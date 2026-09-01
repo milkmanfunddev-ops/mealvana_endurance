@@ -4,12 +4,16 @@
 - App uses local-first data architecture:
   - Local DB: Drift/SQLite in app runtime
   - Cloud DB: Supabase/PostgreSQL for sync + shared backend state
-- Drift schema version in code is `9` (`AppDatabase.schemaVersion`). v9 is the
-  consolidated Formula Kit bump from the last released schema (v8), folding
-  four tables — `during_workout_templates`, `pre_workout_templates`,
-  `post_workout_templates`, `formula_pins` — into one migration step. Earlier
-  interim numbers (v9 / v10 / v11 / v12 on the feature branch) never shipped.
-- Drift table set in code currently includes 24 tables (declared in `app_database.dart`).
+- Drift schema version: read `schemaVersion` in `lib/shared/database/app_database.dart`
+  (never a number from this file). Its doc comment carries the per-version changelog;
+  the `onUpgrade` ladder is idempotent (`addColumn` / `ensureTable` guards) because web
+  replays steps. Latest addition: `user_entitlements` (v19) — a read-only local cache of the
+  user's Pro subscription row, written server-side by the `revenuecat-webhook`
+  (`supabase/migrations/20260902080000_user_entitlements.sql`; see
+  `docs/implement_mealplanning/04-entitlement.md`). It is not a `SyncableRepository`.
+- Drift tables are the `tables:` list in `app_database.dart`; snapshots per version live in
+  `database_schemas/drift_schemas/drift_schema_v<N>.json`
+  (`dart run drift_dev schema dump lib/shared/database/app_database.dart database_schemas/drift_schemas/`).
 - Database connection is platform-specific:
   - Native: `connection_native.dart`
   - Web: `connection_web.dart` (Wasm database assets)

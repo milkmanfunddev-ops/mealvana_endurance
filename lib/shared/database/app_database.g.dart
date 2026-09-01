@@ -41737,6 +41737,637 @@ class RecipesTableCompanion extends UpdateCompanion<RecipeEntry> {
   }
 }
 
+class $UserEntitlementsTableTable extends UserEntitlementsTable
+    with TableInfo<$UserEntitlementsTableTable, UserEntitlementEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserEntitlementsTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entitlementMeta = const VerificationMeta(
+    'entitlement',
+  );
+  @override
+  late final GeneratedColumn<String> entitlement = GeneratedColumn<String>(
+    'entitlement',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activeMeta = const VerificationMeta('active');
+  @override
+  late final GeneratedColumn<bool> active = GeneratedColumn<bool>(
+    'active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _productIdMeta = const VerificationMeta(
+    'productId',
+  );
+  @override
+  late final GeneratedColumn<String> productId = GeneratedColumn<String>(
+    'product_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _storeMeta = const VerificationMeta('store');
+  @override
+  late final GeneratedColumn<String> store = GeneratedColumn<String>(
+    'store',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _periodTypeMeta = const VerificationMeta(
+    'periodType',
+  );
+  @override
+  late final GeneratedColumn<String> periodType = GeneratedColumn<String>(
+    'period_type',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expiresAtMeta = const VerificationMeta(
+    'expiresAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> expiresAt = GeneratedColumn<DateTime>(
+    'expires_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('revenuecat'),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fetchedAtMeta = const VerificationMeta(
+    'fetchedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> fetchedAt = GeneratedColumn<DateTime>(
+    'fetched_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    entitlement,
+    active,
+    productId,
+    store,
+    periodType,
+    expiresAt,
+    source,
+    updatedAt,
+    fetchedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_entitlements';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserEntitlementEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('entitlement')) {
+      context.handle(
+        _entitlementMeta,
+        entitlement.isAcceptableOrUnknown(
+          data['entitlement']!,
+          _entitlementMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_entitlementMeta);
+    }
+    if (data.containsKey('active')) {
+      context.handle(
+        _activeMeta,
+        active.isAcceptableOrUnknown(data['active']!, _activeMeta),
+      );
+    }
+    if (data.containsKey('product_id')) {
+      context.handle(
+        _productIdMeta,
+        productId.isAcceptableOrUnknown(data['product_id']!, _productIdMeta),
+      );
+    }
+    if (data.containsKey('store')) {
+      context.handle(
+        _storeMeta,
+        store.isAcceptableOrUnknown(data['store']!, _storeMeta),
+      );
+    }
+    if (data.containsKey('period_type')) {
+      context.handle(
+        _periodTypeMeta,
+        periodType.isAcceptableOrUnknown(data['period_type']!, _periodTypeMeta),
+      );
+    }
+    if (data.containsKey('expires_at')) {
+      context.handle(
+        _expiresAtMeta,
+        expiresAt.isAcceptableOrUnknown(data['expires_at']!, _expiresAtMeta),
+      );
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('fetched_at')) {
+      context.handle(
+        _fetchedAtMeta,
+        fetchedAt.isAcceptableOrUnknown(data['fetched_at']!, _fetchedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fetchedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, entitlement};
+  @override
+  UserEntitlementEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserEntitlementEntry(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      entitlement: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entitlement'],
+      )!,
+      active: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}active'],
+      )!,
+      productId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_id'],
+      ),
+      store: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}store'],
+      ),
+      periodType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_type'],
+      ),
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      ),
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      fetchedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}fetched_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserEntitlementsTableTable createAlias(String alias) {
+    return $UserEntitlementsTableTable(attachedDatabase, alias);
+  }
+}
+
+class UserEntitlementEntry extends DataClass
+    implements Insertable<UserEntitlementEntry> {
+  final String userId;
+
+  /// Entitlement key, e.g. 'pro' (see `Entitlement.key`).
+  final String entitlement;
+  final bool active;
+
+  /// Store SKU that granted the entitlement.
+  final String? productId;
+
+  /// APP_STORE | PLAY_STORE | PROMOTIONAL | … (RevenueCat store string).
+  final String? store;
+
+  /// NORMAL | TRIAL | INTRO | PROMOTIONAL.
+  final String? periodType;
+  final DateTime? expiresAt;
+
+  /// revenuecat | promo | internal.
+  final String source;
+
+  /// Server `updated_at` (= RevenueCat event timestamp).
+  final DateTime updatedAt;
+
+  /// When this device last fetched the row — staleness signal for the cache.
+  final DateTime fetchedAt;
+  const UserEntitlementEntry({
+    required this.userId,
+    required this.entitlement,
+    required this.active,
+    this.productId,
+    this.store,
+    this.periodType,
+    this.expiresAt,
+    required this.source,
+    required this.updatedAt,
+    required this.fetchedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['entitlement'] = Variable<String>(entitlement);
+    map['active'] = Variable<bool>(active);
+    if (!nullToAbsent || productId != null) {
+      map['product_id'] = Variable<String>(productId);
+    }
+    if (!nullToAbsent || store != null) {
+      map['store'] = Variable<String>(store);
+    }
+    if (!nullToAbsent || periodType != null) {
+      map['period_type'] = Variable<String>(periodType);
+    }
+    if (!nullToAbsent || expiresAt != null) {
+      map['expires_at'] = Variable<DateTime>(expiresAt);
+    }
+    map['source'] = Variable<String>(source);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['fetched_at'] = Variable<DateTime>(fetchedAt);
+    return map;
+  }
+
+  UserEntitlementsTableCompanion toCompanion(bool nullToAbsent) {
+    return UserEntitlementsTableCompanion(
+      userId: Value(userId),
+      entitlement: Value(entitlement),
+      active: Value(active),
+      productId: productId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(productId),
+      store: store == null && nullToAbsent
+          ? const Value.absent()
+          : Value(store),
+      periodType: periodType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(periodType),
+      expiresAt: expiresAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAt),
+      source: Value(source),
+      updatedAt: Value(updatedAt),
+      fetchedAt: Value(fetchedAt),
+    );
+  }
+
+  factory UserEntitlementEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserEntitlementEntry(
+      userId: serializer.fromJson<String>(json['userId']),
+      entitlement: serializer.fromJson<String>(json['entitlement']),
+      active: serializer.fromJson<bool>(json['active']),
+      productId: serializer.fromJson<String?>(json['productId']),
+      store: serializer.fromJson<String?>(json['store']),
+      periodType: serializer.fromJson<String?>(json['periodType']),
+      expiresAt: serializer.fromJson<DateTime?>(json['expiresAt']),
+      source: serializer.fromJson<String>(json['source']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      fetchedAt: serializer.fromJson<DateTime>(json['fetchedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'entitlement': serializer.toJson<String>(entitlement),
+      'active': serializer.toJson<bool>(active),
+      'productId': serializer.toJson<String?>(productId),
+      'store': serializer.toJson<String?>(store),
+      'periodType': serializer.toJson<String?>(periodType),
+      'expiresAt': serializer.toJson<DateTime?>(expiresAt),
+      'source': serializer.toJson<String>(source),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'fetchedAt': serializer.toJson<DateTime>(fetchedAt),
+    };
+  }
+
+  UserEntitlementEntry copyWith({
+    String? userId,
+    String? entitlement,
+    bool? active,
+    Value<String?> productId = const Value.absent(),
+    Value<String?> store = const Value.absent(),
+    Value<String?> periodType = const Value.absent(),
+    Value<DateTime?> expiresAt = const Value.absent(),
+    String? source,
+    DateTime? updatedAt,
+    DateTime? fetchedAt,
+  }) => UserEntitlementEntry(
+    userId: userId ?? this.userId,
+    entitlement: entitlement ?? this.entitlement,
+    active: active ?? this.active,
+    productId: productId.present ? productId.value : this.productId,
+    store: store.present ? store.value : this.store,
+    periodType: periodType.present ? periodType.value : this.periodType,
+    expiresAt: expiresAt.present ? expiresAt.value : this.expiresAt,
+    source: source ?? this.source,
+    updatedAt: updatedAt ?? this.updatedAt,
+    fetchedAt: fetchedAt ?? this.fetchedAt,
+  );
+  UserEntitlementEntry copyWithCompanion(UserEntitlementsTableCompanion data) {
+    return UserEntitlementEntry(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      entitlement: data.entitlement.present
+          ? data.entitlement.value
+          : this.entitlement,
+      active: data.active.present ? data.active.value : this.active,
+      productId: data.productId.present ? data.productId.value : this.productId,
+      store: data.store.present ? data.store.value : this.store,
+      periodType: data.periodType.present
+          ? data.periodType.value
+          : this.periodType,
+      expiresAt: data.expiresAt.present ? data.expiresAt.value : this.expiresAt,
+      source: data.source.present ? data.source.value : this.source,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      fetchedAt: data.fetchedAt.present ? data.fetchedAt.value : this.fetchedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserEntitlementEntry(')
+          ..write('userId: $userId, ')
+          ..write('entitlement: $entitlement, ')
+          ..write('active: $active, ')
+          ..write('productId: $productId, ')
+          ..write('store: $store, ')
+          ..write('periodType: $periodType, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('source: $source, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('fetchedAt: $fetchedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    userId,
+    entitlement,
+    active,
+    productId,
+    store,
+    periodType,
+    expiresAt,
+    source,
+    updatedAt,
+    fetchedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserEntitlementEntry &&
+          other.userId == this.userId &&
+          other.entitlement == this.entitlement &&
+          other.active == this.active &&
+          other.productId == this.productId &&
+          other.store == this.store &&
+          other.periodType == this.periodType &&
+          other.expiresAt == this.expiresAt &&
+          other.source == this.source &&
+          other.updatedAt == this.updatedAt &&
+          other.fetchedAt == this.fetchedAt);
+}
+
+class UserEntitlementsTableCompanion
+    extends UpdateCompanion<UserEntitlementEntry> {
+  final Value<String> userId;
+  final Value<String> entitlement;
+  final Value<bool> active;
+  final Value<String?> productId;
+  final Value<String?> store;
+  final Value<String?> periodType;
+  final Value<DateTime?> expiresAt;
+  final Value<String> source;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime> fetchedAt;
+  final Value<int> rowid;
+  const UserEntitlementsTableCompanion({
+    this.userId = const Value.absent(),
+    this.entitlement = const Value.absent(),
+    this.active = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.store = const Value.absent(),
+    this.periodType = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.source = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.fetchedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserEntitlementsTableCompanion.insert({
+    required String userId,
+    required String entitlement,
+    this.active = const Value.absent(),
+    this.productId = const Value.absent(),
+    this.store = const Value.absent(),
+    this.periodType = const Value.absent(),
+    this.expiresAt = const Value.absent(),
+    this.source = const Value.absent(),
+    required DateTime updatedAt,
+    required DateTime fetchedAt,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       entitlement = Value(entitlement),
+       updatedAt = Value(updatedAt),
+       fetchedAt = Value(fetchedAt);
+  static Insertable<UserEntitlementEntry> custom({
+    Expression<String>? userId,
+    Expression<String>? entitlement,
+    Expression<bool>? active,
+    Expression<String>? productId,
+    Expression<String>? store,
+    Expression<String>? periodType,
+    Expression<DateTime>? expiresAt,
+    Expression<String>? source,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? fetchedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (entitlement != null) 'entitlement': entitlement,
+      if (active != null) 'active': active,
+      if (productId != null) 'product_id': productId,
+      if (store != null) 'store': store,
+      if (periodType != null) 'period_type': periodType,
+      if (expiresAt != null) 'expires_at': expiresAt,
+      if (source != null) 'source': source,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (fetchedAt != null) 'fetched_at': fetchedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserEntitlementsTableCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? entitlement,
+    Value<bool>? active,
+    Value<String?>? productId,
+    Value<String?>? store,
+    Value<String?>? periodType,
+    Value<DateTime?>? expiresAt,
+    Value<String>? source,
+    Value<DateTime>? updatedAt,
+    Value<DateTime>? fetchedAt,
+    Value<int>? rowid,
+  }) {
+    return UserEntitlementsTableCompanion(
+      userId: userId ?? this.userId,
+      entitlement: entitlement ?? this.entitlement,
+      active: active ?? this.active,
+      productId: productId ?? this.productId,
+      store: store ?? this.store,
+      periodType: periodType ?? this.periodType,
+      expiresAt: expiresAt ?? this.expiresAt,
+      source: source ?? this.source,
+      updatedAt: updatedAt ?? this.updatedAt,
+      fetchedAt: fetchedAt ?? this.fetchedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (entitlement.present) {
+      map['entitlement'] = Variable<String>(entitlement.value);
+    }
+    if (active.present) {
+      map['active'] = Variable<bool>(active.value);
+    }
+    if (productId.present) {
+      map['product_id'] = Variable<String>(productId.value);
+    }
+    if (store.present) {
+      map['store'] = Variable<String>(store.value);
+    }
+    if (periodType.present) {
+      map['period_type'] = Variable<String>(periodType.value);
+    }
+    if (expiresAt.present) {
+      map['expires_at'] = Variable<DateTime>(expiresAt.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (fetchedAt.present) {
+      map['fetched_at'] = Variable<DateTime>(fetchedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserEntitlementsTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('entitlement: $entitlement, ')
+          ..write('active: $active, ')
+          ..write('productId: $productId, ')
+          ..write('store: $store, ')
+          ..write('periodType: $periodType, ')
+          ..write('expiresAt: $expiresAt, ')
+          ..write('source: $source, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('fetchedAt: $fetchedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -41809,6 +42440,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $RecipesTableTable recipesTable = $RecipesTableTable(this);
+  late final $UserEntitlementsTableTable userEntitlementsTable =
+      $UserEntitlementsTableTable(this);
   late final UserDao userDao = UserDao(this as AppDatabase);
   late final FoodPreferencesDao foodPreferencesDao = FoodPreferencesDao(
     this as AppDatabase,
@@ -41858,6 +42491,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     mealLogsTable,
     savedMealsTable,
     recipesTable,
+    userEntitlementsTable,
   ];
 }
 
@@ -60279,6 +60913,324 @@ typedef $$RecipesTableTableProcessedTableManager =
       RecipeEntry,
       PrefetchHooks Function()
     >;
+typedef $$UserEntitlementsTableTableCreateCompanionBuilder =
+    UserEntitlementsTableCompanion Function({
+      required String userId,
+      required String entitlement,
+      Value<bool> active,
+      Value<String?> productId,
+      Value<String?> store,
+      Value<String?> periodType,
+      Value<DateTime?> expiresAt,
+      Value<String> source,
+      required DateTime updatedAt,
+      required DateTime fetchedAt,
+      Value<int> rowid,
+    });
+typedef $$UserEntitlementsTableTableUpdateCompanionBuilder =
+    UserEntitlementsTableCompanion Function({
+      Value<String> userId,
+      Value<String> entitlement,
+      Value<bool> active,
+      Value<String?> productId,
+      Value<String?> store,
+      Value<String?> periodType,
+      Value<DateTime?> expiresAt,
+      Value<String> source,
+      Value<DateTime> updatedAt,
+      Value<DateTime> fetchedAt,
+      Value<int> rowid,
+    });
+
+class $$UserEntitlementsTableTableFilterComposer
+    extends Composer<_$AppDatabase, $UserEntitlementsTableTable> {
+  $$UserEntitlementsTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entitlement => $composableBuilder(
+    column: $table.entitlement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get store => $composableBuilder(
+    column: $table.store,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodType => $composableBuilder(
+    column: $table.periodType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserEntitlementsTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserEntitlementsTableTable> {
+  $$UserEntitlementsTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entitlement => $composableBuilder(
+    column: $table.entitlement,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get active => $composableBuilder(
+    column: $table.active,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productId => $composableBuilder(
+    column: $table.productId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get store => $composableBuilder(
+    column: $table.store,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodType => $composableBuilder(
+    column: $table.periodType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get expiresAt => $composableBuilder(
+    column: $table.expiresAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get fetchedAt => $composableBuilder(
+    column: $table.fetchedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserEntitlementsTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserEntitlementsTableTable> {
+  $$UserEntitlementsTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get entitlement => $composableBuilder(
+    column: $table.entitlement,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get active =>
+      $composableBuilder(column: $table.active, builder: (column) => column);
+
+  GeneratedColumn<String> get productId =>
+      $composableBuilder(column: $table.productId, builder: (column) => column);
+
+  GeneratedColumn<String> get store =>
+      $composableBuilder(column: $table.store, builder: (column) => column);
+
+  GeneratedColumn<String> get periodType => $composableBuilder(
+    column: $table.periodType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get expiresAt =>
+      $composableBuilder(column: $table.expiresAt, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get fetchedAt =>
+      $composableBuilder(column: $table.fetchedAt, builder: (column) => column);
+}
+
+class $$UserEntitlementsTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserEntitlementsTableTable,
+          UserEntitlementEntry,
+          $$UserEntitlementsTableTableFilterComposer,
+          $$UserEntitlementsTableTableOrderingComposer,
+          $$UserEntitlementsTableTableAnnotationComposer,
+          $$UserEntitlementsTableTableCreateCompanionBuilder,
+          $$UserEntitlementsTableTableUpdateCompanionBuilder,
+          (
+            UserEntitlementEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $UserEntitlementsTableTable,
+              UserEntitlementEntry
+            >,
+          ),
+          UserEntitlementEntry,
+          PrefetchHooks Function()
+        > {
+  $$UserEntitlementsTableTableTableManager(
+    _$AppDatabase db,
+    $UserEntitlementsTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserEntitlementsTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$UserEntitlementsTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$UserEntitlementsTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> entitlement = const Value.absent(),
+                Value<bool> active = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String?> store = const Value.absent(),
+                Value<String?> periodType = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime> fetchedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserEntitlementsTableCompanion(
+                userId: userId,
+                entitlement: entitlement,
+                active: active,
+                productId: productId,
+                store: store,
+                periodType: periodType,
+                expiresAt: expiresAt,
+                source: source,
+                updatedAt: updatedAt,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String entitlement,
+                Value<bool> active = const Value.absent(),
+                Value<String?> productId = const Value.absent(),
+                Value<String?> store = const Value.absent(),
+                Value<String?> periodType = const Value.absent(),
+                Value<DateTime?> expiresAt = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                required DateTime updatedAt,
+                required DateTime fetchedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => UserEntitlementsTableCompanion.insert(
+                userId: userId,
+                entitlement: entitlement,
+                active: active,
+                productId: productId,
+                store: store,
+                periodType: periodType,
+                expiresAt: expiresAt,
+                source: source,
+                updatedAt: updatedAt,
+                fetchedAt: fetchedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserEntitlementsTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserEntitlementsTableTable,
+      UserEntitlementEntry,
+      $$UserEntitlementsTableTableFilterComposer,
+      $$UserEntitlementsTableTableOrderingComposer,
+      $$UserEntitlementsTableTableAnnotationComposer,
+      $$UserEntitlementsTableTableCreateCompanionBuilder,
+      $$UserEntitlementsTableTableUpdateCompanionBuilder,
+      (
+        UserEntitlementEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $UserEntitlementsTableTable,
+          UserEntitlementEntry
+        >,
+      ),
+      UserEntitlementEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -60393,4 +61345,6 @@ class $AppDatabaseManager {
       $$SavedMealsTableTableTableManager(_db, _db.savedMealsTable);
   $$RecipesTableTableTableManager get recipesTable =>
       $$RecipesTableTableTableManager(_db, _db.recipesTable);
+  $$UserEntitlementsTableTableTableManager get userEntitlementsTable =>
+      $$UserEntitlementsTableTableTableManager(_db, _db.userEntitlementsTable);
 }

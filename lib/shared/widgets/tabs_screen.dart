@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
-import '../services/app_config.dart';
+import '../../features/subscription/application/pro_gate.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -47,6 +47,11 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final showCoachTab = kIsWeb;
     final useRail = context.useNavigationRail;
+    // Pro gate subscription. The Food tab (meal planning, Phase 4) will be
+    // included only when Pro is unlocked; watching here already means the
+    // tab list rebuilds the moment a purchase / restore flips the status,
+    // without a restart. Index math is untouched until the tab exists.
+    ref.watch(proUnlockedProvider);
 
     // Navigate to coach portal route when coach tab is selected on web
     if (showCoachTab && _currentIndex == _coachTabIndex) {
