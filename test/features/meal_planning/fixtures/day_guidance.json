@@ -1,0 +1,77 @@
+{
+  "kind": "day_guidance",
+  "date": "2026-09-01",
+  "label": "Rest day",
+  "workout": null,
+  "minCarbsG": 336,
+  "note": "At least 336g carbs, protein at every meal. No need to top up around training.",
+  "suggestions": [
+    {
+      "source": "saved",
+      "id": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+      "name": "Egg & Veggie Scramble",
+      "mealType": "dinner",
+      "contexts": [],
+      "batch": false,
+      "prepMinutes": null,
+      "kcal": 280,
+      "carbsG": 8,
+      "proteinG": 22,
+      "fatG": 18,
+      "allergens": [],
+      "dietsOk": [],
+      "swaps": null,
+      "why": "one of your saved meals",
+      "attribution": "your saved meal",
+      "attributionShort": "your saved meal",
+      "ingredients": "Egg & Veggie Scramble",
+      "libraryMealId": null,
+      "score": 0.65,
+      "kind": "assembly",
+      "pattern": null,
+      "frequency": "staple",
+      "icon": "egg",
+      "myVote": 0
+    },
+    {
+      "source": "library",
+      "id": "AS-232",
+      "name": "Hard-boiled eggs with sliced avocado",
+      "mealType": "snack",
+      "contexts": [
+        "everyday",
+        "rest-day",
+        "race-week"
+      ],
+      "batch": true,
+      "prepMinutes": 0,
+      "kcal": 250,
+      "carbsG": 5,
+      "proteinG": 14,
+      "fatG": 20,
+      "allergens": [
+        "eggs"
+      ],
+      "dietsOk": [
+        "keto",
+        "low_carb",
+        "omnivore",
+        "paleo",
+        "pescatarian",
+        "vegetarian"
+      ],
+      "swaps": "none needed for keto/paleo; not vegan",
+      "why": "Volek & Phinney identify avocados as a core fat source for low-carb athletes; Zach Bitter's diet is described as heavy in \"ground beef and eggs\"",
+      "attribution": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+      "attributionShort": "",
+      "ingredients": "hard-boiled eggs 2, avocado, sliced 1/2, sea salt pinch",
+      "libraryMealId": "AS-232",
+      "score": 0.54,
+      "kind": "assembly",
+      "pattern": "protein + fat",
+      "frequency": "staple",
+      "icon": "egg",
+      "myVote": 0
+    }
+  ]
+}
