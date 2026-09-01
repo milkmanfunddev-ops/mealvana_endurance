@@ -276,6 +276,45 @@ class SavedMealsRepository with SyncableRepository {
     }());
   }
 
+  /// Set the athlete's own directions on a saved meal (meal planning's
+  /// "Your directions"; <= 2000 chars, trimmed by the caller). Local-first:
+  /// the row is re-dirtied and an immediate upload scheduled. No-op if no
+  /// active row exists.
+  Future<void> updateNotes(String mealId, String? notes) async {
+    final row =
+        await (_database.select(_database.savedMealsTable)
+              ..where((t) => t.id.equals(mealId) & t.isDeleted.equals(false))
+              ..limit(1))
+            .getSingleOrNull();
+    if (row == null) return;
+
+    final now = DateTime.now();
+    await (_database.update(
+      _database.savedMealsTable,
+    )..where((t) => t.id.equals(mealId))).write(
+      SavedMealsTableCompanion(
+        notes: Value(notes),
+        updatedAt: Value(now),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+      ),
+    );
+
+    _logger.info(
+      'Updated saved meal notes',
+      context: 'SAVED_MEALS_REPOSITORY',
+      data: {'mealId': mealId},
+    );
+
+    final updated = SavedMeal.fromDriftEntry(row).copyWith(
+      notes: notes,
+      updatedAt: now,
+      needsUpload: true,
+      localUpdatedAt: now,
+    );
+    _scheduleImmediateUpload(updated, label: 'notes');
+  }
+
   /// Soft-delete a saved meal by id. No-op if no active row exists.
   Future<void> softDelete(String mealId) async {
     final row =

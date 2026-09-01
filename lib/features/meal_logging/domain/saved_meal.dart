@@ -25,6 +25,11 @@ class SavedMeal {
     this.fatG,
     this.sodiumMg,
     this.photoPath,
+    this.icon,
+    this.notes,
+    this.mealTypes = const [],
+    this.batch,
+    this.libraryMealId,
     this.lastUsedAt,
     required this.createdAt,
     required this.updatedAt,
@@ -51,6 +56,24 @@ class SavedMeal {
 
   /// Object path inside the `meal-photos` storage bucket.
   final String? photoPath;
+
+  // ── Meal-planning columns (Drift v20) ─────────────────────────────────────
+
+  /// `MealIcon` wire key (`saved_meals.icon`); null → classify from name.
+  /// Kept as a string so this feature does not depend on meal_planning.
+  final String? icon;
+
+  /// The athlete's own directions (`saved_meals.notes`).
+  final String? notes;
+
+  /// Meal types this meal suits (`breakfast|lunch|dinner|snack` wire values).
+  final List<String> mealTypes;
+
+  /// Batch-cookable; null = unknown.
+  final bool? batch;
+
+  /// `meal_library.id` this saved meal was matched/copied from.
+  final String? libraryMealId;
 
   /// Bumped each time the saved meal is re-logged (sorts the picker).
   final DateTime? lastUsedAt;
@@ -79,6 +102,11 @@ class SavedMeal {
       fatG: entry.fatG,
       sodiumMg: entry.sodiumMg,
       photoPath: entry.photoPath,
+      icon: entry.icon,
+      notes: entry.notes,
+      mealTypes: _decodeStringList(entry.mealTypes),
+      batch: entry.batch,
+      libraryMealId: entry.libraryMealId,
       lastUsedAt: entry.lastUsedAt,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
@@ -100,6 +128,11 @@ class SavedMeal {
       fatG: Value(fatG),
       sodiumMg: Value(sodiumMg),
       photoPath: Value(photoPath),
+      icon: Value(icon),
+      notes: Value(notes),
+      mealTypes: Value(jsonEncode(mealTypes)),
+      batch: Value(batch),
+      libraryMealId: Value(libraryMealId),
       lastUsedAt: Value(lastUsedAt),
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -126,6 +159,11 @@ class SavedMeal {
       if (fatG != null) 'fat_g': fatG,
       if (sodiumMg != null) 'sodium_mg': sodiumMg,
       'photo_path': photoPath,
+      'icon': icon,
+      'notes': notes,
+      'meal_types': mealTypes,
+      'batch': batch,
+      'library_meal_id': libraryMealId,
       'last_used_at': lastUsedAt?.toUtc().toIso8601String(),
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
@@ -146,6 +184,11 @@ class SavedMeal {
       fatG: (json['fat_g'] as num?)?.toDouble(),
       sodiumMg: (json['sodium_mg'] as num?)?.toDouble(),
       photoPath: json['photo_path'] as String?,
+      icon: json['icon'] as String?,
+      notes: json['notes'] as String?,
+      mealTypes: _coerceStringList(json['meal_types']),
+      batch: json['batch'] as bool?,
+      libraryMealId: json['library_meal_id'] as String?,
       lastUsedAt: json['last_used_at'] == null
           ? null
           : DateTime.parse(json['last_used_at'] as String),
@@ -168,6 +211,11 @@ class SavedMeal {
     double? fatG,
     double? sodiumMg,
     String? photoPath,
+    String? icon,
+    String? notes,
+    List<String>? mealTypes,
+    bool? batch,
+    String? libraryMealId,
     DateTime? lastUsedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -186,6 +234,11 @@ class SavedMeal {
       fatG: fatG ?? this.fatG,
       sodiumMg: sodiumMg ?? this.sodiumMg,
       photoPath: photoPath ?? this.photoPath,
+      icon: icon ?? this.icon,
+      notes: notes ?? this.notes,
+      mealTypes: mealTypes ?? this.mealTypes,
+      batch: batch ?? this.batch,
+      libraryMealId: libraryMealId ?? this.libraryMealId,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -205,6 +258,23 @@ class SavedMeal {
     } catch (_) {
       return const [];
     }
+  }
+
+  /// Decode the Drift TEXT `meal_types` column (a JSON-encoded string array).
+  static List<String> _decodeStringList(String? raw) {
+    if (raw == null || raw.isEmpty || raw == '[]') return const [];
+    try {
+      return _coerceStringList(jsonDecode(raw));
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Coerce a Supabase `text[]` (decoded List) or a JSON string.
+  static List<String> _coerceStringList(Object? raw) {
+    if (raw is String) return _decodeStringList(raw);
+    if (raw is List) return raw.whereType<String>().toList(growable: false);
+    return const [];
   }
 
   static List<MealComponent> _coerceComponents(Object? raw) {

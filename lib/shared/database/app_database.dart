@@ -49,6 +49,9 @@ import 'tables/meal_logs_table.dart';
 import 'tables/saved_meals_table.dart';
 import 'tables/recipes_table.dart';
 import 'tables/user_entitlements_table.dart';
+import 'tables/meal_plans_table.dart';
+import 'tables/plan_meals_table.dart';
+import 'tables/user_memories_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -157,6 +160,9 @@ part 'app_database.g.dart';
     // Pro subscription entitlement cache (read-only mirror of the user's own
     // user_entitlements rows; written server-side by the RevenueCat webhook)
     UserEntitlementsTable,
+    MealPlansTable,
+    PlanMealsTable,
+    UserMemoriesTable,
   ],
   daos: [
     UserDao,
@@ -290,7 +296,14 @@ class AppDatabase extends _$AppDatabase {
   /// function; the app caches its own row so the Pro gate can answer offline
   /// and before RevenueCat responds on a cold start. Supabase
   /// app_config.current_schema_version must be bumped to 19 when this ships.
-  int get schemaVersion => 19;
+  ///
+  /// v20 added the meal-planning user data (Phase 4b of
+  /// docs/implement_mealplanning): `meal_plans`, `plan_meals`, `user_memories`
+  /// (all offline-first with `needs_upload`), `meal_logs.plan_meal_id`, and
+  /// the `saved_meals` planning columns (`icon notes meal_types batch
+  /// library_meal_id`). Supabase app_config.current_schema_version must be
+  /// bumped to 20 when this ships.
+  int get schemaVersion => 20;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -559,6 +572,25 @@ class AppDatabase extends _$AppDatabase {
         // user_version replays; no columns change on existing tables.
         if (from < 19) {
           await ensureTable(userEntitlementsTable);
+        }
+
+        // v20: meal-planning user data (Phase 4b). Three new tables plus
+        // additive nullable/defaulted columns on meal_logs and saved_meals.
+        // ensureTable / addColumn are idempotent for web user_version replays.
+        if (from < 20) {
+          await ensureTable(mealPlansTable);
+          await ensureTable(planMealsTable);
+          await ensureTable(userMemoriesTable);
+          await addColumn('meal_logs', 'plan_meal_id', 'TEXT');
+          await addColumn('saved_meals', 'icon', 'TEXT');
+          await addColumn('saved_meals', 'notes', 'TEXT');
+          await addColumn(
+            'saved_meals',
+            'meal_types',
+            "TEXT NOT NULL DEFAULT '[]'",
+          );
+          await addColumn('saved_meals', 'batch', 'INTEGER');
+          await addColumn('saved_meals', 'library_meal_id', 'TEXT');
         }
       },
 

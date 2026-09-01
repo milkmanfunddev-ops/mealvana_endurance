@@ -22,6 +22,9 @@ import '../../../feedback/data/feedback_repository.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
 import '../../../meal_logging/data/meal_log_repository.dart';
 import '../../../meal_logging/data/saved_meals_repository.dart';
+import '../../../meal_planning/data/meal_plan_repository.dart';
+import '../../../meal_planning/data/user_memory_repository.dart';
+import '../../../../shared/data/syncable_repository.dart';
 import '../../../nutrition_plan/presentation/providers/macro_targets_controller.dart';
 import '../../../onboarding/application/onboarding_snapshot_service.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
@@ -736,7 +739,11 @@ class SettingsController extends _$SettingsController {
     try {
       await ref.read(subscriptionStatusProvider.notifier).clear();
     } catch (e) {
-      logger.error('Pro entitlement clear failed', context: 'SETTINGS', error: e);
+      logger.error(
+        'Pro entitlement clear failed',
+        context: 'SETTINGS',
+        error: e,
+      );
     }
 
     // Sign out from Supabase (triggers AuthChangeEvent.signedOut)
@@ -747,7 +754,12 @@ class SettingsController extends _$SettingsController {
 
   /// Upload dirty records from all repositories before logout.
   /// Uses Future.wait for parallel uploads - fast and targeted.
+  ///
+  /// `uploadDirtyRecords()` swallows exceptions into a silent
+  /// `UploadResult.failed()`, so every result is checked here and the
+  /// failures logged — an unchecked call looks identical to a success.
   Future<void> _uploadDirtyBeforeLogout(String userId) async {
+    final logger = ref.read(appExternalDepsProvider).logger;
     final activitiesRepo = ref.read(activitiesRepositoryProvider);
     final eventsRepo = ref.read(eventsRepositoryProvider);
     final carbLoadingRepo = ref.read(carbLoadingRepositoryProvider);
@@ -759,17 +771,36 @@ class SettingsController extends _$SettingsController {
 
     final mealLogRepo = ref.read(mealLogRepositoryProvider);
     final savedMealsRepo = ref.read(savedMealsRepositoryProvider);
+    // Meal planning (Phase 4b): local-first plan edits + Vana settings.
+    final mealPlanRepo = ref.read(mealPlanRepositoryProvider);
+    final userMemoryRepo = ref.read(userMemoryRepositoryProvider);
 
-    await Future.wait([
-      activitiesRepo.uploadDirtyRecords(userId),
-      eventsRepo.uploadDirtyRecords(userId),
-      carbLoadingRepo.uploadDirtyRecords(userId),
-      feedbackRepo.uploadDirtyRecords(userId),
-      foodPrefsRepo.uploadDirtyRecords(userId),
-      userRepo.uploadDirtyRecords(userId),
-      mealLogRepo.uploadDirtyRecords(userId),
-      savedMealsRepo.uploadDirtyRecords(userId),
-    ]);
+    final repos = <SyncableRepository>[
+      activitiesRepo,
+      eventsRepo,
+      carbLoadingRepo,
+      feedbackRepo,
+      foodPrefsRepo,
+      userRepo,
+      mealLogRepo,
+      savedMealsRepo,
+      mealPlanRepo,
+      userMemoryRepo,
+    ];
+
+    final results = await Future.wait(
+      repos.map((repo) => repo.uploadDirtyRecords(userId)),
+    );
+
+    for (var i = 0; i < repos.length; i++) {
+      final result = results[i];
+      if (result.success) continue;
+      logger.error(
+        'Pre-logout upload failed for ${repos[i].repositoryKey}',
+        context: 'SETTINGS',
+        data: {'repository': repos[i].repositoryKey, 'error': result.error},
+      );
+    }
   }
 
   /// Delete the current user account
