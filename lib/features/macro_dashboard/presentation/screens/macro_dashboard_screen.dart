@@ -45,9 +45,10 @@ import '../widgets/workout_card.dart';
 /// the Fuel Timeline design (Notion 3a7e3fdb) so a design session has the
 /// real thing to ratify from:
 ///   · a third `⛓ Brick` pill in the add row, after a divider, offered only
-///     while `hasBrickCandidates` holds (brick_eligibility.dart: 2+ swim /
-///     bike / run on the day, 2+ sports — adjacency NOT required, legs in
-///     pick order; ruled Lee 2026-08-26, logic-SSOT record pending);
+///     while `hasBrickCandidates` holds (brick_eligibility.dart — SSOT
+///     docs/ssot/spec/domain/brick.md, RATIFIED v1: R1 2+ eligible on the
+///     day, adjacency withdrawn; R2 same-sport OK; R5 skipped legs excluded;
+///     R6 legs in pick order);
 ///   · tapping it swaps the add row for "Pick legs to link · Cancel" and the
 ///     day's workout cards become pickable in place (rail geometry unchanged);
 ///   · a docked LEG ORDER panel (Swap · Create Brick (n)) commits directly;

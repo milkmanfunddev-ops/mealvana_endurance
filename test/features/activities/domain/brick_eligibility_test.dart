@@ -3,16 +3,23 @@ import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/activities/domain/brick_eligibility.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
-/// Only the three triathlon disciplines are groupable (Notion 3a7e3fdb), and
-/// the Brick entry point appears whenever the day holds 2+ eligible workouts
-/// — adjacency withdrawn, same-sport allowed, pick order free (Lee, 2026-08-26;
-/// logic-SSOT record: qa/intake/2026-08-26-brick-eligibility-logic-ssot.md).
+/// SSOT: docs/ssot/spec/domain/brick.md (RATIFIED v1, Xuan 2026-08-31).
+/// R1 offer threshold, R2 same-sport, R3 sport set, R4 count gates, R5
+/// skipped-leg exclusion (fixes D-007), R6 leg order = pick order. The full
+/// conformance sweep runs via qa run_dart.sh brick-eligibility against
+/// docs/ssot/vectors/domain/brick-eligibility.json; these unit tests keep the
+/// same rules red-green inside the app's own suite.
 void main() {
-  Activity act(String id, ActivityType type) => Activity(
+  Activity act(
+    String id,
+    ActivityType type, {
+    ActivityStatus status = ActivityStatus.planned,
+  }) => Activity(
     id: id,
     userId: 'u1',
     title: id,
     activityType: type,
+    status: status,
     scheduledDateTime: DateTime(2026, 7, 25, 8),
     createdAt: DateTime(2026, 7, 25),
     updatedAt: DateTime(2026, 7, 25),
@@ -34,6 +41,23 @@ void main() {
       expect(act('f', ActivityType.triathlon).isBrickEligible, isFalse);
       expect(act('g', ActivityType.duathlon).isBrickEligible, isFalse);
       expect(act('h', ActivityType.multisport).isBrickEligible, isFalse);
+    });
+
+    test('R5: a skipped leg is not eligible (fixes D-007)', () {
+      expect(
+        act('s', ActivityType.running, status: ActivityStatus.skipped)
+            .isBrickEligible,
+        isFalse,
+      );
+    });
+
+    test('Q-BR1 characterization: completed legs stay linkable', () {
+      // Open question — current behaviour pinned, not ratified truth.
+      expect(
+        act('d', ActivityType.running, status: ActivityStatus.completed)
+            .isBrickEligible,
+        isTrue,
+      );
     });
   });
 
@@ -145,6 +169,66 @@ void main() {
         ]),
         {'swim', 'run'},
       );
+    });
+
+    test('R5: a skipped workout blocks the offer when only 1 remains', () {
+      expect(
+        hasBrickCandidates([
+          act('run', ActivityType.running),
+          act('bike', ActivityType.cycling, status: ActivityStatus.skipped),
+        ]),
+        isFalse,
+      );
+    });
+
+    test('R5: a skipped workout is excluded from candidates', () {
+      expect(
+        brickCandidateIds([
+          act('run', ActivityType.running),
+          act('sk', ActivityType.cycling, status: ActivityStatus.skipped),
+          act('bike', ActivityType.cycling),
+        ]),
+        {'run', 'bike'},
+      );
+    });
+  });
+
+  group('evaluateBrickCreate (brick.md R3–R6)', () {
+    test('allows 2 eligible legs; legOrder is pick order (R6)', () {
+      final v = evaluateBrickCreate([
+        act('b', ActivityType.cycling),
+        act('a', ActivityType.running),
+      ]);
+      expect(v.createAllowed, isTrue);
+      expect(v.gate, isNull);
+      expect(v.legOrder, ['b', 'a']);
+    });
+
+    test('R4: one leg → min-legs gate', () {
+      final v = evaluateBrickCreate([act('a', ActivityType.running)]);
+      expect(v.createAllowed, isFalse);
+      expect(v.gate, BrickCreateGate.minLegs);
+      expect(v.legOrder, isNull);
+    });
+
+    test('R4: four legs → max-legs gate (the cap stands — ruled)', () {
+      final v = evaluateBrickCreate([
+        act('a', ActivityType.running),
+        act('b', ActivityType.cycling),
+        act('c', ActivityType.running),
+        act('d', ActivityType.swimming),
+      ]);
+      expect(v.createAllowed, isFalse);
+      expect(v.gate, BrickCreateGate.maxLegs);
+    });
+
+    test('R5: picking a skipped leg → ineligible-leg gate (fixes D-007)', () {
+      final v = evaluateBrickCreate([
+        act('a', ActivityType.running),
+        act('b', ActivityType.cycling, status: ActivityStatus.skipped),
+      ]);
+      expect(v.createAllowed, isFalse);
+      expect(v.gate, BrickCreateGate.ineligibleLeg);
     });
   });
 }
