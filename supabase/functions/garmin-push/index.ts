@@ -38,6 +38,7 @@ import {
 } from "../_shared/garmin/mappers.ts";
 import {
   buildGarminCompletionUpdate,
+  enrichCompletedGarminActivity,
   findMatchingPlannedActivity,
   insertGarminActivityIfMissing,
 } from "../_shared/garmin/activity_completion.ts";
@@ -337,6 +338,15 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               console.log(
                 `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
               );
+              // The winning push may have carried a preliminary payload
+              // (0 duration / 0 distance) — fill any metric gaps from ours.
+              await enrichCompletedGarminActivity(
+                supabase,
+                mapping.user_id,
+                String(summaryId),
+                activityRow,
+                "[garmin-push]",
+              );
               stats.skipped++;
             } else {
               console.log(
@@ -374,12 +384,24 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
                 stats.inserted++;
                 stats.processed++;
                 break;
-              case "duplicate":
+              case "duplicate": {
                 console.log(
                   `[garmin-push] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
                 );
+                const dupSummaryId = activity.summaryId ??
+                  (activity as { activityId?: string }).activityId;
+                if (dupSummaryId) {
+                  await enrichCompletedGarminActivity(
+                    supabase,
+                    mapping.user_id,
+                    String(dupSummaryId),
+                    activityRow,
+                    "[garmin-push]",
+                  );
+                }
                 stats.skipped++;
                 break;
+              }
               case "skipped_non_endurance":
                 console.log(
                   `[garmin-push] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
@@ -821,6 +843,15 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               console.log(
                 `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
               );
+              // Detail pushes usually carry the richest data — backfill any
+              // metric gaps left by the preliminary payload that won the race.
+              await enrichCompletedGarminActivity(
+                supabase,
+                mapping.user_id,
+                String(detailSummaryId),
+                activityRow,
+                "[garmin-push]",
+              );
               stats.skipped++;
             } else {
               console.log(
@@ -860,6 +891,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               case "duplicate":
                 console.log(
                   `[garmin-push] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
+                );
+                await enrichCompletedGarminActivity(
+                  supabase,
+                  mapping.user_id,
+                  String(detailSummaryId),
+                  activityRow,
+                  "[garmin-push]",
                 );
                 stats.skipped++;
                 break;

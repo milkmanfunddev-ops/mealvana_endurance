@@ -51,6 +51,10 @@ class TemplateFoodsTable extends Table {
   TextColumn get productType =>
       text().withDefault(const Constant('real_food')).named('product_type')();
 
+  /// Layer A food group (G1…G9) per food-composition v3 §3.1–3.9; drives the
+  /// §3.10 tier matrix. NULL = not classified by that SSOT (e.g. water, salt).
+  TextColumn get foodGroup => text().nullable().named('food_group')();
+
   /// Activity types this food is suitable for (JSON array string)
   TextColumn get activityTypes => text()
       .withDefault(const Constant('["running","cycling","swimming"]'))

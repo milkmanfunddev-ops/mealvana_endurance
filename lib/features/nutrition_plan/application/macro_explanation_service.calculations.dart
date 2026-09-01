@@ -638,26 +638,29 @@ extension _$CalculationsExt on MacroExplanationService {
     ];
   }
 
-  /// Pre-workout fluid tier math.
+  /// Pre-workout fluid math.
   ///
-  /// Tier detection prefers the authoritative `tier` (sourced from the edge
-  /// function field `pre_run_hydration_tier`): 1 = body-weight scaled,
-  /// 2 = fixed 250 ml top-up, 3 = no hydration. When [tier] is null
-  /// (legacy plans / older offline paths), falls back to the historical
-  /// fluid-magnitude heuristic — but note that heuristic mislabels low-BW
-  /// Tier 1 athletes whose BW × 6 ml lands ≤ 300 ml.
+  /// Branches on the hydration v6 [regime] string (`cited` | `extrapolated` |
+  /// `clearance_bound` | `gated`), which replaced the retired integer tier —
+  /// see PW-013 in `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. When [regime] is
+  /// null (legacy cached plans), falls back to the historical fluid-magnitude
+  /// heuristic — but note that heuristic mislabels low-bodyweight athletes
+  /// whose full-protocol dose lands ≤ 300 ml.
   List<CalculationSection> _buildPreWorkoutFluidCalculationSections({
     required double bodyWeightKg,
     required int fluidsMl,
     required int? fluidsLowMl,
     required int? fluidsHighMl,
-    int? tier,
+    String? regime,
     bool isGateFired = false,
     bool useImperial = false,
   }) {
-    final bool isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
-    final bool isTier2 = tier != null
-        ? tier == 2
+    final bool isTier3 = regime != null
+        ? regime == PreRunHydrationRegime.gated
+        : fluidsMl == 0;
+    final bool isTier2 = regime != null
+        ? (regime == PreRunHydrationRegime.extrapolated ||
+              regime == PreRunHydrationRegime.clearanceBound)
         : (!isTier3 && fluidsMl <= 300);
 
     // Gate-fired: short + mild workout → no plan needed.
@@ -767,71 +770,14 @@ extension _$CalculationsExt on MacroExplanationService {
     ];
   }
 
-  /// Pre-workout sodium time-window math. Uses time-window language, not
-  /// internal tier labels.
-  List<CalculationSection> _buildPreWorkoutSodiumCalculationSections({
-    required int sodiumMg,
-    required int? sodiumLowMg,
-    required int? sodiumHighMg,
-    bool isGateFired = false,
-    bool useImperial = false,
-  }) {
-    if (sodiumMg == 0) {
-      final reasonText = isGateFired
-          ? 'workout < 60 min + mild — drink-to-thirst with meals'
-          : '< 10 min pre-start — no sodium needed';
-      return [
-        CalculationSection(
-          header: 'PRE-WORKOUT SODIUM',
-          lines: [
-            FormulaLine([
-              const FormulaSegment(
-                'no structured sodium ',
-                style: SegmentStyle.accent,
-              ),
-              const FormulaSegment('→ ', style: SegmentStyle.op),
-              FormulaSegment(reasonText, style: SegmentStyle.dim),
-            ], stepNumber: '①'),
-          ],
-        ),
-      ];
-    }
-
-    // ≥ 2 hr window (~450 mg) vs 10–120 min window (~150 mg): cutoff at 300 mg.
-    final isFullProtocol = sodiumMg >= 300;
-    final windowLabel = isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
-    final header = 'PRE-WORKOUT SODIUM';
-    return [
-      CalculationSection(
-        header: header,
-        lines: [
-          FormulaLine([
-            fAccent('$windowLabel '),
-            fOp('→ '),
-            fAccent(
-              isFullProtocol ? 'full ACSM protocol' : 'short-window top-up',
-            ),
-          ], stepNumber: '①'),
-          FormulaLine([
-            fAccent('fixed sodium '),
-            fOp('= '),
-            fResult('$sodiumMg mg '),
-            fDim(
-              '[${sodiumLowMg ?? (isFullProtocol ? 300 : 100)}–${sodiumHighMg ?? (isFullProtocol ? 600 : 200)} mg]',
-            ),
-          ], stepNumber: '②'),
-          FormulaLine([
-            fOp('→ '),
-            fDim(
-              isFullProtocol
-                  ? 'retains consumed fluid; aligns with ACSM 300–600 mg window'
-                  : 'keeps the ${_fmtMlAmount(250, useImperial)} in your body until start',
-            ),
-          ]),
-        ],
-      ),
-    ];
-  }
+  // Pre-workout sodium has no calculation sections.
+  //
+  // `_buildPreWorkoutSodiumCalculationSections` was deleted with sodium v3.
+  // It rendered a "≥ 2 hr window → full ACSM protocol → 450 mg [300–600 mg]"
+  // chain for a target that no longer exists. There is no pre-workout sodium
+  // formula to show — the absence of one is the position. See
+  // `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §3 and
+  // `_preWorkoutSodiumTransparency`.
 
   // ---------------------------------------------------------------------------
   // DURING SINGLE SPORT FLUID

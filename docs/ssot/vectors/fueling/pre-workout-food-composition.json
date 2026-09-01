@@ -1,0 +1,1823 @@
+{
+  "section": "pre-workout-food-composition",
+  "engine": null,
+  "specVersion": "v3 (2026-08-05)",
+  "note": "Pins RATIFIED v3. EXPECTED-RED: no engine implements these gates yet -- there is no food-suitability entry point in the published interface, so this slice has no runner until one exists. Belongs to a FOOD-COMPOSITION bundle, NOT pre-workout-macros@v1 (that manifest explicitly excludes this slice). Expected is an engine-agnostic verdict per section 11 ('deliberately not tied to any engine interface'): {verdict, failedGate: H1..H7|null, knownException}. Two extensions, both documented: failedRule='matrix' for a section 3.10 tier-matrix rejection, which is a Layer A membership rule and has no H-number; and {available, rating} for the pure matrix-coverage vectors. A feeding is evaluated on its SUMMED macros, never per item (check 4). Gate evaluation order is an ORACLE CONVENTION -- matrix, H4, H5, H6, H1, H2, H3, H7 -- because the SSOT specifies none; every section 7 example fails at most one gate so the order does not affect them. Macro values for the section 7 feedings are taken verbatim from that table, not re-derived from USDA; food-to-macro lookup is a separate food-database concern. toleranceG applies to gram-vs-ceiling comparisons; '<=' is inclusive.",
+  "toleranceG": 0.001,
+  "vectors": [
+    {
+      "id": "wx-01-oatmeal-banana-honey",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 341,
+        "fatG": 4.0,
+        "fibreG": 7.1,
+        "proteinG": 7.3,
+        "carbG": 72,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 1. Fibre 7.1 against the 8 g floor is the tightest gate in the document and must pass."
+    },
+    {
+      "id": "wx-02-bagel-jam-juice",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 494,
+        "fatG": 2.0,
+        "fibreG": 3.0,
+        "proteinG": 12.4,
+        "carbG": 108,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": 11.0,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 2. Carries an ~11 % juice: at the MEAL tier H6 does not apply (check 11), so it passes."
+    },
+    {
+      "id": "wx-03-rice-3oz-chicken-carrot",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 372,
+        "fatG": 3.5,
+        "fibreG": 2.9,
+        "proteinG": 31.2,
+        "carbG": 51,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H3",
+        "knownException": true
+      },
+      "why": "Section 7 row 3. FAIL H3 -- 31.2 g against 26 g at 65 kg. A canonical section 3.11 meal that does NOT pass; asserted as a known exception, not silently tolerated (check 1)."
+    },
+    {
+      "id": "wx-04-bagel-2tbsp-PB",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 461,
+        "fatG": 17.9,
+        "fibreG": 3.9,
+        "proteinG": 17.6,
+        "carbG": 60,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H1",
+        "knownException": false
+      },
+      "why": "Section 7 row 4. FAIL H1 -- 17.9 g against the 15 g floor. Per-item this would pass on the bagel and fail on the peanut butter; the gate is the SUM (check 4)."
+    },
+    {
+      "id": "wx-05-toast-jam",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 121,
+        "fatG": 0.8,
+        "fibreG": 0.9,
+        "proteinG": 2.4,
+        "carbG": 26,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 5."
+    },
+    {
+      "id": "wx-06-banana-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 105,
+        "fatG": 0.4,
+        "fibreG": 3.1,
+        "proteinG": 1.3,
+        "carbG": 27,
+        "foodGroup": "G3",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 6. Fibre 3.1 against the snack's 4 g floor."
+    },
+    {
+      "id": "wx-07-oatmeal-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 166,
+        "fatG": 3.6,
+        "fibreG": 4.0,
+        "proteinG": 5.9,
+        "carbG": 28,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 7. Fibre exactly 4.0 == the floor; '<=' is inclusive (section 4), so this passes."
+    },
+    {
+      "id": "wx-08-gel-250ml-water",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 100,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 23,
+        "foodGroup": "G4b",
+        "form": "gel",
+        "drinkCarbPct": 8.2,
+        "practised": true,
+        "isBolus": true,
+        "withChaseWater": true,
+        "volumeMl": 282
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 8. ~8.2 % as mixed; qualifies for H6's bolus exemption (single serving <=300 ml with chase water, <=12 %)."
+    },
+    {
+      "id": "wx-09-sports-drink-300ml-7%",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 84,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 21,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 7.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Section 7 row 9. 7 % sustained, inside the 8 % ceiling."
+    },
+    {
+      "id": "wx-10-banana-top-off-t-25",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 105,
+        "fatG": 0.4,
+        "fibreG": 3.1,
+        "proteinG": 1.3,
+        "carbG": 27,
+        "foodGroup": "G3",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true,
+        "softLowResidue": true,
+        "leadTimeMin": 25
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": true
+      },
+      "why": "Section 7 row 10. Fibre 3.1 exceeds the top-off's 2 g, but H4's soft-solid allowance (t-30..t-20) explicitly waives it. Known exception (check 1)."
+    },
+    {
+      "id": "wx-11-juice-300ml-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 140,
+        "fatG": 0.6,
+        "fibreG": 0.6,
+        "proteinG": 2.1,
+        "carbG": 33,
+        "foodGroup": "G3",
+        "form": "liquid",
+        "drinkCarbPct": 11.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H6",
+        "knownException": false
+      },
+      "why": "Section 7 row 11. FAIL H6 -- ~11 % sustained at the top-off. Same drink is fine as a snack (check 11)."
+    },
+    {
+      "id": "wx-12-electrolyte-tab",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 0,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 0,
+        "foodGroup": null,
+        "form": "liquid",
+        "drinkCarbPct": 0.0,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H5",
+        "knownException": false
+      },
+      "why": "Section 7 row 12. FAIL H5 -- zero carbohydrate can never be a top-off."
+    },
+    {
+      "id": "h1-scale-pb-50kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 50,
+        "gutTolerance": "moderate",
+        "kcal": 461,
+        "fatG": 17.9,
+        "fibreG": 3.9,
+        "proteinG": 17.6,
+        "carbG": 60,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H1",
+        "knownException": false
+      },
+      "why": "H1 meal ceiling at 50 kg = 15.0 g (max(15, 0.22*kg)). The 17.9 g plate fails. Floor binds at 50/65; per-kg term takes over above ~68 kg. The doc names 85 kg explicitly as the point this plate passes as served."
+    },
+    {
+      "id": "h1-scale-pb-65kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 461,
+        "fatG": 17.9,
+        "fibreG": 3.9,
+        "proteinG": 17.6,
+        "carbG": 60,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H1",
+        "knownException": false
+      },
+      "why": "H1 meal ceiling at 65 kg = 15.0 g (max(15, 0.22*kg)). The 17.9 g plate fails. Floor binds at 50/65; per-kg term takes over above ~68 kg. The doc names 85 kg explicitly as the point this plate passes as served."
+    },
+    {
+      "id": "h1-scale-pb-80kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 80,
+        "gutTolerance": "moderate",
+        "kcal": 461,
+        "fatG": 17.9,
+        "fibreG": 3.9,
+        "proteinG": 17.6,
+        "carbG": 60,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H1",
+        "knownException": false
+      },
+      "why": "H1 meal ceiling at 80 kg = 17.6 g (max(15, 0.22*kg)). The 17.9 g plate fails. Floor binds at 50/65; per-kg term takes over above ~68 kg. The doc names 85 kg explicitly as the point this plate passes as served."
+    },
+    {
+      "id": "h1-scale-pb-85kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 85,
+        "gutTolerance": "moderate",
+        "kcal": 461,
+        "fatG": 17.9,
+        "fibreG": 3.9,
+        "proteinG": 17.6,
+        "carbG": 60,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "H1 meal ceiling at 85 kg = 18.7 g (max(15, 0.22*kg)). The 17.9 g plate passes. Floor binds at 50/65; per-kg term takes over above ~68 kg. The doc names 85 kg explicitly as the point this plate passes as served."
+    },
+    {
+      "id": "h1-scale-pb-95kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 95,
+        "gutTolerance": "moderate",
+        "kcal": 461,
+        "fatG": 17.9,
+        "fibreG": 3.9,
+        "proteinG": 17.6,
+        "carbG": 60,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "H1 meal ceiling at 95 kg = 20.9 g (max(15, 0.22*kg)). The 17.9 g plate passes. Floor binds at 50/65; per-kg term takes over above ~68 kg. The doc names 85 kg explicitly as the point this plate passes as served."
+    },
+    {
+      "id": "mono-oatmeal-50kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 50,
+        "gutTolerance": "moderate",
+        "kcal": 341,
+        "fatG": 4.0,
+        "fibreG": 7.1,
+        "proteinG": 7.3,
+        "carbG": 72,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Monotonicity (check 3): a feeding that passes at 65 kg must still pass at 50 kg. H1/H2 are non-decreasing in body mass, so passing can never flip to failing as mass rises."
+    },
+    {
+      "id": "mono-oatmeal-65kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 341,
+        "fatG": 4.0,
+        "fibreG": 7.1,
+        "proteinG": 7.3,
+        "carbG": 72,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Monotonicity (check 3): a feeding that passes at 65 kg must still pass at 65 kg. H1/H2 are non-decreasing in body mass, so passing can never flip to failing as mass rises."
+    },
+    {
+      "id": "mono-oatmeal-95kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 95,
+        "gutTolerance": "moderate",
+        "kcal": 341,
+        "fatG": 4.0,
+        "fibreG": 7.1,
+        "proteinG": 7.3,
+        "carbG": 72,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Monotonicity (check 3): a feeding that passes at 65 kg must still pass at 95 kg. H1/H2 are non-decreasing in body mass, so passing can never flip to failing as mass rises."
+    },
+    {
+      "id": "h3-scale-chicken-95kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 95,
+        "gutTolerance": "moderate",
+        "kcal": 372,
+        "fatG": 3.5,
+        "fibreG": 2.9,
+        "proteinG": 31.2,
+        "carbG": 51,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The doc states this explicitly: at 95 kg H3 rises to 38 g, so the 31.2 g plate that fails at 65 kg passes. Same feeding, different mass, opposite verdict -- the scaling is real, not cosmetic."
+    },
+    {
+      "id": "h2-floor-light-athlete-50kg",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 50,
+        "gutTolerance": "moderate",
+        "kcal": 341,
+        "fatG": 4.0,
+        "fibreG": 7.1,
+        "proteinG": 7.3,
+        "carbG": 72,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The floor's whole purpose: a straight 0.12 g/kg would cap fibre at 6.0 g at 50 kg and reject oatmeal-plus-banana (7.1 g). max(8, per-kg) keeps it at 8.0 and it passes. Regression guard against reintroducing v1's over-restriction."
+    },
+    {
+      "id": "s1-huge-kcal-still-passes",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 1200,
+        "fatG": 10.0,
+        "fibreG": 6.0,
+        "proteinG": 20.0,
+        "carbG": 240,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "S1 advisory only: 1200 kcal is far above 4 x 120 min, yet every hard gate passes, so the verdict is PASS. Calorie count is explicitly not a gate and must never become one (check 2)."
+    },
+    {
+      "id": "s1-huge-kcal-topoff-still-passes",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 400,
+        "fatG": 0.0,
+        "fibreG": 0.0,
+        "proteinG": 0.0,
+        "carbG": 100,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 7.5,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Same property at the top-off: a large-energy drink inside the 8 % ceiling passes. No gate reads kcal."
+    },
+    {
+      "id": "s2-carb-not-dominant-still-passes",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 325,
+        "fatG": 3.5,
+        "fibreG": 2.9,
+        "proteinG": 22.4,
+        "carbG": 51,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The 2 oz chicken variant the doc names as passing (22.4 g protein against 26 g). Carbohydrate is NOT the dominant energy source here; S2 has no floor and must not reject it. This is the exact shape v1 got wrong. Fat/fibre carried from the 3 oz plate as a conservative upper bound."
+    },
+    {
+      "id": "s3-whole-grain-meal-passes",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 161,
+        "fatG": 2.2,
+        "fibreG": 3.8,
+        "proteinG": 7.9,
+        "carbG": 27,
+        "foodGroup": "G8",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Two slices of whole-wheat bread: 3.8 g fibre passes H2's 8 g meal ceiling. G8 is LIMITED (not AVOID) at the meal tier, so it is available. S3's refined-over-whole preference is a soft score and must not reject it -- the doc says outright that H2's grams do not separate G1 from G8."
+    },
+    {
+      "id": "pct-floor-tiny-condiment",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 4,
+        "fatG": 0.2,
+        "fibreG": 0.0,
+        "proteinG": 0.1,
+        "carbG": 0.5,
+        "foodGroup": "G7",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "A teaspoon of mustard: 0.2 g fat reads 47 % of energy from fat, but no percentage may be evaluated below 50 kcal (section 4, check 5). Gram gates all pass, so PASS."
+    },
+    {
+      "id": "pct-floor-black-coffee",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 2,
+        "fatG": 0.0,
+        "fibreG": 0.0,
+        "proteinG": 0.3,
+        "carbG": 0.0,
+        "foodGroup": null,
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Black coffee reads 100 % protein by energy. Under 50 kcal no percentage is evaluated; nothing rejects it at the meal tier (H5 is top-off-only)."
+    },
+    {
+      "id": "g6-dairy-meal-low",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "low",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": null,
+        "knownException": false,
+        "failedRule": "matrix"
+      },
+      "why": "G6 at the meal tier with gutTolerance=low (resolves to low). AVOID when low -- removed from meal and snack (check 6)."
+    },
+    {
+      "id": "g6-dairy-snack-low",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "low",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": null,
+        "knownException": false,
+        "failedRule": "matrix"
+      },
+      "why": "G6 at the snack tier with gutTolerance=low (resolves to low). AVOID when low -- removed from meal and snack (check 6)."
+    },
+    {
+      "id": "g6-dairy-meal-moderate",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "G6 at the meal tier with gutTolerance=moderate (resolves to moderate). LIMITED when not low, so available. 'unknown' resolves to moderate, never to the restrictive branch -- the source caution is conditional on frequent stomach problems."
+    },
+    {
+      "id": "g6-dairy-meal-unknown",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "unknown",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "G6 at the meal tier with gutTolerance=unknown (resolves to moderate). LIMITED when not low, so available. 'unknown' resolves to moderate, never to the restrictive branch -- the source caution is conditional on frequent stomach problems."
+    },
+    {
+      "id": "g6-dairy-snack-unknown",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "unknown",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "G6 at the snack tier with gutTolerance=unknown (resolves to moderate). LIMITED when not low, so available. 'unknown' resolves to moderate, never to the restrictive branch -- the source caution is conditional on frequent stomach problems."
+    },
+    {
+      "id": "g6-dairy-snack-high",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "high",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "G6 at the snack tier with gutTolerance=high (resolves to high). LIMITED when not low, so available. 'unknown' resolves to moderate, never to the restrictive branch -- the source caution is conditional on frequent stomach problems."
+    },
+    {
+      "id": "g6-dairy-topoff-always-avoid",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "high",
+        "kcal": 122,
+        "fatG": 4.8,
+        "fibreG": 0.0,
+        "proteinG": 8.0,
+        "carbG": 12,
+        "foodGroup": "G6",
+        "form": "liquid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": null,
+        "knownException": false,
+        "failedRule": "matrix"
+      },
+      "why": "G6 is AVOID at the top-off for every gutTolerance value -- the tier matrix, not the gut branch."
+    },
+    {
+      "id": "h6-scope-juice-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 140,
+        "fatG": 0.6,
+        "fibreG": 0.6,
+        "proteinG": 2.1,
+        "carbG": 33,
+        "foodGroup": "G3",
+        "form": "liquid",
+        "drinkCarbPct": 11.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The SAME ~11 % juice at the meal tier: H6 is top-off-only, so it is NOT concentration-gated and passes (checks 7 and 11). A harness that rejects this is reading H6 out of scope."
+    },
+    {
+      "id": "h6-scope-juice-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 140,
+        "fatG": 0.6,
+        "fibreG": 0.6,
+        "proteinG": 2.1,
+        "carbG": 33,
+        "foodGroup": "G3",
+        "form": "liquid",
+        "drinkCarbPct": 11.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The SAME ~11 % juice at the snack tier: H6 is top-off-only, so it is NOT concentration-gated and passes (checks 7 and 11). A harness that rejects this is reading H6 out of scope."
+    },
+    {
+      "id": "h6-bolus-12pct-with-chase",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 140,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 35,
+        "foodGroup": "G4b",
+        "form": "gel",
+        "drinkCarbPct": 12.0,
+        "practised": true,
+        "isBolus": true,
+        "withChaseWater": true,
+        "volumeMl": 290
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Bolus exemption boundary: exactly 12 % in a 290 ml single serving with chase water. '<=' is inclusive, so PASS. This is the Simpson gel-plus-water case the exemption was written for."
+    },
+    {
+      "id": "h6-bolus-over-12pct",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 150,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 38,
+        "foodGroup": "G4b",
+        "form": "gel",
+        "drinkCarbPct": 12.5,
+        "practised": true,
+        "isBolus": true,
+        "withChaseWater": true,
+        "volumeMl": 290
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H6",
+        "knownException": false
+      },
+      "why": "12.5 % exceeds the bolus exemption's ~12 % -- FAIL H6. The exemption is bounded, not open-ended."
+    },
+    {
+      "id": "h6-bolus-volume-over-300ml",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 200,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 50,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 11.0,
+        "practised": true,
+        "isBolus": true,
+        "withChaseWater": true,
+        "volumeMl": 400
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H6",
+        "knownException": false
+      },
+      "why": "11 % is inside the bolus ceiling but 400 ml exceeds the '<= 300 ml single serving' condition, so the exemption does not apply and the 8 % sustained rule bites -- FAIL H6."
+    },
+    {
+      "id": "h6-sustained-9pct-no-chase",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 110,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 27,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 9.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H6",
+        "knownException": false
+      },
+      "why": "9 % sustained with no chase water and no bolus claim -- FAIL H6 against the 8 % ceiling."
+    },
+    {
+      "id": "h6-sustained-8pct-exact",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 96,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 24,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 8.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "Exactly 8 % -- '<=' is inclusive (section 4), so PASS. Boundary guard."
+    },
+    {
+      "id": "g4b-sports-drink-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 84,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 21,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 7.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "v3 ruling: G4b (sports drink, mix, gel, chews) is permitted at the meal tier. A vector asserting it is unavailable at meal or snack is pinning the superseded v2 top-off-only rule (check 10). Zero fat, fibre and protein -- it clears H1-H3 by the widest margin in the document."
+    },
+    {
+      "id": "g4b-sports-drink-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 84,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 21,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 7.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "v3 ruling: G4b (sports drink, mix, gel, chews) is permitted at the snack tier. A vector asserting it is unavailable at meal or snack is pinning the superseded v2 top-off-only rule (check 10). Zero fat, fibre and protein -- it clears H1-H3 by the widest margin in the document."
+    },
+    {
+      "id": "g4b-sports-drink-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 84,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 21,
+        "foodGroup": "G4b",
+        "form": "liquid",
+        "drinkCarbPct": 7.0,
+        "practised": true,
+        "volumeMl": 300
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "v3 ruling: G4b (sports drink, mix, gel, chews) is permitted at the top-off tier. A vector asserting it is unavailable at meal or snack is pinning the superseded v2 top-off-only rule (check 10). Zero fat, fibre and protein -- it clears H1-H3 by the widest margin in the document."
+    },
+    {
+      "id": "g4b-gel-at-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 100,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 23,
+        "foodGroup": "G4b",
+        "form": "gel",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The gel travels with the drink: G4b is one group and is FREE at every tier under v3."
+    },
+    {
+      "id": "h4-solid-bagel-at-topoff",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 270,
+        "fatG": 1.5,
+        "fibreG": 2.3,
+        "proteinG": 10.5,
+        "carbG": 53,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": null,
+        "knownException": false,
+        "failedRule": "matrix"
+      },
+      "why": "An ordinary solid at the top-off -- FAIL H4. G1 is also AVOID there in the matrix; the form gate is what a composed-feeding harness will trip first."
+    },
+    {
+      "id": "h4-banana-too-late-t10",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 105,
+        "fatG": 0.4,
+        "fibreG": 3.1,
+        "proteinG": 1.3,
+        "carbG": 27,
+        "foodGroup": "G3",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true,
+        "softLowResidue": true,
+        "leadTimeMin": 10
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H4",
+        "knownException": false
+      },
+      "why": "The soft-solid allowance runs t-30 to about t-20, explicitly 'not in the last 15 minutes'. At t-10 the allowance lapses and the form gate applies -- FAIL H4."
+    },
+    {
+      "id": "h4-applesauce-pouch-t25",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 45,
+        "fatG": 0.0,
+        "fibreG": 1.3,
+        "proteinG": 0.2,
+        "carbG": 11,
+        "foodGroup": "G3",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true,
+        "softLowResidue": true,
+        "leadTimeMin": 25
+      },
+      "expected": {
+        "verdict": "pass",
+        "failedGate": null,
+        "knownException": false
+      },
+      "why": "The other named soft-solid: an applesauce pouch at t-25. Fibre 1.3 g is under the 2 g top-off ceiling anyway, so this passes without needing the H2 waiver."
+    },
+    {
+      "id": "h5-plain-water-topoff",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 0,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 0,
+        "foodGroup": null,
+        "form": "liquid",
+        "drinkCarbPct": 0.0,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H5",
+        "knownException": false
+      },
+      "why": "Water is a valid answer to hydration and is never a valid top-off CARBOHYDRATE item -- FAIL H5."
+    },
+    {
+      "id": "h5-electrolyte-powder-topoff",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 5,
+        "fatG": 0,
+        "fibreG": 0,
+        "proteinG": 0,
+        "carbG": 0,
+        "foodGroup": null,
+        "form": "liquid",
+        "drinkCarbPct": 0.0,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H5",
+        "knownException": false
+      },
+      "why": "Electrolyte powder: near-zero energy, zero carbohydrate -- FAIL H5. The athlete would believe they were fuelled. This is the failure mode H5 exists to catch."
+    },
+    {
+      "id": "h2-bran-cereal-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 160,
+        "fatG": 1.5,
+        "fibreG": 9.0,
+        "proteinG": 5.0,
+        "carbG": 34,
+        "foodGroup": "G8",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": null,
+        "knownException": false,
+        "failedRule": "matrix"
+      },
+      "why": "Bran cereal at 9.0 g fibre against the snack's 4 g floor -- FAIL H2. This is the 'gross offender' H2 exists to catch, as opposed to whole-wheat bread at 3.8 g which it deliberately does not."
+    },
+    {
+      "id": "h2-berry-bowl-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 300,
+        "fatG": 2.0,
+        "fibreG": 12.0,
+        "proteinG": 6.0,
+        "carbG": 60,
+        "foodGroup": "G8",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H2",
+        "knownException": false
+      },
+      "why": "A berry-loaded bowl at 12.0 g fibre against the meal's 8 g floor -- FAIL H2 at 65 kg. Note it would PASS at 100 kg (0.12 * 100 = 12.0, inclusive); the gate scales by design."
+    },
+    {
+      "id": "h3-protein-shake-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 160,
+        "fatG": 1.0,
+        "fibreG": 0.0,
+        "proteinG": 30.0,
+        "carbG": 8,
+        "foodGroup": "G5",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": true
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H3",
+        "knownException": false
+      },
+      "why": "30 g of protein at the snack tier against the 0.2 g/kg = 13 g ceiling -- FAIL H3. The snack ceiling is half the meal's; 'low-moderate protein' tightens as the window closes."
+    },
+    {
+      "id": "h7-untried-item",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "bodyWeightKg": 65,
+        "gutTolerance": "moderate",
+        "kcal": 341,
+        "fatG": 4.0,
+        "fibreG": 7.1,
+        "proteinG": 7.3,
+        "carbG": 72,
+        "foodGroup": "G1",
+        "form": "solid",
+        "drinkCarbPct": null,
+        "practised": false
+      },
+      "expected": {
+        "verdict": "fail",
+        "failedGate": "H7",
+        "knownException": false
+      },
+      "why": "Same feeding that passes everything else, marked as never rehearsed -- FAIL H7. Thomas 2016: the pre-event meal 'should be well trialed and individualized'."
+    },
+    {
+      "id": "matrix-G1-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G1",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G1 at meal is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G1-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G1",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G1 at snack is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G1-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G1",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G1 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G2-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G2",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G2 at meal is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G2-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G2",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G2 at snack is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G2-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G2",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G2 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G3-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G3",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G3 at meal is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G3-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G3",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G3 at snack is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G3-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G3",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G3 at top-off is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G4a-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G4a",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G4a at meal is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G4a-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G4a",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G4a at snack is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G4a-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G4a",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G4a at top-off is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G4b-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G4b",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G4b at meal is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G4b-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G4b",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G4b at snack is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G4b-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G4b",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "FREE"
+      },
+      "why": "Section 3.10 tier matrix: G4b at top-off is FREE. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G5-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G5",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G5 at meal is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G5-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G5",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G5 at snack is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G5-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G5",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G5 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G6-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G6",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G6 at meal is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G6-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G6",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G6 at snack is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G6-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G6",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G6 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G7-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G7",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G7 at meal is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G7-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G7",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G7 at snack is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G7-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G7",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G7 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G8-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G8",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G8 at meal is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G8-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G8",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G8 at snack is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G8-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G8",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G8 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G9-meal",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "foodGroup": "G9",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": true,
+        "rating": "LIMITED"
+      },
+      "why": "Section 3.10 tier matrix: G9 at meal is LIMITED. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G9-snack",
+      "status": "ratified",
+      "inputs": {
+        "tier": "snack",
+        "foodGroup": "G9",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G9 at snack is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-G9-top-off",
+      "status": "ratified",
+      "inputs": {
+        "tier": "top-off",
+        "foodGroup": "G9",
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "available": false,
+        "rating": "AVOID"
+      },
+      "why": "Section 3.10 tier matrix: G9 at top-off is AVOID. FREE and LIMITED are available; AVOID is not."
+    },
+    {
+      "id": "matrix-coverage-complete",
+      "status": "ratified",
+      "inputs": {},
+      "expected": {
+        "groups": [
+          "G1",
+          "G2",
+          "G3",
+          "G4a",
+          "G4b",
+          "G5",
+          "G6",
+          "G7",
+          "G8",
+          "G9"
+        ],
+        "tiers": [
+          "meal",
+          "snack",
+          "top-off"
+        ],
+        "everyGroupRatedInEveryTier": true
+      },
+      "why": "Check 9, first half: every group in section 3 carries a rating for all three tiers. Ten groups (G1, G2, G3, G4a, G4b, G5, G6, G7, G8, G9) x three tiers, no gaps."
+    },
+    {
+      "id": "matrix-groups-are-disjoint",
+      "status": "characterization",
+      "inputs": {
+        "food": "apple juice"
+      },
+      "expected": {
+        "belongsToExactlyOneGroup": false,
+        "groups": [
+          "G3",
+          "G9"
+        ]
+      },
+      "why": "TRIPWIRE, not truth. Check 9's second half asserts every named food belongs to exactly one group, but section 3.9 states G9 'overlaps G8 and G3 deliberately -- this is a different axis, not a different shelf', and names apple and pear (G9) which are also low-residue fruit/juice (G3). The check as written is unsatisfiable, and the SSOT gives no precedence rule for a food in two groups. Marked characterization per CLAUDE.md so it reads as a spec defect to resolve, never as ratified behaviour."
+    }
+  ]
+}

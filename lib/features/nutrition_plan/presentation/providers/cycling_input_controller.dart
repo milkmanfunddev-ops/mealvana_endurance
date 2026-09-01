@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/fueling_window_limits.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../domain/meal_type.dart';
@@ -349,8 +350,10 @@ class CyclingInputController extends _$CyclingInputController {
   }
 
   void updatePreRideMinutes(int minutes) {
+    // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
+    // carry persisted lead times up to 480 (see FuelingWindowLimits).
     state = state.copyWith(
-      preRideMinutes: minutes,
+      preRideMinutes: clampFuelingWindowMinutes(minutes),
       preRideMinutesManuallySet: true,
     );
   }

@@ -21478,7 +21478,7 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String id;
   final String userId;
 
-  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot'
+  /// Provider name: 'final_surge', 'training_peaks', 'strava', 'garmin', 'vdot', 'runna'
   final String provider;
   final String accessToken;
   final String? refreshToken;
@@ -24499,6 +24499,17 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('real_food'),
   );
+  static const VerificationMeta _foodGroupMeta = const VerificationMeta(
+    'foodGroup',
+  );
+  @override
+  late final GeneratedColumn<String> foodGroup = GeneratedColumn<String>(
+    'food_group',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _activityTypesMeta = const VerificationMeta(
     'activityTypes',
   );
@@ -24806,6 +24817,7 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
     isActive,
     excludedDiets,
     productType,
+    foodGroup,
     activityTypes,
     categories,
     isElectrolyte,
@@ -24965,6 +24977,12 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
           data['product_type']!,
           _productTypeMeta,
         ),
+      );
+    }
+    if (data.containsKey('food_group')) {
+      context.handle(
+        _foodGroupMeta,
+        foodGroup.isAcceptableOrUnknown(data['food_group']!, _foodGroupMeta),
       );
     }
     if (data.containsKey('activity_types')) {
@@ -25236,6 +25254,10 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
         DriftSqlType.string,
         data['${effectivePrefix}product_type'],
       )!,
+      foodGroup: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}food_group'],
+      ),
       activityTypes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}activity_types'],
@@ -25374,6 +25396,10 @@ class TemplateFoodEntry extends DataClass
   /// Product type: real_food/bar/gel/chew/supplement/beverage/condiment/sports_drink
   final String productType;
 
+  /// Layer A food group (G1…G9) per food-composition v3 §3.1–3.9; drives the
+  /// §3.10 tier matrix. NULL = not classified by that SSOT (e.g. water, salt).
+  final String? foodGroup;
+
   /// Activity types this food is suitable for (JSON array string)
   final String activityTypes;
 
@@ -25420,6 +25446,7 @@ class TemplateFoodEntry extends DataClass
     required this.isActive,
     required this.excludedDiets,
     required this.productType,
+    this.foodGroup,
     required this.activityTypes,
     required this.categories,
     required this.isElectrolyte,
@@ -25470,6 +25497,9 @@ class TemplateFoodEntry extends DataClass
     map['is_active'] = Variable<bool>(isActive);
     map['excluded_diets'] = Variable<String>(excludedDiets);
     map['product_type'] = Variable<String>(productType);
+    if (!nullToAbsent || foodGroup != null) {
+      map['food_group'] = Variable<String>(foodGroup);
+    }
     map['activity_types'] = Variable<String>(activityTypes);
     map['categories'] = Variable<String>(categories);
     map['is_electrolyte'] = Variable<bool>(isElectrolyte);
@@ -25537,6 +25567,9 @@ class TemplateFoodEntry extends DataClass
       isActive: Value(isActive),
       excludedDiets: Value(excludedDiets),
       productType: Value(productType),
+      foodGroup: foodGroup == null && nullToAbsent
+          ? const Value.absent()
+          : Value(foodGroup),
       activityTypes: Value(activityTypes),
       categories: Value(categories),
       isElectrolyte: Value(isElectrolyte),
@@ -25602,6 +25635,7 @@ class TemplateFoodEntry extends DataClass
       isActive: serializer.fromJson<bool>(json['isActive']),
       excludedDiets: serializer.fromJson<String>(json['excludedDiets']),
       productType: serializer.fromJson<String>(json['productType']),
+      foodGroup: serializer.fromJson<String?>(json['foodGroup']),
       activityTypes: serializer.fromJson<String>(json['activityTypes']),
       categories: serializer.fromJson<String>(json['categories']),
       isElectrolyte: serializer.fromJson<bool>(json['isElectrolyte']),
@@ -25654,6 +25688,7 @@ class TemplateFoodEntry extends DataClass
       'isActive': serializer.toJson<bool>(isActive),
       'excludedDiets': serializer.toJson<String>(excludedDiets),
       'productType': serializer.toJson<String>(productType),
+      'foodGroup': serializer.toJson<String?>(foodGroup),
       'activityTypes': serializer.toJson<String>(activityTypes),
       'categories': serializer.toJson<String>(categories),
       'isElectrolyte': serializer.toJson<bool>(isElectrolyte),
@@ -25698,6 +25733,7 @@ class TemplateFoodEntry extends DataClass
     bool? isActive,
     String? excludedDiets,
     String? productType,
+    Value<String?> foodGroup = const Value.absent(),
     String? activityTypes,
     String? categories,
     bool? isElectrolyte,
@@ -25741,6 +25777,7 @@ class TemplateFoodEntry extends DataClass
     isActive: isActive ?? this.isActive,
     excludedDiets: excludedDiets ?? this.excludedDiets,
     productType: productType ?? this.productType,
+    foodGroup: foodGroup.present ? foodGroup.value : this.foodGroup,
     activityTypes: activityTypes ?? this.activityTypes,
     categories: categories ?? this.categories,
     isElectrolyte: isElectrolyte ?? this.isElectrolyte,
@@ -25802,6 +25839,7 @@ class TemplateFoodEntry extends DataClass
       productType: data.productType.present
           ? data.productType.value
           : this.productType,
+      foodGroup: data.foodGroup.present ? data.foodGroup.value : this.foodGroup,
       activityTypes: data.activityTypes.present
           ? data.activityTypes.value
           : this.activityTypes,
@@ -25888,6 +25926,7 @@ class TemplateFoodEntry extends DataClass
           ..write('isActive: $isActive, ')
           ..write('excludedDiets: $excludedDiets, ')
           ..write('productType: $productType, ')
+          ..write('foodGroup: $foodGroup, ')
           ..write('activityTypes: $activityTypes, ')
           ..write('categories: $categories, ')
           ..write('isElectrolyte: $isElectrolyte, ')
@@ -25934,6 +25973,7 @@ class TemplateFoodEntry extends DataClass
     isActive,
     excludedDiets,
     productType,
+    foodGroup,
     activityTypes,
     categories,
     isElectrolyte,
@@ -25979,6 +26019,7 @@ class TemplateFoodEntry extends DataClass
           other.isActive == this.isActive &&
           other.excludedDiets == this.excludedDiets &&
           other.productType == this.productType &&
+          other.foodGroup == this.foodGroup &&
           other.activityTypes == this.activityTypes &&
           other.categories == this.categories &&
           other.isElectrolyte == this.isElectrolyte &&
@@ -26022,6 +26063,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
   final Value<bool> isActive;
   final Value<String> excludedDiets;
   final Value<String> productType;
+  final Value<String?> foodGroup;
   final Value<String> activityTypes;
   final Value<String> categories;
   final Value<bool> isElectrolyte;
@@ -26064,6 +26106,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     this.isActive = const Value.absent(),
     this.excludedDiets = const Value.absent(),
     this.productType = const Value.absent(),
+    this.foodGroup = const Value.absent(),
     this.activityTypes = const Value.absent(),
     this.categories = const Value.absent(),
     this.isElectrolyte = const Value.absent(),
@@ -26107,6 +26150,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     this.isActive = const Value.absent(),
     this.excludedDiets = const Value.absent(),
     this.productType = const Value.absent(),
+    this.foodGroup = const Value.absent(),
     this.activityTypes = const Value.absent(),
     this.categories = const Value.absent(),
     this.isElectrolyte = const Value.absent(),
@@ -26153,6 +26197,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     Expression<bool>? isActive,
     Expression<String>? excludedDiets,
     Expression<String>? productType,
+    Expression<String>? foodGroup,
     Expression<String>? activityTypes,
     Expression<String>? categories,
     Expression<bool>? isElectrolyte,
@@ -26196,6 +26241,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
       if (isActive != null) 'is_active': isActive,
       if (excludedDiets != null) 'excluded_diets': excludedDiets,
       if (productType != null) 'product_type': productType,
+      if (foodGroup != null) 'food_group': foodGroup,
       if (activityTypes != null) 'activity_types': activityTypes,
       if (categories != null) 'categories': categories,
       if (isElectrolyte != null) 'is_electrolyte': isElectrolyte,
@@ -26243,6 +26289,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     Value<bool>? isActive,
     Value<String>? excludedDiets,
     Value<String>? productType,
+    Value<String?>? foodGroup,
     Value<String>? activityTypes,
     Value<String>? categories,
     Value<bool>? isElectrolyte,
@@ -26286,6 +26333,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
       isActive: isActive ?? this.isActive,
       excludedDiets: excludedDiets ?? this.excludedDiets,
       productType: productType ?? this.productType,
+      foodGroup: foodGroup ?? this.foodGroup,
       activityTypes: activityTypes ?? this.activityTypes,
       categories: categories ?? this.categories,
       isElectrolyte: isElectrolyte ?? this.isElectrolyte,
@@ -26366,6 +26414,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     }
     if (productType.present) {
       map['product_type'] = Variable<String>(productType.value);
+    }
+    if (foodGroup.present) {
+      map['food_group'] = Variable<String>(foodGroup.value);
     }
     if (activityTypes.present) {
       map['activity_types'] = Variable<String>(activityTypes.value);
@@ -26462,6 +26513,7 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
           ..write('isActive: $isActive, ')
           ..write('excludedDiets: $excludedDiets, ')
           ..write('productType: $productType, ')
+          ..write('foodGroup: $foodGroup, ')
           ..write('activityTypes: $activityTypes, ')
           ..write('categories: $categories, ')
           ..write('isElectrolyte: $isElectrolyte, ')
@@ -29046,6 +29098,17 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _subPhaseMeta = const VerificationMeta(
+    'subPhase',
+  );
+  @override
+  late final GeneratedColumn<String> subPhase = GeneratedColumn<String>(
+    'sub_phase',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _digestionSpeedMeta = const VerificationMeta(
     'digestionSpeed',
   );
@@ -29166,6 +29229,18 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
     false,
     type: DriftSqlType.double,
     requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fiberPerServingMeta = const VerificationMeta(
+    'fiberPerServing',
+  );
+  @override
+  late final GeneratedColumn<double> fiberPerServing = GeneratedColumn<double>(
+    'fiber_per_serving',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
   );
   static const VerificationMeta _proteinPerServingMeta = const VerificationMeta(
     'proteinPerServing',
@@ -29288,6 +29363,7 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
     name,
     baseCategory,
     timeWindow,
+    subPhase,
     digestionSpeed,
     allergens,
     servingUnit,
@@ -29298,6 +29374,7 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
     notes,
     isActive,
     carbsPerServing,
+    fiberPerServing,
     proteinPerServing,
     fatPerServing,
     sodiumMg,
@@ -29352,6 +29429,12 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
       );
     } else if (isInserting) {
       context.missing(_timeWindowMeta);
+    }
+    if (data.containsKey('sub_phase')) {
+      context.handle(
+        _subPhaseMeta,
+        subPhase.isAcceptableOrUnknown(data['sub_phase']!, _subPhaseMeta),
+      );
     }
     if (data.containsKey('digestion_speed')) {
       context.handle(
@@ -29440,6 +29523,15 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
       );
     } else if (isInserting) {
       context.missing(_carbsPerServingMeta);
+    }
+    if (data.containsKey('fiber_per_serving')) {
+      context.handle(
+        _fiberPerServingMeta,
+        fiberPerServing.isAcceptableOrUnknown(
+          data['fiber_per_serving']!,
+          _fiberPerServingMeta,
+        ),
+      );
     }
     if (data.containsKey('protein_per_serving')) {
       context.handle(
@@ -29557,6 +29649,10 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
         DriftSqlType.string,
         data['${effectivePrefix}time_window'],
       )!,
+      subPhase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sub_phase'],
+      ),
       digestionSpeed: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}digestion_speed'],
@@ -29596,6 +29692,10 @@ class $PreWorkoutTemplatesTableTable extends PreWorkoutTemplatesTable
       carbsPerServing: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}carbs_per_serving'],
+      )!,
+      fiberPerServing: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}fiber_per_serving'],
       )!,
       proteinPerServing: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
@@ -29654,8 +29754,16 @@ class PreWorkoutTemplateEntry extends DataClass
   /// e.g. 'Bagel', 'Oats / Granola', 'Hydration'.
   final String baseCategory;
 
-  /// Timing label, e.g. '< 30 min', '30-90 min', '1.5-3 hours'.
+  /// Timing label, e.g. '< 30 min', '30-120 min', '2-4 hours' (older
+  /// catalogs: '30-90 min', '1.5-3 hours' — see BeforeSubPhase.fromTimeWindow).
+  /// DISPLAY ONLY since 2026-08-06 — tier membership comes from [subPhase].
   final String timeWindow;
+
+  /// Explicit tier membership: 'full_meal' | 'snack' | 'top_up' (mirrors
+  /// BeforeSubPhase.storageValue). Authoritative when present; nullable
+  /// because prod's catalog predates the column until its migration replays
+  /// there — fall back to BeforeSubPhase.fromTimeWindow(timeWindow).
+  final String? subPhase;
 
   /// Digestion speed bucket as stored in Supabase, e.g. 'Fast', 'Medium'.
   final String digestionSpeed;
@@ -29670,6 +29778,10 @@ class PreWorkoutTemplateEntry extends DataClass
   final String? notes;
   final bool isActive;
   final double carbsPerServing;
+
+  /// Fibre in grams per 1x serving. Required by food-composition v3's H2
+  /// per-feeding fibre gate (see the 2026-08-05 v3 structure migration).
+  final double fiberPerServing;
   final double proteinPerServing;
   final double fatPerServing;
   final double sodiumMg;
@@ -29693,6 +29805,7 @@ class PreWorkoutTemplateEntry extends DataClass
     required this.name,
     required this.baseCategory,
     required this.timeWindow,
+    this.subPhase,
     required this.digestionSpeed,
     required this.allergens,
     required this.servingUnit,
@@ -29703,6 +29816,7 @@ class PreWorkoutTemplateEntry extends DataClass
     this.notes,
     required this.isActive,
     required this.carbsPerServing,
+    required this.fiberPerServing,
     required this.proteinPerServing,
     required this.fatPerServing,
     required this.sodiumMg,
@@ -29721,6 +29835,9 @@ class PreWorkoutTemplateEntry extends DataClass
     map['name'] = Variable<String>(name);
     map['base_category'] = Variable<String>(baseCategory);
     map['time_window'] = Variable<String>(timeWindow);
+    if (!nullToAbsent || subPhase != null) {
+      map['sub_phase'] = Variable<String>(subPhase);
+    }
     map['digestion_speed'] = Variable<String>(digestionSpeed);
     map['allergens'] = Variable<String>(allergens);
     map['serving_unit'] = Variable<String>(servingUnit);
@@ -29733,6 +29850,7 @@ class PreWorkoutTemplateEntry extends DataClass
     }
     map['is_active'] = Variable<bool>(isActive);
     map['carbs_per_serving'] = Variable<double>(carbsPerServing);
+    map['fiber_per_serving'] = Variable<double>(fiberPerServing);
     map['protein_per_serving'] = Variable<double>(proteinPerServing);
     map['fat_per_serving'] = Variable<double>(fatPerServing);
     map['sodium_mg'] = Variable<double>(sodiumMg);
@@ -29754,6 +29872,9 @@ class PreWorkoutTemplateEntry extends DataClass
       name: Value(name),
       baseCategory: Value(baseCategory),
       timeWindow: Value(timeWindow),
+      subPhase: subPhase == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subPhase),
       digestionSpeed: Value(digestionSpeed),
       allergens: Value(allergens),
       servingUnit: Value(servingUnit),
@@ -29766,6 +29887,7 @@ class PreWorkoutTemplateEntry extends DataClass
           : Value(notes),
       isActive: Value(isActive),
       carbsPerServing: Value(carbsPerServing),
+      fiberPerServing: Value(fiberPerServing),
       proteinPerServing: Value(proteinPerServing),
       fatPerServing: Value(fatPerServing),
       sodiumMg: Value(sodiumMg),
@@ -29791,6 +29913,7 @@ class PreWorkoutTemplateEntry extends DataClass
       name: serializer.fromJson<String>(json['name']),
       baseCategory: serializer.fromJson<String>(json['baseCategory']),
       timeWindow: serializer.fromJson<String>(json['timeWindow']),
+      subPhase: serializer.fromJson<String?>(json['subPhase']),
       digestionSpeed: serializer.fromJson<String>(json['digestionSpeed']),
       allergens: serializer.fromJson<String>(json['allergens']),
       servingUnit: serializer.fromJson<String>(json['servingUnit']),
@@ -29801,6 +29924,7 @@ class PreWorkoutTemplateEntry extends DataClass
       notes: serializer.fromJson<String?>(json['notes']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       carbsPerServing: serializer.fromJson<double>(json['carbsPerServing']),
+      fiberPerServing: serializer.fromJson<double>(json['fiberPerServing']),
       proteinPerServing: serializer.fromJson<double>(json['proteinPerServing']),
       fatPerServing: serializer.fromJson<double>(json['fatPerServing']),
       sodiumMg: serializer.fromJson<double>(json['sodiumMg']),
@@ -29825,6 +29949,7 @@ class PreWorkoutTemplateEntry extends DataClass
       'name': serializer.toJson<String>(name),
       'baseCategory': serializer.toJson<String>(baseCategory),
       'timeWindow': serializer.toJson<String>(timeWindow),
+      'subPhase': serializer.toJson<String?>(subPhase),
       'digestionSpeed': serializer.toJson<String>(digestionSpeed),
       'allergens': serializer.toJson<String>(allergens),
       'servingUnit': serializer.toJson<String>(servingUnit),
@@ -29835,6 +29960,7 @@ class PreWorkoutTemplateEntry extends DataClass
       'notes': serializer.toJson<String?>(notes),
       'isActive': serializer.toJson<bool>(isActive),
       'carbsPerServing': serializer.toJson<double>(carbsPerServing),
+      'fiberPerServing': serializer.toJson<double>(fiberPerServing),
       'proteinPerServing': serializer.toJson<double>(proteinPerServing),
       'fatPerServing': serializer.toJson<double>(fatPerServing),
       'sodiumMg': serializer.toJson<double>(sodiumMg),
@@ -29853,6 +29979,7 @@ class PreWorkoutTemplateEntry extends DataClass
     String? name,
     String? baseCategory,
     String? timeWindow,
+    Value<String?> subPhase = const Value.absent(),
     String? digestionSpeed,
     String? allergens,
     String? servingUnit,
@@ -29863,6 +29990,7 @@ class PreWorkoutTemplateEntry extends DataClass
     Value<String?> notes = const Value.absent(),
     bool? isActive,
     double? carbsPerServing,
+    double? fiberPerServing,
     double? proteinPerServing,
     double? fatPerServing,
     double? sodiumMg,
@@ -29878,6 +30006,7 @@ class PreWorkoutTemplateEntry extends DataClass
     name: name ?? this.name,
     baseCategory: baseCategory ?? this.baseCategory,
     timeWindow: timeWindow ?? this.timeWindow,
+    subPhase: subPhase.present ? subPhase.value : this.subPhase,
     digestionSpeed: digestionSpeed ?? this.digestionSpeed,
     allergens: allergens ?? this.allergens,
     servingUnit: servingUnit ?? this.servingUnit,
@@ -29888,6 +30017,7 @@ class PreWorkoutTemplateEntry extends DataClass
     notes: notes.present ? notes.value : this.notes,
     isActive: isActive ?? this.isActive,
     carbsPerServing: carbsPerServing ?? this.carbsPerServing,
+    fiberPerServing: fiberPerServing ?? this.fiberPerServing,
     proteinPerServing: proteinPerServing ?? this.proteinPerServing,
     fatPerServing: fatPerServing ?? this.fatPerServing,
     sodiumMg: sodiumMg ?? this.sodiumMg,
@@ -29913,6 +30043,7 @@ class PreWorkoutTemplateEntry extends DataClass
       timeWindow: data.timeWindow.present
           ? data.timeWindow.value
           : this.timeWindow,
+      subPhase: data.subPhase.present ? data.subPhase.value : this.subPhase,
       digestionSpeed: data.digestionSpeed.present
           ? data.digestionSpeed.value
           : this.digestionSpeed,
@@ -29937,6 +30068,9 @@ class PreWorkoutTemplateEntry extends DataClass
       carbsPerServing: data.carbsPerServing.present
           ? data.carbsPerServing.value
           : this.carbsPerServing,
+      fiberPerServing: data.fiberPerServing.present
+          ? data.fiberPerServing.value
+          : this.fiberPerServing,
       proteinPerServing: data.proteinPerServing.present
           ? data.proteinPerServing.value
           : this.proteinPerServing,
@@ -29969,6 +30103,7 @@ class PreWorkoutTemplateEntry extends DataClass
           ..write('name: $name, ')
           ..write('baseCategory: $baseCategory, ')
           ..write('timeWindow: $timeWindow, ')
+          ..write('subPhase: $subPhase, ')
           ..write('digestionSpeed: $digestionSpeed, ')
           ..write('allergens: $allergens, ')
           ..write('servingUnit: $servingUnit, ')
@@ -29979,6 +30114,7 @@ class PreWorkoutTemplateEntry extends DataClass
           ..write('notes: $notes, ')
           ..write('isActive: $isActive, ')
           ..write('carbsPerServing: $carbsPerServing, ')
+          ..write('fiberPerServing: $fiberPerServing, ')
           ..write('proteinPerServing: $proteinPerServing, ')
           ..write('fatPerServing: $fatPerServing, ')
           ..write('sodiumMg: $sodiumMg, ')
@@ -29999,6 +30135,7 @@ class PreWorkoutTemplateEntry extends DataClass
     name,
     baseCategory,
     timeWindow,
+    subPhase,
     digestionSpeed,
     allergens,
     servingUnit,
@@ -30009,6 +30146,7 @@ class PreWorkoutTemplateEntry extends DataClass
     notes,
     isActive,
     carbsPerServing,
+    fiberPerServing,
     proteinPerServing,
     fatPerServing,
     sodiumMg,
@@ -30028,6 +30166,7 @@ class PreWorkoutTemplateEntry extends DataClass
           other.name == this.name &&
           other.baseCategory == this.baseCategory &&
           other.timeWindow == this.timeWindow &&
+          other.subPhase == this.subPhase &&
           other.digestionSpeed == this.digestionSpeed &&
           other.allergens == this.allergens &&
           other.servingUnit == this.servingUnit &&
@@ -30038,6 +30177,7 @@ class PreWorkoutTemplateEntry extends DataClass
           other.notes == this.notes &&
           other.isActive == this.isActive &&
           other.carbsPerServing == this.carbsPerServing &&
+          other.fiberPerServing == this.fiberPerServing &&
           other.proteinPerServing == this.proteinPerServing &&
           other.fatPerServing == this.fatPerServing &&
           other.sodiumMg == this.sodiumMg &&
@@ -30056,6 +30196,7 @@ class PreWorkoutTemplatesTableCompanion
   final Value<String> name;
   final Value<String> baseCategory;
   final Value<String> timeWindow;
+  final Value<String?> subPhase;
   final Value<String> digestionSpeed;
   final Value<String> allergens;
   final Value<String> servingUnit;
@@ -30066,6 +30207,7 @@ class PreWorkoutTemplatesTableCompanion
   final Value<String?> notes;
   final Value<bool> isActive;
   final Value<double> carbsPerServing;
+  final Value<double> fiberPerServing;
   final Value<double> proteinPerServing;
   final Value<double> fatPerServing;
   final Value<double> sodiumMg;
@@ -30082,6 +30224,7 @@ class PreWorkoutTemplatesTableCompanion
     this.name = const Value.absent(),
     this.baseCategory = const Value.absent(),
     this.timeWindow = const Value.absent(),
+    this.subPhase = const Value.absent(),
     this.digestionSpeed = const Value.absent(),
     this.allergens = const Value.absent(),
     this.servingUnit = const Value.absent(),
@@ -30092,6 +30235,7 @@ class PreWorkoutTemplatesTableCompanion
     this.notes = const Value.absent(),
     this.isActive = const Value.absent(),
     this.carbsPerServing = const Value.absent(),
+    this.fiberPerServing = const Value.absent(),
     this.proteinPerServing = const Value.absent(),
     this.fatPerServing = const Value.absent(),
     this.sodiumMg = const Value.absent(),
@@ -30109,6 +30253,7 @@ class PreWorkoutTemplatesTableCompanion
     required String name,
     required String baseCategory,
     required String timeWindow,
+    this.subPhase = const Value.absent(),
     required String digestionSpeed,
     this.allergens = const Value.absent(),
     required String servingUnit,
@@ -30119,6 +30264,7 @@ class PreWorkoutTemplatesTableCompanion
     this.notes = const Value.absent(),
     this.isActive = const Value.absent(),
     required double carbsPerServing,
+    this.fiberPerServing = const Value.absent(),
     required double proteinPerServing,
     required double fatPerServing,
     required double sodiumMg,
@@ -30149,6 +30295,7 @@ class PreWorkoutTemplatesTableCompanion
     Expression<String>? name,
     Expression<String>? baseCategory,
     Expression<String>? timeWindow,
+    Expression<String>? subPhase,
     Expression<String>? digestionSpeed,
     Expression<String>? allergens,
     Expression<String>? servingUnit,
@@ -30159,6 +30306,7 @@ class PreWorkoutTemplatesTableCompanion
     Expression<String>? notes,
     Expression<bool>? isActive,
     Expression<double>? carbsPerServing,
+    Expression<double>? fiberPerServing,
     Expression<double>? proteinPerServing,
     Expression<double>? fatPerServing,
     Expression<double>? sodiumMg,
@@ -30176,6 +30324,7 @@ class PreWorkoutTemplatesTableCompanion
       if (name != null) 'name': name,
       if (baseCategory != null) 'base_category': baseCategory,
       if (timeWindow != null) 'time_window': timeWindow,
+      if (subPhase != null) 'sub_phase': subPhase,
       if (digestionSpeed != null) 'digestion_speed': digestionSpeed,
       if (allergens != null) 'allergens': allergens,
       if (servingUnit != null) 'serving_unit': servingUnit,
@@ -30186,6 +30335,7 @@ class PreWorkoutTemplatesTableCompanion
       if (notes != null) 'notes': notes,
       if (isActive != null) 'is_active': isActive,
       if (carbsPerServing != null) 'carbs_per_serving': carbsPerServing,
+      if (fiberPerServing != null) 'fiber_per_serving': fiberPerServing,
       if (proteinPerServing != null) 'protein_per_serving': proteinPerServing,
       if (fatPerServing != null) 'fat_per_serving': fatPerServing,
       if (sodiumMg != null) 'sodium_mg': sodiumMg,
@@ -30207,6 +30357,7 @@ class PreWorkoutTemplatesTableCompanion
     Value<String>? name,
     Value<String>? baseCategory,
     Value<String>? timeWindow,
+    Value<String?>? subPhase,
     Value<String>? digestionSpeed,
     Value<String>? allergens,
     Value<String>? servingUnit,
@@ -30217,6 +30368,7 @@ class PreWorkoutTemplatesTableCompanion
     Value<String?>? notes,
     Value<bool>? isActive,
     Value<double>? carbsPerServing,
+    Value<double>? fiberPerServing,
     Value<double>? proteinPerServing,
     Value<double>? fatPerServing,
     Value<double>? sodiumMg,
@@ -30234,6 +30386,7 @@ class PreWorkoutTemplatesTableCompanion
       name: name ?? this.name,
       baseCategory: baseCategory ?? this.baseCategory,
       timeWindow: timeWindow ?? this.timeWindow,
+      subPhase: subPhase ?? this.subPhase,
       digestionSpeed: digestionSpeed ?? this.digestionSpeed,
       allergens: allergens ?? this.allergens,
       servingUnit: servingUnit ?? this.servingUnit,
@@ -30244,6 +30397,7 @@ class PreWorkoutTemplatesTableCompanion
       notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,
       carbsPerServing: carbsPerServing ?? this.carbsPerServing,
+      fiberPerServing: fiberPerServing ?? this.fiberPerServing,
       proteinPerServing: proteinPerServing ?? this.proteinPerServing,
       fatPerServing: fatPerServing ?? this.fatPerServing,
       sodiumMg: sodiumMg ?? this.sodiumMg,
@@ -30272,6 +30426,9 @@ class PreWorkoutTemplatesTableCompanion
     }
     if (timeWindow.present) {
       map['time_window'] = Variable<String>(timeWindow.value);
+    }
+    if (subPhase.present) {
+      map['sub_phase'] = Variable<String>(subPhase.value);
     }
     if (digestionSpeed.present) {
       map['digestion_speed'] = Variable<String>(digestionSpeed.value);
@@ -30302,6 +30459,9 @@ class PreWorkoutTemplatesTableCompanion
     }
     if (carbsPerServing.present) {
       map['carbs_per_serving'] = Variable<double>(carbsPerServing.value);
+    }
+    if (fiberPerServing.present) {
+      map['fiber_per_serving'] = Variable<double>(fiberPerServing.value);
     }
     if (proteinPerServing.present) {
       map['protein_per_serving'] = Variable<double>(proteinPerServing.value);
@@ -30346,6 +30506,7 @@ class PreWorkoutTemplatesTableCompanion
           ..write('name: $name, ')
           ..write('baseCategory: $baseCategory, ')
           ..write('timeWindow: $timeWindow, ')
+          ..write('subPhase: $subPhase, ')
           ..write('digestionSpeed: $digestionSpeed, ')
           ..write('allergens: $allergens, ')
           ..write('servingUnit: $servingUnit, ')
@@ -30356,6 +30517,7 @@ class PreWorkoutTemplatesTableCompanion
           ..write('notes: $notes, ')
           ..write('isActive: $isActive, ')
           ..write('carbsPerServing: $carbsPerServing, ')
+          ..write('fiberPerServing: $fiberPerServing, ')
           ..write('proteinPerServing: $proteinPerServing, ')
           ..write('fatPerServing: $fatPerServing, ')
           ..write('sodiumMg: $sodiumMg, ')
@@ -33925,6 +34087,657 @@ class FormulaPinsTableCompanion extends UpdateCompanion<FormulaPinEntry> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('isDeleted: $isDeleted, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $OnboardingSurveysTableTable extends OnboardingSurveysTable
+    with TableInfo<$OnboardingSurveysTableTable, OnboardingSurveyEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OnboardingSurveysTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sportsMeta = const VerificationMeta('sports');
+  @override
+  late final GeneratedColumn<String> sports = GeneratedColumn<String>(
+    'sports',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalsMeta = const VerificationMeta('goals');
+  @override
+  late final GeneratedColumn<String> goals = GeneratedColumn<String>(
+    'goals',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pitfallsMeta = const VerificationMeta(
+    'pitfalls',
+  );
+  @override
+  late final GeneratedColumn<String> pitfalls = GeneratedColumn<String>(
+    'pitfalls',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _surveyPayloadMeta = const VerificationMeta(
+    'surveyPayload',
+  );
+  @override
+  late final GeneratedColumn<String> surveyPayload = GeneratedColumn<String>(
+    'survey_payload',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _completedAtMeta = const VerificationMeta(
+    'completedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> completedAt = GeneratedColumn<DateTime>(
+    'completed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _needsUploadMeta = const VerificationMeta(
+    'needsUpload',
+  );
+  @override
+  late final GeneratedColumn<bool> needsUpload = GeneratedColumn<bool>(
+    'needs_upload',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("needs_upload" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    sports,
+    goals,
+    pitfalls,
+    surveyPayload,
+    completedAt,
+    createdAt,
+    updatedAt,
+    needsUpload,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'onboarding_surveys';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OnboardingSurveyEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('sports')) {
+      context.handle(
+        _sportsMeta,
+        sports.isAcceptableOrUnknown(data['sports']!, _sportsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sportsMeta);
+    }
+    if (data.containsKey('goals')) {
+      context.handle(
+        _goalsMeta,
+        goals.isAcceptableOrUnknown(data['goals']!, _goalsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalsMeta);
+    }
+    if (data.containsKey('pitfalls')) {
+      context.handle(
+        _pitfallsMeta,
+        pitfalls.isAcceptableOrUnknown(data['pitfalls']!, _pitfallsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pitfallsMeta);
+    }
+    if (data.containsKey('survey_payload')) {
+      context.handle(
+        _surveyPayloadMeta,
+        surveyPayload.isAcceptableOrUnknown(
+          data['survey_payload']!,
+          _surveyPayloadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('completed_at')) {
+      context.handle(
+        _completedAtMeta,
+        completedAt.isAcceptableOrUnknown(
+          data['completed_at']!,
+          _completedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_completedAtMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('needs_upload')) {
+      context.handle(
+        _needsUploadMeta,
+        needsUpload.isAcceptableOrUnknown(
+          data['needs_upload']!,
+          _needsUploadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId};
+  @override
+  OnboardingSurveyEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OnboardingSurveyEntry(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      sports: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sports'],
+      )!,
+      goals: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goals'],
+      )!,
+      pitfalls: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pitfalls'],
+      )!,
+      surveyPayload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}survey_payload'],
+      ),
+      completedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}completed_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      needsUpload: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}needs_upload'],
+      ),
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      ),
+    );
+  }
+
+  @override
+  $OnboardingSurveysTableTable createAlias(String alias) {
+    return $OnboardingSurveysTableTable(attachedDatabase, alias);
+  }
+}
+
+class OnboardingSurveyEntry extends DataClass
+    implements Insertable<OnboardingSurveyEntry> {
+  final String userId;
+
+  /// JSON array of OnboardingSport dbValues, e.g. ["running","triathlon"].
+  final String sports;
+
+  /// JSON array of OnboardingGoal dbValues.
+  final String goals;
+
+  /// JSON array of OnboardingPitfall dbValues.
+  final String pitfalls;
+
+  /// JSON object for small survey flags (tridot_notify, sweat_test_interest,
+  /// declined_training_apps, connected_provider, ...).
+  final String? surveyPayload;
+  final DateTime completedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool? needsUpload;
+  final DateTime? localUpdatedAt;
+  const OnboardingSurveyEntry({
+    required this.userId,
+    required this.sports,
+    required this.goals,
+    required this.pitfalls,
+    this.surveyPayload,
+    required this.completedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.needsUpload,
+    this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['sports'] = Variable<String>(sports);
+    map['goals'] = Variable<String>(goals);
+    map['pitfalls'] = Variable<String>(pitfalls);
+    if (!nullToAbsent || surveyPayload != null) {
+      map['survey_payload'] = Variable<String>(surveyPayload);
+    }
+    map['completed_at'] = Variable<DateTime>(completedAt);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || needsUpload != null) {
+      map['needs_upload'] = Variable<bool>(needsUpload);
+    }
+    if (!nullToAbsent || localUpdatedAt != null) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    }
+    return map;
+  }
+
+  OnboardingSurveysTableCompanion toCompanion(bool nullToAbsent) {
+    return OnboardingSurveysTableCompanion(
+      userId: Value(userId),
+      sports: Value(sports),
+      goals: Value(goals),
+      pitfalls: Value(pitfalls),
+      surveyPayload: surveyPayload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(surveyPayload),
+      completedAt: Value(completedAt),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      needsUpload: needsUpload == null && nullToAbsent
+          ? const Value.absent()
+          : Value(needsUpload),
+      localUpdatedAt: localUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localUpdatedAt),
+    );
+  }
+
+  factory OnboardingSurveyEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OnboardingSurveyEntry(
+      userId: serializer.fromJson<String>(json['userId']),
+      sports: serializer.fromJson<String>(json['sports']),
+      goals: serializer.fromJson<String>(json['goals']),
+      pitfalls: serializer.fromJson<String>(json['pitfalls']),
+      surveyPayload: serializer.fromJson<String?>(json['surveyPayload']),
+      completedAt: serializer.fromJson<DateTime>(json['completedAt']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
+      localUpdatedAt: serializer.fromJson<DateTime?>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'sports': serializer.toJson<String>(sports),
+      'goals': serializer.toJson<String>(goals),
+      'pitfalls': serializer.toJson<String>(pitfalls),
+      'surveyPayload': serializer.toJson<String?>(surveyPayload),
+      'completedAt': serializer.toJson<DateTime>(completedAt),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'needsUpload': serializer.toJson<bool?>(needsUpload),
+      'localUpdatedAt': serializer.toJson<DateTime?>(localUpdatedAt),
+    };
+  }
+
+  OnboardingSurveyEntry copyWith({
+    String? userId,
+    String? sports,
+    String? goals,
+    String? pitfalls,
+    Value<String?> surveyPayload = const Value.absent(),
+    DateTime? completedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<bool?> needsUpload = const Value.absent(),
+    Value<DateTime?> localUpdatedAt = const Value.absent(),
+  }) => OnboardingSurveyEntry(
+    userId: userId ?? this.userId,
+    sports: sports ?? this.sports,
+    goals: goals ?? this.goals,
+    pitfalls: pitfalls ?? this.pitfalls,
+    surveyPayload: surveyPayload.present
+        ? surveyPayload.value
+        : this.surveyPayload,
+    completedAt: completedAt ?? this.completedAt,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
+    localUpdatedAt: localUpdatedAt.present
+        ? localUpdatedAt.value
+        : this.localUpdatedAt,
+  );
+  OnboardingSurveyEntry copyWithCompanion(
+    OnboardingSurveysTableCompanion data,
+  ) {
+    return OnboardingSurveyEntry(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      sports: data.sports.present ? data.sports.value : this.sports,
+      goals: data.goals.present ? data.goals.value : this.goals,
+      pitfalls: data.pitfalls.present ? data.pitfalls.value : this.pitfalls,
+      surveyPayload: data.surveyPayload.present
+          ? data.surveyPayload.value
+          : this.surveyPayload,
+      completedAt: data.completedAt.present
+          ? data.completedAt.value
+          : this.completedAt,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      needsUpload: data.needsUpload.present
+          ? data.needsUpload.value
+          : this.needsUpload,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OnboardingSurveyEntry(')
+          ..write('userId: $userId, ')
+          ..write('sports: $sports, ')
+          ..write('goals: $goals, ')
+          ..write('pitfalls: $pitfalls, ')
+          ..write('surveyPayload: $surveyPayload, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('needsUpload: $needsUpload, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    userId,
+    sports,
+    goals,
+    pitfalls,
+    surveyPayload,
+    completedAt,
+    createdAt,
+    updatedAt,
+    needsUpload,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OnboardingSurveyEntry &&
+          other.userId == this.userId &&
+          other.sports == this.sports &&
+          other.goals == this.goals &&
+          other.pitfalls == this.pitfalls &&
+          other.surveyPayload == this.surveyPayload &&
+          other.completedAt == this.completedAt &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.needsUpload == this.needsUpload &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class OnboardingSurveysTableCompanion
+    extends UpdateCompanion<OnboardingSurveyEntry> {
+  final Value<String> userId;
+  final Value<String> sports;
+  final Value<String> goals;
+  final Value<String> pitfalls;
+  final Value<String?> surveyPayload;
+  final Value<DateTime> completedAt;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool?> needsUpload;
+  final Value<DateTime?> localUpdatedAt;
+  final Value<int> rowid;
+  const OnboardingSurveysTableCompanion({
+    this.userId = const Value.absent(),
+    this.sports = const Value.absent(),
+    this.goals = const Value.absent(),
+    this.pitfalls = const Value.absent(),
+    this.surveyPayload = const Value.absent(),
+    this.completedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OnboardingSurveysTableCompanion.insert({
+    required String userId,
+    required String sports,
+    required String goals,
+    required String pitfalls,
+    this.surveyPayload = const Value.absent(),
+    required DateTime completedAt,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.needsUpload = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       sports = Value(sports),
+       goals = Value(goals),
+       pitfalls = Value(pitfalls),
+       completedAt = Value(completedAt),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<OnboardingSurveyEntry> custom({
+    Expression<String>? userId,
+    Expression<String>? sports,
+    Expression<String>? goals,
+    Expression<String>? pitfalls,
+    Expression<String>? surveyPayload,
+    Expression<DateTime>? completedAt,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? needsUpload,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (sports != null) 'sports': sports,
+      if (goals != null) 'goals': goals,
+      if (pitfalls != null) 'pitfalls': pitfalls,
+      if (surveyPayload != null) 'survey_payload': surveyPayload,
+      if (completedAt != null) 'completed_at': completedAt,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (needsUpload != null) 'needs_upload': needsUpload,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OnboardingSurveysTableCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? sports,
+    Value<String>? goals,
+    Value<String>? pitfalls,
+    Value<String?>? surveyPayload,
+    Value<DateTime>? completedAt,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool?>? needsUpload,
+    Value<DateTime?>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return OnboardingSurveysTableCompanion(
+      userId: userId ?? this.userId,
+      sports: sports ?? this.sports,
+      goals: goals ?? this.goals,
+      pitfalls: pitfalls ?? this.pitfalls,
+      surveyPayload: surveyPayload ?? this.surveyPayload,
+      completedAt: completedAt ?? this.completedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      needsUpload: needsUpload ?? this.needsUpload,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (sports.present) {
+      map['sports'] = Variable<String>(sports.value);
+    }
+    if (goals.present) {
+      map['goals'] = Variable<String>(goals.value);
+    }
+    if (pitfalls.present) {
+      map['pitfalls'] = Variable<String>(pitfalls.value);
+    }
+    if (surveyPayload.present) {
+      map['survey_payload'] = Variable<String>(surveyPayload.value);
+    }
+    if (completedAt.present) {
+      map['completed_at'] = Variable<DateTime>(completedAt.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (needsUpload.present) {
+      map['needs_upload'] = Variable<bool>(needsUpload.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OnboardingSurveysTableCompanion(')
+          ..write('userId: $userId, ')
+          ..write('sports: $sports, ')
+          ..write('goals: $goals, ')
+          ..write('pitfalls: $pitfalls, ')
+          ..write('surveyPayload: $surveyPayload, ')
+          ..write('completedAt: $completedAt, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
           ..write('rowid: $rowid')
@@ -40820,6 +41633,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $FormulaPinsTableTable formulaPinsTable = $FormulaPinsTableTable(
     this,
   );
+  late final $OnboardingSurveysTableTable onboardingSurveysTable =
+      $OnboardingSurveysTableTable(this);
   late final $PersonalFormulasTableTable personalFormulasTable =
       $PersonalFormulasTableTable(this);
   late final $AthletePairingCodesTableTable athletePairingCodesTable =
@@ -40874,6 +41689,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     tpWritebackTable,
     personalTemplatesTable,
     formulaPinsTable,
+    onboardingSurveysTable,
     personalFormulasTable,
     athletePairingCodesTable,
     coachPairingCodesTable,
@@ -51446,6 +52262,7 @@ typedef $$TemplateFoodsTableTableCreateCompanionBuilder =
       Value<bool> isActive,
       Value<String> excludedDiets,
       Value<String> productType,
+      Value<String?> foodGroup,
       Value<String> activityTypes,
       Value<String> categories,
       Value<bool> isElectrolyte,
@@ -51490,6 +52307,7 @@ typedef $$TemplateFoodsTableTableUpdateCompanionBuilder =
       Value<bool> isActive,
       Value<String> excludedDiets,
       Value<String> productType,
+      Value<String?> foodGroup,
       Value<String> activityTypes,
       Value<String> categories,
       Value<bool> isElectrolyte,
@@ -51607,6 +52425,11 @@ class $$TemplateFoodsTableTableFilterComposer
 
   ColumnFilters<String> get productType => $composableBuilder(
     column: $table.productType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get foodGroup => $composableBuilder(
+    column: $table.foodGroup,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -51820,6 +52643,11 @@ class $$TemplateFoodsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get foodGroup => $composableBuilder(
+    column: $table.foodGroup,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get activityTypes => $composableBuilder(
     column: $table.activityTypes,
     builder: (column) => ColumnOrderings(column),
@@ -52008,6 +52836,9 @@ class $$TemplateFoodsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get foodGroup =>
+      $composableBuilder(column: $table.foodGroup, builder: (column) => column);
+
   GeneratedColumn<String> get activityTypes => $composableBuilder(
     column: $table.activityTypes,
     builder: (column) => column,
@@ -52175,6 +53006,7 @@ class $$TemplateFoodsTableTableTableManager
                 Value<bool> isActive = const Value.absent(),
                 Value<String> excludedDiets = const Value.absent(),
                 Value<String> productType = const Value.absent(),
+                Value<String?> foodGroup = const Value.absent(),
                 Value<String> activityTypes = const Value.absent(),
                 Value<String> categories = const Value.absent(),
                 Value<bool> isElectrolyte = const Value.absent(),
@@ -52217,6 +53049,7 @@ class $$TemplateFoodsTableTableTableManager
                 isActive: isActive,
                 excludedDiets: excludedDiets,
                 productType: productType,
+                foodGroup: foodGroup,
                 activityTypes: activityTypes,
                 categories: categories,
                 isElectrolyte: isElectrolyte,
@@ -52261,6 +53094,7 @@ class $$TemplateFoodsTableTableTableManager
                 Value<bool> isActive = const Value.absent(),
                 Value<String> excludedDiets = const Value.absent(),
                 Value<String> productType = const Value.absent(),
+                Value<String?> foodGroup = const Value.absent(),
                 Value<String> activityTypes = const Value.absent(),
                 Value<String> categories = const Value.absent(),
                 Value<bool> isElectrolyte = const Value.absent(),
@@ -52303,6 +53137,7 @@ class $$TemplateFoodsTableTableTableManager
                 isActive: isActive,
                 excludedDiets: excludedDiets,
                 productType: productType,
+                foodGroup: foodGroup,
                 activityTypes: activityTypes,
                 categories: categories,
                 isElectrolyte: isElectrolyte,
@@ -53472,6 +54307,7 @@ typedef $$PreWorkoutTemplatesTableTableCreateCompanionBuilder =
       required String name,
       required String baseCategory,
       required String timeWindow,
+      Value<String?> subPhase,
       required String digestionSpeed,
       Value<String> allergens,
       required String servingUnit,
@@ -53482,6 +54318,7 @@ typedef $$PreWorkoutTemplatesTableTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<bool> isActive,
       required double carbsPerServing,
+      Value<double> fiberPerServing,
       required double proteinPerServing,
       required double fatPerServing,
       required double sodiumMg,
@@ -53500,6 +54337,7 @@ typedef $$PreWorkoutTemplatesTableTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> baseCategory,
       Value<String> timeWindow,
+      Value<String?> subPhase,
       Value<String> digestionSpeed,
       Value<String> allergens,
       Value<String> servingUnit,
@@ -53510,6 +54348,7 @@ typedef $$PreWorkoutTemplatesTableTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<bool> isActive,
       Value<double> carbsPerServing,
+      Value<double> fiberPerServing,
       Value<double> proteinPerServing,
       Value<double> fatPerServing,
       Value<double> sodiumMg,
@@ -53549,6 +54388,11 @@ class $$PreWorkoutTemplatesTableTableFilterComposer
 
   ColumnFilters<String> get timeWindow => $composableBuilder(
     column: $table.timeWindow,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subPhase => $composableBuilder(
+    column: $table.subPhase,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -53599,6 +54443,11 @@ class $$PreWorkoutTemplatesTableTableFilterComposer
 
   ColumnFilters<double> get carbsPerServing => $composableBuilder(
     column: $table.carbsPerServing,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get fiberPerServing => $composableBuilder(
+    column: $table.fiberPerServing,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -53682,6 +54531,11 @@ class $$PreWorkoutTemplatesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get subPhase => $composableBuilder(
+    column: $table.subPhase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get digestionSpeed => $composableBuilder(
     column: $table.digestionSpeed,
     builder: (column) => ColumnOrderings(column),
@@ -53729,6 +54583,11 @@ class $$PreWorkoutTemplatesTableTableOrderingComposer
 
   ColumnOrderings<double> get carbsPerServing => $composableBuilder(
     column: $table.carbsPerServing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get fiberPerServing => $composableBuilder(
+    column: $table.fiberPerServing,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -53808,6 +54667,9 @@ class $$PreWorkoutTemplatesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get subPhase =>
+      $composableBuilder(column: $table.subPhase, builder: (column) => column);
+
   GeneratedColumn<String> get digestionSpeed => $composableBuilder(
     column: $table.digestionSpeed,
     builder: (column) => column,
@@ -53849,6 +54711,11 @@ class $$PreWorkoutTemplatesTableTableAnnotationComposer
 
   GeneratedColumn<double> get carbsPerServing => $composableBuilder(
     column: $table.carbsPerServing,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get fiberPerServing => $composableBuilder(
+    column: $table.fiberPerServing,
     builder: (column) => column,
   );
 
@@ -53945,6 +54812,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> baseCategory = const Value.absent(),
                 Value<String> timeWindow = const Value.absent(),
+                Value<String?> subPhase = const Value.absent(),
                 Value<String> digestionSpeed = const Value.absent(),
                 Value<String> allergens = const Value.absent(),
                 Value<String> servingUnit = const Value.absent(),
@@ -53955,6 +54823,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<double> carbsPerServing = const Value.absent(),
+                Value<double> fiberPerServing = const Value.absent(),
                 Value<double> proteinPerServing = const Value.absent(),
                 Value<double> fatPerServing = const Value.absent(),
                 Value<double> sodiumMg = const Value.absent(),
@@ -53971,6 +54840,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 name: name,
                 baseCategory: baseCategory,
                 timeWindow: timeWindow,
+                subPhase: subPhase,
                 digestionSpeed: digestionSpeed,
                 allergens: allergens,
                 servingUnit: servingUnit,
@@ -53981,6 +54851,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 notes: notes,
                 isActive: isActive,
                 carbsPerServing: carbsPerServing,
+                fiberPerServing: fiberPerServing,
                 proteinPerServing: proteinPerServing,
                 fatPerServing: fatPerServing,
                 sodiumMg: sodiumMg,
@@ -53999,6 +54870,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 required String name,
                 required String baseCategory,
                 required String timeWindow,
+                Value<String?> subPhase = const Value.absent(),
                 required String digestionSpeed,
                 Value<String> allergens = const Value.absent(),
                 required String servingUnit,
@@ -54009,6 +54881,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 required double carbsPerServing,
+                Value<double> fiberPerServing = const Value.absent(),
                 required double proteinPerServing,
                 required double fatPerServing,
                 required double sodiumMg,
@@ -54025,6 +54898,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 name: name,
                 baseCategory: baseCategory,
                 timeWindow: timeWindow,
+                subPhase: subPhase,
                 digestionSpeed: digestionSpeed,
                 allergens: allergens,
                 servingUnit: servingUnit,
@@ -54035,6 +54909,7 @@ class $$PreWorkoutTemplatesTableTableTableManager
                 notes: notes,
                 isActive: isActive,
                 carbsPerServing: carbsPerServing,
+                fiberPerServing: fiberPerServing,
                 proteinPerServing: proteinPerServing,
                 fatPerServing: fatPerServing,
                 sodiumMg: sodiumMg,
@@ -55708,6 +56583,328 @@ typedef $$FormulaPinsTableTableProcessedTableManager =
         BaseReferences<_$AppDatabase, $FormulaPinsTableTable, FormulaPinEntry>,
       ),
       FormulaPinEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$OnboardingSurveysTableTableCreateCompanionBuilder =
+    OnboardingSurveysTableCompanion Function({
+      required String userId,
+      required String sports,
+      required String goals,
+      required String pitfalls,
+      Value<String?> surveyPayload,
+      required DateTime completedAt,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$OnboardingSurveysTableTableUpdateCompanionBuilder =
+    OnboardingSurveysTableCompanion Function({
+      Value<String> userId,
+      Value<String> sports,
+      Value<String> goals,
+      Value<String> pitfalls,
+      Value<String?> surveyPayload,
+      Value<DateTime> completedAt,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool?> needsUpload,
+      Value<DateTime?> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$OnboardingSurveysTableTableFilterComposer
+    extends Composer<_$AppDatabase, $OnboardingSurveysTableTable> {
+  $$OnboardingSurveysTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sports => $composableBuilder(
+    column: $table.sports,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goals => $composableBuilder(
+    column: $table.goals,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pitfalls => $composableBuilder(
+    column: $table.pitfalls,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get surveyPayload => $composableBuilder(
+    column: $table.surveyPayload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OnboardingSurveysTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $OnboardingSurveysTableTable> {
+  $$OnboardingSurveysTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sports => $composableBuilder(
+    column: $table.sports,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goals => $composableBuilder(
+    column: $table.goals,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pitfalls => $composableBuilder(
+    column: $table.pitfalls,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get surveyPayload => $composableBuilder(
+    column: $table.surveyPayload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OnboardingSurveysTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OnboardingSurveysTableTable> {
+  $$OnboardingSurveysTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get sports =>
+      $composableBuilder(column: $table.sports, builder: (column) => column);
+
+  GeneratedColumn<String> get goals =>
+      $composableBuilder(column: $table.goals, builder: (column) => column);
+
+  GeneratedColumn<String> get pitfalls =>
+      $composableBuilder(column: $table.pitfalls, builder: (column) => column);
+
+  GeneratedColumn<String> get surveyPayload => $composableBuilder(
+    column: $table.surveyPayload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get completedAt => $composableBuilder(
+    column: $table.completedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get needsUpload => $composableBuilder(
+    column: $table.needsUpload,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$OnboardingSurveysTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OnboardingSurveysTableTable,
+          OnboardingSurveyEntry,
+          $$OnboardingSurveysTableTableFilterComposer,
+          $$OnboardingSurveysTableTableOrderingComposer,
+          $$OnboardingSurveysTableTableAnnotationComposer,
+          $$OnboardingSurveysTableTableCreateCompanionBuilder,
+          $$OnboardingSurveysTableTableUpdateCompanionBuilder,
+          (
+            OnboardingSurveyEntry,
+            BaseReferences<
+              _$AppDatabase,
+              $OnboardingSurveysTableTable,
+              OnboardingSurveyEntry
+            >,
+          ),
+          OnboardingSurveyEntry,
+          PrefetchHooks Function()
+        > {
+  $$OnboardingSurveysTableTableTableManager(
+    _$AppDatabase db,
+    $OnboardingSurveysTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OnboardingSurveysTableTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$OnboardingSurveysTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OnboardingSurveysTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> sports = const Value.absent(),
+                Value<String> goals = const Value.absent(),
+                Value<String> pitfalls = const Value.absent(),
+                Value<String?> surveyPayload = const Value.absent(),
+                Value<DateTime> completedAt = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OnboardingSurveysTableCompanion(
+                userId: userId,
+                sports: sports,
+                goals: goals,
+                pitfalls: pitfalls,
+                surveyPayload: surveyPayload,
+                completedAt: completedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String sports,
+                required String goals,
+                required String pitfalls,
+                Value<String?> surveyPayload = const Value.absent(),
+                required DateTime completedAt,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<bool?> needsUpload = const Value.absent(),
+                Value<DateTime?> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OnboardingSurveysTableCompanion.insert(
+                userId: userId,
+                sports: sports,
+                goals: goals,
+                pitfalls: pitfalls,
+                surveyPayload: surveyPayload,
+                completedAt: completedAt,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                needsUpload: needsUpload,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OnboardingSurveysTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OnboardingSurveysTableTable,
+      OnboardingSurveyEntry,
+      $$OnboardingSurveysTableTableFilterComposer,
+      $$OnboardingSurveysTableTableOrderingComposer,
+      $$OnboardingSurveysTableTableAnnotationComposer,
+      $$OnboardingSurveysTableTableCreateCompanionBuilder,
+      $$OnboardingSurveysTableTableUpdateCompanionBuilder,
+      (
+        OnboardingSurveyEntry,
+        BaseReferences<
+          _$AppDatabase,
+          $OnboardingSurveysTableTable,
+          OnboardingSurveyEntry
+        >,
+      ),
+      OnboardingSurveyEntry,
       PrefetchHooks Function()
     >;
 typedef $$PersonalFormulasTableTableCreateCompanionBuilder =
@@ -58944,6 +60141,11 @@ class $AppDatabaseManager {
       );
   $$FormulaPinsTableTableTableManager get formulaPinsTable =>
       $$FormulaPinsTableTableTableManager(_db, _db.formulaPinsTable);
+  $$OnboardingSurveysTableTableTableManager get onboardingSurveysTable =>
+      $$OnboardingSurveysTableTableTableManager(
+        _db,
+        _db.onboardingSurveysTable,
+      );
   $$PersonalFormulasTableTableTableManager get personalFormulasTable =>
       $$PersonalFormulasTableTableTableManager(_db, _db.personalFormulasTable);
   $$AthletePairingCodesTableTableTableManager get athletePairingCodesTable =>

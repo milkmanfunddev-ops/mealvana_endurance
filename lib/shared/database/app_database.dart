@@ -39,6 +39,7 @@ import 'tables/post_workout_templates_table.dart';
 import 'tables/tp_writeback_table.dart';
 import 'tables/personal_templates_table.dart';
 import 'tables/formula_pins_table.dart';
+import 'tables/onboarding_surveys_table.dart';
 import 'tables/personal_formulas_table.dart';
 import 'tables/athlete_pairing_codes_table.dart';
 import 'tables/coach_pairing_codes_table.dart';
@@ -132,6 +133,9 @@ part 'app_database.g.dart';
     // Formula Kit pins (user preference signal for plan generation)
     FormulaPinsTable,
 
+    // Onboarding survey answers (sports/goals/pitfalls; one row per user)
+    OnboardingSurveysTable,
+
     // Formula Kit personal formulas (user-authored fueling recipes)
     PersonalFormulasTable,
 
@@ -176,6 +180,19 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._internal(super.e);
 
   @override
+  /// Schema version 16: pre-workout food-composition v3 + category-based
+  /// selection (2026-08-06). Three additive columns:
+  ///   • pre_workout_templates.sub_phase (TEXT, nullable) — explicit tier
+  ///     membership ('full_meal' | 'snack' | 'top_up'); time_window becomes a
+  ///     display label only. Matches the Supabase sub_phase migration
+  ///     (20260806150000, applied to dev).
+  ///   • pre_workout_templates.fiber_per_serving (REAL NOT NULL DEFAULT 0) —
+  ///     H2 per-feeding fibre gate (Supabase v3 structure migration).
+  ///   • template_foods.food_group (TEXT, nullable) — Layer A food group
+  ///     G1…G9 for the §3.10 tier matrix (same migration).
+  /// All three use the idempotent addColumn helper, so a web user_version
+  /// replay of the step is harmless.
+  ///
   /// Schema version 14: build-a-meal redesign — `meal_logs.slot` becomes
   /// optional (nullable). SQLite has no `ALTER COLUMN ... DROP NOT NULL`, so
   /// the `from < 14` step rebuilds the table (rename → recreate via the
@@ -193,12 +210,12 @@ class AppDatabase extends _$AppDatabase {
   /// matching Supabase column (`activities.is_fasted boolean not null
   /// default false`) already exists on dev + prod.
   ///
-  /// Schema version 11: meal logging + Jade groundwork. Adds three tables:
+  /// Schema version 11: meal logging + Mealvana AI groundwork. Adds three tables:
   ///   • meal_logs   — logged meals on the Daily Macros tab (offline-first,
   ///     soft-deleted via is_deleted, needs_upload dirty tracking)
   ///   • saved_meals — explicit user favorites for one-tap re-logging
   ///   • recipes     — read-only mirror of the curated recipe catalog
-  /// Jade chat tables (jade_conversations/jade_messages/jade_calls) are
+  /// Mealvana AI chat tables (jade_conversations/jade_messages/jade_calls) are
   /// online-only and have NO Drift mirror. Supabase schema:
   /// docs/database/meal_logging_jade_schema.sql (applied dev + prod).
   /// NOTE: the matching Supabase `app_config` schema version (read by
@@ -245,7 +262,15 @@ class AppDatabase extends _$AppDatabase {
   /// v5 added personal_templates table for user-saved nutrition plan templates.
   /// v4 added template_foods and templates tables for nutrition templates.
   /// v3 added intensity distribution and default pace columns.
-  int get schemaVersion => 14;
+  ///
+  /// v17 added the onboarding_surveys table (sports/goals/pitfalls from the
+  /// redesigned onboarding flow — docs/features/onboarding-redesign/README.md).
+  /// The branch originally shipped this as v16, but develop's v16 (sub_phase /
+  /// fiber_per_serving / food_group) landed first, so surveys became v17 at
+  /// merge time. Supabase app_config.current_schema_version must be bumped to
+  /// 17 only when the build carrying this ships (it triggers client
+  /// delete-and-resync).
+  int get schemaVersion => 17;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -362,7 +387,7 @@ class AppDatabase extends _$AppDatabase {
           await ensureTable(personalFormulasTable);
         }
 
-        // v11: Meal logging + Jade groundwork — meal_logs, saved_meals,
+        // v11: Meal logging + Mealvana AI groundwork — meal_logs, saved_meals,
         // recipes. No local FK references between them.
         if (from < 11) {
           await ensureTable(mealLogsTable);
@@ -439,6 +464,65 @@ class AppDatabase extends _$AppDatabase {
             }
           }
         }
+
+        // v15: repair `activities.is_fasted` on installs that were already at
+        // v14 when that column was introduced.
+        //
+        // The column was originally added inside the `from < 14` step above
+        // ("v14 (part 2)"). Devices that had ALREADY migrated to v14 before
+        // that step existed never re-run it — Drift skips onUpgrade entirely
+        // when `from == to` — so they sat at schemaVersion 14 with the column
+        // missing. The startup integrity check then found
+        //   Table "activities" missing columns: is_fasted
+        // and WIPED the local database to recover, losing any unsynced local
+        // data (Sentry MEALVANA-ENDURANCE-DEV-60 / DEV-61, 4 users).
+        //
+        // Bumping to 15 is what actually fixes it: it forces onUpgrade to run
+        // again for those installs. addColumn is idempotent, so devices that
+        // already picked the column up via the v14 path are unaffected.
+        if (from < 15) {
+          await addColumn(
+            'activities',
+            'is_fasted',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+        }
+
+        // v16: pre-workout food-composition v3 + category-based selection.
+        // sub_phase is the authoritative tier ('full_meal'/'snack'/'top_up');
+        // fiber_per_serving feeds the H2 fibre gate; food_group carries the
+        // Layer A classification on the ingredient catalog. All nullable or
+        // defaulted, all idempotent via addColumn.
+        if (from < 16) {
+          await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
+          await addColumn(
+            'pre_workout_templates',
+            'fiber_per_serving',
+            'REAL NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'food_group', 'TEXT');
+        }
+
+        // v17: onboarding_surveys — the one new table of the onboarding
+        // redesign (sports/goals/pitfalls + survey_payload JSON escape
+        // hatch). ensureTable is idempotent for web user_version replays.
+        //
+        // The onboarding branch shipped this step as its own v16 in parallel
+        // with the sub_phase v16 above, so a device that ran the branch's v16
+        // sits at 16 WITH onboarding_surveys but WITHOUT the sub_phase
+        // columns. This step therefore re-runs the sub_phase addColumns
+        // (idempotent) so both v16 lineages converge at 17 instead of
+        // tripping the schema-integrity wipe.
+        if (from < 17) {
+          await ensureTable(onboardingSurveysTable);
+          await addColumn('pre_workout_templates', 'sub_phase', 'TEXT');
+          await addColumn(
+            'pre_workout_templates',
+            'fiber_per_serving',
+            'REAL NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'food_group', 'TEXT');
+        }
       },
 
       // Called when database is first created (version 0 -> current)
@@ -485,11 +569,11 @@ class AppDatabase extends _$AppDatabase {
         if (!details.wasCreated) {
           // Repair the integrations.provider CHECK in place before validating.
           // CHECK constraints are baked into the table at CREATE time, so
-          // adding 'vdot' to the Dart definition doesn't update tables that
-          // already exist on-device. We deliberately do NOT bump schemaVersion
-          // for this CHECK fix, so this idempotent in-place repair (not a
-          // version bump) is what fixes existing installs that reject
-          // `provider = 'vdot'` inserts.
+          // adding a provider (first 'vdot', later 'runna') to the Dart
+          // definition doesn't update tables that already exist on-device. We
+          // deliberately do NOT bump schemaVersion for this CHECK fix, so this
+          // idempotent in-place repair (not a version bump) is what fixes
+          // existing installs that reject inserts for the new provider.
           await PerformanceTelemetry.measure(
             'database.ensure_integrations_constraint',
             _ensureIntegrationsProviderCheck,
@@ -590,27 +674,34 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  /// Ensure the `integrations.provider` CHECK constraint allows 'vdot'.
+  /// Ensure the `integrations.provider` CHECK constraint allows every
+  /// provider the app can write ('vdot' was added first, 'runna' later).
   ///
   /// SQLite stores CHECK constraints as part of the table's CREATE statement,
-  /// so editing the Dart table definition (which now lists 'vdot') does NOT
-  /// alter tables that were created before 'vdot' was added — those keep
-  /// rejecting `provider = 'vdot'` inserts with a CHECK failure (code 275).
-  /// Bumping schemaVersion would trigger a delete-and-resync, but we're
-  /// deliberately staying on v9, so instead we repair the constraint in place:
-  /// detect a stale CHECK and, if found, rebuild the table preserving its rows.
-  /// Idempotent — once the CHECK includes 'vdot' this is a no-op on open.
+  /// so editing the Dart table definition does NOT alter tables that already
+  /// exist on-device — those keep rejecting inserts for the new provider with
+  /// a CHECK failure (code 275). Bumping schemaVersion would trigger a
+  /// delete-and-resync, so instead we repair the constraint in place: detect
+  /// a stale CHECK and, if found, rebuild the table preserving its rows.
+  /// Idempotent — once the CHECK includes all required providers this is a
+  /// no-op on open.
   Future<void> _ensureIntegrationsProviderCheck() async {
     final rows = await customSelect(
       "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'integrations'",
     ).get();
     if (rows.isEmpty) return; // missing table is handled by schema validation
     final createSql = rows.first.read<String?>('sql') ?? '';
-    if (createSql.contains("'vdot'")) return; // already up to date
+    // Providers added after the table first shipped — extend this list when a
+    // new provider value is added to the CHECK in integrations_table.dart.
+    const requiredProviders = ["'vdot'", "'runna'"];
+    if (requiredProviders.every(createSql.contains)) {
+      return; // already up to date
+    }
 
     if (kDebugMode) {
       print(
-        '🔧 Rebuilding integrations table to add \'vdot\' to provider CHECK',
+        '🔧 Rebuilding integrations table to refresh the provider CHECK '
+        '(needs: $requiredProviders)',
       );
     }
 

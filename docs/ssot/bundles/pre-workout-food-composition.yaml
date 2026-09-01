@@ -1,0 +1,80 @@
+# Release bundle manifest — a pinned set of ratified SSOTs for one app release.
+# A code agent checks out the tag `pre-workout-food-composition@v1` and implements exactly
+# these slices to green conformance. This file is the durable "what"; run-instructions are
+# ephemeral. Second entry of the spec registry (one manifest per release bundle).
+
+bundle: pre-workout-food-composition
+version: v1
+status: ratified
+ratified: 2026-08-05            # Xuan
+ships: pre-workout food SUITABILITY only — which foods may fill each tier, not how much
+
+specs:
+  - slice:   pre-workout-food-composition
+    version: v3
+    spec:    spec/fueling/pre-workout-food-composition.md
+    vectors: vectors/fueling/pre-workout-food-composition.json
+    engine:  none — no published entry point exists yet; defining one is part of this bundle
+
+excludes:
+  - slice:  pre-workout-hydration
+    reason: shipped in pre-workout-macros@v1 — macro quantity, not food selection
+  - slice:  pre-workout-carbs
+    reason: shipped in pre-workout-macros@v1 — owns HOW MUCH carbohydrate; this bundle owns WHICH FOODS
+  - slice:  pre-workout-sodium
+    reason: shipped in pre-workout-macros@v1 — macro quantity, not food selection
+  - slice:  food-macro-lookup
+    reason: >
+      Resolving a food to its fat/fibre/protein/carbohydrate grams is a food-database
+      concern, not a gate concern. The vectors take SUMMED macros as inputs and assert
+      only the gate verdict. Whoever supplies the numbers is out of scope here.
+  - slice:  drawer-explanation
+    reason: the in-app wording of a food recommendation is a drawer contract, not this SSOT
+
+conformance:
+  runner: qa/conformance/run_dart.sh
+  invoke:
+    - run_dart.sh pre-workout-food-composition
+  done_when: all slices green
+  note: >
+    EXPECTED-RED, and more deeply so than pre-workout-macros@v1 — this bundle has no
+    engine and no runner yet, and building both is part of the task.
+
+    (1) No published entry point. The spec is deliberately engine-agnostic (section 11:
+    the checks are "deliberately not tied to any engine interface"), and vectors carry
+    engine: null. The implementing agent defines the food-suitability entry point, then
+    satisfies it. Food selection currently lives in the generate-macros-v4 edge function
+    (pre-workout-scoring.ts), which is OUTSIDE the pure OfflineMacroCalculator interface
+    the macro slices target — so this bundle also decides where the gates live.
+
+    (2) No runner exists. run_dart.sh derives its harness path from the slice name and
+    expects conformance/pre_workout_food_composition_conformance_test.dart, which is not
+    written. run_dart.sh is also hardwired to OfflineMacroCalculator. Harness and engine
+    co-evolve; that is the implementation task, not a pre-requisite.
+
+    (3) Two prerequisites the engine cannot satisfy without a data change. The shipped
+    food catalog carries no FIBRE field, so H2 is unenforceable as-is; and no field
+    distinguishes seedless / pulp-free items. Adding fibre to the food schema is part of
+    implementing H2, not a reason to weaken it.
+
+    (4) One vector is status:characterization, not ratified — matrix-groups-are-disjoint.
+    It is a TRIPWIRE flagging a spec self-conflict: section 11 check 9 asserts every named
+    food belongs to exactly one group, while section 3.9 states G9 overlaps G3 and G8 by
+    design. The SSOT gives no precedence rule for a food in two groups. Do not implement
+    around it — it needs a spec ruling, and resolving it is a v2 of this bundle.
+
+    (5) The vectors document two conventions the SSOT does not state: gate evaluation
+    order, and an interpretation of H3's "~ 0" at the top-off tier. Both are named in the
+    vectors' note. They are challengeable, not settled.
+
+deviations:
+  - slice:  pre-workout-food-composition
+    status: unratified
+    logged: false                 # NOT yet in qa/DEVIATIONS.md — needs an entry
+    note: >
+      Shipped fat budget collides with H1. generate-macros-v4 sets a plan-level fat target
+      of round(0.4 * kg) and BUDGET_SPLITS.fat allocates 80% of it to the meal tier — 20.8 g
+      at 65 kg, against H1's <= 15 g ceiling. The engine's own target therefore violates this
+      bundle's gate by roughly 2x at typical body mass. Not ratified by this bundle, and not
+      yet logged in DEVIATIONS.md; the implementing agent must reconcile the fat budget with
+      H1 rather than assume either side is correct.

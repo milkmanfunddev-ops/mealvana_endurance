@@ -1,0 +1,448 @@
+{
+  "section": "pre-workout-hydration",
+  "engine": "OfflineMacroCalculator.calculatePreWorkoutHydration",
+  "specVersion": "v6 (2026-08-03, ratified)",
+  "note": "Pins ratified v6. EXPECTED-RED until the engine implements v6 (repo code implements v1). Fluid is EXACT (no rounding) -> compare fluid* with abs tol 1e-3 ml. tier is RETIRED (not asserted). Sodium moved to pre-workout-sodium.json. Gate returns null (not 0) and empty tiers. Harness must thread hydrationCheck in and assert regime/targetBasis/hydrationCheckUsed.",
+  "toleranceMl": 0.001,
+  "vectors": [
+    {
+      "id": "cited-180-65-pale",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "pale",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 487.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "meal 7.5*65=487.5; band 5-10 ml/kg = [325,780]; pale adds nothing"
+    },
+    {
+      "id": "cited-180-65-dark",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "dark",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 747.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "dark"
+      },
+      "why": "dark +4 ml/kg snack: 487.5+260=747.5; band identical [325,780] (inv 8b)"
+    },
+    {
+      "id": "cited-180-65-unknown",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 487.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "unknown treated as pale -> 487.5; hydrationCheckUsed=pale (PROVISIONAL)"
+    },
+    {
+      "id": "cited-boundary-120-65-pale",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 120,
+        "hydrationCheck": "pale",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 487.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "t=120 inclusive of cited branch; 487.5"
+    },
+    {
+      "id": "cited-boundary-120-65-dark",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 120,
+        "hydrationCheck": "dark",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 747.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "dark"
+      },
+      "why": "dark-path step at T_REF pins inv 5: plan(120)=747.5"
+    },
+    {
+      "id": "cited-135-65-pale",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 135,
+        "hydrationCheck": "pale",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 487.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "grid point above T_REF collapses to same output as 120/180 (time-independent)"
+    },
+    {
+      "id": "cited-plan-cap-50-dark",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 50,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "dark",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 575,
+        "fluidLowMl": 250,
+        "fluidHighMl": 600,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "dark"
+      },
+      "why": "plan-cap teeth: 7.5*50+5*50=625 clamped to 12*50=600 -> high 600; plan 375+200=575"
+    },
+    {
+      "id": "cited-plan-cap-100-dark",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 100,
+        "workoutDurationMin": 120,
+        "timeBeforeWorkoutMin": 240,
+        "hydrationCheck": "dark",
+        "tempC": 25
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 1150,
+        "fluidLowMl": 500,
+        "fluidHighMl": 1200,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "dark"
+      },
+      "why": "100kg: meal 750 + dark 400 = 1150; high min(1250,1200)=1200; low 500"
+    },
+    {
+      "id": "cited-90kg-pale",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 90,
+        "workoutDurationMin": 120,
+        "timeBeforeWorkoutMin": 240,
+        "hydrationCheck": "pale",
+        "tempC": 25
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 675,
+        "fluidLowMl": 450,
+        "fluidHighMl": 1080,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "90kg pale: 675; band [450,1080]"
+    },
+    {
+      "id": "cited-a0guard-30-pale",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 30,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "pale",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 225,
+        "fluidLowMl": 150,
+        "fluidHighMl": 360,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "A0 guard BW<33.3: meal=7.5*30=225; band [150,360]"
+    },
+    {
+      "id": "taper-105-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 105,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 457.8125,
+        "fluidLowMl": 0,
+        "fluidHighMl": 650,
+        "regime": "extrapolated",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "snack f(105)=457.8125; low 0; high 10*65=650; extrapolated"
+    },
+    {
+      "id": "taper-90-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 90,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 428.125,
+        "fluidLowMl": 0,
+        "fluidHighMl": 650,
+        "regime": "extrapolated",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "snack f(90)=428.125; high 650; extrapolated"
+    },
+    {
+      "id": "taper-boundary-30-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 30,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 309.375,
+        "fluidLowMl": 0,
+        "fluidHighMl": 650,
+        "regime": "extrapolated",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "t=30 inclusive lower edge of snack window; f(30)=309.375"
+    },
+    {
+      "id": "topoff-boundary-29-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 29,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 307.3958,
+        "fluidLowMl": 0,
+        "fluidHighMl": 650,
+        "regime": "extrapolated",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "t=29 -> top-off window (just below 30); f(29)=307.3958; high 650"
+    },
+    {
+      "id": "topoff-15-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 15,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 279.6875,
+        "fluidLowMl": 0,
+        "fluidHighMl": 650,
+        "regime": "extrapolated",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "top-off f(15)=279.6875; high 650; extrapolated"
+    },
+    {
+      "id": "topoff-anchor-0-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 0,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 250,
+        "fluidLowMl": 0,
+        "fluidHighMl": 400,
+        "regime": "clearance_bound",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "anchor B: plan=min(250,487.5)=250; low 0; high min(650,400)=400; clearance_bound"
+    },
+    {
+      "id": "clearance-100-15",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 100,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 15,
+        "hydrationCheck": "unknown",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 312.5,
+        "fluidLowMl": 0,
+        "fluidHighMl": 890.2164,
+        "regime": "clearance_bound",
+        "targetBasis": "design_choice",
+        "hydrationCheckUsed": "unknown"
+      },
+      "why": "100kg clearance binds on-grid at t=15: high=400*e^0.8=890.22 < 1000; clearance_bound"
+    },
+    {
+      "id": "gate-fires-short-mild",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 45,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "pale",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": true,
+        "fluidMl": null,
+        "fluidLowMl": null,
+        "fluidHighMl": null,
+        "regime": "gated",
+        "targetBasis": "none"
+      },
+      "why": "45<60 AND 22<30 -> gated: all null, empty tiers (inv 11), even at t=180"
+    },
+    {
+      "id": "gate-not-fired-hot",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 45,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "pale",
+        "tempC": 32
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 487.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "short but 32>=30 -> not gated -> cited 487.5"
+    },
+    {
+      "id": "gate-not-fired-dur60",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 60,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "pale",
+        "tempC": 22
+      },
+      "expected": {
+        "gateTriggered": false,
+        "fluidMl": 487.5,
+        "fluidLowMl": 325,
+        "fluidHighMl": 780,
+        "regime": "cited",
+        "targetBasis": "evidenced_band",
+        "hydrationCheckUsed": "pale"
+      },
+      "why": "dur=60 not <60 -> not gated -> cited 487.5 (boundary inclusive)"
+    },
+    {
+      "id": "gate-tempnull-default",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 45,
+        "timeBeforeWorkoutMin": 180,
+        "hydrationCheck": "pale",
+        "tempC": null
+      },
+      "expected": {
+        "gateTriggered": true,
+        "fluidMl": null,
+        "fluidLowMl": null,
+        "fluidHighMl": null,
+        "regime": "gated",
+        "targetBasis": "none"
+      },
+      "why": "tempC null -> 22; 45<60 AND 22<30 -> gated (tests null default + gate)"
+    }
+  ]
+}

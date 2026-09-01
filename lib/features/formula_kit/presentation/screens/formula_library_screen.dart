@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
+import 'package:mealvana_endurance/shared/widgets/swipe_action_background.dart';
 
 import '../../application/formula_library_controller.dart';
 import '../../application/formula_pin_controller.dart';
@@ -417,27 +418,15 @@ List<Widget> _yourFormulasSection(
           child: Dismissible(
             key: ValueKey('formula_kit.personal_dismiss_${f.id}'),
             direction: DismissDirection.endToStart,
-            background: Container(
+            // Radius matches PersonalFormulaCard's, so the reveal is
+            // card-shaped rather than a square-cornered slab.
+            background: const SwipeActionBackground(
               alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: AppColors.dragonfruit,
-                borderRadius: AppRadius.cardRadius,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    'Delete',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  const Icon(Icons.delete_outline, color: Colors.white),
-                ],
-              ),
+              color: AppColors.dragonfruit,
+              borderRadius: AppRadius.cardRadius,
+              padding: EdgeInsets.only(right: AppSpacing.lg),
+              icon: Icon(Icons.delete_outline, color: Colors.white),
+              label: 'Delete',
             ),
             // Confirm + delete via state rebuild; return false so the
             // Dismissible itself never animates away (avoids double-removal).

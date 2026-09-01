@@ -331,7 +331,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preFluids: preFluids,
           duringFluids: duringFluids,
           postFluids: postFluids,
-          preSodium: macros.preRun.sodiumMg.round(),
+          // Sodium v3: no pre-workout sodium target. Null renders as an
+          // em dash in the table rather than a fabricated 0 mg.
+          preSodium: macros.preRun.sodiumMg?.round(),
           duringSodium: macros.duringRun.sodiumTotalMg.round(),
           postSodium: macros.postRun.sodiumMg.round(),
         ),
@@ -349,10 +351,20 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
   ) {
     // Use the standard MacroTargetsTable for brick workouts
     // Shows same layout as running/cycling/swimming tabs
+    //
+    // Fluids are stored in mL, so they need the same unit conversion the
+    // single-sport path does above — without it the table rendered raw
+    // millilitres under an "oz" header (a 3.5 h brick read "3105oz").
+    final useMetric = state.unitSystem == UnitSystem.metric;
+
+    int fluids(double ml) =>
+        useMetric ? ml.round() : (ml * UnitFormatter.kFlOzPerMl).round();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: MacroTargetsTable(
         title: 'Your Nutritional Targets',
+        useMetric: useMetric,
         macroData: MacroTableData(
           preCarbs: macros.preRun.carbsG.round(),
           duringCarbs: macros.duringRun.carbTotalG.round(),
@@ -360,10 +372,12 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preProtein: macros.preRun.proteinG.round(),
           duringProtein: 0,
           postProtein: macros.postRun.proteinG.round(),
-          preFluids: macros.preRun.fluidsMl.round(),
-          duringFluids: macros.duringRun.fluidTotalMl.round(),
-          postFluids: macros.postRun.fluidsMl.round(),
-          preSodium: macros.preRun.sodiumMg.round(),
+          preFluids: fluids(macros.preRun.fluidsMl),
+          duringFluids: fluids(macros.duringRun.fluidTotalMl),
+          postFluids: fluids(macros.postRun.fluidsMl),
+          // Sodium v3: no pre-workout sodium target. Null renders as an
+          // em dash in the table rather than a fabricated 0 mg.
+          preSodium: macros.preRun.sodiumMg?.round(),
           duringSodium: macros.duringRun.sodiumTotalMg.round(),
           postSodium: macros.postRun.sodiumMg.round(),
         ),

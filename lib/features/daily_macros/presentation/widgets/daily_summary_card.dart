@@ -58,10 +58,20 @@ class _DailySummaryCardState extends ConsumerState<DailySummaryCard> {
     final consumed = ref
         .watch(consumedTotalsForDateProvider(dateStr))
         .maybeWhen(data: (v) => v, orElse: () => const ConsumedTotals());
-    // Has the user logged anything for this day yet? Until the stream resolves
-    // we treat the day as "not yet logged" and show the planned face.
-    final hasLogs =
+    // Has the user logged anything for this day yet? Workout fuel on a
+    // completed activity counts too — a fuel-only day must show the eaten
+    // face, or the card contradicts the non-zero consumed totals above. Until
+    // the streams resolve we treat the day as "not yet logged" and show the
+    // planned face.
+    final hasMealLogs =
         ref.watch(mealLogsForDateProvider(dateStr)).value?.isNotEmpty ?? false;
+    final hasFuelLogs =
+        ref
+            .watch(completedActivitiesForDateProvider(dateStr))
+            .value
+            ?.any((a) => !duringFuelTotalsForActivity(a).isZero) ??
+        false;
+    final hasLogs = hasMealLogs || hasFuelLogs;
 
     // Fresh edge calc populates `sources`; cached reads don't. For cached
     // reads, fall back to the same Garmin-authoritative check the rest of the

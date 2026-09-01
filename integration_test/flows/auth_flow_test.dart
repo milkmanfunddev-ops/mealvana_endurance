@@ -118,6 +118,6 @@ void main() {
             'the tree with `debugDumpApp()` and check what screen we landed on.',
       );
     },
-    timeout: const Timeout(Duration(minutes: 6)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }

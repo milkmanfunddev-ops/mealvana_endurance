@@ -9,7 +9,7 @@
 ## How to Use This Document
 
 1. **Add bugs as you discover them** - Include description, steps to reproduce, expected vs actual behavior
-2. **Link to screenshots** - Reference any screenshot files in `docs/screenshots/` or `docs/bugfixes/`
+2. **Link to screenshots** - Reference any screenshot files in `docs/_archived/screenshots/` or `docs/_archived/bugfixes/`
 3. **Mark test status** - Note when integration test coverage is added for each bug
 4. **Priority levels** - Critical (app crashes), High (data loss/corruption), Medium (UX issues), Low (cosmetic)
 
@@ -172,7 +172,7 @@ Based on the bugs above, the test account needs:
 - **Actual:** [What actually happens]
 - **Test Account Setup:** [What data is needed to reproduce this?]
 - **Verification Method:** [How can we programmatically verify this is fixed?]
-- **Screenshots:** [Link to docs/screenshots/ or docs/bugfixes/]
+- **Screenshots:** [Link to docs/_archived/screenshots/ or docs/_archived/bugfixes/]
 - **Notes:** [Any additional context]
 ```
 

@@ -9,6 +9,7 @@ import '../../providers/activity_detail_state.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../application/macro_explanation_service.dart';
 import '../../../application/resolved_during_target_resolver.dart';
+import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/run_parameters.dart';
@@ -123,7 +124,12 @@ class _NutritionSectionsBuilderState
       return BrickNutritionSections(
         brick: activity,
         planData: plan,
-        useImperial: brickSettings?.preferredDistanceUnit == DistanceUnit.miles,
+        // Default to imperial when settings have not loaded yet — that is the
+        // app-wide default (users.unit_system defaults to 'imperial'). Testing
+        // `== miles` on a null settings object silently yields metric.
+        useImperial:
+            (brickSettings?.preferredDistanceUnit ?? DistanceUnit.miles) ==
+            DistanceUnit.miles,
         bodyWeightKg: _getBodyWeightKg(brickSettings?.weightPounds),
         onAddFood: widget.onAddFood,
         onSwapFood: widget.onSwapFood,
@@ -149,7 +155,9 @@ class _NutritionSectionsBuilderState
         widget.state.activity?.activityType ?? ActivityType.running;
     // Check unit preference and get body weight
     final settings = ref.watch(settingsControllerProvider).value;
-    final useImperial = settings?.preferredDistanceUnit == DistanceUnit.miles;
+    final useImperial =
+        (settings?.preferredDistanceUnit ?? DistanceUnit.miles) ==
+        DistanceUnit.miles;
     final bodyWeightKg = _getBodyWeightKg(settings?.weightPounds);
     final resolvedDuringTarget = widget.state.macroTargets != null
         ? ResolvedDuringTargetResolver.resolveForSingleSport(
@@ -216,6 +224,7 @@ class _NutritionSectionsBuilderState
                 macroTargets: widget.state.macroTargets,
                 bodyWeightKg: bodyWeightKg,
                 sportLabel: activityType.displayName,
+                activityType: activityType,
                 carbsLow: widget.state.macroTargets?.preRun.carbsLowG?.round(),
                 carbsHigh: widget.state.macroTargets?.preRun.carbsHighG
                     ?.round(),
@@ -223,10 +232,8 @@ class _NutritionSectionsBuilderState
                     ?.round(),
                 proteinHigh: widget.state.macroTargets?.preRun.proteinHighG
                     ?.round(),
-                sodiumLow: widget.state.macroTargets?.preRun.sodiumLowMg
-                    ?.round(),
-                sodiumHigh: widget.state.macroTargets?.preRun.sodiumHighMg
-                    ?.round(),
+                // Sodium v3: no pre-workout sodium band — deliberately not
+                // passed.
                 fluidsLow: widget.state.macroTargets?.preRun.fluidsLowMl
                     ?.round(),
                 fluidsHigh: widget.state.macroTargets?.preRun.fluidsHighMl
@@ -321,8 +328,8 @@ class _NutritionSectionsBuilderState
           carbsHigh = mt.preRun.carbsHighG?.round();
           proteinLow = mt.preRun.proteinLowG?.round();
           proteinHigh = mt.preRun.proteinHighG?.round();
-          sodiumLow = mt.preRun.sodiumLowMg?.round();
-          sodiumHigh = mt.preRun.sodiumHighMg?.round();
+          // Sodium v3: no pre-workout sodium band. Left null so nothing
+          // downstream can paint a track, a marker or an in-range colour.
           fluidsLow = mt.preRun.fluidsLowMl?.round();
           fluidsHigh = mt.preRun.fluidsHighMl?.round();
         }
@@ -345,6 +352,9 @@ class _NutritionSectionsBuilderState
               sodiumHigh: sodiumHigh,
               fluidsLow: fluidsLow,
               fluidsHigh: fluidsHigh,
+              preRun: category.toLowerCase().contains('before')
+                  ? mt?.preRun
+                  : null,
               useImperial: useImperial,
               carbsOverridden: false,
               proteinOverridden: false,
@@ -391,6 +401,7 @@ class _NutritionSectionsBuilderState
     String? proteinOverrideLabel,
     String? sodiumOverrideLabel,
     String? fluidsOverrideLabel,
+    PreRunMacros? preRun,
   }) {
     final isExpanded = _expandedSections[category] ?? false;
     // Post-workout recovery is treated as a trigger, not a macro-dosing event,
@@ -437,6 +448,7 @@ class _NutritionSectionsBuilderState
               sodiumHigh: sodiumHigh,
               fluidsLow: fluidsLow,
               fluidsHigh: fluidsHigh,
+              preRun: preRun,
               carbsOverridden: carbsOverridden,
               proteinOverridden: proteinOverridden,
               sodiumOverridden: sodiumOverridden,

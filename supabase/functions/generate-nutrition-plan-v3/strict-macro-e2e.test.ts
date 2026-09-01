@@ -291,7 +291,7 @@ const athletes = {
   },
 };
 
-// Screenshot-derived regression scenarios from docs/algorithm_tests filenames
+// Screenshot-derived regression scenarios from docs/features/algorithm_tests filenames
 const screenshotScenarios = {
   brick_1500_3_20: {
     name: "brick_1500_3_20",
@@ -478,7 +478,7 @@ function strictAssertInRange(
 }
 
 // Helper: Strict absolute range assertion (uses V4 low/high directly)
-// tolerancePct adds extra breathing room for non-LP solvers (Algorithm C, rule solver)
+// tolerancePct must stay 0: the computed range IS the pass band (2026-07-29).
 function strictAssertAbsolute(
   actual: number,
   low: number | undefined,
@@ -864,16 +864,7 @@ describe("Strict E2E — Running Before Phase", () => {
         macroTargets.pre_run.carbs_g,
         ranges.carbs,
         `${athlete.name} - Before Carbs`,
-        0.20,
-      );
-      strictAssertAbsolute(
-        sums.protein,
-        macroTargets.pre_run.protein_low_g,
-        macroTargets.pre_run.protein_high_g,
-        macroTargets.pre_run.protein_g,
-        ranges.protein,
-        `${athlete.name} - Before Protein`,
-        0.35,
+        0,
       );
       strictAssertAbsolute(
         sums.sodium,
@@ -882,7 +873,7 @@ describe("Strict E2E — Running Before Phase", () => {
         macroTargets.pre_run.sodium_mg,
         ranges.sodium,
         `${athlete.name} - Before Sodium`,
-        0.20,
+        0,
       );
       strictAssertAbsolute(
         sums.water,
@@ -891,7 +882,7 @@ describe("Strict E2E — Running Before Phase", () => {
         macroTargets.pre_run.water_ml,
         ranges.water,
         `${athlete.name} - Before Water`,
-        1.0,
+        0,
       );
     });
   }
@@ -956,7 +947,7 @@ describe("Strict E2E — Running During Phase", () => {
         macroTargets.during_run.carbs_g,
         ranges.carbs,
         `${athlete.name} - During Carbs`,
-        0.15,
+        0,
         duringShortfalls,
         "carbs",
       );
@@ -1022,8 +1013,8 @@ describe("Strict E2E — Running After Phase", () => {
       // Water: scales with target — extreme targets (>3000ml) are impossible to fill
       //   in a single recovery meal because the LP is limited to ~8 food items
       const ranges = RANGES.after;
-      const AFTER_TOL = 0.35;
-      const AFTER_SW_TOL = 0.15;
+      const AFTER_TOL = 0; // range IS the pass band (2026-07-29)
+      const AFTER_SW_TOL = 0;
       const waterTarget = macroTargets.post_run.water_ml;
       // For extreme water targets: relax to allow any positive delivery
       const waterTolerance = waterTarget > 5000
@@ -1038,15 +1029,6 @@ describe("Strict E2E — Running After Phase", () => {
         macroTargets.post_run.carbs_g,
         ranges.carbs,
         `${athlete.name} - After Carbs`,
-        AFTER_TOL,
-      );
-      afterTriggerDesignCheck(
-        sums.protein,
-        macroTargets.post_run.protein_low_g,
-        macroTargets.post_run.protein_high_g,
-        macroTargets.post_run.protein_g,
-        ranges.protein,
-        `${athlete.name} - After Protein`,
         AFTER_TOL,
       );
       afterTriggerDesignCheck(
@@ -1098,7 +1080,7 @@ describe("Strict E2E — Brick Workouts", () => {
       const beforeFoods = extractFoodsFromPhase(plan, "before");
       const beforeSums = sumMacros(beforeFoods);
       const beforeRanges = RANGES.before;
-      const BRICK_BEFORE_TOL = 0.15;
+      const BRICK_BEFORE_TOL = 0;
       strictAssertAbsolute(
         beforeSums.carbs,
         macroTargets.pre_run.carbs_low_g,
@@ -1106,15 +1088,6 @@ describe("Strict E2E — Brick Workouts", () => {
         macroTargets.pre_run.carbs_g,
         beforeRanges.carbs,
         `${athlete.name} - Before Carbs`,
-        BRICK_BEFORE_TOL,
-      );
-      strictAssertAbsolute(
-        beforeSums.protein,
-        macroTargets.pre_run.protein_low_g,
-        macroTargets.pre_run.protein_high_g,
-        macroTargets.pre_run.protein_g,
-        beforeRanges.protein,
-        `${athlete.name} - Before Protein`,
         BRICK_BEFORE_TOL,
       );
       strictAssertAbsolute(
@@ -1203,8 +1176,8 @@ describe("Strict E2E — Brick Workouts", () => {
       const afterFoods = extractFoodsFromPhase(plan, "after");
       const afterSums = sumMacros(afterFoods);
       const afterRanges = RANGES.after;
-      const BRICK_AFTER_TOL = 0.35;
-      const BRICK_AFTER_SW_TOL = 0.15; // sodium/water need more tolerance
+      const BRICK_AFTER_TOL = 0;
+      const BRICK_AFTER_SW_TOL = 0;
       strictAssertAbsolute(
         afterSums.carbs,
         macroTargets.post_run.carbs_low_g,
@@ -1212,15 +1185,6 @@ describe("Strict E2E — Brick Workouts", () => {
         macroTargets.post_run.carbs_g,
         afterRanges.carbs,
         `${athlete.name} - After Carbs`,
-        BRICK_AFTER_TOL,
-      );
-      strictAssertAbsolute(
-        afterSums.protein,
-        macroTargets.post_run.protein_low_g,
-        macroTargets.post_run.protein_high_g,
-        macroTargets.post_run.protein_g,
-        afterRanges.protein,
-        `${athlete.name} - After Protein`,
         BRICK_AFTER_TOL,
       );
       strictAssertAbsolute(
@@ -1274,14 +1238,6 @@ describe("Strict E2E — Screenshot Regressions", () => {
       macroTargets.pre_run.carbs_g,
       RANGES.before.carbs,
       "run_7.4_57_7_45 before carbs",
-    );
-    strictAssertAbsolute(
-      before.protein,
-      macroTargets.pre_run.protein_low_g,
-      macroTargets.pre_run.protein_high_g,
-      macroTargets.pre_run.protein_g,
-      RANGES.before.protein,
-      "run_7.4_57_7_45 before protein",
     );
     strictAssertAbsolute(
       before.sodium,
@@ -1341,14 +1297,6 @@ describe("Strict E2E — Screenshot Regressions", () => {
       macroTargets.post_run.carbs_g,
       RANGES.after.carbs,
       "run_7.4_57_7_45 after carbs",
-    );
-    afterTriggerDesignCheck(
-      after.protein,
-      macroTargets.post_run.protein_low_g,
-      macroTargets.post_run.protein_high_g,
-      macroTargets.post_run.protein_g,
-      RANGES.after.protein,
-      "run_7.4_57_7_45 after protein",
     );
     afterTriggerDesignCheck(
       after.sodium,
@@ -1684,27 +1632,28 @@ describe("Strict E2E — Sodium & Water Delivery", () => {
       const beforeFoods = extractFoodsFromPhase(plan, "before");
       const beforeSums = sumMacros(beforeFoods);
       if (macroTargets.pre_run.sodium_mg > 0) {
-        const sodiumPct = beforeSums.sodium / macroTargets.pre_run.sodium_mg;
+        const floor = macroTargets.pre_run.sodium_low_mg ??
+          macroTargets.pre_run.sodium_mg * RANGES.before.sodium.min;
         assert(
-          sodiumPct >= 0.85,
+          beforeSums.sodium >= floor,
           `${athlete.name} - Before sodium ${
-            (sodiumPct * 100).toFixed(0)
-          }% < 85%`,
+            beforeSums.sodium.toFixed(0)
+          }mg below range floor ${floor.toFixed(0)}mg`,
         );
       }
 
-      // Check during phase (if applicable)
-      // During phase uses rule solver with discrete servings — sodium delivery is often limited
-      // by available electrolyte products. Use 30% threshold instead of 85%.
+      // Check during phase (if applicable). The calculated range floor is the
+      // pass bar — no discrete-serving leniency (2026-07-29).
       if (macroTargets.during_run && macroTargets.during_run.sodium_mg > 0) {
         const duringFoods = extractFoodsFromPhase(plan, "during");
         const duringSums = sumMacros(duringFoods);
-        const sodiumPct = duringSums.sodium / macroTargets.during_run.sodium_mg;
+        const floor = macroTargets.during_run.sodium_low_mg ??
+          macroTargets.during_run.sodium_mg * RANGES.during.sodium.min;
         assert(
-          sodiumPct >= 0.30,
+          duringSums.sodium >= floor,
           `${athlete.name} - During sodium ${
-            (sodiumPct * 100).toFixed(0)
-          }% < 30%`,
+            duringSums.sodium.toFixed(0)
+          }mg below range floor ${floor.toFixed(0)}mg`,
         );
       }
 
@@ -1743,27 +1692,27 @@ describe("Strict E2E — Sodium & Water Delivery", () => {
       const beforeFoods = extractFoodsFromPhase(plan, "before");
       const beforeSums = sumMacros(beforeFoods);
       if (macroTargets.pre_run.water_ml > 0) {
-        const waterPct = beforeSums.water / macroTargets.pre_run.water_ml;
+        const floor = macroTargets.pre_run.water_low_ml ??
+          macroTargets.pre_run.water_ml * RANGES.before.water.min;
         assert(
-          waterPct >= 0.85,
+          beforeSums.water >= floor,
           `${athlete.name} - Before water ${
-            (waterPct * 100).toFixed(0)
-          }% < 85%`,
+            beforeSums.water.toFixed(0)
+          }ml below range floor ${floor.toFixed(0)}ml`,
         );
       }
 
-      // Check during phase (if applicable)
-      // During phase uses rule solver — fluid delivery depends on sports drink selection
-      // which is driven by carb targets. Use 50% threshold instead of 85%.
+      // Check during phase (if applicable). Range floor is the pass bar.
       if (macroTargets.during_run && macroTargets.during_run.water_ml > 0) {
         const duringFoods = extractFoodsFromPhase(plan, "during");
         const duringSums = sumMacros(duringFoods);
-        const waterPct = duringSums.water / macroTargets.during_run.water_ml;
+        const floor = macroTargets.during_run.water_low_ml ??
+          macroTargets.during_run.water_ml * RANGES.during.water.min;
         assert(
-          waterPct >= 0.50,
+          duringSums.water >= floor,
           `${athlete.name} - During water ${
-            (waterPct * 100).toFixed(0)
-          }% < 50%`,
+            duringSums.water.toFixed(0)
+          }ml below range floor ${floor.toFixed(0)}ml`,
         );
       }
 

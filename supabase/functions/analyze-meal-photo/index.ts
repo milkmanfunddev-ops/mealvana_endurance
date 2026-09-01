@@ -9,7 +9,9 @@
  * Auth: Supabase user JWT (Authorization: Bearer ...)
  *
  * Request body:
- *   { photo_path: string }  — e.g. "{userId}/{uuid}.jpg"
+ *   { photo_path: string, description?: string }
+ *   — photo_path e.g. "{userId}/{uuid}.jpg"; description is optional typed
+ *     text analyzed together with the photo as one meal
  *
  * Response (200):
  *   MealAnalysis JSON (see _shared/meal_analysis/schema.ts)
@@ -109,7 +111,7 @@ serve(withSentry(async (req: Request) => {
     if (!user) return errorResponse("Invalid authentication state", 401);
 
     // Parse body
-    let body: { photo_path?: unknown };
+    let body: { photo_path?: unknown; description?: unknown };
     try {
       body = await req.json();
     } catch {
@@ -122,6 +124,12 @@ serve(withSentry(async (req: Request) => {
         "photo_path is required and must be a non-empty string",
       );
     }
+
+    // Optional typed description, analyzed together with the photo. Capped so
+    // a runaway client can't inflate the prompt.
+    const description = typeof body.description === "string"
+      ? body.description.trim().slice(0, 2000)
+      : "";
 
     // Authorization: photo must belong to the calling user
     if (!photoPath.startsWith(`${user.id}/`)) {
@@ -210,7 +218,19 @@ serve(withSentry(async (req: Request) => {
                   `You are a sports nutrition assistant helping an endurance athlete log their meals accurately.
 
 Analyze this food photo and return a structured meal breakdown.
+${
+                    description
+                      ? `
+The athlete also described the meal in their own words:
+"${description}"
 
+Treat the photo and the description as ONE meal. Use the description to
+identify items that are unclear or not visible in the photo, and to refine
+portion sizes — when the description and the photo disagree, trust the
+description for what the food is and the photo for how much of it there is.
+`
+                      : ""
+                  }
 INSTRUCTIONS:
 - Group what you see into items the way a person logging their own plate
   would think about it — one item per DISH, not one item per raw
@@ -241,7 +261,7 @@ Return your answer as structured JSON matching the requested schema.`,
             user: user.id,
             tags: [
               "feature:meal-analyze",
-              "modality:photo",
+              description ? "modality:photo_text" : "modality:photo",
               "function:analyze-meal-photo",
             ],
           },
@@ -284,7 +304,7 @@ Return your answer as structured JSON matching the requested schema.`,
         .then(({ error: logError }) => {
           if (logError) {
             console.error(
-              "[analyze-meal-photo] Failed to log jade_call:",
+              "[analyze-meal-photo] Failed to log ai usage:",
               logError,
             );
           }
@@ -300,6 +320,7 @@ Return your answer as structured JSON matching the requested schema.`,
         model: ANALYZE_MEAL_PHOTO_MODEL,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
+        costUsd,
       }),
     );
     // deno-lint-ignore no-explicit-any

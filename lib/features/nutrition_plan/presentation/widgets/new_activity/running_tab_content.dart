@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import '../../../domain/fueling_window_limits.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../providers/running_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
@@ -602,8 +603,12 @@ class _TimeBeforeRunControl extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canIncrement = value + 15 <= 480;
-    final canDecrement = value - 15 >= 0;
+    final canIncrement =
+        value + FuelingWindowLimits.stepMinutes <=
+        FuelingWindowLimits.maxMinutes;
+    final canDecrement =
+        value - FuelingWindowLimits.stepMinutes >=
+        FuelingWindowLimits.minMinutes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

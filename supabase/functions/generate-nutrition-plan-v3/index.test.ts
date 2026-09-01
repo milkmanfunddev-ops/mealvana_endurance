@@ -2693,7 +2693,7 @@ function isPlantBasedWhitelisted(name: string): boolean {
   // ============================================================================
 
   describe('24. Pre-Workout Timing Windows', () => {
-    const timingWindows = [0.5, 1.0, 1.5, 2.0, 3.0];
+    const timingWindows = [0.25, 0.5, 1.0, 1.5, 2.0, 3.0];
 
     for (const hours of timingWindows) {
       it(`${hours}h pre-workout: valid plan structure`, async () => {
@@ -2709,17 +2709,23 @@ function isPlantBasedWhitelisted(name: string): boolean {
         const before = planData.plan.before;
         assertExists(before, `${hours}h: should have before phase`);
 
-        if (hours >= 2.5) {
-          // Full meal window (>= 2.5h): should have meal sub-phase
+        // SSOT tier boundaries (pre-workout-carbs.md v2): meal iff
+        // t >= TIER_MEAL_MIN (120 min), snack iff t >= TIER_TOPOFF_MAX
+        // (30 min), top-off always.
+        if (hours >= 2) {
+          // Meal window (>= 120 min): should have meal sub-phase
           assert(before.meal?.foods?.length > 0, `${hours}h: should have meal sub-phase foods`);
           console.log(`  ${hours}h: meal(${before.meal?.foods?.length ?? 0} foods), snack(${before.snack?.foods?.length ?? 0}), top_up(${before.top_up?.foods?.length ?? 0})`);
-        } else if (hours >= 1.0) {
-          // Snack window
+        } else if (hours >= 0.5) {
+          // Snack window (>= 30 min): no meal sub-phase, but some foods
+          assert(!before.meal, `${hours}h: should NOT have a meal sub-phase below 120 min`);
           const totalFoods = countBeforeFoods(planData.plan);
           assert(totalFoods > 0, `${hours}h: should have some before-phase foods`);
           console.log(`  ${hours}h: ${totalFoods} before foods`);
         } else {
-          // Top-up only
+          // Top-up only (< 30 min)
+          assert(!before.meal, `${hours}h: should NOT have a meal sub-phase below 120 min`);
+          assert(!before.snack, `${hours}h: should NOT have a snack sub-phase below 30 min`);
           console.log(`  ${hours}h: before foods count: ${countBeforeFoods(planData.plan)}`);
         }
       });

@@ -152,9 +152,17 @@ class NotificationService {
       }
     }
 
+    // Sent by the edge function alongside the copy it chose. Absent on any
+    // push queued before copy variants existed — those report "unknown"
+    // rather than being mislabelled as the current variant.
+    final rawVariant = data['copy_variant']?.toString().trim();
+    final copyVariant = (rawVariant == null || rawVariant.isEmpty)
+        ? null
+        : rawVariant;
+
     final payload = data['payload']?.toString();
     if (payload != null && payload.isNotEmpty) {
-      _handleNotificationPayload(payload);
+      _handleNotificationPayload(payload, copyVariant: copyVariant);
       return;
     }
 
@@ -166,11 +174,14 @@ class NotificationService {
 
     final type = data['type']?.toString().trim();
     if (type != null && type.isNotEmpty) {
-      _handleNotificationPayload('$type:$activityId');
+      _handleNotificationPayload('$type:$activityId', copyVariant: copyVariant);
       return;
     }
 
-    _handleNotificationPayload('activity:$activityId');
+    _handleNotificationPayload(
+      'activity:$activityId',
+      copyVariant: copyVariant,
+    );
   }
 
   /// Syncs Supabase auth user id to OneSignal external id.
@@ -277,15 +288,58 @@ class NotificationService {
     _handleNotificationPayload(payload);
   }
 
-  static void _handleNotificationPayload(String payload) {
+  /// Splits a typed notification payload into its parts.
+  ///
+  /// Format is `"<type>:<activityId>"` with an optional third
+  /// `"<copyVariant>"` segment. Two-segment payloads must keep parsing: every
+  /// build before copy variants existed emitted them, and one sitting in a
+  /// notification tray across an upgrade still has to navigate.
+  ///
+  /// Returns null for anything that isn't a typed payload — a bare activity
+  /// id, an empty string, or a leading/trailing colon — which the caller
+  /// treats as the legacy reminder format.
+  @visibleForTesting
+  static ({String type, String activityId, String? copyVariant})?
+  parseTypedNotificationPayload(String payload) {
+    if (payload.isEmpty) return null;
+
+    final separatorIndex = payload.indexOf(':');
+    if (separatorIndex <= 0 || separatorIndex >= payload.length - 1) {
+      return null;
+    }
+
+    final type = payload.substring(0, separatorIndex);
+    var activityId = payload.substring(separatorIndex + 1);
+    String? copyVariant;
+
+    final variantIndex = activityId.indexOf(':');
+    if (variantIndex >= 0) {
+      final parsedVariant = activityId.substring(variantIndex + 1);
+      activityId = activityId.substring(0, variantIndex);
+      copyVariant = parsedVariant.isEmpty ? null : parsedVariant;
+    }
+
+    if (activityId.isEmpty) return null;
+
+    return (type: type, activityId: activityId, copyVariant: copyVariant);
+  }
+
+  /// [copyVariant] is supplied by the remote path, which reads it from the
+  /// OneSignal data payload. Local notifications carry it as a third payload
+  /// segment instead, since the tap arrives through the plugin as a bare
+  /// string with no room for structured data. An explicitly passed value
+  /// wins over a parsed one; both being absent reports "unknown".
+  static void _handleNotificationPayload(
+    String payload, {
+    String? copyVariant,
+  }) {
     if (payload.isEmpty) return;
 
-    // Typed payload format: "<type>:<activityId>"
-    final separatorIndex = payload.indexOf(':');
-    if (separatorIndex > 0 && separatorIndex < payload.length - 1) {
-      final type = payload.substring(0, separatorIndex);
-      final activityId = payload.substring(separatorIndex + 1);
-      if (activityId.isEmpty) return;
+    final parsed = parseTypedNotificationPayload(payload);
+    if (parsed != null) {
+      final type = parsed.type;
+      final activityId = parsed.activityId;
+      final payloadVariant = copyVariant ?? parsed.copyVariant;
 
       if (type == 'reminder') {
         _analytics.trackReminderClicked(
@@ -298,6 +352,7 @@ class NotificationService {
           properties: {
             'device_id': 'unknown',
             'activity_id': activityId,
+            'copy_variant': payloadVariant ?? _unknownCopyVariant,
             'timestamp': DateTime.now().toIso8601String(),
           },
         );
@@ -496,15 +551,42 @@ class NotificationService {
     }
   }
 
+  /// Heading for the activity-uploaded notification.
+  ///
+  /// Must stay in lockstep with the OneSignal heading in
+  /// `supabase/functions/_shared/garmin/onesignal.ts` — this local path and
+  /// the remote push are mutually exclusive at runtime (see
+  /// [isRemotePushConfigured]), so an athlete must get the same message
+  /// either way.
+  static const _activityUploadedTitle = 'Your targets just updated';
+
+  /// Identifies which wording this notification was sent with, so
+  /// click-through can be segmented by copy rather than inferred from a
+  /// release date.
+  ///
+  /// Must stay in lockstep with `ACTIVITY_UPLOAD_COPY_VARIANT` in
+  /// `supabase/functions/_shared/garmin/onesignal.ts`. Bump both whenever the
+  /// heading or body changes.
+  static const _activityUploadCopyVariant = 'accuracy_hook_v2';
+
+  /// Reported when a click arrives with no variant attached — either a push
+  /// sent before this field existed, or a legacy payload.
+  static const _unknownCopyVariant = 'unknown';
+
   /// Shows an immediate local notification when a completed activity
   /// is uploaded from Garmin Connect (or another push-based provider).
+  ///
+  /// The copy leads with the retrospective recalculation rather than the
+  /// upload itself: Garmin's measured energy expenditure re-runs the
+  /// nutrition calculator, so the athlete's targets genuinely change.
   ///
   /// [provider] should be the human-readable provider label used in the
   /// notification body (e.g. "Garmin Connect"). The default matches
   /// Garmin's brand-compliant full name — never use an abbreviation.
+  /// Garmin's Developer API Brand Guidelines require this attribution
+  /// wherever Garmin-derived data is surfaced, so it stays in the body.
   static Future<void> showActivityUploadedNotification({
     required String activityId,
-    required String title,
     required DateTime activityDate,
     String provider = 'Garmin Connect',
   }) async {
@@ -525,6 +607,10 @@ class NotificationService {
     final day = activityDate.day.toString().padLeft(2, '0');
     final year = activityDate.year.toString();
     final activityDateText = '$month/$day/$year';
+    // Body uses the short MM/DD form so a long device-model attribution
+    // ("Garmin Forerunner 955") doesn't push the copy past the point iOS
+    // truncates. Analytics below keeps the full MM/DD/YYYY form.
+    final bodyDateText = '$month/$day';
 
     final notificationDetails = NotificationDetails(
       android: const AndroidNotificationDetails(
@@ -545,15 +631,17 @@ class NotificationService {
       ),
     );
 
-    final body = 'A workout for $activityDateText was uploaded from $provider.';
+    final body =
+        'Your $provider workout is in. We recalculated your fuel plan for '
+        '$bodyDateText from what you actually burned.';
 
     await _plugin.show(
       // Stable-ish positive int for this activity ID
       activityId.hashCode & 0x7fffffff,
-      title,
+      _activityUploadedTitle,
       body,
       notificationDetails,
-      payload: 'activity:$activityId',
+      payload: 'activity:$activityId:$_activityUploadCopyVariant',
     );
 
     await _analytics.track(
@@ -563,6 +651,7 @@ class NotificationService {
         'activity_id': activityId,
         'provider': provider.toLowerCase(),
         'activity_date': activityDateText,
+        'copy_variant': _activityUploadCopyVariant,
         'timestamp': DateTime.now().toIso8601String(),
       },
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../providers/brick_input_controller.dart';
+import '../../../../domain/fueling_window_limits.dart';
 import 'brick_sport_toggle_selector.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
@@ -18,6 +19,7 @@ import '../../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggl
 import '../shared/environment_section.dart';
 import '../shared/fasted_toggle.dart';
 import '../../../../../../shared/providers/unit_system_provider.dart';
+import '../../../../../../shared/utils/unit_formatter.dart';
 import '../../../../../../features/nutrition_plan/domain/run_parameters.dart'
     show UnitSystem;
 
@@ -74,9 +76,9 @@ class BrickTabContent extends ConsumerWidget {
           label: 'Pre-Activity Fueling Window',
           value: formState.preActivityMinutes,
           onChanged: controller.updatePreActivityMinutes,
-          min: 0,
-          max: 480,
-          step: 15,
+          min: FuelingWindowLimits.minMinutes,
+          max: FuelingWindowLimits.maxMinutes,
+          step: FuelingWindowLimits.stepMinutes,
           unit: 'minutes',
         ),
 
@@ -487,20 +489,34 @@ class _BrickRunningInputs extends StatelessWidget {
         // 1. WORKOUT DETAILS
         WorkoutDetailsWidget(
           sport: ActivityType.running,
-          distance: input.distanceMiles ?? 3.0,
-          distanceUnit: 'mi',
+          // The model stores miles and min/mile; a metric athlete edits in km
+          // and min/km, so convert on the way in and back out again.
+          distance: useImperial
+              ? (input.distanceMiles ?? 3.0)
+              : (input.distanceMiles ?? 3.0) * UnitFormatter.kKmPerMile,
+          distanceUnit: useImperial ? 'mi' : 'km',
           mode: input.durationPaceMode,
           estimatedDuration: _getDisplayedDuration(),
-          pace: input.paceMinutesPerMile ?? 9.0,
-          paceUnit: 'min/mi',
-          onDistanceChanged: (v) =>
-              _updateDerivedFields(input.copyWith(distanceMiles: v)),
+          pace: useImperial
+              ? (input.paceMinutesPerMile ?? 9.0)
+              : (input.paceMinutesPerMile ?? 9.0) * UnitFormatter.kMilePerKm,
+          paceUnit: useImperial ? 'min/mi' : 'min/km',
+          onDistanceChanged: (v) => _updateDerivedFields(
+            input.copyWith(
+              distanceMiles: useImperial ? v : v * UnitFormatter.kMilePerKm,
+            ),
+          ),
           onModeChanged: (mode) {
             final updated = input.copyWith(durationPaceMode: mode);
             _updateDerivedFields(updated);
           },
-          onPaceChanged: (v) =>
-              _updateDerivedFields(input.copyWith(paceMinutesPerMile: v)),
+          onPaceChanged: (v) => _updateDerivedFields(
+            input.copyWith(
+              paceMinutesPerMile: useImperial
+                  ? v
+                  : v * UnitFormatter.kKmPerMile,
+            ),
+          ),
           onDurationChanged: (duration) {
             final pace = _computePaceFromDuration(input, duration);
             onUpdate(
@@ -654,20 +670,31 @@ class _BrickCyclingInputs extends StatelessWidget {
         // 1. WORKOUT DETAILS
         WorkoutDetailsWidget(
           sport: ActivityType.cycling,
-          distance: input.distanceMiles ?? 20.0,
-          distanceUnit: 'mi',
+          // Model stores miles and mph; a metric athlete edits km and km/h.
+          distance: useImperial
+              ? (input.distanceMiles ?? 20.0)
+              : (input.distanceMiles ?? 20.0) * UnitFormatter.kKmPerMile,
+          distanceUnit: useImperial ? 'mi' : 'km',
           mode: input.durationPaceMode,
           estimatedDuration: _getDisplayedDuration(),
-          pace: input.speedMph ?? 18.0,
-          paceUnit: 'mph',
-          onDistanceChanged: (v) =>
-              _updateDerivedFields(input.copyWith(distanceMiles: v)),
+          pace: useImperial
+              ? (input.speedMph ?? 18.0)
+              : UnitFormatter.mphToKph(input.speedMph ?? 18.0),
+          paceUnit: useImperial ? 'mph' : 'km/h',
+          onDistanceChanged: (v) => _updateDerivedFields(
+            input.copyWith(
+              distanceMiles: useImperial ? v : v * UnitFormatter.kMilePerKm,
+            ),
+          ),
           onModeChanged: (mode) {
             final updated = input.copyWith(durationPaceMode: mode);
             _updateDerivedFields(updated);
           },
-          onPaceChanged: (v) =>
-              _updateDerivedFields(input.copyWith(speedMph: v)),
+          onPaceChanged: (v) => _updateDerivedFields(
+            input.copyWith(
+              speedMph: useImperial ? v : UnitFormatter.kphToMph(v),
+            ),
+          ),
           onDurationChanged: (duration) {
             final speed = _computeSpeedFromDuration(input, duration);
             onUpdate(

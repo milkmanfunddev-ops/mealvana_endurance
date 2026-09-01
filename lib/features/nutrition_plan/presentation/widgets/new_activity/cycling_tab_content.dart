@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
+import '../../../domain/fueling_window_limits.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../providers/cycling_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
@@ -87,9 +88,9 @@ class CyclingTabContent extends ConsumerWidget {
           label: 'Pre-Ride Fueling Window',
           value: formState.preRideMinutes,
           onChanged: controller.updatePreRideMinutes,
-          min: 0,
-          max: 480,
-          step: 15,
+          min: FuelingWindowLimits.minMinutes,
+          max: FuelingWindowLimits.maxMinutes,
+          step: FuelingWindowLimits.stepMinutes,
           unit: 'minutes',
         ),
 

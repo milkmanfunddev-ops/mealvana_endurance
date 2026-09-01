@@ -61,11 +61,19 @@ class UserContextRecord {
 
 /// Message record
 class MessageRecord {
-  const MessageRecord({required this.message, this.level, this.tags});
+  const MessageRecord({
+    required this.message,
+    this.level,
+    this.tags,
+    this.extra,
+    this.fingerprint,
+  });
 
   final String message;
   final SentryLevel? level;
   final Map<String, String>? tags;
+  final Map<String, dynamic>? extra;
+  final List<String>? fingerprint;
 
   @override
   String toString() => 'MessageRecord($message, level: $level)';
@@ -208,8 +216,18 @@ class RecordingSentryReporter implements SentryReporter {
     String message, {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   }) async {
-    messages.add(MessageRecord(message: message, level: level, tags: tags));
+    messages.add(
+      MessageRecord(
+        message: message,
+        level: level,
+        tags: tags,
+        extra: extra,
+        fingerprint: fingerprint,
+      ),
+    );
   }
 
   @override

@@ -119,5 +119,5 @@ The client code and project notes these docs are derived from:
   object fields and the `steps[]` tree, including the `target` structure.
 - `lib/features/integrations/application/vdot_oauth_service.dart` — the OAuth
   flow, custom-scheme redirect, and `+`-in-code raw parsing.
-- `docs/vdot/README.md`, `docs/vdot/NEXT_STEPS.md` — project notes, live-endpoint
+- `docs/integration/vdot/README.md`, `docs/integration/vdot/NEXT_STEPS.md` — project notes, live-endpoint
   probe results, and a summary of the VDOT O2 wiki.

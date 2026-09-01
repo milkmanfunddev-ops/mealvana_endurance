@@ -102,6 +102,7 @@ class _EnergyBreakdownSheetState extends ConsumerState<EnergyBreakdownSheet> {
       child: Row(
         children: [
           GestureDetector(
+            key: const ValueKey('energy_breakdown.close_button'),
             onTap: () => Navigator.of(context).pop(),
             child: Container(
               width: 32,

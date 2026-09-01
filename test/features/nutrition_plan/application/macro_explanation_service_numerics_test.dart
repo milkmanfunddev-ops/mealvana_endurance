@@ -230,42 +230,102 @@ void main() {
     });
   });
 
-  group('Pre-sodium Full Story — spec parity (C9–C12)', () {
-    test('kidney-excretion framing + sodium-loading Q both present', () {
-      final data = service.getSodiumTransparencyData(
-        bodyWeightKg: 70,
-        phase: ExplanationPhase.before,
-        macroTargets: _sampleTargets(durationH: 1.5, preSodiumMg: 450),
-      )![Scenario.singleSport]!;
+  // Sodium v3 replaced the C9–C12 pre-sodium question set wholesale. There is
+  // no target, so the Qs that explained one (C9's kidney-excretion framing
+  // attached to a 450 mg dose, C10's "where does 300–600 mg come from", C12's
+  // sodium-loading distinction) went with it. What replaces them has to carry
+  // more weight, not less: a deleted number with no explanation reads to the
+  // athlete as a bug.
+  // SSOT: docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md §3.
+  group('Pre-sodium Full Story — sodium v3', () {
+    NutrientTransparencyData preSodium() => service.getSodiumTransparencyData(
+      bodyWeightKg: 70,
+      phase: ExplanationPhase.before,
+      // A delivered figure may still be threaded through — it is an
+      // observation, never a target.
+      macroTargets: _sampleTargets(durationH: 1.5, preSodiumMg: 450),
+    )![Scenario.singleSport]!;
 
-      final retention = data.storySections.firstWhere(
-        (s) => s.question.contains('help retain fluid'),
+    test('the card sets no target and no band', () {
+      final data = preSodium();
+      expect(data.targetGrams, isNull);
+      expect(data.rangeLow, isNull);
+      expect(data.rangeHigh, isNull);
+      expect(data.tldrLines, isEmpty);
+      expect(data.calculationSections, isEmpty);
+    });
+
+    test('all three v3 questions are present', () {
+      final questions = preSodium().storySections
+          .map((s) => s.question)
+          .toList();
+      expect(questions, contains('Why is there no pre-workout sodium target?'));
+      expect(questions, contains('Does sodium still help before a workout?'));
+      expect(
+        questions,
+        contains('Then what is the sodium number on this screen?'),
+      );
+    });
+
+    test('the removal is explained and cited, not silently absent', () {
+      final removal = preSodium().storySections.firstWhere(
+        (s) => s.question.contains('no pre-workout sodium target'),
         orElse: () => const StorySection(question: 'MISSING', answer: ''),
       );
+      expect(removal.question, isNot('MISSING'));
+      // D-007: the retired band only held for ~65–163 kg, so it silently
+      // over-concentrated every lighter athlete.
+      expect(removal.answer, contains('65 kg'));
+      expect(removal.answer, contains('163 kg'));
       expect(
-        retention.question,
-        isNot('MISSING'),
-        reason: 'C9 — kidney-excretion framing Q',
+        removal.answer,
+        contains('during-workout plan'),
+        reason: 'sodium individualisation moved, it did not disappear',
       );
+      expect(removal.citation, contains('Sawka'));
+      expect(removal.confidence, ConfidenceLevel.high);
+    });
+
+    test('the retention effect is kept qualitatively and never quantified', () {
+      final retention = preSodium().storySections.firstWhere(
+        (s) => s.question.contains('Does sodium still help'),
+        orElse: () => const StorySection(question: 'MISSING', answer: ''),
+      );
+      expect(retention.question, isNot('MISSING'));
+      // The mechanism survives — it is the number attached to it that does not.
+      expect(retention.answer, contains('excreted'));
       expect(
         retention.answer,
-        contains('kidneys'),
-        reason: 'mechanism is kidney excretion, not plasma expansion',
+        isNot(matches(RegExp(r'\d'))),
+        reason:
+            'the retention studies used 77 mmol/L, several times a sports '
+            'drink, so the effect must never be given a number to aim at',
       );
+      expect(retention.citation, contains('Maughan'));
+    });
 
-      final loading = data.storySections.firstWhere(
-        (s) => s.question.contains('sodium loading'),
+    test('the surviving figure is framed as an observation, not a goal', () {
+      final observed = preSodium().storySections.firstWhere(
+        (s) => s.question.contains('what is the sodium number'),
         orElse: () => const StorySection(question: 'MISSING', answer: ''),
       );
+      expect(observed.question, isNot('MISSING'));
+      expect(observed.answer, contains('observation, not a goal'));
+      expect(observed.answer, contains('no range'));
+    });
+
+    test('the retired v1 questions are gone', () {
+      final questions = preSodium().storySections
+          .map((s) => s.question)
+          .toList();
+      expect(questions, isNot(contains('How does sodium help retain fluid?')));
+      expect(questions, isNot(contains('Where does 300–600 mg come from?')));
       expect(
-        loading.question,
-        isNot('MISSING'),
-        reason: 'C12 — sodium-loading distinction Q',
-      );
-      expect(
-        loading.citation,
-        contains('Sims'),
-        reason: 'Sims et al. (2007) citation for loading distinction',
+        questions.any((q) => q.contains('sodium loading')),
+        isFalse,
+        reason:
+            'the loading distinction explained a target that no longer '
+            'exists; if copy wants it back it needs re-deriving under v3',
       );
     });
   });

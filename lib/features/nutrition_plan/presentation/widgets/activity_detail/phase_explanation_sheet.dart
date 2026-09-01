@@ -593,22 +593,26 @@ class _PhaseExplanationSheetState extends ConsumerState<PhaseExplanationSheet> {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.electrolyte.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                explanation.rangeRationale,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.electrolyte,
-                  height: 1.4,
-                  fontSize: 13,
+            // Sodium v3: pre-workout sodium has no range, so no range
+            // rationale callout is rendered for it.
+            if (explanation.rangeRationale != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.electrolyte.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  explanation.rangeRationale!,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.electrolyte,
+                    height: 1.4,
+                    fontSize: 13,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),

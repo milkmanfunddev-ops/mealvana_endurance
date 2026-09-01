@@ -78,7 +78,7 @@ MealAiService mealAiService(Ref ref) {
 // Service
 // ---------------------------------------------------------------------------
 
-/// Application-layer service for Jade AI meal analysis.
+/// Application-layer service for Mealvana AI AI meal analysis.
 ///
 /// All network failures are mapped to [MealAiException] with a user-presentable
 /// [MealAiException.userMessage] and a discriminated [MealAiFailureKind] so
@@ -100,13 +100,20 @@ class MealAiService {
   /// the storage path (for use in the meal log record).
   ///
   /// Throws [MealAiException] on any failure.
-  Future<MealPhotoAnalysis> analyzePhoto(File imageFile) async {
+  ///
+  /// When [description] is provided, the typed text is analyzed together with
+  /// the photo as a single meal (one metered call).
+  Future<MealPhotoAnalysis> analyzePhoto(
+    File imageFile, {
+    String? description,
+  }) async {
     final userId = _requireUserId();
     final bytes = await imageFile.readAsBytes();
     return _analyzeBytes(
       userId: userId,
       bytes: bytes,
       extension: _extensionFromPath(imageFile.path),
+      description: description,
     );
   }
 
@@ -117,9 +124,15 @@ class MealAiService {
   Future<MealPhotoAnalysis> analyzePhotoBytes(
     Uint8List bytes, {
     String extension = 'jpg',
+    String? description,
   }) async {
     final userId = _requireUserId();
-    return _analyzeBytes(userId: userId, bytes: bytes, extension: extension);
+    return _analyzeBytes(
+      userId: userId,
+      bytes: bytes,
+      extension: extension,
+      description: description,
+    );
   }
 
   /// Call the `describe-meal` edge function with a free-text [description].
@@ -167,6 +180,7 @@ class MealAiService {
     required String userId,
     required Uint8List bytes,
     required String extension,
+    String? description,
   }) async {
     // 1. Upload to storage
     final photoPath = '$userId/${_uuid.v4()}.$extension';
@@ -200,9 +214,14 @@ class MealAiService {
 
     // 2. Analyze via edge function
     try {
+      final trimmedDescription = description?.trim();
       final response = await _supabase.functions.invoke(
         'analyze-meal-photo',
-        body: {'photo_path': photoPath},
+        body: {
+          'photo_path': photoPath,
+          if (trimmedDescription != null && trimmedDescription.isNotEmpty)
+            'description': trimmedDescription,
+        },
       );
 
       final result = _parseAnalysisResponse(

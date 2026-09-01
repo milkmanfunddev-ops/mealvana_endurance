@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../shared/database/app_database.dart';
-import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
@@ -17,16 +16,28 @@ import '../../domain/solver_types.dart';
 
 /// Assembles and filters the food pool for a given nutrition phase.
 ///
-/// Loads template foods from Drift (with Supabase fallback), user foods,
-/// food preferences, and user profile to produce a scored list of
-/// [SolverFood] items suitable for the greedy solver.
+/// Loads template foods from Drift (with Supabase fallback), food preferences,
+/// and the user profile to produce a scored list of [SolverFood] items suitable
+/// for the greedy solver.
+///
+/// FOOD-SOURCE POLICY (2026-07-29): the pool is the curated `template_foods`
+/// catalog ONLY. `user_foods` — user-created, barcode-scanned and branded
+/// grocery items — are NOT loaded here, and must not be reintroduced. This
+/// mirrors the server (`_shared/nutrition/template-food-queries.ts`). The one
+/// legitimate user-originating source is a pinned personal formula, which is
+/// self-contained: its components carry their own macros and never touch this
+/// pool (see `ClientPlanService._tryPinnedPersonalFormula`). The pin backfill
+/// does read this pool, but only for `isEssential` water/salt.
+///
+/// Rows without a classified `product_type` (null or `'import'`) are also
+/// excluded, matching the server gate — a curated row that arrives unclassified
+/// or flagged as an import never reaches a generated plan.
 class ClientFoodPoolService {
   ClientFoodPoolService(this._ref);
   final Ref _ref;
 
   TemplateFoodsRepository get _templateFoodsRepo =>
       _ref.read(templateFoodsRepositoryProvider);
-  AppDatabase get _database => _ref.read(appDatabaseProvider);
   AppLogger get _logger => _ref.read(appExternalDepsProvider).logger;
 
   /// Build a scored and filtered food pool for a specific phase.
@@ -70,19 +81,21 @@ class ClientFoodPoolService {
       templateFoods = await _fetchTemplateFoodsFromSupabase();
     }
 
-    // 4. Load user foods
-    final userFoods = await _database.foodsDao.getUserFoods(userId);
-
-    // 5. Phase category names for filtering
+    // 4. Phase category names for filtering
     final phaseCategories = _phaseCategoryNames(phase);
     final sportName = activityType.dbValue;
 
-    // 6. Build solver food list
+    // 5. Build solver food list — curated template foods only.
     final result = <SolverFood>[];
 
-    // Process template foods
     for (final tf in templateFoods) {
       if (tf.toExcludeFromSolver) continue;
+
+      // Branded / unclassified gate (skip for essentials so water/salt are
+      // never lost to a data-entry gap). Mirrors the server's
+      // `isClassifiedProductType` in template-food-queries.ts and the SQL gate
+      // in before-phase-substitution.ts.
+      if (!tf.isEssential && !isClassifiedProductType(tf.productType)) continue;
 
       // Category filter
       final categories = _parseJsonList(tf.categories);
@@ -121,45 +134,27 @@ class ClientFoodPoolService {
       );
     }
 
-    // Process user foods
-    for (final uf in userFoods) {
-      if (uf.toExcludeFromSolver) continue;
-
-      // Endurance-relevance gate — mirrors the server solver
-      // (generate-nutrition-plan-v3 before-phase-substitution, which filters
-      // `product_type IS NOT NULL AND product_type != 'import'`). Only foods
-      // with a classified product type feed generated plans, so arbitrary
-      // scanned groceries (product_type null/'import') don't get pulled into a
-      // plan despite user foods carrying the top preference score.
-      final productType = uf.productTypeId;
-      if (productType == null || productType == 'import') continue;
-
-      // Category filter
-      final categories = _parseJsonList(uf.categories);
-      if (categories.isNotEmpty &&
-          !categories.any((c) => phaseCategories.contains(c))) {
-        continue;
-      }
-
-      // Activity type filter
-      final activityTypes = _parseJsonList(uf.activityTypes);
-      if (activityTypes.isNotEmpty && !activityTypes.contains(sportName)) {
-        continue;
-      }
-
-      // User foods always get the highest preference score
-      result.add(
-        SolverFood.fromUserFood(uf, preferenceScore: kPrefScoreUserFood),
-      );
-    }
-
     _logger.info(
       'Food pool for $phase: ${result.length} foods '
-      '(${templateFoods.length} templates checked, ${userFoods.length} user foods checked)',
+      '(${templateFoods.length} curated template foods checked; '
+      'user_foods excluded by policy)',
       context: 'CLIENT_FOOD_POOL',
     );
 
     return result;
+  }
+
+  /// True when a food row carries a real, classified product type.
+  ///
+  /// Null/empty (never classified) or `'import'` (a barcode-scanned or
+  /// otherwise imported branded item) is not eligible for plan generation.
+  /// Server twin: `isClassifiedProductType` in
+  /// `supabase/functions/_shared/nutrition/template-food-queries.ts`.
+  @visibleForTesting
+  static bool isClassifiedProductType(String? productType) {
+    if (productType == null) return false;
+    final t = productType.trim().toLowerCase();
+    return t.isNotEmpty && t != 'import';
   }
 
   /// Score a food based on its preference status.

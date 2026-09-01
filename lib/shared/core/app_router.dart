@@ -12,10 +12,10 @@ import '../../main.dart' show sentryNavigatorKey;
 import '../../features/app_startup/presentation/screens/force_upgrade_screen.dart';
 import '../../features/onboarding/presentation/screens/welcome_screen.dart';
 import '../../features/nutrition_plan/presentation/screens/new_activity_screen.dart';
-// New onboarding PageView (December 2025 redesign)
-// Note: Old food_preferences_screen.dart moved to /archived folder (replaced by food_preferences_v2_screen.dart)
+// Onboarding PageView (2026-08 redesign). Food preferences left the
+// onboarding flow entirely — food is managed via the Settings screens.
 import '../../features/onboarding/presentation/screens/onboarding_pageview_screen.dart';
-// Onboarding screens that support both onboarding and settings modes
+// Screens that survived the onboarding redesign for their /settings/* routes
 import '../../features/onboarding/presentation/screens/dietary_preference_screen.dart';
 import '../../features/onboarding/presentation/screens/allergies_screen.dart';
 import '../../features/onboarding/presentation/screens/running_details_screen.dart';
@@ -76,8 +76,8 @@ import '../../features/coach_mode/presentation/screens/coach_directory_screen.da
 import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
-// Jade AI coach
-import '../../features/jade/presentation/screens/jade_chat_screen.dart';
+// Mealvana AI AI coach
+import '../../features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
 // Meal logging screens
 import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
@@ -1035,12 +1035,12 @@ class AppRouter {
         ),
 
         // ====================================================================
-        // JADE AI COACH
+        // MEALVANA AI COACH
         // ====================================================================
         GoRoute(
           path: '/jade',
           name: 'jade-chat',
-          builder: (context, state) => const JadeChatScreen(),
+          builder: (context, state) => const AiCoachChatScreen(),
         ),
       ],
 

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 
 /// Dialog result for creating an activity for an athlete
 class CreateActivityResult {
@@ -21,16 +25,17 @@ class CreateActivityResult {
 }
 
 /// Dialog for coach to create an activity for an athlete
-class CreateActivityDialog extends StatefulWidget {
+class CreateActivityDialog extends ConsumerStatefulWidget {
   final DateTime? initialDate;
 
   const CreateActivityDialog({super.key, this.initialDate});
 
   @override
-  State<CreateActivityDialog> createState() => _CreateActivityDialogState();
+  ConsumerState<CreateActivityDialog> createState() =>
+      _CreateActivityDialogState();
 }
 
-class _CreateActivityDialogState extends State<CreateActivityDialog> {
+class _CreateActivityDialogState extends ConsumerState<CreateActivityDialog> {
   final _titleController = TextEditingController();
   final _durationController = TextEditingController();
   final _distanceController = TextEditingController();
@@ -43,6 +48,12 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
     super.initState();
     _scheduledDate = widget.initialDate ?? DateTime.now();
   }
+
+  /// The coach's own preference — `unitSystemProvider` resolves to the
+  /// logged-in user, not the athlete the activity is being created for.
+  bool get _useMetric =>
+      (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+      UnitSystem.metric;
 
   @override
   void dispose() {
@@ -82,7 +93,7 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
               ),
               const SizedBox(height: 12),
               _buildField(
-                'Distance (mi)',
+                _useMetric ? 'Distance (km)' : 'Distance (mi)',
                 _distanceController,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
@@ -271,8 +282,16 @@ class _CreateActivityDialogState extends State<CreateActivityDialog> {
         activityType: _activityType,
         scheduledDateTime: scheduledDateTime,
         durationMinutes: int.tryParse(_durationController.text),
-        distanceMiles: double.tryParse(_distanceController.text),
+        // The field is labelled in the coach's units; the result is always
+        // miles, matching Activity.distanceMiles.
+        distanceMiles: _distanceEnteredAsMiles(),
       ),
     );
+  }
+
+  double? _distanceEnteredAsMiles() {
+    final entered = double.tryParse(_distanceController.text);
+    if (entered == null) return null;
+    return _useMetric ? entered * UnitFormatter.kMilePerKm : entered;
   }
 }

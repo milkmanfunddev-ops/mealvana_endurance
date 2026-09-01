@@ -68,10 +68,6 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
   bool get _isOnboarding => widget.mode == ScreenMode.onboarding;
   bool get _isSettings => widget.mode == ScreenMode.settings;
-  bool get _hasChanges =>
-      _bikeBottles != _originalBikeBottles ||
-      _hasAeroBottle != _originalHasAeroBottle ||
-      _hasBentoBox != _originalHasBentoBox;
 
   @override
   void initState() {
@@ -83,30 +79,6 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
         .read(appExternalDepsProvider)
         .analytics
         .track('screen_viewed', properties: {'screen_name': screenName});
-
-    // In onboarding mode, initialize from cache
-    if (_isOnboarding) {
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      final cachedPrefs = controller.cachedSportPreferences;
-      if (cachedPrefs != null) {
-        final ftpWatts = cachedPrefs['ftpWatts'] as int?;
-        if (ftpWatts != null) {
-          _ftpController.text = ftpWatts.toString();
-        }
-        final typicalBikeBottles = cachedPrefs['typicalBikeBottles'] as int?;
-        if (typicalBikeBottles != null) {
-          _bikeBottles = typicalBikeBottles;
-        }
-        final hasAeroBottle = cachedPrefs['hasAeroBottle'] as bool?;
-        if (hasAeroBottle != null) {
-          _hasAeroBottle = hasAeroBottle;
-        }
-        final hasBentoBox = cachedPrefs['hasBentoBox'] as bool?;
-        if (hasBentoBox != null) {
-          _hasBentoBox = hasBentoBox;
-        }
-      }
-    }
 
     // In settings mode, load the current preferences
     if (_isSettings) {
@@ -171,14 +143,8 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
       final ftpWatts = int.tryParse(_ftpController.text) ?? 0;
 
       if (_isOnboarding) {
-        // ONBOARDING MODE: Just cache data
-        controller.cacheSportPreferences(
-          ftpWatts: ftpWatts,
-          typicalBikeBottles: _bikeBottles,
-          hasAeroBottle: _hasAeroBottle,
-          hasBentoBox: _hasBentoBox,
-        );
-
+        // ONBOARDING MODE (legacy — sport details left the onboarding flow in
+        // the 2026-08 redesign; nothing to persist here).
         unawaited(
           analytics.track(
             'cycling_details_completed',

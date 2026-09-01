@@ -33,7 +33,8 @@ class AppConfig {
     required this.revenueCatApiKeyApple,
     required this.revenueCatApiKeyGoogle,
     required this.aiCreditsEnabled,
-    this.describeMealEnabled = false,
+    this.revenueCatApiKeyTest = '',
+    this.describeMealEnabled = true,
     this.coachInsightsEnabled = false,
     this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
@@ -116,16 +117,37 @@ class AppConfig {
   final String revenueCatApiKeyApple;
   final String revenueCatApiKeyGoogle;
 
-  /// Feature flag controlling AI credit purchasing UI.
+  /// RevenueCat **Test Store** public key (`test_…`), for exercising the whole
+  /// purchase → webhook → wallet path without a real store.
   ///
-  /// Default false — the paywall and balance chip are hidden until explicitly
-  /// enabled via the `AI_CREDITS_ENABLED=true` env var.
+  /// The Test Store is platform-agnostic and completes purchases instantly with
+  /// no payment method, which is the only way to test buying on a simulator —
+  /// StoreKit returns no products there without a sandbox account or a
+  /// `.storekit` config file.
+  ///
+  /// **Honoured only in a DEBUG build of the dev flavor** (see
+  /// [revenueCatApiKey]). RevenueCat forbids Test Store keys in release
+  /// binaries, and enforces it at runtime: a release build handed a `test_` key
+  /// shows a native "wrong API key" alert on launch and terminates when it is
+  /// dismissed. So a TestFlight dev build uses the real Apple key and cannot
+  /// complete Test Store purchases — exercise those on a simulator or a local
+  /// `flutter run` instead.
+  final String revenueCatApiKeyTest;
+
+  /// Feature flag controlling AI credit purchasing UI (token pill, top-up
+  /// sheet, buy-credits screen).
+  ///
+  /// **ON by default in dev builds, off in prod** — same rule as
+  /// [describeMealEnabled] and [coachInsightsEnabled]. `AI_CREDITS_ENABLED=false`
+  /// still turns it off explicitly.
   final bool aiCreditsEnabled;
 
   /// Release gate for text/photo meal analysis entry points.
   ///
-  /// Defaults off in every real build so an omitted environment variable
-  /// cannot accidentally expose a metered AI feature.
+  /// Pinned open in every build (2026-08-10, Lee): the Describe tab and the
+  /// photo/describe routes always show, dev and prod alike. The field is kept
+  /// so the gate can be re-closed at one choke point if metering ever demands
+  /// it.
   final bool describeMealEnabled;
 
   /// Release gate for Formula Kit coach insights.
@@ -139,6 +161,20 @@ class AppConfig {
   /// Returns the Apple key on iOS/macOS and the Google key on Android.
   /// Empty string on web or when the keys have not been configured.
   String get revenueCatApiKey {
+    // Dev opt-in: a Test Store key wins over the real store key so purchases
+    // can be exercised end to end without paying.
+    //
+    // Gated on `kDebugMode`, NOT merely on the dev flavor. RevenueCat's own
+    // rule is "never submit an app configured with a Test Store API key" —
+    // debug builds get the test key, release builds get the platform key. A
+    // Codemagic dev build is a *release* build (Shorebird → TestFlight), so
+    // handing it a `test_` key made the native SDK raise its "wrong API key"
+    // alert at launch and then take the app down when the alert was dismissed.
+    // The dev *flavor* is not the same thing as a debug *build*, and only the
+    // latter is safe here.
+    if (isDevelopment && kDebugMode && revenueCatApiKeyTest.isNotEmpty) {
+      return revenueCatApiKeyTest;
+    }
     if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
       return revenueCatApiKeyApple;
@@ -267,12 +303,38 @@ class AppConfig {
         'REVENUECAT_API_KEY_GOOGLE',
         fallback: '',
       ),
+      revenueCatApiKeyTest: dotenv.get('REVENUECAT_API_KEY_TEST', fallback: ''),
+      // AI surfaces default ON for dev builds (2026-07-22, Lee): dev is the
+      // proving ground for Describe/Photo meal logging, formula coach insights,
+      // and the token/paywall surfaces. An explicit env value still wins in
+      // either direction, and prod keeps the OFF fallback until the
+      // release-gating decision flips.
+      //
+      // `aiCreditsEnabled` was missed by that change and kept a hard `false`
+      // fallback, which made the token pill and the whole RevenueCat paywall
+      // invisible in **Codemagic-built dev apps** — CI writes `.env.dev.local`
+      // from the `DOTENV_DEV_LOCAL` secret, and that secret does not carry
+      // `AI_CREDITS_ENABLED`. Local dev builds worked, because a developer's own
+      // `.env.dev.local` sets it. Same class of bug as the
+      // `ANALYTICS_DEV_ENABLED` gap patched in codemagic.yaml.
       aiCreditsEnabled:
-          dotenv.get('AI_CREDITS_ENABLED', fallback: 'false') == 'true',
-      describeMealEnabled:
-          dotenv.get('DESCRIBE_MEAL_ENABLED', fallback: 'false') == 'true',
+          dotenv.get(
+            'AI_CREDITS_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
+      // Describe/photo meal AI ships everywhere (2026-08-10, Lee): prod
+      // TestFlight needs the Describe tab visible to exercise real purchase
+      // flows, so the release gate is pinned open — an env value no longer
+      // hides it. Re-introduce the DESCRIBE_MEAL_ENABLED read here if the
+      // gate ever needs to close again.
+      describeMealEnabled: true,
       coachInsightsEnabled:
-          dotenv.get('COACH_INSIGHTS_ENABLED', fallback: 'false') == 'true',
+          dotenv.get(
+            'COACH_INSIGHTS_ENABLED',
+            fallback: isDevMode ? 'true' : 'false',
+          ) ==
+          'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -310,6 +372,7 @@ class AppConfig {
     String appEnvironment = 'dev',
     String revenueCatApiKeyApple = '',
     String revenueCatApiKeyGoogle = '',
+    String revenueCatApiKeyTest = '',
     bool aiCreditsEnabled = false,
     bool describeMealEnabled = true,
     bool coachInsightsEnabled = true,
@@ -347,6 +410,7 @@ class AppConfig {
       appEnvironment: appEnvironment,
       revenueCatApiKeyApple: revenueCatApiKeyApple,
       revenueCatApiKeyGoogle: revenueCatApiKeyGoogle,
+      revenueCatApiKeyTest: revenueCatApiKeyTest,
       aiCreditsEnabled: aiCreditsEnabled,
       describeMealEnabled: describeMealEnabled,
       coachInsightsEnabled: coachInsightsEnabled,
@@ -527,24 +591,21 @@ class AppConfig {
         'REVENUECAT_API_KEY_GOOGLE',
         defaultValue: '',
       ),
-      aiCreditsEnabled:
-          const String.fromEnvironment(
-            'AI_CREDITS_ENABLED',
-            defaultValue: 'false',
-          ) ==
-          'true',
-      describeMealEnabled:
-          const String.fromEnvironment(
-            'DESCRIBE_MEAL_ENABLED',
-            defaultValue: 'false',
-          ) ==
-          'true',
+      revenueCatApiKeyTest: const String.fromEnvironment(
+        'REVENUECAT_API_KEY_TEST',
+        defaultValue: '',
+      ),
+      // Same dev-default-ON rule as fromEnv: an explicit define wins, an
+      // absent one falls back to the flavor (dev shows the AI surfaces).
+      aiCreditsEnabled: const String.fromEnvironment('AI_CREDITS_ENABLED') != ''
+          ? const String.fromEnvironment('AI_CREDITS_ENABLED') == 'true'
+          : isDevMode,
+      // Pinned open — same rule as fromEnv (2026-08-10, Lee).
+      describeMealEnabled: true,
       coachInsightsEnabled:
-          const String.fromEnvironment(
-            'COACH_INSIGHTS_ENABLED',
-            defaultValue: 'false',
-          ) ==
-          'true',
+          const String.fromEnvironment('COACH_INSIGHTS_ENABLED') != ''
+          ? const String.fromEnvironment('COACH_INSIGHTS_ENABLED') == 'true'
+          : isDevMode,
 
       // Debug settings
       enableDebugLogging: kDebugMode,

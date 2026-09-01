@@ -415,16 +415,50 @@ describe("Gap-fill unit behavior", () => {
     water_ml: 10000,
   };
 
-  it("tops up an existing item toward the carb target", () => {
+  it("tops up an existing item to the carb TARGET, not the 90% line", () => {
     const current = [buildFoodResult(gel, 2)]; // 50g of 120g target
     const out = gapFillDuringCarbs(current, [gel], targets, 120, "moderate");
     assert(out.applied, "fill must apply on a 42% delivery");
     const totals = calculateTotals(out.foods);
     assert(
-      totals.carbs_g >= 120 * 0.9,
-      `expected ≥108g after fill, got ${totals.carbs_g}g`,
+      totals.carbs_g >= 120 - 2,
+      `expected ≥118g (target − rounding slack) after fill, got ${totals.carbs_g}g`,
     );
     assertEquals(out.foods.length, 1, "top-up must not add a duplicate item");
+  });
+
+  it("REGRESSION: a plan at 93% of target still gets filled to target", () => {
+    // The old fill anchored on the 90% shortfall line: 112.5g of 120g (94%)
+    // was "good enough" and every gap-filled plan settled ~10% short. The
+    // target is the goal; the range is a reporting band (Lee, 2026-08-06).
+    // A half-serving increment food, so the [118, 132]g window is reachable —
+    // with whole 25g gels it wouldn't be, and staying short is correct.
+    const halfGel = constrainedFood({
+      name: "gel",
+      is_indivisible: false,
+      min_increment: 0.5,
+      per_serving: {
+        carbs_g: 25,
+        protein_g: 0,
+        fat_g: 0,
+        sodium_mg: 50,
+        water_ml: 0,
+        calories: 100,
+      },
+    });
+    const current = [buildFoodResult(halfGel, 4.5)]; // 112.5g of 120g
+    const out = gapFillDuringCarbs(current, [halfGel], targets, 120, "moderate");
+    assert(out.applied, "fill must apply below target − slack");
+    const totals = calculateTotals(out.foods);
+    assert(
+      totals.carbs_g >= 120 - 2,
+      `expected ≥118g after fill, got ${totals.carbs_g}g — the fill stopped ` +
+        `short of the point target again`,
+    );
+    assert(
+      totals.carbs_g <= 120 * 1.1 + 1e-6,
+      `fill overshot the upper band: ${totals.carbs_g}g > 132g`,
+    );
   });
 
   it("respects the gut-training per-hour cap (low gut stays short + honest)", () => {
@@ -438,8 +472,8 @@ describe("Gap-fill unit behavior", () => {
     );
   });
 
-  it("no-op when already within 90% of target", () => {
-    const current = [buildFoodResult(gel, 5)]; // 125g ≥ 108g
+  it("no-op when already at/above the target", () => {
+    const current = [buildFoodResult(gel, 5)]; // 125g ≥ 118g (target − slack)
     const out = gapFillDuringCarbs(current, [gel], targets, 120, "moderate");
     assertEquals(out.applied, false);
     assertEquals(out.addedCarbs, 0);

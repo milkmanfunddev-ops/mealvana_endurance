@@ -318,11 +318,11 @@ void main() {
       // Add Activity button must be absent — it would navigate to a create-
       // workout screen which is invalid context when only Meals are shown.
       expect(
-        find.text('+ Add Activity'),
+        find.text('+ Activity'),
         findsNothing,
         reason: 'Meals filter must hide the Add Activity button',
       );
-      expect(find.text('+ Add Food'), findsOneWidget);
+      expect(find.text('+ Food'), findsOneWidget);
     });
 
     testWidgets('Workout filter hides the meal and the Add Food button', (
@@ -346,11 +346,11 @@ void main() {
         reason: 'Workout filter must keep WorkoutNode cards',
       );
       expect(
-        find.text('+ Add Food'),
+        find.text('+ Food'),
         findsNothing,
         reason: 'Workout filter must hide the Add Food button',
       );
-      expect(find.text('+ Add Activity'), findsOneWidget);
+      expect(find.text('+ Activity'), findsOneWidget);
     });
 
     testWidgets('switching back to All restores both nodes', (tester) async {
@@ -491,8 +491,8 @@ void main() {
         reason: 'Empty state must show the fallback message',
       );
       // Add buttons still present in All filter even when empty.
-      expect(find.text('+ Add Food'), findsOneWidget);
-      expect(find.text('+ Add Activity'), findsOneWidget);
+      expect(find.text('+ Food'), findsOneWidget);
+      expect(find.text('+ Activity'), findsOneWidget);
     });
   });
 

@@ -21,6 +21,8 @@ import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
 import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
@@ -29,12 +31,14 @@ import '../../../recipes/domain/recipe.dart';
 import '../../application/meal_ai_service.dart';
 import '../../application/meal_logging_service.dart' show RecipeLogParams;
 import '../../domain/consumed_totals.dart';
+import '../../domain/meal_analysis_result.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_auto_name.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/saved_meal.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/common_ingredients_section.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/log_sheet_helpers.dart';
 import '../widgets/manual_log_form.dart';
 import '../widgets/quick_log_confirm_sheet.dart';
@@ -1549,6 +1553,16 @@ class _AiTabState extends ConsumerState<_AiTab> {
   final _ctrl = TextEditingController();
   bool _isAnalyzing = false;
 
+  /// A picked photo waits here until Analyze is pressed — attaching is free;
+  /// Analyze is the single metered action whether it sends text, a photo, or
+  /// both as one meal.
+  XFile? _photo;
+  ImageSource? _photoSource;
+
+  /// Which set of waiting copy the overlay shows — this tab can start either a
+  /// text or a photo analysis, and the first line names what Mealvana AI is reading.
+  List<String> _thinkingPhases = AiThinkingStatus.describePhases;
+
   @override
   void dispose() {
     _ctrl.dispose();
@@ -1556,29 +1570,77 @@ class _AiTabState extends ConsumerState<_AiTab> {
   }
 
   Future<void> _analyze() async {
+    final photo = _photo;
+    final hasPhoto = photo != null;
+    final text = _ctrl.text.trim();
+    // 'text' keeps the typed-describe funnel distinct from the photo funnels;
+    // has_text marks combined photo+text sends within the photo funnels.
+    final method = !hasPhoto
+        ? 'text'
+        : _photoSource == ImageSource.camera
+        ? 'photo_camera'
+        : 'photo_gallery';
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    analytics.track('meal_ai_action_tapped', properties: {'method': 'text'});
-    if (!_formKey.currentState!.validate()) {
+    analytics.track(
+      'meal_ai_action_tapped',
+      properties: {'method': method, 'has_text': text.isNotEmpty},
+    );
+    // With a photo attached the text is optional colour; without one it is
+    // the whole input, so only then does the validator gate the send.
+    if (!hasPhoto && !_formKey.currentState!.validate()) {
       analytics.track(
         'meal_ai_validation_failed',
-        properties: {'method': 'text'},
+        properties: {'method': method},
       );
       return;
     }
     FocusScope.of(context).unfocus();
-    // Captured before the async gap so it stays valid if the widget unmounts.
-    // 'text' keeps the typed-describe funnel distinct from the photo funnels.
-    analytics.track('meal_ai_started', properties: {'method': 'text'});
+    analytics.track(
+      'meal_ai_started',
+      properties: {'method': method, 'has_text': text.isNotEmpty},
+    );
     final stopwatch = Stopwatch()..start();
-    setState(() => _isAnalyzing = true);
+    setState(() {
+      _thinkingPhases = hasPhoto
+          ? AiThinkingStatus.photoPhases
+          : AiThinkingStatus.describePhases;
+      _isAnalyzing = true;
+    });
     try {
       final service = ref.read(mealAiServiceProvider);
-      final result = await service.describeMeal(_ctrl.text.trim());
+      final MealAnalysisResult result;
+      String? photoPath;
+      if (hasPhoto) {
+        // Photo (with the typed text riding along, if any) — one analysis,
+        // one token.
+        final description = text.isEmpty ? null : text;
+        MealPhotoAnalysis analysis;
+        if (kIsWeb) {
+          final bytes = await photo.readAsBytes();
+          final parts = photo.name.split('.');
+          final ext = (parts.length > 1 ? parts.last : 'jpg').toLowerCase();
+          analysis = await service.analyzePhotoBytes(
+            bytes,
+            extension: ext,
+            description: description,
+          );
+        } else {
+          analysis = await service.analyzePhoto(
+            File(photo.path),
+            description: description,
+          );
+        }
+        result = analysis.result;
+        photoPath = analysis.storagePath;
+      } else {
+        result = await service.describeMeal(text);
+      }
       stopwatch.stop();
       analytics.track(
         'meal_ai_completed',
         properties: {
-          'method': 'text',
+          'method': method,
+          'has_text': text.isNotEmpty,
           'latency_ms': stopwatch.elapsedMilliseconds,
           'input_tokens': result.inputTokens,
           'output_tokens': result.outputTokens,
@@ -1597,9 +1659,9 @@ class _AiTabState extends ConsumerState<_AiTab> {
         '/meal-log/review',
         extra: {
           'result': result,
-          'source': 'describe',
+          'source': hasPhoto ? 'photo' : 'describe',
           'logDate': widget.logDate,
-          'photoPath': null,
+          'photoPath': photoPath,
         },
       );
     } on InsufficientCreditsException catch (e) {
@@ -1607,7 +1669,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       analytics.track(
         'meal_ai_failed',
         properties: {
-          'method': 'text',
+          'method': method,
           'error_type': 'insufficient_credits',
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
@@ -1618,7 +1680,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       analytics.track(
         'meal_ai_failed',
         properties: {
-          'method': 'text',
+          'method': method,
           'error_type': e.kind.name,
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
@@ -1629,7 +1691,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
       analytics.track(
         'meal_ai_failed',
         properties: {
-          'method': 'text',
+          'method': method,
           'error_type': 'unknown',
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
@@ -1645,19 +1707,24 @@ class _AiTabState extends ConsumerState<_AiTab> {
     }
   }
 
+  /// Pick a photo and attach it. No analysis happens here — the photo waits
+  /// in the "Photo attached" card until Analyze is pressed, so attaching
+  /// (and re-attaching) costs nothing.
   Future<void> _pickPhoto(ImageSource source) async {
     final method = source == ImageSource.camera
         ? 'photo_camera'
         : 'photo_gallery';
     final analytics = ref.read(appExternalDepsProvider).analytics;
-    analytics.track('meal_ai_action_tapped', properties: {'method': method});
+    analytics.track('meal_ai_photo_attached', properties: {'method': method});
     final picker = ImagePicker();
     XFile? file;
     try {
+      // 1000px keeps enough detail for food recognition while trimming ~30%
+      // off the image's share of model input tokens vs 1200px.
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1200,
+        maxWidth: 1000,
       );
     } catch (_) {
       if (mounted) {
@@ -1669,93 +1736,17 @@ class _AiTabState extends ConsumerState<_AiTab> {
       return;
     }
     if (file == null || !mounted) return;
+    setState(() {
+      _photo = file;
+      _photoSource = source;
+    });
+  }
 
-    // Distinguish camera vs gallery so the two photo funnels stay separate
-    // from each other and from the typed-describe funnel.
-    analytics.track('meal_ai_started', properties: {'method': method});
-    final stopwatch = Stopwatch()..start();
-    setState(() => _isAnalyzing = true);
-    try {
-      final service = ref.read(mealAiServiceProvider);
-      MealPhotoAnalysis analysis;
-      if (kIsWeb) {
-        final bytes = await file.readAsBytes();
-        final parts = file.name.split('.');
-        final ext = (parts.length > 1 ? parts.last : 'jpg').toLowerCase();
-        analysis = await service.analyzePhotoBytes(bytes, extension: ext);
-      } else {
-        analysis = await service.analyzePhoto(File(file.path));
-      }
-      stopwatch.stop();
-      final result = analysis.result;
-      analytics.track(
-        'meal_ai_completed',
-        properties: {
-          'method': method,
-          'latency_ms': stopwatch.elapsedMilliseconds,
-          'input_tokens': result.inputTokens,
-          'output_tokens': result.outputTokens,
-          'total_tokens': result.totalTokens,
-          if (result.model != null) 'model': result.model,
-          if (result.costUsd != null) 'cost_usd': result.costUsd,
-          'confidence': result.confidence.name,
-          'item_count': result.items.length,
-        },
-      );
-      if (!mounted) return;
-      // Capture router before closing the screen.
-      final router = GoRouter.of(context);
-      widget.onNavigateAway();
-      router.push(
-        '/meal-log/review',
-        extra: {
-          'result': analysis.result,
-          'source': 'photo',
-          'logDate': widget.logDate,
-          'photoPath': analysis.storagePath,
-        },
-      );
-    } on InsufficientCreditsException catch (e) {
-      stopwatch.stop();
-      analytics.track(
-        'meal_ai_failed',
-        properties: {
-          'method': method,
-          'error_type': 'insufficient_credits',
-          'latency_ms': stopwatch.elapsedMilliseconds,
-        },
-      );
-      maybeShowInsufficientCreditsPaywall(e);
-    } on MealAiException catch (e) {
-      stopwatch.stop();
-      analytics.track(
-        'meal_ai_failed',
-        properties: {
-          'method': method,
-          'error_type': e.kind.name,
-          'latency_ms': stopwatch.elapsedMilliseconds,
-        },
-      );
-      if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
-    } catch (_) {
-      stopwatch.stop();
-      analytics.track(
-        'meal_ai_failed',
-        properties: {
-          'method': method,
-          'error_type': 'unknown',
-          'latency_ms': stopwatch.elapsedMilliseconds,
-        },
-      );
-      if (mounted) {
-        MealvanaSnackbar.showError(
-          context,
-          'Something went wrong. Please try again.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isAnalyzing = false);
-    }
+  void _removePhoto() {
+    setState(() {
+      _photo = null;
+      _photoSource = null;
+    });
   }
 
   @override
@@ -1763,108 +1754,110 @@ class _AiTabState extends ConsumerState<_AiTab> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
-    return Stack(
+    return ListView(
+      controller: widget.scrollController,
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       children: [
-        ListView(
-          controller: widget.scrollController,
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
+        // Prompt on the left, token balance on the right — the cost of
+        // the action sits next to the description of it. This is the
+        // primary Describe surface (the Log a Meal tab); the standalone
+        // DescribeMealScreen carries the same pair.
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Describe what you ate and Jade will estimate the macros.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: textColor.withValues(alpha: 0.65),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Form(
-              key: _formKey,
-              child: TextFormField(
-                controller: _ctrl,
-                maxLines: 4,
-                minLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-                enabled: !_isAnalyzing,
-                onTapOutside: (_) => FocusScope.of(context).unfocus(),
-                decoration: const InputDecoration(
-                  labelText: 'What did you eat?',
-                  hintText:
-                      'e.g. Oatmeal with blueberries, a tablespoon of honey, large coffee with oat milk.',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
+            Expanded(
+              child: Text(
+                'Describe what you ate and Mealvana AI will estimate the macros.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: textColor.withValues(alpha: 0.65),
                 ),
-                validator: (v) => (v == null || v.trim().length < 5)
-                    ? 'Please describe your meal'
-                    : null,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            KylePrimaryButton(
-              text: 'Analyze',
-              isLoading: _isAnalyzing,
-              onPressed: _isAnalyzing ? null : _analyze,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            if (!kIsWeb)
-              Row(
-                children: [
-                  Expanded(
-                    child: _OutlineButton(
-                      label: 'Camera',
-                      icon: Icons.photo_camera_outlined,
-                      onTap: _isAnalyzing
-                          ? null
-                          : () => _pickPhoto(ImageSource.camera),
-                      isDark: isDark,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: _OutlineButton(
-                      label: 'Gallery',
-                      icon: Icons.photo_library_outlined,
-                      onTap: _isAnalyzing
-                          ? null
-                          : () => _pickPhoto(ImageSource.gallery),
-                      isDark: isDark,
-                    ),
-                  ),
-                ],
-              )
-            else
-              _OutlineButton(
-                label: 'Choose Photo',
-                icon: Icons.photo_library_outlined,
-                onTap: _isAnalyzing
-                    ? null
-                    : () => _pickPhoto(ImageSource.gallery),
-                isDark: isDark,
-              ),
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(width: AppSpacing.md),
+            const TokenPill(),
           ],
         ),
+        const SizedBox(height: AppSpacing.md),
+        // While Mealvana AI works, the inputs give way to the shape of the answer
+        // rather than being covered by a scrim — the wait happens in the
+        // place the result will appear.
         if (_isAnalyzing)
-          Container(
-            color: Colors.black54,
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const CircularProgressIndicator(color: Colors.white),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    'Jade is thinking...',
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
+          MealAnalysisSkeleton(phases: _thinkingPhases)
+        else ...[
+          Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _ctrl,
+              maxLines: 4,
+              minLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
+              decoration: const InputDecoration(
+                labelText: 'What did you eat?',
+                hintText:
+                    'e.g. Oatmeal with blueberries, a tablespoon of honey, large coffee with oat milk.',
+                border: OutlineInputBorder(),
+                alignLabelWithHint: true,
               ),
+              validator: (v) => (v == null || v.trim().length < 5)
+                  ? 'Please describe your meal'
+                  : null,
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          if (!kIsWeb)
+            Row(
+              children: [
+                Expanded(
+                  child: _OutlineButton(
+                    label: 'Camera',
+                    icon: Icons.photo_camera_outlined,
+                    onTap: () => _pickPhoto(ImageSource.camera),
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _OutlineButton(
+                    label: 'Gallery',
+                    icon: Icons.photo_library_outlined,
+                    onTap: () => _pickPhoto(ImageSource.gallery),
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            )
+          else
+            _OutlineButton(
+              label: 'Choose Photo',
+              icon: Icons.photo_library_outlined,
+              onTap: () => _pickPhoto(ImageSource.gallery),
+              isDark: isDark,
+            ),
+          if (_photo != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _PhotoAttachedCard(
+              photo: _photo!,
+              source: _photoSource,
+              onRemove: _removePhoto,
+              isDark: isDark,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          // Analyze sits below the inputs as the single metered action —
+          // whatever is above it (text, photo, or both) goes as one analysis
+          // for one token. The price rides inside the button.
+          KylePrimaryButton(
+            text: 'Analyze',
+            onPressed: _analyze,
+            trailing: const TokenCostChip(),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.xl),
       ],
     );
   }
@@ -1908,6 +1901,8 @@ class _OutlineButton extends StatelessWidget {
                 color: isDark ? AppColors.cream : AppColors.blackberry,
               ),
               const SizedBox(height: 4),
+              // No price tag here — attaching a photo is free; only Analyze
+              // below is metered.
               Text(
                 label,
                 style: AppTextStyles.bodySmall.copyWith(
@@ -1918,6 +1913,94 @@ class _OutlineButton extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The "Photo attached" card that appears between the pickers and Analyze.
+///
+/// A thumbnail, a confirmation line naming where the photo came from, and a
+/// remove button — so the athlete can see what will be analyzed (and change
+/// their mind) before spending the token.
+class _PhotoAttachedCard extends StatelessWidget {
+  const _PhotoAttachedCard({
+    required this.photo,
+    required this.source,
+    required this.onRemove,
+    required this.isDark,
+  });
+
+  final XFile photo;
+  final ImageSource? source;
+  final VoidCallback onRemove;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
+    final subtitle = kIsWeb
+        ? 'Chosen photo'
+        : source == ImageSource.camera
+        ? 'Camera capture'
+        : 'Gallery photo';
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: AppColors.electrolyte.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: SizedBox(
+              width: 48,
+              height: 48,
+              // XFile.path is a blob URL on web, a file path elsewhere.
+              child: kIsWeb
+                  ? Image.network(photo.path, fit: BoxFit.cover)
+                  : Image.file(File(photo.path), fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Photo attached',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.electrolyte,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            key: const ValueKey('describe.remove_photo'),
+            onPressed: onRemove,
+            tooltip: 'Remove photo',
+            icon: Icon(
+              Icons.close,
+              size: 20,
+              color: onSurface.withValues(alpha: 0.7),
+            ),
+          ),
+        ],
       ),
     );
   }

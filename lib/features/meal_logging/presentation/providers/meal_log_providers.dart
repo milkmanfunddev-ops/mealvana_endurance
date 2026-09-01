@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../features/activities/data/activities_repository.dart';
+import '../../../../features/activities/domain/activity.dart';
 import '../../../../features/auth/data/user_repository.dart';
+import '../../../../features/nutrition_plan/domain/fuel_log_data.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/supabase/supabase_client_provider.dart';
@@ -58,28 +61,82 @@ Stream<List<MealLog>> mealLogsForDate(Ref ref, String date) async* {
   yield* repo.watchLogsForDate(userId, date);
 }
 
-/// Derived provider: [ConsumedTotals] for [date], recomputed whenever the
-/// underlying [mealLogsForDateProvider] stream emits.
+/// Streams the day's completed activities (local calendar day of
+/// `scheduledDateTime`), so their logged workout fuel can count as "eaten".
 ///
-/// This is the single value the Daily Macros progress bars should watch.
-/// Derives directly from the same repository stream so it shares the same
-/// Drift subscription lifecycle.
+/// Empty when there is no authenticated user.
 @riverpod
-Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
+Stream<List<Activity>> completedActivitiesForDate(Ref ref, String date) async* {
   final userRepo = await ref.read(userRepositoryProvider.future);
   final user = await userRepo.getCurrentUser();
   final userId = user?.id;
   if (userId == null) {
-    yield const ConsumedTotals();
+    yield const [];
     return;
   }
 
-  final repo = ref.read(mealLogRepositoryProvider);
+  yield* ref
+      .read(activitiesRepositoryProvider)
+      .watchCompletedActivitiesForDate(userId, DateTime.parse(date));
+}
+
+/// DURING-section consumed totals from a completed activity's fuel log.
+///
+/// Only the during-workout items count: the before/after sections describe
+/// ordinary meals (breakfast, recovery shake) that users also log in the meal
+/// log, so counting them here would double-count the day. Uses
+/// [FuelLogItem.actualNutritionalInfo] so skipped items (actual quantity 0)
+/// contribute nothing.
+ConsumedTotals duringFuelTotalsForActivity(Activity activity) {
+  final raw = activity.fuelLogData;
+  if (raw == null) return ConsumedTotals.zero;
+
+  final FuelLogData fuelLog;
+  try {
+    fuelLog = FuelLogData.fromJson(raw);
+  } catch (_) {
+    // A malformed blob must never take down the Daily Macros tab.
+    return ConsumedTotals.zero;
+  }
+
+  var totals = ConsumedTotals.zero;
+  for (final item in fuelLog.items) {
+    if (!item.sectionId.contains('during')) continue;
+    final info = item.actualNutritionalInfo;
+    if (info == null) continue;
+    totals =
+        totals +
+        ConsumedTotals(
+          calories: info.calories ?? 0,
+          carbsG: (info.carbs ?? 0).toDouble(),
+          proteinG: (info.protein ?? 0).toDouble(),
+          fatG: (info.fat ?? 0).toDouble(),
+          sodiumMg: (info.sodium ?? 0).toDouble(),
+        );
+  }
+  return totals;
+}
+
+/// Derived provider: [ConsumedTotals] for [date] — meal logs PLUS the
+/// during-workout fuel logged on the day's completed activities.
+///
+/// This is the single value the Daily Macros progress bars (and the fuel
+/// timeline's energy balance) should watch. Re-emits whenever either
+/// underlying Drift stream changes.
+@riverpod
+Stream<ConsumedTotals> consumedTotalsForDate(Ref ref, String date) async* {
   final service = ref.read(mealLoggingServiceProvider);
 
-  await for (final logs in repo.watchLogsForDate(userId, date)) {
-    yield service.consumedTotalsForLogs(logs);
-  }
+  final logs = await ref.watch(mealLogsForDateProvider(date).future);
+  final activities = await ref.watch(
+    completedActivitiesForDateProvider(date).future,
+  );
+
+  final mealTotals = service.consumedTotalsForLogs(logs);
+  final fuelTotals = ConsumedTotals.fold(
+    activities.map(duringFuelTotalsForActivity),
+  );
+  yield mealTotals + fuelTotals;
 }
 
 // ============================================================================

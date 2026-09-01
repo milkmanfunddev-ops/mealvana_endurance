@@ -1038,6 +1038,34 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// Watches completed activities scheduled on [date]'s local calendar day.
+  ///
+  /// Backs the Daily Macros consumed totals: completed workouts contribute
+  /// their logged during-workout fuel to "eaten today". Day attribution uses
+  /// `scheduledDateTime` local wall clock, matching the fuel timeline's
+  /// filter. Archived brick segments (`brickId` set) are excluded so a
+  /// combined brick and its segments never both count.
+  Stream<List<domain.Activity>> watchCompletedActivitiesForDate(
+    String userId,
+    DateTime date,
+  ) {
+    final dayStart = DateTime(date.year, date.month, date.day);
+    final dayEnd = dayStart.add(const Duration(days: 1));
+    final query = _database.select(_database.activitiesTable)
+      ..where(
+        (tbl) =>
+            tbl.userId.lower().equals(userId.toLowerCase()) &
+            tbl.status.equals('completed') &
+            tbl.deletedAt.isNull() &
+            tbl.brickId.isNull() &
+            tbl.scheduledDateTime.isBiggerOrEqualValue(dayStart) &
+            tbl.scheduledDateTime.isSmallerThanValue(dayEnd),
+      );
+    return query.watch().map(
+      (rows) => rows.map(_mapper.fromDriftRow).toList(),
+    );
+  }
+
   /// Insert a new activity directly (used by sync services)
   ///
   /// Unlike createActivity, this method doesn't immediately upload to Supabase.

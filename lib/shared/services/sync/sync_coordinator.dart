@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../logging_service.dart';
@@ -19,6 +20,9 @@ import '../../../features/auth/data/user_repository.dart';
 import '../../../features/user_foods/data/user_foods_repository.dart';
 import '../../../features/meal_logging/data/meal_log_repository.dart';
 import '../../../features/meal_logging/data/saved_meals_repository.dart';
+import '../../../features/integrations/presentation/providers/integrations_providers.dart';
+import '../../../features/formula_kit/data/formula_pins_repository.dart';
+import '../../../features/onboarding/data/onboarding_survey_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -67,9 +71,6 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// Track last failed sync attempt per repository (for rate limiting)
   final Map<String, DateTime> _lastFailedAttempt = {};
 
-  /// Skip sync for users who just completed onboarding (in-memory, self-clearing)
-  bool _skipSyncForNewUser = false;
-
   /// Track consecutive failure count per repository (for rate limiting)
   final Map<String, int> _failureCount = {};
 
@@ -78,6 +79,12 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Sync lock to prevent concurrent syncs
   bool _syncInProgress = false;
+
+  /// Completion of the sync currently in flight, so concurrent callers can
+  /// await the real result instead of an instant `true`. Callers like the
+  /// post-onboarding path act on "sync finished" (cache busts, recomputes);
+  /// an instant `true` made them fire before the download half had run.
+  Completer<bool>? _activeSync;
 
   /// Last successful sync time (for debugging)
   DateTime? _lastSyncTime;
@@ -124,17 +131,13 @@ class SyncCoordinator extends _$SyncCoordinator {
     String userId, {
     SyncableRepository? repository,
   }) async {
-    // 0. Skip sync for users who just completed onboarding
-    // New users have all data locally - nothing to download from Supabase
-    // Their data will be uploaded via background sync later
-    if (_shouldSkipSyncForNewUser()) {
-      _logger.info(
-        'Skipping sync - user just completed onboarding',
-        context: 'SYNC_COORDINATOR',
-        data: {'repoKey': repoKey},
-      );
-      return;
-    }
+    // NOTE (2026-07-29 policy change): there is deliberately no "skip sync for
+    // a user who just onboarded" short-circuit here any more. We ALWAYS push
+    // to Supabase, including for anonymous (skipped-account-creation) users —
+    // the old flag suppressed the first upload after onboarding, which was the
+    // one upload that carried the onboarding answers. Downloads are additive
+    // (every syncFromRemote upserts and preserves locally-dirty rows), so
+    // syncing a brand-new user against an empty remote cannot lose data.
 
     // 1. Prevent infinite loops - if already syncing this repo, return
     if (_syncingNow.contains(repoKey)) {
@@ -292,6 +295,16 @@ class SyncCoordinator extends _$SyncCoordinator {
           return ref.read(mealLogRepositoryProvider);
         case 'saved_meals':
           return ref.read(savedMealsRepositoryProvider);
+        // Both are written during onboarding — `integrations` by the
+        // Connect-Training step, `formula_pins` by the default-formula
+        // auto-pin — but neither was resolvable here, so a dirty row that
+        // missed its opportunistic inline upload had no retry channel at all.
+        case 'integrations':
+          return ref.read(integrationsRepositoryProvider);
+        case 'formula_pins':
+          return ref.read(formulaPinsRepositoryProvider);
+        case 'onboarding_surveys':
+          return ref.read(onboardingSurveyRepositoryProvider);
         default:
           return null;
       }
@@ -307,6 +320,10 @@ class SyncCoordinator extends _$SyncCoordinator {
 
   /// Repository keys that [_repositoryFor] can resolve, i.e. everything that
   /// participates in dirty-record upload.
+  ///
+  /// `onboarding_surveys` must stay in this list: its only other upload path
+  /// is the opportunistic inline push right after onboarding, so without the
+  /// dirty-record walk a survey written offline would never reach Supabase.
   static const List<String> _syncableRepositoryKeys = <String>[
     'users',
     'activities',
@@ -317,7 +334,17 @@ class SyncCoordinator extends _$SyncCoordinator {
     'user_foods',
     'meal_logs',
     'saved_meals',
+    'integrations',
+    'formula_pins',
+    'onboarding_surveys',
   ];
+
+  /// Test-only view of the dirty-record upload roster, so a regression test
+  /// can pin repositories (like `onboarding_surveys`) whose absence is
+  /// invisible at runtime — uploads just silently never retry.
+  @visibleForTesting
+  static List<String> get syncableRepositoryKeysForTesting =>
+      _syncableRepositoryKeys;
 
   /// Check if a repository's data is stale and needs syncing.
   ///
@@ -382,30 +409,6 @@ class SyncCoordinator extends _$SyncCoordinator {
     _failureCount.remove(repoKey);
   }
 
-  // ========================================================================
-  // New User (Post-Onboarding) Sync Skip
-  // ========================================================================
-
-  /// Check if sync should be skipped for a user who just completed onboarding.
-  ///
-  /// New users have all data locally - nothing to download from Supabase.
-  /// Their user profile is already uploaded during onboarding completion.
-  /// Skipping sync prevents unnecessary network calls and potential FK errors.
-  ///
-  /// Uses in-memory flag - self-clearing on first check.
-  bool _shouldSkipSyncForNewUser() {
-    if (_skipSyncForNewUser) {
-      _skipSyncForNewUser = false; // Clear immediately (self-clearing)
-      return true;
-    }
-    return false;
-  }
-
-  /// Set flag to skip sync for new users (called from onboarding completion)
-  void setSkipSyncForNewUser() {
-    _skipSyncForNewUser = true;
-  }
-
   /// Single entry point for ALL sync operations (LEGACY - kept for backwards compatibility)
   ///
   /// Returns true if sync completed successfully, false otherwise
@@ -420,9 +423,15 @@ class SyncCoordinator extends _$SyncCoordinator {
     SyncTrigger trigger = SyncTrigger.manual,
     bool skipInvalidation = false,
   }) async {
-    // Prevent concurrent syncs
-    if (_syncInProgress) {
-      return true; // Return true since a sync is happening
+    // Prevent concurrent syncs — join the in-flight one instead of returning
+    // an instant `true`. Sign-in always kicks a full sync, so the instant
+    // `true` meant the post-onboarding path invalidated the daily-macro cache
+    // BEFORE that sync landed the user's workouts, re-caching a session-less
+    // rest-day TDEE with no TTL (the "2637 kcal until you leave and come
+    // back" dashboard bug).
+    final active = _activeSync;
+    if (active != null) {
+      return active.future;
     }
 
     // Check network connectivity before attempting sync
@@ -431,9 +440,12 @@ class SyncCoordinator extends _$SyncCoordinator {
       return false; // Return false since sync was skipped (offline-first: user can continue)
     }
 
+    final completer = Completer<bool>();
+    _activeSync = completer;
     _syncInProgress = true;
     state = SyncState.syncing;
 
+    var result = false;
     try {
       // Step 1: Upload dirty records per-repository
       await _uploadAllDirtyRecords(userId);
@@ -451,6 +463,7 @@ class SyncCoordinator extends _$SyncCoordinator {
         }
       }
 
+      result = success;
       return success;
     } catch (e, stackTrace) {
       _logger.error(
@@ -470,14 +483,26 @@ class SyncCoordinator extends _$SyncCoordinator {
       return false;
     } finally {
       _syncInProgress = false;
+      _activeSync = null;
+      if (!completer.isCompleted) {
+        completer.complete(result);
+      }
       state = SyncState.idle;
     }
   }
 
   /// Upload dirty records from all repositories (public API).
-  /// Best-effort: logs failures but doesn't throw.
-  /// Used by corruption recovery to save data before database deletion.
-  Future<void> uploadAllDirtyRecords(String userId) =>
+  ///
+  /// Best-effort: never throws. Returns the repository keys whose upload did
+  /// not succeed (failed outright, or was skipped because a dependency failed)
+  /// so callers can surface the failure instead of assuming success —
+  /// `uploadDirtyRecords()` swallows exceptions into a silent
+  /// `UploadResult.failed()`, so an unchecked call looks identical to a
+  /// successful one. An empty list means everything reached Supabase.
+  ///
+  /// Used by corruption recovery to save data before database deletion, and by
+  /// onboarding completion to push the freshly-captured profile.
+  Future<List<String>> uploadAllDirtyRecords(String userId) =>
       _uploadAllDirtyRecords(userId);
 
   /// Upload dirty records from all repositories before download.
@@ -487,14 +512,14 @@ class SyncCoordinator extends _$SyncCoordinator {
   /// once (the previous behaviour) raced a child against its parent: a dirty
   /// event could reach Supabase before the activity it references, failing
   /// events_activity_id_fkey with Postgres 23503.
-  Future<void> _uploadAllDirtyRecords(String userId) async {
+  Future<List<String>> _uploadAllDirtyRecords(String userId) async {
+    final failures = <String>[];
+    final skipped = <String>[];
+
     try {
       final levels = SyncDependencyGraph.topologicalLevels(
         _syncableRepositoryKeys,
       );
-
-      final failures = <String>[];
-      final skipped = <String>[];
 
       for (final level in levels) {
         // A repository whose parent failed to upload cannot succeed — its rows
@@ -581,7 +606,13 @@ class SyncCoordinator extends _$SyncCoordinator {
           context: 'sync_upload_dirty_records',
         ),
       );
+      // The orchestration itself blew up, so nothing can be assumed to have
+      // landed. Report every repository as unsuccessful rather than handing the
+      // caller a misleading empty (== "all good") list.
+      return _syncableRepositoryKeys.toList(growable: false);
     }
+
+    return [...failures, ...skipped];
   }
 
   /// Invalidate ALL data providers after sync
@@ -625,6 +656,11 @@ class SyncCoordinator extends _$SyncCoordinator {
     _failureCount.clear();
     _lastSyncTime = null;
     _syncInProgress = false;
+    final abandoned = _activeSync;
+    _activeSync = null;
+    if (abandoned != null && !abandoned.isCompleted) {
+      abandoned.complete(false); // release any joined waiters on sign-out
+    }
     state = SyncState.idle;
 
     final prefs = ref.read(sharedPreferencesProvider);

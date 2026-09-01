@@ -1676,8 +1676,8 @@ int compareVersions(String a, String b) {
 
 - [Database Architecture](/docs/database/README.md)
 - [Drift Implementation](/docs/technical/drift-implementation.md)
-- [Sync System Analysis](/docs/app_startup/02-sync-system-analysis.md)
-- [App Startup Architecture](/docs/app_startup/README.md)
+- [Sync System Analysis](/docs/features/app_startup_optimization/02-sync-system-analysis.md)
+- [App Startup Architecture](/docs/features/app_startup_optimization/README.md)
 
 ---
 

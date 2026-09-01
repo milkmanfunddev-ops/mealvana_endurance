@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/macro_targets.dart' as targets_model;
+import '../../domain/pre_workout_display_rounding.dart';
 import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 /// Separate widget for section subtitles that can be updated independently
@@ -45,9 +46,9 @@ class SectionSubtitleWidget extends StatelessWidget {
 
     // Match on section.id (before_run, during_run, after_run) not title for sport-agnostic matching
     if (section.id.contains('before')) {
-      final carbsTarget = macroTargets!.preRun.carbsG.round();
-      final fluidsTarget = macroTargets!.preRun.fluidsMl.round();
-      final sodiumTarget = macroTargets!.preRun.sodiumMg.round();
+      final pre = macroTargets!.preRun;
+      final carbsTarget = round5(pre.carbsG).round();
+      final fluidsTarget = round25(pre.fluidsMl).round();
 
       badges = [
         _buildMacroBadge(
@@ -57,20 +58,21 @@ class SectionSubtitleWidget extends StatelessWidget {
           'g',
           _getColorForProgress(carbs, carbsTarget),
         ),
-        _buildMacroBadge(
-          'Fluids',
-          fluids,
-          fluidsTarget,
-          fluidUnit,
-          _getColorForProgress(fluids, fluidsTarget),
-        ),
-        _buildMacroBadge(
-          'Sodium',
-          sodium,
-          sodiumTarget,
-          'mg',
-          _getColorForProgress(sodium, sodiumTarget),
-        ),
+        // Hydration v6: the gate means no fluid target was set at all — show
+        // the delivered figure with no ratio rather than "0/0".
+        if (pre.hasFluidTarget)
+          _buildMacroBadge(
+            'Fluids',
+            fluids,
+            fluidsTarget,
+            fluidUnit,
+            _getColorForProgress(fluids, fluidsTarget),
+          )
+        else
+          _buildDeliveredBadge('Fluids', fluids, fluidUnit),
+        // Sodium v3: Mealvana sets no pre-workout sodium target, so this is a
+        // plain delivered figure — no ratio, no in-range colour.
+        _buildDeliveredBadge('Sodium', sodium, 'mg'),
       ];
     } else if (section.id.contains('during')) {
       final carbsTarget = macroTargets!.duringRun.carbTotalG.round();
@@ -164,6 +166,47 @@ class SectionSubtitleWidget extends StatelessWidget {
         children: [
           Text(
             ratioWithUnit,
+            style: AppTheme.textStyle.copyWith(
+              color: color,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 1.h),
+          Text(
+            label,
+            style: AppTheme.noteStyle.copyWith(
+              color: color,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// A badge that reports what the food **delivers**, with no target, no
+  /// ratio and no in-range colour.
+  ///
+  /// Used where there is deliberately nothing to compare against: pre-workout
+  /// sodium (sodium v3 sets no target) and pre-workout fluid on the gated
+  /// path (hydration v6 sets none for a short, mild session).
+  Widget _buildDeliveredBadge(String label, int value, String unit) {
+    final color = AppTheme.primary900;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$value$unit',
             style: AppTheme.textStyle.copyWith(
               color: color,
               fontSize: 14.sp,

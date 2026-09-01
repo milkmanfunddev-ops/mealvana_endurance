@@ -86,7 +86,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('30-90 min'), findsOneWidget);
+    // The ratified snack window after the 120-minute meal boundary (D-017).
+    expect(find.text('30-120 min'), findsOneWidget);
   });
 
   testWidgets('no scope set renders no scope pill', (tester) async {

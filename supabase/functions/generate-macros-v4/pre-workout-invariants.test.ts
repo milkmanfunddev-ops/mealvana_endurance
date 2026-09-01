@@ -466,19 +466,33 @@ describe('Pre-Workout V4 Integration Tests', () => {
       assertEquals(results.length, 0);
     });
 
-    it('should return full_meal type for >= 2.5 hours', () => {
+    it('should return full_meal type for >= 2 hours', () => {
       const targets = calculatePreWorkoutTargets(73, 3.0, false, 'medium', 'moderate');
       assertEquals(targets.meal_type, 'full_meal');
     });
 
-    it('should return full_meal type from 1.5 hours (Notion spec 31fe3fdb)', () => {
-      const targets = calculatePreWorkoutTargets(73, 1.5, false, 'medium', 'moderate');
-      assertEquals(targets.meal_type, 'full_meal');
+    it('should return full_meal type from exactly 2 hours (carbs v2: TIER_MEAL_MIN = 120 min)', () => {
+      // The boundary moved from 1.5 h to 2 h when carbs v2 was ratified, and it
+      // is inclusive at the bottom.
+      assertEquals(
+        calculatePreWorkoutTargets(73, 2.0, false, 'medium', 'moderate').meal_type,
+        'full_meal',
+      );
+      assertEquals(
+        calculatePreWorkoutTargets(73, 119.999 / 60, false, 'medium', 'moderate').meal_type,
+        'snack',
+      );
     });
 
-    it('should return snack type for 0.5-1.5 hours', () => {
-      const targets = calculatePreWorkoutTargets(73, 1.0, false, 'medium', 'moderate');
-      assertEquals(targets.meal_type, 'snack');
+    it('should return snack type for 0.5-2 hours (1.5 h no longer earns a meal)', () => {
+      assertEquals(
+        calculatePreWorkoutTargets(73, 1.5, false, 'medium', 'moderate').meal_type,
+        'snack',
+      );
+      assertEquals(
+        calculatePreWorkoutTargets(73, 1.0, false, 'medium', 'moderate').meal_type,
+        'snack',
+      );
     });
 
     it('should return top_up type for < 0.5 hours', () => {
@@ -529,22 +543,21 @@ describe('Pre-Workout V4 Integration Tests', () => {
   // ─── Test 8: Phase Splitting ───────────────────────────────────────────
 
   describe('Phase Splitting', () => {
-    it('should have 3 phases for >= 2.5 hours', () => {
+    it('should have 3 phases for >= 2 hours', () => {
       const phases = getActiveSubPhases(3.0);
       assertEquals(phases.length, 3);
       assertEquals(phases, ['meal', 'snack', 'top_up']);
     });
 
-    it('should have 3 phases from 1.5 hours (Notion spec 31fe3fdb)', () => {
-      const phases = getActiveSubPhases(1.5);
+    it('should have 3 phases from exactly 2 hours (carbs v2: TIER_MEAL_MIN = 120 min)', () => {
+      const phases = getActiveSubPhases(2.0);
       assertEquals(phases.length, 3);
       assertEquals(phases, ['meal', 'snack', 'top_up']);
     });
 
-    it('should have 2 phases for 0.5-1.5 hours', () => {
-      const phases = getActiveSubPhases(1.0);
-      assertEquals(phases.length, 2);
-      assertEquals(phases, ['snack', 'top_up']);
+    it('should have 2 phases for 0.5-2 hours (1.5 h no longer earns a meal)', () => {
+      assertEquals(getActiveSubPhases(1.5), ['snack', 'top_up']);
+      assertEquals(getActiveSubPhases(1.0), ['snack', 'top_up']);
     });
 
     it('should have 1 phase for < 0.5 hours', () => {

@@ -46,6 +46,11 @@ import {
   fluidSodiumDeficits,
 } from "../_shared/nutrition/pin-backfill.ts";
 import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
+import {
+  defaultFormulaDecision,
+  logFormulaCascade,
+  withDecisionSource,
+} from "../_shared/nutrition/formula-decision.ts";
 import type { LPPhaseResult } from "./types.ts";
 import { generateLPPhase } from "./lp-phase.ts";
 
@@ -232,11 +237,19 @@ export async function generateAfterPhase(
             `(${foods.length} components, scaled to ${targets.carbs_g}g ` +
             `carbs), bypassing template solver`,
         );
+        logFormulaCascade({
+          phase: "after",
+          source: "personal_formula",
+          templateId: match.id,
+          templateName: match.name,
+          pinSetSize: 1,
+        });
         return {
           foods,
           by_hour_data: null,
           pin_decision: {
             used_pin: true,
+            decision_source: "personal_formula",
             pinned_template_id: match.id,
             pinned_template_name: match.name,
             fallthrough_reason: null,
@@ -256,9 +269,11 @@ export async function generateAfterPhase(
       );
       personalFormulaFallthrough = {
         used_pin: false,
+        decision_source: "default_formula",
         pinned_template_id: null,
         pinned_template_name: null,
         fallthrough_reason: "personal_formula_empty",
+        default_fallthrough_reason: "personal_formula_empty",
         pin_set_size: 1,
       };
     }
@@ -308,7 +323,8 @@ export async function generateAfterPhase(
       likedFoods,
       willingToTryFoods,
       dislikedFoods,
-      deviceId,
+      // No deviceId: the after-phase pool is curated `template_foods` only —
+      // `user_foods` is not a plan-generation source (food-source policy).
       false,
       allergies,
       dietaryPreference,
@@ -383,6 +399,7 @@ export async function generateAfterPhase(
         ) {
           afterPinDecision = {
             used_pin: true,
+            decision_source: "user_pin",
             pinned_template_id: first.id,
             pinned_template_name: first.name,
             fallthrough_reason: null,
@@ -391,12 +408,19 @@ export async function generateAfterPhase(
         }
       }
 
-      // Ephemeral default-formula safety net (formula-first flip): the non-pin
-      // post path already selects and renders a single SYSTEM template (a
-      // formula) via its tuned travel/prep ranking — that IS a formula-first
+      // Default-formula tier: the non-pin post path already selects and renders
+      // a single SYSTEM template (a formula) via its tuned travel/prep
+      // ranking — that IS the after phase's default formula, and since the
+      // client stopped pre-computing auto-pins (2026-07-29) it is the COMMON
       // outcome. When no REAL pin fired we tag it as an ephemeral pin so the
       // plan reads formula-first, without writing `formula_pins` rows and
       // without disturbing the deliberate travel/prep selection order.
+      //
+      // NOTE: `selection_priority` is deliberately NOT the after-phase ranking
+      // key (see post-template-solver.ts header). A parallel default-formula
+      // ranker that re-sorted post survivors by `selection_priority` used to
+      // live in `_shared/nutrition/default-formula.ts`; it was orphaned and
+      // contradicted this order, and was deleted 2026-07-29.
       const afterEphemeral = emitEphemeralDefault &&
         !(afterPinDecision?.used_pin === true) &&
         candidates.length > 0;
@@ -417,17 +441,26 @@ export async function generateAfterPhase(
           // When a real pin didn't fire but the safety net promoted a default
           // formula, tag the outcome as an ephemeral pin so the plan reads
           // formula-first (no `formula_pins` rows written).
-          const emittedPinDecision = afterPinDecision?.used_pin === true
+          const usedRealPin = afterPinDecision?.used_pin === true;
+          logFormulaCascade({
+            phase: "after",
+            source: usedRealPin ? "user_pin" : "default_formula",
+            templateId: rendered.template_id,
+            templateName: rendered.template_name,
+            reason: usedRealPin
+              ? null
+              : afterPinDecision?.fallthrough_reason ?? "no_pin_for_scope",
+            pinSetSize: afterPinDecision?.pin_set_size ?? 0,
+          });
+          const emittedPinDecision = usedRealPin
             ? afterPinDecision
             : afterEphemeral
-            ? {
-              used_pin: true,
-              ephemeral: true,
-              pinned_template_id: rendered.template_id,
-              pinned_template_name: rendered.template_name,
-              fallthrough_reason: null,
-              pin_set_size: afterPinDecision?.pin_set_size ?? 0,
-            }
+            ? defaultFormulaDecision({
+              templateId: rendered.template_id,
+              templateName: rendered.template_name,
+              pinSetSize: afterPinDecision?.pin_set_size ?? 0,
+              fallthroughReason: afterPinDecision?.fallthrough_reason,
+            })
             : afterPinDecision;
           console.log(
             `[PLAN-V3] Post-workout template selected: ${rendered.template_number} (${rendered.template_name})${
@@ -477,9 +510,11 @@ export async function generateAfterPhase(
           );
           afterPinDecision = {
             used_pin: false,
+            decision_source: "solver",
             pinned_template_id: null,
             pinned_template_name: null,
             fallthrough_reason: "pinned_template_unrenderable",
+            default_fallthrough_reason: "pinned_template_unrenderable",
             pin_set_size: afterPinDecision.pin_set_size,
           };
         }
@@ -527,8 +562,19 @@ export async function generateAfterPhase(
       elapsed(phaseStart)
     }ms (path=lp)`,
   );
+  // No recovery formula rendered — neither a pin nor the default (travel/prep
+  // ranked) template tier produced one, so LP dosed the foods instead. Logged
+  // as a warning so the no-pin path can never regress into the solver
+  // silently.
+  logFormulaCascade({
+    phase: "after",
+    source: "solver",
+    reason: afterPinDecision?.fallthrough_reason ?? "no_template_candidates",
+    pinSetSize: afterPinDecision?.pin_set_size ?? 0,
+  });
   return {
     ...lpResult,
-    ...(afterPinDecision && { pin_decision: afterPinDecision }),
+    ...(afterPinDecision &&
+      { pin_decision: withDecisionSource(afterPinDecision, "solver") }),
   };
 }

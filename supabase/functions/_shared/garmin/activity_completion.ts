@@ -9,6 +9,7 @@
 import {
   garminTimestampToDateString,
   garminTimestampToISO,
+  garminTimestampToLocalNaiveISO,
 } from "./mappers.ts";
 import { isEnduranceSportType } from "./types.ts";
 import type { GarminActivitySummary } from "./types.ts";
@@ -159,6 +160,13 @@ export function buildGarminCompletionUpdate(
 
   const updateFields: Record<string, unknown> = {
     status: "completed",
+    // Replace the planned start time with the ACTUAL Garmin start time
+    // (bug 3a6e3fdb: a run scheduled for 1:30 PM but started at 12:30 PM
+    // kept showing 1:30 PM). Local-naive form — see garminTimestampToLocalNaiveISO.
+    scheduled_date_time: garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    ),
     completed_at: completionTimestamp,
     updated_at: syncedAt,
     last_synced_at: syncedAt,
@@ -223,6 +231,137 @@ export function buildGarminCompletionUpdate(
   return updateFields;
 }
 
+export type GarminEnrichOutcome =
+  | { kind: "enriched"; activityId: string; fields: string[] }
+  | { kind: "no_gaps" }
+  | { kind: "not_found" }
+  | { kind: "error"; error: unknown };
+
+/** Metric is absent when it was never written or was written as a zero by a
+ * preliminary payload. (A legitimate 0-mi start/stop run also reads as
+ * "absent" here — enrichment only ever fills such a value with richer data
+ * for the SAME garmin_summary_id, so a real abandoned run stays 0.) */
+function metricAbsent(value: unknown): boolean {
+  return value === null || value === undefined || value === 0;
+}
+
+/**
+ * Upgrade an already-completed Garmin activity with richer metrics.
+ *
+ * Garmin fires the `activities` and `activityDetails` webhooks for the same
+ * workout near-simultaneously. Whichever request completes the planned
+ * activity first wins the race; the loser used to be silently discarded —
+ * so when the FIRST payload was preliminary (0 duration / 0 distance) the
+ * richer second payload never landed and the app showed "0 minutes, 0 miles"
+ * forever (bug 3a6e3fdb). This fills metric gaps (null/0) on the completed
+ * row from the losing payload. It never flips status, never touches
+ * scheduled_date_time/completed_at, and callers must not re-notify.
+ */
+export async function enrichCompletedGarminActivity(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  userId: string,
+  summaryId: string,
+  mappedActivity: Record<string, unknown>,
+  logPrefix: string,
+): Promise<GarminEnrichOutcome> {
+  try {
+    const { data, error } = await supabase
+      .from("activities")
+      .select(
+        "id, duration_minutes, actual_duration_minutes, distance_meters, " +
+          "distance_miles, actual_distance_miles, average_heart_rate, " +
+          "max_heart_rate, calories_burned, average_pace_minutes_per_mile",
+      )
+      .eq("user_id", userId)
+      .eq("garmin_summary_id", String(summaryId))
+      .eq("status", "completed")
+      .is("deleted_at", null)
+      .limit(1);
+
+    if (error) {
+      console.error(`${logPrefix} Enrich lookup error:`, error);
+      return { kind: "error", error };
+    }
+    if (!data || data.length === 0) {
+      return { kind: "not_found" };
+    }
+
+    const existing = data[0] as Record<string, unknown>;
+    const update: Record<string, unknown> = {};
+
+    const num = (v: unknown): number | null =>
+      typeof v === "number" && Number.isFinite(v) ? v : null;
+
+    const durationMinutes = num(mappedActivity.duration_minutes);
+    if (
+      durationMinutes !== null && durationMinutes > 0 &&
+      metricAbsent(existing.duration_minutes)
+    ) {
+      update.duration_minutes = durationMinutes;
+      update.actual_duration_minutes = durationMinutes;
+    }
+
+    const distanceMeters = num(mappedActivity.distance_meters);
+    if (
+      distanceMeters !== null && distanceMeters > 0 &&
+      metricAbsent(existing.distance_meters) &&
+      metricAbsent(existing.actual_distance_miles)
+    ) {
+      const miles = num(mappedActivity.distance_miles) ??
+        distanceMeters / 1609.34;
+      update.distance_meters = distanceMeters;
+      update.distance_miles = miles;
+      update.actual_distance_miles = miles;
+    }
+
+    const scalarGaps: Array<[string]> = [
+      ["average_heart_rate"],
+      ["max_heart_rate"],
+      ["calories_burned"],
+      ["average_pace_minutes_per_mile"],
+    ];
+    for (const [field] of scalarGaps) {
+      const incoming = num(mappedActivity[field]);
+      if (incoming !== null && incoming > 0 && metricAbsent(existing[field])) {
+        update[field] = incoming;
+      }
+    }
+
+    const fields = Object.keys(update);
+    if (fields.length === 0) {
+      return { kind: "no_gaps" };
+    }
+
+    const syncedAt = new Date().toISOString();
+    update.updated_at = syncedAt;
+    update.last_synced_at = syncedAt;
+    update.garmin_last_synced_at = syncedAt;
+
+    const { error: updateError } = await supabase
+      .from("activities")
+      .update(update)
+      .eq("id", existing.id)
+      .eq("status", "completed");
+
+    if (updateError) {
+      console.error(`${logPrefix} Enrich update error:`, updateError);
+      return { kind: "error", error: updateError };
+    }
+
+    const activityId = String(existing.id);
+    console.log(
+      `${logPrefix} Enriched completed activity ${activityId} with ${
+        fields.join(", ")
+      } from a concurrent Garmin payload`,
+    );
+    return { kind: "enriched", activityId, fields };
+  } catch (err) {
+    console.error(`${logPrefix} Enrich error:`, err);
+    return { kind: "error", error: err };
+  }
+}
+
 export type GarminInsertOutcome =
   | { kind: "inserted"; activityId: string }
   | { kind: "duplicate" } // another push already inserted this summaryId
@@ -277,6 +416,11 @@ export async function insertGarminActivityIfMissing(
   const insertRow: Record<string, unknown> = {
     ...mappedActivity,
     ...completionFields,
+    // activities.id has NO database default — client-created rows generate
+    // their id in Dart, so server-side auto-creates must generate one too or
+    // the insert fails with a 23502 not-null violation and the activity is
+    // silently lost (bug: unmatched Garmin activities never imported).
+    id: crypto.randomUUID(),
     garmin_summary_id: String(summaryId),
     // Server-created — no client-side upload queue entry needed.
     needs_upload: false,
@@ -306,6 +450,15 @@ export async function insertGarminActivityIfMissing(
       );
       return { kind: "skipped_enum_not_ready", sportType };
     }
+    // Log loudly here (in addition to the caller): garmin-push intentionally
+    // returns 200 to Garmin even on per-activity failures (their webhook
+    // retry semantics), so this log line is the only durable evidence that
+    // an activity import was dropped.
+    console.error(
+      `[garmin] Auto-create insert FAILED for summaryId=${summaryId} ` +
+        `sport=${sportType} user=${mappedActivity.user_id} — activity NOT imported:`,
+      error,
+    );
     return { kind: "error", error };
   }
 

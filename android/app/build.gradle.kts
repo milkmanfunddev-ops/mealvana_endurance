@@ -30,7 +30,7 @@ android {
     defaultConfig {
         applicationId = "com.milkman.mealvanaendurance"
         minSdk = flutter.minSdkVersion  // Matches pubspec.yaml flutter_launcher_icons config
-        targetSdk = 35  // Google Play requirement (updated Dec 2024)
+        targetSdk = 36  // Google Play requires targeting Android 16 (API 36) by Aug 31, 2026
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 

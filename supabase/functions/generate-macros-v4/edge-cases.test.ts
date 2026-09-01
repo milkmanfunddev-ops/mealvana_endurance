@@ -1,7 +1,7 @@
 /**
  * Edge Case Tests for Hydration Algorithm
  *
- * Ported from /docs/sodium_hydration/hydration_sodium_calc_tests.md §Edge Cases
+ * Ported from /docs/features/sodium_hydration/hydration_sodium_calc_tests.md §Edge Cases
  *
  * Run with:
  *   deno test supabase/functions/generate-macros-v4/edge-cases.test.ts

@@ -27,6 +27,8 @@ class OnboardingService {
     required int heightInches,
     required double weightPounds,
     required bool runsWithWaterBottle,
+    GutTraining? gutTraining,
+    SweatRateCat? sweatRate,
     String authProvider =
         'anonymous', // 'anonymous', 'email', 'google', 'apple'
     bool isAnonymous = true, // false when user signs up with email/OAuth
@@ -42,6 +44,8 @@ class OnboardingService {
       heightInches: heightInches,
       weightPounds: weightPounds,
       runsWithWaterBottle: runsWithWaterBottle,
+      gutTraining: gutTraining,
+      sweatRate: sweatRate,
       authProvider: authProvider,
       isAnonymous: isAnonymous,
       firstName: firstName,
@@ -135,22 +139,6 @@ class OnboardingService {
         'skipped': allergies.isEmpty,
       },
     );
-  }
-
-  /// Complete food preferences step
-  Future<void> saveFoodPreferences(
-    String userId,
-    Map<String, FoodPreference> preferences, {
-    Map<String, int>? sliderLevels,
-  }) async {
-    await _authService.saveFoodPreferences(
-      userId,
-      preferences,
-      sliderLevels: sliderLevels,
-    );
-
-    // No need to track onboarding completion as we only track the events in README
-    // User registration was already tracked when profile was created
   }
 
   /// Check if onboarding is complete

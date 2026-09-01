@@ -1,17 +1,27 @@
 /**
- * Database queries for food retrieval from template_foods table (v2)
+ * Database queries for food retrieval from the curated `template_foods` table.
  *
- * This file is the v2 equivalent of food-queries.ts. It queries the
- * unified `template_foods` table instead of the legacy `foods` table.
+ * LIVE DEPENDENCY OF generate-nutrition-plan-v3. (A previous header claimed this
+ * file was "v2 only"; there is no v2 — `generate-nutrition-plan-v2` no longer
+ * exists. Callers today: `after-phase.ts`, `lp-phase.ts`, `during-phase.ts`,
+ * `brick-handler.ts`.)
  *
- * BACKWARDS COMPATIBILITY: food-queries.ts is left untouched for v1.
- * This file is only imported by generate-nutrition-plan-v2.
+ * FOOD-SOURCE POLICY (2026-07-29): plan generation draws foods ONLY from the
+ * curated `template_foods` catalog. `user_foods` — user-created / barcode-scanned
+ * / branded grocery items — are NOT queried here and must not be reintroduced.
+ * The single legitimate user-originating source is a pinned personal formula,
+ * which is self-contained (its components carry their own macros and do NO
+ * food-pool lookup — see `personal-formula-pins.ts`).
  *
- * Key differences from food-queries.ts:
- * - Queries `template_foods` table (not `foods`)
+ * Additionally, every pool built here excludes rows whose `product_type` is null
+ * or `'import'` (unclassified / imported-branded), matching the gate in
+ * `before-phase-substitution.ts` and the client `ClientFoodPoolService`.
+ *
+ * Column notes vs the legacy `foods` table (`food-queries.ts`, now only used for
+ * water/salt essential backfill):
+ * - Queries `template_foods` (not `foods`)
  * - Column names: carbs_g (not carbs_per_serving), fluid_ml (not fluid_ml_per_serving)
- * - Uses activityType as 3rd param (not userId — v2 uses device_id, no userId needed)
- * - Still queries user_foods for user-created foods
+ * - Uses activityType as 3rd param (no userId needed)
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
@@ -55,6 +65,22 @@ function resolveActivityTypesFilter(activityType: ActivityType): string {
 }
 
 /**
+ * True when a food row carries a real, classified product type.
+ *
+ * Anything null/empty (never classified) or `'import'` (a barcode-scanned or
+ * otherwise imported branded grocery item) is NOT eligible for plan generation.
+ * This is the same gate the before-phase substitution path applies in SQL
+ * (`before-phase-substitution.ts`) and the client applies in
+ * `ClientFoodPoolService`; it lives here so every pool built in this file
+ * enforces it identically.
+ */
+export function isClassifiedProductType(productType: unknown): boolean {
+  if (typeof productType !== "string") return false;
+  const t = productType.trim().toLowerCase();
+  return t.length > 0 && t !== "import";
+}
+
+/**
  * Build a Supabase category filter for the given categories
  * Uses the categories array column with overlaps operator
  */
@@ -78,11 +104,15 @@ function getMaxServings(food: Record<string, unknown>, phase: Phase): number {
 }
 
 /**
- * Get foods suitable for a specific phase and activity type from template_foods
+ * Get foods suitable for a specific phase and activity type from template_foods.
+ *
+ * Curated catalog ONLY — `user_foods` is deliberately not consulted (food-source
+ * policy, see file header). There is no `deviceId` parameter any more; it existed
+ * solely to resolve the user id for the user_foods lookup.
  *
  * Note: Parameter order differs from food-queries.ts:
  *   food-queries.ts:          (supabase, phase, userId, liked, willing, disliked, activityType)
- *   template-food-queries.ts: (supabase, phase, activityType, liked, willing, disliked, deviceId)
+ *   template-food-queries.ts: (supabase, phase, activityType, liked, willing, disliked)
  */
 export async function getTemplateFoodsForPhase(
   supabase: SupabaseClient,
@@ -91,7 +121,6 @@ export async function getTemplateFoodsForPhase(
   likedFoods?: string[],
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
-  deviceId?: string,
   allowNonDefaultDuring: boolean = false,
   allergies?: string[],
   dietaryPreference?: string,
@@ -248,97 +277,18 @@ export async function getTemplateFoodsForPhase(
     }
   }
 
-  // STEP 2: Get user foods for this phase (same as food-queries.ts)
-  let userFoods: Record<string, unknown>[] = [];
-  if (deviceId) {
-    // Look up user_id from device_id
-    const { data: userData } = await supabase
-      .from("users")
-      .select("id")
-      .eq("device_id", deviceId)
-      .single();
-
-    const userId = userData?.id;
-    if (userId) {
-      console.log(
-        `[TMPL-FOODS-${phase.toUpperCase()}] Querying user foods for device_id: ${deviceId} (user_id: ${userId})`,
-      );
-
-      const { data: categoryUserFoods, error: userFoodsError } = await supabase
-        .from("user_foods")
-        .select(`
-          id, name, display_name, display_name_plural, image_address, description,
-          calories_per_serving, carbs_per_serving, protein_per_serving,
-          fat_per_serving, sodium_mg, fluid_ml_per_serving,
-          serving_amount, product_type, serving_unit,
-          is_electrolyte, to_exclude_from_solver, is_deleted,
-          categories, activity_types
-        `)
-        .eq("user_id", userId)
-        .eq("is_deleted", false)
-        .filter("categories", "ov", categoryFilter)
-        .or(activityFilter);
-
-      if (userFoodsError) {
-        console.log(
-          `[TMPL-FOODS-${phase.toUpperCase()}] Error fetching user foods:`,
-          userFoodsError,
-        );
-      } else if (categoryUserFoods) {
-        userFoods = userFoods.concat(categoryUserFoods);
-      }
-
-      // Get uncategorized user foods (empty categories = all phases)
-      const { data: uncategorizedUserFoods, error: uncatError } = await supabase
-        .from("user_foods")
-        .select(`
-          id, name, display_name, display_name_plural, image_address, description,
-          calories_per_serving, carbs_per_serving, protein_per_serving,
-          fat_per_serving, sodium_mg, fluid_ml_per_serving,
-          serving_amount, product_type, serving_unit,
-          is_electrolyte, to_exclude_from_solver, is_deleted,
-          categories, activity_types
-        `)
-        .eq("user_id", userId)
-        .eq("is_deleted", false)
-        .or(`categories.eq.{},categories.is.null`)
-        .or(activityFilter);
-
-      if (uncatError) {
-        console.log(
-          `[TMPL-FOODS-${phase.toUpperCase()}] Error fetching uncategorized user foods:`,
-          uncatError,
-        );
-      } else if (uncategorizedUserFoods) {
-        const categorizedIds = new Set(userFoods.map((f) => f.id));
-        const filtered = (uncategorizedUserFoods as Record<string, unknown>[])
-          .filter((f) => !categorizedIds.has(f.id));
-        userFoods = userFoods.concat(filtered);
-        console.log(
-          `[TMPL-FOODS-${phase.toUpperCase()}] Found ${filtered.length} uncategorized user foods (${userFoods.length} total user foods)`,
-        );
-      }
-    }
-  }
-
-  // STEP 3: Combine template_foods and user_foods
-  const allFoodsMap = new Map<
-    string,
-    { data: Record<string, unknown>; isUserFood: boolean }
-  >();
-
+  // STEP 2: Deduplicate. `user_foods` used to be merged in here — it no longer
+  // is (food-source policy, see file header). The curated catalog is the only
+  // source, so this step just guards against a row appearing twice via the
+  // STEP 1b widening fetch.
+  const allFoodsMap = new Map<string, Record<string, unknown>>();
   for (const food of templateFoods) {
-    allFoodsMap.set(food.id as string, { data: food, isUserFood: false });
-  }
-  for (const food of userFoods) {
-    if (!allFoodsMap.has(food.id as string)) {
-      allFoodsMap.set(food.id as string, { data: food, isUserFood: true });
-    }
+    allFoodsMap.set(food.id as string, food);
   }
 
   const allEntries = Array.from(allFoodsMap.values());
   console.log(
-    `[TMPL-FOODS-${phase.toUpperCase()}] Combined ${templateFoods.length} template + ${userFoods.length} user = ${allEntries.length} total`,
+    `[TMPL-FOODS-${phase.toUpperCase()}] ${allEntries.length} curated template foods in pool (user_foods excluded by policy)`,
   );
 
   if (allEntries.length === 0) return [];
@@ -350,8 +300,24 @@ export async function getTemplateFoodsForPhase(
   // STEP 4: Filter and transform to Food interface
   const totalCandidates = allEntries.length;
   let dislikeExcludedCount = 0;
+  let unclassifiedExcludedCount = 0;
   const filteredFoods = allEntries
-    .filter(({ data: f, isUserFood }) => {
+    .filter((f) => {
+      // Branded / unclassified guard. Mirrors the SQL gate in
+      // `before-phase-substitution.ts` (`product_type IS NOT NULL AND
+      // product_type != 'import'`) and the client `ClientFoodPoolService`.
+      // Curated rows are all classified today, so this is a forward guard: a
+      // row that lands in `template_foods` without a product type (or flagged
+      // as an import) never reaches a generated plan. Essentials (water/salt)
+      // are exempt so hydration is never lost to a data-entry gap.
+      if (f.is_essential !== true && !isClassifiedProductType(f.product_type)) {
+        unclassifiedExcludedCount++;
+        console.log(
+          `[TMPL-FILTER-UNCLASSIFIED] Excluding food with product_type=${f.product_type}: ${f.name}`,
+        );
+        return false;
+      }
+
       const isDisliked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
         dislikedSet,
@@ -368,9 +334,6 @@ export async function getTemplateFoodsForPhase(
       const isPreferredDuring = isLiked || isWilling;
       const isDefaultDuring = f.default_during === true;
       const isEssential = f.is_essential === true;
-      const userFoodProductType = f.product_type as string | null;
-      const isImportedUserFood = isUserFood &&
-        (userFoodProductType == null || userFoodProductType === "import");
       const isElectrolyte = f.is_electrolyte === true;
       // Honor-pin bypass: foods that are components of an in-scope pinned
       // template skip dislike/allergen/diet filters. Without this, a user who
@@ -397,9 +360,9 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Allergen filtering — exclude template foods whose allergens overlap with user's allergies
-      // Essential foods (water, salt) and user-created foods bypass allergen filtering
+      // Essential foods (water, salt) bypass allergen filtering
       if (
-        allergiesLower.length > 0 && !isUserFood && !isEssential &&
+        allergiesLower.length > 0 && !isEssential &&
         !isPinnedComponent
       ) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
@@ -417,7 +380,7 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Allergen-based diet filtering (for -free diets like gluten-free, dairy-free, peanut-free)
-      if (dietPrefLower && !isUserFood && !isEssential && !isPinnedComponent) {
+      if (dietPrefLower && !isEssential && !isPinnedComponent) {
         const dietExcludedAllergens: string[] = [];
         if (dietPrefLower === "gluten-free" || dietPrefLower === "all-free") {
           dietExcludedAllergens.push("gluten");
@@ -446,7 +409,7 @@ export async function getTemplateFoodsForPhase(
       }
 
       // Dietary preference filtering — exclude foods whose excluded_diets contains user's dietary preference
-      if (dietPrefLower && !isUserFood && !isEssential && !isPinnedComponent) {
+      if (dietPrefLower && !isEssential && !isPinnedComponent) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
         const isDietExcluded = excludedDiets.some((d: string) =>
           d.toLowerCase() === dietPrefLower
@@ -464,13 +427,12 @@ export async function getTemplateFoodsForPhase(
       // Running during default policy:
       // - include default_during foods
       // - include user-preferred foods (liked/willing_to_try)
-      // - include user foods and essentials
+      // - include essentials
       // - optionally include all during foods in fallback mode
       if (
         phase === "during" &&
         activityType === "running" &&
         !allowNonDefaultDuring &&
-        !isUserFood &&
         !isEssential &&
         !isPreferredDuring &&
         !isDefaultDuring
@@ -478,21 +440,9 @@ export async function getTemplateFoodsForPhase(
         return false;
       }
 
-      // Keep imported user foods as fallback options in running/during default mode.
-      // They are included in expanded mode and when explicitly preferred by user.
-      if (
-        phase === "during" &&
-        activityType === "running" &&
-        !allowNonDefaultDuring &&
-        isImportedUserFood &&
-        !isPreferredDuring
-      ) {
-        return false;
-      }
-
       return !isExcludedFromSolver;
     })
-    .map(({ data: f, isUserFood }): Food => {
+    .map((f): Food => {
       const isLiked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
         likedSet,
@@ -502,55 +452,25 @@ export async function getTemplateFoodsForPhase(
         willTrySet,
       );
 
-      // User foods with explicit typing are preferred, but imported/generic entries
-      // should not outrank contract-safe template foods by default.
-      const userFoodProductType = f.product_type as string | null;
-      const isImportedUserFood = isUserFood &&
-        (userFoodProductType == null || userFoodProductType === "import");
-      const isExplicitlyTypedUserFood = isUserFood &&
-        userFoodProductType != null &&
-        userFoodProductType !== "import";
-
       let preferenceCategory:
-        | "user_food"
         | "liked"
         | "willing"
         | "essential"
         | "neutral" = "neutral";
-      if (isExplicitlyTypedUserFood) preferenceCategory = "liked";
-      else if (isLiked) preferenceCategory = "liked";
+      if (isLiked) preferenceCategory = "liked";
       else if (isWilling) preferenceCategory = "willing";
-      else if (isImportedUserFood) preferenceCategory = "neutral";
 
       const preference_score = PREFERENCE_SCORE_MAP[preferenceCategory];
-      const maxServings = getMaxServings(f, phase);
-      const importedUserMaxByPhase = phase === "during" ? 2 : 1;
-      const effectiveMaxServings = isImportedUserFood
-        ? Math.min(maxServings, importedUserMaxByPhase)
-        : maxServings;
+      const effectiveMaxServings = getMaxServings(f, phase);
 
-      // Map column names: template_foods uses carbs_g, user_foods uses carbs_per_serving
-      const carbsG = isUserFood
-        ? safe(f.carbs_per_serving as number)
-        : safe(f.carbs_g as number);
-      const proteinG = isUserFood
-        ? safe(f.protein_per_serving as number)
-        : safe(f.protein_g as number);
-      const fatG = isUserFood
-        ? safe(f.fat_per_serving as number)
-        : safe(f.fat_g as number);
+      const carbsG = safe(f.carbs_g as number);
+      const proteinG = safe(f.protein_g as number);
+      const fatG = safe(f.fat_g as number);
       const sodiumMg = safe(f.sodium_mg as number);
-      const waterMl = isUserFood
-        ? safe(f.fluid_ml_per_serving as number)
-        : safe(f.fluid_ml as number);
-      const calories = isUserFood
-        ? safe(f.calories_per_serving as number)
-        : safe(f.calories as number);
+      const waterMl = safe(f.fluid_ml as number);
+      const calories = safe(f.calories as number);
 
-      // min_servings_during defaults to 1.0 for template foods, 0.5 for user foods
-      const minServings = isUserFood
-        ? 0.5
-        : ((f.min_servings_during as number) ?? 1.0);
+      const minServings = (f.min_servings_during as number) ?? 1.0;
 
       return {
         id: f.id as string,
@@ -575,17 +495,21 @@ export async function getTemplateFoodsForPhase(
         max_servings: effectiveMaxServings,
         preference_score,
         is_electrolyte: (f.is_electrolyte as boolean) || false,
-        is_liquid: isUserFood ? false : ((f.is_liquid as boolean) || false),
+        is_liquid: (f.is_liquid as boolean) || false,
         is_essential: (f.is_essential as boolean) || false,
-        is_user_food: isUserFood,
-        is_indivisible: isUserFood
-          ? false
-          : ((f.is_indivisible as boolean) || false),
-        product_type: isUserFood
-          ? ((f.product_type as string) ?? undefined)
-          : ((f.product_type as string) ?? undefined),
+        is_user_food: false,
+        is_indivisible: (f.is_indivisible as boolean) || false,
+        product_type: (f.product_type as string) ?? undefined,
       };
     });
+
+  if (unclassifiedExcludedCount > 0) {
+    console.warn(
+      `[TMPL-FILTER-UNCLASSIFIED] Excluded ${unclassifiedExcludedCount} template food(s) with a null/'import' ` +
+        `product_type for phase=${phase}, activity=${activityType}. Curated rows should always be classified — ` +
+        `check template_foods data entry.`,
+    );
+  }
 
   // Guardrail: if the disliked filter removed most of the candidate pool, the
   // phase will almost certainly under-fuel (no carb sources survive). This is
@@ -699,14 +623,16 @@ export async function getTemplateElectrolyteFoods(
  * Queries foods with 'transition' category — these are quick-consume items
  * (gels, sports drinks, water) suitable for brief transition periods.
  * No activity_type filter — transition foods are universal across sports.
- * Also includes user_foods with transition category if deviceId is provided.
+ *
+ * Curated catalog ONLY — `user_foods` is deliberately not consulted (food-source
+ * policy, see file header). The former `deviceId` parameter existed solely to
+ * resolve the user id for that lookup and has been removed.
  */
 export async function getTransitionFoods(
   supabase: SupabaseClient,
   likedFoods?: string[],
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
-  deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
 ): Promise<Food[]> {
@@ -742,52 +668,11 @@ export async function getTransitionFoods(
     `[TRANSITION-FOODS] Found ${templateFoods.length} transition template foods`,
   );
 
-  // Also fetch user_foods with transition category if deviceId provided
-  let userFoods: Record<string, unknown>[] = [];
-  if (deviceId) {
-    const { data: userData } = await supabase
-      .from("users")
-      .select("id")
-      .eq("device_id", deviceId)
-      .single();
-
-    const userId = userData?.id;
-    if (userId) {
-      const { data: userFoodData, error: userFoodError } = await supabase
-        .from("user_foods")
-        .select(`
-          id, name, display_name, display_name_plural, image_address, description,
-          calories_per_serving, carbs_per_serving, protein_per_serving,
-          fat_per_serving, sodium_mg, fluid_ml_per_serving,
-          serving_amount, product_type, serving_unit,
-          is_electrolyte, to_exclude_from_solver, is_deleted,
-          categories
-        `)
-        .eq("user_id", userId)
-        .eq("is_deleted", false)
-        .filter("categories", "ov", "{transition}");
-
-      if (!userFoodError && userFoodData) {
-        userFoods = userFoodData as Record<string, unknown>[];
-        console.log(
-          `[TRANSITION-FOODS] Found ${userFoods.length} transition user foods`,
-        );
-      }
-    }
-  }
-
-  // Combine and deduplicate
-  const allFoodsMap = new Map<
-    string,
-    { data: Record<string, unknown>; isUserFood: boolean }
-  >();
+  // Deduplicate. `user_foods` used to be merged in here — it no longer is
+  // (food-source policy, see file header).
+  const allFoodsMap = new Map<string, Record<string, unknown>>();
   for (const food of templateFoods) {
-    allFoodsMap.set(food.id as string, { data: food, isUserFood: false });
-  }
-  for (const food of userFoods) {
-    if (!allFoodsMap.has(food.id as string)) {
-      allFoodsMap.set(food.id as string, { data: food, isUserFood: true });
-    }
+    allFoodsMap.set(food.id as string, food);
   }
 
   const allEntries = Array.from(allFoodsMap.values());
@@ -797,17 +682,26 @@ export async function getTransitionFoods(
   const transDietPrefLower = dietaryPreference?.toLowerCase() ?? "";
 
   return allEntries
-    .filter(({ data: f, isUserFood }) => {
+    .filter((f) => {
+      const isEssential = f.is_essential === true;
+
+      // Branded / unclassified guard — same gate as getTemplateFoodsForPhase.
+      if (!isEssential && !isClassifiedProductType(f.product_type)) {
+        console.log(
+          `[TRANSITION-FILTER-UNCLASSIFIED] Excluding food with product_type=${f.product_type}: ${f.name}`,
+        );
+        return false;
+      }
+
       const isDisliked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
         dislikedSet,
       );
-      const isEssential = f.is_essential === true;
-      if (isDisliked && !isUserFood && !isEssential) return false;
+      if (isDisliked && !isEssential) return false;
       if (f.to_exclude_from_solver === true) return false;
 
-      // Allergen filtering — essential foods and user foods bypass
-      if (transAllergiesLower.length > 0 && !isUserFood && !isEssential) {
+      // Allergen filtering — essential foods bypass
+      if (transAllergiesLower.length > 0 && !isEssential) {
         const foodAllergens = (f.allergens as string[] | null) ?? [];
         const hasAllergen = foodAllergens.some((a: string) =>
           transAllergiesLower.includes(a.toLowerCase())
@@ -823,7 +717,7 @@ export async function getTransitionFoods(
       }
 
       // Dietary preference filtering
-      if (transDietPrefLower && !isUserFood && !isEssential) {
+      if (transDietPrefLower && !isEssential) {
         const excludedDiets = (f.excluded_diets as string[] | null) ?? [];
         const isDietExcluded = excludedDiets.some((d: string) =>
           d.toLowerCase() === transDietPrefLower
@@ -838,7 +732,7 @@ export async function getTransitionFoods(
 
       return true;
     })
-    .map(({ data: f, isUserFood }): Food => {
+    .map((f): Food => {
       const isLiked = matchesPreference(
         f as { id?: string; name?: string; display_name?: string | null },
         likedSet,
@@ -848,43 +742,17 @@ export async function getTransitionFoods(
         willTrySet,
       );
 
-      // User foods with explicit typing are preferred, but imported/generic entries
-      // should not outrank contract-safe template foods by default.
-      const transUserFoodProductType = f.product_type as string | null;
-      const isImportedUserFood = isUserFood &&
-        (transUserFoodProductType == null ||
-          transUserFoodProductType === "import");
-      const isExplicitlyTypedUserFood = isUserFood &&
-        transUserFoodProductType != null &&
-        transUserFoodProductType !== "import";
-
-      let preferenceCategory:
-        | "user_food"
-        | "liked"
-        | "willing"
-        | "essential"
-        | "neutral" = "neutral";
-      if (isExplicitlyTypedUserFood) preferenceCategory = "liked";
-      else if (isLiked) preferenceCategory = "liked";
+      let preferenceCategory: "liked" | "willing" | "essential" | "neutral" =
+        "neutral";
+      if (isLiked) preferenceCategory = "liked";
       else if (isWilling) preferenceCategory = "willing";
-      else if (isImportedUserFood) preferenceCategory = "neutral";
 
-      const carbsG = isUserFood
-        ? safe(f.carbs_per_serving as number)
-        : safe(f.carbs_g as number);
-      const proteinG = isUserFood
-        ? safe(f.protein_per_serving as number)
-        : safe(f.protein_g as number);
-      const fatG = isUserFood
-        ? safe(f.fat_per_serving as number)
-        : safe(f.fat_g as number);
+      const carbsG = safe(f.carbs_g as number);
+      const proteinG = safe(f.protein_g as number);
+      const fatG = safe(f.fat_g as number);
       const sodiumMg = safe(f.sodium_mg as number);
-      const waterMl = isUserFood
-        ? safe(f.fluid_ml_per_serving as number)
-        : safe(f.fluid_ml as number);
-      const calories = isUserFood
-        ? safe(f.calories_per_serving as number)
-        : safe(f.calories as number);
+      const waterMl = safe(f.fluid_ml as number);
+      const calories = safe(f.calories as number);
 
       return {
         id: f.id as string,
@@ -909,12 +777,10 @@ export async function getTransitionFoods(
         max_servings: (f.max_servings_during as number) ?? DEFAULT_MAX_SERVINGS,
         preference_score: PREFERENCE_SCORE_MAP[preferenceCategory],
         is_electrolyte: (f.is_electrolyte as boolean) || false,
-        is_liquid: isUserFood ? false : ((f.is_liquid as boolean) || false),
+        is_liquid: (f.is_liquid as boolean) || false,
         is_essential: (f.is_essential as boolean) || false,
-        is_user_food: isUserFood,
-        is_indivisible: isUserFood
-          ? false
-          : ((f.is_indivisible as boolean) || false),
+        is_user_food: false,
+        is_indivisible: (f.is_indivisible as boolean) || false,
         product_type: (f.product_type as string) ?? undefined,
       };
     });
@@ -1013,8 +879,9 @@ export async function getDuringWorkoutTemplates(
  * max_per_hr_low, max_per_hr_moderate, max_per_hr_high, min_increment,
  * sodium_top_up_eligible.
  *
- * Includes both template_foods and user_foods, with the same preference
- * scoring and filtering as getTemplateFoodsForPhase.
+ * Curated `template_foods` ONLY — `user_foods` is never consulted (food-source
+ * policy, see file header). Same preference scoring and filtering as
+ * getTemplateFoodsForPhase.
  */
 export async function getTemplateFoodsForDuringWithConstraints(
   supabase: SupabaseClient,
@@ -1022,7 +889,10 @@ export async function getTemplateFoodsForDuringWithConstraints(
   likedFoods?: string[],
   willingToTryFoods?: string[],
   dislikedFoods?: string[],
-  deviceId?: string,
+  /** @deprecated Ignored. Retained only to keep the positional signature stable
+   * for existing callers; it used to resolve a user id for a `user_foods`
+   * lookup that no longer exists. Do not reintroduce. */
+  _deviceId?: string,
   allergies?: string[],
   dietaryPreference?: string,
   /** Food names that are components of the user's pinned during-templates.
@@ -1120,6 +990,15 @@ export async function getTemplateFoodsForDuringWithConstraints(
 
       const isEssential = f.is_essential === true;
       const isElectrolyte = f.is_electrolyte === true;
+
+      // Branded / unclassified guard — same gate as getTemplateFoodsForPhase.
+      if (!isEssential && !isClassifiedProductType(f.product_type)) {
+        console.log(
+          `[TMPL-FOODS-DURING-CONSTRAINTS] Excluding food with product_type=${f.product_type}: ${f.name}`,
+        );
+        return false;
+      }
+
       // Honor-pin bypass: foods that are components of an in-scope pinned
       // template skip dislike/allergen/diet filters. Without this, a user who
       // pins a template containing a generally-disliked or allergen-bearing

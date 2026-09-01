@@ -54,6 +54,8 @@ abstract class SentryReporter {
     String message, {
     SentryLevel level,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   });
 
   bool get isEnabled;
@@ -145,8 +147,9 @@ class SentrySdkReporter implements SentryReporter {
         scope.level = SentryLevel.warning;
         if (url != null) scope.setTag('url', url);
         if (method != null) scope.setTag('method', method);
-        if (statusCode != null)
+        if (statusCode != null) {
           scope.setTag('status_code', statusCode.toString());
+        }
         if (timeout != null) {
           scope.setTag('timeout_ms', timeout.inMilliseconds.toString());
         }
@@ -205,12 +208,20 @@ class SentrySdkReporter implements SentryReporter {
     String message, {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   }) async {
     await Sentry.captureMessage(
       message,
       level: level,
       withScope: (scope) {
         tags?.forEach(scope.setTag);
+        if (extra != null) {
+          scope.setContexts('diagnostic', extra);
+        }
+        if (fingerprint != null) {
+          scope.fingerprint = fingerprint;
+        }
       },
     );
   }
@@ -281,6 +292,8 @@ class NoopSentryReporter implements SentryReporter {
     String message, {
     SentryLevel level = SentryLevel.info,
     Map<String, String>? tags,
+    Map<String, dynamic>? extra,
+    List<String>? fingerprint,
   }) async {}
 
   @override

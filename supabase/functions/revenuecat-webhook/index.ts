@@ -10,12 +10,21 @@
  *   • URL:  https://<project-ref>.supabase.co/functions/v1/revenuecat-webhook
  *   • Authorization header: set to the SAME value as the REVENUECAT_WEBHOOK_SECRET
  *     secret below (RC sends it verbatim in the Authorization header).
+ *   • Environment filter: the PROD webhook must receive BOTH sandbox and
+ *     production events — TestFlight purchases are always sandbox, so a
+ *     production-only filter silently routes every TestFlight purchase to the
+ *     dev project and the prod wallet never increments (2026-08-11 incident).
+ *     Cross-project deliveries are safe: an app_user_id that doesn't exist in
+ *     this project's auth.users FK-fails in grant_credits and is acked as a
+ *     no-op below.
  * Deploy with JWT verification OFF (RC is not a Supabase-authed caller):
  *   supabase functions deploy revenuecat-webhook --no-verify-jwt --project-ref <ref>
  * Secrets:
  *   REVENUECAT_WEBHOOK_SECRET  — shared secret matched against the Authorization header
  *   RC_PRODUCT_CREDITS         — optional JSON map of store product id → credit amount,
- *                                e.g. {"mealvana_credits_100":100,"mealvana_credits_500":500}
+ *                                e.g. {"mealvana_credits_50":50,"mealvana_credits_250":250}
+ *                                NOTE: when set, this REPLACES the defaults below — a stale
+ *                                secret is enough to make every new SKU grant 0 credits.
  *
  * IMPORTANT: the RevenueCat "App User ID" must be the Supabase auth user id
  * (set via Purchases.logIn(userId) in the app) so app_user_id maps to our user.
@@ -34,9 +43,17 @@ const WEBHOOK_SECRET = Deno.env.get('REVENUECAT_WEBHOOK_SECRET') ?? '';
 
 /** RC store product id → credits granted. Override via RC_PRODUCT_CREDITS JSON. */
 const DEFAULT_PRODUCT_CREDITS: Record<string, number> = {
-  mealvana_credits_100: 100,
-  mealvana_credits_500: 500,
-  mealvana_credits_1200: 1200,
+  mealvana_credits_50: 50,
+  mealvana_credits_250: 250,
+  // Prod App Store `_prod` variants of the packs above — same Apple
+  // product-id-uniqueness constraint as the test pack below.
+  mealvana_credits_50_prod: 50,
+  mealvana_credits_250_prod: 250,
+  // $0.99 pipeline-test pack, shown only to dev builds / tester devices.
+  // The prod App Store carries a `_prod` variant because Apple rejects a
+  // product id already claimed by any app in the team (the dev app owns it).
+  mealvana_credits_test_1: 1,
+  mealvana_credits_test_1_prod: 1,
 };
 
 function productCredits(): Record<string, number> {
@@ -120,6 +137,16 @@ serve(async (req: Request) => {
       if (error.code === '23505') {
         console.log(`[rc-webhook] event ${eventId} already processed (idempotent)`);
         return json({ ok: true, idempotent: true });
+      }
+      // FK violation == the app_user_id has no auth.users row in THIS project.
+      // Dev and prod share one RevenueCat project, and TestFlight purchases are
+      // always sandbox, so both Supabase projects can receive events for users
+      // that only exist in the other one. Acknowledge so RC doesn't retry.
+      if (error.code === '23503') {
+        console.log(
+          `[rc-webhook] user ${appUserId} not in this project, ignoring event ${eventId}`,
+        );
+        return json({ ok: true, ignored: 'user_not_in_project' });
       }
       console.error('[rc-webhook] grant_credits error:', error.message);
       return json({ error: 'grant failed' }, 500);

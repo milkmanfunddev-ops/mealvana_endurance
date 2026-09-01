@@ -3,9 +3,9 @@
 # Edge Function Test Runner (auto-discovery)
 # =============================================================================
 #
-# Discovers and runs EVERY *.test.ts under supabase/functions/ — a new test
-# file is picked up with zero edits to this script. There is no hand-curated
-# test list; if you add a test, it runs.
+# Discovers and runs EVERY *.test.ts under supabase/functions/ (except
+# `_archived/`) — a new test file is picked up with zero edits to this script.
+# There is no hand-curated test list; if you add a test, it runs.
 #
 # Usage:
 #   ./supabase/functions/run-algorithm-tests.sh              # Local tests only
@@ -127,7 +127,13 @@ echo -e "${BLUE}╚════════════════════�
 ALL_FILES=()
 while IFS= read -r f; do
   ALL_FILES+=("$f")
-done < <(find . -name '*.test.ts' -type f | sed 's|^\./||' | sort)
+#
+# `_archived/` is pruned: retired tests are moved to the repo-root
+# `_archived/supabase/functions/...` mirror (same convention as the Flutter
+# `_archived/test/...`), which is already outside this script's `cd`. The
+# prune below is belt-and-braces for anyone who archives in place instead —
+# without it, moving a test to `_archived/` would keep running it.
+done < <(find . -path './_archived' -prune -o -name '*.test.ts' -type f -print | sed 's|^\./||' | sort)
 
 LOCAL_FILES=()
 REMOTE_FILES=()

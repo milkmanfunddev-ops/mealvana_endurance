@@ -46,6 +46,7 @@ class AuthService {
     required double weightPounds,
     required bool runsWithWaterBottle,
     GutTraining? gutTraining,
+    SweatRateCat? sweatRate,
     UnitSystem unitSystem = UnitSystem.imperial,
     Map<String, FoodPreference>? foodPreferences,
     String authProvider =
@@ -104,6 +105,7 @@ class AuthService {
         weightPounds: weightPounds,
         runsWithWaterBottle: runsWithWaterBottle,
         gutTraining: gutTraining ?? GutTraining.moderate,
+        sweatRate: sweatRate ?? SweatRateCat.medium,
         unitSystem: unitSystem,
         onboardingCompleted:
             true, // Set true immediately so user can proceed even if later steps fail

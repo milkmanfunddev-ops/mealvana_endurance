@@ -1,0 +1,41 @@
+{
+  "section": "during-workout-sodium",
+  "engine": "OfflineMacroCalculator.calculateDuringWorkoutHydration (sodium fields)",
+  "note": "sodiumRate = round(recommendedFluidRate/1000 * conc). Fluid rate inherited from the ratified hydration slice (precise/round3dp). Asserts only fields present in 'expected'.",
+  "vectors": [
+    { "id": "ex1-average-salt", "status": "ratified",
+      "inputs": { "durationMin": 90, "weightKg": 65, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 55, "sport": "running" },
+      "expected": { "sodiumConcMgPerL": 825, "sodiumRateMgph": 534, "sodiumTotalMg": 801 },
+      "why": "SSOT example at precise fluid 647: 0.647*825=534 (doc prints 532 from fluid 645)" },
+
+    { "id": "high-salt-tier", "status": "ratified",
+      "inputs": { "durationMin": 90, "weightKg": 65, "sweatRateCategory": "medium", "sweatSodiumCat": "high", "tempC": 22, "humidityPct": 55, "sport": "running" },
+      "expected": { "sodiumConcMgPerL": 1000, "sodiumRateMgph": 647, "sodiumTotalMg": 971 },
+      "why": "high tier 1000 mg/L; 0.647*1000=647" },
+
+    { "id": "low-salt-tier", "status": "ratified",
+      "inputs": { "durationMin": 90, "weightKg": 65, "sweatRateCategory": "medium", "sweatSodiumCat": "low", "tempC": 22, "humidityPct": 55, "sport": "running" },
+      "expected": { "sodiumConcMgPerL": 650, "sodiumRateMgph": 421, "sodiumTotalMg": 632 },
+      "why": "low tier 650; 0.647*650=420.55->421" },
+
+    { "id": "known-sodium-conc-override", "status": "ratified",
+      "inputs": { "durationMin": 90, "weightKg": 65, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 55, "sport": "running", "knownSodiumConcMgPerL": 1200 },
+      "expected": { "sodiumConcMgPerL": 1200, "sodiumRateMgph": 776, "sodiumTotalMg": 1164 },
+      "why": "known conc overrides tier; 0.647*1200=776.4->776" },
+
+    { "id": "gate-sodium", "status": "ratified",
+      "inputs": { "durationMin": 45, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "sport": "running" },
+      "expected": { "sodiumConcMgPerL": 825, "sodiumRateMgph": 317, "sodiumTotalMg": 238 },
+      "why": "gate fluid 384; 0.384*825=316.8->317; *0.75=238" },
+
+    { "id": "ceiling-capped-sodium", "status": "ratified",
+      "inputs": { "durationMin": 120, "weightKg": 60, "sweatRateCategory": "heavy", "sweatSodiumCat": "high", "tempC": 30, "humidityPct": 50, "sport": "running" },
+      "expected": { "sodiumConcMgPerL": 1000, "sodiumRateMgph": 800, "sodiumTotalMg": 1600 },
+      "why": "fluid capped at 800 GI ceiling; 0.800*1000=800; *2h=1600" },
+
+    { "id": "swim-sodium-zero", "status": "ratified",
+      "inputs": { "durationMin": 60, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "swimming" },
+      "expected": { "sodiumConcMgPerL": 825, "sodiumRateMgph": 0, "sodiumTotalMg": 0 },
+      "why": "swimming -> no drinking -> sodium 0; conc still reported" }
+  ]
+}

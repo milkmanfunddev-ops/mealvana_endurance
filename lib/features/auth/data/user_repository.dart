@@ -1,9 +1,7 @@
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/user_preferences.dart';
-import '../../onboarding/domain/dietary_preference.dart';
-import '../../onboarding/domain/allergy.dart';
-import '../../nutrition_plan/domain/nutrition_target_overrides.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
@@ -106,18 +104,28 @@ class UserRepository with SyncableRepository {
         return UploadResult.nothingToUpload();
       }
 
-      // Convert to UserProfile domain object using UserDao's helper
-      final userProfile = _convertToDomainUserProfile(dirtyUser);
+      // Serialize the dirty SNAPSHOT via the DAO's canonical mapping — the
+      // single source of truth for every UserProfile field (a hand-duplicated
+      // copy used to live here and silently dropped sweatRate/unitSystem/
+      // nutritionTargetOverrides on every background upload).
+      final userProfile = database.userDao.toDomainProfile(dirtyUser);
 
       // Upload to Supabase
       await supabase
           .from('users')
           .upsert(userProfile.toJson(), onConflict: 'id');
 
-      // Clear dirty flag in local database
-      await database
-          .update(database.userProfilesTable)
-          .replace(dirtyUser.copyWith(needsUpload: false));
+      // Clear the dirty flag with a TARGETED column write, not a full-row
+      // .replace of the earlier snapshot: a concurrent local edit landing
+      // between the read and this write would otherwise be reverted wholesale
+      // AND un-dirtied — local and server permanently diverged. The
+      // updatedAt guard narrows it further: an edit that landed mid-upload
+      // bumps updatedAt, the guard misses, the row stays dirty, and the NEW
+      // value uploads on the next pass instead of being silently dropped.
+      await (database.update(database.userProfilesTable)
+            ..where((t) => t.id.equals(userId))
+            ..where((t) => t.updatedAt.equals(dirtyUser.updatedAt)))
+          .write(const UserProfilesTableCompanion(needsUpload: Value(false)));
 
       sentry.addBreadcrumb(
         message: 'Uploaded dirty user profile to Supabase',
@@ -135,57 +143,6 @@ class UserRepository with SyncableRepository {
       );
       return UploadResult.failed(e.toString());
     }
-  }
-
-  /// Convert database entry to domain model
-  /// Same as UserDao._convertToDomainUserProfile but accessible here
-  UserProfile _convertToDomainUserProfile(UserProfileEntry dbUser) {
-    return UserProfile(
-      id: dbUser.id,
-      deviceId: dbUser.deviceId,
-      authUserId: dbUser.authUserId,
-      authProvider: dbUser.authProvider,
-      isAnonymous: dbUser.isAnonymous,
-      gender: Gender.values.firstWhere(
-        (g) => g.name == dbUser.gender,
-        orElse: () => Gender.other,
-      ),
-      birthday: dbUser.birthday ?? DateTime.now(),
-      heightFeet: dbUser.heightFeet ?? 0,
-      heightInches: dbUser.heightInches ?? 0,
-      weightPounds: dbUser.weightPounds ?? 0.0,
-      runsWithWaterBottle: dbUser.runsWithWaterBottle,
-      gutTraining: GutTraining.values.firstWhere(
-        (g) => g.name == dbUser.gutTrainingLevel,
-        orElse: () => GutTraining.moderate,
-      ),
-      onboardingCompleted: dbUser.onboardingCompleted,
-      createdAt: dbUser.createdAt,
-      updatedAt: dbUser.updatedAt,
-      appVersion: dbUser.appVersion ?? '',
-      swipeHintShown: dbUser.swipeHintShown,
-      // Dietary preference and allergies (onboarding revamp)
-      // Convert null to DietaryPreference.none for UI
-      dietaryPreference:
-          DietaryPreference.fromDbValue(dbUser.dietaryPreference) ??
-          DietaryPreference.none,
-      allergies: Allergy.fromDbArray(dbUser.allergies),
-      // Optional name fields for coach mode athlete identification
-      firstName: dbUser.firstName,
-      lastName: dbUser.lastName,
-      // Contact information
-      email: dbUser.email,
-      // Sweat profile fields
-      sweatSodium: SweatSodiumCat.fromDbValue(dbUser.sweatSodium),
-      knownSweatRateMlPerHour: dbUser.knownSweatRateMlPerHour,
-      knownSodiumConcentrationMgPerLiter:
-          dbUser.knownSodiumConcentrationMgPerLiter,
-      sweatTestDate: dbUser.sweatTestDate,
-      sweatTestSource: dbUser.sweatTestSource,
-      // Garmin precedence timestamps
-      weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
-      bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
-    );
   }
 
   // ========== End SyncableRepository Implementation ==========
@@ -744,7 +701,7 @@ class UserRepository with SyncableRepository {
             category: 'sync',
             data: {'user_id': userId},
           );
-          return _convertToDomainUserProfile(localProfile!);
+          return database.userDao.getUserProfileById(userId);
         }
 
         final user = _parseUserFromSupabase(response, userId);
@@ -884,108 +841,81 @@ class UserRepository with SyncableRepository {
     }
   }
 
-  /// Parse user data from Supabase response
+  /// Parse user data from Supabase response.
+  ///
+  /// Delegates to [UserProfile.fromSupabaseRow], the one complete DEFENSIVE
+  /// parser (per-field defaults for missing/null columns — `fromJson` throws
+  /// on sparse legacy rows). The old inline field list here omitted
+  /// unit_system and sweat_rate, so every remote hydration through this path
+  /// reset a metric athlete to imperial and their sweat profile to medium.
   UserProfile _parseUserFromSupabase(dynamic response, String deviceId) {
-    // Handle both single object and array responses
-    final userData = response is List ? response.first : response;
+    // Handle both single object and array responses.
+    final userData =
+        (response is List ? response.first : response) as Map<String, dynamic>;
 
-    return UserProfile(
-      id: userData['id'] ?? deviceId,
-      deviceId: userData['device_id'] ?? deviceId,
-      authUserId: userData['auth_user_id'] as String?,
-      authProvider: userData['auth_provider'] as String? ?? 'anonymous',
-      isAnonymous: userData['is_anonymous'] as bool? ?? true,
-      gender: Gender.values.firstWhere(
-        (e) => e.name == userData['gender'],
-        orElse: () => Gender.other,
-      ),
-      birthday: DateTime.parse(
-        userData['birthday'] ?? DateTime.now().toIso8601String(),
-      ),
-      heightFeet: userData['height_feet'] ?? 5,
-      heightInches: userData['height_inches'] ?? 8,
-      weightPounds: (userData['weight_pounds'] as num?)?.toDouble() ?? 150.0,
-      runsWithWaterBottle: userData['runs_with_water_bottle'] ?? false,
-      gutTraining: GutTraining.values.firstWhere(
-        (e) => e.name == userData['gut_training_level'],
-        orElse: () => GutTraining.moderate,
-      ),
-      onboardingCompleted: userData['onboarding_completed'] ?? false,
-      createdAt: DateTime.parse(
-        userData['created_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      updatedAt: DateTime.parse(
-        userData['updated_at'] ?? DateTime.now().toIso8601String(),
-      ),
-      appVersion: userData['app_version'] ?? '1.0.0',
-      giSensitivity: userData['gi_sensitivity'] as bool?,
-      ftpWatts: userData['cycling_ftp_watts'] as int?,
-      typicalBikeBottles: userData['typical_bike_bottles'] as int?,
-      hasAeroBottle: userData['has_aero_bottle'] as bool?,
-      hasBentoBox: userData['has_bento_box'] as bool?,
-      cssPacePer100mSeconds: userData['swimming_css_seconds_per_100m'] as int?,
-      typicalWetsuit: userData['typical_wetsuit'] as bool?,
-      typicalSwimCapType: userData['typical_swim_cap_type'] as String?,
-      // Dietary preference and allergies (already parsed by UserProfile.fromJson in some paths)
-      // Convert null to DietaryPreference.none for consistency (database stores null, domain uses none)
-      dietaryPreference:
-          DietaryPreference.fromDbValue(
-            userData['dietary_preference'] as String?,
-          ) ??
-          DietaryPreference.none,
-      allergies: _parseAllergiesFromSupabase(userData['allergies']),
-      // Nutrition target overrides
-      nutritionTargetOverrides: userData['nutrition_target_overrides'] != null
-          ? NutritionTargetOverrides.fromJson(
-              userData['nutrition_target_overrides'] as Map<String, dynamic>,
-            )
-          : null,
-      // User identity
-      firstName: userData['first_name'] as String?,
-      lastName: userData['last_name'] as String?,
-      // Contact information
-      email: userData['email'] as String?,
-      // Garmin precedence timestamps
-      weightPoundsUpdatedAt: userData['weight_pounds_updated_at'] != null
-          ? DateTime.tryParse(userData['weight_pounds_updated_at'] as String)
-          : null,
-      bodyFatPctUpdatedAt: userData['body_fat_pct_updated_at'] != null
-          ? DateTime.tryParse(userData['body_fat_pct_updated_at'] as String)
-          : null,
-    );
-  }
-
-  /// Parse allergies from Supabase response, handling both formats:
-  /// - New format: `List<dynamic>` from PostgreSQL allergy_enum[] array
-  /// - Legacy format: String in PostgreSQL text format like "{dairy,gluten}"
-  List<Allergy> _parseAllergiesFromSupabase(dynamic value) {
-    if (value == null) return [];
-
-    // New format: List<dynamic> from PostgreSQL enum array
-    // This is what Supabase returns after the 20251218 migration
-    if (value is List) {
-      return value
-          .map((item) => Allergy.fromDbValue(item.toString()))
-          .whereType<Allergy>()
-          .toList();
-    }
-
-    // Legacy format: String in PostgreSQL text format
-    // For backwards compatibility with old data
-    if (value is String) {
-      return Allergy.fromDbArray(value);
-    }
-
-    return [];
+    return UserProfile.fromSupabaseRow(userData, fallbackId: deviceId);
   }
 
   Future<void> _upsertUserProfileToSupabase(UserProfile profile) async {
     await supabase.from('users').upsert(profile.toJson());
   }
 
+  /// Whether [userId] has data in LOCAL Drift worth migrating to a new uid.
+  ///
+  /// Complements [checkUserHasData] (which asks Supabase): an anonymous user
+  /// who onboarded or logged data OFFLINE has rows only in Drift, so the
+  /// remote check alone returned false, `migrateAnonymousUserData` never ran,
+  /// and everything they entered was orphaned under the dead anon uid.
+  ///
+  /// A freshly-reset post-sign-out anonymous user has none of these rows
+  /// (their old data stays under the OLD uid), so this correctly stays false
+  /// for the "empty anon signs back in" case the remote check was built for.
+  ///
+  /// Checked tables mirror what `migrateUserData` can move: the onboarding
+  /// survey (written by every completed onboarding), plus the user-created
+  /// data types (activities, events, meal logs, personal formulas).
+  Future<bool> hasLocalDataWorthMigrating(String userId) async {
+    final row = await database
+        .customSelect(
+          'SELECT ('
+          'EXISTS(SELECT 1 FROM onboarding_surveys WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM activities WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM events WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM meal_logs WHERE user_id = ?1) OR '
+          'EXISTS(SELECT 1 FROM personal_formulas WHERE user_id = ?1)'
+          ') AS has_data',
+          variables: [Variable.withString(userId)],
+        )
+        .getSingle();
+    return row.read<bool>('has_data');
+  }
+
+  /// Whether [userId]'s server profile exists and has completed onboarding.
+  ///
+  /// Used by `migrateAnonymousUserData` alongside [checkUserHasData]: that
+  /// check probes only activities/events/food_preferences, so an account that
+  /// was set up but hasn't logged workouts yet read as "no data" — and the
+  /// destructive Scenario B migration then deleted its server rows (including
+  /// un-probed user_foods and carb plans) and overwrote its profile with the
+  /// anon draft. A completed profile IS data: it must route to Scenario A
+  /// (account wins).
+  Future<bool> remoteAccountIsOnboarded(String userId) async {
+    final row = await supabase
+        .from('users')
+        .select('onboarding_completed')
+        .eq('id', userId)
+        .maybeSingle();
+    return row != null && (row['onboarding_completed'] as bool? ?? false);
+  }
+
   /// Check if a user has any data worth migrating (activities, events, etc.)
   /// This is used to prevent unnecessary migration when signing back into an existing account
   /// after sign-out (where a new empty anonymous user is created)
+  ///
+  /// REMOTE-ONLY by design at the `migrateAnonymousUserData` call site (it
+  /// decides whether the OAUTH account's server data wins). For the "does the
+  /// ANON user have anything to migrate" question, pair it with
+  /// [hasLocalDataWorthMigrating] — offline data never shows up here.
   Future<bool> checkUserHasData(String userId) async {
     try {
       // Check Supabase for any user data

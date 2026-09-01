@@ -37,6 +37,22 @@ bool isDiagnosticEvent(SentryEvent event) =>
     event.tags?.containsKey('metrickit') ?? false;
 
 bool isSentryNoise(SentryEvent event) {
+  // Weather is decorative and already degrades to a default forecast in
+  // WeatherService.getWeatherForecast's catch. The events still reach Sentry
+  // because the SDK's HTTP integration reports the failed request itself
+  // (`mechanism: SentryHttpClient`) before app code ever sees it — which is
+  // why 546s from get-weather-forecast show up despite the graceful fallback
+  // (MEALVANA-ENDURANCE-AH / DEV-5D / DEV-5C).
+  //
+  // Scoped to this one endpoint on purpose: a blanket SentryHttpClientError
+  // drop would also hide the 500s and 502s from edge functions that do NOT
+  // degrade gracefully, and those are real.
+  //
+  // NOTE: 546 is a Supabase Edge *worker limit* — the function was killed for
+  // exceeding memory/CPU. Filtering the client noise does not fix the server;
+  // get-weather-forecast still needs a timeout on its upstream call.
+  if (_isHandledWeatherRequestFailure(event)) return true;
+
   final buffer = StringBuffer();
 
   final throwable = event.throwable;
@@ -57,6 +73,22 @@ bool isSentryNoise(SentryEvent event) {
     if (text.contains(needle)) return true;
   }
   return false;
+}
+
+/// True for SDK-reported HTTP failures against `get-weather-forecast`, whose
+/// caller already substitutes a default forecast.
+bool _isHandledWeatherRequestFailure(SentryEvent event) {
+  final url = event.request?.url;
+  if (url == null || !url.contains('get-weather-forecast')) return false;
+
+  // Only drop the SDK's own HTTP-layer report. A real exception thrown from
+  // our code that happens to mention this endpoint should still come through.
+  final isHttpClientReport =
+      (event.throwable?.toString() ?? '').contains('SentryHttpClientError') ||
+      (event.exceptions ?? const <SentryException>[]).any(
+        (e) => (e.type ?? '').contains('SentryHttpClientError'),
+      );
+  return isHttpClientReport;
 }
 
 const List<String> _noiseNeedles = <String>[

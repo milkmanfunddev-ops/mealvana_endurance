@@ -16,6 +16,10 @@
 --   • Section 3 (users sweat-profile columns) — DEV + PROD: safe to apply now.
 --     Independent of formula-kit; fixes a live 42703 error that makes EVERY
 --     profile save (name/allergies/diet) fail to reach Supabase.
+--   • Section 6 (pre-workout food-composition v3) — DEV: ✅ applied 2026-08-05.
+--     PROD: ⛔ HOLD — do NOT paste until the app code lands. Section 6 is a
+--     POINTER, not runnable SQL, precisely so a top-to-bottom paste can't
+--     apply it early. Read its header before touching prod.
 --   • Section 5 (users.is_internal analytics earmark) — ✅ APPLIED to DEV +
 --     PROD on 2026-07-08 via Supabase MCP. Flags internal team/test accounts
 --     for exclusion from Mixpanel + engagement metrics. No longer pending —
@@ -412,8 +416,34 @@ CREATE TABLE IF NOT EXISTS public.ai_usage (
   model          TEXT NOT NULL,   -- provider/model string actually used
   input_tokens   INT NOT NULL DEFAULT 0,
   output_tokens  INT NOT NULL DEFAULT 0,
+  cost_usd       NUMERIC,         -- actual USD charge from the AI Gateway (null if unreported)
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Added 2026-07-23 (applied to DEV + PROD): durable per-request cost, so
+-- accounting no longer depends on Mixpanel cost_usd event props.
+ALTER TABLE public.ai_usage ADD COLUMN IF NOT EXISTS cost_usd NUMERIC;
+
+-- Per-user accounting view (DEV + PROD, applied 2026-07-23). One row per
+-- (user, function, model): calls, tokens, summed USD cost. security_invoker
+-- so the underlying RLS still applies to non-service-role callers; query as
+-- service role (DataGrip) for the full cross-user report.
+CREATE OR REPLACE VIEW public.ai_usage_per_user
+WITH (security_invoker = true) AS
+SELECT
+  u.user_id,
+  au.email,
+  u.function_name,
+  u.model,
+  count(*)                            AS calls,
+  sum(u.input_tokens)                 AS input_tokens,
+  sum(u.output_tokens)                AS output_tokens,
+  round(sum(u.cost_usd)::numeric, 4)  AS cost_usd,
+  min(u.created_at)                   AS first_call,
+  max(u.created_at)                   AS last_call
+FROM public.ai_usage u
+LEFT JOIN auth.users au ON au.id = u.user_id
+GROUP BY u.user_id, au.email, u.function_name, u.model;
 
 CREATE INDEX IF NOT EXISTS ai_usage_user_created
   ON public.ai_usage (user_id, created_at DESC);
@@ -470,6 +500,76 @@ WHERE id IN (
 -- run the UPDATE for these too once confirmed internal:
 --   'aada1a31-24a5-4ac0-a4d6-88e4c5e57885'  -- anon, created 2025-11-27 (Xuan's signup day)
 --   '64dd093b-28d3-4442-bfc7-59679791089d'  -- anon, created 2025-11-29 (test coach's signup day)
+
+
+-- ── 6. Pre-workout food-composition v3 — ✅ APPLIED to DEV + PROD ───────────
+--
+-- DEV:  ✅ applied 2026-08-05.
+-- PROD: ✅ applied 2026-08-11 via the cutover runbook (supabase/migrations/
+--       cutover/README.md): 00_pre_unlock_sub_phase → v3 data → drop_standalone_g4b
+--       → drop_ingredient_rows → 40_post_relock_and_verify (passed) →
+--       50_app_config_force_update (min_app_version 1.23.1, schema 14→17)
+--       after the 1.23.1 App Store release went live.
+-- Final verified state, both projects: pre_workout_templates 29 rows
+-- (14 full_meal / 10 snack / 5 top_up), time_window '2-4 hours' / '30-120 min'
+-- / '< 30 min', template_foods.food_group 79/93, 0 dangling pre_system pins.
+-- The .sql files now live in supabase/migrations/_archived/. Full analysis:
+-- docs/pre_workout_food_composition_v3_migration_report.md
+
+-- ── 7. onboarding_surveys — onboarding redesign survey answers ──────────────
+-- ✅ DEV: applied 2026-08-07 (table + 3 RLS policies verified; the branch's
+--    claim that it was applied 2026-08-06 was wrong — the table was absent).
+-- ✅ PROD: applied 2026-08-11 (table + 3 RLS policies, ledger 20260811144825);
+-- app_config current/latest_schema_version bumped to 17 the same day as part
+-- of the v3 cutover force-update flip, after 1.23.1 went live on the App Store.
+--
+-- One row per user: sports/goals/pitfalls multi-selects from the new
+-- onboarding flow, plus survey_payload jsonb for small flags (tridot_notify,
+-- sweat_test_interest, declined_training_apps, connected_provider). Future
+-- survey questions extend survey_payload — no new columns.
+-- Mirrored locally as Drift v17 onboarding_surveys (was v16 on the feature
+-- branch; renumbered at merge — develop's v16 is the sub_phase columns).
+
+CREATE TABLE IF NOT EXISTS public.onboarding_surveys (
+  user_id     uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  sports      jsonb NOT NULL DEFAULT '[]'::jsonb,
+  goals       jsonb NOT NULL DEFAULT '[]'::jsonb,
+  pitfalls    jsonb NOT NULL DEFAULT '[]'::jsonb,
+  survey_payload jsonb,
+  completed_at timestamptz NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE public.onboarding_surveys IS
+  'Onboarding survey answers (sports/goals/pitfalls), one row per user. survey_payload holds small flags; extend it instead of adding columns.';
+
+ALTER TABLE public.onboarding_surveys ENABLE ROW LEVEL SECURITY;
+
+-- (select auth.uid()) so the function is evaluated once per query, not per
+-- row; user_id is the PK so the policy predicate is index-backed.
+DROP POLICY IF EXISTS "Users read own onboarding survey" ON public.onboarding_surveys;
+CREATE POLICY "Users read own onboarding survey"
+  ON public.onboarding_surveys FOR SELECT
+  USING (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "Users insert own onboarding survey" ON public.onboarding_surveys;
+CREATE POLICY "Users insert own onboarding survey"
+  ON public.onboarding_surveys FOR INSERT
+  WITH CHECK (user_id = (select auth.uid()));
+
+DROP POLICY IF EXISTS "Users update own onboarding survey" ON public.onboarding_surveys;
+CREATE POLICY "Users update own onboarding survey"
+  ON public.onboarding_surveys FOR UPDATE
+  USING (user_id = (select auth.uid()))
+  WITH CHECK (user_id = (select auth.uid()));
+
+-- app_config.current_schema_version → 17: DO NOT run until the schema-17
+-- build is released (it force-resyncs every client).
+--   UPDATE public.app_config SET value = '17' WHERE key = 'current_schema_version';
+-- If a latest_schema_version row exists it takes precedence in
+-- VersionCheckService — bump it too:
+--   UPDATE public.app_config SET value = '17' WHERE key = 'latest_schema_version';
 
 
 -- ============================================================================

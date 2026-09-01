@@ -7,19 +7,49 @@
  * - Pre-workout selection output
  */
 
+import type { FormulaDecisionSource } from '../_shared/nutrition/formula-decision.ts';
+
 // ============================================================================
 // Database Template Types
 // ============================================================================
 
 export type TemplateType = 'food' | 'drink' | 'electrolyte';
-export type TimeWindow = '< 30 min' | '30-90 min' | '1.5-3 hours';
+/**
+ * `pre_workout_templates.time_window` values, BOTH catalog generations.
+ *
+ * The labels moved with the 120-minute ruling (D-017): dev's catalog was
+ * migrated to `30-120 min` / `2-4 hours` on 2026-08-05, prod still holds
+ * `30-90 min` / `1.5-3 hours`. Code must never compare these strings
+ * directly — classify through `timeWindowToPhase` (pre-workout.ts) instead.
+ */
+export type TimeWindow =
+  | '< 30 min'
+  | '30-90 min'
+  | '1.5-3 hours'
+  | '30-120 min'
+  | '2-4 hours';
 export type SubPhaseType = 'meal' | 'snack' | 'top_up';
+
+/**
+ * `pre_workout_templates.sub_phase` values — explicit tier membership
+ * (Lee ruling 2026-08-06: select by CATEGORY, not by time period). Mirrors
+ * the client's `BeforeSubPhase.storageValue`. Optional because the prod
+ * catalog predates the column until its migration replays there; code must
+ * fall back to `timeWindowToPhase` when it is null/absent.
+ */
+export type TemplateSubPhase = 'full_meal' | 'snack' | 'top_up';
 
 export interface PreWorkoutTemplate {
   id: string;
   name: string;
   base_category: string;
+  /** DISPLAY label only. Tier membership comes from `sub_phase` (with
+   * `timeWindowToPhase(time_window)` as the pre-migration fallback) — see
+   * `templatePhase` in pre-workout.ts. Never compare these strings. */
   time_window: TimeWindow;
+  /** Explicit tier membership. Null/absent on catalogs that predate the
+   * 2026-08-06 `sub_phase` migration (prod until it replays). */
+  sub_phase?: TemplateSubPhase | null;
   digestion_speed: string;
   allergens: string[];
   excluded_diets?: string[];
@@ -93,6 +123,15 @@ export const BANANA_FLUID = 0;
 export const SPORTS_DRINK_CARBS = 15;    // per 1 cup (8 oz)
 export const SPORTS_DRINK_SODIUM = 100;   // per 1 cup (8 oz)
 export const SPORTS_DRINK_FLUID = 240;    // per 1 cup (8 oz)
+
+// Top-off floor (bug 3ace3fdb). A rendered top_up slot must never ship empty:
+// the UI draws a group header for it either way, so an empty one reads as a
+// broken plan. Half a cup of water is the agreed minimum — it is the one thing
+// that is always safe this close to a start, and hydration is the top-off's
+// actual job. Deliberately allowed to push total fluid past water_high_ml:
+// over-delivering 120 ml of water carries no GI risk, whereas an empty slot is
+// a visible defect. See PASS 4 in pre-workout.ts.
+export const MIN_TOP_UP_FLUID_ML = 120;   // 1/2 cup (4 oz)
 // Pass 1.5 universal fallback foods (vegan, gluten-free, no common allergens).
 // Used to deliver carbs when banana/sports_drink are disliked or already used. (#15)
 export const DATES_CARBS = 18;            // per 2 medjool dates
@@ -182,12 +221,22 @@ export interface PreWorkoutPhaseResult {
      * than a real `formula_pins` row. Absent/false for real pins. Formula-first
      * flip, 2026-07-03 (plan Phase 2 #5). */
     ephemeral?: boolean;
+    /** Honest provenance: `user_pin` | `personal_formula` | `default_formula`
+     * | `solver`. Added 2026-07-29 when client-side auto-pinning was removed
+     * and computed defaults became the common path — `used_pin`/`ephemeral`
+     * alone conflate "you pinned this" with "we picked this for you". Additive;
+     * older parsers ignore it. See `_shared/nutrition/formula-decision.ts`. */
+    decision_source?: FormulaDecisionSource;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin
      * banner without an extra round-trip. Formula Kit PR 2 substep 9. */
     pinned_template_name: string | null;
     fallthrough_reason: 'no_pin_for_scope' | null;
+    /** Why no REAL pin fired, preserved for `default_formula` outcomes.
+     * `fallthrough_reason` must stay null while `used_pin` is true (client
+     * invariant), so the reason rides here instead of being discarded. */
+    default_fallthrough_reason?: string | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase
      * after scope-matching. Drives `plan_used_pin` / `plan_pin_fallthrough`
      * analytics. 0 when pins were supplied but none matched scope.

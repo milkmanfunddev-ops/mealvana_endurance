@@ -11,9 +11,16 @@
 import { createServiceClient } from "../_shared/supabase-client.ts";
 import type { PreWorkoutTemplate } from "./types.ts";
 import {
+  loadPreWorkoutDrinkPool,
+  loadPreWorkoutElectrolytePool,
+} from "./ingredient-pools.ts";
+import {
   applyPreWorkoutHydrationOverlay,
+  calculatePreWorkoutCarbs,
   calculatePreWorkoutHydration,
+  legacyHydrationTier,
   calculatePreWorkoutTargets,
+  type HydrationCheck,
   selectPreWorkoutFoods,
 } from "./pre-workout.ts";
 import {
@@ -521,19 +528,18 @@ export async function loadPreWorkoutTemplates(
 }> {
   const supabase = clientOverride ?? createServiceClient();
 
-  const [foodResult, drinkResult, electrolyteResult] = await Promise.all([
+  // Food formulas come from pre_workout_templates; the drink and electrolyte
+  // pools come from template_foods (the ingredient catalog) — see
+  // ingredient-pools.ts. The ingredient-shaped rows that used to carry the
+  // drink/electrolyte pools inside pre_workout_templates are dropped
+  // (food-composition v3, H5).
+  const [foodResult, drink, electrolyte] = await Promise.all([
     supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
       "template_type",
       "food",
     ),
-    supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
-      "template_type",
-      "drink",
-    ),
-    supabase.from("pre_workout_templates").select("*").eq("is_active", true).eq(
-      "template_type",
-      "electrolyte",
-    ),
+    loadPreWorkoutDrinkPool(clientOverride),
+    loadPreWorkoutElectrolytePool(),
   ]);
 
   if (foodResult.error) {
@@ -541,21 +547,11 @@ export async function loadPreWorkoutTemplates(
       `Failed to load food templates: ${foodResult.error.message}`,
     );
   }
-  if (drinkResult.error) {
-    throw new Error(
-      `Failed to load drink templates: ${drinkResult.error.message}`,
-    );
-  }
-  if (electrolyteResult.error) {
-    throw new Error(
-      `Failed to load electrolyte templates: ${electrolyteResult.error.message}`,
-    );
-  }
 
   return {
     food: (foodResult.data ?? []) as PreWorkoutTemplate[],
-    drink: (drinkResult.data ?? []) as PreWorkoutTemplate[],
-    electrolyte: (electrolyteResult.data ?? []) as PreWorkoutTemplate[],
+    drink,
+    electrolyte,
   };
 }
 
@@ -656,6 +652,13 @@ export interface MacroInputV4 {
    * byte-identical pre-safety-net behavior. 2026-07-03 (plan Phase 2 #5).
    */
   emit_ephemeral_default_formula?: boolean;
+  /**
+   * Urine-colour check answered by the athlete while the snack window is open.
+   * Only affects output when `hours_before * 60 >= 120`, where `dark` adds
+   * ACSM 2007's +4 ml/kg correction. Omitted → `unknown` (treated as `pale`).
+   * See `docs/ssot/spec/fueling/pre-workout-hydration.md` v6.
+   */
+  hydration_check?: HydrationCheck;
 }
 
 /**
@@ -768,6 +771,7 @@ export async function calculateMacrosV4(
     input.is_fasted,
     input.sweat_sodium ?? "average",
     envLabel,
+    durationMin,
   );
 
   // Spec-compliant pre-workout hydration (time-tier algorithm). Overlaid on
@@ -775,16 +779,28 @@ export async function calculateMacrosV4(
   // NOTE: applied regardless of is_fasted — fasted only affects carbs/protein/
   // fat, not fluid/sodium. The spec's pre-workout gate is duration < 60 AND
   // temp < 30, not fasted status.
-  const preHydration = calculatePreWorkoutHydration({
+  const preHydrationInput = {
     bodyWeightKg: weightKg,
     workoutDurationMin: durationMin,
     timeBeforeWorkoutMin: input.hours_before * 60,
     tempC: input.temp_c ?? null,
-  });
+    hydrationCheck: input.hydration_check ?? "unknown",
+  };
+  const preHydration = calculatePreWorkoutHydration(preHydrationInput);
   const preTargets = applyPreWorkoutHydrationOverlay(
     preTargetsLegacy,
     preHydration,
   );
+
+  // The carbohydrate plan's per-feeding split (carbs SSOT v2). `tiers` is
+  // load-bearing: a consumer reading only the plan total presents it as one
+  // feeding, which is the exact misreading v1 encouraged.
+  const preCarbPlan = calculatePreWorkoutCarbs({
+    bodyWeightKg: weightKg,
+    timeBeforeWorkoutMin: input.hours_before * 60,
+    workoutDurationMin: durationMin,
+    isFasted: input.is_fasted,
+  });
 
   const preSelections = selectPreWorkoutFoods(
     preTargets,
@@ -865,20 +881,39 @@ export async function calculateMacrosV4(
     preTargets.protein_high_g,
     ov?.pre_protein_g,
   );
-  const [preSodium, preSodiumLow, preSodiumHigh] = applyOverride(
-    preTargets.sodium_mg,
-    preTargets.sodium_low_mg,
-    preTargets.sodium_high_mg,
-    ov?.pre_sodium_mg,
-  );
-  const [preWater, preWaterLow, preWaterHigh] = applyOverride(
-    preTargets.water_ml,
-    preTargets.water_low_ml,
-    preTargets.water_high_ml,
-    ov?.pre_water_ml,
-    0.85,
-    1.15,
-  );
+  // Sodium: Mealvana sets NO pre-workout sodium target (sodium SSOT v3), so
+  // the engine emits null — never 0, which would read as "consume no sodium".
+  // An explicit user override is still honoured; that is the athlete's own
+  // number, not ours.
+  const preSodiumOverride = ov?.pre_sodium_mg;
+  const preSodiumOverridden = preSodiumOverride !== undefined &&
+    preSodiumOverride > 0;
+  const preSodium = preSodiumOverridden ? Math.round(preSodiumOverride) : null;
+  const preSodiumLow = preSodiumOverridden
+    ? Math.round(preSodiumOverride * 0.8)
+    : null;
+  const preSodiumHigh = preSodiumOverridden
+    ? Math.round(preSodiumOverride * 1.2)
+    : null;
+
+  // Fluid: null on the gate path (no statement made). Rounding happens here,
+  // at the response boundary — the engine itself is exact.
+  const preWaterOverride = ov?.pre_water_ml;
+  const preWaterOverridden = preWaterOverride !== undefined &&
+    preWaterOverride > 0;
+  const preWater = preWaterOverridden
+    ? Math.round(preWaterOverride)
+    : (preTargets.water_ml === null ? null : Math.round(preTargets.water_ml));
+  const preWaterLow = preWaterOverridden
+    ? Math.round(preWaterOverride * 0.85)
+    : (preTargets.water_low_ml === null
+      ? null
+      : Math.round(preTargets.water_low_ml));
+  const preWaterHigh = preWaterOverridden
+    ? Math.round(preWaterOverride * 1.15)
+    : (preTargets.water_high_ml === null
+      ? null
+      : Math.round(preTargets.water_high_ml));
 
   // During-workout overrides
   const duringSodiumRateOverride = ov?.during_sodium_rate_mg_per_h ??
@@ -969,8 +1004,20 @@ export async function calculateMacrosV4(
     pre_run_water_high_ml: preWaterHigh,
     pre_run_meal_type: preTargets.meal_type,
 
-    // Pre-workout hydration transparency (spec time-tier algorithm)
-    pre_run_hydration_tier: preHydration.tier,
+    // Pre-workout carbohydrate transparency (carbs SSOT v2)
+    pre_run_carb_target_basis: preCarbPlan.target_basis,
+    pre_run_carb_tiers: preCarbPlan.tiers,
+
+    // Pre-workout hydration transparency (hydration SSOT v6). `regime`
+    // replaces the integer `pre_run_hydration_tier`, but the integer is still
+    // emitted alongside it for clients up to 1.22.x, which read it and would
+    // otherwise fall back to their offline path (PW-013 — see
+    // `legacyHydrationTier`).
+    pre_run_hydration_regime: preHydration.regime,
+    pre_run_hydration_tier: legacyHydrationTier(preHydrationInput),
+    pre_run_fluid_target_basis: preHydration.target_basis,
+    pre_run_hydration_check_used: preHydration.hydration_check_used,
+    pre_run_fluid_tiers: preHydration.tiers,
     pre_run_hydration_gate_triggered: preHydration.gate_triggered,
     pre_run_hydration_message: preHydration.message,
 

@@ -22,6 +22,12 @@ Future<void> activityCoachFeedbackSync(Ref ref, String activityId) async {
   // 1. Initial sync: pull latest coach messages for this activity
   await syncService.syncCoachMessagesForActivity(activityId);
 
+  // The sync above is an async gap: the widget may have disposed/invalidated
+  // this provider mid-flight, and using a stale ref throws
+  // UnmountedRefException (Sentry MEALVANA-ENDURANCE-AY). Bail out before
+  // subscribing — no channel exists yet, so there's nothing to clean up.
+  if (!ref.mounted) return;
+
   // 2. Invalidate the feedback provider to reload fresh data from local database
   ref.invalidate(activityCoachFeedbackProvider(activityId));
 
@@ -50,9 +56,13 @@ Future<void> activityCoachFeedbackSync(Ref ref, String activityId) async {
             },
           );
 
-          // Re-sync and refresh the feedback list
+          // Re-sync and refresh the feedback list. An in-flight callback can
+          // complete after this provider is disposed (unsubscribe races the
+          // sync) — don't touch a dead ref.
           syncService.syncCoachMessagesForActivity(activityId).then((_) {
-            ref.invalidate(activityCoachFeedbackProvider(activityId));
+            if (ref.mounted) {
+              ref.invalidate(activityCoachFeedbackProvider(activityId));
+            }
           });
         },
       )

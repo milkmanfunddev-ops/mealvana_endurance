@@ -6,7 +6,7 @@
  * the canonical, prod-safe, server-side record of how many tokens each user
  * consumes — it cannot be spoofed by the client (unlike Mixpanel events) and it
  * exists in BOTH dev and prod (the older `jade_calls` table is dev-only and only
- * covers the Jade functions).
+ * covers the AI coach functions).
  *
  * Today this is a "track now, throttle later" ledger: nothing reads it back to
  * enforce limits yet. A future per-user throttle/cutoff queries this table
@@ -29,6 +29,8 @@ export interface AiUsageRow {
   model: string;
   inputTokens: number;
   outputTokens: number;
+  /** Actual USD charge reported by the AI Gateway (null when unavailable). */
+  costUsd?: number | null;
 }
 
 /**
@@ -70,6 +72,7 @@ export async function logAiUsage(
       model: row.model,
       input_tokens: row.inputTokens ?? 0,
       output_tokens: row.outputTokens ?? 0,
+      cost_usd: row.costUsd ?? null,
     });
     if (error) {
       console.error(

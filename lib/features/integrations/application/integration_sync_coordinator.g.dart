@@ -76,7 +76,7 @@ final class IntegrationSyncCoordinatorProvider
 }
 
 String _$integrationSyncCoordinatorHash() =>
-    r'050cae5f90f5035320acf1e4a8b9ff12ca7d12a6';
+    r'a74eef21b28a73abbcc834bd7bd36307fe03df1b';
 
 /// Lightweight coordinator for integration staleness checks and dedup.
 ///

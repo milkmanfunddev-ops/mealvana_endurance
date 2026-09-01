@@ -7,21 +7,33 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 /// Regression for milkmanfunddev-ops/mealvana_endurance#16:
 ///
 /// For a low-bodyweight athlete (47.6 kg ≈ 105 lb) scheduled with a 4 h
-/// pre-workout window, the edge function emits Tier 1 with `fluidsMl =
-/// 286` (BW × 6 ml). Before the fix, the Flutter explanation service
-/// inferred tier from the magnitude (`fluidsMl <= 300`) and rendered
-/// "PRE-WORKOUT TIER 2" copy, mismatched against the Tier 1 numbers.
+/// pre-workout window, the engine emits the full cited protocol but a small
+/// absolute dose. Before the fix, the Flutter explanation service inferred the
+/// window from the *magnitude* (`fluidsMl <= 300`) and rendered short-window
+/// copy against full-protocol numbers.
 ///
-/// The fix threads `pre_run_hydration_tier` through `PreRunMacros` and
-/// branches the explanation on the explicit tier. These tests pin the
-/// boundary case so a regression to the old heuristic surfaces in CI.
+/// The fix threads an explicit signal through [PreRunMacros] and branches the
+/// explanation on it rather than on the number. **That premise is unchanged.**
+/// What changed is the signal itself: hydration v6 retired the integer
+/// `hydrationTier` in favour of the [PreRunHydrationRegime] string
+/// (`cited` | `extrapolated` | `clearance_bound` | `gated`) — see PW-013 in
+/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. These tests pin the boundary case
+/// so a regression to the old magnitude heuristic surfaces in CI.
+///
+/// Tier headers were replaced with user-facing window language (no internal
+/// "Tier n" terminology may leak — see `pre_workout_windows_test.dart`), so the
+/// tests discriminate by formula *content*:
+///   * `cited`                        → 'full ACSM protocol'
+///   * `extrapolated`/`clearance_bound` → '10–120 min window'
+///   * `gated`                        → 'no structured intake'
 void main() {
-  group('PreWorkout fluid transparency — explicit hydrationTier wins', () {
-    final service = MacroExplanationService();
+  group(
+    'PreWorkout fluid transparency — explicit regime beats the heuristic',
+    () {
+      final service = MacroExplanationService();
 
-    test(
-      '47.6 kg, hydrationTier=1, fluidsMl=286 renders TIER 1 (not TIER 2)',
-      () {
+      test('47.6 kg, regime=cited, fluidsMl=286 renders the full protocol '
+          '(not the short window)', () {
         final macroTargets = _sampleMacroTargetsWithPreRun(
           preRun: const PreRunMacros(
             carbsG: 190,
@@ -31,7 +43,7 @@ void main() {
             sodiumMg: 450,
             fluidsLowMl: 238,
             fluidsHighMl: 333,
-            hydrationTier: 1,
+            hydrationRegime: PreRunHydrationRegime.cited,
           ),
         );
 
@@ -44,17 +56,12 @@ void main() {
         expect(map, isNotNull);
         final data = map![Scenario.singleSport]!;
 
-        // Tier headers were replaced with user-facing window language
-        // (no internal "Tier n" terminology may leak — see
-        // pre_workout_windows_test). Discriminate tiers by their formula
-        // content instead: Tier 1 = full ACSM protocol / ≥ 2 hr window,
-        // Tier 2 = 10–120 min fixed top-up.
         final formulaText = _allFormulaText(data.calculationSections);
         expect(
           formulaText,
           contains('full ACSM protocol'),
           reason:
-              'Explicit hydrationTier=1 must drive the full-protocol '
+              'An explicit cited regime must drive the full-protocol '
               'calculation copy even when fluidsMl ≤ 300 (the old '
               'fluid-magnitude heuristic).',
         );
@@ -65,72 +72,147 @@ void main() {
               'Short-window markup would mislabel a body-weight-scaled '
               'full-protocol recommendation for low-bodyweight athletes.',
         );
-      },
-    );
+      });
 
-    test('hydrationTier=2 with fluidsMl=250 renders TIER 2', () {
-      final macroTargets = _sampleMacroTargetsWithPreRun(
-        preRun: const PreRunMacros(
-          carbsG: 0,
-          proteinG: 0,
-          fatCapG: 0,
-          fluidsMl: 250,
-          sodiumMg: 150,
-          fluidsLowMl: 200,
-          fluidsHighMl: 300,
-          hydrationTier: 2,
-        ),
+      test(
+        'regime=extrapolated with fluidsMl=250 renders the short window',
+        () {
+          final formulaText = _formulaTextFor(
+            service,
+            const PreRunMacros(
+              carbsG: 0,
+              proteinG: 0,
+              fatCapG: 0,
+              fluidsMl: 250,
+              fluidsLowMl: 0,
+              fluidsHighMl: 300,
+              hydrationRegime: PreRunHydrationRegime.extrapolated,
+            ),
+          );
+          expect(formulaText, contains('10–120 min window'));
+          expect(formulaText, isNot(contains('full ACSM protocol')));
+        },
       );
 
-      final map = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: macroTargets,
-        bodyWeightKg: 70,
-      )!;
-
-      final formulaText = _allFormulaText(
-        map[Scenario.singleSport]!.calculationSections,
+      test(
+        'regime=clearance_bound renders the short window too — it is a sub-2 h '
+        'regime, and a large dose must not flip it to the full protocol',
+        () {
+          // The mirror of #16: a heavy athlete very close to the start gets a
+          // clearance-capped dose well over 300 ml. Magnitude would say "full
+          // protocol"; the regime says otherwise, and the regime wins.
+          final formulaText = _formulaTextFor(
+            service,
+            const PreRunMacros(
+              carbsG: 0,
+              proteinG: 0,
+              fatCapG: 0,
+              fluidsMl: 400,
+              fluidsLowMl: 0,
+              fluidsHighMl: 890,
+              hydrationRegime: PreRunHydrationRegime.clearanceBound,
+            ),
+            bodyWeightKg: 100,
+          );
+          expect(formulaText, contains('10–120 min window'));
+          expect(formulaText, isNot(contains('full ACSM protocol')));
+        },
       );
-      expect(formulaText, contains('10–120 min window'));
-      expect(formulaText, isNot(contains('full ACSM protocol')));
-    });
 
-    test(
-      'legacy plan without hydrationTier still falls back to fluid heuristic',
-      () {
-        // Older cached plans have no hydrationTier — service must remain
-        // backwards compatible (uses the fluid-magnitude heuristic).
-        final macroTargets = _sampleMacroTargetsWithPreRun(
-          preRun: const PreRunMacros(
-            carbsG: 280,
-            proteinG: 14,
-            fatCapG: 14,
-            fluidsMl: 420,
-            sodiumMg: 450,
-            fluidsLowMl: 350,
-            fluidsHighMl: 490,
-            // hydrationTier intentionally null
+      test('regime=gated renders no structured intake', () {
+        final formulaText = _formulaTextFor(
+          service,
+          const PreRunMacros(
+            carbsG: 0,
+            proteinG: 0,
+            fatCapG: 0,
+            // The gate path sets no target at all; the domain collapses it to 0
+            // for the legacy field, which is exactly why the regime — not the
+            // number — has to be what the copy branches on.
+            fluidsMl: 0,
+            hydrationRegime: PreRunHydrationRegime.gated,
           ),
         );
+        expect(formulaText, contains('no structured intake'));
+        expect(formulaText, isNot(contains('full ACSM protocol')));
+        expect(formulaText, isNot(contains('10–120 min window')));
+      });
 
-        final map = service.getFluidTransparencyData(
-          phase: ExplanationPhase.before,
-          macroTargets: macroTargets,
-          bodyWeightKg: 70,
-        )!;
+      test(
+        'legacy plan without a regime still falls back to the fluid heuristic',
+        () {
+          // Older cached plans carry no regime — the service must stay backwards
+          // compatible and use the historical fluid-magnitude heuristic.
+          final formulaText = _formulaTextFor(
+            service,
+            const PreRunMacros(
+              carbsG: 280,
+              proteinG: 14,
+              fatCapG: 14,
+              fluidsMl: 420,
+              sodiumMg: 450,
+              fluidsLowMl: 350,
+              fluidsHighMl: 490,
+              // hydrationRegime intentionally null
+            ),
+          );
+          // 420 ml > 300 → legacy heuristic resolves to the full protocol.
+          expect(formulaText, contains('full ACSM protocol'));
+        },
+      );
 
-        final formulaText = _allFormulaText(
-          map[Scenario.singleSport]!.calculationSections,
+      test('the regime, not the magnitude, decides: identical fluidsMl renders '
+          'different copy under different regimes', () {
+        // The whole point of #16 in one assertion. Same number, same athlete,
+        // opposite copy — impossible under a magnitude heuristic.
+        const fluidsMl = 286.0;
+        final cited = _formulaTextFor(
+          service,
+          const PreRunMacros(
+            carbsG: 0,
+            proteinG: 0,
+            fatCapG: 0,
+            fluidsMl: fluidsMl,
+            hydrationRegime: PreRunHydrationRegime.cited,
+          ),
+          bodyWeightKg: 47.6,
         );
-        // 420 ml > 300 → legacy heuristic resolves to the full protocol.
-        expect(formulaText, contains('full ACSM protocol'));
-      },
-    );
-  });
+        final extrapolated = _formulaTextFor(
+          service,
+          const PreRunMacros(
+            carbsG: 0,
+            proteinG: 0,
+            fatCapG: 0,
+            fluidsMl: fluidsMl,
+            hydrationRegime: PreRunHydrationRegime.extrapolated,
+          ),
+          bodyWeightKg: 47.6,
+        );
+
+        expect(cited, contains('full ACSM protocol'));
+        expect(extrapolated, contains('10–120 min window'));
+        expect(cited, isNot(extrapolated));
+      });
+    },
+  );
+}
+
+/// Render [preRun] and flatten its pre-workout fluid calculation copy.
+String _formulaTextFor(
+  MacroExplanationService service,
+  PreRunMacros preRun, {
+  double bodyWeightKg = 70,
+}) {
+  final map = service.getFluidTransparencyData(
+    phase: ExplanationPhase.before,
+    macroTargets: _sampleMacroTargetsWithPreRun(preRun: preRun),
+    bodyWeightKg: bodyWeightKg,
+  )!;
+  return _allFormulaText(map[Scenario.singleSport]!.calculationSections);
 }
 
 /// Flatten every formula segment across [sections] into one string so tests
-/// can discriminate which tier's calculation copy rendered by content.
+/// can discriminate which window's calculation copy rendered by content.
 String _allFormulaText(List<CalculationSection> sections) {
   return sections
       .expand((s) => s.lines)

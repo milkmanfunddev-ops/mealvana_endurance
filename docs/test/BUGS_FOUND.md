@@ -176,7 +176,7 @@ hardcoded placeholder data to every user** — they look shipped but aren't wire
 - **`RecipePickerScreen` — FOA violation.** `ensureSynced` + `getAllRecipes`
   business logic runs in `didChangeDependencies` (setState-based), bypassing
   Riverpod — same class as #15.
-- `JadeChatController` (testability note): `eventStream` must emit across async
+- `AiCoachChatController` (testability note): `eventStream` must emit across async
   gaps; `Stream.fromIterable` emits synchronously and hangs the test pump loop —
   any mock/real path using it will stall silently.
 

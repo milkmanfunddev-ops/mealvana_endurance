@@ -1,0 +1,48 @@
+{
+  "section": "during-workout-hydration",
+  "engine": "OfflineMacroCalculator.calculateDuringWorkoutHydration",
+  "note": "Expected computed from Algorithm v2.1 precisely (round3dp sweat rate, not the doc's 2dp hand-calc). Each vector asserts only the fields present in 'expected'.",
+  "vectors": [
+    {
+      "id": "ex1-standard-pct-wins", "status": "ratified",
+      "inputs": { "durationMin": 90, "weightKg": 65, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 55, "isIndoor": false, "sport": "running" },
+      "expected": { "effectiveSweatRateLph": 1.293, "replacementPct": 0.5, "hydrationRateMlph": 647, "floorMlHr": 426, "ceilingMlHr": 800 },
+      "why": "SSOT Ex1 precise (doc prints 645/423 at 2dp; 3dp gives 647/426)"
+    },
+    {
+      "id": "ex2-short-gate", "status": "ratified",
+      "inputs": { "durationMin": 45, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "isIndoor": false, "sport": "running" },
+      "expected": { "effectiveSweatRateLph": 1.28, "replacementPct": 0.3, "hydrationRateMlph": 384, "floorMlHr": 0, "ceilingMlHr": 800 },
+      "why": "SSOT Ex2: <60min & <30C gate fires -> 30% conservative, floor 0"
+    },
+    {
+      "id": "swim-zero", "status": "ratified",
+      "inputs": { "durationMin": 60, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "swimming" },
+      "expected": { "hydrationRateMlph": 0, "floorMlHr": 0, "ceilingMlHr": 0, "replacementPct": 0 },
+      "why": "swimming -> no drinking, all hydration outputs 0"
+    },
+    {
+      "id": "ceiling-lt-floor-heavy-hot", "status": "ratified",
+      "inputs": { "durationMin": 120, "weightKg": 60, "sweatRateCategory": "heavy", "sweatSodiumCat": "high", "tempC": 30, "humidityPct": 50, "isIndoor": false, "sport": "running" },
+      "expected": { "effectiveSweatRateLph": 2.191, "replacementPct": 0.6, "hydrationRateMlph": 800, "floorMlHr": 1591, "ceilingMlHr": 800 },
+      "why": "heavy+hot: floor 1591 > GI ceiling 800 -> capped at 800, ceiling<floor flag"
+    },
+    {
+      "id": "gi-ceiling-cap", "status": "ratified",
+      "inputs": { "durationMin": 100, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 24, "humidityPct": 60, "isIndoor": false, "sport": "running" },
+      "expected": { "effectiveSweatRateLph": 1.41, "replacementPct": 0.6, "hydrationRateMlph": 800, "floorMlHr": 570, "ceilingMlHr": 800 },
+      "why": "pct-based 846 > 800 GI cap, floor 570 < ceiling -> rate capped at 800"
+    },
+    {
+      "id": "known-rate-override", "status": "ratified",
+      "inputs": { "durationMin": 90, "weightKg": 65, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "running", "knownSweatRateMlPerHour": 1500 },
+      "expected": { "effectiveSweatRateLph": 1.5, "replacementPct": 0.5, "hydrationRateMlph": 750, "floorMlHr": 633, "ceilingMlHr": 800 },
+      "why": "known rate 1500 overrides tier base; still gets multipliers (none here)"
+    },
+    { "id": "dur-tier-59", "status": "ratified", "inputs": { "durationMin": 59, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "running" }, "expected": { "replacementPct": 0.3 }, "why": "duration tier boundary <60" },
+    { "id": "dur-tier-90", "status": "ratified", "inputs": { "durationMin": 90, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "running" }, "expected": { "replacementPct": 0.5 }, "why": "60-90 inclusive of 90" },
+    { "id": "dur-tier-91", "status": "ratified", "inputs": { "durationMin": 91, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "running" }, "expected": { "replacementPct": 0.6 }, "why": "91-150" },
+    { "id": "dur-tier-150", "status": "ratified", "inputs": { "durationMin": 150, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "running" }, "expected": { "replacementPct": 0.6 }, "why": "150 inclusive" },
+    { "id": "dur-tier-240", "status": "ratified", "inputs": { "durationMin": 240, "weightKg": 70, "sweatRateCategory": "medium", "sweatSodiumCat": "average", "tempC": 22, "humidityPct": 50, "sport": "running" }, "expected": { "replacementPct": 0.8 }, "why": "240+ ultra tier" }
+  ]
+}

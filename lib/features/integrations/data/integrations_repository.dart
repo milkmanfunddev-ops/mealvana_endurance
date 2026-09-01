@@ -117,6 +117,29 @@ class IntegrationsRepository with SyncableRepository {
     }
   }
 
+  /// Whether `public.users` already has a row for [userId].
+  ///
+  /// Fails **closed**: if the check itself errors (offline, transient), we
+  /// return false and defer the upload rather than attempting an upsert that
+  /// would violate the FK. Deferring is free — the rows stay dirty and retry.
+  Future<bool> _remoteUserExists(String userId) async {
+    try {
+      final row = await _supabase
+          .from('users')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+      return row != null;
+    } catch (e) {
+      _logger.warning(
+        'Could not confirm remote user row; deferring integration upload',
+        context: 'INTEGRATIONS_REPOSITORY',
+        data: {'userId': userId, 'error': e.toString()},
+      );
+      return false;
+    }
+  }
+
   @override
   Future<UploadResult> uploadDirtyRecords(String userId) async {
     try {
@@ -127,6 +150,28 @@ class IntegrationsRepository with SyncableRepository {
               .get();
 
       if (dirty.isEmpty) {
+        return UploadResult.nothingToUpload();
+      }
+
+      // Parent-row guard for integrations_user_id_fkey.
+      //
+      // During onboarding the user connects a training provider before the
+      // profile has been written remotely, so this upsert lands before the
+      // `users` row exists and Postgres rejects it with 23503 (Sentry
+      // MEALVANA-ENDURANCE-3W — 339 occurrences, still live on 1.22.0+88).
+      //
+      // The sync graph already declares `integrations: ['users']`, but that
+      // only guarantees the users repository is *asked* to sync first — it
+      // does not guarantee a row was actually produced, which is exactly the
+      // onboarding case. So check for the parent directly and, when it isn't
+      // there yet, leave the rows dirty and defer. They upload on the next
+      // sync once the profile lands, which is the offline-first contract.
+      if (!await _remoteUserExists(userId)) {
+        _logger.info(
+          'Deferring integration upload: user row not yet remote',
+          context: 'INTEGRATIONS_REPOSITORY',
+          data: {'userId': userId, 'deferred': dirty.length},
+        );
         return UploadResult.nothingToUpload();
       }
 

@@ -747,7 +747,7 @@ supabase projects list | grep "Production"
 
 - [ ] **Test edge functions**:
   ```bash
-  cd test/local_edge_functions
+  cd _archived/test/local_edge_functions
   npm install
   npm test  # Should see 150+ tests pass
   ```
@@ -807,11 +807,11 @@ supabase projects list | grep "Production"
             node-version: '20'
 
         - name: Install dependencies
-          working-directory: test/local_edge_functions
+          working-directory: _archived/test/local_edge_functions
           run: npm install
 
         - name: Run edge function tests
-          working-directory: test/local_edge_functions
+          working-directory: _archived/test/local_edge_functions
           run: npm test
 
     edge-integration-tests:

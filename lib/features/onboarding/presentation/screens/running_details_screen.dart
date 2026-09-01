@@ -55,7 +55,6 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
 
   bool get _isOnboarding => widget.mode == ScreenMode.onboarding;
   bool get _isSettings => widget.mode == ScreenMode.settings;
-  bool get _hasChanges => _runsWithWaterBottle != _originalRunsWithWaterBottle;
 
   @override
   void initState() {
@@ -67,18 +66,6 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
         .read(appExternalDepsProvider)
         .analytics
         .track('screen_viewed', properties: {'screen_name': screenName});
-
-    // In onboarding mode, initialize from cache
-    if (_isOnboarding) {
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      final cachedPrefs = controller.cachedSportPreferences;
-      if (cachedPrefs != null && cachedPrefs.containsKey('giSensitivity')) {
-        final giSensitivity = cachedPrefs['giSensitivity'] as bool?;
-        if (giSensitivity != null) {
-          _runsWithWaterBottle = !giSensitivity;
-        }
-      }
-    }
 
     // In settings mode, load the current preference
     if (_isSettings) {
@@ -117,8 +104,8 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
       final analytics = ref.read(appExternalDepsProvider).analytics;
 
       if (_isOnboarding) {
-        // ONBOARDING MODE: Just cache data, don't save
-        controller.cacheSportPreferences(giSensitivity: giSensitivity);
+        // ONBOARDING MODE (legacy — sport details left the onboarding flow in
+        // the 2026-08 redesign; nothing to persist here).
 
         // Track analytics (fire-and-forget)
         unawaited(

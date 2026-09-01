@@ -1,4 +1,5 @@
 import '../../../../shared/domain/activity_type.dart';
+import '../../../../shared/utils/unit_formatter.dart';
 import '../providers/macro_targets_controller.dart';
 import '../../domain/macro_targets.dart' as domain;
 
@@ -47,9 +48,7 @@ class MacroHelpers {
     switch (macros.activityType) {
       case ActivityType.running:
         final pace = macros.metrics.paceMinPerMile ?? 8.5;
-        final minutes = pace.floor();
-        final seconds = ((pace - minutes) * 60).round();
-        return '$minutes:${seconds.toString().padLeft(2, '0')}/mi';
+        return '${UnitFormatter.formatMinutesAsMinSec(pace)}/mi';
 
       case ActivityType.cycling:
         final speed = macros.metrics.speedMph;

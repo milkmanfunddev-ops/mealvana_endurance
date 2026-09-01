@@ -5,6 +5,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/food_item_data.dart';
+import '../../domain/macro_target_status.dart';
 
 /// Utility class for Activity Detail Screen
 /// Contains formatting, mapping, and UI calculation logic
@@ -58,6 +59,17 @@ class ActivityDetailHelpers {
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'pm' : 'am';
     return '$hour:$minute$period';
+  }
+
+  /// Format a frozen plan lead time for prose, e.g. "Planned 3 hours ahead".
+  /// "45 min" under an hour, "3 hours" on the whole hour, "2h 30m" otherwise
+  /// (reusing [formatDuration] for the mixed case).
+  static String formatLeadTime(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    final hours = minutes ~/ 60;
+    final mins = minutes % 60;
+    if (mins == 0) return hours == 1 ? '1 hour' : '$hours hours';
+    return formatDuration(minutes);
   }
 
   /// Format duration in minutes as "2h 30m" or "45m"
@@ -278,22 +290,16 @@ class ActivityDetailHelpers {
   }) {
     final inRangeColor = Theme.of(context).colorScheme.secondary;
 
-    // Range mode: compare against band
-    if (low != null && high != null && (low > 0 || high > 0)) {
-      if (actual >= low && actual <= high) return inRangeColor;
-      final margin = (high - low) * 0.2;
-      if (actual >= low - margin && actual <= high + margin) {
-        return AppColors.dragonfruit; // within 20% margin
-      }
-      return AppColors.dragonfruitDark; // >20% outside
-    }
-
-    // Ratio mode: compare against single target
-    if (target <= 0) return inRangeColor;
-    final ratio = actual / target;
-    if (ratio >= 0.8 && ratio <= 1.2) return inRangeColor;
-    if (ratio >= 0.6 && ratio <= 1.5) return AppColors.dragonfruit;
-    return AppColors.dragonfruitDark;
+    return switch (classifyMacroTarget(
+      actual: actual,
+      target: target,
+      low: low,
+      high: high,
+    )) {
+      MacroTargetStatus.green => inRangeColor,
+      MacroTargetStatus.nonGreen => AppColors.dragonfruit,
+      MacroTargetStatus.severe => AppColors.dragonfruitDark,
+    };
   }
 
   /// Legacy alias — delegates to [getMacroRangeColor] in ratio mode.

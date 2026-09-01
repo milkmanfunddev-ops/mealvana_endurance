@@ -3,17 +3,21 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../application/fuel_risk_service.dart';
 import '../../domain/nutrition_plan.dart';
 
 /// Non-judgmental indicator shown when athlete's planned carb intake
-/// is significantly below target (33% or more below).
+/// is significantly below target (33% or more below), overall or in any
+/// single phase (e.g. the BEFORE window manually emptied to 0 g).
 ///
 /// Helps athletes identify under-fueling risks without being preachy.
+/// Evaluation logic lives in [FuelRiskService] (application layer).
 class LowFuelRiskBadge extends StatelessWidget {
   const LowFuelRiskBadge({
     super.key,
     required this.nutritionPlan,
-    this.threshold = 0.67, // Show warning if actual < 67% of target (33% below)
+    this.threshold = FuelRiskService
+        .defaultThreshold, // Warn if actual < 67% of target (33% below)
   });
 
   /// The nutrition plan to analyze for under-fueling
@@ -22,75 +26,12 @@ class LowFuelRiskBadge extends StatelessWidget {
   /// Threshold ratio below which warning is shown (default: 0.67 = 33% below target)
   final double threshold;
 
-  /// Calculate fuel status from the nutrition plan
-  /// Returns a record with (isLowFuel, actualCarbs, targetCarbs, lowestSection)
-  ({bool isLowFuel, int actualCarbs, int targetCarbs, String? lowestSection})
-  _calculateFuelStatus() {
-    int totalActualCarbs = 0;
-    int totalTargetCarbs = 0;
-    String? lowestSection;
-    double lowestRatio = double.infinity;
-
-    for (final section in nutritionPlan.sections) {
-      // Calculate actual carbs from food items in this section
-      // V2 template plans store foods in subPhases, not directly in section.foodItems
-      int sectionActualCarbs = 0;
-      if (section.hasSubPhases) {
-        for (final subPhase in section.subPhases!) {
-          for (final food in subPhase.foodItems) {
-            if (food.nutritionalInfo != null) {
-              sectionActualCarbs += food.nutritionalInfo!.carbs ?? 0;
-            }
-          }
-        }
-      } else {
-        for (final food in section.foodItems) {
-          if (food.nutritionalInfo != null) {
-            sectionActualCarbs += food.nutritionalInfo!.carbs ?? 0;
-          }
-        }
-      }
-
-      // Get target carbs for this section
-      final sectionTargetCarbs = section.carbsTarget?.round() ?? 0;
-
-      totalActualCarbs += sectionActualCarbs;
-      totalTargetCarbs += sectionTargetCarbs;
-
-      // Track which section has the lowest ratio
-      if (sectionTargetCarbs > 0) {
-        final ratio = sectionActualCarbs / sectionTargetCarbs;
-        if (ratio < lowestRatio) {
-          lowestRatio = ratio;
-          lowestSection = _getSectionName(section.id);
-        }
-      }
-    }
-
-    // Check if overall carbs are below threshold
-    final isLowFuel =
-        totalTargetCarbs > 0 &&
-        (totalActualCarbs / totalTargetCarbs) < threshold;
-
-    return (
-      isLowFuel: isLowFuel,
-      actualCarbs: totalActualCarbs,
-      targetCarbs: totalTargetCarbs,
-      lowestSection: isLowFuel ? lowestSection : null,
-    );
-  }
-
-  /// Get user-friendly section name from section ID
-  String _getSectionName(String sectionId) {
-    if (sectionId.contains('before')) return 'before';
-    if (sectionId.contains('during')) return 'during';
-    if (sectionId.contains('after')) return 'after';
-    return sectionId;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final status = _calculateFuelStatus();
+    final status = FuelRiskService.evaluate(
+      nutritionPlan,
+      threshold: threshold,
+    );
 
     // Don't show anything if fuel levels are adequate
     if (!status.isLowFuel) {

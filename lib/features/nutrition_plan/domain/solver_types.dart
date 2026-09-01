@@ -2,6 +2,9 @@
 ///
 /// These match the server-side constants in `constants.ts` to maintain
 /// consistent food selection priority between edge function and fallback.
+/// Unused since the 2026-07-29 food-source policy: `user_foods` are no longer
+/// a plan-generation source (see [ClientFoodPoolService]). Kept only so the
+/// score ladder still reads as the server's. Do not wire it back up.
 const int kPrefScoreUserFood = 300;
 const int kPrefScoreLiked = 200;
 const int kPrefScoreWilling = 80;
@@ -67,6 +70,12 @@ class SolverTargets {
     this.fatG = 0,
     this.sodiumMg = 0,
     this.fluidMl = 0,
+    this.sodiumLowMg,
+    this.sodiumHighMg,
+    this.carbsLowG,
+    this.carbsHighG,
+    this.fluidLowMl,
+    this.fluidHighMl,
   });
 
   final double carbsG;
@@ -74,4 +83,10 @@ class SolverTargets {
   final double fatG;
   final double sodiumMg;
   final double fluidMl;
+  final double? sodiumLowMg;
+  final double? sodiumHighMg;
+  final double? carbsLowG;
+  final double? carbsHighG;
+  final double? fluidLowMl;
+  final double? fluidHighMl;
 }

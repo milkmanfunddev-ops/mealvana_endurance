@@ -41,6 +41,7 @@ import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 import { z } from 'npm:zod@3';
 
 import { MealAnalysisSchema, MealItemSchema } from '../_shared/meal_analysis/schema.ts';
+import { ANALYZE_MEAL_PHOTO_MODEL } from '../_shared/ai/model.ts';
 
 // ---------------------------------------------------------------------------
 // A. MealAnalysisSchema — shape validation
@@ -355,14 +356,15 @@ describe('E. not_food detection logic', () => {
 });
 
 // ---------------------------------------------------------------------------
-// F. JADE_MODEL default value
+// F. AI_COACH_MODEL default value
 // ---------------------------------------------------------------------------
 
-describe('F. JADE_MODEL default', () => {
-  it('defaults to anthropic/claude-sonnet-4.6 when env not set', () => {
-    // Test the env-resolution logic without relying on module-level side effects
-    const model =
-      Deno.env.get('JADE_MODEL') ?? 'anthropic/claude-sonnet-4.6';
-    assertEquals(model, 'anthropic/claude-sonnet-4.6');
+describe('F. ANALYZE_MEAL_PHOTO_MODEL default', () => {
+  it('resolves to Sonnet when env not set', () => {
+    // This function reads ANALYZE_MEAL_PHOTO_MODEL, not AI_COACH_MODEL — and it
+    // asserts the REAL exported constant rather than re-typing the fallback,
+    // which is what let the earlier Haiku swap slip past this test unchanged.
+    assertEquals(Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL'), undefined);
+    assertEquals(ANALYZE_MEAL_PHOTO_MODEL, 'anthropic/claude-sonnet-4.6');
   });
 });

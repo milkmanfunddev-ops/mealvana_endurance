@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../shared/domain/activity_type.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../domain/macro_targets.dart';
+import '../domain/pre_run_macros_wire.dart';
 import 'offline_macro_calculator.dart';
 
 part 'macro_repository.g.dart';
@@ -195,12 +196,29 @@ class MacroRepositoryImpl implements MacroRepository {
         carbsG: targets.preRun.carbsG,
         proteinG: targets.preRun.proteinG,
         fatCapG: targets.preRun.fatCapG,
-        fluidsMl: preHydration.fluidMl.toDouble(),
-        sodiumMg: preHydration.sodiumMg.toDouble(),
-        fluidsLowMl: preHydration.fluidLowMl.toDouble(),
-        fluidsHighMl: preHydration.fluidHighMl.toDouble(),
-        sodiumLowMg: preHydration.sodiumLowMg.toDouble(),
-        sodiumHighMg: preHydration.sodiumHighMg.toDouble(),
+        carbsLowG: targets.preRun.carbsLowG,
+        carbsHighG: targets.preRun.carbsHighG,
+        proteinLowG: targets.preRun.proteinLowG,
+        proteinHighG: targets.preRun.proteinHighG,
+        carbTargetBasis: targets.preRun.carbTargetBasis,
+        carbTiers: targets.preRun.carbTiers,
+        // Hydration v6 returns null for all three fluid fields on the gate
+        // path. `fluidsMl` is non-nullable, so a gated plan collapses to 0
+        // here — `hydrationRegime` is what tells a consumer that this 0 means
+        // "no target set" rather than "drink nothing". Never read one without
+        // the other; `PreRunMacros.isHydrationGated` does that for you.
+        fluidsMl: preHydration.fluidMl ?? 0,
+        fluidsLowMl: preHydration.fluidLowMl,
+        fluidsHighMl: preHydration.fluidHighMl,
+        // Sodium v3: Mealvana sets no pre-workout sodium target, so all three
+        // engine fields are permanently null and are deliberately not mapped.
+        // A 0 here would be a recommendation to consume no sodium.
+        hydrationRegime: preHydration.regime,
+        fluidTargetBasis: preHydration.targetBasis,
+        hydrationCheckUsed: preHydration.hydrationCheckUsed,
+        fluidTiers: preHydration.tiers
+            .map((t) => PreRunFluidTier(tier: t.tier, fluidMl: t.fluidMl))
+            .toList(),
       ),
       duringRun: targets.duringRun.copyWith(
         fluidRateMlPerH: duringHydration.hydrationRateMlph.toDouble(),
@@ -234,8 +252,11 @@ class MacroRepositoryImpl implements MacroRepository {
         proteinG: (macros['pre_run_protein_g_optional'] as num).toDouble(),
         fatCapG: (macros['pre_run_fat_g_cap'] as num).toDouble(),
         fluidsMl: (macros['pre_run_water_ml'] as num).toDouble(),
-        sodiumMg: (macros['pre_run_sodium_mg'] as num).toDouble(),
-        hydrationTier: (macros['pre_run_hydration_tier'] as num?)?.toInt(),
+        // Sodium v3: no pre-workout sodium target. `pre_run_sodium_mg` is
+        // deliberately not read — it is null from the current engine, and a
+        // legacy non-null value is a retired target we must not resurrect.
+        hydrationRegime: PreRunMacrosWire.regimeFrom(macros),
+        fluidTargetBasis: macros['pre_run_fluid_target_basis'] as String?,
       ),
       duringRun: DuringRunMacros(
         carbRateGPerH: (macros['during_rate_g_per_h'] as num).toDouble(),

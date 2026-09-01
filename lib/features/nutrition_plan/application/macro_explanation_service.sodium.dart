@@ -321,61 +321,54 @@ extension _$SodiumExt on MacroExplanationService {
   // PRE-WORKOUT SODIUM
   // ---------------------------------------------------------------------------
 
+  /// Pre-workout sodium — **sodium v3**.
+  ///
+  /// Mealvana sets no pre-workout sodium target. This is a deliberate
+  /// decision, not an omission: the retired v1 target (450 mg [300–600])
+  /// rested solely on ACSM's 20–50 mEq/L, which at that dose only held for
+  /// athletes between roughly 65 kg and 163 kg — it silently
+  /// over-concentrated every athlete under ~65 kg. Real pre-workout food
+  /// overshoots any plausible band anyway (a bagel with peanut butter is
+  /// ~737 mg), so the band flagged ordinary food as defective.
+  ///
+  /// What survives is the **delivered** figure — an observation, not a
+  /// target — and the qualitative copy, which must **not** be quantified: the
+  /// retention studies used 77 mmol/L, three to seven times a sports drink.
+  ///
+  /// So: no `targetGrams`, no `rangeLow`/`rangeHigh`, no formula lines.
+  /// See `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §3.
   NutrientTransparencyData _preWorkoutSodiumTransparency({
     required MacroTargets macroTargets,
     bool useImperial = false,
   }) {
     final pre = macroTargets.preRun;
-    final sodiumMg = pre.sodiumMg.round();
-    final rangeLowMg = pre.sodiumLowMg?.round() ?? (sodiumMg * 0.8).round();
-    final rangeHighMg = pre.sodiumHighMg?.round() ?? (sodiumMg * 1.2).round();
 
-    // Mirror the gate detection from the fluid card: short + mild workout.
-    final durationMin = macroTargets.metrics.durationMin;
-    final tempC = macroTargets.duringRun.tempC ?? 22.0;
-    final isGateFired = sodiumMg == 0 && durationMin < 60 && tempC < 30;
-
-    // Determine the time-window label for the formula line (no tier labels).
-    final isFullProtocol = sodiumMg >= 300;
-    final windowLabel = isFullProtocol ? '≥ 2 hr window' : '10–120 min window';
-
+    // Three states that must never read alike (digest §5): the hydration gate
+    // fired (short + mild session — we set nothing), the athlete is fasted (no
+    // recommendation is being made at all), or the ordinary case where sodium
+    // simply isn't something we set a number for.
     final String tldrBody;
-    final List<FormulaLine> tldrLines;
-    if (isGateFired) {
+    if (pre.isHydrationGated) {
       tldrBody =
-          'No structured pre-hydration sodium needed — this workout is short '
-          'and mild. A small electrolyte drink or salty snack beforehand is '
-          'plenty.';
-      tldrLines = const [];
-    } else if (sodiumMg == 0) {
+          'This session is short and mild, so there\'s no pre-workout '
+          'hydration plan — and no sodium plan either. Eat and drink normally '
+          'beforehand.';
+    } else if (pre.isCarbRecommendationAbsent) {
       tldrBody =
-          'Too close to start for a meaningful sodium protocol. Focus on your '
-          'during-workout electrolyte plan instead.';
-      tldrLines = const [];
+          'You\'ve chosen to train fasted, so we\'re not recommending anything '
+          'before this session — including sodium.';
     } else {
       tldrBody =
-          'Pre-workout sodium keeps the fluid you drink in your body rather '
-          'than sending it straight to your bladder. Without sodium, much of '
-          'what you consume before exercise is excreted before you even start.';
-      // Spec transparency_pre_sodium.md §Formula — multi-line TL;DR with
-      // time-window midpoint, floor/ceiling, and range label.
-      tldrLines = [
-        FormulaLine([
-          fAccent('$windowLabel '),
-          fOp('→ '),
-          fResult('$sodiumMg mg'),
-          fOp(' (midpoint)'),
-        ], stepNumber: '①'),
-        FormulaLine([fOp('↓ floor = '), fDim('$rangeLowMg mg')]),
-        FormulaLine([fOp('↑ ceiling = '), fDim('$rangeHighMg mg')]),
-        FormulaLine([
-          fOp('range '),
-          fOp('→ '),
-          fDim('$rangeLowMg–$rangeHighMg mg'),
-          fOp(' sipped with fluid'),
-        ]),
-      ];
+          'We don\'t set a pre-workout sodium target. A salty snack or an '
+          'electrolyte drink alongside your pre-workout fluid helps that fluid '
+          'stay in, but there isn\'t good evidence for a specific number '
+          'beforehand — and everyday pre-workout food already carries plenty. '
+          'Whatever figure you see here is what your food delivers, not '
+          'something to hit.';
     }
+
+    // No formula: there is no calculation. Sodium v3 is the absence of one.
+    const List<FormulaLine> tldrLines = [];
 
     return NutrientTransparencyData(
       nutrientLabel: 'Sodium',
@@ -384,74 +377,57 @@ extension _$SodiumExt on MacroExplanationService {
       phase: 'before',
       tldrBody: tldrBody,
       tldrLines: tldrLines,
-      calculationSections: _buildPreWorkoutSodiumCalculationSections(
-        sodiumMg: sodiumMg,
-        sodiumLowMg: rangeLowMg,
-        sodiumHighMg: rangeHighMg,
-        isGateFired: isGateFired,
-        useImperial: useImperial,
-      ),
+      // No calculation sections: there is no pre-workout sodium calculation.
+      calculationSections: const [],
       storySections: const [
         StorySection(
-          question: 'How does sodium help retain fluid?',
+          question: 'Why is there no pre-workout sodium target?',
           answer:
-              'When you drink plain fluid before exercise, your kidneys detect the '
-              'dilution of plasma sodium and respond by excreting the excess fluid '
-              'as urine within 30–60 minutes. Adding sodium keeps plasma osmolality '
-              'near baseline, so the fluid stays in circulation — ready to support '
-              'sweat and blood volume once exercise starts.',
+              'We used to set one — 450 mg, with a 300–600 mg range — and we '
+              'removed it rather than re-derive it. It rested on a single '
+              'concentration guideline, and at that dose the guideline only '
+              'actually held for athletes between about 65 kg and 163 kg; '
+              'everyone lighter was being told to drink a more concentrated '
+              'mix than the source supports. Ordinary pre-workout food also '
+              'clears any plausible band on its own — a bagel with peanut '
+              'butter is roughly 737 mg — so the band mostly served to flag '
+              'normal food as a mistake. Sodium individualisation now lives '
+              'entirely in the during-workout plan, where it is fitted to your '
+              'own sweat.',
           citation:
-              'Sawka et al. (2007) — ACSM Position Stand on Exercise and Fluid Replacement',
+              'Sawka et al. (2007) — ACSM Position Stand; Baker et al. (2016)',
           confidence: ConfidenceLevel.high,
         ),
         StorySection(
-          question: 'Where does 300–600 mg come from?',
+          question: 'Does sodium still help before a workout?',
           answer:
-              'ACSM recommends 20–50 mEq of sodium per litre of pre-exercise fluid '
-              '(about 460–1150 mg/L). For a typical pre-workout drink of roughly 500 ml, '
-              'that translates to 300–600 mg sodium. A standard electrolyte drink, a '
-              'salty meal, or an electrolyte tablet all get you into this range.',
-          citation: 'Sawka et al. (2007) — ACSM 20–50 mEq/L guidance',
-          dataChips: [
-            '≥ 2 hr · 300–600 mg',
-            '10–120 min · 100–200 mg',
-            '< 10 min · none',
-          ],
-          confidence: ConfidenceLevel.high,
-        ),
-        StorySection(
-          question:
-              'Why isn\'t sodium scaled to body weight like the fluid target?',
-          answer:
-              'Fluid pre-loading is proportional to body mass because larger athletes '
-              'have larger blood and extracellular volumes. Sodium, by contrast, is '
-              'regulated tightly against plasma concentration — not total mass. A '
-              'fixed dose is enough to prevent dilution-driven excretion for most '
-              'athletes, regardless of weight.',
-          citation: 'Cheuvront & Kenefick (2014) — Comprehensive Physiology',
-          transparencyNote:
-              'The 300–600 mg range is fixed across all athletes. For very heavy '
-              'athletes consuming larger fluid volumes, this results in a lower '
-              'sodium concentration per litre than the ACSM\'s 20–50 mEq/L '
-              'recommendation. This is a known limitation.',
+              'Yes — sodium alongside your pre-workout fluid helps that fluid '
+              'stay in your body rather than being excreted before you start. '
+              'A salty snack or an electrolyte drink with your pre-workout '
+              'fluid is a sound habit. What we won\'t do is put a number on '
+              'it: the studies showing the retention effect used '
+              'concentrations several times stronger than any sports drink, so '
+              'they don\'t translate into a target you could aim at.',
+          citation:
+              'Maughan & Shirreffs (2016); Sawka et al. (2007) — ACSM Position Stand',
           confidence: ConfidenceLevel.medium,
         ),
         StorySection(
-          question: 'Is this the same as sodium loading?',
+          question: 'Then what is the sodium number on this screen?',
           answer:
-              'No — sodium loading is a separate, more aggressive strategy used '
-              'before hot or long races to deliberately expand plasma volume. It '
-              'typically involves 20–30 mg sodium per kg body weight consumed '
-              'with fluid 1–2 hours before exercise — 2–3× the amount in the '
-              'everyday pre-workout protocol. Use only for heat or endurance events.',
-          citation:
-              'Sims et al. (2007) — Journal of Science and Medicine in Sport',
+              'It\'s an observation, not a goal — simply the sodium contained '
+              'in the food and drink chosen for this phase. There\'s no range, '
+              'no marker and no "in range" state, because there\'s nothing to '
+              'be in range of. It\'s there so nothing is hidden from you, not '
+              'so you can hit it.',
           confidence: ConfidenceLevel.high,
         ),
       ],
-      targetGrams: sodiumMg.toDouble(),
-      rangeLow: rangeLowMg.toDouble(),
-      rangeHigh: rangeHighMg.toDouble(),
+      // Sodium v3: no target and no band. Leaving all three null is what stops
+      // the transparency sheet rendering a target badge or a range chip.
+      targetGrams: null,
+      rangeLow: null,
+      rangeHigh: null,
       sportLabel: 'Pre-Workout',
     );
   }

@@ -472,6 +472,14 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
     );
   }
 
+  /// The coach's own unit preference — `unitSystemProvider` resolves to the
+  /// logged-in user, not the athlete being viewed.
+  DistanceUnit _distanceUnit() =>
+      (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
+          UnitSystem.metric
+      ? DistanceUnit.kilometers
+      : DistanceUnit.miles;
+
   Widget _buildActivitiesTab(BuildContext context, AthleteDetailState state) {
     final calendarMode = ref.watch(calendarViewProvider);
 
@@ -534,7 +542,7 @@ class _AthleteDetailScreenState extends ConsumerState<AthleteDetailScreen> {
                         leading: const Icon(Icons.directions_run),
                         title: Text(activity.title),
                         subtitle: Text(
-                          '${activity.distanceMiles?.toStringAsFixed(1) ?? "-"} mi - ${_formatDate(activity.scheduledDateTime)}',
+                          '${activity.distanceMiles == null ? "-" : UnitFormatter.formatDistance(activity.distanceMiles!, unit: _distanceUnit())} - ${_formatDate(activity.scheduledDateTime)}',
                         ),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {

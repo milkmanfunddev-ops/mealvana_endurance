@@ -64,20 +64,20 @@ class PreferencesService {
     await _prefs.setBool(_keyGarminBannerDismissed, true);
   }
 
-  // ─── Jade Baseline Tip Banner ───
+  // ─── Mealvana AI Baseline Tip Banner ───
 
-  static const String _keyJadeBaselineTipDismissed =
+  static const String _keyAiCoachBaselineTipDismissed =
       'jade_baseline_tip_dismissed';
 
   /// Whether the user has dismissed the one-time baseline-logging tutorial
-  /// copy on the Jade coach banner.  Once true, the banner shows the default
+  /// copy on the Mealvana AI coach banner.  Once true, the banner shows the default
   /// "has baseline" copy instead of the tutorial variant.
-  bool get jadeBaselineTipDismissed =>
-      _prefs.getBool(_keyJadeBaselineTipDismissed) ?? false;
+  bool get aiCoachBaselineTipDismissed =>
+      _prefs.getBool(_keyAiCoachBaselineTipDismissed) ?? false;
 
-  /// Persist dismissal of the Jade baseline tutorial copy.
-  Future<void> dismissJadeBaselineTip() async {
-    await _prefs.setBool(_keyJadeBaselineTipDismissed, true);
+  /// Persist dismissal of the Mealvana AI baseline tutorial copy.
+  Future<void> dismissAiCoachBaselineTip() async {
+    await _prefs.setBool(_keyAiCoachBaselineTipDismissed, true);
   }
 
   // ─── Fuel Timeline Tracking ───
@@ -92,6 +92,24 @@ class PreferencesService {
 
   Future<void> setFuelTrackingEnabled(bool enabled) async {
     await _prefs.setBool(_keyFuelTrackingEnabled, enabled);
+  }
+
+  // ─── AI credits ───
+
+  static const String _keyCreditsEnsuredStamp = 'credits_ensured_stamp';
+
+  /// Marker for "this user's free monthly credits have already been requested",
+  /// stored as `<userId>|<YYYY-MM>`.
+  ///
+  /// Provisioning the wallet is an edge-function round trip, and the grant it
+  /// performs is idempotent for the whole calendar month — so calling it more
+  /// than once per user per month is pure cost. The user id is part of the
+  /// value so that signing in as somebody else on the same device does not
+  /// inherit the previous account's marker.
+  String? get creditsEnsuredStamp => _prefs.getString(_keyCreditsEnsuredStamp);
+
+  Future<void> setCreditsEnsuredStamp(String stamp) async {
+    await _prefs.setString(_keyCreditsEnsuredStamp, stamp);
   }
 
   /// Clear all preferences (useful for testing or logout)

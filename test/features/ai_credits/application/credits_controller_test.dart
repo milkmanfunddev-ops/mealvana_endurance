@@ -17,10 +17,14 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/credits_controller.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
+import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
+
+const _testUserId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
 
 class _MockCreditsRepository extends Mock implements CreditsRepository {}
 
@@ -31,9 +35,17 @@ class _MockCreditsRepository extends Mock implements CreditsRepository {}
 const _wallet100 = CreditWallet(balance: 100, freePeriod: 'trial');
 const _wallet0 = CreditWallet.zero;
 
+/// SharedPreferences instance backing every container in this file. The
+/// controller uses it to remember that a user's monthly grant was already
+/// requested, so it must be a real (mock-backed) instance, not a stub.
+late SharedPreferences _prefs;
+
 ProviderContainer _container(_MockCreditsRepository repo) {
   final c = ProviderContainer(
-    overrides: [creditsRepositoryProvider.overrideWithValue(repo)],
+    overrides: [
+      creditsRepositoryProvider.overrideWithValue(repo),
+      sharedPreferencesProvider.overrideWithValue(_prefs),
+    ],
   );
   addTearDown(c.dispose);
   return c;
@@ -44,13 +56,101 @@ void main() {
 
   late _MockCreditsRepository repo;
 
-  setUp(() {
+  setUpAll(() => registerFallbackValue((CreditWallet _) {}));
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    _prefs = await SharedPreferences.getInstance();
     repo = _MockCreditsRepository();
+    when(() => repo.currentUserId).thenReturn(_testUserId);
+    // The controller now provisions before reading. Default to "provisioning
+    // unavailable" so every existing test still exercises the fetchWallet path
+    // it was written for; the provisioning tests stub this explicitly.
+    when(() => repo.ensureWallet()).thenAnswer((_) async => null);
+    // The controller now opens a realtime wallet subscription on build; unit
+    // tests have no socket, so "not signed in / unavailable" (null) is right.
+    when(() => repo.subscribeToWallet(any())).thenReturn(null);
   });
 
   // -------------------------------------------------------------------------
   // build()
   // -------------------------------------------------------------------------
+
+  group('CreditsController.build — provisioning', () {
+    test(
+      'a first-run user gets the provisioned balance, not a bare zero',
+      () async {
+        // No wallet row exists yet, so a plain read would report zero and the
+        // UI would tell a brand-new user they are out of tokens.
+        when(() => repo.ensureWallet()).thenAnswer((_) async => 20);
+        when(
+          () => repo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+
+        final container = _container(repo);
+
+        final wallet = await container.read(creditsControllerProvider.future);
+
+        expect(wallet.balance, 20);
+        verifyNever(() => repo.fetchWallet());
+      },
+    );
+
+    test('the provisioning call is made at most once per user per month, '
+        'however many times the provider is rebuilt', () async {
+      when(() => repo.ensureWallet()).thenAnswer((_) async => 20);
+      when(
+        () => repo.fetchWallet(),
+      ).thenAnswer((_) async => const CreditWallet(balance: 20));
+
+      final container = _container(repo);
+
+      await container.read(creditsControllerProvider.future);
+      // Simulate the pill remounting / a post-purchase invalidate.
+      for (var i = 0; i < 4; i++) {
+        container.invalidate(creditsControllerProvider);
+        await container.read(creditsControllerProvider.future);
+      }
+
+      // The edge function is a round trip whose answer is fixed for the
+      // calendar month; rebuilds must fall through to the cheap read.
+      verify(() => repo.ensureWallet()).called(1);
+    });
+
+    test('a different user on the same device still gets provisioned', () async {
+      when(() => repo.ensureWallet()).thenAnswer((_) async => 20);
+      when(
+        () => repo.fetchWallet(),
+      ).thenAnswer((_) async => const CreditWallet(balance: 20));
+
+      final container = _container(repo);
+      await container.read(creditsControllerProvider.future);
+
+      // Someone else signs in — the marker is keyed by user id, so it must not
+      // suppress their grant.
+      when(() => repo.currentUserId).thenReturn('a-different-user-id');
+      container.invalidate(creditsControllerProvider);
+      await container.read(creditsControllerProvider.future);
+
+      verify(() => repo.ensureWallet()).called(2);
+    });
+
+    test(
+      'falls back to a plain read when provisioning is unavailable',
+      () async {
+        when(() => repo.ensureWallet()).thenAnswer((_) async => null);
+        when(
+          () => repo.fetchWallet(),
+        ).thenAnswer((_) async => const CreditWallet(balance: 7));
+
+        final container = _container(repo);
+
+        final wallet = await container.read(creditsControllerProvider.future);
+
+        expect(wallet.balance, 7);
+      },
+    );
+  });
 
   group('CreditsController.build — initial load', () {
     test('exposes AsyncData with wallet returned by repository', () async {
@@ -72,22 +172,27 @@ void main() {
       verify(() => repo.fetchWallet()).called(1);
     });
 
-    test('exposes AsyncError when repository throws on build', () async {
-      when(() => repo.fetchWallet()).thenThrow(Exception('network error'));
+    test(
+      'a throwing repository degrades to zero rather than erroring',
+      () async {
+        when(() => repo.fetchWallet()).thenThrow(Exception('network error'));
 
-      final container = _container(repo);
-      // Await the future and expect it to throw.
-      final threw = await container
-          .read(creditsControllerProvider.future)
-          .then((_) => false)
-          .catchError((_) => true);
+        final container = _container(repo);
+        final wallet = await container.read(creditsControllerProvider.future);
 
-      expect(
-        threw,
-        isTrue,
-        reason: 'build() must propagate repository exceptions as AsyncError.',
-      );
-    });
+        expect(wallet.balance, 0);
+        expect(
+          container.read(creditsControllerProvider),
+          isA<AsyncData<CreditWallet>>(),
+          reason:
+              'build() must never throw. Under keepAlive an erroring initial '
+              'build leaves `.future` permanently uncompleted, and '
+              'PurchaseController awaits that future while polling for the '
+              'post-purchase balance — so a throwing build hangs a purchase '
+              'instead of failing it.',
+        );
+      },
+    );
 
     test(
       'state is AsyncData (not AsyncLoading) after build resolves',
@@ -159,64 +264,70 @@ void main() {
       },
     );
 
-    test(
-      'refresh exposes AsyncError when repository throws on re-fetch',
-      () async {
-        var callCount = 0;
-        when(() => repo.fetchWallet()).thenAnswer((_) async {
-          callCount++;
-          if (callCount == 1) return _wallet100;
-          throw Exception('server down');
-        });
-
-        final container = _container(repo);
-        await container.read(creditsControllerProvider.future);
-
-        await container.read(creditsControllerProvider.notifier).refresh();
-
-        final state = container.read(creditsControllerProvider);
-        expect(
-          state,
-          isA<AsyncError<CreditWallet>>(),
-          reason: 'refresh() must surface repository errors as AsyncError.',
-        );
-      },
-    );
-
-    test('refresh sets AsyncLoading before resolving', () async {
-      final completer = Completer<CreditWallet>();
+    test('a failing background refresh keeps the last good balance '
+        '(stale beats broken)', () async {
       var callCount = 0;
       when(() => repo.fetchWallet()).thenAnswer((_) async {
         callCount++;
-        if (callCount == 1) return _wallet0;
-        return completer.future;
+        if (callCount == 1) return _wallet100;
+        throw Exception('server down');
       });
 
       final container = _container(repo);
       await container.read(creditsControllerProvider.future);
 
-      // Kick off refresh without awaiting.
-      final refreshFuture = container
-          .read(creditsControllerProvider.notifier)
-          .refresh();
+      await container.read(creditsControllerProvider.notifier).refresh();
 
-      // Give the event loop a tick to transition to loading.
-      await Future<void>.microtask(() {});
-
-      final stateWhileLoading = container.read(creditsControllerProvider);
+      final state = container.read(creditsControllerProvider);
       expect(
-        stateWhileLoading,
-        isA<AsyncLoading<CreditWallet>>(),
-        reason: 'State must be AsyncLoading while refresh is in progress.',
+        state.value?.balance,
+        100,
+        reason:
+            'refresh() runs on every app foreground; a transient network '
+            'error there must not replace a real balance with an error '
+            'state. Stale beats broken.',
       );
-
-      // Resolve.
-      completer.complete(const CreditWallet(balance: 50));
-      await refreshFuture;
-
-      final stateAfter = container.read(creditsControllerProvider);
-      expect(stateAfter.value?.balance, 50);
     });
+
+    test(
+      'refresh keeps the previous balance visible while in flight',
+      () async {
+        final completer = Completer<CreditWallet>();
+        var callCount = 0;
+        when(() => repo.fetchWallet()).thenAnswer((_) async {
+          callCount++;
+          if (callCount == 1) return _wallet100;
+          return completer.future;
+        });
+
+        final container = _container(repo);
+        await container.read(creditsControllerProvider.future);
+
+        // Kick off refresh without awaiting.
+        final refreshFuture = container
+            .read(creditsControllerProvider.notifier)
+            .refresh();
+
+        await Future<void>.microtask(() {});
+
+        // No loading flash: refresh runs on app foreground, and blanking the
+        // pill each time reads as the balance vanishing.
+        final stateWhileLoading = container.read(creditsControllerProvider);
+        expect(
+          stateWhileLoading.value?.balance,
+          100,
+          reason:
+              'The old balance must stay visible while refresh is in flight.',
+        );
+
+        // Resolve.
+        completer.complete(const CreditWallet(balance: 50));
+        await refreshFuture;
+
+        final stateAfter = container.read(creditsControllerProvider);
+        expect(stateAfter.value?.balance, 50);
+      },
+    );
   });
 
   // -------------------------------------------------------------------------

@@ -9,7 +9,10 @@ import '../../../shared/services/privacy/analytics_consent.dart';
 import '../../../shared/services/privacy/privacy_region_service.dart';
 import '../../../shared/services/performance_telemetry.dart';
 import '../../../shared/models/version_check_result.dart';
+import '../../../features/auth/data/user_repository.dart';
 import '../../../features/auth/domain/user_preferences.dart';
+import '../../../features/onboarding/application/onboarding_snapshot_service.dart';
+import '../../../features/onboarding/data/onboarding_survey_repository.dart';
 
 part 'app_startup_provider.g.dart';
 
@@ -111,30 +114,42 @@ class AppStartup extends _$AppStartup {
         );
 
         if (!resyncSuccess) {
-          _logger.error(
-            'Schema resync failed - app may be in inconsistent state',
+          if (versionCheckService.wasDeferredForDataProtection) {
+            // Anonymous user with dirty local rows that couldn't reach
+            // Supabase (onboarding-redesign plan §7): the database was NOT
+            // deleted. Continue on the old schema; the mismatch retries next
+            // launch, once the upload has had a chance to succeed.
+            _logger.warning(
+              'Schema resync deferred to protect anonymous local data - '
+              'continuing on the old schema this launch',
+              context: 'VERSION_CHECK',
+            );
+          } else {
+            _logger.error(
+              'Schema resync failed - app may be in inconsistent state',
+              context: 'VERSION_CHECK',
+            );
+            // Return resyncRequired to show error state
+            return AppStartupData(
+              user: null,
+              hasCompletedOnboarding: false,
+              resyncRequired: true,
+              localSchemaVersion: resyncResult.localSchemaVersion,
+              remoteSchemaVersion: resyncResult.remoteSchemaVersion,
+            );
+          }
+        } else {
+          _logger.info(
+            'Schema resync completed - reinitializing database',
             context: 'VERSION_CHECK',
           );
-          // Return resyncRequired to show error state
-          return AppStartupData(
-            user: null,
-            hasCompletedOnboarding: false,
-            resyncRequired: true,
-            localSchemaVersion: resyncResult.localSchemaVersion,
-            remoteSchemaVersion: resyncResult.remoteSchemaVersion,
-          );
+
+          // Invalidate database provider to create fresh instance with new schema
+          ref.invalidate(appDatabaseProvider);
+
+          // Continue with normal startup - database will be fresh and empty
+          // User will need to sign in again to sync their data
         }
-
-        _logger.info(
-          'Schema resync completed - reinitializing database',
-          context: 'VERSION_CHECK',
-        );
-
-        // Invalidate database provider to create fresh instance with new schema
-        ref.invalidate(appDatabaseProvider);
-
-        // Continue with normal startup - database will be fresh and empty
-        // User will need to sign in again to sync their data
       }
 
       // Version check passed - continue with normal startup
@@ -187,12 +202,21 @@ class AppStartup extends _$AppStartup {
 
       // CRITICAL: Pass currentAuthUserId to getCurrentUserProfile
       // Without this, it returns null even when a valid session exists!
-      final user = await PerformanceTelemetry.measure(
+      var user = await PerformanceTelemetry.measure(
         'startup.local_user_lookup',
         () => database.userDao.getCurrentUserProfile(
           currentAuthUserId: currentAuthUserId,
         ),
         threshold: const Duration(milliseconds: 500),
+      );
+
+      // Anonymous safety net (onboarding-redesign plan §7): after a
+      // delete-and-recreate upgrade, an anonymous user whose session was
+      // lost gets nothing back from the re-pull. If no user row exists but
+      // an onboarding snapshot does, re-import it locally with
+      // needs_upload = true so sync can push it once a session exists.
+      user ??= await _maybeRestoreOnboardingSnapshot(
+        currentAuthUserId: currentAuthUserId,
       );
       final hasCompletedOnboarding = user?.onboardingCompleted ?? false;
 
@@ -226,6 +250,76 @@ class AppStartup extends _$AppStartup {
         'startup.total',
         startupStopwatch.elapsed,
       );
+    }
+  }
+
+  /// Restore the onboarding snapshot into Drift when the local database has
+  /// no user row (post delete-and-recreate with a lost anonymous session).
+  /// Rows are written with `needs_upload = true` so a future session pushes
+  /// them. Returns the restored profile, or null when there is no snapshot
+  /// or the restore fails (startup proceeds as a fresh install either way).
+  Future<UserProfile?> _maybeRestoreOnboardingSnapshot({
+    required String? currentAuthUserId,
+  }) async {
+    try {
+      final snapshotService = ref.read(onboardingSnapshotServiceProvider);
+      final snapshot = await snapshotService.readSnapshot();
+      if (snapshot == null) return null;
+
+      // The snapshot is a recovery net for the SAME user whose session was
+      // lost. If a different account is signed in (fresh login after a wipe,
+      // shared device, deleted account), restoring would resurrect a ghost
+      // profile under the wrong session — its dirty rows would then be
+      // pushed to Supabase as that user or bounce off RLS forever. Skip.
+      if (currentAuthUserId != null &&
+          currentAuthUserId != snapshot.profile.id) {
+        _logger.warning(
+          'Onboarding snapshot belongs to a different user than the current '
+          'session - skipping restore',
+          context: 'ONBOARDING_SNAPSHOT',
+          data: {
+            'snapshotUserId': snapshot.profile.id,
+            'currentAuthUserId': currentAuthUserId,
+          },
+        );
+        return null;
+      }
+
+      _logger.warning(
+        'No local user row but an onboarding snapshot exists - restoring '
+        'locally with needs_upload=true',
+        context: 'ONBOARDING_SNAPSHOT',
+        data: {
+          'snapshotUserId': snapshot.profile.id,
+          'writtenAt': snapshot.writtenAt.toIso8601String(),
+        },
+      );
+
+      final userRepository = await ref.read(userRepositoryProvider.future);
+      await userRepository.saveUserProfile(snapshot.profile, needsUpload: true);
+      await ref
+          .read(onboardingSurveyRepositoryProvider)
+          .saveSurveyFromDraft(
+            userId: snapshot.profile.id,
+            draft: snapshot.toSurveyDraft(),
+          );
+
+      final sentry = ref.read(appExternalDepsProvider).sentry;
+      sentry.addBreadcrumb(
+        message: 'Onboarding snapshot restored after DB recreate',
+        category: 'onboarding',
+        data: {'userId': snapshot.profile.id},
+      );
+
+      return snapshot.profile;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Onboarding snapshot restore failed - continuing as fresh install',
+        context: 'ONBOARDING_SNAPSHOT',
+        error: e,
+        stackTrace: stackTrace,
+      );
+      return null;
     }
   }
 }

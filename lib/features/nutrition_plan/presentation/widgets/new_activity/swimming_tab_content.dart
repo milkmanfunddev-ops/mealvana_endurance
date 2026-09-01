@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../domain/fueling_window_limits.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../shared/widgets/kyle_design/buttons/segmented_control.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
@@ -121,9 +122,9 @@ class SwimmingTabContent extends ConsumerWidget {
           label: 'Pre-Swim Fueling Window',
           value: formState.preSwimMinutes,
           onChanged: controller.updatePreSwimMinutes,
-          min: 0,
-          max: 480,
-          step: 15,
+          min: FuelingWindowLimits.minMinutes,
+          max: FuelingWindowLimits.maxMinutes,
+          step: FuelingWindowLimits.stepMinutes,
           unit: 'minutes',
         ),
 

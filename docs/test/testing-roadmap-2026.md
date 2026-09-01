@@ -8,7 +8,7 @@ Patrol proves the user can do the thing; direct tests prove the numbers are righ
 
 Macro generation is **deterministic** (formula-based — ISSN/Jeukendrup/Baker, no
 LLM), so exact/range assertions are safe. "Generate Plan" in the app is this
-engine, NOT Jade/AI.
+engine, NOT Mealvana AI/AI.
 
 ---
 
@@ -43,7 +43,7 @@ login (email-login fallback only fires on a clean install).
 - [ ] **Food preferences editing** (post-onboarding).
 - [ ] **Templates:** save a plan as template, then "Use Template" path (only appears once a template exists).
 - [ ] **Formula Kit:** create/edit a personal formula, pin it, verify it surfaces.
-- [ ] **Carb loading**, **race checklist**, **Daily Macros / meal logging / Jade**.
+- [ ] **Carb loading**, **race checklist**, **Daily Macros / meal logging / Mealvana AI**.
 - [ ] **Android:** fix the birth-year `CupertinoPicker` deadlock (gates the whole Android fresh-user→CRUD chain).
 
 ---

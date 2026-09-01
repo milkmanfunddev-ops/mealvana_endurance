@@ -6,13 +6,19 @@ part of 'macro_explanation_service.dart';
 // Conversion: 1 mL = 0.033814 fl oz. Used to pre-convert targetGrams /
 // rangeLow / rangeHigh values in the fluid service when useImperial=true so
 // the transparency card (which only knows the `unit` suffix) displays the
-// right magnitude. See audit doc `docs/sodium_hydration/2026-04-22_audit.md`
+// right magnitude. See audit doc `docs/features/sodium_hydration/2026-04-22_audit.md`
 // U1 for the bug this fixes (e.g. `1688mL` rendering as `1688oz`).
 double _mlToDisplay(double ml, bool useImperial) =>
     useImperial ? (ml * 0.033814).roundToDouble() : ml;
 
 double? _mlToDisplayOrNull(double? ml, bool useImperial) =>
     ml == null ? null : _mlToDisplay(ml, useImperial);
+
+/// Formats a ml/kg figure without a trailing `.0` — `7.5`, but `5` not `5.0`.
+String _trimZero(double value) {
+  final oneDp = value.toStringAsFixed(1);
+  return oneDp.endsWith('.0') ? oneDp.substring(0, oneDp.length - 2) : oneDp;
+}
 
 // ── Narrative/formula-line fluid-unit helpers ───────────────────────────────
 // The structured targetGrams/rangeLow/rangeHigh fields above are already
@@ -58,29 +64,48 @@ extension _$FluidExt on MacroExplanationService {
     bool useImperial = false,
   }) {
     final pre = macroTargets.preRun;
-    final fluidsMl = pre.fluidsMl.round();
-    final rangeLowMl = pre.fluidsLowMl?.round() ?? (fluidsMl * 0.8).round();
-    final rangeHighMl = pre.fluidsHighMl?.round() ?? (fluidsMl * 1.2).round();
+    // Display rounding lives here, never in the engine — the engine's 487.5 ml
+    // is exact, and printing it raw reads as though it were measured.
+    // Digest §5: target `round25`, band `[floor25(low), ceil25(high)]`.
+    final fluidsMl = round25(pre.fluidsMl).round();
+    final roundedBand = roundFluidBand(pre.fluidsLowMl, pre.fluidsHighMl);
+    final rangeLowMl =
+        roundedBand?.low.round() ?? floor25(fluidsMl * 0.8).round();
+    final rangeHighMl =
+        roundedBand?.high.round() ?? ceil25(fluidsMl * 1.2).round();
 
-    // Prefer the authoritative `hydrationTier` from the edge function
-    // (1 = body-weight scaled, 2 = fixed 250 ml top-up, 3 = no hydration).
-    // Fall back to the legacy fluid-magnitude heuristic only when tier is
-    // missing — older cached plans and some offline paths may not have
-    // populated it. The heuristic mislabels low-bodyweight Tier 1 athletes
-    // (e.g. 47.6 kg → 286 ml) as Tier 2; the explicit tier avoids that.
-    final tier = pre.hydrationTier;
-    final isTier3 = tier != null ? tier == 3 : fluidsMl == 0;
-    final isTier2 = tier != null ? tier == 2 : (!isTier3 && fluidsMl <= 300);
+    // Hydration v6 regime replaces the retired integer tier (PW-013).
+    //
+    //   gated           → short + mild session; no fluid target was set at all
+    //   clearance_bound → t < 2 h and gastric clearance, not body weight, caps
+    //                     the ceiling — i.e. very close to the start
+    //   extrapolated    → t < 2 h, below the cited window
+    //   cited           → t >= 2 h, Thomas 2016's window
+    //
+    // Legacy cached plans carry no regime; `PreRunMacros.fromJson` maps a
+    // retired integer tier forward where it can, and the fluid-magnitude
+    // heuristic remains the last resort. That heuristic mislabels
+    // low-bodyweight athletes (e.g. 47.6 kg → 286 ml) — the regime avoids it.
+    final regime = pre.hydrationRegime;
+    final isGateFired = regime != null
+        ? regime == PreRunHydrationRegime.gated
+        : (fluidsMl == 0 &&
+              macroTargets.metrics.durationMin < 60 &&
+              (macroTargets.duringRun.tempC ?? 22.0) < 30);
 
-    // When fluidsMl == 0, determine whether the gate fired (short + mild
-    // workout → no plan needed) or whether it's a too-late scenario
-    // (< 10 min before start → fluid won't absorb). The gate fires when
-    // duration < 60 min AND temp < 30°C. We use duringRun because that's
-    // where durationMin and tempC live; this mirrors the gate logic used
-    // in the during-workout card.
-    final durationMin = macroTargets.metrics.durationMin;
-    final tempC = macroTargets.duringRun.tempC ?? 22.0;
-    final isGateFired = isTier3 && durationMin < 60 && tempC < 30;
+    // "No structured intake" — the gate, or too close to the start to absorb.
+    final isNoIntake = isGateFired || (regime == null && fluidsMl == 0);
+
+    // Sub-2 h: a partial dose, sipped, rather than the full cited protocol.
+    final isShortWindow = regime != null
+        ? (regime == PreRunHydrationRegime.extrapolated ||
+              regime == PreRunHydrationRegime.clearanceBound)
+        : (!isNoIntake && fluidsMl <= 300);
+
+    // Retained names so the branches below read the same as before the v6
+    // rename: tier 3 == no structured intake, tier 2 == short window.
+    final isTier3 = isNoIntake;
+    final isTier2 = isShortWindow;
 
     final String blurb;
     final List<FormulaLine> tldrLines;
@@ -119,8 +144,10 @@ extension _$FluidExt on MacroExplanationService {
         ]),
       ];
     } else {
-      // Tier 1 — full ACSM protocol. Spec uses 6 ml/kg midpoint, 5 ml/kg
-      // floor, 7 ml/kg ceiling.
+      // `cited` regime — hydration v6's full protocol: 7.5 ml/kg with a
+      // [5, 12] ml/kg band. The figures below are read off the engine's own
+      // output rather than restated, so a future spec change can't leave this
+      // card quoting a band the engine no longer produces.
       // Back-derive the approximate time before the workout from the carb
       // prescription: preRun.carbsG / (bodyWeightKg * 1 g/kg/hr) gives hours.
       // Clamped to 2–4 h since that's the Tier 1 window. When bodyWeightKg is
@@ -139,20 +166,29 @@ extension _$FluidExt on MacroExplanationService {
           'normal baseline, not loaded or depleted. With $hoursLabel available, '
           'you have time for the full protocol: sip ${_fmtMlAmount(fluidsMl, useImperial)} '
           'gradually, let it absorb, and aim for pale yellow urine before you head out.';
-      // Bucket the derived ml/kg to the spec-exact integer (5/6/7) when it's
-      // close, to avoid displaying e.g. "5.5 mL/kg" — which was the prior
-      // output even though the legacy calc used a non-spec tier.
-      final rawPerKg = bodyWeightKg > 0 ? fluidsMl / bodyWeightKg : 6.0;
-      final String mlPerKg;
-      if (rawPerKg < 5.5) {
-        mlPerKg = '5';
-      } else if (rawPerKg < 6.5) {
-        mlPerKg = '6';
-      } else {
-        mlPerKg = '7';
-      }
-      final floorMl = (bodyWeightKg * 5).round();
-      final ceilMl = (bodyWeightKg * 7).round();
+      // The ml/kg shown is derived from the plan the engine actually produced,
+      // not from a constant restated here — a restated constant is how the
+      // card ended up quoting a 5–7 ml/kg band the engine had stopped using.
+      // Hydration v6's cited regime is 7.5 ml/kg with a [5, 12] ml/kg band.
+      final rawPerKg = bodyWeightKg > 0 ? pre.fluidsMl / bodyWeightKg : 7.5;
+      final mlPerKg = _trimZero(rawPerKg);
+      // Band ends come from the engine and are rounded outward for display.
+      final floorMl = rangeLowMl;
+      final ceilMl = rangeHighMl;
+      final floorPerKg = bodyWeightKg > 0
+          ? _trimZero(
+              pre.fluidsLowMl != null
+                  ? pre.fluidsLowMl! / bodyWeightKg
+                  : floorMl / bodyWeightKg,
+            )
+          : null;
+      final ceilPerKg = bodyWeightKg > 0
+          ? _trimZero(
+              pre.fluidsHighMl != null
+                  ? pre.fluidsHighMl! / bodyWeightKg
+                  : ceilMl / bodyWeightKg,
+            )
+          : null;
       tldrLines = [
         FormulaLine([
           fAccent('${bodyWeightKg.toStringAsFixed(0)} kg '),
@@ -164,12 +200,12 @@ extension _$FluidExt on MacroExplanationService {
         FormulaLine([
           fOp('↓ floor = '),
           fDim(_fmtMlAmount(floorMl, useImperial)),
-          fOp(' (5 ml/kg)'),
+          if (floorPerKg != null) fOp(' ($floorPerKg ml/kg)'),
         ]),
         FormulaLine([
           fOp('↑ ceiling = '),
           fDim(_fmtMlAmount(ceilMl, useImperial)),
-          fOp(' (7 ml/kg)'),
+          if (ceilPerKg != null) fOp(' ($ceilPerKg ml/kg)'),
         ]),
         FormulaLine([
           fOp('range '),
@@ -203,7 +239,7 @@ extension _$FluidExt on MacroExplanationService {
         fluidsMl: fluidsMl,
         fluidsLowMl: rangeLowMl,
         fluidsHighMl: rangeHighMl,
-        tier: tier,
+        regime: regime,
         isGateFired: isGateFired,
         useImperial: useImperial,
       ),

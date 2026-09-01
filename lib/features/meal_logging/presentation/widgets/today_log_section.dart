@@ -241,7 +241,7 @@ class MealLogMethodSheet extends ConsumerWidget {
             _MethodTile(
               icon: Icons.camera_alt_outlined,
               title: 'Take a Photo',
-              subtitle: 'Jade AI identifies food and estimates macros',
+              subtitle: 'Mealvana AI identifies food and estimates macros',
               onTap: () => onMethodSelected('photo'),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -256,8 +256,8 @@ class MealLogMethodSheet extends ConsumerWidget {
             const SizedBox(height: AppSpacing.sm),
             _MethodTile(
               icon: Icons.record_voice_over_outlined,
-              title: 'Describe to Jade',
-              subtitle: 'Tell Jade what you ate in plain language',
+              title: 'Describe to Mealvana',
+              subtitle: 'Tell Mealvana what you ate in plain language',
               onTap: () => onMethodSelected('describe'),
             ),
           ],

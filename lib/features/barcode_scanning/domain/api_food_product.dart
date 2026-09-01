@@ -110,8 +110,15 @@ class ApiFoodProduct {
     return null;
   }
 
-  /// Calculate nutritional values for a specific serving size in grams
-  /// Prioritizes per-serving values when available
+  /// How far a requested serving may differ from the declared one before the
+  /// per-serving values are scaled rather than used as-is, as a FRACTION of
+  /// the declared serving.
+  ///
+  /// Relative, not absolute — see the note at the comparison site.
+  static const double _servingToleranceFraction = 0.10;
+
+  /// Calculate nutritional values for a specific serving size in grams.
+  /// Prioritizes per-serving values when available.
   NutritionalValues calculateForServing(double servingGrams) {
     DebugLogger.debug('🧮 DEBUG - calculateForServing:');
     DebugLogger.debug('  Requested serving: ${servingGrams}g');
@@ -128,9 +135,22 @@ class ApiFoodProduct {
       DebugLogger.debug('    Protein: $proteinPerServing');
       DebugLogger.debug('    Fat: $fatPerServing');
 
-      // If the serving size matches exactly or we don't have serving_grams, use values directly
+      // Close enough to the declared serving? Use the API's numbers as-is.
+      //
+      // The tolerance is RELATIVE (a fraction of the declared serving), not a
+      // fixed number of grams. An absolute 5 g threshold behaves completely
+      // differently across the range of things people scan: 5 g on a 100 g
+      // cereal portion is kitchen-scale noise, but 5 g on a 5 g energy chew is
+      // the whole product. That is not hypothetical — under the old rule a
+      // 5 g chew logged as 9 g fell inside the tolerance and returned the 5 g
+      // values unscaled, understating a during-race fuel item by ~80%.
+      //
+      // 10% keeps the original intent (don't manufacture precision from a
+      // rounding difference) while scaling correctly for gels, chews and
+      // tablets, where the carb number matters most.
       if (this.servingGrams == null ||
-          (servingGrams - this.servingGrams!).abs() < 5.0) {
+          (servingGrams - this.servingGrams!).abs() <=
+              this.servingGrams! * _servingToleranceFraction) {
         return NutritionalValues(
           calories: caloriesPerServing?.round(),
           carbohydrates: carbohydratesPerServing,
@@ -185,6 +205,65 @@ class ApiFoodProduct {
           ? (sodiumMgPer100g! * factor).round()
           : null,
     );
+  }
+
+  /// Fluid content of one serving in millilitres, for beverages only.
+  ///
+  /// Returns null when the product is not a beverage, or when no volume can be
+  /// read. Beverage detection is the `categories` string from Open Food Facts.
+  ///
+  /// Volume units are NOT limited to millilitres. OFF publishes whatever the
+  /// label says — a 1 L bottle commonly arrives as `product_quantity: 1` with
+  /// `product_quantity_unit: "l"`, and small cans as `cl`. Matching only "ml"
+  /// silently recorded ZERO fluid for those products, which for a beverage is
+  /// the one number that matters: an athlete's during-run fluid plan is built
+  /// from it. Litres, centilitres and US fluid ounces are converted here.
+  ///
+  /// Strategy mirrors the OFF data model: prefer the per-serving quantity,
+  /// fall back to the whole-product quantity.
+  double? get fluidMlPerServing {
+    if (categories?.toLowerCase().contains('beverage') != true) return null;
+
+    final fromServing = _toMillilitres(servingQuantity, servingQuantityUnit);
+    if (fromServing != null) return fromServing;
+
+    return _toMillilitres(productQuantity, productQuantityUnit);
+  }
+
+  /// Convert [value] in [unit] to millilitres, or null when unusable.
+  static double? _toMillilitres(double? value, String? unit) {
+    if (value == null || unit == null) return null;
+    if (!value.isFinite || value <= 0) return null;
+
+    switch (unit.trim().toLowerCase()) {
+      case 'ml':
+      case 'millilitre':
+      case 'milliliter':
+        return value;
+      case 'cl':
+      case 'centilitre':
+      case 'centiliter':
+        return value * 10;
+      case 'dl':
+      case 'decilitre':
+      case 'deciliter':
+        return value * 100;
+      case 'l':
+      case 'litre':
+      case 'liter':
+        return value * 1000;
+      case 'fl oz':
+      case 'floz':
+      case 'fl. oz.':
+      case 'oz':
+        // US fluid ounce. OFF uses "fl oz" for volume; a bare "oz" on a
+        // beverage is a volume in practice, not a weight.
+        return value * 29.5735;
+      default:
+        // Unknown unit: better to record nothing than to record a number in
+        // the wrong scale, which reads as a plausible fluid target.
+        return null;
+    }
   }
 
   /// Get a display name combining brand and product name

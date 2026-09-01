@@ -22,14 +22,15 @@ class PersonalFormulaCard extends StatelessWidget {
   final VoidCallback onTap;
 
   /// The timing/scope badges shown like the system cards do — the before
-  /// timing window (e.g. "30-90 min"), one badge per during duration bracket,
+  /// timing window (e.g. "30-120 min"), one badge per during duration bracket,
   /// or the after travel label. Empty when the formula has no scope set yet.
   List<String> _scopeBadges() {
     switch (formula.phase) {
       case FormulaPhase.before:
+        // Ratified windows after the 120-minute meal boundary (D-017).
         final label = switch (formula.subPhase) {
-          'full_meal' => '1.5-3 hours',
-          'snack' => '30-90 min',
+          'full_meal' => '2-4 hours',
+          'snack' => '30-120 min',
           'top_up' => '< 30 min',
           _ => null,
         };

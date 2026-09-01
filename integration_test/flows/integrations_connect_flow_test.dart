@@ -29,6 +29,15 @@
 /// NOTE (Lee, 2026-06-13): VDOT and Garmin are not fully set up yet, so their
 /// connects may not complete even at the provider end — treat failures past the
 /// launch boundary as "not yet configured", not as app regressions.
+///
+/// NOTE (2026-08 onboarding redesign): "Connect Training" is no longer the
+/// first onboarding step. `ConnectedAppsScreen` moved from PageView index 0 to
+/// index 3, behind sports → goals → pitfalls, so reaching it now costs three
+/// extra taps (see `_reachConnectTrainingStep`). Until this was fixed the flow
+/// tapped "Get Started" and immediately looked for the provider button, landing
+/// on sports selection instead — all three provider cases failed on `mustFind`
+/// timeout. `test/features/onboarding/onboarding_step_alignment_test.dart`
+/// now fails if that ordering changes again.
 library;
 
 import 'package:flutter/material.dart';
@@ -61,7 +70,7 @@ void main() {
           const Duration(minutes: 2),
         );
 
-        // Reach the onboarding "Connect Training" screen.
+        // Reach the onboarding "Connect Training" screen (PageView index 3).
         final getStarted = find.byKey(
           const ValueKey('welcome.get_started_button'),
         );
@@ -70,6 +79,7 @@ void main() {
             getStarted,
             reason: 'welcome.get_started_button',
           );
+          await _reachConnectTrainingStep(tester);
         } else {
           // Already past welcome (hot sim). If we can't see the connect button,
           // skip — this test's entry point is the onboarding connect screen.
@@ -142,9 +152,53 @@ void main() {
               'launch + cancel (no crash).',
         );
       },
-      timeout: const Timeout(Duration(minutes: 8)),
+      timeout: const Timeout(Duration(minutes: 5)),
     );
   }
+}
+
+/// Walks the three onboarding steps the 2026-08 redesign inserted ahead of
+/// "Connect Training": sports (≥1 selection required) → goals → pitfalls.
+///
+/// Also answers the regional privacy-consent interstitial, which strict-regime
+/// devices (EEA/UK, WA) show between welcome and the first step. Mirrors
+/// `_startOnboardingFromWelcome` in onboarding_signup_flow_test.dart.
+Future<void> _reachConnectTrainingStep(WidgetTester tester) async {
+  const consentContinue = ValueKey('privacy_consent.continue_button');
+  const sportsContinue = ValueKey('sport_selection.continue_button');
+
+  // Consent gate, if this device's region raises one.
+  for (var i = 0; i < 6; i++) {
+    if (find.byKey(sportsContinue).evaluate().isNotEmpty) break;
+    if (find.byKey(consentContinue).evaluate().isNotEmpty) {
+      await tester.mustTap(
+        find.byKey(consentContinue),
+        reason: 'privacy_consent.continue',
+      );
+      break;
+    }
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
+  // Sports: at least one selection is required before Continue enables.
+  await tester.mustTap(
+    find.byKey(const ValueKey('sport_selection.running_chip')),
+    reason: 'sport_selection.running_chip',
+  );
+  await tester.mustTap(
+    find.byKey(sportsContinue),
+    reason: 'sport_selection.continue',
+  );
+
+  // Goals and pitfalls are both non-blocking — continue straight through.
+  await tester.mustTap(
+    find.byKey(const ValueKey('goals.continue_button')),
+    reason: 'goals.continue',
+  );
+  await tester.mustTap(
+    find.byKey(const ValueKey('pitfalls.continue_button')),
+    reason: 'pitfalls.continue',
+  );
 }
 
 class _Provider {

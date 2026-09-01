@@ -9,7 +9,13 @@ Mealvana Endurance uses a **dual CI/CD strategy**:
 | Platform | Purpose | Triggers |
 |----------|---------|----------|
 | **Codemagic** | Mobile app builds, integration tests, App Store/Play Store deployment | Push/PR to branches |
-| **GitHub Actions** | Backend deployment (Supabase), schema monitoring, code reviews | Push/PR, scheduled |
+| **GitHub Actions** | Test suites (self-hosted runner), changelog publishing, data-ops (catalog refresh, prod→dev sync) | Push/PR, scheduled |
+
+> **Backend deployment is NOT in CI.** The Supabase deploy workflows (`deploy-dev.yml`,
+> `deploy-prod.yml`, `schema-drift-check.yml`) were deleted in `b2f86b4f` (2026-05-22) and are
+> not coming back. Edge functions ship manually via `scripts/deploy_dev.sh` /
+> `scripts/deploy_prod.sh` (or the `/deploy-edge` Claude skill); schema is applied by hand.
+> See [/docs/deployment/README.md](/docs/deployment/README.md).
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -34,11 +40,11 @@ Mealvana Endurance uses a **dual CI/CD strategy**:
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │                   GITHUB ACTIONS                             │    │
 │  ├─────────────────────────────────────────────────────────────┤    │
-│  │  • Flutter + Edge Function Tests                            │    │
-│  │  • Supabase Dev Deployment (auto on develop)                │    │
-│  │  • Supabase Prod Deployment (manual approval)               │    │
-│  │  • Daily Schema Drift Detection                             │    │
-│  │  • CodeRabbit AI Code Reviews                               │    │
+│  │  • Test suites on self-hosted runner (PR status checks)     │    │
+│  │  • Changelog generation on main (→ Sanity)                  │    │
+│  │  • TheFeed catalog refresh (scheduled data-ops)             │    │
+│  │  • Prod → Dev table sync (scheduled data-ops)               │    │
+│  │  (NO Supabase deploys — those are manual, see below)        │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
@@ -70,20 +76,21 @@ main (production)
 ```
 
 **Deployment Rules:**
-- `develop` → Auto-deploy to dev Supabase
-- `release/*` → Trigger iOS/Android builds
-- `main` → Production deployment (manual approval required)
+- `develop` → Codemagic dev-iOS build (TestFlight). Supabase is NOT auto-deployed —
+  edge-function changes ship only via a manual `scripts/deploy_dev.sh` run.
+- `release/*` → Codemagic prod iOS/Android builds
+- `main` → changelog workflow; prod Supabase deploys are manual (`scripts/deploy_prod.sh`)
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `/codemagic.yaml` | Codemagic workflow definitions |
-| `/.github/workflows/test.yml` | Test automation |
-| `/.github/workflows/deploy-dev.yml` | Dev environment deployment |
-| `/.github/workflows/deploy-prod.yml` | Production deployment |
-| `/.github/workflows/schema-drift-check.yml` | Daily schema monitoring |
-| `/.github/workflows/coderabbit.yml` | AI code review |
+| `/.github/workflows/tests-selfhosted.yml` | Test suites on self-hosted runner |
+| `/.github/workflows/changelog-on-main.yml` | Changelog generation on main |
+| `/.github/workflows/refresh-feed.yml` | TheFeed catalog refresh (data-ops) |
+| `/.github/workflows/sync-prod-to-dev.yml` | Prod → dev table sync (data-ops) |
+| `/scripts/deploy_dev.sh`, `/scripts/deploy_prod.sh` | Manual edge-function deploys (process of record) |
 | `/shorebird.yaml` | Shorebird OTA configuration |
 
 ## Current Status
@@ -110,13 +117,18 @@ See [Troubleshooting](./troubleshooting.md#configuration-conflict) for resolutio
 
 ### Required in GitHub Actions
 
+The authoritative list is whatever the workflow files reference (`grep secrets.
+.github/workflows/`). Highlights:
+
 | Secret | Purpose |
 |--------|---------|
-| `DEV_PROJECT_ID` | Dev Supabase project |
-| `DEV_DB_PASSWORD` | Dev database access |
-| `PROD_PROJECT_ID` | Production Supabase project |
-| `PROD_DB_PASSWORD` | Production database access |
-| `SUPABASE_ACCESS_TOKEN` | Supabase CLI authentication |
+| `DEV_SUPABASE_SERVICE_ROLE_KEY` | Data-ops workflows (catalog refresh, prod→dev sync) |
+| `PROD_SUPABASE_SERVICE_ROLE_KEY` | Data-ops workflows |
+| Sanity / Anthropic credentials | Changelog workflow |
+
+(The old deploy-workflow secrets — `DEV_PROJECT_ID`, `*_DB_PASSWORD`,
+`SUPABASE_ACCESS_TOKEN` — are no longer used by CI; manual deploys authenticate with
+`~/.supabase/pat` locally.)
 
 ## Testing Strategy
 

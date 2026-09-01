@@ -31,9 +31,9 @@
  *     "usage": { "input_tokens": <int>, "output_tokens": <int>, "model": "<string>" }
  *   }
  *
- * Token usage is RETURNED to the client (the client logs it to Mixpanel as
- * `coach_insight_generated`) rather than written to a DB table — the prod
- * project has no Jade/usage tables, and Mixpanel is the app's analytics sink.
+ * Token usage is written server-side to the `ai_usage` ledger (dev + prod) and
+ * also RETURNED to the client, which logs it to Mixpanel as
+ * `coach_insight_generated`.
  *
  * Error responses:
  *   400 — missing/invalid body, unknown mode, or empty components
@@ -325,6 +325,7 @@ serve(withSentry(async (req: Request) => {
         model: COACH_INSIGHT_MODEL,
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
+        costUsd,
       }),
     );
     // deno-lint-ignore no-explicit-any

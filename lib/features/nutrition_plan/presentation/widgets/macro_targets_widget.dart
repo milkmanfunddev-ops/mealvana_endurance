@@ -75,8 +75,11 @@ class MacroTargetsWidget extends StatelessWidget {
                 detailedTargets.postRun.carbsG)
             .round();
 
+    // Sodium v3: no pre-workout sodium target, so the all-phase denominator
+    // is during + post. `?? 0` is summing an absent term, not displaying a
+    // pre-workout target of zero.
     final targetSodium =
-        (detailedTargets.preRun.sodiumMg +
+        ((detailedTargets.preRun.sodiumMg ?? 0) +
                 detailedTargets.duringRun.sodiumTotalMg +
                 detailedTargets.postRun.sodiumMg)
             .round();

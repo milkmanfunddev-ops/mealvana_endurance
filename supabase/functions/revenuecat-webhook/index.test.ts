@@ -67,9 +67,8 @@ class FakeSupabaseClient {
 }
 
 const DEFAULT_PRODUCT_CREDITS: Record<string, number> = {
-  mealvana_credits_100: 100,
-  mealvana_credits_500: 500,
-  mealvana_credits_1200: 1200,
+  mealvana_credits_50: 50,
+  mealvana_credits_250: 250,
 };
 
 const GRANTING_EVENT_TYPES = new Set(['NON_RENEWING_PURCHASE', 'INITIAL_PURCHASE', 'RENEWAL']);
@@ -143,6 +142,9 @@ async function handleWebhook(
       if (error.code === '23505') {
         return json({ ok: true, idempotent: true });
       }
+      if (error.code === '23503') {
+        return json({ ok: true, ignored: 'user_not_in_project' });
+      }
       return json({ error: 'grant failed' }, 500);
     }
     return json({ ok: true, granted: credits, balance: data });
@@ -185,7 +187,7 @@ function rcEvent(overrides: Record<string, unknown> = {}): { event: Record<strin
       id: 'evt-001',
       type: 'INITIAL_PURCHASE',
       app_user_id: USER_ID,
-      product_id: 'mealvana_credits_100',
+      product_id: 'mealvana_credits_50',
       ...overrides,
     },
   };
@@ -296,7 +298,7 @@ describe('C. event types', () => {
       assertEquals(res.status, 200);
       const body = await res.json();
       assertEquals(body.ok, true);
-      assertEquals(body.granted, 100); // mealvana_credits_100 default mapping
+      assertEquals(body.granted, 50); // mealvana_credits_50 default mapping
       assertEquals(body.balance, 250); // RPC return surfaced as new balance
 
       // The DB write itself: exactly one grant_credits call, right args.
@@ -304,17 +306,16 @@ describe('C. event types', () => {
       assertEquals(client.calls[0].fn, 'grant_credits');
       assertEquals(client.calls[0].args, {
         p_user_id: USER_ID,
-        p_amount: 100,
+        p_amount: 50,
         p_reason: 'grant_purchase',
         p_ref: `evt-${type}`,
       });
     });
   }
 
-  it('default product map: 500 and 1200 packs grant their amounts', async () => {
+  it('default product map: the 250 pack grants its amount', async () => {
     for (const [productId, expected] of [
-      ['mealvana_credits_500', 500],
-      ['mealvana_credits_1200', 1200],
+      ['mealvana_credits_250', 250],
     ] as const) {
       const client = new FakeSupabaseClient();
       const res = await handleWebhook(
@@ -387,6 +388,23 @@ describe('E. grant outcomes', () => {
     assertEquals(client.calls[0].args.p_ref, 'evt-001');
   });
 
+  it('FK violation 23503 (user not in this project) → 200 acked, no retry storm', async () => {
+    // Dev + prod share one RC project and TestFlight is always sandbox, so each
+    // Supabase project receives events for users that only exist in the other.
+    const client = new FakeSupabaseClient({
+      error: {
+        code: '23503',
+        message: 'insert or update on table "token_wallets" violates foreign key constraint',
+      },
+    });
+    const res = await handleWebhook(rcRequest(rcEvent()), envWith(), client);
+    assertEquals(res.status, 200);
+    const body = await res.json();
+    assertEquals(body.ok, true);
+    assertEquals(body.ignored, 'user_not_in_project');
+    assertEquals(client.calls.length, 1);
+  });
+
   it('non-unique-violation RPC error → 500 grant failed (RC will retry)', async () => {
     const client = new FakeSupabaseClient({
       error: { code: 'P0001', message: 'wallet missing' },
@@ -432,11 +450,11 @@ describe('F. RC_PRODUCT_CREDITS env override', () => {
     const client = new FakeSupabaseClient();
     const res = await handleWebhook(rcRequest(rcEvent()), env, client);
     assertEquals(res.status, 200);
-    assertEquals(client.calls[0].args.p_amount, 100);
+    assertEquals(client.calls[0].args.p_amount, 50);
   });
 
   it('zero-credit mapping is treated as unmapped (never grants 0)', async () => {
-    const env = envWith({ RC_PRODUCT_CREDITS: '{"mealvana_credits_100":0}' });
+    const env = envWith({ RC_PRODUCT_CREDITS: '{"mealvana_credits_50":0}' });
     const client = new FakeSupabaseClient();
     const res = await handleWebhook(rcRequest(rcEvent()), env, client);
     assertEquals((await res.json()).ignored, 'unmapped_product');
@@ -461,5 +479,6 @@ Deno.test('mirror fidelity — constants match revenuecat-webhook/index.ts', asy
     );
   }
   assert(src.includes("'23505'"), 'index.ts no longer special-cases unique violations');
+  assert(src.includes("'23503'"), 'index.ts no longer acks cross-project user misses');
   assert(src.includes("p_reason: 'grant_purchase'"), 'grant reason drifted');
 });

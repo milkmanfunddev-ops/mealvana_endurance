@@ -1,13 +1,24 @@
 // Verifies pre-workout fluid + sodium transparency data renders the right
-// copy / formula / calculation for each of the four observable states:
+// copy / formula / calculation for each observable state.
 //
-//   1. Gate fired       — short, mild workout: no plan needed
-//   2. Too late          — < 10 min before workout, fluidsMl = 0
-//   3. Short window      — 10–120 min before, fixed top-up
-//   4. Full protocol     — ≥ 120 min before, body-weight-scaled
+// The states are now named by the hydration v6 regime rather than an integer
+// tier (PW-013), and carbohydrate adds one more:
 //
-// Spec: docs/sodium_hydration/transparency_pre_hydration.md
-//       docs/sodium_hydration/transparency_pre_sodium.md
+//   1. Gate fired   — `gated`: short, mild session; NO target is set at all
+//   2. Too late     — legacy plans with no regime and 0 ml; nothing absorbs now
+//   3. Short window — `extrapolated` / `clearance_bound`: sub-2 h partial dose
+//   4. Full protocol— `cited`: >= 2 h, body-weight-scaled
+//   5. Fasted       — no carbohydrate recommendation is being made at all
+//
+// States 1, 2 and 5 all show "nothing" and MUST NOT read alike — see the
+// `three ways of showing nothing` group, which is the only thing keeping that
+// true.
+//
+// Sodium is **v3**: Mealvana sets no pre-workout sodium target. There is no
+// 450 mg midpoint, no 300–600 mg band, no 150 mg tier-2 figure and no formula
+// lines. The assertions below state that positively rather than by omission.
+//
+// Spec: docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md §1 (hydration v6), §3 (sodium v3)
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/application/macro_explanation_service.dart';
@@ -19,22 +30,26 @@ void main() {
   const service = MacroExplanationService();
   const bodyWeightKg = 65.0;
 
-  // ── Gate-fired ────────────────────────────────────────────────────────────
+  // Engine-real v6 output for a 65 kg athlete, so the cards are exercised with
+  // the numbers they will actually receive.
+  //   t = 180 (cited):       487.5 ml, band [325, 780]   → display 500, [325, 800]
+  //   t =  90 (extrapolated): 428.125 ml, band [0, 650]  → display 425, [0, 650]
+  // Display rounding lives in the card: round25 on the target, floor25/ceil25
+  // on the band.
+
+  // ── 1. Gate fired ─────────────────────────────────────────────────────────
   group('Pre-workout — gate fired (short, mild workout)', () {
     final targets = _preTargets(
       fluidsMl: 0,
-      sodiumMg: 0,
       carbsG: 0,
       durationMin: 45,
       tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.gated,
+      fluidTargetBasis: PreRunTargetBasis.none,
     );
 
     test('fluid blurb says no plan needed, not "too late"', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+      final data = _fluid(service, targets, bodyWeightKg);
 
       expect(data.tldrBody, isNotNull);
       expect(data.tldrBody, contains('No structured pre-hydration needed'));
@@ -43,48 +58,39 @@ void main() {
       expect(data.tldrTip, isNull, reason: 'urine tip is full-protocol-only');
     });
 
-    test('sodium blurb references gate, not the standard retention copy', () {
-      final data = service.getSodiumTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+    test('sodium blurb says no plan either — and sets no target or band', () {
+      final data = _sodium(service, targets, bodyWeightKg);
 
-      expect(data.tldrBody, contains('No structured pre-hydration sodium'));
-      expect(data.tldrLines, isEmpty);
+      expect(data.tldrBody, contains('no pre-workout hydration plan'));
+      expect(data.tldrBody, contains('no sodium plan either'));
+      _expectNoSodiumTargetOrBand(data);
     });
 
     test('fluid calc accordion shows gate condition, not "<10 min"', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
-      final flat = _flattenFormula(data.calculationSections);
+      final flat = _flattenFormula(
+        _fluid(service, targets, bodyWeightKg).calculationSections,
+      );
       expect(flat, contains('workout < 60 min'));
       expect(flat, contains('temp < 30'));
       expect(flat, isNot(contains('< 10 min pre-start')));
     });
   });
 
-  // ── Too late (< 10 min before workout) ────────────────────────────────────
+  // ── 2. Too late (legacy plans: no regime, 0 ml) ───────────────────────────
   group('Pre-workout — too late (< 10 min before workout)', () {
-    // Long hot workout + 0 ml fluid → not the gate, must be too-late case.
+    // No regime (a legacy cached plan) + long hot workout + 0 ml fluid → not
+    // the gate, so the too-late branch. New plans carry a regime and reach this
+    // branch only through `gated`; this fixture pins the back-compatibility
+    // path deliberately.
     final targets = _preTargets(
       fluidsMl: 0,
-      sodiumMg: 0,
       carbsG: 0,
       durationMin: 180,
       tempC: 32,
     );
 
     test('fluid blurb says "Too late" and points to during-workout', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+      final data = _fluid(service, targets, bodyWeightKg);
 
       expect(data.tldrBody, contains('Too late for structured pre-hydration'));
       expect(data.tldrBody, contains('during-workout plan'));
@@ -93,25 +99,19 @@ void main() {
     });
 
     test('fluid calc accordion shows < 10 min, not gate language', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
-      final flat = _flattenFormula(data.calculationSections);
+      final flat = _flattenFormula(
+        _fluid(service, targets, bodyWeightKg).calculationSections,
+      );
       expect(flat, contains('< 10 min pre-start'));
       expect(flat, isNot(contains('workout < 60 min')));
     });
 
-    test('Full Story skips "Where does 5–7 ml/kg come from?" Q', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
-      final questions = data.storySections.map((s) => s.question).toList();
+    test('Full Story skips the body-weight-scaled Q', () {
+      final questions = _fluid(
+        service,
+        targets,
+        bodyWeightKg,
+      ).storySections.map((s) => s.question).toList();
       expect(
         questions.any((q) => q.contains('Where does 5')),
         isFalse,
@@ -121,40 +121,40 @@ void main() {
     });
   });
 
-  // ── Short window (10–120 min) ─────────────────────────────────────────────
-  group('Pre-workout — short window (10–120 min)', () {
-    // ~30 minutes before workout: carbs ≈ 0.5 g/kg → 32g for 65kg.
-    // Fluid = 250 ml fixed, sodium = 150 mg fixed per spec.
+  // ── 3. Short window (extrapolated) ────────────────────────────────────────
+  group('Pre-workout — short window (sub-2 h, extrapolated)', () {
     final targets = _preTargets(
-      fluidsMl: 250,
-      fluidsLowMl: 200,
-      fluidsHighMl: 300,
-      sodiumMg: 150,
-      sodiumLowMg: 100,
-      sodiumHighMg: 200,
-      carbsG: 33,
+      fluidsMl: 428.125,
+      fluidsLowMl: 0,
+      fluidsHighMl: 650,
+      carbsG: 48.75,
       durationMin: 90,
       tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.extrapolated,
     );
 
-    test('fluid blurb uses spec wording for the short window', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+    test(
+      'fluid blurb uses the short-window wording and the rounded target',
+      () {
+        final data = _fluid(service, targets, bodyWeightKg);
 
-      expect(data.tldrBody, contains('Not enough time for the full protocol'));
-      expect(data.tldrBody, contains('250 mL'));
-    });
+        expect(
+          data.tldrBody,
+          contains('Not enough time for the full protocol'),
+        );
+        // round25(428.125) = 425 — the card rounds, the engine never does.
+        expect(data.tldrBody, contains('425 mL'));
+        expect(
+          data.tldrBody,
+          isNot(contains('428')),
+          reason:
+              'a raw engine value on screen reads as though it were measured',
+        );
+      },
+    );
 
-    test('fluid formula shows "10–120 min window" not "Tier 2"', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
+    test('fluid formula shows the window label, not "Tier 2"', () {
+      final data = _fluid(service, targets, bodyWeightKg);
       final flat =
           _flattenFormula(data.calculationSections) +
           _flattenLines(data.tldrLines);
@@ -162,115 +162,159 @@ void main() {
       expect(flat.toLowerCase(), isNot(contains('tier')));
     });
 
-    test(
-      'sodium formula shows "10–120 min window" with the right midpoint',
-      () {
-        final data = service.getSodiumTransparencyData(
-          phase: ExplanationPhase.before,
-          macroTargets: targets,
-          bodyWeightKg: bodyWeightKg,
-        )![Scenario.singleSport]!;
+    test('clearance_bound renders as the same short window', () {
+      // A second regime maps to the same observable state; a card that
+      // branched on only one of them would silently fall through to the full
+      // protocol for an athlete standing on the start line.
+      final clearanceTargets = _preTargets(
+        fluidsMl: 312.5,
+        fluidsLowMl: 0,
+        fluidsHighMl: 890.216,
+        carbsG: 16.25,
+        durationMin: 90,
+        tempC: 22,
+        hydrationRegime: PreRunHydrationRegime.clearanceBound,
+      );
+      final data = _fluid(service, clearanceTargets, bodyWeightKg);
+      expect(data.tldrBody, contains('Not enough time for the full protocol'));
+      expect(_flattenLines(data.tldrLines), contains('10–120 min window'));
+    });
 
-        final flat = _flattenLines(data.tldrLines);
-        expect(flat, contains('10–120 min window'));
-        expect(flat, contains('150 mg'));
-        expect(flat, contains('100–200 mg'));
-      },
-    );
+    test('sodium sets no target and no band in the short window either', () {
+      final data = _sodium(service, targets, bodyWeightKg);
+
+      // v3: the retired figures must not come back in any form.
+      final flat = _flattenLines(data.tldrLines);
+      expect(flat, isEmpty, reason: 'there is no pre-workout sodium formula');
+      expect(data.tldrBody, isNot(contains('150 mg')));
+      expect(data.tldrBody, isNot(contains('100–200 mg')));
+      _expectNoSodiumTargetOrBand(data);
+    });
 
     test('no urine tip in the short window', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
-      expect(data.tldrTip, isNull);
+      expect(_fluid(service, targets, bodyWeightKg).tldrTip, isNull);
     });
   });
 
-  // ── Full protocol (≥ 120 min) ─────────────────────────────────────────────
-  group('Pre-workout — full protocol (≥ 2 hr)', () {
-    // 3 hours before, 65 kg athlete → 195 g carbs, 390 ml fluid, 450 mg
-    // sodium per the algorithm.
+  // ── 4. Full protocol (cited) ──────────────────────────────────────────────
+  group('Pre-workout — full protocol (cited, >= 2 h)', () {
     final targets = _preTargets(
-      fluidsMl: 390,
-      fluidsLowMl: 325,
-      fluidsHighMl: 455,
-      sodiumMg: 450,
-      sodiumLowMg: 300,
-      sodiumHighMg: 600,
-      carbsG: 195, // 3 hr × 65 kg × 1 g/kg/hr
+      fluidsMl: 487.5, // 7.5 ml/kg
+      fluidsLowMl: 325, // 5 ml/kg
+      fluidsHighMl: 780, // 12 ml/kg
+      carbsG: 195, // 3 h × 65 kg → back-derives "3 hours"
       durationMin: 120,
       tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.cited,
     );
 
-    test('fluid blurb mentions the back-derived hours and target ml', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+    test('fluid blurb mentions the back-derived hours and rounded target', () {
+      final data = _fluid(service, targets, bodyWeightKg);
 
       expect(data.tldrBody, contains('euhydrated'));
-      expect(data.tldrBody, contains('390 mL'));
-      // hoursBefore is clamped at 4.0; for 195g/65kg = 3.0 hours.
+      // round25(487.5) = 500.
+      expect(data.tldrBody, contains('500 mL'));
       expect(data.tldrBody, contains('3 hours available'));
       expect(data.tldrBody, contains('full protocol'));
     });
 
     test('fluid formula uses the inline kg × ml/kg form', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
-      final flat = _flattenLines(data.tldrLines);
+      final flat = _flattenLines(
+        _fluid(service, targets, bodyWeightKg).tldrLines,
+      );
       expect(flat, contains('65 kg'));
-      expect(flat, contains('6 ml/kg'));
-      expect(flat, contains('390 mL'));
+      expect(flat, contains('7.5 ml/kg'));
+      expect(flat, contains('500 mL'));
       expect(flat, contains('floor'));
       expect(flat, contains('325 mL'));
       expect(flat, contains('ceiling'));
-      expect(flat, contains('455 mL'));
-      expect(flat, contains('325–455 mL'));
+      expect(flat, contains('800 mL')); // ceil25(780)
+      expect(flat, contains('325–800 mL'));
+    });
+
+    test('the band is read off the engine, not a restated constant', () {
+      // The card used to hardcode 5–7 ml/kg, which under v6 quoted a ceiling
+      // ~40 % below the engine's own. Assert the per-kg ends match the plan.
+      final flat = _flattenLines(
+        _fluid(service, targets, bodyWeightKg).tldrLines,
+      );
+      expect(flat, contains('(5 ml/kg)'));
+      expect(flat, contains('(12 ml/kg)'));
+      expect(flat, isNot(contains('5–7 ml/kg')));
+      expect(
+        flat,
+        isNot(contains('7 ml/kg')),
+        reason: 'the retired v1 ceiling must not reappear',
+      );
     });
 
     test('urine tip is present', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
+      final data = _fluid(service, targets, bodyWeightKg);
       expect(data.tldrTip, isNotNull);
       expect(data.tldrTip, contains('pale yellow'));
       expect(data.tldrTip, contains('3–5 ml/kg'));
     });
 
-    test('sodium formula uses "≥ 2 hr window" with 450 mg midpoint', () {
-      final data = service.getSodiumTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+    test('sodium states the v3 position: no target, no band, no formula', () {
+      final data = _sodium(service, targets, bodyWeightKg);
 
+      expect(data.tldrBody, contains('don\'t set a pre-workout sodium target'));
+      expect(
+        data.tldrBody,
+        contains('what your food delivers'),
+        reason: 'the surviving figure is an observation, not a goal',
+      );
+      _expectNoSodiumTargetOrBand(data);
+
+      // The retired v1 numbers, in every form they appeared.
       final flat = _flattenLines(data.tldrLines);
-      expect(flat, contains('≥ 2 hr window'));
-      expect(flat, contains('450 mg'));
-      expect(flat, contains('300–600 mg'));
-      expect(flat, contains('sipped with fluid'));
+      for (final retired in const [
+        '450 mg',
+        '300–600 mg',
+        '150 mg',
+        '100–200 mg',
+        '≥ 2 hr window',
+        'sipped with fluid',
+      ]) {
+        expect(flat, isNot(contains(retired)), reason: 'retired: $retired');
+        expect(
+          data.tldrBody,
+          isNot(contains(retired)),
+          reason: 'retired: $retired',
+        );
+      }
+    });
+
+    test('the qualitative retention copy is not quantified', () {
+      // Digest §3: the retention studies used 77 mmol/L, three to seven times a
+      // sports drink — so the effect is stated in words and never in a number.
+      final data = _sodium(service, targets, bodyWeightKg);
+
+      expect(
+        data.tldrBody,
+        isNot(matches(RegExp(r'\d'))),
+        reason: 'the athlete-facing sodium summary must quantify nothing',
+      );
+
+      final retention = data.storySections.firstWhere(
+        (s) => s.question.contains('Does sodium still help'),
+        orElse: () => const StorySection(question: 'MISSING', answer: ''),
+      );
+      expect(retention.question, isNot('MISSING'));
+      expect(retention.answer, contains('stay in your body'));
+      expect(
+        retention.answer,
+        isNot(matches(RegExp(r'\d'))),
+        reason: 'no number may attach to the retention claim',
+      );
     });
 
     test('Full Story includes all four hydration Qs', () {
-      final data = service.getFluidTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
-
-      final questions = data.storySections.map((s) => s.question).toList();
+      final questions = _fluid(
+        service,
+        targets,
+        bodyWeightKg,
+      ).storySections.map((s) => s.question).toList();
       expect(
         questions,
         contains('What is euhydration and why does it matter?'),
@@ -283,96 +327,331 @@ void main() {
       expect(questions, contains('What about early morning workouts?'));
     });
 
-    test('Full Story includes all four sodium Qs', () {
-      final data = service.getSodiumTransparencyData(
-        phase: ExplanationPhase.before,
-        macroTargets: targets,
-        bodyWeightKg: bodyWeightKg,
-      )![Scenario.singleSport]!;
+    test('Full Story answers the three v3 sodium questions', () {
+      final questions = _sodium(
+        service,
+        targets,
+        bodyWeightKg,
+      ).storySections.map((s) => s.question).toList();
 
-      final questions = data.storySections.map((s) => s.question).toList();
-      expect(questions, contains('How does sodium help retain fluid?'));
-      expect(questions, contains('Where does 300–600 mg come from?'));
+      expect(questions, contains('Why is there no pre-workout sodium target?'));
+      expect(questions, contains('Does sodium still help before a workout?'));
       expect(
-        questions.any((q) => q.contains("isn't sodium scaled to body weight")),
-        isTrue,
+        questions,
+        contains('Then what is the sodium number on this screen?'),
       );
-      expect(questions, contains('Is this the same as sodium loading?'));
+      // The v1 Qs rested on a target that no longer exists.
+      expect(questions, isNot(contains('How does sodium help retain fluid?')));
+      expect(questions, isNot(contains('Where does 300–600 mg come from?')));
+    });
+
+    test('the removal is explained, not silently absent', () {
+      // A deleted target with no explanation reads as a bug to the athlete.
+      final removalQ = _sodium(service, targets, bodyWeightKg).storySections
+          .firstWhere(
+            (s) => s.question.contains('no pre-workout sodium target'),
+          );
+      expect(removalQ.answer, contains('We used to set one'));
+      expect(removalQ.answer, contains('during-workout plan'));
+      expect(removalQ.citation, isNotNull);
     });
   });
 
-  // ── No "Tier" terminology leaks anywhere user-facing ─────────────────────
-  group('Pre-workout — no internal tier terminology in any window', () {
-    for (final sample in [
-      _preTargets(
+  // ── 5. Fasted ─────────────────────────────────────────────────────────────
+  group('Pre-workout — fasted (no recommendation at all)', () {
+    final targets = _preTargets(
+      fluidsMl: 487.5,
+      fluidsLowMl: 325,
+      fluidsHighMl: 780,
+      carbsG: 0,
+      durationMin: 120,
+      tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.cited,
+      carbTargetBasis: PreRunTargetBasis.none,
+      carbTiers: const [],
+    );
+
+    test('sodium says nothing is being recommended, and sets no target', () {
+      final data = _sodium(service, targets, bodyWeightKg);
+
+      expect(data.tldrBody, contains('train fasted'));
+      expect(data.tldrBody, contains('not recommending anything'));
+      _expectNoSodiumTargetOrBand(data);
+    });
+
+    test('fasted is not the gate: fluid still gets its full-protocol plan', () {
+      // Training fasted suppresses food, not fluid. Collapsing the two would
+      // silently drop a euhydration dose the athlete still needs.
+      final data = _fluid(service, targets, bodyWeightKg);
+      expect(data.tldrBody, contains('euhydrated'));
+      expect(data.tldrBody, contains('500 mL'));
+    });
+  });
+
+  // ── The three ways of showing nothing ─────────────────────────────────────
+  group('three ways of showing nothing must never read alike', () {
+    // Digest §5 and sodium v3 both make this a hard requirement: a number that
+    // is zero · no target set (gated) · no recommendation at all (fasted).
+    final realZero = _preTargets(
+      fluidsMl: 487.5,
+      fluidsLowMl: 325,
+      fluidsHighMl: 780,
+      sodiumMg: 0, // the food chosen simply delivers no sodium
+      carbsG: 195,
+      durationMin: 120,
+      tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.cited,
+    );
+    final noTargetSet = _preTargets(
+      fluidsMl: 0,
+      carbsG: 0,
+      durationMin: 45,
+      tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.gated,
+      fluidTargetBasis: PreRunTargetBasis.none,
+    );
+    final noRecommendation = _preTargets(
+      fluidsMl: 487.5,
+      fluidsLowMl: 325,
+      fluidsHighMl: 780,
+      carbsG: 0,
+      durationMin: 120,
+      tempC: 22,
+      hydrationRegime: PreRunHydrationRegime.cited,
+      carbTargetBasis: PreRunTargetBasis.none,
+      carbTiers: const [],
+    );
+
+    test('the sodium card renders three distinct blurbs', () {
+      final bodies = <String, String?>{
+        'real zero': _sodium(service, realZero, bodyWeightKg).tldrBody,
+        'no target set': _sodium(service, noTargetSet, bodyWeightKg).tldrBody,
+        'no recommendation': _sodium(
+          service,
+          noRecommendation,
+          bodyWeightKg,
+        ).tldrBody,
+      };
+
+      for (final body in bodies.values) {
+        expect(body, isNotNull);
+        expect(body, isNotEmpty);
+      }
+      expect(
+        bodies.values.toSet(),
+        hasLength(3),
+        reason:
+            'a consumer that collapses these three misreports all of them: '
+            '${bodies.entries.map((e) => '${e.key}=${e.value}').join(' | ')}',
+      );
+    });
+
+    test('only the gated state claims there is no plan', () {
+      expect(
+        _sodium(service, noTargetSet, bodyWeightKg).tldrBody,
+        contains('no sodium plan either'),
+      );
+      expect(
+        _sodium(service, realZero, bodyWeightKg).tldrBody,
+        isNot(contains('no sodium plan either')),
+      );
+      expect(
+        _sodium(service, noRecommendation, bodyWeightKg).tldrBody,
+        isNot(contains('no sodium plan either')),
+      );
+    });
+
+    test('the fluid card separates gated from too-late', () {
+      final legacyTooLate = _preTargets(
         fluidsMl: 0,
-        sodiumMg: 0,
+        carbsG: 0,
+        durationMin: 180,
+        tempC: 32,
+      );
+      final gatedBody = _fluid(service, noTargetSet, bodyWeightKg).tldrBody;
+      final tooLateBody = _fluid(service, legacyTooLate, bodyWeightKg).tldrBody;
+
+      expect(gatedBody, isNot(tooLateBody));
+      expect(gatedBody, contains('short and mild'));
+      expect(tooLateBody, contains('Too late'));
+    });
+
+    test('none of the three sets a sodium target or band', () {
+      for (final targets in [realZero, noTargetSet, noRecommendation]) {
+        _expectNoSodiumTargetOrBand(_sodium(service, targets, bodyWeightKg));
+      }
+    });
+  });
+
+  // ── No internal terminology leaks anywhere user-facing ────────────────────
+  group('Pre-workout — no internal terminology in any state', () {
+    final samples = <String, MacroTargets>{
+      'gated': _preTargets(
+        fluidsMl: 0,
         carbsG: 0,
         durationMin: 45,
         tempC: 20,
+        hydrationRegime: PreRunHydrationRegime.gated,
+        fluidTargetBasis: PreRunTargetBasis.none,
       ),
-      _preTargets(
-        fluidsMl: 250,
-        sodiumMg: 150,
-        carbsG: 33,
+      'extrapolated': _preTargets(
+        fluidsMl: 428.125,
+        fluidsLowMl: 0,
+        fluidsHighMl: 650,
+        carbsG: 48.75,
         durationMin: 90,
         tempC: 25,
+        hydrationRegime: PreRunHydrationRegime.extrapolated,
       ),
-      _preTargets(
-        fluidsMl: 390,
-        sodiumMg: 450,
+      'clearance_bound': _preTargets(
+        fluidsMl: 312.5,
+        fluidsLowMl: 0,
+        fluidsHighMl: 890.216,
+        carbsG: 16.25,
+        durationMin: 90,
+        tempC: 25,
+        hydrationRegime: PreRunHydrationRegime.clearanceBound,
+      ),
+      'cited': _preTargets(
+        fluidsMl: 487.5,
+        fluidsLowMl: 325,
+        fluidsHighMl: 780,
         carbsG: 195,
         durationMin: 120,
         tempC: 25,
+        hydrationRegime: PreRunHydrationRegime.cited,
       ),
-    ]) {
-      test('fluid + sodium copy free of "Tier 1/2/3" '
-          '(fluidsMl=${sample.preRun.fluidsMl})', () {
-        final fluid = service.getFluidTransparencyData(
-          phase: ExplanationPhase.before,
-          macroTargets: sample,
-          bodyWeightKg: bodyWeightKg,
-        )![Scenario.singleSport]!;
-        final sodium = service.getSodiumTransparencyData(
-          phase: ExplanationPhase.before,
-          macroTargets: sample,
-          bodyWeightKg: bodyWeightKg,
-        )![Scenario.singleSport]!;
+      'fasted': _preTargets(
+        fluidsMl: 487.5,
+        fluidsLowMl: 325,
+        fluidsHighMl: 780,
+        carbsG: 0,
+        durationMin: 120,
+        tempC: 25,
+        hydrationRegime: PreRunHydrationRegime.cited,
+        carbTargetBasis: PreRunTargetBasis.none,
+        carbTiers: const [],
+      ),
+    };
 
-        for (final data in [fluid, sodium]) {
-          final allText = [
-            data.tldrBody ?? '',
-            for (final line in data.tldrLines)
-              for (final seg in line.segments) seg.text,
-            for (final s in data.storySections) s.question,
-            for (final s in data.storySections) s.answer,
-            for (final s in data.calculationSections) s.header,
-            for (final s in data.calculationSections)
-              for (final line in s.lines)
-                for (final seg in line.segments) seg.text,
-          ].join(' ').toLowerCase();
+    samples.forEach((label, sample) {
+      test('fluid + sodium copy is free of internal vocabulary ($label)', () {
+        final cards = <NutrientTransparencyData>[
+          _fluid(service, sample, bodyWeightKg),
+          _sodium(service, sample, bodyWeightKg),
+        ];
+
+        for (final data in cards) {
+          final allText = _allUserFacingText(data);
+
+          // Guard against the whole check passing vacuously on empty copy —
+          // an absent card would satisfy every `isNot(contains(...))` below.
+          expect(
+            allText.length,
+            greaterThan(200),
+            reason: '$label: no copy to check, so the check proves nothing',
+          );
+
+          // The retired integer tier.
           expect(allText, isNot(contains('tier 1')));
           expect(allText, isNot(contains('tier 2')));
           expect(allText, isNot(contains('tier 3')));
           expect(allText, isNot(contains('pre-workout tier')));
+
+          // The regime strings that replaced it are just as internal. Matched
+          // on word boundaries so ordinary prose ("excited", "elicited") can't
+          // trip the check.
+          for (final wire in const [
+            'cited',
+            'extrapolated',
+            'clearance_bound',
+            'clearance bound',
+            'gated',
+            'evidenced_band',
+            'design_choice',
+            'top_off',
+          ]) {
+            expect(
+              allText,
+              isNot(matches(RegExp('\\b${RegExp.escape(wire)}\\b'))),
+              reason: '$label: wire value "$wire" leaked into athlete copy',
+            );
+          }
         }
       });
-    }
+    });
   });
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+NutrientTransparencyData _fluid(
+  MacroExplanationService service,
+  MacroTargets targets,
+  double bodyWeightKg,
+) {
+  return service.getFluidTransparencyData(
+    phase: ExplanationPhase.before,
+    macroTargets: targets,
+    bodyWeightKg: bodyWeightKg,
+  )![Scenario.singleSport]!;
+}
+
+NutrientTransparencyData _sodium(
+  MacroExplanationService service,
+  MacroTargets targets,
+  double bodyWeightKg,
+) {
+  return service.getSodiumTransparencyData(
+    phase: ExplanationPhase.before,
+    macroTargets: targets,
+    bodyWeightKg: bodyWeightKg,
+  )![Scenario.singleSport]!;
+}
+
+/// Sodium v3, asserted positively: no target, no band, no formula, no
+/// calculation. `null` here is the whole position — a `0` would be the
+/// recommendation "consume no sodium".
+void _expectNoSodiumTargetOrBand(NutrientTransparencyData data) {
+  expect(data.targetGrams, isNull, reason: 'v3 sets no sodium target');
+  expect(data.rangeLow, isNull, reason: 'v3 has no sodium band');
+  expect(data.rangeHigh, isNull, reason: 'v3 has no sodium band');
+  expect(data.tldrLines, isEmpty, reason: 'v3 has no sodium formula');
+  expect(
+    data.calculationSections,
+    isEmpty,
+    reason: 'v3 has no sodium calculation to show',
+  );
+}
+
+/// Everything on the card an athlete can read.
+String _allUserFacingText(NutrientTransparencyData data) {
+  return [
+    data.tldrBody ?? '',
+    data.tldrTip ?? '',
+    for (final line in data.tldrLines)
+      for (final seg in line.segments) seg.text,
+    for (final s in data.storySections) s.question,
+    for (final s in data.storySections) s.answer,
+    for (final s in data.calculationSections) s.header,
+    for (final s in data.calculationSections)
+      for (final line in s.lines)
+        for (final seg in line.segments) seg.text,
+  ].join(' ').toLowerCase();
+}
+
 MacroTargets _preTargets({
   required double fluidsMl,
-  required double sodiumMg,
   required double carbsG,
   required double durationMin,
   required double tempC,
+  double? sodiumMg,
   double? fluidsLowMl,
   double? fluidsHighMl,
-  double? sodiumLowMg,
-  double? sodiumHighMg,
+  String? hydrationRegime,
+  String? fluidTargetBasis,
+  String? carbTargetBasis,
+  List<PreRunCarbTier>? carbTiers,
 }) {
   final durationH = durationMin / 60.0;
   return MacroTargets(
@@ -383,11 +662,16 @@ MacroTargets _preTargets({
       proteinG: 20,
       fatCapG: 10,
       fluidsMl: fluidsMl,
+      // Sodium v3: new plans carry no engine sodium figure. A delivered
+      // observation may still be threaded through, which is what a non-null
+      // value here represents.
       sodiumMg: sodiumMg,
       fluidsLowMl: fluidsLowMl,
       fluidsHighMl: fluidsHighMl,
-      sodiumLowMg: sodiumLowMg,
-      sodiumHighMg: sodiumHighMg,
+      hydrationRegime: hydrationRegime,
+      fluidTargetBasis: fluidTargetBasis,
+      carbTargetBasis: carbTargetBasis,
+      carbTiers: carbTiers,
     ),
     duringRun: DuringRunMacros(
       carbRateGPerH: 70,

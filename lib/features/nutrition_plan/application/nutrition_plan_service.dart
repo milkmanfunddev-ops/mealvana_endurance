@@ -42,7 +42,10 @@ class NutritionPlanService {
     required double carbsG,
     double? proteinG,
     double? fatG,
-    required double sodiumMg,
+    // Nullable for the BEFORE phase only: sodium v3 sets no pre-workout
+    // sodium target, and omitting the key is how we say so. DURING and POST
+    // still pass a real number.
+    required double? sodiumMg,
     required double waterMl,
     double? carbsLowG,
     double? carbsHighG,
@@ -55,7 +58,7 @@ class NutritionPlanService {
   }) {
     final map = <String, dynamic>{
       'carbs_g': carbsG,
-      'sodium_mg': sodiumMg,
+      if (sodiumMg != null) 'sodium_mg': sodiumMg,
       'water_ml': waterMl,
       if (proteinG != null) 'protein_g': proteinG,
       if (fatG != null) 'fat_g': fatG,
@@ -79,7 +82,9 @@ class NutritionPlanService {
         _isOutsideBand(proteinG, proteinLowG, proteinHighG)) {
       overrides['protein'] = true;
     }
-    if (_isOutsideBand(sodiumMg, sodiumLowMg, sodiumHighMg)) {
+    // Sodium v3: with no pre-workout target there is nothing to be outside of.
+    if (sodiumMg != null &&
+        _isOutsideBand(sodiumMg, sodiumLowMg, sodiumHighMg)) {
       overrides['sodium'] = true;
     }
     if (_isOutsideBand(waterMl, waterLowMl, waterHighMl)) {
@@ -138,8 +143,8 @@ class NutritionPlanService {
           carbsHighG: macroTargets.preRun.carbsHighG,
           proteinLowG: macroTargets.preRun.proteinLowG,
           proteinHighG: macroTargets.preRun.proteinHighG,
-          sodiumLowMg: macroTargets.preRun.sodiumLowMg,
-          sodiumHighMg: macroTargets.preRun.sodiumHighMg,
+          // Sodium v3: no pre-workout sodium band. Deliberately not sent — a
+          // band here is what made normal pre-workout food look defective.
           waterLowMl: macroTargets.preRun.fluidsLowMl,
           waterHighMl: macroTargets.preRun.fluidsHighMl,
         ),
@@ -191,7 +196,7 @@ class NutritionPlanService {
   /// Pre-workout phase uses Algorithm C selections from macro generation.
   /// During phase uses the template solver with rule/LP fallback in the Edge
   /// Function. After phase uses the LP solver.
-  Future<NutritionPlan> generatePlanFromMacrosV2({
+  Future<NutritionPlanGenerationResult> generatePlanFromMacrosV2({
     required MacroTargets macroTargets,
     required double hoursBefore,
     required double weightKg,
@@ -459,7 +464,10 @@ class NutritionPlanService {
         );
       }
 
-      return plan;
+      return NutritionPlanGenerationResult(
+        plan: plan,
+        source: NutritionPlanGenerationSource.edge,
+      );
     } catch (e, stackTrace) {
       _logger.error(
         '❌ [V3-FAILED] V3 edge function failed. Error: $e',
@@ -468,13 +476,20 @@ class NutritionPlanService {
         stackTrace: stackTrace,
       );
 
-      return _generateLocalFallbackPlanFromMacros(
+      final fallbackPlan = await _generateLocalFallbackPlanFromMacros(
         macroTargets: macroTargets,
         hoursBefore: hoursBefore,
         activityId: activityId,
         userId: userId,
         durationMinutes: durationMinutes,
         gutTrainingLevel: gutTrainingLevel,
+      );
+      return NutritionPlanGenerationResult(
+        plan: fallbackPlan,
+        source: fallbackPlan.id.startsWith('client-plan-')
+            ? NutritionPlanGenerationSource.clientFallback
+            : NutritionPlanGenerationSource.genericFallback,
+        primaryError: e.toString(),
       );
     }
   }
@@ -544,7 +559,9 @@ class NutritionPlanService {
           carbsG: pre.carbsG,
           proteinG: pre.proteinG,
           fatG: pre.fatCapG,
-          sodiumMg: pre.sodiumMg,
+          // Sodium v3: no pre-workout sodium target. The fallback item carries
+          // no sodium figure rather than a fabricated one.
+          sodiumMg: pre.sodiumMg ?? 0,
           timing: 'Finish eating before the activity',
         ),
       if (pre.fluidsMl > 0)
@@ -623,8 +640,9 @@ class NutritionPlanService {
         carbsHighTarget: pre.carbsHighG,
         proteinLowTarget: pre.proteinLowG,
         proteinHighTarget: pre.proteinHighG,
-        sodiumLowTarget: pre.sodiumLowMg,
-        sodiumHighTarget: pre.sodiumHighMg,
+        // Sodium v3: the BEFORE section gets no sodium band. Leaving these
+        // null is what stops `MacroSummaryRow` painting a range bar and an
+        // in-range/out-of-range colour for pre-workout sodium.
         fluidsLowTarget: pre.fluidsLowMl,
         fluidsHighTarget: pre.fluidsHighMl,
       ),
@@ -671,8 +689,10 @@ class NutritionPlanService {
         pre.carbsG.round() + during.carbTotalG.round() + post.carbsG.round();
     final totalProtein = pre.proteinG.round() + post.proteinG.round();
     final totalFat = pre.fatCapG.round();
+    // Sodium v3: there is no pre-workout sodium target, so the day total is
+    // during + post. `?? 0` here is a sum, not a displayed target.
     final totalSodium =
-        pre.sodiumMg.round() +
+        (pre.sodiumMg?.round() ?? 0) +
         during.sodiumTotalMg.round() +
         post.sodiumMg.round();
     final totalFluidsMl = pre.fluidsMl + during.fluidTotalMl + post.fluidsMl;
@@ -807,3 +827,19 @@ class NutritionPlanService {
 final nutritionPlanServiceProvider = Provider<NutritionPlanService>((ref) {
   return NutritionPlanService(ref);
 });
+
+enum NutritionPlanGenerationSource { edge, clientFallback, genericFallback }
+
+class NutritionPlanGenerationResult {
+  const NutritionPlanGenerationResult({
+    required this.plan,
+    required this.source,
+    this.primaryError,
+  });
+
+  final NutritionPlan plan;
+  final NutritionPlanGenerationSource source;
+  final String? primaryError;
+
+  bool get usedFallback => source != NutritionPlanGenerationSource.edge;
+}

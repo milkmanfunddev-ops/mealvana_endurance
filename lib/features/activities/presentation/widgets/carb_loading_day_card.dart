@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../carb_loading/presentation/providers/carb_loading_controller.dart';
 import '../../../carb_loading/presentation/screens/carb_loading_day_detail_page.dart';
 
@@ -24,15 +25,15 @@ class CarbLoadingDayCard extends ConsumerWidget {
     return Dismissible(
       key: Key(carbDay.id.toString()),
       direction: DismissDirection.endToStart,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
+      // Radius + margin mirror the foreground [Card] (theme card shape,
+      // `bottom: 12` margin) so the reveal never shows square corners.
+      background: SwipeActionBackground(
         alignment: Alignment.centerRight,
+        color: Colors.red,
+        borderRadius: SwipeActionBackground.cardThemeRadius(context),
+        margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white, size: 32),
+        icon: const Icon(Icons.delete, color: Colors.white, size: 32),
       ),
       confirmDismiss: (direction) => _confirmDelete(context, dayNumber),
       onDismissed: (direction) => _handleDelete(context, ref, dayNumber),

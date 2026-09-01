@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../../shared/widgets/swipe_action_background.dart';
 import '../../../application/by_hour_apportionment_service.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/time_slot_assignment.dart';
@@ -160,11 +161,14 @@ class SipThroughoutRow extends StatelessWidget {
                   '${assignment.foodItemId}_${assignment.timeSlot}_sip',
                 ),
                 direction: DismissDirection.endToStart,
-                background: Container(
+                // These sip chips are bare text in a Wrap, so the reveal
+                // supplies its own rounding rather than inheriting a card's.
+                background: SwipeActionBackground(
                   alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: AppSpacing.sm),
                   color: Colors.red.withValues(alpha: 0.1),
-                  child: const Icon(Icons.close, size: 16, color: Colors.red),
+                  borderRadius: AppRadius.xsRadius,
+                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                  icon: const Icon(Icons.close, size: 16, color: Colors.red),
                 ),
                 onDismissed: (_) {
                   onRemoveFromSlot?.call(

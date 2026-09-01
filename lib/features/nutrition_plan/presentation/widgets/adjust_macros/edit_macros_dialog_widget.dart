@@ -57,8 +57,10 @@ class _EditMacrosDialogWidgetState
       'postFluids': TextEditingController(
         text: widget.macros.postRun.fluidsMl.round().toString(),
       ),
+      // Sodium v3: no pre-workout sodium target, so the field starts empty
+      // rather than pre-filled with a fabricated 0.
       'preSodium': TextEditingController(
-        text: widget.macros.preRun.sodiumMg.round().toString(),
+        text: widget.macros.preRun.sodiumMg?.round().toString() ?? '',
       ),
       'duringSodium': TextEditingController(
         text: widget.macros.duringRun.sodiumTotalMg.round().toString(),

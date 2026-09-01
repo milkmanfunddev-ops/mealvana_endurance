@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
@@ -17,6 +18,7 @@ import '../../data/macro_repository.dart';
 import '../../application/macro_generation_service.dart';
 import '../../application/brick_macro_service.dart';
 import '../../application/nutrition_plan_service.dart';
+import '../../application/nutrition_plan_generation_audit.dart';
 import '../../application/draft_activity_cleanup_service.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../../formula_kit/domain/pin_decision.dart';
@@ -665,7 +667,11 @@ class MacroTargetsController extends _$MacroTargetsController {
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
                 isFasted: isFasted,
-                notes: 'Draft activity - nutrition plan being generated',
+                // Keep whatever the user wrote. The "Draft activity…" note
+                // belongs to the create branch, where the row really is a
+                // placeholder; stamping it on an update overwrites real notes
+                // every time the plan is regenerated.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -842,6 +848,14 @@ class MacroTargetsController extends _$MacroTargetsController {
           eventName: eventName,
         );
 
+        // Persist the estimated duration alongside distance/speed — the
+        // running branch does the same via estimatedDurationMinutes. Detail
+        // renders activity.durationMinutes, so omitting it here left edited
+        // rides showing their old (e.g. imported) duration forever.
+        final estimatedCyclingDurationMin = speedMph > 0
+            ? (distanceMiles / speedMph) * 60.0
+            : 0.0;
+
         if (finalActivityId.isEmpty) {
           final createdActivity = await activitiesService.createActivity(
             deviceId: deviceId,
@@ -851,6 +865,9 @@ class MacroTargetsController extends _$MacroTargetsController {
             title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
+            durationMinutes: estimatedCyclingDurationMin > 0
+                ? estimatedCyclingDurationMin.round()
+                : null,
             cyclingSpeedMph: speedMph,
             cyclingTerrain: terrain,
             cyclingIndoorOutdoor: indoorOutdoor,
@@ -883,6 +900,9 @@ class MacroTargetsController extends _$MacroTargetsController {
                 activityType: ActivityType.cycling,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
+                durationMinutes: estimatedCyclingDurationMin > 0
+                    ? estimatedCyclingDurationMin.round()
+                    : existingActivity.durationMinutes,
                 cyclingSpeedMph: speedMph,
                 cyclingTerrain: terrain,
                 cyclingIndoorOutdoor: indoorOutdoor,
@@ -891,8 +911,8 @@ class MacroTargetsController extends _$MacroTargetsController {
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
                 isFasted: isFasted,
-                notes:
-                    'Draft cycling activity - nutrition plan being generated',
+                // See the running branch: never clobber user notes on update.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -907,9 +927,6 @@ class MacroTargetsController extends _$MacroTargetsController {
         );
 
         // Load sport-specific overrides with 90-min gate
-        final estimatedCyclingDurationMin = speedMph > 0
-            ? (distanceMiles / speedMph) * 60.0
-            : 0.0;
         final overrides = await _loadOverridesForEdgeFunction(
           ActivityType.cycling,
           estimatedCyclingDurationMin,
@@ -1129,6 +1146,11 @@ class MacroTargetsController extends _$MacroTargetsController {
             title: resolvedTitle,
             scheduledDateTime: scheduledDateTime,
             distanceMiles: distanceMiles,
+            // Same as the cycling/running branches: persist the estimated
+            // duration so Detail shows the edited swim length.
+            durationMinutes: durationMinutes > 0
+                ? durationMinutes.round()
+                : null,
             swimmingPacePer100mSeconds: paceSecondsper100m,
             swimmingPoolOrOpenWater: poolOrOpenWater,
             swimmingWaterTempC: waterTempC,
@@ -1158,13 +1180,16 @@ class MacroTargetsController extends _$MacroTargetsController {
                 activityType: ActivityType.swimming,
                 scheduledDateTime: scheduledDateTime,
                 distanceMiles: distanceMiles,
+                durationMinutes: durationMinutes > 0
+                    ? durationMinutes.round()
+                    : existingActivity.durationMinutes,
                 swimmingPacePer100mSeconds: paceSecondsper100m,
                 swimmingPoolOrOpenWater: poolOrOpenWater,
                 swimmingWaterTempC: waterTempC,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
-                notes:
-                    'Draft swimming activity - nutrition plan being generated',
+                // See the running branch: never clobber user notes on update.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -1402,6 +1427,19 @@ class MacroTargetsController extends _$MacroTargetsController {
               fallbackTitle: fallbackTitle,
               requestedTitle: activityTitle ?? eventName,
             );
+            // Carry the brick's provenance across the update. The metadata
+            // built above always says `originalActivityIds: null` /
+            // `createdFromExisting: false`, which is only true for a brick
+            // authored from scratch on the Brick tab. Re-saving a brick that
+            // was grouped from existing workouts would otherwise erase the
+            // record of which activities it came from.
+            final preservedMetadata = brickMetadata.copyWith(
+              originalActivityIds:
+                  existingActivity.brickMetadata?.originalActivityIds,
+              createdFromExisting:
+                  existingActivity.brickMetadata?.createdFromExisting,
+            );
+
             await activitiesService.updateActivity(
               deviceId: deviceId,
               currentUserId: deviceId,
@@ -1409,11 +1447,12 @@ class MacroTargetsController extends _$MacroTargetsController {
                 title: brickTitle,
                 activityType: ActivityType.brick,
                 scheduledDateTime: scheduledDateTime,
-                brickMetadata: brickMetadata,
+                brickMetadata: preservedMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
                 isFasted: isFasted,
-                notes: 'Draft brick activity - nutrition plan being generated',
+                // See the running branch: never clobber user notes on update.
+                notes: existingActivity.notes,
               ),
             );
           }
@@ -1823,6 +1862,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     state = AsyncData(currentState.copyWith(isCreatingPlan: true));
 
     final modifiedFieldsCount = _countModifiedFields(resolvedMacroTargets);
+    NutritionPlanGenerationResult? generationResult;
+    var targetMisses = <NutritionPlanTargetMiss>[];
 
     // Track plan creation start
     await _analytics.timeEvent('nutrition_plan_created_from_adjusted_macros');
@@ -1899,21 +1940,24 @@ class MacroTargetsController extends _$MacroTargetsController {
             : <String>[];
 
         // Try V2 template-based generation, falls back to V1 internally
-        final nutritionPlan = await nutritionPlanService
-            .generatePlanFromMacrosV2(
-              macroTargets: resolvedMacroTargets,
-              hoursBefore: hoursBefore,
-              weightKg: weightKg,
-              activityId: currentStateValue?.activityId,
-              userId: activityOwnerUserId,
-              dietaryPreference: dietaryPreference,
-              allergies: allergies,
-              likedFoods: likedFoods,
-              dislikedFoods: dislikedFoods,
-              willingToTryFoods: willingToTryFoods,
-              durationMinutes: resolvedDurationMinutes,
-              gutTrainingLevel: userProfile?.gutTraining.name,
-            );
+        generationResult = await nutritionPlanService.generatePlanFromMacrosV2(
+          macroTargets: resolvedMacroTargets,
+          hoursBefore: hoursBefore,
+          weightKg: weightKg,
+          activityId: currentStateValue?.activityId,
+          userId: activityOwnerUserId,
+          dietaryPreference: dietaryPreference,
+          allergies: allergies,
+          likedFoods: likedFoods,
+          dislikedFoods: dislikedFoods,
+          willingToTryFoods: willingToTryFoods,
+          durationMinutes: resolvedDurationMinutes,
+          gutTrainingLevel: userProfile?.gutTraining.name,
+        );
+        final nutritionPlan = generationResult!.plan;
+        targetMisses = NutritionPlanGenerationAudit.findUnexplainedMisses(
+          nutritionPlan,
+        );
 
         // Track successful plan creation (the service handles whether it's LLM or algorithmic)
         await _analytics.track(
@@ -1928,6 +1972,13 @@ class MacroTargetsController extends _$MacroTargetsController {
             'post_run_carbs_g': resolvedMacroTargets.postRun.carbsG,
             'modified_fields_count': modifiedFieldsCount,
             'plan_type': 'v2_template', // Template-based with LP fallback
+            // Per-phase food counts live here, not on `plan_generated`. This
+            // is the first moment a food plan exists; `plan_generated` fires
+            // at macro-generation time, where it could only ever report a
+            // placeholder.
+            'before_run_items': nutritionPlan.beforeItemCount,
+            'during_run_items': nutritionPlan.duringItemCount,
+            'after_run_items': nutritionPlan.afterItemCount,
           },
         );
 
@@ -2086,6 +2137,15 @@ class MacroTargetsController extends _$MacroTargetsController {
     });
 
     state = createPlanResult;
+    await _reportPlanGenerationOutcome(
+      generationResult: generationResult,
+      targetMisses: targetMisses,
+      operationError: createPlanResult.error,
+      activityType: resolvedMacroTargets.activityType,
+      targetsWereAdjusted: modifiedFieldsCount > 0,
+      isCoachFlow:
+          currentState.forUserId != null && currentState.forUserId!.isNotEmpty,
+    );
     if (createPlanResult.hasError) {
       appLogger.error(
         'Create nutrition plan failed',
@@ -2106,6 +2166,63 @@ class MacroTargetsController extends _$MacroTargetsController {
 
     // Return the activityId from the successful updated state
     return createPlanResult.value?.activityId;
+  }
+
+  Future<void> _reportPlanGenerationOutcome({
+    required NutritionPlanGenerationResult? generationResult,
+    required List<NutritionPlanTargetMiss> targetMisses,
+    required Object? operationError,
+    required ActivityType activityType,
+    required bool targetsWereAdjusted,
+    required bool isCoachFlow,
+  }) async {
+    final usedFallback = generationResult?.usedFallback ?? false;
+    if (operationError == null && !usedFallback && targetMisses.isEmpty) {
+      return;
+    }
+
+    final outcome = operationError != null
+        ? 'plan_generation_failed'
+        : usedFallback
+        ? 'plan_fallback_used'
+        : 'plan_target_miss';
+
+    try {
+      await ref
+          .read(appExternalDepsProvider)
+          .sentry
+          .captureMessage(
+            'Nutrition plan generation anomaly',
+            level: operationError != null
+                ? SentryLevel.error
+                : SentryLevel.warning,
+            tags: {
+              'component': 'nutrition_plan_generation',
+              'outcome': outcome,
+              'activity_type': activityType.name,
+              'generation_source':
+                  generationResult?.source.name ?? 'unavailable',
+              'target_miss_count': targetMisses.length.toString(),
+              'targets_adjusted': targetsWereAdjusted.toString(),
+              'coach_flow': isCoachFlow.toString(),
+            },
+            extra: {
+              if (generationResult?.primaryError != null)
+                'primary_generation_error': generationResult!.primaryError,
+              if (operationError != null)
+                'operation_error': operationError.toString(),
+              if (targetMisses.isNotEmpty)
+                'target_misses': targetMisses
+                    .map((miss) => miss.toJson())
+                    .toList(),
+            },
+            fingerprint: ['nutrition-plan-generation', outcome],
+          );
+    } catch (error) {
+      DebugLogger.warning(
+        'Failed to send nutrition plan generation diagnostic: $error',
+      );
+    }
   }
 
   /// Walks the generated plan and fires one `plan_used_pin` /

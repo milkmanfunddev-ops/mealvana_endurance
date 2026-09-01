@@ -1,0 +1,144 @@
+{
+  "section": "pre-workout-sodium",
+  "engine": "OfflineMacroCalculator.calculatePreWorkoutHydration (sodium fields)",
+  "specVersion": "v3 (2026-08-03, ratified)",
+  "note": "Pins v3: NO pre-workout sodium target. All three sodium fields null in EVERY tier and on the gate path; never 0 (0 is a failure); no input -- body weight, duration, temperature, lead time, hydrationCheck -- perturbs them. Harness must assert null (not int). v1 vectors (450/150/0 mg tiers) contradicted this and are replaced.",
+  "vectors": [
+    {
+      "id": "meal-tier-65-pale",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "tempC": 22,
+        "hydrationCheck": "pale"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "tier1 (>=120): sodium null, sourced from food not engine"
+    },
+    {
+      "id": "meal-tier-65-dark",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 180,
+        "tempC": 22,
+        "hydrationCheck": "dark"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "hydrationCheck must not perturb sodium"
+    },
+    {
+      "id": "snack-tier-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 60,
+        "tempC": 22,
+        "hydrationCheck": "unknown"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "tier2 (30-120): sodium null"
+    },
+    {
+      "id": "topoff-tier-65",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 15,
+        "tempC": 22,
+        "hydrationCheck": "unknown"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "tier3 (<30): sodium null; CE-drink sodium reported, not targeted"
+    },
+    {
+      "id": "gate-path-45min",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 45,
+        "timeBeforeWorkoutMin": 180,
+        "tempC": 22,
+        "hydrationCheck": "pale"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "gate path: sodium null (never 0)"
+    },
+    {
+      "id": "heavy-100kg",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 100,
+        "workoutDurationMin": 120,
+        "timeBeforeWorkoutMin": 240,
+        "tempC": 25,
+        "hydrationCheck": "pale"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "body weight does not introduce a sodium number"
+    },
+    {
+      "id": "hot-32c",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 65,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 120,
+        "tempC": 32,
+        "hydrationCheck": "pale"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "temperature does not introduce a sodium number"
+    },
+    {
+      "id": "light-50kg-90min",
+      "status": "ratified",
+      "inputs": {
+        "bodyWeightKg": 50,
+        "workoutDurationMin": 90,
+        "timeBeforeWorkoutMin": 90,
+        "tempC": 22,
+        "hydrationCheck": "dark"
+      },
+      "expected": {
+        "sodiumMg": null,
+        "sodiumLowMg": null,
+        "sodiumHighMg": null
+      },
+      "why": "no input combination yields a sodium target"
+    }
+  ]
+}

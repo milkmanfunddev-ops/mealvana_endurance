@@ -12,46 +12,69 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { pickElectrolyte } from './pre-workout.ts';
 import type { PreWorkoutTemplate } from './types.ts';
+import {
+  type IngredientPoolRow,
+  ingredientRowToTemplate,
+} from './ingredient-pools.ts';
 
-function makeTemplate(overrides: Partial<PreWorkoutTemplate> & { id: string; name: string }): PreWorkoutTemplate {
-  return {
-    base_category: 'Electrolyte',
-    time_window: '< 30 min',
-    digestion_speed: 'fast',
-    allergens: [],
-    serving_unit: 'capsule',
-    min_servings: 1,
-    max_servings: 2,
-    plus_banana: false,
-    plus_sports_drink: false,
-    carbs_per_serving: 0,
-    protein_per_serving: 0,
-    fat_per_serving: 0,
+// ============================================================================
+// Fixtures — template_foods-shaped rows through the production adapter.
+//
+// Since the 2026-08-06 repoint, electrolyte candidates are `template_foods`
+// ingredient rows adapted via `ingredientRowToTemplate`, not
+// pre_workout_templates rows. NOTE: the production BEFORE-phase electrolyte
+// pool is deliberately EMPTY (loadPreWorkoutElectrolytePool — sodium SSOT v3
+// sets no pre-workout sodium target, and Lee ruled the BEFORE phase considers
+// fluids, not electrolytes). `pickElectrolyte` itself is kept working and
+// pinned by these tests: it still serves legacy/fixture paths and any future
+// phase where sodium delivery IS spec'd.
+//
+// `min_servings`/step semantics come from `is_indivisible` (indivisible → 1,
+// whole steps; divisible → 0.5, half steps) and `max_servings` from
+// `max_servings_before`, exactly as the adapter derives them.
+// ============================================================================
+
+function makeIngredient(
+  overrides: Partial<IngredientPoolRow> & { id: string; name: string },
+): PreWorkoutTemplate {
+  const row: IngredientPoolRow = {
+    display_name: null,
+    serving_size: '1 capsule',
+    serving_unit: null,
+    carbs_g: 0,
+    protein_g: 0,
+    fat_g: 0,
     sodium_mg: 200,
     fluid_ml: 0,
-    template_type: 'electrolyte',
-    is_active: true,
-    component_food_names: [],
-    component_quantities: {},
+    allergens: [],
+    excluded_diets: [],
+    is_indivisible: true,
+    max_servings_before: 2,
+    is_drink_pool: false,
+    drink_pool_phases: [],
+    is_electrolyte: true,
     ...overrides,
   };
+  return ingredientRowToTemplate(row, 'electrolyte');
 }
 
 // Pure sodium delivery, zero carbs/fluid — the realistic shape.
-const SODIUM_CAPSULE = makeTemplate({
+const SODIUM_CAPSULE = makeIngredient({
   id: 'sodium-capsule',
-  name: 'Sodium Capsule',
+  name: 'sodium_capsule',
+  display_name: 'Sodium Capsule',
   sodium_mg: 200,
-  carbs_per_serving: 0,
+  carbs_g: 0,
   fluid_ml: 0,
 });
 
 // A chew with a small carb load — used to exercise the carbs_high path.
-const SALT_CHEW = makeTemplate({
+const SALT_CHEW = makeIngredient({
   id: 'salt-chew',
-  name: 'Salt Chew',
+  name: 'salt_chew',
+  display_name: 'Salt Chew',
   sodium_mg: 100,
-  carbs_per_serving: 5,
+  carbs_g: 5,
   fluid_ml: 0,
 });
 
@@ -116,14 +139,14 @@ Deno.test(
 );
 
 // A tablet whose single serving overshoots a low before-run sodium_high.
-const BIG_TABLET = makeTemplate({
+const BIG_TABLET = makeIngredient({
   id: 'big-tablet',
-  name: 'Big Salt Tablet',
+  name: 'big_salt_tablet',
+  display_name: 'Big Salt Tablet',
   sodium_mg: 300,
-  carbs_per_serving: 0,
+  carbs_g: 0,
   fluid_ml: 0,
-  min_servings: 1,
-  max_servings: 2,
+  max_servings_before: 2,
 });
 
 // Tier-2 before-run hydration overlay targets (100 low / 200 high / 150 target)
@@ -180,14 +203,14 @@ Deno.test(
     // gives 197 (< low? no, 197 >= 100 and <= 200 — that would pass the normal
     // path). Use 150mg and 300mg so 77+150=227 and 77+300=377 both overshoot;
     // the 150mg (227, least overshoot) must win.
-    const MID = makeTemplate({
+    const MID = makeIngredient({
       id: 'mid-tablet',
-      name: 'Mid Salt Tablet',
+      name: 'mid_salt_tablet',
+      display_name: 'Mid Salt Tablet',
       sodium_mg: 150,
-      carbs_per_serving: 0,
+      carbs_g: 0,
       fluid_ml: 0,
-      min_servings: 1,
-      max_servings: 1,
+      max_servings_before: 1,
     });
     const pick = pickElectrolyte(
       [BIG_TABLET, MID],
@@ -242,14 +265,14 @@ Deno.test(
 // solver land inside a tight before-run sodium band (e.g. Tier-2's 100-200mg)
 // that a whole-unit-only 300mg tablet cannot hit without badly overshooting.
 
-const DIVISIBLE_PACKET = makeTemplate({
+const DIVISIBLE_PACKET = makeIngredient({
   id: 'electrolyte-packet',
-  name: 'Electrolyte Packet',
+  name: 'electrolyte_packet',
+  display_name: 'Electrolyte Packet',
   sodium_mg: 150,
-  carbs_per_serving: 0,
+  carbs_g: 0,
   fluid_ml: 0,
-  min_servings: 0.5,
-  max_servings: 3,
+  max_servings_before: 3,
   is_indivisible: false,
 });
 
@@ -330,6 +353,130 @@ Deno.test(
     assert(
       overshoot < 30,
       `expected a small overshoot from the divisible packet's 0.5 step, got ${overshoot}mg`,
+    );
+  },
+);
+
+// ===========================================================================
+// Target-seeking (2026-07-29)
+//
+// `pickElectrolyte` used to open with `if (totalSodiumDelivered >= sodiumLow)
+// return null` — the instant food + drink selection cleared the band FLOOR, no
+// electrolyte was ever considered, so sodium parked at the bottom of the range
+// while sodium_target sat well above. These tests assert distance-to-target,
+// not range membership: landing in-range but further from target than an
+// available option is a failure.
+// ===========================================================================
+
+Deno.test(
+  'pickElectrolyte: keeps closing the gap to TARGET after the floor is already cleared',
+  () => {
+    // 320mg delivered — already above the 300mg floor, but 130mg short of the
+    // 450mg target. A 100mg tab lands 420mg (30mg from target). The old
+    // floor gate returned null here and shipped 320mg.
+    const SMALL_TAB = makeIngredient({
+      id: 'small-tab',
+      name: 'small_salt_tab',
+      display_name: 'Small Salt Tab',
+      sodium_mg: 100,
+      carbs_g: 0,
+      fluid_ml: 0,
+      max_servings_before: 3,
+    });
+
+    const pick = pickElectrolyte(
+      [SMALL_TAB],
+      /* carbsDelivered */ 20,
+      /* proteinDelivered */ 0,
+      /* totalSodiumDelivered */ 320,
+      /* totalFluidDelivered */ 0,
+      /* carbsTarget */ 60,
+      TARGETS.carbsHigh,
+      TARGETS.proteinHigh,
+      TARGETS.sodiumLow,
+      TARGETS.sodiumHigh,
+      TARGETS.sodiumTarget,
+      TARGETS.fluidHigh,
+      TARGETS.fluidTarget,
+    );
+
+    assert(
+      pick !== null,
+      'expected an electrolyte: sodium cleared the floor but is 130mg short of target',
+    );
+    const total = 320 + pick!.sodium_mg;
+    assertEquals(
+      pick!.servings,
+      1,
+      `expected the target-closest serving; got ${pick!.servings} (total ${total}mg)`,
+    );
+    assert(
+      Math.abs(total - TARGETS.sodiumTarget) < Math.abs(320 - TARGETS.sodiumTarget),
+      `pick must move sodium CLOSER to target: ${total}mg vs baseline 320mg (target ${TARGETS.sodiumTarget}mg)`,
+    );
+  },
+);
+
+Deno.test(
+  'pickElectrolyte: adds nothing once sodium is already on target',
+  () => {
+    const SMALL_TAB = makeIngredient({
+      id: 'small-tab',
+      name: 'small_salt_tab',
+      display_name: 'Small Salt Tab',
+      sodium_mg: 100,
+      carbs_g: 0,
+      fluid_ml: 0,
+      max_servings_before: 3,
+    });
+
+    const pick = pickElectrolyte(
+      [SMALL_TAB],
+      20,
+      0,
+      /* totalSodiumDelivered */ TARGETS.sodiumTarget,
+      0,
+      60,
+      TARGETS.carbsHigh,
+      TARGETS.proteinHigh,
+      TARGETS.sodiumLow,
+      TARGETS.sodiumHigh,
+      TARGETS.sodiumTarget,
+      TARGETS.fluidHigh,
+      TARGETS.fluidTarget,
+    );
+
+    assertEquals(pick, null, 'on target — nothing to add, and never overshoot');
+  },
+);
+
+Deno.test(
+  'pickElectrolyte: target-seeking must not become ceiling-busting',
+  () => {
+    // 320mg delivered (in range), only a 300mg tablet available: 620mg would
+    // breach sodium_high (600). Removing the floor gate must NOT let a
+    // ceiling-breaching pick through, and the floor rescue must stay dormant
+    // because we did not start below the floor.
+    const pick = pickElectrolyte(
+      [BIG_TABLET],
+      20,
+      0,
+      /* totalSodiumDelivered */ 320,
+      0,
+      60,
+      TARGETS.carbsHigh,
+      TARGETS.proteinHigh,
+      TARGETS.sodiumLow,
+      TARGETS.sodiumHigh,
+      TARGETS.sodiumTarget,
+      TARGETS.fluidHigh,
+      TARGETS.fluidTarget,
+    );
+
+    assertEquals(
+      pick,
+      null,
+      'prefer the in-range shortfall over breaching sodium_high',
     );
   },
 );

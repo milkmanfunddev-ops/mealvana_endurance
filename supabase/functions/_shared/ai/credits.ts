@@ -24,14 +24,30 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3
 
 export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
 
-export const FREE_MONTHLY_CREDITS = intEnv('AI_FREE_MONTHLY_CREDITS', 50);
+/**
+ * Free credits granted once per calendar month.
+ *
+ * 20 is the figure the pricing model is built on ("AI Features — Cost
+ * Accounting & Token Pricing" §5): at Sonnet 4.6's worst case of ~$0.013 per
+ * analysis it costs ≤ $0.26 per user per month, and it sits below the ~30
+ * analyses/month a daily meal-logger runs, so the packs have a reason to exist.
+ *
+ * Scale this with the model, not with generosity. Dev ran at 500 for a while,
+ * which is $6.50/user/month at Sonnet rates — more than the $4.99 pack itself,
+ * and enough that no user would ever need to buy one.
+ */
+export const FREE_MONTHLY_CREDITS = intEnv('AI_FREE_MONTHLY_CREDITS', 20);
 
 /** Per-action credit cost. User-facing credits, NOT raw LLM tokens — the real
  *  token cost is tracked separately in ai_usage. Tune freely. */
 const DEFAULT_COSTS: Record<string, number> = {
   'ai-coach': 1,
   'describe-meal': 1,
-  'analyze-meal-photo': 2,
+  // 1, not 2. The token sheet tells the user "Each analysis costs 1 token",
+  // and the pack economics are derived from one analysis per token — a photo
+  // costs ~$0.011 vs ~$0.009 for text, nowhere near double. Charging 2 made the
+  // UI a lie and the pricing model wrong in the same stroke.
+  'analyze-meal-photo': 1,
   'jade-chat': 1,
 };
 

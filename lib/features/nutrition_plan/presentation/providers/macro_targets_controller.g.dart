@@ -40,7 +40,7 @@ final class MacroTargetsControllerProvider
 }
 
 String _$macroTargetsControllerHash() =>
-    r'847d5ab48c538f937e57afe3d6884c5ba1439fd6';
+    r'37dc4ac30102e1b2a160300e1b3c7e2ec2bfdcd2';
 
 /// Controller for distance page gut entry screen
 /// FOA COMPLIANT: Contains ALL business logic, no UI concerns

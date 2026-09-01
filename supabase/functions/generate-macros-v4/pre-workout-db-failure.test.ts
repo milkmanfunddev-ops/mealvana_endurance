@@ -80,26 +80,30 @@ function makeStubClient(result: { data: unknown; error: unknown }) {
 }
 
 /**
- * Build a stub where only queries for `template_type = <failType>` return an
- * error; the others succeed with an empty array.
+ * Build a stub where only queries against `failTable` return an error; the
+ * others succeed with an empty array. Since the 2026-08-06 repoint, food
+ * formulas come from `pre_workout_templates` while the drink pool comes from
+ * `template_foods` (ingredient-pools.ts), so the failure domain is the TABLE,
+ * not the `template_type` filter. The electrolyte pool is a constant `[]`
+ * (Lee ruling 2026-08-06 / sodium v3) and performs no query at all.
  */
-function makeSelectiveFailureClient(failType: "food" | "drink" | "electrolyte") {
-  // We intercept at the `.eq("template_type", ...)` level.
-  function makeSmartChain(capturedType: { value: string | null }) {
+function makeSelectiveFailureClient(
+  failTable: "pre_workout_templates" | "template_foods",
+) {
+  function makeSmartChain(table: string) {
     const chain = {
-      eq(col: string, val: unknown) {
-        if (col === "template_type") {
-          capturedType.value = val as string;
-        }
+      eq(_col: string, _val: unknown) {
         return chain;
       },
       then(
         resolve: (v: { data: unknown; error: unknown }) => unknown,
         _reject: (e: unknown) => unknown,
       ) {
-        const shouldFail = capturedType.value === failType;
-        const result = shouldFail
-          ? { data: null, error: { message: `simulated ${failType} query failure` } }
+        const result = table === failTable
+          ? {
+            data: null,
+            error: { message: `simulated ${failTable} query failure` },
+          }
           : { data: [], error: null };
         return Promise.resolve(resolve(result));
       },
@@ -108,11 +112,10 @@ function makeSelectiveFailureClient(failType: "food" | "drink" | "electrolyte") 
   }
 
   return {
-    from(_table: string) {
+    from(table: string) {
       return {
         select(_cols: string) {
-          const capturedType: { value: string | null } = { value: null };
-          return makeSmartChain(capturedType);
+          return makeSmartChain(table);
         },
       };
     },
@@ -126,7 +129,7 @@ function makeSelectiveFailureClient(failType: "food" | "drink" | "electrolyte") 
 describe("loadPreWorkoutTemplates — DB failure handling", () => {
 
   it("throws when the food query fails", async () => {
-    const client = makeSelectiveFailureClient("food");
+    const client = makeSelectiveFailureClient("pre_workout_templates");
     await assertRejects(
       () => loadPreWorkoutTemplates(client),
       Error,
@@ -134,22 +137,23 @@ describe("loadPreWorkoutTemplates — DB failure handling", () => {
     );
   });
 
-  it("throws when the drink query fails", async () => {
-    const client = makeSelectiveFailureClient("drink");
+  it("throws when the drink-pool query fails", async () => {
+    const client = makeSelectiveFailureClient("template_foods");
     await assertRejects(
       () => loadPreWorkoutTemplates(client),
       Error,
-      "Failed to load drink templates",
+      "Failed to load drink pool",
     );
   });
 
-  it("throws when the electrolyte query fails", async () => {
-    const client = makeSelectiveFailureClient("electrolyte");
-    await assertRejects(
-      () => loadPreWorkoutTemplates(client),
-      Error,
-      "Failed to load electrolyte templates",
-    );
+  it("electrolyte pool is empty by ruling — no query, no failure mode", async () => {
+    // Sodium v3 sets no pre-workout sodium target and Lee ruled the BEFORE
+    // phase considers fluids, not electrolytes — loadPreWorkoutElectrolytePool
+    // is a constant [] and cannot fail. This pins that Pass 3 stays inert
+    // rather than silently regaining a DB dependency.
+    const client = makeStubClient({ data: [], error: null });
+    const result = await loadPreWorkoutTemplates(client);
+    assertEquals(result.electrolyte.length, 0);
   });
 
   it("includes the DB error message in the thrown Error", async () => {

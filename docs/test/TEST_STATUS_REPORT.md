@@ -19,7 +19,7 @@ Integration (Patrol + live `--e2e` + python) ✅ · Migration ✅.
 **🟢 Covered:** nutrition_plan (29), formula_kit (15), coach_mode (5), fuel_timeline (5),
 activities (4), integrations (4), settings (3), content (3), daily_macros (3, *obsolete*),
 ai_credits/auth/calendar/carb_loading/education/meal_logging/personal_templates (2 each),
-app_startup/events/jade/onboarding/race_checklist/user_foods/weather (1 each) + `new_sync`
+app_startup/events/ai_coach/onboarding/race_checklist/user_foods/weather (1 each) + `new_sync`
 (24, sync/repos) + the nutrition engine (12 Deno).
 
 **🔴 Remaining 0-coverage (the only real gaps left):**

@@ -20,7 +20,9 @@ class CarbsPerHourService {
   /// Minimum effort length (minutes) for carbs/hr to be tracked.
   final int minimumDurationMinutes;
 
-  /// Qualifying prior efforts required before the trend unlocks.
+  /// Qualifying efforts required before the trend unlocks, counting the
+  /// current session (so the trend unlocks on the athlete's Nth qualifying
+  /// effort, with N-1 priors behind it).
   final int unlockThreshold;
 
   /// Total points shown on the sparkline, including the current session.
@@ -123,7 +125,11 @@ class CarbsPerHourService {
       );
     }
 
-    final isBuilding = baseline.count < unlockThreshold;
+    // The current session counts toward the baseline, matching what the card
+    // tells the athlete ("$n of $unlockThreshold baseline efforts"). Gating on
+    // priors alone left a one-run-wide dead state where the card announced
+    // "Your carb trend is ready." while still rendering the progress dots.
+    final isBuilding = baseline.count + 1 < unlockThreshold;
     final trend = isBuilding ? const <double>[] : [...baseline.history, rate];
 
     return CarbsPerHourSummary(

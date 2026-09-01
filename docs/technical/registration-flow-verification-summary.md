@@ -59,7 +59,7 @@ The registration/onboarding flow with the single database architecture is **corr
 
 ## Integration Tests
 
-**File:** `/test/integration/registration_flow_test.dart`
+**File:** `/test/db_flows/registration_flow_test.dart`
 
 **Test Results:**
 ```bash
@@ -71,7 +71,7 @@ The registration/onboarding flow with the single database architecture is **corr
 
 **Run Command:**
 ```bash
-flutter test test/integration/registration_flow_test.dart
+flutter test test/db_flows/registration_flow_test.dart
 ```
 
 ## Flow Diagram
@@ -221,7 +221,7 @@ await (delete(featureSurveyResponsesTable)..where((t) => t.deviceId.equals(userI
    - Edge cases and error handling
 
 2. **Integration Tests**
-   - `/test/integration/registration_flow_test.dart`
+   - `/test/db_flows/registration_flow_test.dart`
    - 4 test cases covering all scenarios
    - All tests passing
 

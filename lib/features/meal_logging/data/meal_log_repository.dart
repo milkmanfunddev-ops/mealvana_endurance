@@ -198,8 +198,8 @@ class MealLogRepository with SyncableRepository {
   /// Returns the count of non-deleted meal logs for [userId] with a
   /// [createdAt] on or after [since].
   ///
-  /// Used by [jadeHasBaselineProvider] to decide whether to show the
-  /// baseline-logging tutorial copy on the Jade coach banner.
+  /// Used by [aiCoachHasBaselineProvider] to decide whether to show the
+  /// baseline-logging tutorial copy on the Mealvana AI coach banner.
   Future<int> countLogsSince(String userId, DateTime since) async {
     final result =
         await (_database.select(_database.mealLogsTable)..where(

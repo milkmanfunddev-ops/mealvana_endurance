@@ -1,0 +1,242 @@
+[
+  {
+    "tag": "text|haiku|long-01",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 8.85,
+    "input_tokens": 1381,
+    "output_tokens": 427,
+    "analysis": {
+      "name": "Oatmeal bowl with banana, peanut butter, blueberries, and honey",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Rolled oats (cooked)",
+          "portion": "1 cup cooked",
+          "calories": 150,
+          "carb_g": 27,
+          "protein_g": 5,
+          "fat_g": 3,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Banana, sliced",
+          "portion": "1 medium",
+          "calories": 105,
+          "carb_g": 27,
+          "protein_g": 1.3,
+          "fat_g": 0.3,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Peanut butter",
+          "portion": "1 heaping tablespoon",
+          "calories": 188,
+          "carb_g": 7,
+          "protein_g": 8,
+          "fat_g": 16,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Blueberries",
+          "portion": "1 handful (~0.75 cup)",
+          "calories": 65,
+          "carb_g": 16.5,
+          "protein_g": 0.9,
+          "fat_g": 0.4,
+          "sodium_mg": 2
+        },
+        {
+          "name": "Honey",
+          "portion": "1 drizzle (~1 tablespoon)",
+          "calories": 64,
+          "carb_g": 17,
+          "protein_g": 0.1,
+          "fat_g": 0,
+          "sodium_mg": 3
+        },
+        {
+          "name": "Black coffee",
+          "portion": "1 large cup (12 oz)",
+          "calories": 5,
+          "carb_g": 0.1,
+          "protein_g": 0.6,
+          "fat_g": 0,
+          "sodium_mg": 10
+        }
+      ],
+      "totals": {
+        "calories": 577,
+        "carb_g": 95.6,
+        "protein_g": 16.8,
+        "fat_g": 19.7,
+        "sodium_mg": 94
+      },
+      "notes": "Pre-run breakfast with substantial carbohydrate and moderate protein for endurance. Portion sizes are typical for an athlete's morning fuel. Coffee has minimal caloric impact."
+    }
+  },
+  {
+    "tag": "text|sonnet|long-01",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 32.43,
+    "input_tokens": 1382,
+    "output_tokens": 341,
+    "analysis": {
+      "name": "Pre-Run Oatmeal Bowl with Coffee",
+      "suggested_slot": "breakfast",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Oatmeal bowl (rolled oats, banana, peanut butter, blueberries, honey)",
+          "portion": "1 cup dry rolled oats cooked in water, 1 medium banana sliced, 1 heaping tbsp peanut butter (~2 tbsp), 1 handful blueberries (~1/2 cup), 1 drizzle honey (~1 tbsp)",
+          "calories": 620,
+          "carb_g": 103,
+          "protein_g": 17,
+          "fat_g": 14,
+          "sodium_mg": 75
+        },
+        {
+          "name": "Large black coffee",
+          "portion": "~16 oz (large mug)",
+          "calories": 5,
+          "carb_g": 1,
+          "protein_g": 0,
+          "fat_g": 0,
+          "sodium_mg": 10
+        }
+      ],
+      "totals": {
+        "calories": 625,
+        "carb_g": 104,
+        "protein_g": 17,
+        "fat_g": 14,
+        "sodium_mg": 85
+      },
+      "notes": "Oats (~300 kcal), banana (~105 kcal), peanut butter heaping spoonful estimated at ~2 tbsp (~190 kcal), blueberries 1/2 cup (~42 kcal), honey 1 tbsp (~64 kcal) were combined into a single bowl item. Coffee contributes negligible calories. Confidence is medium as no exact weights were provided."
+    }
+  },
+  {
+    "tag": "image|haiku|compressed|img-01",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 7.81,
+    "input_tokens": 2270,
+    "output_tokens": 217,
+    "analysis": {
+      "name": "Edamame",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Boiled Edamame",
+          "portion": "1.5 cups (about 200g)",
+          "calories": 188,
+          "carb_g": 13.4,
+          "protein_g": 18.6,
+          "fat_g": 8.1,
+          "sodium_mg": 320
+        }
+      ],
+      "totals": {
+        "calories": 188,
+        "carb_g": 13.4,
+        "protein_g": 18.6,
+        "fat_g": 8.1,
+        "sodium_mg": 320
+      },
+      "notes": "Classic boiled edamame (soybean pods) seasoned with what appears to be sea salt. High in plant-based protein and fiber, making it an excellent snack for endurance athletes. The pods are typically discarded after eating, and only the beans inside are consumed."
+    }
+  },
+  {
+    "tag": "image|sonnet|compressed|img-01",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 10.18,
+    "input_tokens": 2271,
+    "output_tokens": 220,
+    "analysis": {
+      "name": "Salted Edamame",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Edamame in pods with sea salt",
+          "portion": "~200g in-pod (approx. 100g shelled beans)",
+          "calories": 122,
+          "carb_g": 10.0,
+          "protein_g": 12.0,
+          "fat_g": 5.0,
+          "sodium_mg": 350
+        }
+      ],
+      "totals": {
+        "calories": 122,
+        "carb_g": 10.0,
+        "protein_g": 12.0,
+        "fat_g": 5.0,
+        "sodium_mg": 350
+      },
+      "notes": "Bowl appears to contain a standard restaurant-style serving of edamame in pods, lightly salted. Visible sea salt crystals on the pods. Estimated as approximately 200g in-pod weight (typical appetizer portion). Macros are for the edible shelled beans only. Sodium estimate accounts for the visible salt seasoning but will vary depending on preparation."
+    }
+  },
+  {
+    "tag": "image|haiku|uncompressed|img-01",
+    "model": "anthropic/claude-haiku-4.5",
+    "latency_s": 7.7,
+    "input_tokens": 2862,
+    "output_tokens": 189,
+    "analysis": {
+      "name": "Edamame",
+      "suggested_slot": "snack",
+      "confidence": "high",
+      "items": [
+        {
+          "name": "Edamame (boiled, salted)",
+          "portion": "1 cup (about 155g)",
+          "calories": 189,
+          "carb_g": 13.5,
+          "protein_g": 18.2,
+          "fat_g": 8.1,
+          "sodium_mg": 387
+        }
+      ],
+      "totals": {
+        "calories": 189,
+        "carb_g": 13.5,
+        "protein_g": 18.2,
+        "fat_g": 8.1,
+        "sodium_mg": 387
+      },
+      "notes": "Boiled and salted edamame is a protein-rich snack suitable for endurance athletes. The portion shown appears to be approximately 1 cup of cooked edamame pods."
+    }
+  },
+  {
+    "tag": "image|sonnet|uncompressed|img-01",
+    "model": "anthropic/claude-sonnet-4.6",
+    "latency_s": 10.14,
+    "input_tokens": 2863,
+    "output_tokens": 223,
+    "analysis": {
+      "name": "Salted Edamame in Pods",
+      "suggested_slot": "snack",
+      "confidence": "medium",
+      "items": [
+        {
+          "name": "Edamame (steamed, salted, in pods)",
+          "portion": "~200g in-pod (approx. 100g shelled beans)",
+          "calories": 122,
+          "carb_g": 10.0,
+          "protein_g": 11.0,
+          "fat_g": 5.0,
+          "sodium_mg": 350.0
+        }
+      ],
+      "totals": {
+        "calories": 122,
+        "carb_g": 10.0,
+        "protein_g": 11.0,
+        "fat_g": 5.0,
+        "sodium_mg": 350.0
+      },
+      "notes": "A generous bowl of steamed edamame dusted with sea salt \u2014 a classic high-protein snack well-suited for endurance athletes. Portion estimated as approximately 200g in-pod weight (~100g of actual beans). Sodium estimated based on visible salt crystals; actual content may vary depending on how heavily salted."
+    }
+  }
+]

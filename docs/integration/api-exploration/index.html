@@ -38,6 +38,17 @@ body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);l
 .filter{padding:.7rem .9rem;border-bottom:1px solid var(--rule)}
 .filter input{width:100%;font-family:var(--mono);font-size:.78rem;padding:.4rem .55rem;border:1px solid var(--rule);border-radius:5px;background:var(--card);color:var(--ink)}
 .filter input::placeholder{color:var(--ink-3)}
+.search-meta{display:flex;justify-content:space-between;gap:.5rem;margin-top:.35rem;font-family:var(--mono);font-size:.62rem;color:var(--ink-3)}
+.search-results{display:none;padding:.35rem .55rem 1.5rem}
+.side.searching .nav{display:none}
+.side.searching .search-results{display:block}
+.search-result{display:block;width:100%;border:0;border-bottom:1px solid var(--rule);background:transparent;color:var(--ink);text-align:left;padding:.65rem .45rem;cursor:pointer;font-family:var(--sans)}
+.search-result:hover{background:var(--rule-2)}
+.search-result .sr-title{display:block;font-size:.78rem;font-weight:650;line-height:1.3;color:var(--accent)}
+.search-result .sr-path{display:block;font-family:var(--mono);font-size:.59rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);margin:.12rem 0}
+.search-result .sr-snippet{display:block;font-size:.69rem;line-height:1.35;color:var(--ink-2)}
+.search-result mark{background:var(--warn-b);color:var(--ink);border-radius:2px;padding:0 .05rem}
+.search-empty{padding:.8rem .45rem;font-size:.76rem;line-height:1.45;color:var(--ink-3)}
 .nav{padding:.6rem .6rem 2rem;display:flex;flex-direction:column;gap:.15rem}
 .nav-sec{display:flex;flex-direction:column;gap:.1rem;padding-bottom:.5rem;margin-bottom:.4rem;border-bottom:1px solid var(--rule)}
 .nav-link{display:block;text-decoration:none;color:var(--ink-2);font-size:.85rem;padding:.34rem .55rem;border-radius:5px;line-height:1.3}
@@ -123,6 +134,7 @@ td.cap{color:var(--ink-2)}
 .prose em{color:var(--ink-2)}
 .example{margin:0 0 1.1rem;border-radius:6px;scroll-margin-top:1rem}
 .example.flash{box-shadow:0 0 0 2px var(--accent);transition:box-shadow .2s}
+.search-hit{outline:2px solid var(--accent);outline-offset:4px;border-radius:3px;background:var(--accent-b);transition:background .2s}
 .ex-name{font-family:var(--mono);font-size:.74rem;color:var(--accent);margin-bottom:.3rem;font-weight:600}
 pre.json{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:.8rem 1rem;overflow-x:auto;margin:0}
 pre.json code{font-family:var(--mono);font-size:.76rem;line-height:1.5;color:var(--ink);white-space:pre}
@@ -149,10 +161,15 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
       <div class="kick">Endurance Platform Integrations</div>
       <div class="ttl">Training Platform APIs — Reference</div>
     </div>
-    <div class="filter"><input id="filter" type="text" placeholder="filter menu…" autocomplete="off"></div>
+    <div class="filter">
+      <input id="filter" type="search" placeholder="Search every field, type, endpoint…" autocomplete="off" aria-label="Search the complete API reference">
+      <div class="search-meta"><span id="searchStatus" aria-live="polite">Full-text search</span><span>⌘/Ctrl K</span></div>
+    </div>
+    <div class="search-results" id="searchResults" aria-label="Search results"></div>
     <nav class="nav" id="nav"><div class="nav-sec">
 <a href="#overview" data-goto="overview" class="nav-link">Overview</a>
 <a href="#how" data-goto="how" class="nav-link">How the APIs work</a>
+<a href="#onboarding-matrix" data-goto="onboarding-matrix" class="nav-link">Onboarding data matrix</a>
 </div>
 <div class="nav-group" data-group="garmin">
 <button class="nav-group-head" data-toggle="garmin"><span class="ng-label">Garmin</span><span class="chip chip-push">push</span><span class="caret">›</span></button>
@@ -163,7 +180,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 <a href="#garmin__activity-data" data-goto="garmin__activity-data" class="nav-link sub">Activity API Data Model</a>
 <a href="#garmin__health-data" data-goto="garmin__health-data" class="nav-link sub">Health API Data Model</a>
 <a href="#garmin__training-courses-womens" data-goto="garmin__training-courses-womens" class="nav-link sub">Training, Courses &amp; Women&#x27;s Health APIs</a>
-<a href="#garmin__field-reference" data-goto="garmin__field-reference" class="nav-link sub">Complete Field Reference</a>
+<a href="#garmin__field-reference" data-goto="garmin__field-reference" class="nav-link sub">Garmin data dictionary</a>
 <a href="#garmin__examples" data-goto="garmin__examples" class="nav-link sub">Examples · 21</a>
 </div></div>
 <div class="nav-group" data-group="training-peaks">
@@ -175,7 +192,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 <a href="#training-peaks__workout-data" data-goto="training-peaks__workout-data" class="nav-link sub">Workout Data</a>
 <a href="#training-peaks__athlete-data" data-goto="training-peaks__athlete-data" class="nav-link sub">Athlete, Zones &amp; Events</a>
 <a href="#training-peaks__writeback" data-goto="training-peaks__writeback" class="nav-link sub">Write API</a>
-<a href="#training-peaks__field-reference" data-goto="training-peaks__field-reference" class="nav-link sub">Field Reference</a>
+<a href="#training-peaks__field-reference" data-goto="training-peaks__field-reference" class="nav-link sub">TrainingPeaks data dictionary</a>
 <a href="#training-peaks__examples" data-goto="training-peaks__examples" class="nav-link sub">Examples · 18</a>
 </div></div>
 <div class="nav-group" data-group="final-surge">
@@ -185,7 +202,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 <a href="#final-surge__authentication" data-goto="final-surge__authentication" class="nav-link sub">Authentication</a>
 <a href="#final-surge__endpoints" data-goto="final-surge__endpoints" class="nav-link sub">Endpoints</a>
 <a href="#final-surge__workout-data" data-goto="final-surge__workout-data" class="nav-link sub">Workout Data</a>
-<a href="#final-surge__field-reference" data-goto="final-surge__field-reference" class="nav-link sub">Field Reference</a>
+<a href="#final-surge__field-reference" data-goto="final-surge__field-reference" class="nav-link sub">Final Surge data dictionary</a>
 <a href="#final-surge__examples" data-goto="final-surge__examples" class="nav-link sub">Examples · 17</a>
 </div></div>
 <div class="nav-group" data-group="vdot-o2">
@@ -195,8 +212,13 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
 <a href="#vdot-o2__authentication" data-goto="vdot-o2__authentication" class="nav-link sub">Authentication</a>
 <a href="#vdot-o2__endpoints" data-goto="vdot-o2__endpoints" class="nav-link sub">Endpoints</a>
 <a href="#vdot-o2__workout-data" data-goto="vdot-o2__workout-data" class="nav-link sub">Workout Data</a>
-<a href="#vdot-o2__field-reference" data-goto="vdot-o2__field-reference" class="nav-link sub">Field Reference</a>
+<a href="#vdot-o2__field-reference" data-goto="vdot-o2__field-reference" class="nav-link sub">VDOT O2 data dictionary</a>
 <a href="#vdot-o2__examples" data-goto="vdot-o2__examples" class="nav-link sub">Examples · 11</a>
+</div></div>
+<div class="nav-group" data-group="runna">
+<button class="nav-group-head" data-toggle="runna"><span class="ng-label">Runna</span><span class="chip chip-pull">calendar pull</span><span class="caret">›</span></button>
+<div class="nav-group-body" id="grp-runna">
+<a href="#runna__reference" data-goto="runna__reference" class="nav-link sub">Runna data dictionary</a>
 </div></div></nav>
   </aside>
   <div class="main">
@@ -207,54 +229,93 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(-
     <div class="content" id="content">
       <div class="breadcrumb" id="crumb"></div>
       <article class="doc" id="overview" hidden><div class="lead">
-  <p class="standfirst">A reference to the APIs of four endurance-training platforms — Garmin,
-  TrainingPeaks, Final Surge, and VDOT O2. For each: how the API works, every endpoint, and every
-  data field it exposes, with real payload examples. Grounded in the vendor specifications and
-  verified against live payloads.</p>
+  <p class="standfirst">A reference to five implemented endurance-training integrations — Garmin,
+  TrainingPeaks, Final Surge, VDOT O2, and Runna. For each: how the data surface works, every
+  endpoint or feed property, and every field it exposes, with payload evidence. Grounded in vendor
+  specifications and verified against the application's clients, parsers, fixtures, and tests.</p>
   <div class="meta">
-    <span><b>Platforms</b> 4</span>
+    <span><b>Platforms</b> 5</span>
     <span><b>Endpoints</b> ~85 documented</span>
-    <span><b>Data docs</b> 24</span>
+    <span><b>Data docs</b> 26</span>
     <span><b>Example payloads</b> 66</span>
   </div>
 </div>
 
-<h2>What each API offers</h2>
+<h2>Onboarding data we collect</h2>
+<p class="standfirst">This is the Mealvana Endurance onboarding matrix: the profile and preference
+data <strong>we ask the athlete for during active onboarding</strong>, compared with what each
+training integration can supply.</p>
+<div class="meta">
+  <span><b>Active onboarding fields</b> 11</span>
+  <span><b>Implemented providers</b> 5</span>
+  <span><b>Verified</b> 2026-07-23</span>
+  <span><a href="#onboarding-matrix" data-goto="onboarding-matrix">Open notes, sources, and prefill behavior →</a></span>
+  <span><a href="../../../output/pdf/onboarding-matrix.pdf">Download one-page PDF →</a></span>
+</div>
+<div class="scroll">
+<table class="matrix">
+<thead><tr><th>Data we collect in onboarding</th><th>App value</th><th>Garmin</th><th>TrainingPeaks</th><th>Final Surge</th><th>VDOT O2</th><th>Runna</th></tr></thead>
+<tbody>
+<tr><td class="cap">First name</td><td>Optional string</td><td class="mk no">no</td><td class="mk ok">yes · <code>FirstName</code></td><td class="mk ok">yes · <code>firstname</code></td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Last name</td><td>Optional string</td><td class="mk no">no</td><td class="mk ok">yes · <code>LastName</code></td><td class="mk ok">yes · <code>lastname</code></td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Email</td><td>Optional email</td><td class="mk no">no</td><td class="mk ok">yes · <code>Email</code></td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Gender</td><td>Required enum</td><td class="mk no">no</td><td class="mk wn">partial · <code>Sex</code> m/f</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Birthday</td><td>Required full date</td><td class="mk no">no</td><td class="mk wn">partial · <code>BirthMonth</code></td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Height</td><td>Required cm or ft/in</td><td class="mk no">no*</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Weight</td><td>Required kg or lb</td><td class="mk ok">yes · <code>weightInGrams</code></td><td class="mk ok">yes · <code>Weight</code> kg</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Unit system</td><td>Metric / imperial</td><td class="mk no">no</td><td class="mk ok">yes · <code>PreferredUnits</code></td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Sports trained</td><td>Run / bike / swim</td><td class="mk wn">infer activities</td><td class="mk wn">infer workouts/zones</td><td class="mk wn">infer workouts</td><td class="mk wn">infer events</td><td class="mk wn">running feed</td></tr>
+<tr><td class="cap">Dietary preference</td><td>Optional enum</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Allergies</td><td>Optional list</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+</tbody>
+</table>
+</div>
+<div class="legend">
+  <span class="ok">yes - direct onboarding match</span>
+  <span class="wn">partial / inferred - confirm with athlete</span>
+  <span class="no">no onboarding equivalent</span>
+</div>
+<div class="callout"><strong>Height is not available from these integrations</strong><p>Garmin
+pregnancy snapshots can contain a pregnancy-specific goal height, but it is not a general athlete
+profile field and is intentionally marked unavailable for onboarding.</p></div>
+
+<h2>API capability overview <span class="chip chip-pull">not onboarding data</span></h2>
 <p class="sub">Which data and capabilities each platform's API exposes. “Offered” means the API
 supports it — a few capabilities are outbound (you send data to the platform); those are marked
-<em>(write)</em>.</p>
+<em>(write)</em>. This table describes the broader API surface; it is separate from the onboarding
+matrix above.</p>
 <div class="scroll">
   <table class="matrix">
-    <thead><tr><th>Capability</th><th>Garmin</th><th>TrainingPeaks</th><th>Final Surge</th><th>VDOT O2</th></tr></thead>
+    <thead><tr><th>Capability</th><th>Garmin</th><th>TrainingPeaks</th><th>Final Surge</th><th>VDOT O2</th><th>Runna</th></tr></thead>
     <tbody>
       <tr><td class="cap">Completed activities / workouts</td>
-        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk wn">plan only, no actuals</td></tr>
+        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk wn">plan only, no actuals</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Planned / scheduled workouts (read)</td>
-        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td></tr>
+        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">running feed</td></tr>
       <tr><td class="cap">GPS / HR / power samples</td>
-        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Lap / segment splits</td>
-        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Structured intervals</td>
-        <td class="mk ok">yes <em>(write)</em></td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td></tr>
+        <td class="mk ok">yes <em>(write)</em></td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk wn">description text only</td></tr>
       <tr><td class="cap">Health &amp; wellness (sleep, stress, HRV…)</td>
-        <td class="mk ok">yes · 12 types</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">yes · 12 types</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Body composition / weight</td>
-        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Training zones / thresholds</td>
-        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk wn">in step targets</td></tr>
+        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk wn">in step targets</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Race / event calendar</td>
-        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk wn">events not typed as races</td></tr>
       <tr><td class="cap">Nutrition entries</td>
-        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk no">—</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Courses / routes</td>
-        <td class="mk ok">yes <em>(write)</em></td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">yes <em>(write)</em></td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Menstrual cycle / pregnancy</td>
-        <td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Write / upload back to the platform</td>
-        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">GPS only</td></tr>
+        <td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">yes</td><td class="mk ok">GPS only</td><td class="mk no">—</td></tr>
       <tr><td class="cap">Webhook / push delivery</td>
-        <td class="mk ok">native</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td></tr>
+        <td class="mk ok">native</td><td class="mk ok">yes</td><td class="mk no">—</td><td class="mk no">—</td><td class="mk no">—</td></tr>
     </tbody>
   </table>
 </div>
@@ -264,7 +325,19 @@ supports it — a few capabilities are outbound (you send data to the platform);
   <span class="no">— not offered</span>
 </div>
 
-<h2>The four platforms</h2>
+<h2>Complete data dictionaries</h2>
+<p class="sub">Each provider has a master field inventory with field name, object/API, data type,
+unit, example, description, and caveats. These are the quickest route when you need to answer
+questions such as “which API has height, weight, HRV, pace, or FTP?”</p>
+<div class="cardgrid">
+  <div class="pcard"><h3>Garmin</h3><p>Activity, Health, Training, Courses, Women's Health, and lifecycle fields.</p><a class="go" data-goto="garmin__field-reference">Open Garmin dictionary →</a></div>
+  <div class="pcard"><h3>TrainingPeaks</h3><p>Profiles, zones, workouts, details, events, metrics, nutrition, uploads, and webhooks.</p><a class="go" data-goto="training-peaks__field-reference">Open TrainingPeaks dictionary →</a></div>
+  <div class="pcard"><h3>Final Surge</h3><p>OAuth identity, workouts, structured steps, profile storage, uploads, and login tokens.</p><a class="go" data-goto="final-surge__field-reference">Open Final Surge dictionary →</a></div>
+  <div class="pcard"><h3>VDOT O2</h3><p>Tokens, workouts, nested step targets, and GPS-upload responses, plus explicit non-exposed data.</p><a class="go" data-goto="vdot-o2__field-reference">Open VDOT O2 dictionary →</a></div>
+  <div class="pcard"><h3>Runna</h3><p>Calendar envelope, every supported VEVENT property, derived summary fields, imported activity shape, and sync semantics.</p><a class="go" data-goto="runna__reference">Open Runna dictionary →</a></div>
+</div>
+
+<h2>The five integrations</h2>
 <div class="cardgrid">
   <div class="pcard">
     <h3>Garmin</h3>
@@ -297,8 +370,17 @@ supports it — a few capabilities are outbound (you send data to the platform);
     <span class="chip chip-pull">pull · beta</span>
     <span class="host">app.vdoto2.com</span>
     <p>Jack Daniels' training platform. Planned workouts with a nested <code>steps[]</code> tree
-    carrying E/M/T/I/R pace targets. The thinnest and least-documented of the four; beta.</p>
+    carrying E/M/T/I/R pace targets. The thinnest and least-documented JSON API; beta.</p>
     <a class="go" data-goto="vdot-o2__readme">Open VDOT O2 →</a>
+  </div>
+  <div class="pcard">
+    <h3>Runna</h3>
+    <span class="chip chip-pull">calendar pull</span>
+    <span class="host">personal iCalendar URL</span>
+    <p>A read-only personal calendar subscription rather than OAuth/JSON. Supplies planned running
+    events, dates, titles, text steps, distances, durations, and deep links; no athlete profile or
+    completed-workout actuals.</p>
+    <a class="go" data-goto="runna__reference">Open Runna →</a>
   </div>
 </div>
 
@@ -312,12 +394,14 @@ files and vendor specs live at these paths in the repository:</p>
     <tr><td class="k">This reference</td><td><code>docs/integration/api-exploration/</code> — one folder per platform, plus this portal</td></tr>
     <tr><td class="k">Garmin spec</td><td><code>docs/integration/Activity_API-1.2.3.pdf</code>, <code>Health_API_1.2.2.pdf</code>, <code>Training_API_V2_1/Training_API_V2.pdf</code>, <code>Courses API_2/Courses_API.pdf</code>, <code>Women's_API_1.0.4.pdf</code>, <code>OAuth2PKCE_1.pdf</code></td></tr>
     <tr><td class="k">Garmin docs</td><td><code>docs/integration/api-exploration/garmin/*.md</code></td></tr>
-    <tr><td class="k">TrainingPeaks spec</td><td><code>docs/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></td></tr>
+    <tr><td class="k">TrainingPeaks spec</td><td><code>docs/integration/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></td></tr>
     <tr><td class="k">TrainingPeaks docs</td><td><code>docs/integration/api-exploration/training-peaks/*.md</code></td></tr>
-    <tr><td class="k">Final Surge spec</td><td><code>docs/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td></tr>
+    <tr><td class="k">Final Surge spec</td><td><code>docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td></tr>
     <tr><td class="k">Final Surge docs</td><td><code>docs/integration/api-exploration/final-surge/*.md</code></td></tr>
-    <tr><td class="k">VDOT O2 notes</td><td><code>docs/vdot/README.md</code>, <code>docs/vdot/NEXT_STEPS.md</code></td></tr>
+    <tr><td class="k">VDOT O2 notes</td><td><code>docs/integration/vdot/README.md</code>, <code>docs/integration/vdot/NEXT_STEPS.md</code></td></tr>
     <tr><td class="k">VDOT O2 docs</td><td><code>docs/integration/api-exploration/vdot-o2/*.md</code></td></tr>
+    <tr><td class="k">Runna docs</td><td><code>docs/integration/api-exploration/runna/README.md</code></td></tr>
+    <tr><td class="k">Runna implementation</td><td><code>runna_ics_client.dart</code>, <code>runna_ics_parser.dart</code>, <code>runna_transformer.dart</code>, and <code>runna_sync_service.dart</code></td></tr>
   </table>
 </div>
 <p class="sub">Each platform's <strong>Overview</strong> page ends with its own “Source files” section
@@ -326,9 +410,9 @@ against. Raw example payloads are under each platform's <strong>Examples</strong
 <code>&lt;platform&gt;/examples/*.json</code>.</p>
 </article>
 <article class="doc" id="how" hidden><h1>How these APIs work</h1>
-<p class="sub">The four platforms fall into two delivery models and share a common OAuth2 foundation.
-This page covers the concepts that recur across all of them; each provider's own section has the
-exact details.</p>
+<p class="sub">The five integrations use push, REST pull, and calendar-feed pull delivery. Four use
+OAuth2; Runna uses a personal feed URL with an embedded credential. Each provider's own section has
+the exact details.</p>
 
 <h2>Two delivery models</h2>
 <div class="cardgrid">
@@ -342,18 +426,19 @@ exact details.</p>
     obtained through a separate <strong>backfill</strong> request.</p>
   </div>
   <div class="pcard">
-    <h3>Pull — TrainingPeaks · Final Surge · VDOT O2</h3>
+    <h3>Pull — TrainingPeaks · Final Surge · VDOT O2 · Runna</h3>
     <span class="chip chip-pull">pull</span>
     <p>These are conventional REST APIs. A client requests data on demand — typically a date-range
     query for workouts plus lookups by id. Responses are JSON. TrainingPeaks additionally accepts
     <strong>writes</strong> (updating a planned workout); Final Surge and VDOT O2 accept file
-    <strong>uploads</strong> (GPS/FIT).</p>
+    <strong>uploads</strong> (GPS/FIT). Runna is also pulled, but returns iCalendar text from a
+    personal subscription URL rather than JSON from a REST API.</p>
   </div>
 </div>
 
-<h2>Authentication — OAuth2 across the board</h2>
-<p class="sub">All four use OAuth2 authorization-code grants and issue an access token plus a refresh
-token. The differences are in the details:</p>
+<h2>Authentication</h2>
+<p class="sub">Garmin, TrainingPeaks, Final Surge, and VDOT O2 use OAuth2 authorization-code grants
+and issue an access token plus a refresh token. Runna's feed URL contains its credential:</p>
 <div class="scroll">
   <table class="matrix">
     <thead><tr><th>Platform</th><th>Grant</th><th>Redirect</th><th>Notable requirement</th></tr></thead>
@@ -362,6 +447,7 @@ token. The differences are in the details:</p>
       <tr><td class="cap">TrainingPeaks</td><td>Auth code</td><td>HTTPS</td><td>Separate sandbox and production hosts; scope list controls read vs write</td></tr>
       <tr><td class="cap">Final Surge</td><td>Auth code</td><td>HTTPS</td><td>Credentials go in the request <strong>body</strong> (hyphenated keys), and a <code>client-id</code> header is required on data calls</td></tr>
       <tr><td class="cap">VDOT O2</td><td>Auth code</td><td><strong>Custom scheme</strong> <code>com.milkman.mealvanaendurance://callback</code></td><td>Credentials must be in the body on refresh too, or the token endpoint returns <code>invalid_payload</code></td></tr>
+      <tr><td class="cap">Runna</td><td>Personal feed URL</td><td>None</td><td><code>webcal://</code> is normalized to HTTPS; the embedded URL token is a credential and there is no refresh grant</td></tr>
     </tbody>
   </table>
 </div>
@@ -390,6 +476,56 @@ the API is), <strong>Authentication</strong>, <strong>Endpoints</strong> (every 
 request/response examples), a <strong>data reference</strong> (every field), and
 <strong>Examples</strong> (raw payloads). The Overview page has a source map pointing to the vendor
 specs and the local <code>.md</code> files behind this reference.</p>
+</article>
+<article class="doc" id="onboarding-matrix" hidden><h1>Onboarding Data We Collect - API Coverage</h1>
+<p class="standfirst">The fields Mealvana Endurance asks the athlete for during active onboarding,
+compared with what Garmin, TrainingPeaks, Final Surge, VDOT O2, and Runna can supply.</p>
+<div class="meta">
+  <span><b>Verified</b> 2026-07-23</span>
+  <span><b>Active fields</b> 11</span>
+  <span><b>Providers</b> 5</span>
+  <span><b>PDF</b> <a href="../../../output/pdf/onboarding-matrix.pdf">onboarding-matrix.pdf</a></span>
+</div>
+<div class="scroll">
+<table class="matrix">
+<thead><tr><th>Active onboarding field</th><th>App value</th><th>Garmin</th><th>TrainingPeaks</th><th>Final Surge</th><th>VDOT O2</th><th>Runna</th></tr></thead>
+<tbody>
+<tr><td class="cap">First name</td><td>Optional string</td><td class="mk no">no</td><td class="mk ok">yes · <code>FirstName</code></td><td class="mk ok">yes · <code>firstname</code></td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Last name</td><td>Optional string</td><td class="mk no">no</td><td class="mk ok">yes · <code>LastName</code></td><td class="mk ok">yes · <code>lastname</code></td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Email</td><td>Optional email</td><td class="mk no">no</td><td class="mk ok">yes · <code>Email</code></td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Gender</td><td>Required enum</td><td class="mk no">no</td><td class="mk wn">partial · <code>Sex</code> m/f</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Birthday</td><td>Required full date</td><td class="mk no">no</td><td class="mk wn">partial · <code>BirthMonth</code></td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Height</td><td>Required cm or ft/in</td><td class="mk no">no*</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Weight</td><td>Required kg or lb</td><td class="mk ok">yes · <code>weightInGrams</code></td><td class="mk ok">yes · <code>Weight</code> kg</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Unit system</td><td>Metric / imperial</td><td class="mk no">no</td><td class="mk ok">yes · <code>PreferredUnits</code></td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Sports trained</td><td>Run / bike / swim</td><td class="mk wn">infer activities</td><td class="mk wn">infer workouts/zones</td><td class="mk wn">infer workouts</td><td class="mk wn">infer events</td><td class="mk wn">running feed</td></tr>
+<tr><td class="cap">Dietary preference</td><td>Optional enum</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+<tr><td class="cap">Allergies</td><td>Optional list</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td><td class="mk no">no</td></tr>
+</tbody>
+</table>
+</div>
+<div class="legend"><span class="ok">yes - direct semantic match</span><span class="wn">partial / inferred - confirm with user</span><span class="no">no - no equivalent field</span></div>
+<div class="callout"><strong>Garmin height caveat</strong><p>Women's Health pregnancy snapshots
+can contain <code>weightGoalUserInput.heightInCentimeters</code>, but it is a pregnancy-specific
+goal input, not a general athlete profile field. It is therefore classified as unavailable for
+onboarding.</p></div>
+<h2>Source endpoints and current prefill</h2>
+<div class="scroll"><table class="matrix">
+<thead><tr><th>Provider</th><th>Relevant source</th><th>What the app currently prefills</th></tr></thead>
+<tbody>
+<tr><td class="cap">Garmin</td><td>Health body composition push/ping and <code>bodyComps</code></td><td>Weight; preferred over TrainingPeaks when both have a value.</td></tr>
+<tr><td class="cap">TrainingPeaks</td><td><code>GET /v1/athlete/profile</code></td><td>Name, weight, birthday (day defaults to 1), and binary gender.</td></tr>
+<tr><td class="cap">Final Surge</td><td>Identity fields in <code>POST /oauth/token</code> response</td><td>Name only.</td></tr>
+<tr><td class="cap">VDOT O2</td><td>No profile endpoint</td><td>Nothing.</td></tr>
+<tr><td class="cap">Runna</td><td>Personal iCalendar subscription; no profile endpoint</td><td>Nothing.</td></tr>
+</tbody></table></div>
+<p class="sub">TrainingPeaks exposes email, but the current integration-prefill block does not copy
+it into the onboarding email field. Email may instead be populated from the authenticated Supabase
+account.</p>
+<h2>Scope boundary</h2>
+<p class="sub">The live PageView skips the preserved sport-detail screens and removed the food-like
+screen. This matrix therefore excludes water-bottle usage, GI sensitivity, FTP, bike-storage setup,
+CSS pace, wetsuit/cap preferences, and food likes. Those are not collected by active onboarding.</p>
 </article>
 <article class="doc" id="garmin__readme" hidden><div class="prose"><h1 id="garmin-connect-developer-program-api-reference">Garmin — Connect Developer Program API Reference</h1>
 <p>A developer reference for the <strong>Garmin Connect Developer Program (GCDP)</strong> APIs: what they expose,
@@ -4934,9 +5070,9 @@ fields come back <code>null</code> (and are silently ignored on write). Detect p
 <p>This reference is grounded in the sources below; read them for deeper detail.</p>
 <ul>
 <li><strong>TrainingPeaks' own API guide</strong> (transcribed from the <a href="https://github.com/TrainingPeaks/PartnersAPI/wiki">Partner API wiki</a>):
-  <code>docs/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></li>
-<li>OAuth environment/credential setup notes: <code>docs/training_peaks/README.md</code>,
-  <code>docs/training_peaks/WEB_OAUTH_SETUP.md</code>, <code>docs/training_peaks/TRAININGPEAKS_API_IMPLEMENTATION.md</code></li>
+  <code>docs/integration/training_peaks/TRAININGPEAKS_API_COMPREHENSIVE_GUIDE.md</code></li>
+<li>OAuth environment/credential setup notes: <code>docs/integration/training_peaks/README.md</code>,
+  <code>docs/integration/training_peaks/WEB_OAUTH_SETUP.md</code>, <code>docs/integration/training_peaks/TRAININGPEAKS_API_IMPLEMENTATION.md</code></li>
 <li>A working API client (endpoint shapes, headers, error mapping):
   <code>lib/features/integrations/data/training_peaks_api_client.dart</code></li>
 <li>Field semantics and the decoded <code>Structure</code> model:
@@ -8431,7 +8567,7 @@ webhook / push mechanism. It is a pull-based calendar and file API.</p>
 </thead>
 <tbody>
 <tr>
-<td><code>docs/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td>
+<td><code>docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf</code></td>
 <td>The authoritative Final Surge Partner API vendor document (auth, ProfileInfo, uploads, UpcomingWorkouts, LoginToken, and the structured-workout object)</td>
 </tr>
 <tr>
@@ -8451,7 +8587,7 @@ webhook / push mechanism. It is a pull-based calendar and file API.</p>
 <td>A standalone CLI probe (<code>auth</code>, <code>workouts</code>, <code>workout</code>, <code>daterange</code>, <code>profile</code>, <code>compare</code>) that exercises each endpoint</td>
 </tr>
 <tr>
-<td><code>test/integration/final_surge_api_test.dart</code></td>
+<td><code>test/manual_live/final_surge_api_test.dart</code></td>
 <td>Live-API integration checks asserting response structure and units</td>
 </tr>
 </tbody>
@@ -9595,7 +9731,7 @@ durations in seconds):</p>
 }
 </code></pre>
 <p>The full multi-repeat vendor example is in
-<code>docs/final_surge/Final-Surge-Partner-API-Uploads.pdf</code>.</p>
+<code>docs/integration/final_surge/Final-Surge-Partner-API-Uploads.pdf</code>.</p>
 <p>A simplified illustrative sample using a <code>Steps</code> / <code>Duration</code> / <code>IntensityTarget</code> shape is
 also kept at
 <a href="#final-surge__examples" data-goto="final-surge__examples" data-anchor="ex-final-surge-structured-workout-json-fs-v1">examples/structured-workout-json-fs-v1.json</a>
@@ -11017,7 +11153,7 @@ responses are known:</p>
   object fields and the <code>steps[]</code> tree, including the <code>target</code> structure.</li>
 <li><code>lib/features/integrations/application/vdot_oauth_service.dart</code> — the OAuth
   flow, custom-scheme redirect, and <code>+</code>-in-code raw parsing.</li>
-<li><code>docs/vdot/README.md</code>, <code>docs/vdot/NEXT_STEPS.md</code> — project notes, live-endpoint
+<li><code>docs/integration/vdot/README.md</code>, <code>docs/integration/vdot/NEXT_STEPS.md</code> — project notes, live-endpoint
   probe results, and a summary of the VDOT O2 wiki.</li>
 </ul></div></article>
 <article class="doc" id="vdot-o2__authentication" hidden><div class="prose"><h1 id="vdot-o2-authentication">VDOT O2 — Authentication</h1>
@@ -12805,6 +12941,127 @@ UUIDs are fabricated.</p>
     }
   ]
 }</code></pre></div></article>
+<article class="doc" id="runna__reference" hidden><div class="prose">
+<h1>Runna - Calendar Feed Data Reference</h1>
+<p>Runna is an implemented training integration, but it does not expose a conventional OAuth/JSON
+API to Mealvana. The athlete pastes the personal calendar-subscription URL from Runna Settings.
+Mealvana fetches the iCalendar (<code>.ics</code>) document and imports planned running workouts.</p>
+<p><strong>Last verified:</strong> 2026-07-23 against <code>runna_ics_client.dart</code>,
+<code>runna_ics_parser.dart</code>, <code>runna_transformer.dart</code>,
+<code>runna_sync_service.dart</code>, and their unit tests.</p>
+
+<h2>Endpoint, authentication, and delivery</h2>
+<table>
+<thead><tr><th>Item</th><th>Type</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><strong>Feed URL</strong></td><td><code>webcal://...</code> or <code>https://...</code> string</td><td>User-specific calendar-subscription URL copied from Runna.</td></tr>
+<tr><td><strong>Effective method</strong></td><td>HTTP <code>GET</code></td><td><code>webcal://</code> is normalized to <code>https://</code>; the client also accepts <code>http://</code>.</td></tr>
+<tr><td><strong>Authentication</strong></td><td>Embedded URL token</td><td>No separate OAuth flow or header token. The feed URL is stored in the integration record's <code>accessToken</code> slot.</td></tr>
+<tr><td><strong>Request Accept</strong></td><td>string</td><td><code>text/calendar, text/plain, */*</code></td></tr>
+<tr><td><strong>Success</strong></td><td>HTTP 200 with text body</td><td>The body must contain <code>BEGIN:VCALENDAR</code>.</td></tr>
+<tr><td><strong>Timeout</strong></td><td>duration</td><td>20 seconds.</td></tr>
+<tr><td><strong>Sync direction</strong></td><td>Pull, read-only</td><td>Mealvana reads the calendar and cannot write workouts or results back to Runna.</td></tr>
+</tbody></table>
+<div class="callout"><strong>Credential handling</strong><p>The feed URL itself is a credential and
+must not be logged, placed in screenshots, or shared. Runna supplies no athlete id or profile;
+Mealvana derives a stable non-reversible fingerprint of the URL for
+<code>providerAthleteId</code>.</p></div>
+
+<h2>Raw calendar envelope</h2>
+<table>
+<thead><tr><th>Field</th><th>Type</th><th>Description</th><th>App use</th></tr></thead>
+<tbody>
+<tr><td><code>BEGIN:VCALENDAR</code> / <code>END:VCALENDAR</code></td><td>structural marker</td><td>Calendar document envelope.</td><td>Validates that the URL returned a calendar.</td></tr>
+<tr><td><code>VERSION</code></td><td>string</td><td>iCalendar version, commonly <code>2.0</code>.</td><td>Ignored.</td></tr>
+<tr><td><code>PRODID</code></td><td>string</td><td>Producer identifier.</td><td>Ignored.</td></tr>
+<tr><td><code>X-WR-CALNAME</code></td><td>string</td><td>Display name of the subscribed calendar.</td><td>Ignored.</td></tr>
+<tr><td><code>BEGIN:VEVENT</code> / <code>END:VEVENT</code></td><td>structural marker</td><td>One planned calendar event or workout.</td><td>Creates one parser candidate.</td></tr>
+</tbody></table>
+<p>The parser is an intentionally bounded RFC 5545 subset. Unknown calendar or event properties
+remain in the raw feed but are ignored.</p>
+
+<h2>Complete supported VEVENT field dictionary</h2>
+<div class="scroll"><table>
+<thead><tr><th>iCalendar field</th><th>Parsed type</th><th>Required</th><th>Description</th><th>Mealvana mapping / behavior</th></tr></thead>
+<tbody>
+<tr><td><code>UID</code></td><td>string</td><td>Yes</td><td>Stable event identifier and deduplication key.</td><td><code>providerWorkoutId</code>; duplicate UIDs are filtered.</td></tr>
+<tr><td><code>DTSTART;VALUE=DATE</code></td><td>local <code>DateTime</code> + <code>isAllDay=true</code></td><td>One DTSTART form</td><td>All-day planned date.</td><td>Anchored at 06:00 device-local time.</td></tr>
+<tr><td><code>DTSTART</code> ending in <code>Z</code></td><td>UTC timestamp converted to local <code>DateTime</code></td><td>One DTSTART form</td><td>Absolute scheduled start.</td><td>Converted with <code>toLocal()</code>.</td></tr>
+<tr><td><code>DTSTART;TZID=...</code> or floating <code>DTSTART</code></td><td>local wall-clock <code>DateTime</code></td><td>One DTSTART form</td><td>Scheduled local time.</td><td>TZID is not resolved; wall-clock time is kept in the device timezone.</td></tr>
+<tr><td><code>DTEND</code></td><td><code>DateTime?</code></td><td>No</td><td>End time for a timed event.</td><td>Duration source 2: <code>DTEND - DTSTART</code>. All-day exclusive-next-day values are discarded.</td></tr>
+<tr><td><code>DURATION</code></td><td><code>Duration?</code></td><td>No</td><td>RFC 5545 / ISO 8601 duration; weeks, days, hours, minutes, seconds, and leading minus sign.</td><td>Duration source 3; non-positive values are unusable.</td></tr>
+<tr><td><code>X-WORKOUT-ESTIMATED-DURATION</code></td><td>positive integer seconds</td><td>No</td><td>Runna estimated moving time; fractional input is rounded.</td><td>Preferred duration source 1.</td></tr>
+<tr><td><code>SUMMARY</code></td><td>unescaped string</td><td>No</td><td>Compact workout label containing title and often distance/duration segments.</td><td>Title, distance, duration fallback, subtype, intensity, pace, and non-run filtering. Missing value becomes <code>Runna workout</code>.</td></tr>
+<tr><td><code>DESCRIPTION</code></td><td>unescaped string</td><td>No</td><td>Step-by-step workout text.</td><td><code>notes</code>; not structurally parsed into intervals or pace targets.</td></tr>
+<tr><td><code>URL</code></td><td>string / URL</td><td>No</td><td>Provider deep link.</td><td><code>providerWorkoutUrl</code>.</td></tr>
+<tr><td><code>LOCATION</code></td><td>unescaped string</td><td>No</td><td>Event location.</td><td>Parsed into <code>RunnaIcsEvent</code>, but not stored on the activity.</td></tr>
+<tr><td><code>LAST-MODIFIED</code></td><td><code>DateTime?</code></td><td>No</td><td>Provider modification timestamp.</td><td>Parsed but not used for change detection or stored.</td></tr>
+<tr><td><code>STATUS</code></td><td>enum-like string</td><td>No</td><td>Calendar event status.</td><td><code>CANCELLED</code> events are skipped and counted; other values have no special handling.</td></tr>
+<tr><td><code>RRULE</code></td><td>recurrence rule string</td><td>No</td><td>Recurring-event definition.</td><td>Any event with RRULE is skipped; recurrence expansion is not implemented.</td></tr>
+</tbody></table></div>
+
+<h3>Property parameters and encoding</h3>
+<p>Property names and parameter names are case-insensitive. The parser supports semicolon-delimited
+parameters including quoted values, folded physical lines, CRLF/LF/CR line endings, and RFC text
+escapes: <code>\n</code>/<code>\N</code>, <code>\,</code>, <code>\;</code>, and
+<code>\\</code>. If a supported property repeats, the last value wins.</p>
+
+<h2>Data derived from SUMMARY</h2>
+<table>
+<thead><tr><th>Derived value</th><th>Type / unit</th><th>Recognized inputs</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><strong>Workout title</strong></td><td>string</td><td>First bullet-separated segment</td><td>Leading emoji/punctuation removed; fallback <code>Runna workout</code>.</td></tr>
+<tr><td><strong>Distance</strong></td><td>number, miles</td><td><code>6mi</code>, <code>4.5 miles</code>, <code>10km</code>, <code>5k</code></td><td>Kilometres multiply by <code>0.621371</code>; the whole segment must be a distance.</td></tr>
+<tr><td><strong>Duration range</strong></td><td>integer minutes</td><td><code>50m - 55m</code>, <code>50 min - 55 min</code></td><td>Midpoint, rounded.</td></tr>
+<tr><td><strong>Duration hours</strong></td><td>integer minutes</td><td><code>1h</code>, <code>1hr</code>, <code>1h 10m</code></td><td>Converted to total minutes.</td></tr>
+<tr><td><strong>Duration single</strong></td><td>integer minutes</td><td><code>45m</code>, <code>45 mins</code>, <code>45 minutes</code></td><td>Fallback after custom duration, timed end, and DURATION.</td></tr>
+<tr><td><strong>Workout subtype</strong></td><td>enum-like string</td><td>Race, Long Run, Tempo, Threshold, Intervals, Speed, Fartlek, Hills, Progression, Recovery, Easy</td><td>Keyword heuristic; unrecognized titles remain null.</td></tr>
+<tr><td><strong>Intensity</strong></td><td>enum</td><td>easy, moderate, hard, race</td><td>Derived from subtype; unknown defaults to moderate.</td></tr>
+<tr><td><strong>Pace target</strong></td><td>number, min/mile</td><td>Derived duration / distance</td><td>Stored only when both inputs exist and result is 4.0-20.0 min/mile.</td></tr>
+</tbody></table>
+<p>Duration values are clamped to 1-1,440 minutes.</p>
+
+<h2>Imported activity shape</h2>
+<p>Every imported event is a <strong>planned running</strong> activity. The integration does not
+receive completion or actual-performance data.</p>
+<table>
+<thead><tr><th>Activity field</th><th>Type</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td><code>activityType</code></td><td>enum</td><td>Always <code>running</code>.</td></tr>
+<tr><td><code>status</code></td><td>enum</td><td>Always <code>planned</code>.</td></tr>
+<tr><td><code>title</code></td><td>string</td><td>Parsed SUMMARY title.</td></tr>
+<tr><td><code>scheduledDateTime</code></td><td><code>DateTime</code></td><td>DTSTART.</td></tr>
+<tr><td><code>distanceMiles</code></td><td>nullable number</td><td>Parsed SUMMARY distance.</td></tr>
+<tr><td><code>durationMinutes</code></td><td>nullable integer</td><td>Custom duration, timed end, DURATION, or SUMMARY fallback.</td></tr>
+<tr><td><code>paceTargetMinutesPerMile</code></td><td>nullable number</td><td>Derived from duration and distance.</td></tr>
+<tr><td><code>notes</code></td><td>nullable string</td><td>DESCRIPTION.</td></tr>
+<tr><td><code>workoutSubtype</code></td><td>nullable string</td><td>Summary keyword heuristic.</td></tr>
+<tr><td><code>intensityLevel</code></td><td>enum</td><td>Derived from subtype.</td></tr>
+<tr><td><code>providerWorkoutId</code></td><td>string</td><td>UID.</td></tr>
+<tr><td><code>providerWorkoutUrl</code></td><td>nullable string</td><td>URL.</td></tr>
+<tr><td><code>providerScheduledAt</code></td><td><code>DateTime</code></td><td>DTSTART.</td></tr>
+</tbody></table>
+<p>Strength, mobility, yoga, Pilates, conditioning, and cross-training events are filtered by
+summary keywords and are not imported.</p>
+
+<h2>Not available from the Runna feed</h2>
+<ul>
+<li>Athlete first name, last name, email, gender, date of birth, height, weight, body composition, or unit preference.</li>
+<li>Dietary preference or allergies.</li>
+<li>Completed-workout actuals, GPS, heart rate, power, cadence, laps, or sensor samples.</li>
+<li>A structured machine-readable interval tree; step text is available only as DESCRIPTION.</li>
+<li>OAuth scopes, webhooks, write-back, activity uploads, zones, race calendar objects, or profile endpoints.</li>
+</ul>
+
+<h2>Sync semantics</h2>
+<ul>
+<li>Incoming events are deduplicated by UID.</li>
+<li>Malformed, cancelled, recurring, duplicate, and filtered non-run events are counted separately.</li>
+<li>If Runna regenerates UIDs, a same-day plus normalized-title fallback adopts the new UID onto an existing planned activity.</li>
+<li>A missing event is deleted only when its date lies inside the current feed's observed minimum/maximum date window, avoiding deletion when older workouts roll out of Runna's limited feed window.</li>
+</ul>
+<p><strong>Canonical Markdown:</strong> <code>docs/integration/api-exploration/runna/README.md</code>.</p>
+</div></article>
     </div>
   </div>
 </div>
@@ -12816,7 +13073,7 @@ UUIDs are fabricated.</p>
   var app = document.getElementById('app');
   var crumb = document.getElementById('crumb');
   var nowTitle = document.getElementById('nowTitle');
-  var CRUMBS = {"overview": ["Overview"], "how": ["How the APIs work"], "garmin__readme": ["Garmin", "Overview"], "garmin__authentication": ["Garmin", "Authentication (OAuth2 + PKCE)"], "garmin__endpoints": ["Garmin", "Endpoints"], "garmin__activity-data": ["Garmin", "Activity API Data Model"], "garmin__health-data": ["Garmin", "Health API Data Model"], "garmin__training-courses-womens": ["Garmin", "Training, Courses & Women's Health APIs"], "garmin__field-reference": ["Garmin", "Complete Field Reference"], "garmin__examples": ["Garmin", "Examples \u00b7 21"], "training-peaks__readme": ["TrainingPeaks", "Overview"], "training-peaks__authentication": ["TrainingPeaks", "Authentication"], "training-peaks__endpoints": ["TrainingPeaks", "Endpoints"], "training-peaks__workout-data": ["TrainingPeaks", "Workout Data"], "training-peaks__athlete-data": ["TrainingPeaks", "Athlete, Zones & Events"], "training-peaks__writeback": ["TrainingPeaks", "Write API"], "training-peaks__field-reference": ["TrainingPeaks", "Field Reference"], "training-peaks__examples": ["TrainingPeaks", "Examples \u00b7 18"], "final-surge__readme": ["Final Surge", "Overview"], "final-surge__authentication": ["Final Surge", "Authentication"], "final-surge__endpoints": ["Final Surge", "Endpoints"], "final-surge__workout-data": ["Final Surge", "Workout Data"], "final-surge__field-reference": ["Final Surge", "Field Reference"], "final-surge__examples": ["Final Surge", "Examples \u00b7 17"], "vdot-o2__readme": ["VDOT O2", "Overview"], "vdot-o2__authentication": ["VDOT O2", "Authentication"], "vdot-o2__endpoints": ["VDOT O2", "Endpoints"], "vdot-o2__workout-data": ["VDOT O2", "Workout Data"], "vdot-o2__field-reference": ["VDOT O2", "Field Reference"], "vdot-o2__examples": ["VDOT O2", "Examples \u00b7 11"]};
+  var CRUMBS = {"overview": ["Overview"], "how": ["How the APIs work"], "onboarding-matrix": ["Onboarding data matrix"], "garmin__readme": ["Garmin", "Overview"], "garmin__authentication": ["Garmin", "Authentication (OAuth2 + PKCE)"], "garmin__endpoints": ["Garmin", "Endpoints"], "garmin__activity-data": ["Garmin", "Activity API Data Model"], "garmin__health-data": ["Garmin", "Health API Data Model"], "garmin__training-courses-womens": ["Garmin", "Training, Courses & Women's Health APIs"], "garmin__field-reference": ["Garmin", "Complete Field Reference"], "garmin__examples": ["Garmin", "Examples \u00b7 21"], "training-peaks__readme": ["TrainingPeaks", "Overview"], "training-peaks__authentication": ["TrainingPeaks", "Authentication"], "training-peaks__endpoints": ["TrainingPeaks", "Endpoints"], "training-peaks__workout-data": ["TrainingPeaks", "Workout Data"], "training-peaks__athlete-data": ["TrainingPeaks", "Athlete, Zones & Events"], "training-peaks__writeback": ["TrainingPeaks", "Write API"], "training-peaks__field-reference": ["TrainingPeaks", "Field Reference"], "training-peaks__examples": ["TrainingPeaks", "Examples \u00b7 18"], "final-surge__readme": ["Final Surge", "Overview"], "final-surge__authentication": ["Final Surge", "Authentication"], "final-surge__endpoints": ["Final Surge", "Endpoints"], "final-surge__workout-data": ["Final Surge", "Workout Data"], "final-surge__field-reference": ["Final Surge", "Field Reference"], "final-surge__examples": ["Final Surge", "Examples \u00b7 17"], "vdot-o2__readme": ["VDOT O2", "Overview"], "vdot-o2__authentication": ["VDOT O2", "Authentication"], "vdot-o2__endpoints": ["VDOT O2", "Endpoints"], "vdot-o2__workout-data": ["VDOT O2", "Workout Data"], "vdot-o2__field-reference": ["VDOT O2", "Field Reference"], "vdot-o2__examples": ["VDOT O2", "Examples \u00b7 11"], "runna__reference": ["Runna", "Complete Field Reference"]};
   function show(id, push, anchor){
     var target = document.getElementById(id);
     if(!target){ id='overview'; target=document.getElementById('overview'); }
@@ -12829,7 +13086,7 @@ UUIDs are fabricated.</p>
     if(activeLink){ var grp = activeLink.closest('.nav-group'); if(grp) grp.classList.remove('collapsed'); }
     window.scrollTo(0,0);
     if(anchor){ var el=document.getElementById(anchor); if(el){ el.scrollIntoView({block:'start'}); el.classList.add('flash'); setTimeout(function(){el.classList.remove('flash');},1200); } }
-    if(push!==false){ history.replaceState(null,'',' #'+id); }
+    if(push!==false){ history.replaceState(null,'','#'+id); }
     app.classList.remove('open');
   }
   document.getElementById('nav').addEventListener('click', function(e){
@@ -12845,19 +13102,99 @@ UUIDs are fabricated.</p>
   });
   document.getElementById('menuBtn').addEventListener('click', function(){ app.classList.toggle('open'); });
   var filter = document.getElementById('filter');
+  var side = document.getElementById('side');
+  var searchResults = document.getElementById('searchResults');
+  var searchStatus = document.getElementById('searchStatus');
+  var searchIndex = docs.map(function(doc){
+    var cb = CRUMBS[doc.id] || [doc.id];
+    var title = cb.join(' / ');
+    var blocks=Array.prototype.slice.call(doc.querySelectorAll('h1,h2,h3,h4,p,li,th,td,pre'))
+      .map(function(el){return el.textContent;}).join(' ');
+    return {id:doc.id, title:title, path:cb.join(' › '), text:(title+' '+blocks).replace(/\s+/g,' ').trim()};
+  });
+  function escapeHtml(value){
+    return value.replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+  }
+  function highlighted(value,tokens){
+    var alternatives=tokens.filter(Boolean).map(function(token){
+      return token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    });
+    if(!alternatives.length)return escapeHtml(value);
+    var pattern=new RegExp(alternatives.join('|'),'ig'), output='', last=0, match;
+    while((match=pattern.exec(value))!==null){
+      output+=escapeHtml(value.slice(last,match.index))+'<mark>'+escapeHtml(match[0])+'</mark>';
+      last=match.index+match[0].length;
+    }
+    return output+escapeHtml(value.slice(last));
+  }
+  function snippet(text,tokens){
+    var lower=text.toLowerCase();
+    var at=lower.indexOf(tokens[0]);
+    if(at<0)at=0;
+    var start=Math.max(0,at-72), end=Math.min(text.length,at+150);
+    var value=(start?'…':'')+text.slice(start,end)+(end<text.length?'…':'');
+    return highlighted(value,tokens);
+  }
+  function findFirstHit(article,tokens){
+    var candidates=article.querySelectorAll('h1,h2,h3,h4,p,li,td,th,pre');
+    for(var i=0;i<candidates.length;i++){
+      var value=candidates[i].textContent.toLowerCase();
+      if(tokens.every(function(token){return value.indexOf(token)>=0;}))return candidates[i];
+    }
+    return article;
+  }
   filter.addEventListener('input', function(){
     var q = filter.value.trim().toLowerCase();
-    document.querySelectorAll('.nav-group').forEach(function(g){
-      var any=false;
-      g.querySelectorAll('.nav-link').forEach(function(l){
-        var hit = !q || l.textContent.toLowerCase().indexOf(q)>=0 || g.querySelector('.ng-label').textContent.toLowerCase().indexOf(q)>=0;
-        l.style.display = hit?'':'none'; if(hit) any=true;
-      });
-      g.style.display = any?'':'none'; if(q&&any) g.classList.remove('collapsed');
-    });
-    document.querySelectorAll('.nav-sec .nav-link').forEach(function(l){
-      l.style.display = (!q || l.textContent.toLowerCase().indexOf(q)>=0)?'':'none';
-    });
+    if(!q){
+      side.classList.remove('searching');
+      searchResults.innerHTML='';
+      searchStatus.textContent='Full-text search';
+      return;
+    }
+    side.classList.add('searching');
+    var tokens=q.split(/\s+/).filter(Boolean);
+    var matches=searchIndex.map(function(item){
+      var lower=item.text.toLowerCase();
+      if(!tokens.every(function(token){return lower.indexOf(token)>=0;}))return null;
+      var score=tokens.reduce(function(total,token){
+        return total+(item.title.toLowerCase().indexOf(token)>=0?20:0)+(lower.split(token).length-1);
+      },0);
+      return {item:item,score:score};
+    }).filter(Boolean).sort(function(a,b){return b.score-a.score;}).slice(0,50);
+    searchStatus.textContent=matches.length+(matches.length===1?' result':' results');
+    if(!matches.length){
+      searchResults.innerHTML='<div class="search-empty">No page contains every search term. Try a field name, endpoint, unit, type, or provider.</div>';
+      return;
+    }
+    searchResults.innerHTML=matches.map(function(match){
+      return '<button class="search-result" type="button" data-search-goto="'+escapeHtml(match.item.id)+'">'
+        +'<span class="sr-title">'+highlighted(match.item.title,tokens)+'</span>'
+        +'<span class="sr-path">'+escapeHtml(match.item.path)+'</span>'
+        +'<span class="sr-snippet">'+snippet(match.item.text,tokens)+'</span></button>';
+    }).join('');
+  });
+  searchResults.addEventListener('click',function(e){
+    var result=e.target.closest('[data-search-goto]');
+    if(!result)return;
+    var id=result.getAttribute('data-search-goto');
+    var tokens=filter.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    show(id,true);
+    var hit=findFirstHit(document.getElementById(id),tokens);
+    if(hit){
+      hit.scrollIntoView({block:'center'});
+      hit.classList.add('search-hit');
+      setTimeout(function(){hit.classList.remove('search-hit');},1800);
+    }
+  });
+  document.addEventListener('keydown',function(e){
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){
+      e.preventDefault(); filter.focus(); filter.select();
+    }else if(e.key==='Escape'&&document.activeElement===filter){
+      filter.value=''; filter.dispatchEvent(new Event('input')); filter.blur();
+    }else if(e.key==='Enter'&&document.activeElement===filter){
+      var first=searchResults.querySelector('[data-search-goto]');
+      if(first)first.click();
+    }
   });
   window.addEventListener('hashchange', function(){
     var id=(location.hash||'').replace('#','');

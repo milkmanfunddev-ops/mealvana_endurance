@@ -38,16 +38,32 @@ import 'package:mealvana_endurance/features/ai_credits/application/purchase_cont
 import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/revenuecat_service.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
+import 'package:mealvana_endurance/shared/services/prefs_provider.dart';
+import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
+/// Stands in for the Supabase auth user id that RevenueCat is identified with.
+const _testUserId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
+
 class _MockRevenueCatService extends Mock implements RevenueCatService {}
 
 class _MockCreditsRepository extends Mock implements CreditsRepository {}
 
-class _FakePackage extends Fake implements Package {}
+/// A [StoreProduct] stub carrying only what the controller reads: the SKU,
+/// which is attached to Sentry reports so a failed purchase names its pack.
+class _FakeStoreProduct extends Fake implements StoreProduct {
+  @override
+  String get identifier => 'mealvana_credits_50';
+}
+
+class _FakePackage extends Fake implements Package {
+  @override
+  StoreProduct get storeProduct => _FakeStoreProduct();
+}
 
 // ---------------------------------------------------------------------------
 // Fallback registration
@@ -55,6 +71,7 @@ class _FakePackage extends Fake implements Package {}
 
 void _registerFallbacks() {
   registerFallbackValue(_FakePackage());
+  registerFallbackValue((CreditWallet _) {});
 }
 
 // ---------------------------------------------------------------------------
@@ -65,6 +82,8 @@ void _registerFallbacks() {
 
 typedef _Cleanup = void Function();
 
+late SharedPreferences _prefs;
+
 (ProviderContainer, _Cleanup) _buildContainer({
   required _MockRevenueCatService rcService,
   required _MockCreditsRepository creditsRepo,
@@ -73,6 +92,10 @@ typedef _Cleanup = void Function();
     overrides: [
       revenueCatServiceProvider.overrideWithValue(rcService),
       creditsRepositoryProvider.overrideWithValue(creditsRepo),
+      sharedPreferencesProvider.overrideWithValue(_prefs),
+      // Keep the real Sentry SDK out of unit tests; the controller now reports
+      // purchase failures through this provider.
+      sentryReporterProvider.overrideWithValue(const NoopSentryReporter()),
     ],
   );
 
@@ -111,10 +134,19 @@ void main() {
 
   setUpAll(_registerFallbacks);
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    _prefs = await SharedPreferences.getInstance();
     rcService = _MockRevenueCatService();
     creditsRepo = _MockCreditsRepository();
     fakePackage = _FakePackage();
+    // buy() now refuses to reach the store without a signed-in user and
+    // re-asserts the RevenueCat identity first, so both must be stubbed.
+    when(() => creditsRepo.ensureWallet()).thenAnswer((_) async => null);
+    when(() => creditsRepo.subscribeToWallet(any())).thenReturn(null);
+    when(() => creditsRepo.currentUserId).thenReturn(_testUserId);
+    when(() => creditsRepo.isAnonymousUser).thenReturn(false);
+    when(() => rcService.logIn(any())).thenAnswer((_) async {});
   });
 
   // -------------------------------------------------------------------------
@@ -522,6 +554,194 @@ void main() {
         );
       },
       timeout: const Timeout(Duration(seconds: 30)),
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // buy() — the returned PurchaseOutcome
+  //
+  // These pin the distinction the UI depends on. The sheet used to infer the
+  // result from a wallet-balance delta, which collapsed three very different
+  // situations into one message — including telling a user who HAD been
+  // charged that nothing was charged.
+  // -------------------------------------------------------------------------
+
+  group('PurchaseController.buy — outcome', () {
+    test('balance increases → PurchaseOutcome.credited', () async {
+      var balance = 100;
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet(balance: balance));
+      when(() => rcService.purchase(any())).thenAnswer((_) async {
+        balance = 150;
+        return true;
+      });
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(creditsControllerProvider.future);
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.credited);
+    });
+
+    test('store confirms but the wallet never moves → '
+        'PurchaseOutcome.purchasedButNotCredited (NOT failed)', () async {
+      // The webhook is late or never lands. The user has paid.
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => const CreditWallet(balance: 100));
+      when(() => rcService.purchase(any())).thenAnswer((_) async => true);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(creditsControllerProvider.future);
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(
+        outcome,
+        PurchaseOutcome.purchasedButNotCredited,
+        reason:
+            'Reporting this as `failed` would tell a user who was charged '
+            'that nothing was charged — the specific bug this enum fixes.',
+      );
+    }, timeout: const Timeout(Duration(seconds: 30)));
+
+    test('service returns false (cancel or store rejection) → '
+        'PurchaseOutcome.cancelled, and the wallet is never polled', () async {
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => const CreditWallet(balance: 100));
+      when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(creditsControllerProvider.future);
+      await container.read(purchaseControllerProvider.future);
+
+      final sw = Stopwatch()..start();
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+      sw.stop();
+
+      expect(outcome, PurchaseOutcome.cancelled);
+      // Returning early matters: polling here would make a cancel take 7.5s.
+      expect(sw.elapsed, lessThan(const Duration(seconds: 2)));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // buy() — authentication precondition
+  //
+  // The RevenueCat webhook maps `app_user_id` onto `auth.users.id`, so a
+  // purchase made without a signed-in user takes money and credits nobody.
+  // -------------------------------------------------------------------------
+
+  group('PurchaseController.buy — requires a signed-in user', () {
+    test('no signed-in user → PurchaseOutcome.notSignedIn and the store is '
+        'never contacted', () async {
+      when(() => creditsRepo.currentUserId).thenReturn(null);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.notSignedIn);
+      verifyNever(() => rcService.purchase(any()));
+    });
+
+    test('anonymous user → PurchaseOutcome.requiresAccount and the store is '
+        'never contacted', () async {
+      // A Supabase anonymous session has a perfectly valid user id, which is
+      // exactly why the old null-check guard let it through. Only the
+      // link-in-place "Create Account" upgrade preserves that id — signing in
+      // to an existing account swaps it and strands the purchased credits —
+      // so the purchase must be refused before money changes hands.
+      when(() => creditsRepo.isAnonymousUser).thenReturn(true);
+      when(
+        () => creditsRepo.fetchWallet(),
+      ).thenAnswer((_) async => CreditWallet.zero);
+
+      final (container, cleanup) = _buildContainer(
+        rcService: rcService,
+        creditsRepo: creditsRepo,
+      );
+      addTearDown(cleanup);
+
+      await container.read(purchaseControllerProvider.future);
+
+      final outcome = await container
+          .read(purchaseControllerProvider.notifier)
+          .buy(fakePackage);
+
+      expect(outcome, PurchaseOutcome.requiresAccount);
+      verifyNever(() => rcService.purchase(any()));
+      // Not even the identity re-assertion should run — the flow stops cold.
+      verifyNever(() => rcService.logIn(any()));
+
+      final state = container.read(purchaseControllerProvider);
+      expect(
+        state,
+        isA<AsyncData<void>>(),
+        reason: 'Refusal is a funnel step, not an error state.',
+      );
+    });
+
+    test(
+      'signed-in user → RevenueCat identity is re-asserted before purchasing',
+      () async {
+        when(
+          () => creditsRepo.fetchWallet(),
+        ).thenAnswer((_) async => CreditWallet.zero);
+        when(() => rcService.purchase(any())).thenAnswer((_) async => false);
+
+        final (container, cleanup) = _buildContainer(
+          rcService: rcService,
+          creditsRepo: creditsRepo,
+        );
+        addTearDown(cleanup);
+
+        await container.read(purchaseControllerProvider.future);
+        await container
+            .read(purchaseControllerProvider.notifier)
+            .buy(fakePackage);
+
+        // logIn runs once at startup, so a user who signed in afterwards would
+        // otherwise still be carrying the anonymous RevenueCat id.
+        verify(() => rcService.logIn(_testUserId)).called(1);
+      },
     );
   });
 

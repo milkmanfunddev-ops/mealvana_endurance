@@ -1,0 +1,31 @@
+{
+  "tag": "retry1",
+  "model": "anthropic/claude-opus-5",
+  "latency_s": 13.36,
+  "input_tokens": 1715,
+  "output_tokens": 990,
+  "analysis": {
+    "name": "Chipotle Burrito Bowl (brown rice, black beans, double chicken, guac)",
+    "suggested_slot": "lunch",
+    "confidence": "high",
+    "items": [
+      {
+        "name": "Chipotle burrito bowl with brown rice, black beans, double chicken, fajita veggies, corn salsa, cheese and guacamole (no sour cream)",
+        "portion": "1 full bowl (~750 g)",
+        "calories": 1025,
+        "carb_g": 86,
+        "protein_g": 87.5,
+        "fat_g": 41,
+        "sodium_mg": 1680
+      }
+    ],
+    "totals": {
+      "calories": 1025,
+      "carb_g": 86,
+      "protein_g": 87.5,
+      "fat_g": 41,
+      "sodium_mg": 1680
+    },
+    "notes": "Logged as one dish since a burrito bowl is a single composed meal. Estimates use Chipotle's published serving data: 4 oz brown rice, black beans, 2x chicken (~8 oz cooked), fajita veggies, corn salsa, shredded cheese, and roughly a half scoop of guacamole. Sodium is high (~1680 mg) which is generally fine given the morning training session, but worth noting. Carbs ~86 g may be on the low side for post-long-session refueling \u2014 consider adding tortilla chips or a beverage with carbs if recovery glycogen is a priority."
+  }
+}

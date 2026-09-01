@@ -53,6 +53,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
@@ -70,6 +71,11 @@ void main() {
 
       final stamp = DateTime.now().millisecondsSinceEpoch;
       final workoutName = 'Patrol Run $stamp';
+      // TimelineNodeTile renders `activity.title.toUpperCase()`, so a
+      // `find.text` on the mixed-case name we typed matches NOTHING. Match on
+      // the epoch stamp instead: digits are case-invariant, and it is unique
+      // per run so it cannot collide with rows left behind by earlier runs.
+      final onTimeline = find.textContaining('$stamp');
 
       // ---- 1. New activity → running create form ------------------------
       // There is no calendar FAB: the app's entry point to /distancepacegut is
@@ -121,7 +127,10 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await $.pump(const Duration(milliseconds: 400));
       await $(const ValueKey('activity_create.generate_plan_button'))
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
 
       // ---- 4. Adjust-macros screen — macros generated & rendered --------
@@ -137,7 +146,10 @@ void main() {
 
       // ---- 5. Create Plan → lands on the plan detail --------------------
       await $(const ValueKey('adjust_macros.create_plan_button'))
-          .scrollTo(settleBetweenScrollsTimeout: const Duration(seconds: 1))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(seconds: 1),
+          )
           .tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('plan_detail.title'),
@@ -148,10 +160,53 @@ void main() {
       // plan_detail. plan_detail's back only pops one level, so unwind by
       // tapping whichever back button is present until the calendar reappears.
       await _returnToCalendar($);
+      // The selected day and the filter are app-level state shared with every
+      // other flow in the bundle, and this flow's create stack can move the
+      // day. Restate what "on the timeline" means before asserting it.
+      await ensureTimelineOnToday($);
+
+      // Poll rather than assert on the first frame back. Creating the plan ends
+      // with `ref.invalidate(activitiesControllerProvider)`, and the Fuel
+      // Timeline rebuilds from that provider's *async* refetch — so returning
+      // to the timeline and asserting immediately races the refresh. That race
+      // is what failed this flow on 2026-07-31 (and again locally on the first
+      // run that got this far), long after every UI interaction had succeeded.
+      //
+      // Fixed pumps, never settles: the timeline holds a spinner while the
+      // refetch is in flight, so anything that settles would burn its timeout
+      // against it.
+      // Prove the CREATE landed in the database first. This is the assertion
+      // that cannot lie: it is independent of scroll position, lazy list
+      // building and refresh timing, all of which have produced false failures
+      // here. If this passes and the timeline check below fails, the write is
+      // fine and the rendering is at fault — the failure messages say so.
+      final probe = await SupabaseProbe.signIn();
+      if (probe != null) {
+        expect(
+          await probe.activityByTitle(workoutName),
+          isNotNull,
+          reason:
+              'No activities row titled "$workoutName" for this athlete after '
+              'Create Plan, even though plan detail rendered. The write never '
+              'reached Supabase.',
+        );
+      } else {
+        debugPrint(
+          '[activities_crud] Supabase probe unavailable — create/delete '
+          'persistence assertions skipped (UI assertions still ran).',
+        );
+      }
+
+      final appeared = await waitForOnTimeline($, onTimeline);
       expect(
-        $(workoutName),
-        findsWidgets,
-        reason: 'Created activity should appear as a card on the calendar.',
+        appeared,
+        isTrue,
+        reason:
+            'Created activity "$workoutName" never appeared on the Fuel '
+            'Timeline within 20s of returning from the create flow. The plan '
+            'itself was created (plan_detail rendered), so if this persists '
+            'the gap is between the activity write and the timeline refresh, '
+            'not in this test.',
       );
 
       // ---- 7. DELETE — swipe the card (either direction deletes) --------
@@ -160,7 +215,7 @@ void main() {
       // pumps only: any settle here can burn its full timeout against the
       // timeline's persistent spinner.
       final cardRow = find.ancestor(
-        of: find.text(workoutName),
+        of: onTimeline,
         matching: find.byType(Dismissible),
       );
       expect(
@@ -185,14 +240,31 @@ void main() {
       }
 
       // ---- 8. Assert the activity card is gone --------------------------
-      final cardGone = await _pumpUntilGone($, $(workoutName));
+      final cardGone = await _pumpUntilGone($, $(onTimeline));
       expect(
         cardGone,
         isTrue,
         reason: 'Deleted activity should no longer appear on the calendar.',
       );
+
+      // ---- 9. PERSISTED STATE — the row, not just the pixels -------------
+      // A vanished card proves the list rebuilt without the row; it does not
+      // prove the delete was written. An optimistic local removal whose upload
+      // silently failed looks exactly the same on screen, and the row comes
+      // back on the next device. Read it back.
+      if (probe != null) {
+        expect(
+          await probe.activityIsGone(workoutName),
+          isTrue,
+          reason:
+              'The card disappeared from the timeline, but the activities row '
+              'for "$workoutName" is still present and not tombstoned in '
+              'Supabase. The delete was applied locally and never reached the '
+              'server, so the workout returns on the next sync or device.',
+        );
+      }
     },
-    timeout: const Timeout(Duration(minutes: 10)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 
@@ -242,13 +314,43 @@ Future<void> _fillField(
   try {
     await $(key).waitUntilVisible(timeout: const Duration(seconds: 3));
   } on Exception {
-    await $(key).scrollTo(
-      view: find.byType(SingleChildScrollView).first,
-      settleBetweenScrollsTimeout: const Duration(seconds: 1),
-    );
+    await _revealField($, key);
   }
   await $(key).enterText(text, settlePolicy: SettlePolicy.noSettle);
   await $.pump(const Duration(milliseconds: 200));
+}
+
+/// Bring [key] into view without guessing a scroll direction.
+///
+/// `scrollTo` drags one way only — it takes its direction from the
+/// scrollable's `axisDirection`, which for this form is always `down`. When the
+/// target sits *above* the current offset every drag moves further from it, so
+/// the finder walks its full `maxScrolls` to the bottom of the form and only
+/// then throws. That is what happened to `duration_hr_field` on the M1 run of
+/// 2026-07-31, and a naive "try down, then up" retry does not fix it either:
+/// the recovery pass has to out-scroll everything the first pass travelled just
+/// to get back to where it started.
+///
+/// `ensureVisible` asks the target's own nearest Scrollable to reveal it, so
+/// it needs neither a direction nor an iteration count and cannot overshoot.
+/// The [key] must already exist in the tree — callers check that first, and a
+/// widget that exists but still refuses to become hit-testable is a real
+/// finding rather than something to scroll harder at.
+Future<void> _revealField(
+  PatrolIntegrationTester $,
+  ValueKey<String> key,
+) async {
+  final target = find.byKey(key);
+  if (target.evaluate().isEmpty) {
+    throw StateError(
+      '${key.value} is not in the widget tree at all — the form is showing a '
+      'different mode or tab than this flow expects.',
+    );
+  }
+
+  await $.tester.ensureVisible(target.first);
+  // Fixed pump, never settle: this form can hold a weather/zone spinner.
+  await $.pump(const Duration(milliseconds: 400));
 }
 
 /// Polls with fixed pumps (never settles) until [finder] matches nothing.

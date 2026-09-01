@@ -1,5 +1,6 @@
 import 'food_item_data.dart';
 import 'macro_shortfall.dart';
+import 'pre_workout_feeding_labels.dart';
 import 'time_slot_assignment.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -41,24 +42,26 @@ class BeforeSubPhase {
   /// (Formula Kit PR 2 substep 9).
   final PinDecision? pinDecision;
 
-  /// Display title for this sub-phase
-  String get displayTitle {
-    switch (subPhaseType) {
-      case 'meal':
-        return 'Full Meal';
-      case 'snack':
-        return 'Pre-Workout Snack';
-      case 'top_up':
-        return 'Top-Off';
-      default:
-        return subPhaseType;
-    }
-  }
+  /// Display title for this sub-phase, sport-aware when [sport] is known
+  /// ("Pre-Run Meal" / "Pre-Ride Meal"), generic ("Pre-Workout Meal")
+  /// otherwise. See [preWorkoutFeedingTitle].
+  String displayTitleFor(ActivityType? sport) =>
+      preWorkoutFeedingTitle(subPhaseType, sport: sport);
 
-  /// Auto-generated summary of foods in this sub-phase (for collapsed display).
-  /// Shows food names only (no quantities) for a clean, scannable format.
+  /// Sport-agnostic display title for this sub-phase.
+  String get displayTitle => displayTitleFor(null);
+
+  /// Summary of this sub-phase for collapsed display.
+  ///
+  /// Prefers the curated template's own name ("Smoothie", "Oatmeal + Raisins")
+  /// so a multi-ingredient recommendation reads as one item; falls back to
+  /// joining the ingredient names when no curated name exists
+  /// (bug 3abe3fdb754c8153: the getter used to gate templateName behind an
+  /// empty-foodItems condition that never occurs, so the name was never shown).
   String get templateSummary {
-    if (foodItems.isEmpty) return templateName ?? '';
+    final name = templateName;
+    if (name != null && name.isNotEmpty) return name;
+    if (foodItems.isEmpty) return '';
     return foodItems
         .map((f) => _simplifyName(f.displayName ?? f.name))
         .join(' + ');

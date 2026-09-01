@@ -23,45 +23,59 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts';
 import { pickDrink } from './pre-workout.ts';
 import type { PreWorkoutTemplate } from './types.ts';
+import {
+  type IngredientPoolRow,
+  ingredientRowToTemplate,
+} from './ingredient-pools.ts';
 
 // ============================================================================
-// Fixtures
+// Fixtures — template_foods-shaped rows through the production adapter.
+//
+// Since the 2026-08-06 repoint, pickDrink's pool comes from `template_foods`
+// (ingredient-pools.ts), not from pre_workout_templates rows. Fixtures go
+// through `ingredientRowToTemplate` so these tests exercise the exact shape
+// the production loader hands the picker.
 // ============================================================================
 
-function makeTemplate(overrides: Partial<PreWorkoutTemplate> & { id: string; name: string }): PreWorkoutTemplate {
-  return {
-    base_category: 'Hydration',
-    time_window: '< 30 min',
-    digestion_speed: 'fast',
-    allergens: [],
-    serving_unit: 'cup',
-    min_servings: 1,
-    max_servings: 2,
-    plus_banana: false,
-    plus_sports_drink: false,
-    carbs_per_serving: 0,
-    protein_per_serving: 0,
-    fat_per_serving: 0,
+function makeIngredient(
+  overrides: Partial<IngredientPoolRow> & { id: string; name: string },
+): PreWorkoutTemplate {
+  const row: IngredientPoolRow = {
+    display_name: null,
+    serving_size: '1 cup (8 fl oz / 240 mL)',
+    serving_unit: null,
+    carbs_g: 0,
+    protein_g: 0,
+    fat_g: 0,
     sodium_mg: 0,
     fluid_ml: 240,
-    template_type: 'drink',
-    is_active: true,
-    component_food_names: [],
-    component_quantities: {},
+    allergens: [],
+    excluded_diets: [],
+    // Divisible, but min lands at 0.5 and the old fixtures started at 1 —
+    // keep indivisible so serving enumeration (1..max) matches the
+    // pre-repoint expectations these tests pin.
+    is_indivisible: true,
+    max_servings_before: 2,
+    is_drink_pool: true,
+    drink_pool_phases: ['top_up'],
+    is_electrolyte: false,
     ...overrides,
   };
+  return ingredientRowToTemplate(row, 'drink');
 }
 
-const WATER = makeTemplate({
+const WATER = makeIngredient({
   id: 'water',
-  name: 'Water',
+  name: 'water',
+  display_name: 'Water',
   sodium_mg: 0,
   fluid_ml: 240,
 });
 
-const SPORTS_DRINK = makeTemplate({
+const SPORTS_DRINK = makeIngredient({
   id: 'sports-drink',
-  name: 'Sports Drink',
+  name: 'sports_drink',
+  display_name: 'Sports Drink',
   sodium_mg: 200,
   fluid_ml: 240,
 });

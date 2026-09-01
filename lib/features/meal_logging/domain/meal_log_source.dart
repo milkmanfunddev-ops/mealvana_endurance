@@ -13,7 +13,7 @@ enum MealLogSource {
   /// Typed in manually by the user (name + macros).
   manual('manual'),
 
-  /// Described to the Jade AI in natural language.
+  /// Described to the Mealvana AI AI in natural language.
   describe('describe'),
 
   /// Copied from a saved meal in the user's favorites.
@@ -22,8 +22,8 @@ enum MealLogSource {
   /// Scaled from a recipe in the curated recipe catalog.
   recipe('recipe'),
 
-  /// Prepopulated by Jade as part of a baseline daily plan.
-  jadeBaseline('jade_baseline');
+  /// Prepopulated by Mealvana AI as part of a baseline daily plan.
+  aiCoachBaseline('jade_baseline');
 
   const MealLogSource(this.wireValue);
 

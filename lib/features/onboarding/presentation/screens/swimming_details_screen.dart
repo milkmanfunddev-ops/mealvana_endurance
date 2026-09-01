@@ -68,11 +68,6 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
 
   bool get _isOnboarding => widget.mode == ScreenMode.onboarding;
   bool get _isSettings => widget.mode == ScreenMode.settings;
-  bool get _hasChanges =>
-      _typicalWetsuit != _originalTypicalWetsuit ||
-      _swimCapType != _originalSwimCapType ||
-      (int.tryParse(_cssMinutesController.text) ?? 0) != _originalCssMinutes ||
-      (int.tryParse(_cssSecondsController.text) ?? 0) != _originalCssSeconds;
 
   @override
   void initState() {
@@ -84,28 +79,6 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
         .read(appExternalDepsProvider)
         .analytics
         .track('screen_viewed', properties: {'screen_name': screenName});
-
-    // In onboarding mode, initialize from cache
-    if (_isOnboarding) {
-      final controller = ref.read(onboardingControllerProvider.notifier);
-      final cachedPrefs = controller.cachedSportPreferences;
-      if (cachedPrefs != null) {
-        final cssPacePer100mSeconds =
-            cachedPrefs['cssPacePer100mSeconds'] as int?;
-        if (cssPacePer100mSeconds != null) {
-          _cssMinutesController.text = (cssPacePer100mSeconds ~/ 60).toString();
-          _cssSecondsController.text = (cssPacePer100mSeconds % 60).toString();
-        }
-        final typicalWetsuit = cachedPrefs['typicalWetsuit'] as bool?;
-        if (typicalWetsuit != null) {
-          _typicalWetsuit = typicalWetsuit;
-        }
-        final typicalSwimCapType = cachedPrefs['typicalSwimCapType'] as String?;
-        if (typicalSwimCapType != null) {
-          _swimCapType = typicalSwimCapType;
-        }
-      }
-    }
 
     // In settings mode, load the current preferences
     if (_isSettings) {
@@ -183,13 +156,8 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
       final cssSeconds = _calculateCssSeconds();
 
       if (_isOnboarding) {
-        // ONBOARDING MODE: Cache data
-        controller.cacheSportPreferences(
-          cssPacePer100mSeconds: cssSeconds,
-          typicalWetsuit: _typicalWetsuit,
-          typicalSwimCapType: _swimCapType,
-        );
-
+        // ONBOARDING MODE (legacy — sport details left the onboarding flow in
+        // the 2026-08 redesign; nothing to persist here).
         unawaited(
           analytics.track(
             'swimming_details_completed',

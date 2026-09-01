@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../domain/activity.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -11,8 +10,11 @@ import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution.dart';
+import '../navigation/open_activity_fuel.dart';
 import '../providers/activities_controller.dart';
 
 /// Reusable activity card widget matching Kyle's design.
@@ -94,7 +96,7 @@ class ActivityCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark ? AppColors.blackberryLight : Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: AppRadius.cardRadius,
         border: Border.all(
           color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
             alpha: 0.1,
@@ -107,7 +109,7 @@ class ActivityCard extends ConsumerWidget {
         onTap: () => isSelectionMode
             ? onSelectionToggle?.call()
             : _handleTap(context, ref),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: AppRadius.cardRadius,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -129,16 +131,14 @@ class ActivityCard extends ConsumerWidget {
     );
   }
 
+  /// Radius + margin mirror [_buildCard] exactly so the reveal is card-shaped.
   Widget _buildDismissBackground(bool isDark, Alignment alignment) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: AppColors.error,
-        borderRadius: BorderRadius.circular(15),
-      ),
+    return SwipeActionBackground(
       alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: const Icon(Icons.delete, color: Colors.white, size: 24),
+      color: AppColors.error,
+      borderRadius: AppRadius.cardRadius,
+      margin: const EdgeInsets.only(bottom: 12),
+      icon: const Icon(Icons.delete, color: Colors.white, size: 24),
     );
   }
 
@@ -309,38 +309,9 @@ class ActivityCard extends ConsumerWidget {
       return;
     }
 
-    // Check if activity has a nutrition plan
-    if (activity.nutritionPlanData == null) {
-      // No nutrition plan - open New Activity screen with pre-populated data
-      context.push(
-        '/distancepacegut',
-        extra: {
-          'activityId': activity.id,
-          'initialDate': activity.scheduledDateTime,
-          'distance': activity.distanceMiles,
-          'initialDurationMinutes': activity.durationMinutes,
-          'goalPace': activity.paceTargetMinutesPerMile,
-          'initialTitle': activity.title,
-          'activityType': activity.activityType.name,
-          // Cycling-specific parameters
-          'cyclingSpeedMph': activity.cyclingSpeedMph,
-          'cyclingTerrain': activity.cyclingTerrain,
-          'cyclingIndoorOutdoor': activity.cyclingIndoorOutdoor,
-          'cyclingElevationGainFt': activity.cyclingElevationGainFt,
-          'cyclingSessionGoal': activity.cyclingSessionGoal,
-          // Swimming-specific parameters
-          'swimmingPacePer100mSeconds': activity.swimmingPacePer100mSeconds,
-          'swimmingPoolOrOpenWater': activity.swimmingPoolOrOpenWater,
-          'swimmingWaterTempC': activity.swimmingWaterTempC,
-          // Shared parameters
-          'intensityTarget': activity.intensityTarget,
-          'timeBeforeMinutes': activity.timeBeforeMinutes,
-        },
-      );
-    } else {
-      // Has nutrition plan - open Activity Detail screen (current behavior)
-      context.push('/plan', extra: {'mode': 'view', 'activityId': activity.id});
-    }
+    // Plan-less → New Activity pre-filled, else Detail. Shared with the
+    // fuel timeline via openActivityFuel.
+    openActivityFuel(context, activity);
   }
 
   /// Minimal read-only detail sheet for import-only activities.
@@ -509,6 +480,8 @@ class ActivityCard extends ConsumerWidget {
         return 'VDOT';
       case 'strava':
         return 'Strava';
+      case 'runna':
+        return 'Runna';
       default:
         return provider;
     }

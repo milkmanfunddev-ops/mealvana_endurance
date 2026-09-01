@@ -602,19 +602,44 @@ function scoreTotals(
     actual: number,
     target: number,
     weight: number,
+    low?: number | null,
+    high?: number | null,
   ): number => {
     if (target <= 0) return actual > 0 ? actual * weight : 0;
     const ratio = actual / target;
     const deviation = Math.abs(1 - ratio);
-    const outsidePenalty = ratio < 0.9 || ratio > 1.1 ? 10 : 0;
-    const overPenalty = ratio > 1.1 ? 4 : 0;
+    // "Outside" is the REAL calculated range when the targets carry one; the
+    // 0.9/1.1 band is only the fallback for callers that pass no range. The
+    // squared-deviation term still drives toward the point target inside it.
+    const lowRatio = low != null && low > 0 ? low / target : 0.9;
+    const highRatio = high != null && high > 0 ? high / target : 1.1;
+    const outsidePenalty = ratio < lowRatio || ratio > highRatio ? 10 : 0;
+    const overPenalty = ratio > highRatio ? 4 : 0;
     return (deviation * deviation * 100 + outsidePenalty + overPenalty) *
       weight;
   };
 
-  return metricScore(totals.carbs_g, targets.carbs_g, 4) +
-    metricScore(totals.sodium_mg, targets.sodium_mg, 2) +
-    metricScore(totals.water_ml, targets.water_ml, 1);
+  return metricScore(
+      totals.carbs_g,
+      targets.carbs_g,
+      4,
+      targets.carbs_low_g,
+      targets.carbs_high_g,
+    ) +
+    metricScore(
+      totals.sodium_mg,
+      targets.sodium_mg,
+      2,
+      targets.sodium_low_mg,
+      targets.sodium_high_mg,
+    ) +
+    metricScore(
+      totals.water_ml,
+      targets.water_ml,
+      1,
+      targets.water_low_ml,
+      targets.water_high_ml,
+    );
 }
 
 interface SearchComponent {

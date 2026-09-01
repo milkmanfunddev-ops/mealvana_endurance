@@ -5,6 +5,7 @@ import 'package:flutter/material.dart' show Color;
 import '../../../shared/domain/activity_type.dart';
 import '../domain/nutrient_transparency_data.dart';
 import '../domain/macro_targets.dart';
+import '../domain/pre_workout_display_rounding.dart';
 import '../domain/resolved_during_target.dart';
 
 part 'macro_explanation_service.explanations.dart';
@@ -22,6 +23,8 @@ class MacroExplanation {
     this.rangeLow,
     this.rangeHigh,
     required this.formulaText,
+    // Nullable since sodium v3: pre-workout sodium has no range, so there is
+    // no range to rationalise.
     required this.rangeRationale,
     this.actualValue,
   });
@@ -32,7 +35,10 @@ class MacroExplanation {
   final String? rangeLow;
   final String? rangeHigh;
   final String formulaText;
-  final String rangeRationale;
+
+  /// Nullable since sodium v3: pre-workout sodium has no range, so there is
+  /// nothing to rationalise.
+  final String? rangeRationale;
 
   /// The actual food total (e.g. "194") when foods are provided
   final String? actualValue;

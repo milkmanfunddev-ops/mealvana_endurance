@@ -656,5 +656,150 @@ void main() {
             'gel should be skipped when carb target < 15g (would overshoot)',
       );
     });
+
+    // -----------------------------------------------------------------------
+    // Sodium top-up reaches target, not just "sufficient"
+    // (regression: https://app.notion.com/p/3abe3fdb754c814eacd8fcee2c62582a)
+    // -----------------------------------------------------------------------
+    group('sodium top-up drives toward target', () {
+      test(
+        'electrolyte capsules close the sodium gap to within one capsule of target',
+        () {
+          final foods = [
+            _makeFood(
+              id: 'gel-a',
+              productType: 'gel',
+              carbsG: 25,
+              sodiumMg: 50,
+              isIndivisible: true,
+              maxServings: 6,
+            ),
+            _makeFood(
+              id: 'sports-drink',
+              productType: 'sports_drink',
+              carbsG: 20,
+              sodiumMg: 120,
+              fluidMl: 500,
+              isLiquid: true,
+              maxServings: 6,
+            ),
+            _makeFood(
+              id: 'water',
+              productType: 'beverage',
+              fluidMl: 500,
+              sodiumMg: 0,
+              isLiquid: true,
+              maxServings: 10,
+            ),
+            _makeFood(
+              id: 'elec-capsule',
+              productType: 'supplement',
+              sodiumMg: 250,
+              carbsG: 0,
+              fluidMl: 0,
+              isElectrolyte: true,
+              isIndivisible: true,
+              maxServings: 6,
+            ),
+          ];
+
+          const targets = SolverTargets(
+            carbsG: 184,
+            sodiumMg: 2272,
+            fluidMl: 2800,
+            sodiumLowMg: 1818,
+            sodiumHighMg: 2726,
+          );
+
+          final result = _solver.solve(
+            foods: foods,
+            targets: targets,
+            activityType: ActivityType.cycling,
+          );
+
+          final totalSodium = result.fold(0.0, (sum, s) => sum + s.sodiumMg);
+
+          expect(
+            totalSodium,
+            greaterThanOrEqualTo(1818),
+            reason:
+                'total sodium must not fall below the range floor (1818 mg)',
+          );
+          // The capsule is 250 mg and indivisible, so the closest the solver
+          // can land is within one capsule of the point target.
+          expect(
+            totalSodium,
+            greaterThanOrEqualTo(targets.sodiumMg - 250),
+            reason:
+                'total sodium should reach within one capsule (250 mg) of '
+                'target (2272 mg), got $totalSodium mg',
+          );
+        },
+      );
+
+      test(
+        'electrolyte top-up stops at upper bound when target would overshoot',
+        () {
+          final foods = [
+            _makeFood(
+              id: 'gel-a',
+              productType: 'gel',
+              carbsG: 25,
+              sodiumMg: 200,
+              isIndivisible: true,
+              maxServings: 6,
+            ),
+            _makeFood(
+              id: 'water',
+              productType: 'beverage',
+              fluidMl: 500,
+              sodiumMg: 0,
+              isLiquid: true,
+              maxServings: 10,
+            ),
+            _makeFood(
+              id: 'elec-capsule',
+              productType: 'supplement',
+              sodiumMg: 500,
+              carbsG: 0,
+              fluidMl: 0,
+              isElectrolyte: true,
+              isIndivisible: true,
+              maxServings: 6,
+            ),
+          ];
+
+          // Sodium target = 800, upper = 800 * 1.1 = 880.
+          // Gel will contribute significant sodium; capsules should not
+          // push total above upper bound.
+          const targets = SolverTargets(
+            carbsG: 60,
+            sodiumMg: 800,
+            fluidMl: 700,
+            sodiumLowMg: 640,
+            sodiumHighMg: 960,
+          );
+
+          final result = _solver.solve(
+            foods: foods,
+            targets: targets,
+            activityType: ActivityType.cycling,
+          );
+
+          final totalSodium = result.fold(0.0, (sum, s) => sum + s.sodiumMg);
+          // The pass/fail bound is the real range ceiling, not a synthetic
+          // target × 1.1 band.
+          final sodiumUpper = targets.sodiumHighMg!;
+
+          expect(
+            totalSodium,
+            lessThanOrEqualTo(sodiumUpper + 1),
+            reason:
+                'total sodium must not exceed upper bound ($sodiumUpper mg), '
+                'got $totalSodium mg',
+          );
+        },
+      );
+    });
   });
 }

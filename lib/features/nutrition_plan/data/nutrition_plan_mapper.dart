@@ -362,9 +362,10 @@ class NutritionPlanMapper {
             ((post['sodium_mg'] as num?) ?? 0);
         final totalCalories = (totalCarbs * 4 + totalProtein * 4 + totalFat * 9)
             .round();
-        // Extract pre-workout range fields (V4)
-        final preSodiumLow = pre['sodium_low_mg'] as num?;
-        final preSodiumHigh = pre['sodium_high_mg'] as num?;
+        // Extract pre-workout range fields (V4).
+        // Sodium v3: no pre-workout sodium band — `sodium_low_mg` /
+        // `sodium_high_mg` are deliberately not read, so `sodiumMin`/
+        // `sodiumMax` stay null and no range renders.
         final preFluidsLow = pre['water_low_ml'] as num?;
         final preFluidsHigh = pre['water_high_ml'] as num?;
 
@@ -374,8 +375,8 @@ class NutritionPlanMapper {
           protein: totalProtein.round(),
           fat: totalFat.round(),
           sodium: totalSodium.round(),
-          sodiumMin: preSodiumLow?.round(),
-          sodiumMax: preSodiumHigh?.round(),
+          sodiumMin: null,
+          sodiumMax: null,
           fluidsMin: preFluidsLow != null
               ? (preFluidsLow * 0.033814).round()
               : null,
@@ -533,6 +534,8 @@ class NutritionPlanMapper {
     // 2. During segments + interleaved transitions
     final duringSegmentsData =
         plan['during_segments'] as Map<String, dynamic>? ?? {};
+    final duringSegmentShortfalls =
+        plan['during_segment_shortfalls'] as Map<String, dynamic>? ?? {};
     final transitionsData = plan['transitions'] as Map<String, dynamic>? ?? {};
 
     // Build segment targets map from phases.during_segments
@@ -574,6 +577,14 @@ class NutritionPlanMapper {
                 FoodItemData.fromEdgeFunctionJson(item as Map<String, dynamic>),
           )
           .toList();
+      final segmentShortfalls =
+          (duringSegmentShortfalls[segmentOrder] as List<dynamic>? ?? const [])
+              .whereType<Map>()
+              .map(
+                (entry) =>
+                    MacroShortfall.fromJson(Map<String, dynamic>.from(entry)),
+              )
+              .toList();
 
       sections.add(
         PlanSection(
@@ -590,6 +601,7 @@ class NutritionPlanMapper {
           sodiumHighTarget: (segTargets?['sodium_high_mg'] as num?)?.toDouble(),
           fluidsLowTarget: (segTargets?['water_low_ml'] as num?)?.toDouble(),
           fluidsHighTarget: (segTargets?['water_high_ml'] as num?)?.toDouble(),
+          shortfalls: segmentShortfalls,
         ),
       );
 

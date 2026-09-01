@@ -7,6 +7,7 @@ import type {
   FoodResult,
   MacroTargets,
 } from "../_shared/nutrition/index.ts";
+import type { FormulaDecisionSource } from "../_shared/nutrition/formula-decision.ts";
 import type { PreWorkoutPhaseResult } from "../generate-macros-v4/types.ts";
 
 // ============================================================================
@@ -177,6 +178,14 @@ export interface LPPhaseResult {
      * nudge the user to pin it. Absent/false for real pins. Formula-first
      * flip, 2026-07-03 (plan Phase 1 #2). */
     ephemeral?: boolean;
+    /** Honest provenance: `user_pin` | `personal_formula` | `default_formula`
+     * | `solver`. Added 2026-07-29 when client-side auto-pinning was removed
+     * and computed defaults became the COMMON path — `used_pin`/`ephemeral`
+     * alone conflate "you pinned this" with "we picked this for you", and
+     * neither distinguished a solver fallback from an absent decision.
+     * Additive; older parsers ignore it. See
+     * `_shared/nutrition/formula-decision.ts`. */
+    decision_source?: FormulaDecisionSource;
     pinned_template_id: string | null;
     /** Template display name when `used_pin = true`, otherwise null. Lets the
      * client render the pinned formula's label in the activity-detail pin
@@ -201,6 +210,12 @@ export interface LPPhaseResult {
       | "pinned_template_unrenderable"
       | "personal_formula_empty"
       | null;
+    /** Why no REAL pin fired, preserved for `default_formula` / `solver`
+     * outcomes. `fallthrough_reason` must stay null while `used_pin` is true
+     * (the Dart `PinDecision` model documents that invariant and the banner's
+     * copy rule depends on it), so the reason rides here rather than being
+     * discarded. 2026-07-29. */
+    default_fallthrough_reason?: string | null;
     /** Count of in-scope pinned candidates the algorithm saw for this phase.
      * Drives `plan_used_pin` / `plan_pin_fallthrough` analytics. 0 when pins
      * were supplied but none matched scope. Formula Kit PR 2 substep 7. */

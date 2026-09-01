@@ -1,7 +1,7 @@
 # Mealvana Endurance – Startup & Auth Notes
 
 This repository contains the Flutter codebase for the Mealvana Endurance mobile app.  
-The current focus is stabilizing first-run onboarding, adopting Supabase Auth (anonymous sessions + social/email login), and keeping development telemetry isolated from production. For the full plan see [`docs/startup_auth_roadmap/README.md`](docs/startup_auth_roadmap/README.md).
+The current focus is stabilizing first-run onboarding, adopting Supabase Auth (anonymous sessions + social/email login), and keeping development telemetry isolated from production. For the full plan see [`docs/features/startup_auth_roadmap/README.md`](docs/features/startup_auth_roadmap/README.md).
 
 ## Key Decisions (Nov 2025)
 - **Canonical IDs** – Every user is represented by the Supabase Auth UUID. Device IDs remain as metadata on the `users` table only.

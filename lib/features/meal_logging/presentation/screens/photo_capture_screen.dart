@@ -10,7 +10,10 @@ import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_credits/presentation/widgets/token_pill.dart';
+import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
+import '../widgets/meal_analysis_skeleton.dart';
 
 /// Screen for selecting or capturing a meal photo.
 ///
@@ -182,75 +185,55 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
         title: const Text('Photo'),
         elevation: 0,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: AppSpacing.screenPaddingHorizontal,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: AppSpacing.xl),
-                Text(
-                  'Take or choose a photo of your meal.',
-                  style: AppTextStyles.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-                Text(
-                  'Jade AI will identify the food and estimate macros.',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark
-                        ? AppColors.cream.withValues(alpha: 0.55)
-                        : AppColors.blackberry.withValues(alpha: 0.55),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-
-                // Camera option (mobile only)
-                if (!kIsWeb) ...[
-                  _OptionCard(
-                    icon: Icons.camera_alt_outlined,
-                    title: 'Take a Photo',
-                    subtitle: 'Use your camera',
-                    onTap: () => _pickAndAnalyze(ImageSource.camera),
-                    disabled: _isAnalyzing,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-
-                // Gallery option
-                _OptionCard(
-                  icon: Icons.photo_library_outlined,
-                  title: 'Choose from Library',
-                  subtitle: 'Select an existing photo',
-                  onTap: () => _pickAndAnalyze(ImageSource.gallery),
-                  disabled: _isAnalyzing,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-              ],
+      body: SingleChildScrollView(
+        padding: AppSpacing.screenPaddingHorizontal,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Take or choose a photo of your meal.',
+              style: AppTextStyles.bodyLarge,
+              textAlign: TextAlign.center,
             ),
-          ),
-          // Loading overlay
-          if (_isAnalyzing)
-            Container(
-              color: Colors.black54,
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(color: Colors.white),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Analyzing your meal...',
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
+            Text(
+              'Mealvana AI will identify the food and estimate macros.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark
+                    ? AppColors.cream.withValues(alpha: 0.55)
+                    : AppColors.blackberry.withValues(alpha: 0.55),
               ),
+              textAlign: TextAlign.center,
             ),
-        ],
+            const SizedBox(height: AppSpacing.xl),
+
+            // While Mealvana AI works, the pickers give way to the shape of the
+            // answer rather than being covered by a scrim.
+            if (_isAnalyzing)
+              const MealAnalysisSkeleton(phases: AiThinkingStatus.photoPhases)
+            else ...[
+              // Camera option (mobile only)
+              if (!kIsWeb) ...[
+                _OptionCard(
+                  icon: Icons.camera_alt_outlined,
+                  title: 'Take a Photo',
+                  subtitle: 'Use your camera',
+                  onTap: () => _pickAndAnalyze(ImageSource.camera),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+
+              // Gallery option
+              _OptionCard(
+                icon: Icons.photo_library_outlined,
+                title: 'Choose from Library',
+                subtitle: 'Select an existing photo',
+                onTap: () => _pickAndAnalyze(ImageSource.gallery),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xl),
+          ],
+        ),
       ),
     );
   }
@@ -262,60 +245,59 @@ class _OptionCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.disabled = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  final bool disabled;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // The disabled-while-analyzing state is gone: the cards are unmounted
+    // during the wait, replaced by the analysis skeleton.
     return InkWell(
-      onTap: disabled ? null : onTap,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.md),
-      child: Opacity(
-        opacity: disabled ? 0.5 : 1.0,
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                size: 36,
-                color: isDark
-                    ? AppColors.electrolyte
-                    : AppColors.electrolyteDark,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.bodyLarge.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 36,
+              color: isDark ? AppColors.electrolyte : AppColors.electrolyteDark,
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 2),
-                    Text(subtitle, style: AppTextStyles.bodySmall),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: AppTextStyles.bodySmall),
+                ],
               ),
-              Icon(
-                Icons.chevron_right,
-                color: isDark ? Colors.white38 : Colors.black26,
-              ),
-            ],
-          ),
+            ),
+            // Both pickers are metered entry points, so each card carries the
+            // token price like the Analyze button does.
+            const TokenCostTag(),
+            const SizedBox(width: AppSpacing.sm),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.white38 : Colors.black26,
+            ),
+          ],
         ),
       ),
     );

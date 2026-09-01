@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pre-workout hydration — the 15-minute input grid</title>
+<style>
+  :root { color-scheme: light dark; }
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--page,#f9f9f7);padding:28px 20px 40px}
+  .viz-root{color-scheme:light;
+    --page:#f9f9f7;--surface-1:#fcfcfb;--text-primary:#0b0b0b;--text-secondary:#52514e;
+    --text-muted:#898781;--grid:#e1e0d9;--axis:#c3c2b7;
+    --series-1:#2a78d6;--series-2:#eb6834;--series-3:#1baf7a;
+    --border:rgba(11,11,11,.10);max-width:1020px;margin:0 auto}
+  @media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])) .viz-root{color-scheme:dark;
+    --page:#0d0d0d;--surface-1:#1a1a19;--text-primary:#fff;--text-secondary:#c3c2b7;
+    --text-muted:#898781;--grid:#2c2c2a;--axis:#383835;
+    --series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--border:rgba(255,255,255,.10)}}
+  :root[data-theme="dark"] .viz-root{color-scheme:dark;
+    --page:#0d0d0d;--surface-1:#1a1a19;--text-primary:#fff;--text-secondary:#c3c2b7;
+    --text-muted:#898781;--grid:#2c2c2a;--axis:#383835;
+    --series-1:#3987e5;--series-2:#d95926;--series-3:#199e70;--border:rgba(255,255,255,.10)}
+  body{background:var(--page)}
+  h1{font-size:19px;font-weight:600;color:var(--text-primary);margin:0 0 4px;letter-spacing:-.01em}
+  .sub{font-size:13.5px;color:var(--text-secondary);margin:0 0 18px;line-height:1.55}
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:18px 18px 10px}
+  .controls{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:14px}
+  .ctl-label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .seg button{font:inherit;font-size:13px;padding:5px 12px;border:0;cursor:pointer;background:transparent;color:var(--text-secondary);min-height:30px}
+  .seg button[aria-pressed="true"]{background:var(--series-1);color:#fff}
+  .spacer{flex:1 1 auto}
+  .linkbtn{font:inherit;font-size:13px;background:transparent;border:1px solid var(--border);border-radius:8px;padding:5px 12px;color:var(--text-secondary);cursor:pointer;min-height:30px}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin:2px 0 6px 4px}
+  .lg{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)}
+  .key{width:20px;height:0;border-top-width:2px;border-top-style:solid;display:inline-block}
+  .keyfill{width:18px;height:11px;border-radius:2px;display:inline-block}
+  svg{display:block;width:100%;height:auto}
+  .wrap{position:relative}
+  .tt{position:absolute;pointer-events:none;background:var(--surface-1);border:1px solid var(--border);border-radius:8px;
+      padding:8px 11px;font-size:12.5px;color:var(--text-primary);box-shadow:0 4px 14px rgba(0,0,0,.10);
+      min-width:216px;opacity:0;transition:opacity .09s}
+  .tt .row{display:flex;justify-content:space-between;gap:14px;margin-top:3px;color:var(--text-secondary)}
+  .tt .row span:last-child{font-variant-numeric:tabular-nums;color:var(--text-primary)}
+  .tt .row.tot{border-top:1px solid var(--border);margin-top:6px;padding-top:5px;font-weight:600}
+  .tt .bind{margin-top:6px;padding-top:5px;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary)}
+  .sw{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:-1px}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin-top:8px}
+  th,td{text-align:right;padding:6px 10px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;color:var(--text-secondary)}
+  th{color:var(--text-muted);font-weight:500;font-variant-numeric:normal}
+  th:first-child,td:first-child{text-align:left}
+  .note{font-size:12.5px;color:var(--text-muted);margin:12px 4px 0;line-height:1.65}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <h1>Pre-workout hydration — the 15-minute input grid</h1>
+  <p class="sub">Two or more hours out, the cited <b>7.5 ml/kg</b> sits in the meal window and is finished by t−120; a dark urine check adds <b>4 ml/kg</b> in the snack window. Under two hours, the interpolated line from 7.5 ml/kg down to 250 ml goes entirely to the earliest window that exists. Seventeen columns, 0 to 240 minutes — <b>every plan the product can produce</b> at a given body weight. The nine columns at or above t−120 are identical, because the cited band has no time dependence inside it. Engine values are exact; the drawer rounds to 25&nbsp;ml.</p>
+
+  <div class="card">
+    <div class="controls">
+      <span class="ctl-label">Body weight</span>
+      <span class="seg" id="bwseg" role="group" aria-label="Body weight"></span>
+      <span class="ctl-label">Urine check</span><span class="seg" id="ckseg" role="group" aria-label="Urine check"></span>
+      <span class="spacer"></span>
+      <button class="linkbtn" id="toggle" aria-pressed="false">Table view</button>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="wrap" id="wrap">
+      <svg id="chart" viewBox="0 0 980 470" role="img" aria-label="Stacked pre-workout fluid by tier at each 15-minute lead time"></svg>
+      <div class="tt" id="tt" role="status" aria-live="polite"></div>
+    </div>
+    <div id="tableview" hidden>
+      <table>
+        <thead><tr><th scope="col">Lead time</th><th scope="col">meal</th><th scope="col">snack</th>
+        <th scope="col">top-off</th><th scope="col">plan</th><th scope="col">ml/kg</th>
+        <th scope="col">permissible</th><th scope="col">regime</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+
+<script>
+(function(){
+  const GRID=[240,225,210,195,180,165,150,135,120,105,90,75,60,45,30,15,0];   // the app's 15-minute input grid
+  const WEIGHTS=[50,65,80,100]; let bw=65;
+  let check='pale';
+  
+  const A0=()=>Math.min(250,7.5*bw);
+  const f=t=>A0()+(7.5*bw-A0())*Math.min(t,120)/120;
+  function model(t){
+    let meal=0,snack=0,top=0,low,high,tag;
+    if(t>=120){ meal=7.5*bw; snack=(check==='dark'?4*bw:0);
+      low=5*bw; high=Math.min(7.5*bw+5*bw,12*bw); tag='cited'; }
+    else { const ceil=Math.min(10*bw, 400*Math.exp((3.2/60)*t));
+      if(t>=30) snack=f(t); else top=f(t);
+      low=0; high=ceil; tag=(ceil<10*bw?'clearance_bound':'extrapolated'); }
+    return {meal,snack,top,total:meal+snack+top,low,high,tag};
+  }
+
+  const SVG='http://www.w3.org/2000/svg', svg=document.getElementById('chart');
+  const W=980,H=470,P={l:66,r:20,t:56,b:58}, pw=W-P.l-P.r, ph=H-P.t-P.b;
+  let YMAX=300;
+  const slot = pw/GRID.length, BARW = Math.min(24, slot-14);
+  const cx = i => P.l + slot*(i+0.5);
+  const y = v => P.t+ph - Math.min(v,YMAX)/YMAX*ph;
+  const el=(n,a)=>{const e=document.createElementNS(SVG,n);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const css=n=>getComputedStyle(document.querySelector('.viz-root')).getPropertyValue(n).trim();
+  const fm1=v=>(Math.round(v*10)/10).toString();
+  const fm2=v=>(Math.round(v*100)/100).toString();
+
+  // rounded top, square base
+  function seg(x0,yTop,yBot,fill,roundTop){
+    const h=Math.max(0,yBot-yTop); if(h<0.5) return null;
+    const r=Math.min(4,h);
+    const d = roundTop
+      ? `M ${x0} ${yBot} L ${x0} ${yTop+r} Q ${x0} ${yTop} ${x0+r} ${yTop} L ${x0+BARW-r} ${yTop} Q ${x0+BARW} ${yTop} ${x0+BARW} ${yTop+r} L ${x0+BARW} ${yBot} Z`
+      : `M ${x0} ${yBot} L ${x0} ${yTop} L ${x0+BARW} ${yTop} L ${x0+BARW} ${yBot} Z`;
+    return el('path',{d,fill});
+  }
+
+  function draw(){
+    while(svg.firstChild)svg.removeChild(svg.firstChild);
+    const C1=css('--series-1'),C2=css('--series-2'),C3=css('--series-3'),
+          GRIDC=css('--grid'),AXIS=css('--axis'),MUT=css('--text-muted'),
+          SEC=css('--text-secondary'),PRI=css('--text-primary'),SURF=css('--surface-1');
+    YMAX = Math.ceil((12.0*bw+40)/50)*50;
+    const step = YMAX>600?200:(YMAX>250?50:25);
+
+    for(let v=0;v<=YMAX;v+=step){
+      svg.appendChild(el('line',{x1:P.l,x2:P.l+pw,y1:y(v),y2:y(v),stroke:GRIDC,'stroke-width':1}));
+      const tk=el('text',{x:P.l-12,y:y(v)+4,'text-anchor':'end',fill:MUT,'font-size':12});
+      tk.style.fontVariantNumeric='tabular-nums';tk.textContent=v.toLocaleString();svg.appendChild(tk);}
+    const yl=el('text',{x:15,y:P.t+ph/2,fill:MUT,'font-size':12,'text-anchor':'middle',transform:`rotate(-90 15 ${P.t+ph/2})`});
+    yl.textContent='ml';svg.appendChild(yl);
+
+    // guide label with a surface backing so it stays legible over a column
+    function guideLabel(txt,gx,gy,anchor){
+      const w=txt.length*5.9, h=14;
+      const rx = anchor==='end' ? gx-w-4 : gx-4;
+      svg.appendChild(el('rect',{x:rx,y:gy-11,width:w+8,height:h,fill:SURF,rx:3}));
+      const e=el('text',{x:gx,y:gy,'text-anchor':anchor||'start',fill:MUT,'font-size':11.5});
+      e.textContent=txt; svg.appendChild(e);
+    }
+
+    // group captions + tier region separators
+    const sepAfter=[4,11];   // after t-120 (index 4) and after t-15 (index 11)
+    sepAfter.forEach(i=>{const gx=P.l+slot*(i+1);
+      svg.appendChild(el('line',{x1:gx,x2:gx,y1:P.t-30,y2:P.t+ph,stroke:AXIS,'stroke-width':1}));});
+    const cap=(i0,i1,txt)=>{const e=el('text',{x:P.l+slot*((i0+i1+1)/2),y:P.t-36,'text-anchor':'middle',
+      fill:SEC,'font-size':12,'font-weight':600});e.textContent=txt;svg.appendChild(e);};
+    cap(0,4,'meal · snack · top-off'); cap(5,10,'snack · top-off'); cap(11,12,'top-off');
+
+    // columns
+    GRID.forEach((t,i)=>{
+      const s=model(t), x0=cx(i)-BARW/2;
+      let acc=0; const parts=[[s.meal,C1],[s.snack,C2],[s.top,C3]].filter(p=>p[0]>0.001);
+      parts.forEach((p,k)=>{
+        const yBot=y(acc), yTop=y(acc+p[0]);
+        const node=seg(x0,yTop,yBot,p[1],k===parts.length-1);
+        if(node) svg.appendChild(node);
+        if(k<parts.length-1) svg.appendChild(el('rect',{x:x0,y:yTop-1,width:BARW,height:2,fill:SURF}));
+        acc+=p[0];
+      });
+      const cl=el('text',{x:cx(i),y:y(s.total)-8,'text-anchor':'middle',fill:SEC,'font-size':11});
+      cl.style.fontVariantNumeric='tabular-nums';cl.textContent=fm1(s.total);svg.appendChild(cl);
+      const tk=el('text',{x:cx(i),y:P.t+ph+20,'text-anchor':'middle',fill:MUT,'font-size':11.5});
+      tk.style.fontVariantNumeric='tabular-nums';tk.textContent=t;svg.appendChild(tk);
+    });
+    svg.appendChild(el('line',{x1:P.l,x2:P.l+pw,y1:y(0),y2:y(0),stroke:AXIS,'stroke-width':1}));
+
+    
+    const dash=(v,x0,x1,lab,ax,anchor,dy)=>{
+      svg.appendChild(el('line',{x1:x0,x2:x1,y1:y(v),y2:y(v),stroke:AXIS,'stroke-width':1.5,'stroke-dasharray':'2 3'}));
+      guideLabel(lab, ax, y(v)+(dy||-8), anchor||'start');};
+    const HI=Math.min(7.5*bw+5*bw,12*bw), xMid=P.l+slot*5;
+    dash(HI, P.l, xMid, `permissible max · 12 ml/kg = ${fm1(HI)}`, xMid-6, 'end');
+    dash(5*bw, P.l, xMid, `cited min · 5 ml/kg = ${fm1(5*bw)}`, xMid-6, 'end', 16);
+    dash(10*bw, xMid, P.l+pw, `permissible max · 10 ml/kg = ${fm1(10*bw)}`, P.l+pw, 'end');
+
+    const xl=el('text',{x:P.l+pw/2,y:P.t+ph+44,'text-anchor':'middle',fill:MUT,'font-size':12});
+    xl.textContent='minutes before the start — the app’s 15-minute input grid';svg.appendChild(xl);
+
+    // hover per column
+    const tt=document.getElementById('tt'),wrap=document.getElementById('wrap');
+    GRID.forEach((t,i)=>{
+      const hit=el('rect',{x:P.l+slot*i,y:P.t,width:slot,height:ph,fill:'transparent'});
+      svg.appendChild(hit);
+      hit.addEventListener('mouseenter',()=>{
+        const s=model(t);
+        tt.innerHTML=`<b>t−${t} min</b>`+
+          (s.meal>0?`<div class="row"><span><i class="sw" style="background:${C1}"></i>meal</span><span>${fm2(s.meal)}</span></div>`:'')+
+          (s.snack>0?`<div class="row"><span><i class="sw" style="background:${C2}"></i>snack</span><span>${fm2(s.snack)}</span></div>`:'')+
+          (s.top>0?`<div class="row"><span><i class="sw" style="background:${C3}"></i>top-off</span><span>${fm2(s.top)}</span></div>`:'')+
+          `<div class="row tot"><span>plan</span><span>${fm2(s.total)} · ${(s.total/bw).toFixed(2)} ml/kg</span></div>`+
+          `<div class="bind">permissible ${fm1(s.low)}–${fm1(s.high)} · ${s.tag}</div>`;
+        tt.style.opacity=1;
+        const r=svg.getBoundingClientRect(),sx=W/r.width,wr=wrap.getBoundingClientRect();
+        let lx=(cx(i)/sx)+18; if(lx+240>wr.width) lx=(cx(i)/sx)-240;
+        tt.style.left=lx+'px'; tt.style.top=Math.max(0,(y(s.total)/sx)-16)+'px';});
+      hit.addEventListener('mouseleave',()=>{tt.style.opacity=0;});
+    });
+
+    document.getElementById('legend').innerHTML=
+      `<span class="lg"><span class="keyfill" style="background:${C1};opacity:.9"></span>Meal — cited 7.5 ml/kg</span>`+
+      `<span class="lg"><span class="keyfill" style="background:${C2};opacity:.9"></span>Snack</span>`+
+      `<span class="lg"><span class="keyfill" style="background:${C3};opacity:.9"></span>Top-off</span>`+
+      `<span class="lg"><span class="key" style="border-top-color:${AXIS};border-top-style:dotted"></span>Permissible range</span>`;
+
+    document.getElementById('tbody').innerHTML=GRID.map(t=>{const s=model(t);
+      return `<tr><td>t−${t} min</td><td>${s.meal?fm2(s.meal):'—'}</td><td>${s.snack?fm2(s.snack):'—'}</td>`+
+             `<td>${s.top?fm2(s.top):'—'}</td><td><b>${fm2(s.total)}</b></td><td>${(s.total/bw).toFixed(2)}</td>`+
+             `<td>${fm1(s.low)}–${fm1(s.high)}</td><td style="text-align:left">${s.tag}</td></tr>`;}).join('');
+
+    document.getElementById('note').innerHTML=`At ${bw} kg the meal window is a <b>single value</b> across the grid — t−120 through t−180 all give ${fm1(7.5*bw)} ml, because the cited band has no time dependence inside it. The taper only appears below two hours. The permissible band is <b>identical on both check paths</b> (12 ml/kg above t−120, 10 ml/kg below); only the plan number moves when the athlete answers, which is what lets the question sit inside the snack card without the range bar rearranging itself.`;
+  }
+
+  const seg1=document.getElementById('bwseg');
+  seg1.innerHTML=WEIGHTS.map(w=>`<button type="button" data-w="${w}" aria-pressed="${w===bw}">${w} kg</button>`).join('');
+  seg1.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;bw=+b.dataset.w;
+    [...seg1.querySelectorAll('button')].forEach(n=>n.setAttribute('aria-pressed',+n.dataset.w===bw));draw();});
+  
+  const ck=document.getElementById('ckseg');
+  ck.innerHTML=[['pale','pale / unknown'],['dark','dark']].map(([v,l])=>`<button type="button" data-c="${v}" aria-pressed="${v===check}">${l}</button>`).join('');
+  ck.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;check=b.dataset.c;
+    [...ck.querySelectorAll('button')].forEach(n=>n.setAttribute('aria-pressed',n.dataset.c===check));draw();});
+  const tgl=document.getElementById('toggle');
+  tgl.addEventListener('click',()=>{const on=tgl.getAttribute('aria-pressed')==='true';
+    tgl.setAttribute('aria-pressed',String(!on));tgl.textContent=on?'Table view':'Chart view';
+    document.getElementById('tableview').hidden=on;document.querySelector('.wrap').hidden=!on;});
+
+  draw(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change',draw);
+})();
+</script>
+</body>
+</html>

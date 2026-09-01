@@ -250,20 +250,26 @@ describe("trimSodiumOverage (before-sodium 154% regression)", () => {
 });
 
 // ============================================================================
-// Tier thresholds — Notion spec 31fe3fdb (2-hours-before meal bug regression)
+// Eating-occasion tiers — SSOT pre-workout-carbs.md v2, invariant 6.
+//
+// The boundaries moved from 90 min / 30 min to 120 min / 30 min when carbs v2
+// was ratified: `meal` iff t >= TIER_MEAL_MIN (120), `snack` iff
+// t >= TIER_TOPOFF_MAX (30), `top_off` always. The old 1.5 h expectations
+// (Notion spec 31fe3fdb) are superseded, not merely renumbered.
 // ============================================================================
 
 import { calculatePreWorkoutTargets, getActiveSubPhases } from "./pre-workout.ts";
 
-describe("Eating-occasion tiers (Notion spec 31fe3fdb)", () => {
-  it(">= 90 min gets all three tiers — the 2h-before meal bug", () => {
+describe("Eating-occasion tiers (carbs v2 — 120 min / 30 min)", () => {
+  it(">= 120 min gets all three occasions", () => {
     assertEquals(getActiveSubPhases(2.0), ["meal", "snack", "top_up"]);
-    assertEquals(getActiveSubPhases(1.5), ["meal", "snack", "top_up"]);
+    assertEquals(getActiveSubPhases(3.0), ["meal", "snack", "top_up"]);
     assertEquals(getActiveSubPhases(4.0), ["meal", "snack", "top_up"]);
   });
 
-  it("30-89 min gets snack + top-off", () => {
-    assertEquals(getActiveSubPhases(1.49), ["snack", "top_up"]);
+  it("30-119 min gets snack + top-off — 1.5 h no longer earns a meal", () => {
+    assertEquals(getActiveSubPhases(1.99), ["snack", "top_up"]);
+    assertEquals(getActiveSubPhases(1.5), ["snack", "top_up"]);
     assertEquals(getActiveSubPhases(1.0), ["snack", "top_up"]);
     assertEquals(getActiveSubPhases(0.5), ["snack", "top_up"]);
   });
@@ -273,10 +279,21 @@ describe("Eating-occasion tiers (Notion spec 31fe3fdb)", () => {
     assertEquals(getActiveSubPhases(0), ["top_up"]);
   });
 
+  it("both boundaries are inclusive at the bottom", () => {
+    assertEquals(getActiveSubPhases(120 / 60), ["meal", "snack", "top_up"]);
+    assertEquals(getActiveSubPhases(119.999 / 60), ["snack", "top_up"]);
+    assertEquals(getActiveSubPhases(30 / 60), ["snack", "top_up"]);
+    assertEquals(getActiveSubPhases(29.999 / 60), ["top_up"]);
+  });
+
   it("target tiers move with the same boundaries (meal_type)", () => {
     assertEquals(
       calculatePreWorkoutTargets(70, 2.0, false, "medium", "mild").meal_type,
       "full_meal",
+    );
+    assertEquals(
+      calculatePreWorkoutTargets(70, 1.5, false, "medium", "mild").meal_type,
+      "snack",
     );
     assertEquals(
       calculatePreWorkoutTargets(70, 1.0, false, "medium", "mild").meal_type,

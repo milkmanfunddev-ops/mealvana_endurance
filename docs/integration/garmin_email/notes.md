@@ -15,7 +15,7 @@ Read these first (in order):
 3. /docs/integration/garmin_email/response.png (Elena's latest email with her asks)
 
 Start with Phase 1: authorize Notion MCP (mcp__notion__authenticate), then pull the root page
-"Daily Macro Calculation" (326e3fdb754c80199486c17ecf9947cd) and mirror into /docs/macro_calculations.
+"Daily Macro Calculation" (326e3fdb754c80199486c17ecf9947cd) and mirror into /docs/features/macro_calculations.
 Proceed through phases per the plan. Use AskUserQuestion only when something material changes.
 ```
 
@@ -93,7 +93,7 @@ Results from the Explore agent run during planning. Trust these as of 2026-04-24
   - Two styles: `compact` (10pt logo/font) and `standard` (14pt/12pt)
 - **14 Dart files reference "garmin"** (see grep output from planning run) — callsites to audit for the badge swap
 
-### Existing `/docs/macro_calculations/` contents (pre-Notion sync)
+### Existing `/docs/features/macro_calculations/` contents (pre-Notion sync)
 
 ```
 iteration1_spec.txt     # Spec (covers RMR, baseline macros, IF, session cost, carb demand, clamping, TDEE, fat)
@@ -117,7 +117,7 @@ screenshots/            # 3 PNGs from 2026-03-25
 |---|---|
 | Scope | Full: ship Iter 5 + reply to Elena |
 | Tone of email | Honest — describe current code state |
-| Notion shape | Root page with child pages for iterations 1–5 + tests → mirror into `/docs/macro_calculations/` |
+| Notion shape | Root page with child pages for iterations 1–5 + tests → mirror into `/docs/features/macro_calculations/` |
 | BF% precedence | User-entered wins; Garmin is fallback only |
 | Rollout | No feature flag; ship Iter 5 to all users at merge |
 | Email delivery | Assistant drafts full markdown + zipped screenshots → user pastes into Zendesk |
@@ -141,7 +141,7 @@ The fresh session doesn't need to re-read these unless it wants to confirm speci
 - `lib/features/integrations/presentation/widgets/garmin_attribution.dart` (full read, 95 lines)
 - `supabase/functions/calculate-daily-macros/README.md` (full read)
 - `supabase/functions/calculate-daily-macros/pipeline.ts` (full read, 402 lines)
-- `docs/macro_calculations/iteration1_spec.txt`, `iteration3_spec.txt`, `iteration4_spec.txt`, `v1_readme.txt`, `v2_readme.txt`
+- `docs/features/macro_calculations/iteration1_spec.txt`, `iteration3_spec.txt`, `iteration4_spec.txt`, `v1_readme.txt`, `v2_readme.txt`
 - `docs/integration/garmin_email/response.png` (Elena's latest)
 - `docs/integration/garmin_email/Production Review for _Milkman Inc__ Requirements, Ticket_ 206017.eml` (prior Apr 8 requirements email)
 
@@ -161,7 +161,7 @@ Phase 1 (docs from Notion):
   - mcp__notion__authenticate → OAuth URL
   - User authorizes
   - Fetch root page + all children
-  - Mirror into /docs/macro_calculations/
+  - Mirror into /docs/features/macro_calculations/
   - Add README.md + iteration5_spec.md + iteration5_tests.md + garmin_data_usage.md
 
 Phase 2 (edge function, parallelizable with P3):

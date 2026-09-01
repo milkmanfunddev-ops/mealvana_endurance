@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../../../../../shared/utils/celebration_haptics.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 
 /// Full-screen success overlay shown after fuel log is saved.
@@ -68,6 +70,9 @@ class _FuelLogSuccessOverlayState extends State<FuelLogSuccessOverlay>
 
     _checkController.forward();
     _confettiController.forward();
+
+    // Fire the celebration haptic on the same frame the confetti launches.
+    unawaited(CelebrationHaptics.play());
 
     // Auto-dismiss after 4 seconds
     Future.delayed(const Duration(seconds: 4), () {

@@ -1,7 +1,7 @@
 /**
  * Multi-Segment (Brick) Workout Hydration Tests
  *
- * Ported verbatim from /docs/sodium_hydration/hydration_sodium_calc_tests.md
+ * Ported verbatim from /docs/features/sodium_hydration/hydration_sodium_calc_tests.md
  * §Multi-Segment Integration Tests and §Redistribution Test
  *
  * Run with:
@@ -16,7 +16,11 @@ import { describe, it } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
 
 import { calculateBrickHydration } from './brick-workout.ts';
 import { calculateBrickMacrosV4 } from './brick-workout.ts';
-import { calculatePreWorkoutTargets } from './pre-workout.ts';
+import {
+  applyPreWorkoutHydrationOverlay,
+  calculatePreWorkoutHydration,
+  calculatePreWorkoutTargets,
+} from './pre-workout.ts';
 
 const ML_TOL = 0.05; // 5%
 
@@ -309,16 +313,36 @@ describe('Transition naming', () => {
 // segment flat replacement) and that both segments share the same replacement %.
 // ============================================================================
 
+/**
+ * Pre-workout stub for the brick integration tests.
+ *
+ * `calculateBrickMacrosV4` now requires `PreWorkoutOverlaidTargets`, not the
+ * bare `PreWorkoutTargets` map — the overlay carries the v6 fluid tiers, the
+ * regime/basis strings and the solver's numeric view, and fluid + sodium are
+ * nullable on it. Rather than hand-write that widened shape (and drift from
+ * it), build it the way production does: legacy targets, then the real
+ * overlay over a real hydration result.
+ *
+ * These tests assert DURING-phase behaviour; the pre-workout numbers here are
+ * only a well-formed input. Pre-workout output is asserted in
+ * pre-workout-overlay.test.ts and pinned in pre-workout-vectors.test.ts.
+ */
 function makePreTargets() {
-  // Minimal pre-workout targets stub for integration tests.
-  return {
-    carbs_g: 60, carbs_low_g: 48, carbs_high_g: 72,
-    protein_g: 20, protein_low_g: 16, protein_high_g: 24,
-    fat_g: 10,
-    sodium_mg: 400, sodium_low_mg: 280, sodium_high_mg: 520,
-    water_ml: 500, water_low_ml: 400, water_high_ml: 600,
-    meal_type: 'full_meal',
-  } as ReturnType<typeof calculatePreWorkoutTargets>;
+  const legacy = calculatePreWorkoutTargets(
+    /* weightKg */ 72,
+    /* hoursBefore */ 3,
+    /* isFasted */ false,
+    /* sweatSodiumCat */ 'medium',
+    /* envLabel */ 'mild',
+    /* workoutDurationMin */ 135,
+  );
+  const hydration = calculatePreWorkoutHydration({
+    bodyWeightKg: 72,
+    workoutDurationMin: 135,
+    timeBeforeWorkoutMin: 180,
+    tempC: 22,
+  });
+  return applyPreWorkoutHydrationOverlay(legacy, hydration);
 }
 
 // ---- Example 6 via calculateBrickMacrosV4 -----------------------------------

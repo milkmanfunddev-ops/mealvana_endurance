@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/providers/unit_system_provider.dart';
+import '../../../../shared/utils/unit_formatter.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 
 /// Dialog for editing carb target - allows editing grams per kg bodyweight
 /// or directly editing the total daily target in grams
 /// Updated to follow Kyle's design system
-class EditCarbTargetDialog extends StatefulWidget {
+class EditCarbTargetDialog extends ConsumerStatefulWidget {
   final double currentCarbsPerKg;
   final int currentDailyTargetG;
   final double bodyWeightKg;
@@ -20,10 +24,11 @@ class EditCarbTargetDialog extends StatefulWidget {
   });
 
   @override
-  State<EditCarbTargetDialog> createState() => _EditCarbTargetDialogState();
+  ConsumerState<EditCarbTargetDialog> createState() =>
+      _EditCarbTargetDialogState();
 }
 
-class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
+class _EditCarbTargetDialogState extends ConsumerState<EditCarbTargetDialog> {
   late TextEditingController _carbsPerKgController;
   late TextEditingController _dailyTargetController;
   bool _isEditingPerKg = true; // Toggle between per kg and total grams
@@ -128,9 +133,11 @@ class _EditCarbTargetDialogState extends State<EditCarbTargetDialog> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
 
-                  // Body weight display
+                  // Body weight display. The g/kg ratio below stays per-kg —
+                  // that is the sports-nutrition convention in both unit
+                  // systems — but the athlete's own weight reads in their unit.
                   Text(
-                    'Body Weight: ${widget.bodyWeightKg.toStringAsFixed(1)} kg',
+                    'Body Weight: ${UnitFormatter.formatWeight(UnitFormatter.kgToPounds(widget.bodyWeightKg), useMetric: (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) == UnitSystem.metric)}',
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: secondaryTextColor,
                     ),

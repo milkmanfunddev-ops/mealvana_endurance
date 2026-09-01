@@ -15,6 +15,7 @@ class KylePrimaryButton extends ConsumerWidget {
     this.isFullWidth = true,
     this.icon,
     this.height,
+    this.trailing,
   });
 
   final String text;
@@ -23,6 +24,11 @@ class KylePrimaryButton extends ConsumerWidget {
   final bool isFullWidth;
   final IconData? icon;
   final double? height;
+
+  /// Widget laid out after the label, inside the button — e.g. a price chip.
+  /// It shares the label's centred row, so it never overlaps the text the way
+  /// a stacked overlay does.
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -74,6 +80,7 @@ class KylePrimaryButton extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (trailing != null) trailing!,
                 ],
               ),
       ),

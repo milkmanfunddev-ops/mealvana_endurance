@@ -1,39 +1,33 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/activity.dart';
+import '../../domain/brick_eligibility.dart';
 
 part 'brick_creation_available_provider.g.dart';
 
-/// Provider to check if brick creation is available for a given date
+/// Whether the Brick entry point should be offered for a given day.
 ///
-/// Returns true if:
-/// - 2+ activities exist on the selected date
-/// - Activities are of different sport types (not all the same sport)
+/// Brick redesign (Notion 3a7e3fdb): the Brick pill only appears when 2+
+/// *adjacent* brick-eligible workouts exist. Eligibility is limited to the
+/// three triathlon disciplines — a strength or foam-rolling activity must not
+/// be groupable.
 ///
-/// Used to show/hide the "Create Brick" button in activities list
+/// [activities] must arrive in the order they appear on the timeline
+/// (chronological); adjacency is positional over the day's *workout*
+/// sequence, so the caller's ordering is load-bearing. A meal logged between
+/// two workouts does not break their adjacency — an ineligible workout
+/// (strength, an existing brick) does.
 @riverpod
 bool isBrickCreationAvailable(
   Ref ref, {
   required List<Activity> activities,
   required DateTime selectedDate,
 }) {
-  // Filter activities for the selected date
-  final selectedDateActivities = activities.where((activity) {
-    return _isSameDay(activity.scheduledDateTime, selectedDate);
-  }).toList();
+  final onDay = activities
+      .where((a) => _isSameDay(a.scheduledDateTime, selectedDate))
+      .cast<Activity?>()
+      .toList(growable: false);
 
-  // Need at least 2 activities
-  if (selectedDateActivities.length < 2) {
-    return false;
-  }
-
-  // Get unique sport types (excluding brick activities)
-  final sportTypes = selectedDateActivities
-      .where((activity) => !activity.activityType.isBrick)
-      .map((activity) => activity.activityType)
-      .toSet();
-
-  // Need at least 2 different sports
-  return sportTypes.length >= 2;
+  return hasAdjacentBrickCandidates(onDay);
 }
 
 /// Helper to check if two dates are the same day

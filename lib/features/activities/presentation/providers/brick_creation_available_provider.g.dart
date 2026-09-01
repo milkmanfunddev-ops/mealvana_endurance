@@ -8,35 +8,50 @@ part of 'brick_creation_available_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Provider to check if brick creation is available for a given date
+/// Whether the Brick entry point should be offered for a given day.
 ///
-/// Returns true if:
-/// - 2+ activities exist on the selected date
-/// - Activities are of different sport types (not all the same sport)
+/// Brick redesign (Notion 3a7e3fdb): the Brick pill only appears when 2+
+/// *adjacent* brick-eligible workouts exist. Eligibility is limited to the
+/// three triathlon disciplines — a strength or foam-rolling activity must not
+/// be groupable.
 ///
-/// Used to show/hide the "Create Brick" button in activities list
+/// [activities] must arrive in the order they appear on the timeline
+/// (chronological); adjacency is positional over the day's *workout*
+/// sequence, so the caller's ordering is load-bearing. A meal logged between
+/// two workouts does not break their adjacency — an ineligible workout
+/// (strength, an existing brick) does.
 
 @ProviderFor(isBrickCreationAvailable)
 const isBrickCreationAvailableProvider = IsBrickCreationAvailableFamily._();
 
-/// Provider to check if brick creation is available for a given date
+/// Whether the Brick entry point should be offered for a given day.
 ///
-/// Returns true if:
-/// - 2+ activities exist on the selected date
-/// - Activities are of different sport types (not all the same sport)
+/// Brick redesign (Notion 3a7e3fdb): the Brick pill only appears when 2+
+/// *adjacent* brick-eligible workouts exist. Eligibility is limited to the
+/// three triathlon disciplines — a strength or foam-rolling activity must not
+/// be groupable.
 ///
-/// Used to show/hide the "Create Brick" button in activities list
+/// [activities] must arrive in the order they appear on the timeline
+/// (chronological); adjacency is positional over the day's *workout*
+/// sequence, so the caller's ordering is load-bearing. A meal logged between
+/// two workouts does not break their adjacency — an ineligible workout
+/// (strength, an existing brick) does.
 
 final class IsBrickCreationAvailableProvider
     extends $FunctionalProvider<bool, bool, bool>
     with $Provider<bool> {
-  /// Provider to check if brick creation is available for a given date
+  /// Whether the Brick entry point should be offered for a given day.
   ///
-  /// Returns true if:
-  /// - 2+ activities exist on the selected date
-  /// - Activities are of different sport types (not all the same sport)
+  /// Brick redesign (Notion 3a7e3fdb): the Brick pill only appears when 2+
+  /// *adjacent* brick-eligible workouts exist. Eligibility is limited to the
+  /// three triathlon disciplines — a strength or foam-rolling activity must not
+  /// be groupable.
   ///
-  /// Used to show/hide the "Create Brick" button in activities list
+  /// [activities] must arrive in the order they appear on the timeline
+  /// (chronological); adjacency is positional over the day's *workout*
+  /// sequence, so the caller's ordering is load-bearing. A meal logged between
+  /// two workouts does not break their adjacency — an ineligible workout
+  /// (strength, an existing brick) does.
   const IsBrickCreationAvailableProvider._({
     required IsBrickCreationAvailableFamily super.from,
     required ({List<Activity> activities, DateTime selectedDate})
@@ -96,15 +111,20 @@ final class IsBrickCreationAvailableProvider
 }
 
 String _$isBrickCreationAvailableHash() =>
-    r'173be7acf8527a8b10581b97b90f1d59ebcad0a2';
+    r'f74a159a75919501969b765aabaccd9454730bc6';
 
-/// Provider to check if brick creation is available for a given date
+/// Whether the Brick entry point should be offered for a given day.
 ///
-/// Returns true if:
-/// - 2+ activities exist on the selected date
-/// - Activities are of different sport types (not all the same sport)
+/// Brick redesign (Notion 3a7e3fdb): the Brick pill only appears when 2+
+/// *adjacent* brick-eligible workouts exist. Eligibility is limited to the
+/// three triathlon disciplines — a strength or foam-rolling activity must not
+/// be groupable.
 ///
-/// Used to show/hide the "Create Brick" button in activities list
+/// [activities] must arrive in the order they appear on the timeline
+/// (chronological); adjacency is positional over the day's *workout*
+/// sequence, so the caller's ordering is load-bearing. A meal logged between
+/// two workouts does not break their adjacency — an ineligible workout
+/// (strength, an existing brick) does.
 
 final class IsBrickCreationAvailableFamily extends $Family
     with
@@ -121,13 +141,18 @@ final class IsBrickCreationAvailableFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provider to check if brick creation is available for a given date
+  /// Whether the Brick entry point should be offered for a given day.
   ///
-  /// Returns true if:
-  /// - 2+ activities exist on the selected date
-  /// - Activities are of different sport types (not all the same sport)
+  /// Brick redesign (Notion 3a7e3fdb): the Brick pill only appears when 2+
+  /// *adjacent* brick-eligible workouts exist. Eligibility is limited to the
+  /// three triathlon disciplines — a strength or foam-rolling activity must not
+  /// be groupable.
   ///
-  /// Used to show/hide the "Create Brick" button in activities list
+  /// [activities] must arrive in the order they appear on the timeline
+  /// (chronological); adjacency is positional over the day's *workout*
+  /// sequence, so the caller's ordering is load-bearing. A meal logged between
+  /// two workouts does not break their adjacency — an ineligible workout
+  /// (strength, an existing brick) does.
 
   IsBrickCreationAvailableProvider call({
     required List<Activity> activities,

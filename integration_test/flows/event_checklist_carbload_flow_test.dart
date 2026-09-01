@@ -38,6 +38,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
+import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
@@ -78,7 +79,12 @@ void main() {
       // Dismiss the keyboard (it overlays the Create button) and submit.
       FocusManager.instance.primaryFocus?.unfocus();
       await $.pump(const Duration(milliseconds: 400));
-      await $(const ValueKey('event_create.create_button')).scrollTo().tap();
+      await $(const ValueKey('event_create.create_button'))
+          .scrollTo(
+            maxScrolls: 12,
+            settleBetweenScrollsTimeout: const Duration(milliseconds: 500),
+          )
+          .tap();
 
       // Landed on Event Details with our name.
       await $(
@@ -156,8 +162,20 @@ void main() {
         const ValueKey('event_details.delete_confirm'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
-      // The detail screen does NOT auto-pop after delete (known quirk, see
-      // events_crud_flow_test.dart) — use the footer link to reach the list.
+      // ---- 5. Reach My Events, tolerating the post-delete navigation race -
+      // The detail screen does NOT auto-pop after delete: it calls
+      // `context.go('/main')` while the detail route sits pushed on top of the
+      // shell, so the route change happens underneath and the stale screen
+      // stays up (documented in events_crud_flow_test.dart as a UX bug). The
+      // footer link is the workaround, but it RACES that redirect — this step
+      // is where this flow flaked on 3 of 8 M1 runs, passing the identical
+      // step in between.
+      //
+      // So: try the link, then fall back to the events tab, which is a plain
+      // shell tab with no redirect competing for it. The assertion is "the
+      // event is gone", not "this particular link works" — the link's own
+      // behaviour belongs in events_crud_flow_test, which exercises it
+      // deliberately.
       await $(
         const ValueKey('event_details.view_events_link'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
@@ -165,17 +183,70 @@ void main() {
         const ValueKey('event_details.view_events_link'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
-      // ---- 5. Verify gone ----------------------------------------------------
-      await $(
-        const ValueKey('my_events.title'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 20));
+      const myEvents = ValueKey('my_events.title');
+      var onList = false;
+      for (var i = 0; i < 40 && !onList; i++) {
+        await $.pump(const Duration(milliseconds: 300));
+        onList = $(myEvents).exists;
+      }
+      if (!onList) {
+        debugPrint(
+          '[event_checklist] the view-events link did not land (the known '
+          'post-delete redirect race) — falling back to the events tab.',
+        );
+        await $(
+          const ValueKey('bottom_nav.events_tab'),
+        ).tap(settlePolicy: SettlePolicy.noSettle);
+        await $(myEvents).waitUntilExists(timeout: const Duration(seconds: 30));
+      }
+
+      // Poll rather than assert instantly. The delete is offline-first: the
+      // row goes on a queue and the list rebuilds from the local DB, so there
+      // is a short window where My Events still renders the deleted event.
+      // Asserting on the first frame after navigation raced that window and
+      // then cost the run this test's entire timeout on 2026-07-31.
+      //
+      // Fixed pumps, never settles — the events list can hold a sync spinner.
+      var gone = false;
+      for (var i = 0; i < 40; i++) {
+        if (!$(eventName).exists) {
+          gone = true;
+          break;
+        }
+        await $.pump(const Duration(milliseconds: 300));
+      }
       expect(
-        $(eventName),
-        findsNothing,
-        reason: 'Deleted event should no longer appear in My Events.',
+        gone,
+        isTrue,
+        reason:
+            'Deleted event "$eventName" was still listed in My Events after '
+            '12s of polling. If this persists, the delete is not reaching the '
+            'local events list — check the repository write, not this test.',
       );
+
+      // ---- 6. PERSISTED STATE — the row, not the list --------------------
+      // The list is the weaker signal here: reaching it at all depends on a
+      // navigation path with a known redirect race, and a list rebuilding
+      // without the row proves only that local state changed. The row is the
+      // real outcome, and checking it is immune to both problems.
+      final probe = await SupabaseProbe.signIn();
+      if (probe == null) {
+        debugPrint(
+          '[event_checklist] Supabase probe unavailable — persistence '
+          'assertion skipped (UI assertions above still ran).',
+        );
+      } else {
+        expect(
+          await probe.eventByName(eventName),
+          isNull,
+          reason:
+              'The event left My Events but its row is still in Supabase. The '
+              'delete was applied locally and never uploaded, so the event '
+              'returns on the next sync or device.',
+        );
+      }
     },
-    timeout: const Timeout(Duration(minutes: 6)),
+    timeout: const Timeout(Duration(minutes: 5)),
   );
 }
 

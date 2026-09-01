@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import '../../../../../shared/domain/activity_type.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../application/macro_explanation_service.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
+import '../../../domain/pre_workout_display_rounding.dart';
+import '../../../domain/pre_workout_feeding_labels.dart';
 import '../macro_shortfall_card.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
-import 'phase_explanation_sheet.dart';
 
 /// Widget for rendering the "Before" phase with expandable sub-phases.
 ///
@@ -31,6 +32,7 @@ class BeforePhaseWidget extends StatefulWidget {
     this.macroTargets,
     this.bodyWeightKg = 70.0,
     this.sportLabel,
+    this.activityType,
     this.carbsLow,
     this.carbsHigh,
     this.proteinLow,
@@ -74,6 +76,10 @@ class BeforePhaseWidget extends StatefulWidget {
   final MacroTargets? macroTargets;
   final double bodyWeightKg;
   final String? sportLabel;
+
+  /// Sport for the feeding-card titles ("Pre-Run Meal" / "Pre-Ride Meal").
+  /// Null (e.g. the brick path) falls back to the generic "Pre-Workout Meal".
+  final ActivityType? activityType;
   final int? carbsLow;
   final int? carbsHigh;
   final int? proteinLow;
@@ -150,28 +156,17 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       size: 20,
                     ),
-                    onPressed: () {
-                      PhaseExplanationSheet.show(
-                        context,
-                        phase: ExplanationPhase.before,
-                        macroTargets: widget.macroTargets!,
-                        bodyWeightKg: widget.bodyWeightKg,
-                        sportLabel: widget.sportLabel,
-                        useImperial: widget.useImperial,
-                        planId: widget.planId,
-                        foods:
-                            widget.section.subPhases
-                                ?.expand((sp) => sp.foodItems)
-                                .toList() ??
-                            widget.section.foodItems,
-                        onRegenerate: widget.onRegenerate,
-                      );
-                    },
+                    // Deliberate no-op: the BEFORE explanation copy in
+                    // PhaseExplanationSheet is stale pending a rewrite for
+                    // the v3 pre-workout model. Keep the button visually
+                    // unchanged (not greyed out) but inert until then.
+                    // During/post info buttons are unaffected.
+                    onPressed: () {},
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.xs),
 
           // Overall macro summary for the entire before phase
           _buildOverallMacroSummary(subPhases),
@@ -233,6 +228,11 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
       sodiumHigh: widget.sodiumHigh,
       fluidsLow: widget.fluidsLow,
       fluidsHigh: widget.fluidsHigh,
+      // Carries the BEFORE-phase absences the section alone can't express:
+      // the hydration gate (no fluid target set) and the fasted flag (no
+      // carbohydrate recommendation at all). Sodium needs nothing here — v3
+      // means the BEFORE phase never has a sodium target.
+      preRun: widget.macroTargets?.preRun,
       carbsOverridden: widget.carbsOverridden,
       proteinOverridden: widget.proteinOverridden,
       sodiumOverridden: widget.sodiumOverridden,
@@ -292,22 +292,57 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          subPhase.displayTitle,
+                          subPhase.displayTitleFor(widget.activityType),
+                          // Deliberately NOT Compadre despite the mockup: the
+                          // in-app Compadre is a 66-glyph demo cut whose
+                          // lowercase codepoints carry full-cap outlines with
+                          // very wide advances (and no hyphen glyph), so
+                          // "Pre-Run Meal" renders as giant spaced capitals
+                          // and truncates. Use the app-bar Sansita instead
+                          // (sectionTitle family/weight) at 16 px, orange,
+                          // title case, single line.
                           style: AppTextStyles.sectionTitle.copyWith(
-                            color: widget.sectionColor,
+                            color: AppColors.orange,
                             fontSize: 16,
+                            letterSpacing: 0,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (!isExpanded &&
+                        // Window label — derived client-side per the SSOT
+                        // reference implementation; the engine emits none.
+                        if (_windowLabel(subPhase) != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            _windowLabel(subPhase)!,
+                            // Design: 9 px uppercase, cream at 50% — the
+                            // dimmest line in the header hierarchy.
+                            style: AppTextStyles.smallLabel.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.5),
+                              fontSize: 9,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                        // Collapsed: always show the summary line. Expanded:
+                        // keep the curated template name visible so the
+                        // ingredient rows below read as one item
+                        // (bug 3abe3fdb754c8153).
+                        if ((!isExpanded ||
+                                (subPhase.templateName?.isNotEmpty ?? false)) &&
                             subPhase.templateSummary.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             subPhase.templateSummary,
+                            // Design: 12 px at 75% cream — deliberately
+                            // brighter than the window label above it.
                             style: AppTextStyles.smallLabel.copyWith(
                               color: Theme.of(
                                 context,
-                              ).colorScheme.onSurfaceVariant,
-                              fontSize: 11,
+                              ).colorScheme.onSurface.withValues(alpha: 0.75),
+                              fontSize: 12,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -316,6 +351,15 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
                       ],
                     ),
                   ),
+                  // Per-feeding figures, always visible in the header (both
+                  // collapsed and expanded — these chips are the only
+                  // per-feeding numbers): big value over a tiny uppercase
+                  // label. Values are DELIVERED — summed from the card's
+                  // foods, so add/remove/quantity edits move them. A carbs
+                  // chip whenever the foods deliver carbs, a fluids chip
+                  // whenever they deliver fluids, sodium never (digest §5).
+                  // Zero-valued figures render no chip at all.
+                  ..._buildCollapsedChips(subPhase),
                 ],
               ),
             ),
@@ -334,9 +378,8 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
               padding: const EdgeInsets.all(AppSpacing.sm),
               child: Column(
                 children: [
-                  // Centered macro summary
-                  _buildCenteredMacroSummary(subPhase),
-                  const SizedBox(height: AppSpacing.sm),
+                  // No per-feeding macro summary here — the header chips are
+                  // the only per-feeding numbers (ratified design).
                   // Food items
                   ...subPhase.foodItems.asMap().entries.map((entry) {
                     final foodIndex = entry.key;
@@ -394,68 +437,87 @@ class _BeforePhaseWidgetState extends State<BeforePhaseWidget> {
     );
   }
 
-  /// Optional diet hint passed to MacroShortfallCard for diet-aware
-  /// suggestions. Returns null when no diet context is available — the card
-  /// then uses the generic suggestion list.
-  String? get _dietHint => null; // Wire user diet here when threaded through
-
-  /// Centered macro summary displayed inside expanded sub-phase content.
-  /// Shows CARBS/FLUIDS/SODIUM to match the parent card header.
-  Widget _buildCenteredMacroSummary(BeforeSubPhase subPhase) {
-    int totalCarbs = 0;
-    double totalFluidsMl = 0;
-    int totalSodium = 0;
-
-    for (final food in subPhase.foodItems) {
-      if (food.nutritionalInfo != null) {
-        totalCarbs += food.nutritionalInfo!.carbs ?? 0;
-        totalFluidsMl += food.nutritionalInfo!.fluids ?? 0;
-        totalSodium += food.nutritionalInfo!.sodium ?? 0;
-      }
-    }
-
-    // Convert fluids to display unit (ml or oz)
-    final String fluidsValue;
-    final String fluidsUnit;
-    if (widget.useImperial) {
-      fluidsValue = (totalFluidsMl * 0.033814).round().toString();
-      fluidsUnit = 'oz';
-    } else {
-      fluidsValue = totalFluidsMl.round().toString();
-      fluidsUnit = 'ml';
-    }
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _macroLabel('${totalCarbs}g', 'CARBS'),
-        const SizedBox(width: AppSpacing.lg),
-        _macroLabel('$fluidsValue$fluidsUnit', 'FLUIDS'),
-        const SizedBox(width: AppSpacing.lg),
-        _macroLabel('${totalSodium}mg', 'SODIUM'),
-      ],
+  /// Window label for a feeding card. The snack window's near edge depends on
+  /// whether the plan carries a meal tier at all.
+  String? _windowLabel(BeforeSubPhase subPhase) {
+    final hasMealTier =
+        widget.section.subPhases?.any((sp) => sp.subPhaseType == 'meal') ??
+        false;
+    return preWorkoutWindowLabel(
+      subPhase.subPhaseType,
+      hasMealTier: hasMealTier,
     );
   }
 
-  Widget _macroLabel(String value, String label) {
+  /// Right-aligned per-feeding **delivered** figures for the collapsed header,
+  /// summed from the card's foods so add/remove and the quantity stepper move
+  /// them (the controller rewrites each food's `nutritionalInfo` on edit and
+  /// the rebuilt plan state flows back down through `widget.section`).
+  ///
+  /// Display rounding per digest §5: carbs to 5 g, fluid to 25 ml, converted
+  /// to the user's unit. A card whose foods deliver nothing (or no foods at
+  /// all) produces no chip — never a "0g". Sodium never gets a chip.
+  List<Widget> _buildCollapsedChips(BeforeSubPhase subPhase) {
+    final chips = <Widget>[];
+
+    double deliveredCarbs = 0;
+    double deliveredFluidsMl = 0;
+    for (final food in subPhase.foodItems) {
+      final info = food.nutritionalInfo;
+      if (info == null) continue;
+      deliveredCarbs += info.carbs ?? 0;
+      deliveredFluidsMl += info.fluids ?? 0;
+    }
+
+    final carbs = round5(deliveredCarbs).round();
+    if (carbs > 0) {
+      chips.add(_feedingChip('${carbs}g', 'CARBS'));
+    }
+
+    // Any card that delivers fluids shows the chip — the old meal-card-only
+    // rule was an artifact of which card happened to carry a fluid target.
+    final ml = round25(deliveredFluidsMl).round();
+    if (ml > 0) {
+      final value = widget.useImperial
+          ? '${(ml * 0.033814).round()}oz'
+          : '${ml}ml';
+      chips.add(_feedingChip(value, 'FLUIDS'));
+    }
+
+    return [
+      for (int i = 0; i < chips.length; i++) ...[
+        if (i > 0) const SizedBox(width: AppSpacing.md),
+        chips[i],
+      ],
+    ];
+  }
+
+  Widget _feedingChip(String value, String label) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
           value,
-          style: AppTextStyles.smallLabel.copyWith(
+          // Per-feeding values are Sansita 16 px in the ratified design.
+          style: AppTextStyles.sectionTitle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+            fontSize: 16,
           ),
         ),
         Text(
           label,
           style: AppTextStyles.smallLabel.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
-            fontSize: 10,
+            fontSize: 9,
+            letterSpacing: 0.5,
           ),
         ),
       ],
     );
   }
+
+  /// Optional diet hint passed to MacroShortfallCard for diet-aware
+  /// suggestions. Returns null when no diet context is available — the card
+  /// then uses the generic suggestion list.
+  String? get _dietHint => null; // Wire user diet here when threaded through
 }

@@ -1,0 +1,401 @@
+<!--
+  SOURCE DRAWER — Pre-Workout Hydration (explanation layer)
+  Archived by QA 2026-07-30 from the design artifact:
+  https://claude.ai/public/artifacts/514e4251-bdf5-4e92-9822-c61350283ba5
+  (filename there: pre-workout-hydration-section.html)
+
+  This is the DESIGN's copy, not a ratified spec. The ratified math lives in
+  pre-workout-hydration.md. Where the two disagree, the .md wins and the conflict is
+  logged in ../../DEVIATIONS.md (D-005, D-006). Do not "fix" the math to match this file.
+
+  Note: recovered via the artifact viewer's code pane, so original source indentation
+  is not preserved. Content is verbatim.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mealvana — Pre-Workout Hydration</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg: #2b1d4a;
+--border: rgba(255,255,255,0.08);
+--accent: #7ef0c8;
+--accent-dim: rgba(126,240,200,0.09);
+--accent-glow: rgba(126,240,200,0.22);
+--text-primary: #f0eaf8;
+--text-secondary: #a898c0;
+--text-dim: #6e5f88;
+--formula-border: rgba(126,240,200,0.22);
+--warning: #f0c87e;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+background: #1a0f2e;
+font-family: 'DM Sans', sans-serif;
+display: flex;
+justify-content: center;
+padding: 32px 16px;
+}
+
+.drawer-surface {
+width: 100%;
+max-width: 400px;
+background: var(--bg);
+border-radius: 20px;
+padding: 24px 20px;
+}
+
+/* ── Section header ── */
+.section-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.section-title { font-size: 15px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.2px; display: flex; align-items: center; gap: 8px; padding-top: 3px; }
+.section-title::before { content: ''; display: block; width: 3px; height: 16px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 8px var(--accent-glow); flex-shrink: 0; }
+.target-badge { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.target-main { display: flex; align-items: baseline; gap: 5px; justify-content: flex-end; }
+.target-sub-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.planned-val { font-size: 22px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.8px; line-height: 1; }
+.planned-label { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+.divider-slash { font-size: 15px; color: var(--text-dim); font-weight: 300; margin: 0 2px; }
+.target-val { font-size: 16px; font-weight: 600; color: var(--text-secondary); letter-spacing: -0.4px; line-height: 1; }
+.target-label { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+.target-range { font-size: 11px; color: var(--accent); font-weight: 500; background: var(--accent-dim); border: 1px solid var(--formula-border); border-radius: 6px; padding: 2px 7px; }
+.rate-badge { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; color: #f472b6; background: rgba(244,114,182,0.10); border: 1px solid rgba(244,114,182,0.25); border-radius: 6px; padding: 2px 7px; }
+.formula-section-title { font-size: 9.5px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.7px; padding: 4px 0 2px 20px; opacity: 0.7; }
+
+/* ── Time window selector ── */
+.window-selector { margin-bottom: 14px; }
+.window-label { font-size: 10.5px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; }
+.window-chips { display: flex; gap: 5px; }
+.window-chip { flex: 1; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 7px 4px; font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; text-align: center; appearance: none; -webkit-appearance: none; line-height: 1.4; }
+.window-chip:focus { outline: none; }
+.window-chip.active { background: var(--accent-dim); border-color: var(--formula-border); color: var(--accent); }
+.window-chip:hover:not(.active) { border-color: rgba(255,255,255,0.15); color: var(--text-primary); }
+
+/* ── Always-visible explanation ── */
+.tldr-body { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 12px; }
+.tldr-body strong { color: var(--text-primary); font-weight: 600; }
+
+/* ── Formula block ── */
+.formula-block { border-left: 2px solid var(--formula-border); padding: 2px 0 2px 12px; margin-bottom: 10px; }
+.formula-steps { display: flex; flex-direction: column; gap: 5px; }
+.formula-step { display: flex; align-items: baseline; gap: 6px; }
+.step-num { font-size: 9px; font-weight: 700; color: var(--text-dim); font-family: 'DM Mono', monospace; min-width: 14px; flex-shrink: 0; padding-top: 1px; }
+.formula-line { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); font-weight: 500; line-height: 1.7; }
+.formula-line .op { color: var(--text-dim); }
+.formula-line .dim { color: var(--text-secondary); opacity: 0.65; }
+.formula-line .note { color: var(--text-dim); font-size: 10px; }
+.formula-line .result { color: var(--text-primary); font-weight: 600; font-size: 13px; }
+.formula-divider { height: 1px; background: var(--formula-border); margin: 5px 0 5px 20px; }
+
+/* ── Tip callout ── */
+.tip-callout { display: flex; align-items: flex-start; gap: 8px; background: rgba(126,240,200,0.05); border: 1px solid rgba(126,240,200,0.12); border-radius: 9px; padding: 10px 12px; margin-top: 10px; }
+.tip-icon { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+.tip-text { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+.tip-text strong { color: var(--text-primary); font-weight: 600; }
+
+/* ── Feedback row ── */
+.feedback-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.feedback-label { font-size: 10.5px; color: var(--text-dim); font-weight: 400; flex: 1; }
+.thumb-btn { display: flex; align-items: center; gap: 4px; background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; cursor: pointer; transition: background 0.15s, border-color 0.15s; appearance: none; -webkit-appearance: none; }
+.thumb-btn:focus { outline: none; }
+.thumb-btn svg { width: 12px; height: 12px; stroke: var(--text-dim); fill: none; flex-shrink: 0; }
+.thumb-btn .count { font-size: 10.5px; color: var(--text-dim); font-family: 'DM Mono', monospace; font-weight: 500; min-width: 10px; }
+.thumb-btn.active-up { background: rgba(126,240,200,0.1); border-color: var(--formula-border); }
+.thumb-btn.active-up svg { stroke: var(--accent); }
+.thumb-btn.active-up .count { color: var(--accent); }
+.thumb-btn.active-down { background: rgba(240,126,126,0.08); border-color: rgba(240,126,126,0.25); }
+.thumb-btn.active-down svg { stroke: #f07e7e; }
+.thumb-btn.active-down .count { color: #f07e7e; }
+
+/* ── Accordion ── */
+.acc-toggle { width: 100%; background: transparent; border: none; border-top: 1px solid var(--border); padding: 12px 0; display: flex; align-items: center; justify-content: space-between; cursor: pointer; appearance: none; -webkit-appearance: none; }
+.acc-toggle:focus { outline: none; }
+.acc-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); transition: color 0.2s; }
+.accordion.open .acc-label { color: var(--text-primary); }
+.acc-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.3s ease; }
+.acc-icon svg { width: 14px; height: 14px; stroke: var(--text-dim); transition: stroke 0.2s; }
+.accordion.open .acc-icon { transform: rotate(180deg); }
+.accordion.open .acc-icon svg { stroke: var(--accent); }
+.acc-panel { max-height: 0; overflow: hidden; transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+.acc-panel-inner { padding: 0 0 14px; opacity: 0; transform: translateY(-4px); transition: opacity 0.25s ease 0.08s, transform 0.25s ease 0.08s; }
+.accordion.open .acc-panel-inner { opacity: 1; transform: translateY(0); }
+
+/* ── Video ── */
+.video-wrap { position: relative; width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; background: #0e0818; }
+.video-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 10px; }
+.video-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(160deg, #1a0f2e 0%, #0e0818 100%); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.video-placeholder.hidden { opacity: 0; pointer-events: none; }
+.play-ring svg { width: 48px; height: 48px; }
+.video-placeholder p { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.video-placeholder span { font-size: 11px; color: var(--text-dim); }
+
+/* ── Full story ── */
+.story-section { margin-bottom: 12px; }
+.story-section:last-child { margin-bottom: 0; }
+.story-q { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.story-p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.65; }
+.story-p strong { color: var(--text-primary); font-weight: 600; }
+.story-divider { height: 1px; background: var(--border); margin: 11px 0; }
+.cite { font-size: 10.5px; font-style: italic; color: var(--text-dim); margin-top: 4px; }
+
+.data-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.data-chip { font-family: 'DM Mono', monospace; font-size: 10.5px; color: var(--text-secondary); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; line-height: 1.6; }
+.data-chip .chip-accent { color: var(--accent); }
+
+.footnote { border-left: 2px solid rgba(240,200,126,0.4); padding-left: 10px; }
+.footnote-label { font-size: 10px; font-weight: 700; color: var(--warning); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px; opacity: 0.8; }
+.footnote p { font-size: 12px; color: var(--text-secondary); line-height: 1.55; }
+.footnote strong { color: var(--warning); font-weight: 600; }
+
+.panel-feedback { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+.panel-feedback .feedback-label { flex: 1; }
+
+.conf-row { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.conf-badge { font-size: 9.5px; font-weight: 700; font-family: 'DM Mono', monospace; border-radius: 4px; padding: 1px 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+.conf-high { background: rgba(126,240,200,0.12); color: var(--accent); border: 1px solid rgba(126,240,200,0.2); }
+.conf-medium { background: rgba(240,200,126,0.10); color: var(--warning); border: 1px solid rgba(240,200,126,0.2); }
+</style>
+</head>
+<body>
+<div class="drawer-surface">
+
+<!-- Section header -->
+<div class="section-header">
+<div class="section-title">Pre-Workout Fluids</div>
+<div class="target-badge">
+<div class="target-main">
+<span class="planned-val">0ml</span>
+<span class="planned-label">planned</span>
+<span class="divider-slash">/</span>
+<span class="target-val">390ml</span>
+<span class="target-label">target</span>
+</div>
+<div class="target-sub-row" style="justify-content:flex-end;">
+<span class="target-range">325–455 ml</span>
+</div>
+</div>
+</div>
+
+<!-- Always-visible explanation -->
+<div class="tldr-body">
+The goal before a workout is to start <strong>euhydrated</strong> — at your normal baseline, not loaded or depleted. With 3 hours available, you have time for the full protocol: sip 390 ml gradually, let it absorb, and aim for pale yellow urine before you head out.
+</div>
+
+<!-- Calculation accordion -->
+<div class="accordion">
+<button class="acc-toggle" aria-expanded="false">
+<span class="acc-label">Calculation</span>
+<span class="acc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+</button>
+<div class="acc-panel"><div class="acc-panel-inner">
+
+<!-- Formula chain -->
+<div class="formula-block">
+<div class="formula-steps">
+<div class="formula-step">
+<span class="step-num">①</span>
+<span class="formula-line">65 kg <span class="op">×</span> 6 ml/kg <span class="op">=</span> <span class="result">390 ml</span></span>
+</div>
+<div class="formula-divider"></div>
+<div class="formula-step">
+<span class="step-num">↓</span>
+<span class="formula-line">floor <span class="op">=</span> 65 <span class="op">×</span> 5 ml/kg <span class="op">=</span> <span class="dim">325 ml</span></span>
+</div>
+<div class="formula-step">
+<span class="step-num">↑</span>
+<span class="formula-line">ceiling <span class="op">=</span> 65 <span class="op">×</span> 7 ml/kg <span class="op">=</span> <span class="dim">455 ml</span></span>
+</div>
+<div class="formula-step">
+<span class="step-num"></span>
+<span class="formula-line">range <span class="op">→</span> <span class="result">325–455 ml</span> <span class="note">sipped over 3 hrs</span></span>
+</div>
+</div>
+</div>
+
+<!-- Urine tip -->
+<div class="tip-callout">
+<span class="tip-text">If your urine is still dark at 2 hours before your workout, the ACSM recommends an additional <strong>3–5 ml/kg</strong>. Aim for pale yellow — straw coloured — before you start.</span>
+</div>
+
+<div class="feedback-row" style="margin-bottom: 0;">
+<span class="feedback-label">Does this make sense?</span>
+<button class="thumb-btn" data-section="formula" data-vote="up"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+<button class="thumb-btn" data-section="formula" data-vote="down"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+</div>
+
+</div></div>
+</div>
+
+<!-- Watch -->
+<div class="accordion">
+<button class="acc-toggle" aria-expanded="false">
+<span class="acc-label">Watch: Pre-Workout Hydration</span>
+<span class="acc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+</button>
+<div class="acc-panel"><div class="acc-panel-inner">
+<div class="video-wrap">
+<video controls playsinline preload="none"><source src="" type="video/mp4"></video>
+<div class="video-placeholder">
+<div class="play-ring"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="11" stroke="rgba(126,240,200,0.3)" stroke-width="1.5"/><polygon points="10,8 17,12 10,16" fill="#7ef0c8"/></svg></div>
+<p>Pre-Workout Hydration</p>
+<span>~2 min · Mealvana Education</span>
+</div>
+</div>
+</div></div>
+</div>
+
+<!-- Full story -->
+<div class="accordion">
+<button class="acc-toggle" aria-expanded="false">
+<span class="acc-label">The Full Story</span>
+<span class="acc-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+</button>
+<div class="acc-panel"><div class="acc-panel-inner">
+
+<!-- S1: Why euhydration -->
+<div class="story-section">
+<div class="story-q">What is euhydration and why does it matter?</div>
+<p class="story-p">Euhydration is your body's normal fluid balance — not dehydrated, not over-hydrated. Starting a workout even mildly dehydrated (1–2% body weight) measurably impairs performance, increases perceived effort, and accelerates cardiovascular strain. The goal of pre-workout hydration is simply to reach your baseline — no more, no less.</p>
+<p class="cite">Cheuvront &amp; Kenefick (2014) — Comprehensive Physiology · Sawka et al. (2007) ACSM</p>
+<div class="conf-row"><span class="conf-badge conf-high">High confidence</span></div>
+<div class="panel-feedback">
+<span class="feedback-label">Helpful?</span>
+<button class="thumb-btn" data-section="s1" data-vote="up"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+<button class="thumb-btn" data-section="s1" data-vote="down"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+</div>
+</div>
+
+<div class="story-divider"></div>
+
+<!-- S2: Why 5–7 ml/kg -->
+<div class="story-section">
+<div class="story-q">Where does 5–7 ml/kg come from?</div>
+<p class="story-p">The ACSM recommends 5–7 ml/kg consumed at least 4 hours before exercise — enough fluid to absorb, reach the tissues, and allow urine output to normalize. We use 6 ml/kg as the midpoint target with 5–7 ml/kg as the acceptable range. The upper bound matters: drinking significantly more than 7 ml/kg provides no additional benefit and may require an inconvenient bathroom stop mid-warmup.</p>
+<div class="data-row">
+<span class="data-chip"><span class="chip-accent">Floor</span> · 5 ml/kg</span>
+<span class="data-chip"><span class="chip-accent">Target</span> · 6 ml/kg</span>
+<span class="data-chip"><span class="chip-accent">Ceiling</span> · 7 ml/kg</span>
+</div>
+<p class="cite">Sawka et al. (2007) ACSM Position Stand · Thomas et al. (2016) AND/ACSM/DC Position</p>
+<div class="conf-row"><span class="conf-badge conf-high">High confidence</span></div>
+<div class="panel-feedback">
+<span class="feedback-label">Helpful?</span>
+<button class="thumb-btn" data-section="s2" data-vote="up"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+<button class="thumb-btn" data-section="s2" data-vote="down"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+</div>
+</div>
+
+<div class="story-divider"></div>
+
+<!-- S3: Time windows -->
+<div class="story-section">
+<div class="story-q">Why does the recommendation change with time available?</div>
+<p class="story-p">Fluid absorption takes time. The body-weight-scaled protocol (5–7 ml/kg) requires at least 2 hours for the fluid to absorb and for urine output to normalize. With less time, a smaller fixed volume is all that can meaningfully absorb before exercise begins — larger volumes would just arrive in your bladder mid-race.</p>
+<div class="data-row">
+<span class="data-chip"><span class="chip-accent">≥ 2 hours</span> · BW × 5–7 ml/kg</span>
+<span class="data-chip"><span class="chip-accent">10–120 min</span> · 200–300 ml fixed</span>
+<span class="data-chip"><span class="chip-accent">&lt; 10 min</span> · sips only</span>
+</div>
+<p class="cite">ACSM 2007 (≥2 hr protocol) · NATA guidelines (10–20 min top-up)</p>
+<div class="conf-row"><span class="conf-badge conf-high">High confidence ≥ 2 hr</span><span class="conf-badge conf-medium">Medium confidence 10–120 min</span></div>
+<div class="panel-feedback">
+<span class="feedback-label">Helpful?</span>
+<button class="thumb-btn" data-section="s3" data-vote="up"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+<button class="thumb-btn" data-section="s3" data-vote="down"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+</div>
+</div>
+
+<div class="story-divider"></div>
+
+<!-- S4: Early morning -->
+<div class="story-section">
+<div class="story-q">What about early morning workouts?</div>
+<p class="story-p">If you're training at 5–6 AM, you won't have 2 hours before your workout and the body-weight-scaled protocol isn't practical. The most effective strategy is to hydrate the evening before — an extra 300–500 ml with dinner. You wake up better hydrated and the small top-up before your run is all you need.</p>
+<div class="footnote" style="margin-top: 8px;">
+<div class="footnote-label">Transparency note</div>
+<p>The evening-before recommendation is based on ACSM's general guidance to maintain adequate hydration during the 24-hour period before exercise. It is a practical tip, not a separately calculated protocol.</p>
+</div>
+<div class="panel-feedback">
+<span class="feedback-label">Helpful?</span>
+<button class="thumb-btn" data-section="s4" data-vote="up"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+<button class="thumb-btn" data-section="s4" data-vote="down"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleY(-1)"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span class="count">0</span></button>
+</div>
+</div>
+
+</div></div>
+</div>
+
+</div>
+
+<script>
+// Window chips
+document.querySelectorAll('.window-chip').forEach(chip => {
+chip.addEventListener('click', () => {
+document.querySelectorAll('.window-chip').forEach(c => c.classList.remove('active'));
+chip.classList.add('active');
+});
+});
+
+// Accordion
+document.querySelectorAll('.acc-toggle').forEach(toggle => {
+toggle.addEventListener('click', () => {
+const accordion = toggle.closest('.accordion');
+const panel = accordion.querySelector('.acc-panel');
+const isOpen = accordion.classList.contains('open');
+if (isOpen) {
+panel.style.maxHeight = panel.scrollHeight + 'px';
+requestAnimationFrame(() => { panel.style.maxHeight = '0'; });
+accordion.classList.remove('open');
+toggle.setAttribute('aria-expanded', 'false');
+} else {
+accordion.classList.add('open');
+toggle.setAttribute('aria-expanded', 'true');
+panel.style.maxHeight = panel.scrollHeight + 'px';
+panel.addEventListener('transitionend', () => {
+if (accordion.classList.contains('open')) panel.style.maxHeight = 'none';
+}, { once: true });
+}
+});
+});
+
+// Video placeholder
+document.querySelectorAll('.video-placeholder').forEach(p => {
+p.addEventListener('click', () => {
+const video = p.closest('.video-wrap').querySelector('video');
+p.classList.add('hidden');
+if (video) video.play();
+});
+});
+
+// Thumbs
+const votes = {};
+document.querySelectorAll('.thumb-btn').forEach(btn => {
+btn.addEventListener('click', () => {
+const section = btn.dataset.section;
+const vote = btn.dataset.vote;
+const prev = votes[section];
+const container = btn.closest('.feedback-row') || btn.closest('.panel-feedback');
+const upBtn = container.querySelector(`[data-section="${section}"][data-vote="up"]`);
+const downBtn = container.querySelector(`[data-section="${section}"][data-vote="down"]`);
+const upCount = upBtn.querySelector('.count');
+const downCount = downBtn.querySelector('.count');
+if (prev === vote) {
+votes[section] = null;
+btn.classList.remove('active-up', 'active-down');
+btn.querySelector('.count').textContent = Math.max(0, parseInt(btn.querySelector('.count').textContent) - 1);
+return;
+}
+if (prev === 'up') { upBtn.classList.remove('active-up'); upCount.textContent = Math.max(0, parseInt(upCount.textContent) - 1); }
+else if (prev === 'down') { downBtn.classList.remove('active-down'); downCount.textContent = Math.max(0, parseInt(downCount.textContent) - 1); }
+votes[section] = vote;
+if (vote === 'up') { upBtn.classList.add('active-up'); upCount.textContent = parseInt(upCount.textContent) + 1; }
+else { downBtn.classList.add('active-down'); downCount.textContent = parseInt(downCount.textContent) + 1; }
+});
+});
+</script>
+</body>
+</html>

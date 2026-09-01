@@ -288,6 +288,107 @@ class UserProfile {
     return [];
   }
 
+  /// Parse a `users` row fetched from Supabase, tolerating missing/null
+  /// columns (older rows, partial selects) with per-field defaults.
+  ///
+  /// This is the ONE parser every remote-profile hydration path must use.
+  /// The pre-2026-08 hand-rolled parsers each covered a different subset of
+  /// columns, so whichever path ran last silently reset the fields it didn't
+  /// know about (unit_system → imperial, sweat_rate → medium, plan-reveal
+  /// overrides → null) — exactly the "my onboarding answers vanished after
+  /// I signed in" bug.
+  ///
+  /// [fallbackId] is used when the row carries no id/device_id (legacy rows).
+  factory UserProfile.fromSupabaseRow(
+    Map<String, dynamic> row, {
+    required String fallbackId,
+  }) {
+    return UserProfile(
+      id: row['id'] as String? ?? fallbackId,
+      deviceId: row['device_id'] as String? ?? fallbackId,
+      authUserId: row['auth_user_id'] as String?,
+      authProvider: row['auth_provider'] as String? ?? 'anonymous',
+      isAnonymous: row['is_anonymous'] as bool? ?? true,
+      gender: Gender.values.firstWhere(
+        (g) => g.name == row['gender'],
+        orElse: () => Gender.other,
+      ),
+      birthday:
+          DateTime.tryParse(row['birthday'] as String? ?? '') ??
+          DateTime(1990, 1, 1),
+      heightFeet: row['height_feet'] as int? ?? 5,
+      heightInches: row['height_inches'] as int? ?? 8,
+      weightPounds: (row['weight_pounds'] as num?)?.toDouble() ?? 150.0,
+      runsWithWaterBottle: row['runs_with_water_bottle'] as bool? ?? false,
+      createdAt:
+          DateTime.tryParse(row['created_at'] as String? ?? '') ??
+          DateTime.now(),
+      updatedAt:
+          DateTime.tryParse(row['updated_at'] as String? ?? '') ??
+          DateTime.now(),
+      gutTraining: GutTraining.values.firstWhere(
+        (gt) => gt.name == row['gut_training_level'],
+        orElse: () => GutTraining.moderate,
+      ),
+      sweatRate: SweatRateCat.values.firstWhere(
+        (sr) => sr.name == row['sweat_rate'],
+        orElse: () => SweatRateCat.medium,
+      ),
+      onboardingCompleted: row['onboarding_completed'] as bool? ?? false,
+      appVersion: row['app_version'] as String? ?? '1.0.0',
+      unitSystem: UnitSystem.values.firstWhere(
+        (u) => u.name == row['unit_system'],
+        orElse: () => UnitSystem.imperial,
+      ),
+      // Sport preferences (production Supabase column names)
+      ftpWatts: row['cycling_ftp_watts'] as int?,
+      cssPacePer100mSeconds: row['swimming_css_seconds_per_100m'] as int?,
+      // Drift-only fields — never present in a Supabase row
+      giSensitivity: null,
+      typicalBikeBottles: null,
+      hasAeroBottle: null,
+      hasBentoBox: null,
+      typicalWetsuit: null,
+      typicalSwimCapType: null,
+      dietaryPreference:
+          DietaryPreference.fromDbValue(row['dietary_preference'] as String?) ??
+          DietaryPreference.none,
+      allergies: _parseAllergiesFromJson(row['allergies']),
+      senderName: row['sender_name'] as String?,
+      firstName: row['first_name'] as String?,
+      lastName: row['last_name'] as String?,
+      email: row['email'] as String?,
+      nutritionTargetOverrides: row['nutrition_target_overrides'] != null
+          ? NutritionTargetOverrides.fromJson(
+              row['nutrition_target_overrides'] as Map<String, dynamic>,
+            )
+          : null,
+      bodyFatPct: (row['body_fat_pct'] as num?)?.toDouble(),
+      lifestyle: Lifestyle.fromDbValue(row['lifestyle'] as String?),
+      typicalWeeklyHours: (row['typical_weekly_hours'] as num?)?.toDouble(),
+      carbCycleOptIn: row['carb_cycle_opt_in'] as bool? ?? false,
+      trainingPhase: TrainingPhase.fromDbValue(
+        row['training_phase'] as String?,
+      ),
+      sweatSodium: row['sweat_sodium'] != null
+          ? SweatSodiumCat.fromDbValue(row['sweat_sodium'] as String?)
+          : null,
+      knownSweatRateMlPerHour: row['known_sweat_rate_ml_per_hour'] as int?,
+      knownSodiumConcentrationMgPerLiter:
+          row['known_sodium_concentration_mg_per_liter'] as int?,
+      sweatTestDate: row['sweat_test_date'] != null
+          ? DateTime.tryParse(row['sweat_test_date'] as String)
+          : null,
+      sweatTestSource: row['sweat_test_source'] as String?,
+      weightPoundsUpdatedAt: row['weight_pounds_updated_at'] != null
+          ? DateTime.tryParse(row['weight_pounds_updated_at'] as String)
+          : null,
+      bodyFatPctUpdatedAt: row['body_fat_pct_updated_at'] != null
+          ? DateTime.tryParse(row['body_fat_pct_updated_at'] as String)
+          : null,
+    );
+  }
+
   /// Create UserProfile from JSON (from Supabase)
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(

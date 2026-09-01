@@ -944,7 +944,7 @@ class _MacrosCard extends ConsumerWidget {
                     label: 'Fluid',
                     value: UnitFormatter.formatFluids(
                       fluid,
-                      useImperial: !useMetric,
+                      useMetric: useMetric,
                     ),
                   ),
                 ),

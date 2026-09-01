@@ -53,6 +53,11 @@ import {
   fluidSodiumDeficits,
 } from "../_shared/nutrition/pin-backfill.ts";
 import { getEssentialFoods } from "../_shared/nutrition/food-queries.ts";
+import {
+  defaultFormulaDecision,
+  logFormulaCascade,
+  withDecisionSource,
+} from "../_shared/nutrition/formula-decision.ts";
 import type { LPPhaseResult } from "./types.ts";
 
 // ============================================================================
@@ -322,6 +327,13 @@ export async function generateDuringPhase(
           dislikedSet,
           { gapFill: false },
         );
+        logFormulaCascade({
+          phase: "during",
+          source: "personal_formula",
+          templateId: match.id,
+          templateName: match.name,
+          pinSetSize: 1,
+        });
         return {
           foods: closed.foods,
           by_hour_data: null,
@@ -329,6 +341,7 @@ export async function generateDuringPhase(
           ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
           pin_decision: {
             used_pin: true,
+            decision_source: "personal_formula",
             pinned_template_id: match.id,
             pinned_template_name: match.name,
             fallthrough_reason: null,
@@ -348,9 +361,11 @@ export async function generateDuringPhase(
       );
       duringPinDecision = {
         used_pin: false,
+        decision_source: "default_formula",
         pinned_template_id: null,
         pinned_template_name: null,
         fallthrough_reason: "personal_formula_empty",
+        default_fallthrough_reason: "personal_formula_empty",
         pin_set_size: 1,
       };
     } else {
@@ -481,6 +496,7 @@ export async function generateDuringPhase(
         ) {
           duringPinDecision = {
             used_pin: true,
+            decision_source: "user_pin",
             pinned_template_id: first.id,
             pinned_template_name: first.name,
             fallthrough_reason: null,
@@ -561,34 +577,43 @@ export async function generateDuringPhase(
               elapsed(phaseStart)
             }ms (path=template)`,
           );
-          // Ephemeral default-formula safety net (formula-first flip):
-          // the template path IS the default-formula tier — its candidates
-          // are ranked by `selection_priority`, so the template that
-          // rendered is the best-fit system formula for this workout. When
-          // no REAL pin fired AND the client opted in, tag the outcome as
-          // an ephemeral pin so the plan reads formula-first without writing
-          // any `formula_pins` rows. For opted-out (old) clients this falls
-          // back to the pre-safety-net conditional emission, byte-identical
-          // to legacy v3. Behavior of the food output is unchanged either
-          // way; this only enriches telemetry.
-          const emittedPinDecision = duringPinDecision?.used_pin === true
+          // The template path IS the default-formula tier — its candidates
+          // are ranked by `selection_priority` (plus preference score), so
+          // the template that rendered is the best-fit system formula for
+          // this workout. Since the client stopped pre-computing auto-pins
+          // (2026-07-29) this is the COMMON outcome, not a safety net.
+          //
+          // When no REAL pin fired AND the client opted in, tag the outcome
+          // as an ephemeral pin so the plan reads formula-first without
+          // writing any `formula_pins` rows. For opted-out (old) clients this
+          // falls back to the pre-safety-net conditional emission,
+          // byte-identical to legacy v3. Food output is unchanged either way;
+          // this only enriches telemetry.
+          const usedRealPin = duringPinDecision?.used_pin === true;
+          logFormulaCascade({
+            phase: "during",
+            source: usedRealPin ? "user_pin" : "default_formula",
+            templateId: templateResult.template_id,
+            templateName: templateResult.template_name,
+            reason: usedRealPin
+              ? null
+              : duringPinDecision?.fallthrough_reason ?? "no_pin_for_scope",
+            pinSetSize: duringPinDecision?.pin_set_size ?? 0,
+          });
+          const emittedPinDecision = usedRealPin
             ? duringPinDecision
             : emitEphemeralDefault
-            ? {
-              used_pin: true,
-              ephemeral: true,
-              pinned_template_id: templateResult.template_id,
-              pinned_template_name: templateResult.template_name,
-              fallthrough_reason: null,
-              pin_set_size: duringPinDecision?.pin_set_size ?? 0,
-              // An ephemeral default formula is even less "what the user
+            ? defaultFormulaDecision({
+              templateId: templateResult.template_id,
+              templateName: templateResult.template_name,
+              pinSetSize: duringPinDecision?.pin_set_size ?? 0,
+              fallthroughReason: duringPinDecision?.fallthrough_reason,
+              // A computed default formula is even less "what the user
               // asked for" than a real system pin — carry the skips so the
               // banner can still explain the miss.
-              ...(duringPinDecision?.skipped_personal_formulas && {
-                skipped_personal_formulas:
-                  duringPinDecision.skipped_personal_formulas,
-              }),
-            }
+              skippedPersonalFormulas:
+                duringPinDecision?.skipped_personal_formulas,
+            })
             : duringPinDecision;
           return {
             foods: closed.foods,
@@ -626,9 +651,11 @@ export async function generateDuringPhase(
           );
           duringPinDecision = {
             used_pin: false,
+            decision_source: "solver",
             pinned_template_id: null,
             pinned_template_name: null,
             fallthrough_reason: "pinned_template_unrenderable",
+            default_fallthrough_reason: "pinned_template_unrenderable",
             pin_set_size: duringPinDecision.pin_set_size,
             ...(duringPinDecision.skipped_personal_formulas && {
               skipped_personal_formulas:
@@ -680,11 +707,18 @@ export async function generateDuringPhase(
         elapsed(phaseStart)
       }ms (path=empty)`,
     );
+    logFormulaCascade({
+      phase: "during",
+      source: "solver",
+      reason: "no_during_foods_available",
+      pinSetSize: duringPinDecision?.pin_set_size ?? 0,
+    });
     return {
       foods: [],
       generation_path: "empty",
       ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
-      ...(duringPinDecision && { pin_decision: duringPinDecision }),
+      ...(duringPinDecision &&
+        { pin_decision: withDecisionSource(duringPinDecision, "solver") }),
     };
   }
 
@@ -693,6 +727,8 @@ export async function generateDuringPhase(
     constrainedFoods,
     targets,
     activityType,
+    durationMinutes,
+    gutLevel,
   );
   console.log(
     `[PLAN-V3-TIMING] during_rule_solve completed in ${
@@ -715,11 +751,22 @@ export async function generateDuringPhase(
       elapsed(phaseStart)
     }ms (path=rule)`,
   );
+  // No formula rendered for this phase — neither a pin nor the ranked
+  // default-formula tier produced a usable template, so the rule solver
+  // assembled foods from the raw pool. Logged as a warning so the no-pin
+  // path can never regress into the solver silently.
+  logFormulaCascade({
+    phase: "during",
+    source: "solver",
+    reason: duringPinDecision?.fallthrough_reason ?? "no_template_candidates",
+    pinSetSize: duringPinDecision?.pin_set_size ?? 0,
+  });
   return {
     foods: closed.foods,
     by_hour_data: null,
     generation_path: "rule",
     ...(closed.shortfalls && { shortfalls: closed.shortfalls }),
-    ...(duringPinDecision && { pin_decision: duringPinDecision }),
+    ...(duringPinDecision &&
+      { pin_decision: withDecisionSource(duringPinDecision, "solver") }),
   };
 }

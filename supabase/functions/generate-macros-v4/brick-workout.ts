@@ -29,7 +29,7 @@ import {
   calculateSweatRateBreakdown,
   replacementBandLabel,
 } from "../_shared/nutrition/sweat-hydration.ts";
-import { calculatePreWorkoutTargets } from "./pre-workout.ts";
+import type { PreWorkoutOverlaidTargets } from "./pre-workout.ts";
 
 // ============================================================================
 // BRICK SEGMENT TYPES
@@ -482,9 +482,17 @@ export function calculateBrickHydration(
   };
 }
 
+/** Round for the wire while preserving `null` ("no statement made"). */
+function roundOrNull(value: number | null): number | null {
+  return value === null ? null : Math.round(value);
+}
+
 export function calculateBrickMacrosV4(
   input: MacroInputV4,
-  preTargets: ReturnType<typeof calculatePreWorkoutTargets>,
+  // Post-overlay targets: `sodium_*` is null (sodium SSOT v3) and `water_*` is
+  // null on the hydration gate path. Brick only passes them through to the
+  // response — it does no arithmetic on them.
+  preTargets: PreWorkoutOverlaidTargets,
 ) {
   const weightKg = toKg(input.weight, input.weight_unit);
   const segments = input.brick_segments!;
@@ -844,8 +852,11 @@ export function calculateBrickMacrosV4(
         carbs_g: preTargets.carbs_g,
         protein_g: preTargets.protein_g,
         fat_g: preTargets.fat_g,
+        // Sodium is null by design (no pre-workout sodium target); fluid is
+        // null on the hydration gate path. Rounding happens here, at the
+        // response boundary — the engine itself is exact.
         sodium_mg: preTargets.sodium_mg,
-        water_ml: preTargets.water_ml,
+        water_ml: roundOrNull(preTargets.water_ml),
         meal_type: preTargets.meal_type,
         // V4 range fields
         carbs_low_g: preTargets.carbs_low_g,
@@ -854,8 +865,9 @@ export function calculateBrickMacrosV4(
         protein_high_g: preTargets.protein_high_g,
         sodium_low_mg: preTargets.sodium_low_mg,
         sodium_high_mg: preTargets.sodium_high_mg,
-        water_low_ml: preTargets.water_low_ml,
-        water_high_ml: preTargets.water_high_ml,
+        water_low_ml: roundOrNull(preTargets.water_low_ml),
+        water_high_ml: roundOrNull(preTargets.water_high_ml),
+        water_tiers: preTargets.water_tiers,
       },
       during_segments: duringSegments,
       transitions: transitions,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../domain/food_item_data.dart';
+import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
+import '../../../domain/pre_workout_display_rounding.dart';
 import '../../utils/activity_detail_helpers.dart';
 import 'macro_range_indicator.dart';
 
@@ -30,6 +32,7 @@ class MacroSummaryRow extends StatelessWidget {
     this.proteinOverrideLabel,
     this.sodiumOverrideLabel,
     this.fluidsOverrideLabel,
+    this.preRun,
   });
 
   final List<FoodItemData> foods;
@@ -54,6 +57,14 @@ class MacroSummaryRow extends StatelessWidget {
   final String? proteinOverrideLabel;
   final String? sodiumOverrideLabel;
   final String? fluidsOverrideLabel;
+
+  /// The pre-workout targets, when this row is rendering a BEFORE section.
+  ///
+  /// Supplies the *absence* information the section alone can't carry: the
+  /// hydration gate (no fluid target set) and the fasted flag (no carbohydrate
+  /// recommendation at all). Without it the BEFORE row still suppresses the
+  /// sodium band — that follows from the phase, not from the data.
+  final PreRunMacros? preRun;
 
   @override
   Widget build(BuildContext context) {
@@ -93,8 +104,37 @@ class MacroSummaryRow extends StatelessWidget {
     final isBeforeSection = categoryLower.contains('before');
     final showFluids = isBeforeSection || isDuringSection;
 
+    // BEFORE-phase absences (docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md §3 and §5).
+    //
+    // Sodium: Mealvana sets no pre-workout sodium target at all, so the figure
+    // is reported as delivered — no band, no marker, no in-range state. This
+    // follows from the phase itself, so it holds even for a legacy cached plan
+    // that still carries the retired sodium band.
+    final sodiumHasNoTarget = isBeforeSection;
+    // Fluid: the hydration gate fired — a short, mild session gets no target.
+    final fluidsHasNoTarget =
+        isBeforeSection && (preRun?.isHydrationGated ?? false);
+    // Carbohydrate: the athlete is fasted — no recommendation is being made.
+    // Distinct from `carbsG == 0` at t−0, which *is* a recommendation.
+    final carbsHasNoTarget =
+        isBeforeSection && (preRun?.isCarbRecommendationAbsent ?? false);
+
+    // Display rounding belongs here, not in the engine: fluid to the nearest
+    // 25 (target) with the band widened to [floor25, ceil25], carbs to 5 g.
+    if (isBeforeSection) {
+      targetCarbs = round5(targetCarbs.toDouble()).round();
+      targetFluids = round25(targetFluids.toDouble()).round();
+      displayFluidsTarget = useImperial
+          ? (targetFluids * 0.033814).round()
+          : targetFluids;
+    }
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
+      // Top-align the columns so all three values sit on the same line: the
+      // sodium column has no range bar beneath it, and centering would drop
+      // its value visibly below the carbs/fluids figures.
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: MacroSummaryItem(
@@ -102,10 +142,19 @@ class MacroSummaryRow extends StatelessWidget {
             target: targetCarbs,
             unit: 'g',
             label: 'CARBS',
-            low: carbsLow,
-            high: carbsHigh,
+            low: isBeforeSection
+                ? _beforeCarbBand(carbsLow, carbsHigh)?.$1
+                : carbsLow,
+            high: isBeforeSection
+                ? _beforeCarbBand(carbsLow, carbsHigh)?.$2
+                : carbsHigh,
             isOverridden: carbsOverridden,
             overrideLabel: carbsOverrideLabel,
+            hasNoTarget: carbsHasNoTarget,
+            noTargetNote: carbsHasNoTarget
+                ? 'training fasted — no recommendation'
+                : null,
+            prominent: isBeforeSection,
           ),
         ),
         if (showFluids)
@@ -115,14 +164,25 @@ class MacroSummaryRow extends StatelessWidget {
               target: displayFluidsTarget,
               unit: fluidsUnit,
               label: 'FLUIDS',
-              low: useImperial && fluidsLow != null
-                  ? (fluidsLow! * 0.033814).round()
-                  : fluidsLow,
-              high: useImperial && fluidsHigh != null
-                  ? (fluidsHigh! * 0.033814).round()
-                  : fluidsHigh,
+              low: _fluidBandEnd(
+                fluidsLow,
+                isBeforeSection,
+                floor25,
+                useImperial,
+              ),
+              high: _fluidBandEnd(
+                fluidsHigh,
+                isBeforeSection,
+                ceil25,
+                useImperial,
+              ),
               isOverridden: fluidsOverridden,
               overrideLabel: fluidsOverrideLabel,
+              hasNoTarget: fluidsHasNoTarget,
+              noTargetNote: fluidsHasNoTarget
+                  ? 'no target for this session'
+                  : null,
+              prominent: isBeforeSection,
             ),
           )
         else
@@ -144,14 +204,42 @@ class MacroSummaryRow extends StatelessWidget {
             target: targetSodium,
             unit: 'mg',
             label: 'SODIUM',
-            low: sodiumLow,
-            high: sodiumHigh,
+            low: sodiumHasNoTarget ? null : sodiumLow,
+            high: sodiumHasNoTarget ? null : sodiumHigh,
             isOverridden: sodiumOverridden,
             overrideLabel: sodiumOverrideLabel,
+            hasNoTarget: sodiumHasNoTarget,
+            // No note under the sodium figure — the ratified design shows the
+            // dimmed value + "SODIUM" label only. (The fluid/carb no-target
+            // notes above are distinct states and keep theirs.)
+            prominent: isBeforeSection,
           ),
         ),
       ],
     );
+  }
+
+  /// Carbs v2 requires the `[0, 0]` band at t−0 be **suppressed**, not drawn
+  /// as "0 – 0" — which would also make the delivered figure read as "over"
+  /// against a ceiling of zero. Display rounding is to 5 g.
+  (int, int)? _beforeCarbBand(int? low, int? high) {
+    final band = roundCarbBand(low?.toDouble(), high?.toDouble());
+    if (band == null) return null;
+    return (band.low.round(), band.high.round());
+  }
+
+  /// Rounds one end of the pre-workout fluid band, widening rather than
+  /// narrowing it (`floor25` for the floor, `ceil25` for the ceiling), then
+  /// converts to the display unit. Non-BEFORE phases are untouched.
+  int? _fluidBandEnd(
+    int? ml,
+    bool isBeforeSection,
+    double Function(double) round,
+    bool useImperial,
+  ) {
+    if (ml == null) return null;
+    final rounded = isBeforeSection ? round(ml.toDouble()) : ml.toDouble();
+    return useImperial ? (rounded * 0.033814).round() : rounded.round();
   }
 }
 
@@ -167,6 +255,9 @@ class MacroSummaryItem extends StatelessWidget {
     this.high,
     this.isOverridden = false,
     this.overrideLabel,
+    this.hasNoTarget = false,
+    this.noTargetNote,
+    this.prominent = false,
   });
 
   final int actual;
@@ -177,11 +268,42 @@ class MacroSummaryItem extends StatelessWidget {
   final int? high;
   final bool isOverridden;
 
+  /// BEFORE-phase presentation (digest §5): summary values at the design's
+  /// Sansita page-title weight, and the range bar carries a second marker at
+  /// the target. Defaults to false so during/post rendering is untouched.
+  final bool prominent;
+
   /// Display label for the override value (e.g., "120g/hr").
   /// When null, falls back to showing "$target$unit".
   final String? overrideLabel;
 
-  bool get _hasRange => low != null && high != null && (low! > 0 || high! > 0);
+  /// No target exists for this quantity — render what the food delivers and
+  /// nothing else. Three states must never look alike (see
+  /// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §5): a real zero, *no target
+  /// set* (the hydration gate), and *no recommendation at all* (fasted). The
+  /// first keeps its ratio; the other two set this flag and differ by
+  /// [noTargetNote].
+  final bool hasNoTarget;
+
+  /// One-line reason shown beneath the label when [hasNoTarget] is set.
+  final String? noTargetNote;
+
+  bool get _hasRange =>
+      !hasNoTarget && low != null && high != null && (low! > 0 || high! > 0);
+
+  /// Value typography: the ratified BEFORE design puts the three summary
+  /// figures in Sansita bold ([AppTextStyles.pageTitle]); sized down from the
+  /// mockup's 28 px to 24 px per Lee's on-device review (2026-08-05). Other
+  /// phases keep the compact Apercu data number. Colour tokens are the
+  /// caller's — exact-hex reconciliation with the mockup is a design-system
+  /// call.
+  TextStyle _valueStyle(Color color) => prominent
+      ? AppTextStyles.pageTitle.copyWith(color: color, fontSize: 24)
+      : AppTextStyles.dataNumber.copyWith(
+          color: color,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        );
 
   /// Whether the target exceeds the recommended range upper bound.
   bool get _exceedsRange => _hasRange && target > high!;
@@ -197,6 +319,42 @@ class MacroSummaryItem extends StatelessWidget {
     );
     final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
+    if (hasNoTarget) {
+      // Delivered figure only: no ratio, no bar, no marker, and deliberately
+      // the neutral on-surface colour rather than an in-range/out-of-range
+      // one. There is nothing to be in range of.
+      return Column(
+        children: [
+          Text(
+            '$actual$unit',
+            // Deliberately the neutral on-surface tone at the same size as
+            // the teal figures — "dimmed, not diminished".
+            style: _valueStyle(Theme.of(context).colorScheme.onSurface),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            label,
+            style: AppTextStyles.smallLabel.copyWith(
+              color: mutedColor,
+              fontSize: 10,
+            ),
+          ),
+          if (noTargetNote != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              noTargetNote!,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.smallLabel.copyWith(
+                color: mutedColor,
+                fontSize: 9,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
     if (!_hasRange) {
       // No range provided. When target is 0 (spec says "no recommendation"),
       // showing "actual/0 unit" reads as broken data — render just `actual unit`.
@@ -210,20 +368,11 @@ class MacroSummaryItem extends StatelessWidget {
               RichText(
                 text: TextSpan(
                   children: [
-                    TextSpan(
-                      text: '$actual',
-                      style: AppTextStyles.dataNumber.copyWith(
-                        color: actualColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    TextSpan(text: '$actual', style: _valueStyle(actualColor)),
                     TextSpan(
                       text: showFlat ? unit : '/$target$unit',
-                      style: AppTextStyles.dataNumber.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      style: _valueStyle(
+                        Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
@@ -256,11 +405,13 @@ class MacroSummaryItem extends StatelessWidget {
             children: [
               Text(
                 '$actual$unit',
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: actualColor,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: prominent
+                    ? _valueStyle(actualColor)
+                    : AppTextStyles.dataNumber.copyWith(
+                        color: actualColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
               ),
               if (isOverridden) _buildOverrideIcon(context),
             ],
@@ -275,12 +426,17 @@ class MacroSummaryItem extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          // Range bar
+          // Range bar. In prominent (BEFORE) mode it carries both markers:
+          // the triangle is the target, the diamond is what the food delivers.
           MacroRangeIndicator(
             value: actual,
             min: low!,
             max: high!,
             color: actualColor,
+            target: prominent ? target : null,
+            // Ratified design: the target marker is orange, the delivered
+            // diamond keeps the in/out-of-range colour.
+            targetColor: prominent ? AppColors.orange : null,
           ),
           const SizedBox(height: 2),
           // Min / Max labels
@@ -288,14 +444,15 @@ class MacroSummaryItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '$low',
+                // Design (BEFORE): band end labels carry the unit ("30g").
+                prominent ? '$low$unit' : '$low',
                 style: AppTextStyles.smallLabel.copyWith(
                   color: mutedColor,
                   fontSize: 9,
                 ),
               ),
               Text(
-                '$high',
+                prominent ? '$high$unit' : '$high',
                 style: AppTextStyles.smallLabel.copyWith(
                   color: mutedColor,
                   fontSize: 9,

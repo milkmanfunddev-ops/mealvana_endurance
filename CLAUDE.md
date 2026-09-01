@@ -70,6 +70,8 @@ stored in the macOS Keychain (service `mealvana-dev-login`). Prereqs: a booted s
 and `idb`. See the script header for details.
 
 ## Docs Map
+- Docs index (core vs `features/` history vs `_archived/`): `/docs/README.md`
+- **Nutrition SSOT (ratified specs + conformance vectors, synced from the QA repo): `/docs/ssot/`** — `PRE-WORKOUT-BUNDLE-DIGEST.md` first; `spec/` is normative, `.md` beats `.html`, `DEVIATIONS.md` holds the open register. Fuelling algorithm changes must go green against `docs/ssot/vectors/`.
 - Notion boards (IDs, release protocol, ownership boundary): `.claude/notion/boards.md`
 - Saved multi-agent workflows (`bug-batch`, `sweep`, `daily-work` — run via the Workflow tool when Lee asks; `daily-work` is launched by the `/daily` skill): `.claude/workflows/`
 - Architecture overview: `/docs/architecture/README.md`

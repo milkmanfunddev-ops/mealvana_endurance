@@ -4,7 +4,7 @@
  * Strategy: describe-meal is a thin wrapper that:
  *   1. Validates auth (JWT → Supabase admin client)
  *   2. Validates body.description (non-empty, max 2000 chars)
- *   3. Calls generateObject with JADE_MODEL and a prompt that embeds the description
+ *   3. Calls generateObject with AI_COACH_MODEL and a prompt that embeds the description
  *   4. Returns the MealAnalysis object
  *
  * The pure-function seam is small (validation logic + prompt assembly) but we
@@ -37,6 +37,7 @@ import { z } from 'npm:zod@3';
 
 import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
 import { creditCost } from '../_shared/ai/credits.ts';
+import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
 
 // ---------------------------------------------------------------------------
 // A. description validation rules (mirrors index.ts handler logic)
@@ -297,13 +298,17 @@ describe('F. AI_GATEWAY_API_KEY guard', () => {
 });
 
 // ---------------------------------------------------------------------------
-// G. JADE_MODEL env wiring
+// G. AI_COACH_MODEL env wiring
 // ---------------------------------------------------------------------------
 
-describe('G. JADE_MODEL wiring', () => {
-  it('defaults to anthropic/claude-sonnet-4.6', () => {
-    const model = Deno.env.get('JADE_MODEL') ?? 'anthropic/claude-sonnet-4.6';
-    assertEquals(model, 'anthropic/claude-sonnet-4.6');
+describe('G. DESCRIBE_MEAL_MODEL wiring', () => {
+  it('resolves to Sonnet when env not set', () => {
+    // This function reads DESCRIBE_MEAL_MODEL, not AI_COACH_MODEL — and it asserts
+    // the REAL exported constant. The previous version re-typed the fallback
+    // inline against the wrong constant, so it passed through the whole
+    // Sonnet -> Haiku -> Sonnet round trip without ever going red.
+    assertEquals(Deno.env.get('DESCRIBE_MEAL_MODEL'), undefined);
+    assertEquals(DESCRIBE_MEAL_MODEL, 'anthropic/claude-sonnet-4.6');
   });
 });
 

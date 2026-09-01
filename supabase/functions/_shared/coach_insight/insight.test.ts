@@ -159,7 +159,8 @@ Deno.test("before snack prompt includes its concrete timing and carb range", () 
     context,
     computeNutritionState(context),
   );
-  assertStringIncludes(message, "TIMING_WINDOW: 30-90 minutes before exercise");
+  // 30-120: the ratified snack window after the 120-minute meal boundary (D-017).
+  assertStringIncludes(message, "TIMING_WINDOW: 30-120 minutes before exercise");
   assertStringIncludes(message, "heuristic_carb_range: 20-70 g");
 });
 

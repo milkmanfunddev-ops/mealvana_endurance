@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/activity.dart';
+import '../../domain/brick_eligibility.dart';
 import '../../domain/brick_exceptions.dart';
 
 part 'brick_selection_controller.g.dart';
@@ -99,6 +100,11 @@ class BrickSelectionController extends _$BrickSelectionController {
   void toggleActivity(Activity activity) {
     final currentState = state;
 
+    // Only swim / bike / run can join a brick. The UI already refuses to make
+    // ineligible rows selectable, but guard here too so no caller can build an
+    // invalid selection (Notion 3a7e3fdb).
+    if (!activity.isBrickEligible) return;
+
     final selectedIds = List<String>.from(currentState.selectedActivityIds);
     final selectedActivities = List<Activity>.from(
       currentState.selectedActivities,
@@ -125,6 +131,21 @@ class BrickSelectionController extends _$BrickSelectionController {
     );
   }
 
+  /// Reverse the leg order of the current selection.
+  ///
+  /// Brick redesign (Notion 3a7e3fdb, step 2 — "Pick legs, set order"):
+  /// "Swap reverses leg order." The selection order defines the brick's
+  /// segment order, so reversing the list is the whole operation; the 1/2/3
+  /// badges and the rail preview follow from it.
+  void swapOrder() {
+    final current = state;
+    if (current.selectedActivityIds.length < 2) return;
+    state = current.copyWith(
+      selectedActivityIds: current.selectedActivityIds.reversed.toList(),
+      selectedActivities: current.selectedActivities.reversed.toList(),
+    );
+  }
+
   /// Check if brick can be created from current selection
   ///
   /// Requirements (from /docs/brick/ui-flow.md):
@@ -141,6 +162,11 @@ class BrickSelectionController extends _$BrickSelectionController {
 
     // Check minimum/maximum count
     if (activities.length < 2 || activities.length > 3) {
+      return false;
+    }
+
+    // Only the three triathlon disciplines are groupable.
+    if (activities.any((a) => !a.isBrickEligible)) {
       return false;
     }
 
@@ -230,6 +256,11 @@ class BrickSelectionController extends _$BrickSelectionController {
     // Check maximum count
     if (activities.length > 3) {
       throw BrickValidationException.maximumActivities();
+    }
+
+    // Only the three triathlon disciplines are groupable.
+    if (activities.any((a) => !a.isBrickEligible)) {
+      throw BrickValidationException.ineligibleSport();
     }
 
     // Check that all sports are different

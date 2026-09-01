@@ -28,6 +28,7 @@ import {
 } from "../_shared/garmin/mappers.ts";
 import {
   buildGarminCompletionUpdate,
+  enrichCompletedGarminActivity,
   findMatchingPlannedActivity,
   getGarminScheduledDate,
   insertGarminActivityIfMissing,
@@ -177,12 +178,24 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
                   stats.inserted++;
                   stats.processed++;
                   break;
-                case "duplicate":
+                case "duplicate": {
                   console.log(
                     `[garmin-ping] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
                   );
+                  const dupSummaryId = activity.summaryId ??
+                    (activity as { activityId?: string }).activityId;
+                  if (dupSummaryId) {
+                    await enrichCompletedGarminActivity(
+                      supabase,
+                      mapping.user_id,
+                      String(dupSummaryId),
+                      activityRow,
+                      "[garmin-ping]",
+                    );
+                  }
                   stats.skipped++;
                   break;
+                }
                 case "skipped_non_endurance":
                   console.log(
                     `[garmin-ping] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
@@ -242,6 +255,15 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             } else if (!updatedRows || updatedRows.length === 0) {
               console.log(
                 `[garmin-ping] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
+              );
+              // The winning push may have carried a preliminary payload
+              // (0 duration / 0 distance) — fill any metric gaps from ours.
+              await enrichCompletedGarminActivity(
+                supabase,
+                mapping.user_id,
+                String(summaryId),
+                activityRow,
+                "[garmin-ping]",
               );
               stats.skipped++;
             } else {
@@ -354,6 +376,13 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
                   console.log(
                     `[garmin-ping] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
                   );
+                  await enrichCompletedGarminActivity(
+                    supabase,
+                    mapping.user_id,
+                    String(detailSummaryId),
+                    activityRow,
+                    "[garmin-ping]",
+                  );
                   stats.skipped++;
                   break;
                 case "skipped_non_endurance":
@@ -407,6 +436,15 @@ async function processPingBody(body: GarminPingNotification): Promise<void> {
             } else if (!updatedRows || updatedRows.length === 0) {
               console.log(
                 `[garmin-ping] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
+              );
+              // Detail pings usually carry the richest data — backfill any
+              // metric gaps left by the preliminary payload that won the race.
+              await enrichCompletedGarminActivity(
+                supabase,
+                mapping.user_id,
+                String(detailSummaryId),
+                activityRow,
+                "[garmin-ping]",
               );
               stats.skipped++;
             } else {

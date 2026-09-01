@@ -3,7 +3,8 @@
 ///
 /// `pre_workout_templates` doesn't have a direct meal/snack/top-up column;
 /// we derive the sub-phase from `time_window`:
-///   `1.5-3 hours` → Meal,  `30-90 min` → Snack,  `< 30 min` → Top-up.
+///   `2-4 hours` (né `1.5-3 hours`) → Meal,  `30-120 min` (né `30-90 min`)
+///   → Snack,  `< 30 min` → Top-up.
 ///
 /// The `storageValue` strings (`full_meal`, `snack`, `top_up`) are kept
 /// stable so analytics payloads don't drift across the table migration.
@@ -45,11 +46,21 @@ enum BeforeSubPhase {
   /// Derive the sub-phase from the live `pre_workout_templates.time_window`
   /// string. Unknown windows return `null` so the row is shown in the "All"
   /// view but excluded from any sub-phase filter.
+  ///
+  /// Accepts BOTH catalog generations. The window labels moved with the
+  /// ratified 120-minute meal boundary (D-017, 2026-08-05): the dev catalog
+  /// now carries `2-4 hours` / `30-120 min`, while prod still carries
+  /// `1.5-3 hours` / `30-90 min`, and this app build syncs from whichever
+  /// backend its flavor points at. Matching one generation only makes the
+  /// Meal/Snack filter chips silently match nothing on the other catalog —
+  /// the client-side twin of the flat-50 g engine failure.
   static BeforeSubPhase? fromTimeWindow(String? timeWindow) {
     return switch (timeWindow) {
-      '1.5-3 hours' => BeforeSubPhase.meal,
-      '30-90 min' => BeforeSubPhase.snack,
-      '< 30 min' => BeforeSubPhase.topUp,
+      '2-4 hours' => BeforeSubPhase.meal, // current (dev, post 2026-08-05)
+      '1.5-3 hours' => BeforeSubPhase.meal, // previous (prod)
+      '30-120 min' => BeforeSubPhase.snack, // current
+      '30-90 min' => BeforeSubPhase.snack, // previous
+      '< 30 min' => BeforeSubPhase.topUp, // unchanged
       _ => null,
     };
   }

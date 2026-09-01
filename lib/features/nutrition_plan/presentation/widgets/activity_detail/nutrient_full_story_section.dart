@@ -7,7 +7,9 @@ import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../auth/domain/user_preferences.dart';
 import '../../../../settings/presentation/providers/settings_controller.dart';
 import '../../../../settings/presentation/providers/sweat_profile_controller.dart';
+import '../../../../../shared/providers/unit_system_provider.dart';
 import '../../../domain/nutrient_transparency_data.dart';
+import '../../../domain/run_parameters.dart';
 import '../../../domain/nutrition_target_overrides.dart';
 import 'transparency_accordion.dart';
 
@@ -61,7 +63,20 @@ class _NutrientFullStorySectionState
   bool _showTargetSaved = false;
   bool _showSweatRateSaved = false;
   bool _showSodiumConcSaved = false;
-  bool _useImperialSweatRate = false; // mL/hr vs oz/hr toggle
+
+  /// Set only when the athlete taps the unit chip. Until then the field
+  /// follows their unit system, so an imperial athlete is not asked to enter
+  /// a sweat rate in mL/hr.
+  bool? _sweatRateUnitOverride;
+
+  /// mL/hr vs oz/hr for the "known sweat rate" field.
+  ///
+  /// `build` watches [unitSystemProvider], so `ref.read` here is always current
+  /// and a settings change rebuilds this sheet.
+  bool get _useImperialSweatRate =>
+      _sweatRateUnitOverride ??
+      ((ref.read(unitSystemProvider).value ?? UnitSystem.imperial) ==
+          UnitSystem.imperial);
 
   @override
   void initState() {
@@ -114,6 +129,9 @@ class _NutrientFullStorySectionState
   @override
   Widget build(BuildContext context) {
     final accentColor = widget.data.nutrientColor;
+    // Establishes the dependency so the sweat-rate unit chip re-renders when
+    // the athlete changes their unit system. Read via _useImperialSweatRate.
+    ref.watch(unitSystemProvider);
 
     return TransparencyAccordion(
       title: 'The Full Story',
@@ -864,7 +882,7 @@ class _NutrientFullStorySectionState
               // Unit toggle: mL/hr ↔ oz/hr
               GestureDetector(
                 onTap: () => setState(
-                  () => _useImperialSweatRate = !_useImperialSweatRate,
+                  () => _sweatRateUnitOverride = !_useImperialSweatRate,
                 ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(

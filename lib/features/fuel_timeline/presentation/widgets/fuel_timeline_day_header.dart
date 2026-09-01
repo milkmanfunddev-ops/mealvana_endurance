@@ -40,12 +40,16 @@ class FuelTimelineDayHeader extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Horizontal inset is 6 (not 20) because the gear is now a 48x48 tap
+        // target: the extra 14 px of button padding replaces the row inset so
+        // the gear glyph still lands ~30 px from the screen edge.
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
           child: _toggleRow(context, ref, isWeek, onSurface, dim),
         ),
         // More breathing room before the month nav (it was crowding BY WEEK).
-        const SizedBox(height: 20),
+        // Trimmed from 20 to 6 to absorb most of the taller (48 px) gear row.
+        const SizedBox(height: 6),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: _monthNav(ref, selected, isWeek, onSurface, isDark),
@@ -96,29 +100,40 @@ class FuelTimelineDayHeader extends ConsumerWidget {
       );
     }
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            label('BY WEEK', isWeek),
-            const SizedBox(width: 26),
-            label('BY MONTH', !isWeek),
-          ],
-        ),
-        Positioned(
-          right: 0,
-          child: GestureDetector(
-            key: const ValueKey('fuel_timeline.settings'),
-            onTap: () => context.pushOnce('/settings'),
-            // Match the gear the shared TabsScreen overlay draws on every other
-            // tab (FontAwesome gear, size 18) so the settings affordance is
-            // identical across the dashboard and the Events/Learn tabs.
-            child: FaIcon(FontAwesomeIcons.gear, size: 18, color: onSurface),
+    // The row is pinned to 48 px tall on purpose. A Stack only sizes itself
+    // from its *non-positioned* children, and a RenderBox never hit-tests a
+    // child outside its own bounds — so before this the gear's tap area was
+    // clipped to the ~22 px height of the BY WEEK / BY MONTH labels no matter
+    // how much padding it carried.
+    return SizedBox(
+      height: 48,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              label('BY WEEK', isWeek),
+              const SizedBox(width: 26),
+              label('BY MONTH', !isWeek),
+            ],
           ),
-        ),
-      ],
+          Positioned(
+            right: 0,
+            child: IconButton(
+              key: const ValueKey('fuel_timeline.settings'),
+              onPressed: () => context.pushOnce('/settings'),
+              tooltip: 'Settings',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              // Match the gear the shared TabsScreen overlay draws on every
+              // other tab so the settings affordance is identical across the
+              // dashboard and the Events/Learn tabs.
+              icon: FaIcon(FontAwesomeIcons.gear, size: 22, color: onSurface),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -303,13 +303,6 @@ describe("STRICT Range Validation — LP Solver", () => {
         }% — should be 60-200% (small targets)`,
       );
     }
-    if (PROFILE_LIGHT.protein_g && PROFILE_LIGHT.protein_g > 0) {
-      const ratio = totals.protein_g / PROFILE_LIGHT.protein_g;
-      assert(
-        ratio >= 0.50 && ratio <= 2.0,
-        `Light after protein: ${(ratio * 100).toFixed(0)}% — should be 50-200%`,
-      );
-    }
   });
 
   it("should produce in-range after-phase for average profile (carbs + protein)", async () => {
@@ -342,13 +335,6 @@ describe("STRICT Range Validation — LP Solver", () => {
       assert(
         ratio >= 0.70 && ratio <= 1.40,
         `Avg after carbs: ${(ratio * 100).toFixed(0)}% — should be 70-140%`,
-      );
-    }
-    if (PROFILE_AVG.protein_g && PROFILE_AVG.protein_g > 0) {
-      const ratio = totals.protein_g / PROFILE_AVG.protein_g;
-      assert(
-        ratio >= 0.50 && ratio <= 1.50,
-        `Avg after protein: ${(ratio * 100).toFixed(0)}% — should be 50-150%`,
       );
     }
   });
@@ -385,13 +371,6 @@ describe("STRICT Range Validation — LP Solver", () => {
         `Heavy after carbs: ${(ratio * 100).toFixed(0)}% — should be 50-150%`,
       );
     }
-    if (PROFILE_HEAVY.protein_g && PROFILE_HEAVY.protein_g > 0) {
-      const ratio = totals.protein_g / PROFILE_HEAVY.protein_g;
-      assert(
-        ratio >= 0.50 && ratio <= 1.50,
-        `Heavy after protein: ${(ratio * 100).toFixed(0)}% — should be 50-150%`,
-      );
-    }
   });
 
   it("should produce in-range before-phase for average profile (carbs + protein)", async () => {
@@ -424,13 +403,6 @@ describe("STRICT Range Validation — LP Solver", () => {
       assert(
         ratio >= 0.70 && ratio <= 1.40,
         `Before avg carbs: ${(ratio * 100).toFixed(0)}% — should be 70-140%`,
-      );
-    }
-    if (PROFILE_AVG.protein_g && PROFILE_AVG.protein_g > 0) {
-      const ratio = totals.protein_g / PROFILE_AVG.protein_g;
-      assert(
-        ratio >= 0.40 && ratio <= 1.60,
-        `Before avg protein: ${(ratio * 100).toFixed(0)}% — should be 40-160%`,
       );
     }
   });
@@ -499,11 +471,18 @@ describe("STRICT Range Validation — LP Solver", () => {
     );
     // Ultra runner targets may push LP to limits — solution might be null (greedy fallback)
     if (solution) {
+      // Assert against the model's own effective bands: buildLPModel relaxes
+      // the sodium floor to min(range.min, 0.75) and the water floor to 0.7,
+      // and any returned solution is validated against those bands.
       strictAssertMacrosInRange(
         "LP after ultra",
         solution.totals,
         AFTER_ULTRA,
-        AFTER_RANGES,
+        {
+          ...AFTER_RANGES,
+          sodium: { ...AFTER_RANGES.sodium, min: Math.min(AFTER_RANGES.sodium.min, 0.75) },
+          water: { ...AFTER_RANGES.water, min: Math.min(AFTER_RANGES.water.min, 0.70) },
+        },
       );
     } else {
       const greedy = greedyFallback(foods, AFTER_ULTRA, "after");
@@ -811,13 +790,7 @@ describe("Extreme Body Types", () => {
         }% — should be ≤250% for small targets`,
       );
     }
-    if (swimmerAfter.protein_g && swimmerAfter.protein_g > 0) {
-      const ratio = totals.protein_g / swimmerAfter.protein_g;
-      assert(
-        ratio <= 2.5,
-        `55kg swimmer protein: ${(ratio * 100).toFixed(0)}% — should be ≤250%`,
-      );
-    }
+    // Protein is not asserted — it is not a solver consideration (2026-07-29).
   });
 
   it("100kg ultra runner — during phase within range", async () => {
@@ -1073,7 +1046,8 @@ describe("Cross-Solver Consistency", () => {
       };
 
       checkAgreement("carbs", lpTotals.carbs_g, greedyTotals.carbs_g);
-      checkAgreement("protein", lpTotals.protein_g, greedyTotals.protein_g);
+      // Protein agreement is not asserted — protein is not a solver
+      // consideration (2026-07-29).
     }
   });
 

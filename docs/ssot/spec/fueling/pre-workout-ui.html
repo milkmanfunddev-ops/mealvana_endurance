@@ -1,0 +1,697 @@
+<title>Pre-workout BEFORE — screen and info tab</title>
+<style>
+:root{
+  --bg:#F7F4F8;--surface:#FFFFFF;--surface-2:#F1ECF3;
+  --text:#241A28;--dim:#584C5E;--muted:#7B6C82;
+  --line:rgba(36,26,40,.11);--line-2:rgba(36,26,40,.06);
+  --rose:#C32748;--rose-bg:rgba(195,39,72,.09);
+  --green:#12795C;--green-bg:rgba(18,121,92,.10);--code:rgba(36,26,40,.055);
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  --bg:#15101A;--surface:#1E1724;--surface-2:#261E2E;
+  --text:#F4EEF7;--dim:#C3B5CB;--muted:#9C8CA5;
+  --line:rgba(255,255,255,.12);--line-2:rgba(255,255,255,.06);
+  --rose:#FF8FA6;--rose-bg:rgba(255,143,166,.13);
+  --green:#5CD6AE;--green-bg:rgba(92,214,174,.13);--code:rgba(255,255,255,.07);}}
+:root[data-theme="dark"]{
+  --bg:#15101A;--surface:#1E1724;--surface-2:#261E2E;
+  --text:#F4EEF7;--dim:#C3B5CB;--muted:#9C8CA5;
+  --line:rgba(255,255,255,.12);--line-2:rgba(255,255,255,.06);
+  --rose:#FF8FA6;--rose-bg:rgba(255,143,166,.13);
+  --green:#5CD6AE;--green-bg:rgba(92,214,174,.13);--code:rgba(255,255,255,.07);}
+:root[data-theme="light"]{
+  --bg:#F7F4F8;--surface:#FFFFFF;--surface-2:#F1ECF3;
+  --text:#241A28;--dim:#584C5E;--muted:#7B6C82;
+  --line:rgba(36,26,40,.11);--line-2:rgba(36,26,40,.06);
+  --rose:#C32748;--rose-bg:rgba(195,39,72,.09);
+  --green:#12795C;--green-bg:rgba(18,121,92,.10);--code:rgba(36,26,40,.055);}
+.dev{--a-bg:#331A3E;--a-card:#452850;--a-inset:#3C2148;--a-orange:#F2853C;--a-teal:#4EE0BE;
+  --a-white:#FFF;--a-dim:#C4B0CE;--a-muted:#937F9D;--a-pink:#EC3D7E;--a-line:rgba(255,255,255,.12);
+  --a-amber:#F0B45E;--a-rose:#FF7A9C;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1280px;margin:0 auto;padding:40px 22px 80px}
+.eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+h1{font-size:clamp(27px,3.6vw,38px);line-height:1.12;letter-spacing:-.025em;margin:0 0 14px;font-weight:800;text-wrap:balance}
+.lede{font-size:17px;color:var(--dim);max-width:64ch;margin:0}
+.lede b{color:var(--text);font-weight:650}
+.controls{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line);margin:30px 0 0;padding:13px 0 14px}
+.ctl-row{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end}
+.ctl{display:flex;flex-direction:column;gap:5px}
+.ctl label{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.ctl input[type=range]{width:200px;accent-color:#B65CD8}
+.val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg button{font:inherit;font-size:13px;padding:6px 13px;border:0;background:transparent;color:var(--dim);cursor:pointer;min-height:34px}
+.seg button[aria-pressed=true]{background:#7A3E93;color:#fff}
+.seg button:focus-visible{outline:2px solid #B65CD8;outline-offset:-2px}
+.preset{font:inherit;font-size:12.5px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--dim);cursor:pointer;min-height:32px}
+.preset:hover{border-color:var(--muted);color:var(--text)}
+.split{display:grid;grid-template-columns:minmax(0,382px) minmax(0,1fr);gap:44px;margin-top:32px;align-items:start}
+@media(max-width:980px){.split{grid-template-columns:1fr;gap:32px}.phonewrap{position:static!important}}
+.phonewrap{position:sticky;top:112px}
+.viewtabs{display:flex;gap:8px;margin-bottom:13px}
+.viewtabs button{font:inherit;font-size:13px;font-weight:650;padding:8px 15px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--dim);cursor:pointer}
+.viewtabs button[aria-pressed=true]{background:var(--text);color:var(--bg);border-color:var(--text)}
+.dev{background:var(--a-bg);border-radius:34px;padding:11px;border:1px solid rgba(255,255,255,.10);box-shadow:0 26px 60px -18px rgba(20,6,28,.55)}
+.screen{background:var(--a-bg);border-radius:25px;overflow-y:auto;max-height:min(76vh,830px);color:var(--a-white);font-size:14px;padding:2px 0 18px}
+.screen::-webkit-scrollbar{width:7px}
+.screen::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:8px}
+.navbar{display:flex;align-items:center;gap:11px;padding:13px 14px 8px}
+.navbar .back{width:33px;height:33px;border-radius:50%;background:rgba(255,255,255,.10);display:grid;place-items:center;font-size:15px;flex:none}
+.navbar h2{font-size:18.5px;margin:0;font-weight:800;letter-spacing:-.012em;flex:1}
+.navbar .ico{color:var(--a-dim);font-size:15px}.navbar .ico.del{color:var(--a-pink)}
+
+.phase{margin:6px 10px 0;border:1px solid rgba(242,133,60,.40);border-radius:18px;padding:14px 12px 15px;background:rgba(255,255,255,.017)}
+.phase-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.phase-hd h3{font-size:14.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--a-orange);margin:0;font-weight:800}
+.phase-when{font-size:11.5px;color:var(--a-muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.info-btn{width:22px;height:22px;border-radius:50%;border:1.4px solid var(--a-muted);color:var(--a-muted);background:transparent;display:grid;place-items:center;font-size:12px;font-weight:700;cursor:pointer;flex:none;padding:0;font-family:inherit}
+.info-btn:hover{border-color:var(--a-teal);color:var(--a-teal)}
+.info-btn:focus-visible{outline:2px solid var(--a-teal);outline-offset:2px}
+
+/* ---- roll-up: three across, one row. delivered against the plan band. ---- */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0 12px;align-items:start}
+.stat{text-align:center;min-width:0}
+.stat .v{font-size:20px;font-weight:800;color:var(--a-teal);font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;line-height:1.2;white-space:nowrap}
+.stat .v .u{font-size:11.5px;color:var(--a-dim);font-weight:700;margin-left:1px}
+.stat.over .v{color:var(--a-pink)}
+.stat.none .v{color:var(--a-dim);font-size:17px}
+.stat .k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--a-muted);font-weight:750;margin-top:2px}
+.stat .meter{margin:9px 0 0}
+.stat .ends{display:flex;justify-content:space-between;font-size:9.5px;color:var(--a-muted);
+  font-variant-numeric:tabular-nums;margin-top:4px;gap:4px}
+.stat .ends .zero{color:#F4A26B}
+.stat .ends .hi.over{color:var(--a-pink);font-weight:700}
+.nobar{height:7px;margin:9px 0 0;border-top:1.5px dashed rgba(255,255,255,.20)}
+.stat .note{font-size:9.5px;color:var(--a-muted);margin-top:4px;line-height:1.35}
+
+/* the meter: fill = what your food delivers, tick = what we suggest, ends = the range */
+.meter{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.13);overflow:visible;margin:3px 0 2px}
+.meter .zone{position:absolute;top:0;bottom:0;background:rgba(78,224,190,.20);border-radius:2px}
+.meter .fill{position:absolute;top:0;bottom:0;left:0;border-radius:4px;background:var(--a-teal);transition:width .28s cubic-bezier(.4,0,.2,1)}
+.meter[data-state=over] .fill{background:var(--a-pink)}
+.meter[data-state=under] .fill{background:rgba(78,224,190,.55)}
+.meter .tick{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--a-white);border-radius:2px;opacity:.85;transition:left .28s}
+.mlab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--a-muted);font-variant-numeric:tabular-nums;margin-top:3px}
+.mlab .zero{color:#F4A26B}
+
+/* ---- timeline ---- */
+.tl{margin:15px 0 0;position:relative}
+.tl::before{content:"";position:absolute;left:5px;top:8px;bottom:26px;width:2px;background:rgba(255,255,255,.13);border-radius:2px}
+.stop{position:relative;padding:0 0 2px 23px;margin-bottom:17px}
+.stop:last-child{margin-bottom:0}
+.stop::before{content:"";position:absolute;left:0;top:6px;width:12px;height:12px;border-radius:50%;background:var(--a-bg);border:2.5px solid var(--a-orange)}
+.stop.now::before{background:var(--a-orange)}
+.stop-when{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--a-muted);font-weight:750}
+.stop-top{display:flex;align-items:baseline;gap:8px;margin-top:1px}
+.stop-name{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.stop-tot{margin-left:auto;font-size:12.5px;font-weight:750;font-variant-numeric:tabular-nums}
+.stop-tot .of{color:var(--a-muted);font-weight:600}
+.stop-tot.ok{color:var(--a-teal)}.stop-tot.under{color:var(--a-dim)}.stop-tot.over{color:var(--a-pink)}
+.hint{font-size:11px;margin:4px 0 0;line-height:1.45}
+.hint.ok{color:var(--a-teal)}.hint.under{color:var(--a-muted)}.hint.over{color:var(--a-pink)}
+
+.food{display:flex;align-items:center;gap:10px;background:var(--a-card);border-radius:11px;padding:9px 8px 9px 11px;margin-top:7px}
+.food .dot{width:28px;height:28px;border-radius:50%;background:rgba(78,224,190,.16);flex:none;display:grid;place-items:center;font-size:13px}
+.food.fl .dot{background:rgba(120,175,255,.17)}
+.food .nm{font-size:13px;font-weight:650;flex:1;line-height:1.35;min-width:0}
+.food .amt{font-size:11.5px;color:var(--a-dim);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:650}
+.food .rm{width:26px;height:26px;border-radius:7px;border:0;background:transparent;color:var(--a-muted);font-size:15px;cursor:pointer;flex:none;font-family:inherit;line-height:1}
+.food .rm:hover{background:rgba(255,122,156,.16);color:var(--a-rose)}
+.food .rm:focus-visible{outline:2px solid var(--a-rose);outline-offset:1px}
+.addfood{display:block;width:100%;margin-top:8px;padding:9px;border-radius:10px;background:transparent;border:1.4px solid rgba(242,133,60,.55);color:var(--a-orange);font:inherit;font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;cursor:pointer}
+.addfood:focus-visible{outline:2px solid var(--a-orange);outline-offset:2px}
+
+/* ---- collapsed row: a summary, never a label ---- */
+.stophd{display:flex;align-items:flex-start;gap:9px;width:100%;text-align:left;background:transparent;
+  border:0;padding:2px 0 0;margin:0;color:inherit;font:inherit;cursor:pointer;border-radius:10px}
+.stophd:focus-visible{outline:2px solid var(--a-teal);outline-offset:3px}
+.chev{font-size:19px;color:var(--a-orange);line-height:1;flex:none;margin-top:2px;
+  transition:transform .2s ease;display:inline-block;font-weight:700}
+.chev.o{transform:rotate(90deg)}
+.hd-main{flex:1;min-width:0;display:block}
+.hd-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.livepill{font-size:9px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;padding:2px 6px;
+  border-radius:4px;background:var(--a-orange);color:#3B1C05}
+.hd-top .stop-when{margin-left:auto}
+.hd-tot{display:block;font-size:12.5px;font-weight:750;font-variant-numeric:tabular-nums;margin:5px 0 0}
+.hd-tot .of{color:var(--a-muted);font-weight:600}
+.hd-tot.ok{color:var(--a-teal)}.hd-tot.under{color:var(--a-dim)}.hd-tot.over{color:var(--a-pink)}
+.hd-sum{display:block;font-size:11.5px;color:var(--a-muted);margin-top:4px;line-height:1.4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stopbody{padding-left:21px;margin-top:9px}
+
+/* plan-level check — promoted out of the snack card once cards collapse */
+.checkpill{font-size:9px;letter-spacing:.11em;text-transform:uppercase;font-weight:800;padding:2px 6px;
+  border-radius:4px;background:rgba(78,224,190,.20);color:var(--a-teal);border:1px solid rgba(78,224,190,.45)}
+.check .cs{font-size:11.5px;color:var(--a-dim);margin:0 0 9px;line-height:1.45}
+.check .fine{font-size:10.5px;color:var(--a-muted);margin:8px 0 0;line-height:1.45}
+.check .done b{color:var(--a-teal)}
+.redo{font:inherit;font-size:10.5px;font-weight:700;background:transparent;border:0;padding:0 0 0 4px;
+  color:var(--a-teal);cursor:pointer;text-decoration:underline}
+.redo:focus-visible{outline:2px solid var(--a-teal);outline-offset:2px}
+.check.done-row{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.12)}
+
+/* picker */
+.picker{margin-top:8px;background:var(--a-inset);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:10px}
+.picker h6{margin:0 0 8px;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--a-muted);font-weight:750}
+.pick{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:9px;padding:8px 10px;margin-bottom:6px;color:var(--a-white);font:inherit;font-size:12.5px;cursor:pointer}
+.pick:hover{border-color:var(--a-teal)}
+.pick:focus-visible{outline:2px solid var(--a-teal);outline-offset:1px}
+.pick .g{margin-left:auto;font-size:11px;color:var(--a-teal);font-variant-numeric:tabular-nums;font-weight:700}
+.pick.no{opacity:.62;cursor:not-allowed;border-style:dashed}
+.pick.no .g{color:var(--a-rose);font-weight:650;font-size:10.5px;text-align:right;line-height:1.3}
+.pick.no:hover{border-color:rgba(255,255,255,.08)}
+
+.check{background:rgba(78,224,190,.08);border:1px solid rgba(78,224,190,.26);border-radius:11px;padding:11px 12px;margin-top:8px}
+.check h5{margin:0 0 6px;font-size:12.5px;font-weight:800;color:var(--a-teal)}
+.check-opts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.check-opts button{font:inherit;font-size:11.5px;font-weight:650;padding:7px 5px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:var(--a-white);cursor:pointer}
+.check-opts button:focus-visible{outline:2px solid var(--a-teal);outline-offset:2px}
+.check .done{font-size:11.5px;color:var(--a-dim);margin:0;line-height:1.5}
+.void{margin:12px 0 0;padding:14px;border-radius:12px;background:rgba(255,255,255,.045);border:1px dashed rgba(255,255,255,.16)}
+.void b{display:block;font-size:13.5px;margin-bottom:3px}
+.void span{font-size:12.5px;color:var(--a-dim);line-height:1.5}
+
+/* info tab */
+.sheet-hd{display:flex;align-items:center;gap:11px;padding:13px 15px 12px;border-bottom:1px solid var(--a-line);position:sticky;top:0;background:var(--a-bg);z-index:5}
+.sheet-hd h3{font-size:17px;margin:0;font-weight:800;flex:1;letter-spacing:-.01em}
+.sec{padding:17px 15px;border-bottom:1px solid var(--a-line)}
+.sec:last-child{border-bottom:0}
+.sec-lab{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--a-muted);font-weight:750;margin:0 0 9px}
+.sec h4{margin:0 0 5px;font-size:15.5px;font-weight:800}
+.sec p{margin:0 0 10px;font-size:13px;color:var(--a-dim);line-height:1.6}
+.sec p:last-child{margin-bottom:0}
+.sec p b{color:var(--a-white);font-weight:700}
+.big{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:6px}
+.big .n{font-size:28px;font-weight:800;color:var(--a-teal);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big .u{font-size:15px;color:var(--a-dim);font-weight:700}
+.chip{font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:750;padding:3px 7px;border-radius:5px}
+.chip.cited{background:rgba(78,224,190,.15);color:var(--a-teal);border:1px solid rgba(78,224,190,.34)}
+.chip.ours{background:rgba(242,133,60,.14);color:#F4A26B;border:1px solid rgba(242,133,60,.33)}
+.chip.none{background:rgba(255,255,255,.07);color:var(--a-muted);border:1px solid rgba(255,255,255,.14)}
+.chain{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--a-dim);background:rgba(255,255,255,.05);border-radius:8px;padding:10px 11px;line-height:1.75;margin:10px 0 0;overflow-x:auto;white-space:nowrap}
+.chain b{color:var(--a-teal);font-weight:700}
+.rulerow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12.5px;line-height:1.5}
+.rulerow:last-child{border-bottom:0}
+.rulerow .t{font-weight:750;color:var(--a-orange);min-width:70px;flex:none}
+.rulerow .d{color:var(--a-dim)}
+.src{font-size:11.5px;color:var(--a-muted);line-height:1.6;margin:0}
+.src b{color:var(--a-dim);font-weight:650}
+
+.ann h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 14px;font-weight:700;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:17px 18px;margin-bottom:12px}
+.card h4{margin:0 0 7px;font-size:16.5px;font-weight:750;letter-spacing:-.01em}
+.card p{margin:0 0 9px;font-size:14.5px;color:var(--dim);line-height:1.62}
+.card p:last-child{margin-bottom:0}
+.card code,.ic{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.87em;background:var(--code);padding:1.5px 5px;border-radius:4px}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.tag{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:750;padding:3px 8px;border-radius:5px}
+.tag.scr{background:var(--green-bg);color:var(--green)}
+.tag.inf{background:var(--rose-bg);color:var(--rose)}
+.tag.ref{background:var(--code);color:var(--muted);font-family:ui-monospace,Menlo,monospace;text-transform:none;letter-spacing:0}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line-2);vertical-align:top;line-height:1.5}
+th{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);font-weight:700;white-space:nowrap}
+.scroll{overflow-x:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Mealvana QA · pre-workout interface</p>
+  <h1>A live tally, and an info tab behind it</h1>
+  <p class="lede"><b>Add and remove food in the mockup</b> — the meters move. Fill is what your food delivers,
+  the white tick is what we suggest, the ends are the permissible range. Everything explaining <em>where the
+  number came from</em> sits behind the <b>ⓘ</b>. Ranges stay on the screen because they are the feedback;
+  provenance, formulas and citations are not.</p>
+
+  <div class="controls">
+    <div class="ctl-row">
+      <div class="ctl"><label for="bw">Body weight · <span class="val" id="bwv">65 kg</span></label>
+        <input type="range" id="bw" min="40" max="110" step="5" value="65"></div>
+      <div class="ctl"><label for="t">Planned at · <span class="val" id="tv">3h 00m</span> out</label>
+        <input type="range" id="t" min="0" max="240" step="15" value="180"></div>
+      <div class="ctl"><label for="nw">Now · <span class="val" id="nwv">3h 00m</span> out</label>
+        <input type="range" id="nw" min="0" max="240" step="15" value="180"></div>
+      <div class="ctl"><label for="dur">Session · <span class="val" id="durv">120 min</span></label>
+        <input type="range" id="dur" min="30" max="240" step="15" value="120"></div>
+      <div class="ctl"><label>Units</label>
+        <div class="seg" id="units"><button data-u="ml" aria-pressed="true">ml</button><button data-u="oz" aria-pressed="false">oz</button></div></div>
+      <div class="ctl"><label>Edge states</label>
+        <div style="display:flex;gap:7px;flex-wrap:wrap">
+          <button class="preset" data-preset="snackwin">Snack window</button>
+          <button class="preset" data-preset="gun">t−0</button>
+          <button class="preset" data-preset="gate">Gated</button>
+          <button class="preset" data-preset="fasted">Fasted</button>
+          <button class="preset" data-preset="reset">Reset plate</button>
+        </div></div>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="phonewrap">
+      <div class="viewtabs">
+        <button id="vScreen" aria-pressed="true">Screen</button>
+        <button id="vInfo" aria-pressed="false">ⓘ Info tab</button>
+      </div>
+      <div class="dev"><div class="screen" id="screen"></div></div>
+    </div>
+    <div class="ann" id="ann"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var A0_ML=250,R_CEIL=400,K=3.2/60,T_REF=120,TOPUP=4,TOPUP_HI=5,PLAN_CAP=12;
+var MEAL=.60,SNACK=.30,TOPOFF=.10,SNACK_NM=.75,TOPOFF_NM=.25,TOL=.125;
+var S={bw:65,t:180,now:180,dur:120,temp:22,check:"unknown",units:"ml",fasted:false,view:"screen",open:null,
+       expand:["meal"],touched:false};
+
+function carbs(bw,t,dur,fasted){
+  if(fasted) return {fasted:true,total:0,meal:0,snack:0,top:0,low:0,high:0,basis:"none",perKg:0};
+  var perKg=Math.min(t/60,4),total=bw*perKg,meal=0,snack=0,top=0;
+  if(t>=120){meal=MEAL*total;snack=SNACK*total;top=TOPOFF*total;}
+  else if(t>=30){snack=SNACK_NM*total;top=TOPOFF_NM*total;}
+  else{top=total;}
+  var inWin=(t>=60&&t<=240)&&dur>=60;
+  return {total:total,meal:meal,snack:snack,top:top,perKg:perKg,
+    low:inWin?bw:total*(1-TOL),high:inWin?4*bw:total*(1+TOL),
+    basis:inWin?"evidenced_band":"design_choice"};
+}
+function fluid(bw,t,dur,temp,check){
+  if(dur<60&&temp<30) return {gated:true,regime:"gated",basis:"none",total:0,low:0,high:0,meal:0,snack:0};
+  var A0=Math.min(A0_ML,7.5*bw),f=function(x){return A0+(7.5*bw-A0)*Math.min(x,T_REF)/T_REF;};
+  if(t>=T_REF){var m=7.5*bw,up=(check==="dark")?TOPUP*bw:0;
+    return {meal:m,snack:up,top:0,total:m+up,low:5*bw,high:Math.min(7.5*bw+TOPUP_HI*bw,PLAN_CAP*bw),
+      regime:"cited",basis:"evidenced_band"};}
+  var v=f(t),ceil=R_CEIL*Math.exp(K*t);
+  return {meal:0,snack:t>=30?v:0,top:t>=30?0:v,total:v,low:0,high:Math.min(10*bw,ceil),
+    regime:(ceil<10*bw)?"clearance_bound":"extrapolated",basis:"design_choice"};
+}
+var r25=function(v){return Math.round(v/25)*25;},r5=function(v){return Math.round(v/5)*5;};
+function ml(v){return S.units==="oz"?Math.round(v/29.5735):v;}
+function mlu(){return S.units==="oz"?"oz":"ml";}
+function fmtT(t){var h=Math.floor(t/60),m=t%60;return h?(h+"h "+(m<10?"0":"")+m+"m"):(m+" min");}
+
+// catalogue. `no` = why the composition ladder rejects it for that tier.
+var CAT={
+  meal:[{id:"rice",n:"1½ cups cooked white rice",c:59,na:5,i:"🍚"},
+        {id:"ban",n:"1 ripe banana",c:27,na:1,i:"🍌"},
+        {id:"honey",n:"2 tbsp honey",c:35,na:2,i:"🍯"},
+        {id:"toast",n:"2 slices white toast + jam",c:44,na:300,i:"🍞"},
+        {id:"oats",n:"1 cup oatmeal + syrup",c:40,na:10,i:"🥣"},
+        {id:"w500",n:"500 ml water",c:0,na:0,fl:500,i:"💧"},
+        {id:"bran",n:"Bran cereal with milk",no:"High fibre + dairy",i:"🥛"}],
+  snack:[{id:"bagel",n:"1 plain bagel with jam",c:62,na:430,i:"🥯"},
+         {id:"cakes",n:"2 rice cakes + honey",c:29,na:60,i:"🍘"},
+         {id:"ban2",n:"1 ripe banana",c:27,na:1,i:"🍌"},
+         {id:"juice",n:"250 ml pulp-free juice",c:26,na:10,fl:250,i:"🧃"},
+         {id:"w300",n:"300 ml water",c:0,na:0,fl:300,i:"💧"},
+         {id:"rx",n:"1 RXBAR Blueberry",no:"9 g fat · dried fruit",i:"🍫"},
+         {id:"pb",n:"Toast with peanut butter",no:"Nut butter over 5 g fat",i:"🥜"}],
+  top:[{id:"sd330",n:"330 ml sports drink (6 %)",c:20,na:160,fl:330,i:"🥤"},
+       {id:"sd500",n:"500 ml sports drink (6 %)",c:30,na:250,fl:500,i:"🥤"},
+       {id:"gel",n:"1 energy gel + 250 ml water",c:25,na:50,fl:250,i:"🧴"},
+       {id:"chews",n:"½ packet energy chews",no:"Not liquid or gel",i:"🍬"},
+       {id:"oj",n:"250 ml orange juice",no:"About 11 % — over the 8 % limit",i:"🍊"},
+       {id:"tab",n:"Electrolyte tablet",no:"No carbohydrate at all",i:"💊"}]
+};
+var DEFAULT={meal:["rice","ban","honey","w500"],snack:["bagel"],top:["sd330"]};
+var plate={meal:DEFAULT.meal.slice(),snack:DEFAULT.snack.slice(),top:DEFAULT.top.slice()};
+function look(tier,id){var a=CAT[tier];for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i];return null;}
+function tally(tier){
+  var c=0,na=0,fl=0;
+  plate[tier].forEach(function(id){var f=look(tier,id);if(!f||f.no)return;c+=f.c||0;na+=f.na||0;fl+=f.fl||0;});
+  return {c:c,na:na,fl:fl};
+}
+
+/* the meter. fill = delivered, tick = target, zone = tolerance, ends = range.
+   `soft` suppresses the under-state entirely — used for fluid, where low = 0 and
+   an athlete who drinks nothing is in spec (notes §5.12). */
+function meter(delivered,target,lo,hi,soft){
+  var max=Math.max(hi,delivered*1.06,target*1.15)||1;
+  var st="ok";
+  if(delivered>hi) st="over";
+  else if(delivered<lo) st=soft?"ok":"under";
+  var pct=function(v){return Math.max(0,Math.min(100,v/max*100));};
+  var h='<div class="meter" data-state="'+st+'">';
+  if(hi>lo) h+='<div class="zone" style="left:'+pct(lo)+'%;width:'+(pct(hi)-pct(lo))+'%"></div>';
+  h+='<div class="fill" style="width:'+pct(delivered)+'%"></div>';
+  if(target>0) h+='<div class="tick" style="left:'+pct(target)+'%"></div>';
+  return h+'</div>';
+}
+function state(delivered,target,lo,hi,soft){
+  if(delivered>hi) return "over";
+  if(delivered<lo) return soft?"ok":"under";
+  return "ok";
+}
+
+// ---------------- SCREEN ----------------
+function renderScreen(){
+  var C=carbs(S.bw,S.t,S.dur,S.fasted),F=fluid(S.bw,S.t,S.dur,S.temp,S.check);
+  var tiers=[];
+  if(!C.fasted){
+    if(S.t>=120) tiers.push("meal");
+    if(S.t>=30) tiers.push("snack");
+    tiers.push("top");
+  }
+  var dC=0,dNa=0,dFl=0;
+  tiers.forEach(function(k){var t=tally(k);dC+=t.c;dNa+=t.na;
+    if(k!=="top") dFl+=t.fl;}); // top-off fluid belongs to the food instruction, notes §1.4
+
+  var h='<div class="navbar"><div class="back">←</div><h2>Run · Long Run</h2><span class="ico">✎</span><span class="ico del">🗑</span></div>';
+  h+='<div class="phase"><div class="phase-hd"><h3>Before</h3><span class="phase-when">'+fmtT(S.t)+' out</span>'+
+     '<button class="info-btn" id="openInfo" aria-label="How we got these numbers">ⓘ</button></div>';
+
+  // roll-up: three across. the only range bars on the screen.
+  h+='<div class="stats">';
+  if(!C.fasted){
+    var cs=state(dC,C.total,C.low,C.high,false);
+    h+='<div class="stat'+(cs==="over"?" over":"")+'"><div class="v">'+dC+'<span class="u">g</span></div>'+
+       '<div class="k">Carbs</div>'+meter(dC,C.total,C.low,C.high,false)+
+       '<div class="ends"><span>'+r5(C.low)+'</span><span class="hi'+(cs==="over"?" over":"")+'">'+r5(C.high)+'</span></div></div>';
+  } else {
+    h+='<div class="stat none"><div class="v">—</div><div class="k">Carbs</div>'+
+       '<div class="nobar"></div><div class="note">fasted</div></div>';
+  }
+  if(!F.gated){
+    var fs=state(dFl,F.total,F.low,F.high,true);
+    h+='<div class="stat'+(fs==="over"?" over":"")+'"><div class="v">'+ml(dFl)+'<span class="u">'+mlu()+'</span></div>'+
+       '<div class="k">Fluid</div>'+meter(dFl,F.total,F.low,F.high,true)+
+       '<div class="ends"><span'+(F.low===0?' class="zero"':'')+'>'+(F.low===0?"none":ml(F.low))+
+       '</span><span class="hi'+(fs==="over"?" over":"")+'">'+ml(Math.round(F.high))+'</span></div></div>';
+  } else {
+    h+='<div class="stat none"><div class="v">—</div><div class="k">Fluid</div>'+
+       '<div class="nobar"></div><div class="note">no target</div></div>';
+  }
+  h+='<div class="stat none"><div class="v">'+(dNa>0?"~"+Math.round(dNa/10)*10:"—")+
+     '<span class="u">mg</span></div><div class="k">Sodium</div>'+
+     '<div class="nobar"></div><div class="note">from your food<br>no target</div></div>';
+  h+='</div>';
+
+  // timeline
+  h+='<div class="tl">';
+  if(C.fasted){
+    h+='<div class="void"><b>No pre-workout food</b><span>You set this session to fasted. '+
+       'Change it in session settings if you\'d rather fuel.</span></div>';
+  } else {
+    var names={meal:"Meal",snack:(C.snack/S.bw)>=1?"Light meal":"Snack",top:"Top-off"};
+    var whens={meal:"Now – 2h out",snack:(S.t>=120?"2h – 30 min out":"Now – 30 min out"),top:"Last 30 min"};
+    var tgts={meal:C.meal,snack:C.snack,top:C.top};
+    tiers.forEach(function(k){h+=stop(k,names[k],whens[k],tgts[k],F);});
+  }
+  h+='</div></div>';
+  return h;
+}
+
+function stop(key,name,when,target,F){
+  var t=tally(key),lo=target*(1-TOL),hi=target*(1+TOL);
+  var st=state(t.c,target,lo,hi,false);
+  var isOpen=(S.expand.indexOf(key)>=0);
+  var live=(liveWindow()===key);
+  var count=plate[key].length;
+
+  var h='<div class="stop'+(live?" now":"")+'">';
+
+  // ---- the row you always see. a summary, never a label. ----
+  h+='<button class="stophd" data-exp="'+key+'" aria-expanded="'+isOpen+'">'+
+     '<span class="chev'+(isOpen?" o":"")+'">›</span>'+
+     '<span class="hd-main">'+
+       '<span class="hd-top"><span class="stop-name">'+name+'</span>'+
+       (live?'<span class="livepill">now</span>':'')+
+       (key==="snack"&&checkPending()?'<span class="checkpill">1 check</span>':'')+
+       '<span class="stop-when">'+when+'</span></span>'+
+       '<span class="hd-tot '+st+'">'+t.c+' g</span>'+
+       '<span class="hd-sum">'+(count===0?"Nothing added yet":summarise(key))+'</span>'+
+     '</span></button>';
+
+  if(!isOpen) return h+'</div>';
+
+  // ---- expanded ----
+  h+='<div class="stopbody"><div class="hint '+st+'">'+
+    (st==="ok"?"Looks about right for this feeding":
+     st==="under"?"A little light — room for one more thing":
+     "A bit more than this feeding needs")+'</div>';
+
+  plate[key].forEach(function(id,i){
+    var f=look(key,id); if(!f) return;
+    h+='<div class="food'+(f.fl&&!f.c?" fl":"")+'"><div class="dot">'+f.i+'</div>'+
+       '<div class="nm">'+f.n+'</div><div class="amt">'+
+       (f.c?f.c+" g":(f.fl?ml(f.fl)+" "+mlu():""))+'</div>'+
+       '<button class="rm" data-rm="'+key+'|'+i+'" aria-label="Remove '+f.n+'">×</button></div>';
+  });
+
+  if(key==="snack"&&checkApplies()){
+    if(S.check==="unknown"){
+      h+='<div class="check"><h5>Was your urine pale yellow last time you went?</h5>'+
+         '<p class="cs">It decides whether this feeding\'s drink gets a top-up — the one thing that makes '+
+         'your fluid number yours rather than an average.</p><div class="check-opts">'+
+         '<button data-check="pale">Pale</button><button data-check="dark">Darker</button>'+
+         '<button data-check="dark">Not gone yet</button><button data-check="unsure">Not sure</button></div>'+
+         '<p class="fine">Taking a multivitamin or B-complex? Your urine looks yellow either way — choose '+
+         '&ldquo;Not sure&rdquo;.</p></div>';
+    } else {
+      h+='<div class="check"><p class="done">'+(S.check==="dark"
+        ? "<b>+"+ml(r25(TOPUP*S.bw))+" "+mlu()+"</b> added to this feeding, because of your check."
+        : S.check==="unsure"
+          ? "No top-up added. If you\'re not taking a supplement and it looked dark, tap to change your answer."
+          : "You\'re set — the drinking worked, so no top-up.")+
+        ' <button class="redo" data-check="unknown">Change</button></p></div>';
+    }
+  }
+
+  if(S.open===key){
+    h+='<div class="picker"><h6>Add to this feeding</h6>';
+    CAT[key].forEach(function(f){
+      if(f.no) h+='<button class="pick no" disabled><span>'+f.i+'</span><span>'+f.n+'</span><span class="g">'+f.no+'</span></button>';
+      else h+='<button class="pick" data-add="'+key+'|'+f.id+'"><span>'+f.i+'</span><span>'+f.n+'</span>'+
+        '<span class="g">'+(f.c?"+"+f.c+" g":"+"+ml(f.fl)+" "+mlu())+'</span></button>';
+    });
+    h+='</div>';
+  }
+  h+='<button class="addfood" data-open="'+key+'">'+(S.open===key?"Close":"+ Add food")+'</button></div>';
+  return h+'</div>';
+}
+function summarise(key){
+  var ns=plate[key].map(function(id){var f=look(key,id);return f?f.n.replace(/^[\d½¼¾.]+\s*(cups?|tbsp|slices?|ml|packets?|servings?)?\s*/i,""):"";})
+    .filter(Boolean);
+  if(ns.length<=2) return ns.join(", ");
+  return ns.slice(0,2).join(", ")+" +"+(ns.length-2);
+}
+function liveWindow(){ return S.now>=120?"meal":(S.now>=30?"snack":"top"); }
+// the check applies only while the snack window can still carry the correction
+// both edges bind: the meal window must have closed, the snack window must not have.
+function checkApplies(){
+  var F=fluid(S.bw,S.t,S.dur,S.temp,S.check);
+  return S.t>=T_REF && S.now<=T_REF && S.now>=30 && !F.gated && !S.fasted;
+}
+function checkPending(){ return checkApplies() && S.check==="unknown"; }
+// "unsure" is a real answer that resolves to no top-up — the echo stays distinct from "pale"
+function autoExpand(){
+  var e=[liveWindow()];
+  if(checkPending() && e.indexOf("snack")<0) e.push("snack");
+  return e;
+}
+
+// ---------------- INFO TAB ----------------
+function chip(b){return b==="evidenced_band"?'<span class="chip cited">Published guideline</span>':
+  b==="design_choice"?'<span class="chip ours">Our judgement</span>':'<span class="chip none">No target</span>';}
+function renderInfo(){
+  var C=carbs(S.bw,S.t,S.dur,S.fasted),F=fluid(S.bw,S.t,S.dur,S.temp,S.check);
+  var h='<div class="sheet-hd"><button class="info-btn" id="closeInfo" aria-label="Back">←</button><h3>How we got these numbers</h3></div>';
+
+  h+='<div class="sec"><p class="sec-lab">Reading the bar</p><h4>Fill, tick, ends</h4>'+
+    '<p>The <b>fill</b> is what the food you\'ve chosen actually delivers. The <b>white tick</b> is what we suggest. '+
+    'The <b>shaded zone</b> is how close you need to land — anywhere inside it is fine.</p>'+
+    '<p>For fluid there is one difference: below two hours the bar has <b>no minimum</b>, so a short fill is never a '+
+    'failure. Only going past the far end is worth telling you about.</p></div>';
+
+  h+='<div class="sec"><p class="sec-lab">Carbohydrate</p>';
+  if(C.fasted) h+='<h4>No recommendation</h4><p>You set this session to fasted, so we make no suggestion at all — which is different from suggesting zero.</p>';
+  else if(C.total===0) h+='<h4>Zero, and that is a real answer</h4><p>At the start line there is no time for food to clear your stomach. There <b>is</b> time to drink, which is why the fluid number is not zero.</p>';
+  else h+='<div class="big"><span class="n">'+r5(C.total)+'</span><span class="u">g</span>'+chip(C.basis)+'</div>'+
+    '<p>'+(C.basis==="evidenced_band"
+      ? "The published range for the hours before a session is <b>1–4 g per kilogram</b>. Yours works out at <b>"+
+        (C.total/S.bw).toFixed(2)+" g/kg</b> — we scale it with how much time you have, because time decides how much "+
+        "your stomach can clear."
+      : "You're outside the window the guideline covers, so this number and its range are <b>ours</b>. We still suggest "+
+        "something, because no source says to skip food.")+'</p>'+
+    '<div class="chain">'+S.bw+' kg × '+C.perKg.toFixed(2)+' g/kg = <b>'+C.total.toFixed(1)+' g</b><br>'+
+    'split '+(S.t>=120?"60 / 30 / 10":(S.t>=30?"75 / 25":"100"))+' across your feedings</div></div>';
+
+  h+='<div class="sec"><p class="sec-lab">Fluid</p>';
+  if(F.gated) h+='<h4>No target</h4><p>Under an hour, in cool conditions — the guideline says a recreational athlete <b>should not need extra fluid</b> beforehand. So we set no target rather than inventing a small one.</p>';
+  else h+='<div class="big"><span class="n">'+ml(r25(F.total))+'</span><span class="u">'+mlu()+'</span>'+chip(F.basis)+'</div>'+
+    '<p>'+(F.regime==="cited"
+      ? "The published advice is <b>5–10 ml per kilogram in the 2–4 hours before</b>, and we aim at the middle. "+
+        "<b>Finish about two hours before you start</b> — the gap is in the guideline itself, so your body has time to "+
+        "clear what it doesn't need."
+      : "Nothing published covers the last two hours. It doesn't say to avoid drinking, so this is <b>our judgement</b>, "+
+        "tapering toward a glass at the start line.")+'</p>'+
+    (F.low===0?'<p><b>There is no minimum.</b> If you\'re already hydrated you may need none of it. That is why the bar '+
+      'starts at zero and never scolds you for a short fill.</p>':
+     '<p>The far end leaves room for the urine check to add a top-up. <b>Aim for the tick, not the end</b> — drinking '+
+     'past what you lose is the real risk here.</p>')+
+    '<div class="chain">'+(F.regime==="cited"
+      ? S.bw+' kg × 7.5 ml/kg = <b>'+(7.5*S.bw).toFixed(0)+' ml</b>'+(S.check==="dark"?'<br>+ '+S.bw+' × 4 ml/kg = <b>'+F.total.toFixed(0)+' ml</b>':'')
+      : '250 + ('+S.bw+' × 7.5 − 250) × '+S.t+'/120 = <b>'+F.total.toFixed(0)+' ml</b>')+'</div>'+
+    '<p style="margin-top:10px">Your top-off drink isn\'t counted here — the water that goes with a gel is part of that '+
+    'feeding, so it\'s only counted once.</p></div>';
+
+  h+='<div class="sec"><p class="sec-lab">Sodium</p><div class="big">'+chip("none")+'</div><h4>We don\'t set one</h4>'+
+    '<p>Both current position statements say sodium <b>may</b> help you hold onto fluid, and both decline to put a number '+
+    'on it before exercise. Rather than invent one, we report what your food delivers and leave it there — which is why '+
+    'that figure has no bar and never turns red.</p>'+
+    '<p>An electrolyte drink is <b>not</b> better than water for holding fluid in. That only holds at concentrations far '+
+    'above what sports drinks contain.</p></div>';
+
+  h+='<div class="sec"><p class="sec-lab">Why each feeding looks different</p>'+
+    '<p>The literature controls stomach trouble with <b>what</b> you eat far more than <b>when</b>. Fat, protein and fibre '+
+    'all slow how fast food leaves your stomach, so the rule tightens as the start line gets closer. That\'s why some '+
+    'items are greyed out when you go to add food.</p>'+
+    '<div class="rulerow"><div class="t">Meal</div><div class="d">Low fat, low fibre. A proper plate with time to settle.</div></div>'+
+    '<div class="rulerow"><div class="t">Snack</div><div class="d">Minimal fat and fibre. No nut butters, granola bars or dried fruit.</div></div>'+
+    '<div class="rulerow"><div class="t">Top-off</div><div class="d">Liquid or gel only, up to 8 % carbohydrate. A sports drink at normal strength leaves your stomach about as fast as water and brings sodium with it. Anything sweeter — juice, cola, powder mixed strong — sits there instead.</div></div></div>';
+
+  h+='<div class="sec"><p class="sec-lab">The fine print</p>'+
+    '<p><b>More is not safer.</b> Drinking beyond what you lose is the main cause of exercise-associated hyponatremia — '+
+    'dangerously low blood sodium. It isn\'t an inconvenient bathroom stop. The risk is highest for smaller, leaner '+
+    'athletes at an easier pace, who sweat less and are out there longer. <b>And it looks exactly like dehydration</b> — '+
+    'confusion, weakness, feeling faint — so the instinct to drink more makes it worse. Treat it as an emergency rather '+
+    'than drinking through it.</p>'+
+    '<p><b>Empty your bladder before you start.</b> Ten minutes out is about right.</p>'+
+    '<p>A multivitamin or B-complex turns urine yellow whatever your hydration — if you take one, skip the colour check.</p></div>';
+
+  h+='<div class="sec"><p class="sec-lab">Sources</p><p class="src"><b>Fluid and carbohydrate:</b> Thomas, Erdman &amp; '+
+    'Burke, <em>Nutrition and Athletic Performance</em>, joint position statement of the American College of Sports '+
+    'Medicine, the Academy of Nutrition and Dietetics and Dietitians of Canada, 2016.<br><b>Urine top-up:</b> ACSM '+
+    'position stand on exercise and fluid replacement, 2007.<br><b>No-extra-fluid carve-out:</b> National Athletic '+
+    'Trainers\' Association position statement, 2017.<br><b>Stomach emptying:</b> Mudie et al., 2014.</p></div>';
+  return h;
+}
+
+function wire(){
+  var o=document.getElementById("openInfo"); if(o) o.addEventListener("click",function(){S.view="info";render();});
+  var c=document.getElementById("closeInfo"); if(c) c.addEventListener("click",function(){S.view="screen";render();});
+  each("[data-rm]",function(b){b.addEventListener("click",function(){
+    var p=b.getAttribute("data-rm").split("|");plate[p[0]].splice(+p[1],1);render();});});
+  each("[data-add]",function(b){b.addEventListener("click",function(){
+    var p=b.getAttribute("data-add").split("|");plate[p[0]].push(p[1]);render();});});
+  each("[data-open]",function(b){b.addEventListener("click",function(){
+    var k=b.getAttribute("data-open");S.open=(S.open===k)?null:k;render();});});
+  each("[data-exp]",function(b){b.addEventListener("click",function(){
+    var k=b.getAttribute("data-exp"),i=S.expand.indexOf(k);
+    if(i>=0) S.expand.splice(i,1); else S.expand.push(k);
+    S.touched=true; if(S.open&&S.expand.indexOf(S.open)<0) S.open=null;
+    render();});});
+  each("[data-check]",function(b){b.addEventListener("click",function(){
+    S.check=b.getAttribute("data-check");
+    if(S.expand.indexOf("snack")<0) S.expand.push("snack");   // answer lands in view
+    render();});});
+}
+function each(sel,fn){Array.prototype.forEach.call(document.querySelectorAll(sel),fn);}
+
+// ---------------- page notes ----------------
+function notes(){
+  var a='<h3>One row of ranges, and only one</h3>';
+  a+=card("scr","Three across, like the original",
+    "Carbs, fluid and sodium sit in one row again rather than three stacked full-width meters. Same rhythm as the "+
+    "screen you started from — value, label, bar, ends — so it reads as a refinement of what is already there rather "+
+    "than a new component. It also gives back the vertical space that collapsing was meant to buy.",
+    null,null);
+  a+=card("scr","The feedings lost their bars entirely",
+    "Each feeding now shows what it delivers and nothing else. One range bar per quantity, at the top, where the "+
+    "number it measures is the one that actually matters.",
+    "<b>This also settles the two-band problem by subtraction.</b> The ±12.5 % per-tier figure is a <em>solver "+
+    "tolerance</em> — a constraint on how the food engine portions, never a goal for the athlete. It has no business "+
+    "on screen in any form, so §5.2's <em>“must not be rendered alike”</em> is satisfied by there being only one kind "+
+    "of range left to render.",
+    ["notes §5.2","carbs v2 · Outputs"]);
+  a+=card("scr","Editing feedback survives the cut",
+    "Add or remove anything and the feeding's number and the roll-up both move. The bar was never the only feedback — "+
+    "it is the <em>calibration</em>, and one calibrated scale is enough for a plan this size.",
+    null,["D-014"]);
+  a+=card("scr","Sodium keeps the slot, not the scale",
+    "It holds its column so the row stays three-across, but where the track would be there is a dashed rule and "+
+    "<em>“from your food · no target”</em>. A dashed line reads as <em>there is no scale here</em>, which is the true "+
+    "statement — different from an empty track, which would read as a scale you are failing.",
+    null,["sodium v3","PW-012"]);
+
+  a+='<h3 style="margin-top:28px">The check stayed in the snack card</h3>';
+  a+=card("scr","Because invariant 8b only pays off next to the number",
+    "The band above two hours is deliberately check-independent so that when an answer arrives <b>only the target "+
+    "moves</b>. At plan level that payoff is lost — you answer and the number it changes is inside a card you cannot "+
+    "see. The card opens itself while the check is pending; collapse it yourself and the row carries a <b>1 check</b> "+
+    "pill. No spec change needed after all.",
+    null,["hydration v6 · inv. 8b","notes §6"]);
+
+  a+='<h3 style="margin-top:28px">What each surface carries</h3><div class="card"><div class="scroll"><table>'+
+    '<thead><tr><th>Element</th><th>Current</th><th>New screen</th><th>Info tab</th></tr></thead><tbody>'+
+    ['Range bars|3|<b>2</b> (sodium barless)|2, annotated',
+     'Rows they occupy|1|<b>1</b>|—',
+     'Per-feeding ranges|—|<b>none</b>|explained',
+     'Per-feeding number|no|delivered only|—',
+     'Target marker|no|<b>tick on the bar</b>|explained',
+     'Over-range signal|pink (DURING only)|<b>pink, both</b>|why it matters',
+     'Provenance|none|none|3 chips',
+     'Urine check|none|in the snack card|explained'].map(function(r){
+      var p=r.split("|");return '<tr><td>'+p[0]+'</td><td>'+p[1]+'</td><td>'+p[2]+'</td><td>'+p[3]+'</td></tr>';
+    }).join("")+'</tbody></table></div></div>';
+  document.getElementById("ann").innerHTML=a;
+}
+function card(k,t,b,was,refs){
+  var lab={scr:"On the screen",inf:"In the info tab"}[k];
+  var h='<div class="card"><div class="tags"><span class="tag '+k+'">'+lab+'</span>';
+  (refs||[]).forEach(function(r){h+='<span class="tag ref">'+r+'</span>';});
+  h+='</div><h4>'+t+'</h4><p>'+b+'</p>';
+  if(was) h+='<p style="border-left:2.5px solid var(--rose);padding-left:13px;font-size:13.5px;color:var(--muted)">'+was+'</p>';
+  return h+'</div>';
+}
+
+function render(){
+  document.getElementById("screen").innerHTML=(S.view==="info")?renderInfo():renderScreen();
+  document.getElementById("vScreen").setAttribute("aria-pressed",S.view==="screen");
+  document.getElementById("vInfo").setAttribute("aria-pressed",S.view==="info");
+  wire();notes();
+}
+function sync(){
+  document.getElementById("bwv").textContent=S.bw+" kg";
+  document.getElementById("tv").textContent=fmtT(S.t);
+  document.getElementById("nwv").textContent=fmtT(S.now);
+  document.getElementById("nw").max=S.t;
+  document.getElementById("durv").textContent=S.dur+" min";
+  render();
+}
+document.getElementById("bw").addEventListener("input",function(e){S.bw=+e.target.value;sync();});
+document.getElementById("t").addEventListener("input",function(e){S.t=+e.target.value;
+  if(S.now>S.t){S.now=S.t;document.getElementById("nw").value=S.now;}
+  document.getElementById("nw").max=S.t;
+  if(!S.touched){S.expand=autoExpand();S.open=null;} sync();});
+document.getElementById("nw").addEventListener("input",function(e){
+  S.now=Math.min(+e.target.value,S.t); e.target.value=S.now;
+  if(!S.touched){S.expand=autoExpand();S.open=null;} sync();});
+document.getElementById("dur").addEventListener("input",function(e){S.dur=+e.target.value;sync();});
+document.getElementById("vScreen").addEventListener("click",function(){S.view="screen";render();});
+document.getElementById("vInfo").addEventListener("click",function(){S.view="info";render();});
+each("#units button",function(b){b.addEventListener("click",function(){
+  S.units=b.getAttribute("data-u");
+  each("#units button",function(x){x.setAttribute("aria-pressed",x===b?"true":"false");});render();});});
+each(".preset",function(b){b.addEventListener("click",function(){
+  var p=b.getAttribute("data-preset");S.fasted=false;S.temp=22;S.check="unknown";S.open=null;
+  if(p==="gun"){S.t=0;S.now=0;S.dur=120;}
+  else if(p==="gate"){S.dur=45;S.t=180;S.now=180;}
+  else if(p==="fasted"){S.fasted=true;S.t=180;S.now=180;S.dur=120;}
+  else if(p==="snackwin"){S.t=240;S.now=90;S.dur=120;S.touched=false;}
+  else{S.t=180;S.now=180;S.dur=120;S.bw=65;S.touched=false;plate={meal:DEFAULT.meal.slice(),snack:DEFAULT.snack.slice(),top:DEFAULT.top.slice()};}
+  document.getElementById("nw").value=S.now;
+  S.expand=autoExpand();
+  document.getElementById("bw").value=S.bw;
+  document.getElementById("t").value=S.t;
+  document.getElementById("dur").value=S.dur;
+  sync();});});
+sync();
+})();
+</script>
