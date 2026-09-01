@@ -18,10 +18,11 @@ made in three places at once (prototype TS, edge-fn TS in `supabase/functions/_s
 | settings keys | `VanaSetting` | `batch_cooking` (bool) · `show_macros` (bool) — rows in `user_memories` with `kind='setting'` |
 | `directions_origin` | `DirectionsOrigin` | `source · alt_source · ai_generated · assembly_simple` |
 
-## 2. Records (Dart classes are immutable, `fromJson`/`toJson`, snake_case on the wire — the JSON is
-the `search_meals` / table row shape, NOT the camelCase TS shape; the TS mappers `rowToMealRef`,
-`rowToPlanMeal`, `toPlan` in `routes/-server/food.ts` define the wire→object mapping and the edge
-functions emit the SAME wire shape so Dart and TS parse identical JSON.)
+## 2. Records — **wire = the camelCase `contracts.ts` shape** (decided 2026-09-01 after the fixtures
+landed: `minCarbsG`, `prepMinutes`, `libraryMealId`…). The edge functions map DB rows with the same
+`rowToMealRef`/`rowToPlanMeal`/`toPlan` code as the prototype and emit camelCase; Dart `fromJson` reads
+camelCase keys. Fixtures in `mealplanning-prototype/packages/web/tests/fixtures/*.json` are the truth.
+Dart classes are immutable with `fromJson`/`toJson`.
 
 **`MealRef`** — one `search_meals` row: `source(library|saved) id name meal_type contexts[] batch
 prep_minutes kcal carbs_g protein_g fat_g allergens[] diets_ok[] swaps why attribution
@@ -42,9 +43,9 @@ from_meal_ids[]}` · `DaySlotRef {source(plan|saved|library) id name kcal? carbs
 planning_kcal lunch_dinner_kcal mode}` · `Memory {id kind key fact value confidence
 last_confirmed_at}` · `ConversationSummary {id kind title summary last_message_at created_at}`.
 
-**`MealDetail`** (what `/food/meals/:id` and cooking mode need; built by the `get_meal` action):
-`MealRef` + `ingredients_json[{name qty role?}] method_steps[] directions{origin source_url source_name
-verbatim} image{url license creator credit source_url} source_url servings notes(saved only)`.
+**`MealDetail`** (`get_meal` action): `{ meal: MealRef, ingredients: {name, qty, role?}[], methodSteps: string[],
+directions: {origin, sourceUrl, sourceName, verbatim}, image: {url, license, creator, credit, sourceUrl} | null,
+sourceUrl, source, swaps: string[], prep, servings, notes, vote }`.
 
 **`AthleteContext`** is server-internal (built per turn in the edge fn) — Dart never sees it.
 
@@ -73,7 +74,7 @@ Unknown kinds are dropped by the Dart parser (same forward-compat rule `AiCoachU
 `toggle_shopping{name,field(checked|have),value}` · `log_from_plan{plan_meal_id,meal_type?}` ·
 `set_setting{key,value}` · `delete_memory{id}` · `list_memories{}` · `set_day_slot{date?,slot,source,id,name?}`
 · `clear_day_slot{date?,slot}` · `plan_day{date?}` · `new_plan{}` · `get_plan{id?}` · `list_plans{}` ·
-**new for the app:** `get_home{date}` (the `/api/vana/home` payload), `get_meal{id}` (→ `MealDetail`),
+**app-only (implemented in contract-v1):** `save_meal{libraryMealId}` (→ `{meal: MealRef}`), `get_home{date?}` (the `/api/vana/home` payload), `get_meal{id}` (→ `MealDetail`),
 `recent_meals{limit}`, `set_saved_meal_notes{saved_meal_id,notes}`, `set_meal_feedback{library_meal_id?|saved_meal_id?,vote,reason?}`
 (wraps the RPC so the client has one write channel; direct RPC is also fine).
 
@@ -88,10 +89,12 @@ thing that changes (Phase 1 adds an NDJSON transport to it so both clients speak
 
 Request: `{message?, conversation_id?, kind: 'meal_planning'|'general', timezone, opener?: bool,
 anchor_date?: 'YYYY-MM-DD'}`. Headers back: `x-conversation-id`, `x-vana-kind`.
-Lines: `{"type":"text","delta"}` · `{"type":"ui","part":VanaPart}` · `{"type":"status","tool":name}`
-(new — drives the "Finding options that fit your week…" line) · `{"type":"done","usage"}` ·
-`{"type":"error","message"}`. Errors before the stream: 401, 402 `insufficientCreditsBody`, 403
-`{error:'pro_required'}` (new), 429 `{error:'rate_limited', retry_after_seconds}`.
+Lines: `{"type":"text","delta"}` (a `"\n"` delta separates text blocks) · `{"type":"ui","part":VanaPart}` ·
+`{"type":"status","tool":name}` (on tool-input-start — drives the "Finding options…" line) ·
+`{"type":"done","usage":{input_tokens,output_tokens}}` · `{"type":"error","message"}`. Pre-stream errors: 401
+`{error:'unauthenticated'}`, 400 `{error:'message_required'}`, 403 `{error:'pro_required'}` (edge fn only), 429
+`{error:'rate_limited', retry_after_seconds}`. Reference implementation: prototype `POST /api/vana/chat-ndjson`
+(`contract-v1`); Flutter uses the same envelope against `vana-chat`.
 
 Persistence (server): user + assistant rows in `vana_messages` with `content` (first text), `parts`
 (ordered AI-SDK parts incl. `tool-*` with `state:'output-available'`), `metadata {ui_parts, tool_calls,
