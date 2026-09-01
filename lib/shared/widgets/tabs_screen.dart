@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/fuel_timeline/presentation/screens/fuel_timeline_screen.dart';
+import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
+import '../services/app_config.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
@@ -58,10 +59,13 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       });
     }
 
-    // Build the list of screens dynamically. Activities + Nutrition are merged
-    // into the single Fuel Timeline tab.
+    // Build the list of screens dynamically. Activities + Nutrition are
+    // merged into the single dashboard tab. The macro dashboard (bundle
+    // daily-macros-dashboard@v3) IS the surface — the MACRO_DASHBOARD_ENABLED
+    // flag was deleted per Lee's 2026-08-20 ruling ("no more hide-flags for
+    // dev features"); the legacy FuelTimelineScreen is retired from this tab.
     final screens = [
-      const FuelTimelineScreen(), // 0: Fuel Timeline (day + food + workouts)
+      const MacroDashboardScreen(), // 0: macro dashboard
       if (showCoachTab)
         const SizedBox.shrink(), // 1: placeholder (coach portal rendered above)
       const EventsListScreen(), // 1 or 2: Events

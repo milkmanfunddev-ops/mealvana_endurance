@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: Energy Availability Safety Gate (RED-S)
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration4_spec` (FFM derivation, Formulas 17–18). **Engine:** B.
 **Conformance target:** `calculate-daily-macros/formulas/safety.ts` (name match only — not yet
 diffed).
@@ -78,11 +78,24 @@ if ea <  20: return BLOCK
 min_intake = 30 × ffm_kg + session_kcal
 deficit    = min_intake − intake
 
-carb += (deficit × 0.6) / 4
-fat  += (deficit × 0.4) / 9
+ceiling  = 12.0 × weight_kg                       # the same clamp assembly step 9 applied
+carb_add = (deficit × 0.6) / 4
+
+if carb + carb_add > ceiling:                     # Q-006 RULED (Xuan, 2026-08-13)
+    overflow_kcal = (carb + carb_add − ceiling) × 4
+    carb          = ceiling
+    fat          += (deficit × 0.4 + overflow_kcal) / 9
+else:
+    carb += carb_add
+    fat  += (deficit × 0.4) / 9
 
 return { carb: round(carb), prot, fat: round(fat), adjusted: true }
 ```
+
+The ceiling branch makes the source's own edge-case row ("carb at ceiling → override adds to fat
+only") true of the formula body. Energy is conserved either way — the redirected kcal land in fat at
+9 kcal/g — so the post-override EA is exactly 30.0 on both paths. Protein is never touched, so the
+protein ceiling cannot bind here.
 
 Worked (reference athlete, FFM 64): carb 250 / prot 115 / fat 60, session 208 kcal.
 `intake = 2000`, `ea = (2000 − 208)/64 = 28.0` → HARD_WARNING.
@@ -93,21 +106,26 @@ Worked (reference athlete, FFM 64): carb 250 / prot 115 / fat 60, session 208 kc
 |---|---|---|---|
 | 250 / 115 / 60 | 208 | 28.0 | carb 269, fat 66; EA → 30.0 |
 | 200 / 100 / 55 | 543 | 18.0 | **BLOCK** — plan not generated |
-| 500 / 140 / 120 | 300 | see [Q-008](OPEN-QUESTIONS.md#q-008) | no change (EA ≥ 45) |
-| 400 / 130 / 90 | 200 | see [Q-008](OPEN-QUESTIONS.md#q-008) | no change (EA ≥ 30) |
+| 500 / 140 / 120 | 300 | **52.2** | no change (EA ≥ 45) |
+| 400 / 130 / 90 | 200 | **42.7** | no change (EA ≥ 30) |
 
-The last two rows' stated EA figures do not reconcile with the formula at FFM 64 (they compute to
-52.2 and 42.7); the *outcomes* are unaffected. Registered as [Q-008](OPEN-QUESTIONS.md#q-008).
+The last two rows' EA values are **corrected** from the source page (which printed 46.3 and 40.3 —
+neither reconciles with the formula at FFM 64, nor with any plausible alternative FFM). Recomputed
+per [Q-008](OPEN-QUESTIONS.md#q-008), ruled 2026-08-13; outcomes were unaffected either way.
 
-### Gaps in Formula 18 as written
+### Formerly gaps — both RULED (Xuan, 2026-08-13)
 
-- **Carb ceiling.** The source's edge-case table says "EA override with carb at ceiling (900 g) →
-  cannot add more carb; override adds to fat only", but the formula body has no such branch — it
-  adds 60 % to carb unconditionally, which can push carb past the `12.0 × weight_kg` clamp that
-  already ran. See [Q-006](OPEN-QUESTIONS.md#q-006).
-- **No downstream recompute.** The override changes carb and fat but the spec does not say whether
-  TDEE, TEF or the fat residual are recomputed afterwards. Taken literally, the returned `tdee` and
-  `tef_kcal` describe the pre-override macros. See [Q-009](OPEN-QUESTIONS.md#q-009).
+- **Carb ceiling — CLOSED.** The branch is now in the formula body above ([Q-006]
+  (OPEN-QUESTIONS.md#q-006)). The source's edge-case table asserted the intended behaviour all
+  along; the formula simply lacked it.
+- **No downstream recompute — RULED as the contract.** TDEE, TEF and the fat residual are **not**
+  recomputed after the override ([Q-009](OPEN-QUESTIONS.md#q-009)). Rationale: the override
+  enforces a *floor* (EA = 30); it is not a better energy estimate, and recomputing opens a
+  fat→intake→TEF→TDEE→fat convergence loop with no stopping rule. The returned `tdee` and
+  `tef_kcal` therefore describe the **pre-override** macros, and the plan's `energy_basis` field is
+  set to `"pre_override"` (else `"as_computed"`) so no consumer can present them as describing the
+  delivered plan. The drawer/explanation layer MUST respect this — an athlete whose plan was raised
+  by the safety gate sees intake above the stated TDEE, and that is correct, not a bug.
 
 ## Constants — provenance
 

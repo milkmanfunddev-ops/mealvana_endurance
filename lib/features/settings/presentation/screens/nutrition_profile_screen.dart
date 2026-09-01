@@ -7,7 +7,9 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
+import '../../../daily_macros/application/daily_macro_service.dart';
 import '../../../daily_macros/domain/enums.dart';
+import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
@@ -245,8 +247,18 @@ class _NutritionProfileScreenState
 
       await userRepository.updateUserProfile(updated);
 
-      // Invalidate daily macros so they recalculate
+      // Settings state mirrors the profile; refresh it.
       ref.invalidate(settingsControllerProvider);
+
+      // Q-016: a MANUAL engine-input write invalidates today + future cached
+      // daily plans (never past) and refreshes the visible day. Skipped when
+      // the save changed nothing the engine reads.
+      if (DailyMacroService.engineInputsDiffer(profile, updated)) {
+        await ref
+            .read(dailyMacroServiceProvider)
+            .invalidateForManualInputChange(profile.id);
+        ref.invalidate(dailyMacrosControllerProvider);
+      }
 
       if (mounted) {
         MealvanaSnackbar.showSuccess(context, 'Nutrition profile saved');

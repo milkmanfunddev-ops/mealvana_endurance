@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../shared/database/app_database.dart';
 import '../../../shared/database/database_provider.dart';
 import '../../../shared/core/revisioned_single_flight.dart';
+import '../../../shared/domain/session_input_resolver.dart';
 import '../../../shared/services/performance_telemetry.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../data/daily_macro_targets_repository.dart';
@@ -79,6 +80,45 @@ class DailyMacroService {
         data: {'affected_weeks': weekStarts.length},
       );
     }
+  }
+
+  /// Q-016 — a MANUAL write to an engine input (weight, height, body-fat %,
+  /// sex, age, lifestyle, typical weekly hours, carb-cycle opt-in, training
+  /// phase — Settings is merely the surface) invalidates TODAY and every
+  /// FUTURE cached day, never past days: a delivered plan is the historical
+  /// record of what the athlete was told to eat, and recalculating it would
+  /// retroactively flip "hit your target" verdicts (platform-resolution.md,
+  /// RULED Xuan 2026-08-17). The spec owns the policy; this is the mechanism.
+  /// Callers also invalidate `dailyMacrosControllerProvider` so the visible
+  /// day recomputes with the new values.
+  Future<void> invalidateForManualInputChange(
+    String userId, {
+    DateTime? now,
+  }) async {
+    final today = now ?? DateTime.now();
+    await _repository.invalidateFromDate(userId, today);
+    // Any in-flight week calculation for the current or next week must
+    // rerun with the new inputs rather than land stale results.
+    markMacroInputsChanged(userId, [today, today.add(const Duration(days: 7))]);
+  }
+
+  /// Whether two revisions of a profile differ in an ENGINE input — the
+  /// fields the daily-macro calculation actually reads (rmr.md F1 sex/age/
+  /// height/weight; baseline-macros.md lifestyle/weekly hours/cycling opt-in/
+  /// phase; energy-availability.md body-fat → FFM). Everything else on the
+  /// profile (units, gear, sweat, dietary preferences…) never reaches the
+  /// engine and must not cost the user a recompute.
+  static bool engineInputsDiffer(UserProfile a, UserProfile b) {
+    return a.gender != b.gender ||
+        a.birthday != b.birthday ||
+        a.heightFeet != b.heightFeet ||
+        a.heightInches != b.heightInches ||
+        a.weightPounds != b.weightPounds ||
+        a.bodyFatPct != b.bodyFatPct ||
+        a.lifestyle != b.lifestyle ||
+        a.typicalWeeklyHours != b.typicalWeeklyHours ||
+        a.carbCycleOptIn != b.carbCycleOptIn ||
+        a.trainingPhase != b.trainingPhase;
   }
 
   /// Calculate daily macros for a specific date.
@@ -155,7 +195,7 @@ class DailyMacroService {
     // 6. Call edge function
     try {
       final response = await _supabase.functions.invoke(
-        'calculate-daily-macros',
+        'calculate-daily-macros-v6',
         body: input,
       );
 
@@ -399,7 +439,7 @@ class DailyMacroService {
 
     try {
       final response = await _supabase.functions.invoke(
-        'calculate-daily-macros',
+        'calculate-daily-macros-v6',
         body: payload,
       );
 
@@ -477,7 +517,7 @@ class DailyMacroService {
                 tss, intensity_level
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL
+         AND deleted_at IS NULL AND status != 'skipped'
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -496,7 +536,16 @@ class DailyMacroService {
     return _WeekActivityInputs(results);
   }
 
-  /// Load sessions for a date in the format expected by the edge function
+  /// Load sessions for a date in the format expected by the edge function.
+  ///
+  /// `status = 'skipped'` rows are excluded from EVERY activity-derived input
+  /// (sessions, adjacent-day context, weekly hours): the athlete's "didn't
+  /// happen" contributes zero to session demand and fuel windows exactly as
+  /// the confirmation ladder's else-rung does, even while planned_time is
+  /// still in the future (platform-resolution.md, SKIPPED addition
+  /// 2026-08-17). Tombstones (status='deleted') also carry deleted_at, so the
+  /// existing filter already drops them. A skip/unskip therefore invalidates
+  /// the cached window — see `macro_cache_invalidation.dart`.
   Future<List<Map<String, dynamic>>> _loadSessionsForDate(
     String userId,
     DateTime date,
@@ -513,7 +562,7 @@ class DailyMacroService {
                 tss, intensity_level
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL
+         AND deleted_at IS NULL AND status != 'skipped'
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -539,7 +588,7 @@ class DailyMacroService {
           '''SELECT tss, duration_minutes, intensity_level, scheduled_date_time
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL''',
+         AND deleted_at IS NULL AND status != 'skipped' ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfDay),
@@ -566,7 +615,7 @@ class DailyMacroService {
           '''SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL''',
+         AND deleted_at IS NULL AND status != 'skipped' ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfWeek),
@@ -623,47 +672,45 @@ DateTime _activityDate(QueryRow row) => DateTime.fromMillisecondsSinceEpoch(
 );
 
 Map<String, dynamic> _sessionFromActivityRow(QueryRow row) {
-  var durationMinutes = row.readNullable<int>('duration_minutes') ?? 0;
   final activityType = row.read<String>('activity_type');
 
-  if (durationMinutes == 0) {
-    final distanceMiles = row.readNullable<double>('distance_miles');
-    if (activityType == 'running') {
-      final pace = row.readNullable<double>('pace_target_minutes_per_mile');
-      if (distanceMiles != null && pace != null && pace > 0) {
-        durationMinutes = (distanceMiles * pace).round();
-      }
-    } else if (activityType == 'cycling') {
-      final speed = row.readNullable<double>('cycling_speed_mph');
-      if (distanceMiles != null && speed != null && speed > 0) {
-        durationMinutes = ((distanceMiles / speed) * 60).round();
-      }
-    } else if (activityType == 'swimming') {
-      final swimPace = row.readNullable<int>('swimming_pace_per_100m_seconds');
-      if (distanceMiles != null && swimPace != null && swimPace > 0) {
-        final distanceMeters = distanceMiles * 1609.34;
-        durationMinutes = ((distanceMeters / 100) * swimPace / 60).round();
-      }
-    }
-    if (durationMinutes == 0) {
-      durationMinutes = activityType == 'other' ? 30 : 60;
-    }
-  }
+  // The ladder lives in SessionInputResolver so display surfaces price a
+  // session exactly the way the engine is fed. Behaviour here is unchanged —
+  // this call is the same ladder, lifted out of this function so it can be
+  // shared rather than copied (bug 2026-08-22-dashboard-prices-distance-
+  // sessions-at-flat-60min: the dashboard had copied only the last rung).
+  final durationMinutes = SessionInputResolver.durationMinutes(
+    activityType: activityType,
+    explicitMinutes: row.readNullable<int>('duration_minutes'),
+    distanceMiles: row.readNullable<double>('distance_miles'),
+    paceTargetMinutesPerMile: row.readNullable<double>(
+      'pace_target_minutes_per_mile',
+    ),
+    cyclingSpeedMph: row.readNullable<double>('cycling_speed_mph'),
+    swimmingPacePer100mSeconds: row.readNullable<int>(
+      'swimming_pace_per_100m_seconds',
+    ),
+  );
 
-  final sport = switch (activityType) {
-    'cycling' => 'cycling',
-    'swimming' => 'swimming',
-    'other' => 'strength',
-    _ => 'running',
-  };
+  final sport = SessionInputResolver.engineSport(activityType);
 
   return {
     'sport': sport,
     'duration_hr': durationMinutes / 60.0,
+    // Same default distribution the display resolves a zoneless session with
+    // (RULED 2026-08-22) — shared so the two cannot drift apart again.
     'pct_conversational':
-        (row.readNullable<int>('intensity_z1_z2_pct') ?? 70) / 100.0,
-    'pct_tempo': (row.readNullable<int>('intensity_z3_z4_pct') ?? 20) / 100.0,
-    'pct_allout': (row.readNullable<int>('intensity_z5_pct') ?? 10) / 100.0,
+        (row.readNullable<int>('intensity_z1_z2_pct') ??
+                SessionInputResolver.defaultZ1Z2Pct) /
+            100.0,
+    'pct_tempo':
+        (row.readNullable<int>('intensity_z3_z4_pct') ??
+                SessionInputResolver.defaultZ3Z4Pct) /
+            100.0,
+    'pct_allout':
+        (row.readNullable<int>('intensity_z5_pct') ??
+                SessionInputResolver.defaultZ5Pct) /
+            100.0,
     'tss': row.readNullable<double>('tss'),
     'activity_id': row.read<String>('id'),
   };

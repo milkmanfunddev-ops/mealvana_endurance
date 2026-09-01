@@ -42,14 +42,16 @@ class BeforeSubPhase {
   /// (Formula Kit PR 2 substep 9).
   final PinDecision? pinDecision;
 
-  /// Display title for this sub-phase, sport-aware when [sport] is known
-  /// ("Pre-Run Meal" / "Pre-Ride Meal"), generic ("Pre-Workout Meal")
-  /// otherwise. See [preWorkoutFeedingTitle].
-  String displayTitleFor(ActivityType? sport) =>
-      preWorkoutFeedingTitle(subPhaseType, sport: sport);
-
-  /// Sport-agnostic display title for this sub-phase.
-  String get displayTitle => displayTitleFor(null);
+  /// The feeding-card title (FC-1): "Pre-Run Meal" for every sport (the
+  /// former sport-varying "Pre-Ride Meal" is retired — deferred-ledger P4),
+  /// "Pre-Workout Snack" and "Top-Off". The SNACK "Light Meal" threshold needs
+  /// the engine's tier aim and body weight, which the plan alone does not
+  /// carry — the BEFORE card's assembler evaluates it; this getter is the
+  /// sport-agnostic fallback used by templates / coach views.
+  String get displayTitle {
+    final tier = PreWorkoutFeedingTier.parse(subPhaseType);
+    return tier == null ? subPhaseType : preWorkoutFeedingTitle(tier);
+  }
 
   /// Summary of this sub-phase for collapsed display.
   ///

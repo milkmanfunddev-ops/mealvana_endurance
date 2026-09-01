@@ -18,6 +18,7 @@ class MockSupabaseClient extends Mock implements SupabaseClient {}
 /// below is one edge-function round trip the user no longer pays, and one date
 /// that still works offline.
 void main() {
+  _versionGateTests();
   late AppDatabase database;
   late DailyMacroTargetsRepository repository;
 
@@ -192,5 +193,48 @@ void main() {
       survivors,
       hasLength(march.length + june.length + julyNextWeek.length),
     );
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Algorithm-version gate (Phase C of daily-macros-dashboard@v3, 2026-08-19):
+// a cached day is stale only when its engine version is OLDER than this
+// build's floor — never when it is newer. An equality gate coupled the engine
+// deploy to the app release (deploy v6 first → every v5-pinned install
+// discards → recalcs → discards forever, the 2026-08-14 flicker). With the
+// floor, a newer engine can ship ahead of the client; raising the floor later
+// invalidates the leftover old rows exactly once.
+// ---------------------------------------------------------------------------
+void _versionGateTests() {
+  group('algorithm-version gate — older-than floor, never equality', () {
+    test('rows at or above the floor are served; older rows are stale', () {
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.0.0'),
+        isFalse,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.1.0'),
+        isFalse,
+        reason: 'newer than the floor is accepted as-is',
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v7.0.0'),
+        isFalse,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v5.0.0'),
+        isTrue,
+        reason: 'older → recalculated once',
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v5.9.9'),
+        isTrue,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('garbage'),
+        isTrue,
+        reason: 'unparsable → treated as older',
+      );
+    });
   });
 }

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart' show Color;
 import '../../../shared/domain/activity_type.dart';
 import '../domain/nutrient_transparency_data.dart';
 import '../domain/macro_targets.dart';
-import '../domain/pre_workout_display_rounding.dart';
 import '../domain/resolved_during_target.dart';
 
 part 'macro_explanation_service.explanations.dart';

@@ -23,12 +23,19 @@ When you make a schema change:
 
 ## Folder layout
 
-There are **no loose migration files in this folder** — every migration `.sql`
-lives in `_archived/` as a historical record. This folder holds only this
-README.
+Loose, timestamped `.sql` files in this folder are **allowed** — they are the
+outstanding (not-yet-applied-everywhere) migrations, written idempotently and
+applied by hand, one file at a time, in DataGrip (▶ Lee, 2026-08-19: *"a
+migration file is an SQL file… it's fine to put it in `supabase/migrations`";
+*"even just directly executing the SQL is fine"* — apply-all and loose files
+are both acceptable; neither is more disciplined in a way that matters).
+Once a file is applied to **dev and prod**, move it to `_archived/` and, if it
+was also mirrored into `docs/database/apply_all.sql`, replace that section with
+an "✅ APPLIED" note.
 
 | Path | Meaning |
 |------|---------|
+| `*.sql` (loose) | Outstanding migrations, idempotent, hand-applied. Today: `20260814120000_activities_two_time_and_tombstone.sql`, `20260814121000_plan_recalc_log.sql` (daily-macros-dashboard bundle). |
 | `_archived/` | Every migration file we've ever written, in one place — applied migrations, data-seed migrations, the disabled pre-Oct-2025 base-schema attempts (`.sql.skip`), and a couple drafted-but-never-applied ones. We don't run these directly. |
 
 ## ⚠️ `supabase db push` will fail (issue #29)

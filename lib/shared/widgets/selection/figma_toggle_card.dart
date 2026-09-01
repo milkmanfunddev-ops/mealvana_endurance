@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/kyle_switch.dart';
 import '../../../theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
 /// Toggle card widget matching Figma onboarding design
 ///
@@ -34,7 +35,7 @@ class FigmaToggleCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.textDark.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
           color: AppColors.textDark.withValues(alpha: 0.08),
           width: 1,

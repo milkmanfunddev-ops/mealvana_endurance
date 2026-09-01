@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: NEAT, TEF & TDEE
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration3_spec` (Formulas 12–15) and `daily_macro_calc_iteration5_spec`
 (CTL tier table). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/neat-tef.ts` (name match only — not yet diffed).
@@ -127,6 +127,14 @@ function calculateTDEE(rmr, neat, session_kcal, carb_g, prot_g, weight_kg):
   return { tdee: round(tdee), fat_g: round(fat), tef: round(tef), neat_kcal: round(neat) }
 ```
 
+**The fat ceiling lives downstream, not here (Q-014 — RULED 2026-08-13).** `calculateTDEE`
+returns the *uncapped* residual; assembly step 10b then caps fat at `0.30 × tdee / 9` and
+redistributes the excess energy to carbohydrate (up to the 12 g/kg clamp; corner case: fat keeps
+the remainder rather than energy being dropped). The split keeps this formula's convergence
+mathematics and its regression tables intact — **every fat value in the tables below is the
+pre-cap residual**, and the returned plan's fat is `min(that, 0.30 × tdee / 9)`. Redistribution
+conserves energy, so every TDEE and TEF cell below is also the returned value.
+
 **Convergence is geometric.** A kcal of TEF change produces only ~0.11 kcal of further TEF change
 (TEF is 10 % of intake; fat absorbs the change at 9 kcal/g). Typical deltas: pass 1 ≈ 225–440,
 pass 2 ≈ 23–35, pass 3 ≈ 2–4.
@@ -149,16 +157,17 @@ test. 4+ passes has never been observed.
 | Rest day — 300 / 115 / 0, NEAT 343 | 3 | 250 | 2501 | 93 |
 | 90-min run — 369 / 130 / 1205, NEAT 378 | 3 | 388 | 3879 | 209 |
 | Rest after long ride — 394 / 123 / 0, NEAT 309 | 2 | 261 | 2478 | **60 (floor)** |
-| Pre-race, all layers — 798 / 159, NEAT 378 | 2 | 437 | 3773 | **60 (floor)** |
+| Pre-race, all layers — 798 / 159, NEAT 378 | 2 | 437 | **4202** | **60 (floor)** |
 
 Rest-day convergence trace: pass 1 `0 → 225` (Δ 225, continue) · pass 2 `225 → 248` (Δ 23,
 continue) · pass 3 `248 → 250` (Δ 2, **stop**).
 Fat-at-floor trace: pass 1 `0 → 261` (Δ 261, continue) · pass 2 `261 → 261` (Δ 0, **stop**).
 
-The pre-race row assumes a session cost of 1050 kcal, which does not match the 1479 kcal that the
-same scenario's session produces elsewhere in the source — see
-[Q-007](OPEN-QUESTIONS.md#q-007). The *fat* and *TEF* values are unaffected (fat is at its floor,
-so intake is fixed) but the TDEE is.
+The pre-race row is **corrected** ([Q-007](OPEN-QUESTIONS.md#q-007), ruled 2026-08-13): the source
+page assumed a 1050 kcal session, but the scenario's run (1.5 hr IF 0.82) costs
+`11 × 75 × (0.82/0.75)² × 1.5 = 1479 kcal` — the figure the Iteration 4 EA table already used
+(intake 4368 → EA 45.1 only works with 1479). TDEE is therefore `1908 + 378 + 437 + 1479 = 4202`,
+not the printed 3773. *Fat* and *TEF* were unaffected either way (fat at its floor pins intake).
 
 ### Lifestyle sensitivity (rest day, serious tier, RMR 1908)
 | Lifestyle | NEAT | TDEE | fat |
@@ -204,4 +213,41 @@ Iteration 5 platform integration, where the two modes start drawing on different
 | TEF fraction | 0.10 of intake | **Uncited**; 10 % is the conventional mixed-diet TEF figure |
 | convergence threshold | delta < 10 kcal | **Mealvana implementation choice** — the doc presents it as a stopping rule, and it is observable in output |
 | `max_passes` | 5 | **Mealvana implementation choice** — safety limit |
-| fat floor | 0.8 g/kg | **Uncited** |
+| fat floor | 0.8 g/kg | **Uncited** as a number. Direction citable: Thomas 2016 discourages chronic fat intake < 20 %E |
+| fat ceiling (step 10b) | 0.30 × tdee kcal, i.e. 30 %E | **Q-014, ruled 2026-08-13.** The number is ISSN 2018's recommended ~30 %E, inside the AMDR 20–35 %E; the redistribute-to-carb rule is research-derived (see Literature — Q-014 basis); the exact 0.30 (vs 0.35) is a Mealvana design choice within the cited band |
+
+## Literature — Q-014 basis (fat ceiling & redistribution)
+
+- **Thomas DT, Erdman KA, Burke LM.** *Position of the Academy of Nutrition and Dietetics,
+  Dietitians of Canada, and the American College of Sports Medicine: Nutrition and Athletic
+  Performance.* Med Sci Sports Exerc. 2016;48(3):543–568. PMID 26891166. Fat intake *"should be in
+  accordance with public health guidelines"* (AMDR 20–35 %E); athletes *"should be discouraged from
+  chronic implementation of fat intakes below 20% of energy"*. No load-scaling of fat anywhere in
+  the stand; daily carbohydrate bands (3–5 / 5–7 / 6–10 / 8–12 g/kg by training volume, verified
+  verbatim) are the load-scaled macro.
+- **Kerksick CM, et al.** *ISSN exercise & sports nutrition review update.* J Int Soc Sports Nutr.
+  2018;15:38. DOI 10.1186/s12970-018-0242-y. Recommends *"a moderate amount of fat (approximately
+  30% of daily caloric intake)"* — the source of the 0.30; notes *"up to 50%"* is *safely
+  tolerated* under high-volume training (a tolerance bound, not a recommendation).
+- **Burke LM, et al.** *Low carbohydrate, high fat diet impairs exercise economy and negates the
+  performance benefit from intensified training in elite race walkers.* J Physiol.
+  2017;595(9):2785–2807. PMID 28012184. Replicated: **Burke LM, et al.** PLoS ONE.
+  2020;15(6):e0234027. The evidence against high fat as a training-day strategy.
+- **Impey SG, et al.** *Fuel for the work required: a theoretical framework for carbohydrate
+  periodization.* Sports Med. 2018;48(5):1031–1048. Day-to-day energy variation is carried by
+  carbohydrate; fat is absent from the periodization framework — the basis for redistributing the
+  capped excess to carbohydrate specifically.
+- **Heikura IA, et al.** *A mismatch between athlete practice and current sports nutrition
+  guidelines among elite female middle- and long-distance athletes.* Int J Sport Nutr Exerc Metab.
+  2017. PMID 28387576. Elite microperiodization moves carbohydrate, not fat, on hard days.
+- **Saris WH, et al.** *Study on food intake and energy expenditure during extreme sustained
+  exercise: the Tour de France.* Int J Sports Med. 1989;10(Suppl 1):S26–S31. ~6,000 kcal/day with
+  fat held near 23 %E and the surplus carried as carbohydrate. *(Volume/pages per secondary
+  sources; PMID not verified.)*
+- **Mountjoy M, et al.** *IOC consensus statement on relative energy deficiency in sport (RED-S):
+  2018 update.* Br J Sports Med. 2018;52(11):687–697. Low energy availability harms performance,
+  bone, immunity — the basis for the corner-case rule that energy is never dropped.
+- **Fahrenholtz IL, et al.** *Within-day energy deficiency and reproductive function in female
+  endurance athletes.* Scand J Med Sci Sports. 2018;28(3):1139–1146. PMID 29205517. Hours in
+  within-day deficit associate with elevated cortisol and menstrual dysfunction — dropping energy
+  on the heaviest days concentrates the deficit exactly where risk is highest.

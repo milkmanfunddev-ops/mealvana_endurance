@@ -6,6 +6,7 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
 import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
 import '../utils/macro_helpers.dart';
+import '../utils/post_create_navigation.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -304,9 +305,14 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final useMetric = state.unitSystem == UnitSystem.metric;
 
     // Calculate fluid values based on unit preference
-    final preFluids = useMetric
-        ? macros.preRun.fluidsMl.round()
-        : (macros.preRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
+    // Gate path (`fluidsMl == null`): no fluid target is stated — the table
+    // renders an em dash (as it does for sodium), never 0oz.
+    final preFluidMl = macros.preRun.fluidsMl;
+    final int? preFluids = preFluidMl == null
+        ? null
+        : useMetric
+        ? preFluidMl.round()
+        : (preFluidMl * UnitFormatter.kFlOzPerMl).round();
 
     final duringFluids = useMetric
         ? macros.duringRun.fluidTotalMl.round()
@@ -372,7 +378,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preProtein: macros.preRun.proteinG.round(),
           duringProtein: 0,
           postProtein: macros.postRun.proteinG.round(),
-          preFluids: fluids(macros.preRun.fluidsMl),
+          // Gate path → null → em dash (never 0oz).
+          preFluids: macros.preRun.fluidsMl == null
+              ? null
+              : fluids(macros.preRun.fluidsMl!),
           duringFluids: fluids(macros.duringRun.fluidTotalMl),
           postFluids: fluids(macros.postRun.fluidsMl),
           // Sodium v3: no pre-workout sodium target. Null renders as an
@@ -648,10 +657,11 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           extra: {'activityId': activityId, 'isCoachView': true},
         );
       } else {
-        context.push(
-          '/current-plan',
-          extra: {'activityId': activityId, 'isNewActivity': true},
-        );
+        // Unwind the spent creation flow (new-activity form + this screen)
+        // instead of pushing on top of it: backing out of the plan must land
+        // on the dashboard, never on a still-armed Generate form that can
+        // insert a duplicate activity.
+        showPlanAfterSuccessfulCreate(context, activityId: activityId);
       }
     } else if (activityId == null) {
       DebugLogger.error(

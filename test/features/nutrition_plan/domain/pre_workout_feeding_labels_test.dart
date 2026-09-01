@@ -1,87 +1,179 @@
-// Window labels and feeding titles for the pre-workout (BEFORE) feeding
-// cards — spec-settled copy from the ratified mockup (docs/pre-workout-macro.html)
-// and the SSOT reference implementation's `whens=` derivation
-// (docs/ssot/spec/fueling/pre-workout-ui.html). Digest §5.
+// Feeding-card titles and window labels for the pre-workout BEFORE card.
+//
+// Contract: docs/ssot/spec/design/components/feeding-card.md v1 (RATIFIED
+// Xuan 2026-08-26) — "Tier × title × window label" table and FC-1. Replaces
+// the sport-varying titles the previous test pinned ("Pre-Ride Meal",
+// "Pre-Workout Meal"): FC-1 as ratified is "Pre-Run Meal" for every sport
+// (deferred-ledger P4 — the sport variant is retired for this surface).
+//
+// Manifest ids covered here at the unit level: fc_naming_threshold (the
+// widget-level assertion lives in pre_workout_before_card_gestures_test.dart).
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_feeding_labels.dart';
-import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 void main() {
-  group('preWorkoutWindowLabel', () {
-    test('meal → FINISH BY 2H OUT regardless of meal-tier presence', () {
+  group('preWorkoutFeedingTitle (FC-1)', () {
+    test('MEAL is "Pre-Run Meal" — always, never renamed by size or sport', () {
       expect(
-        preWorkoutWindowLabel('meal', hasMealTier: true),
-        'FINISH BY 2H OUT',
-      );
-      expect(
-        preWorkoutWindowLabel('meal', hasMealTier: false),
-        'FINISH BY 2H OUT',
-      );
-    });
-
-    test('snack → 2H TO 30 MIN OUT when a meal tier exists', () {
-      expect(
-        preWorkoutWindowLabel('snack', hasMealTier: true),
-        '2H TO 30 MIN OUT',
-      );
-    });
-
-    test('snack → NOW – 30 MIN OUT when no meal tier exists', () {
-      expect(
-        preWorkoutWindowLabel('snack', hasMealTier: false),
-        'NOW – 30 MIN OUT',
-      );
-    });
-
-    test('top_up → LAST 30 MIN regardless of meal-tier presence', () {
-      expect(preWorkoutWindowLabel('top_up', hasMealTier: true), 'LAST 30 MIN');
-      expect(
-        preWorkoutWindowLabel('top_up', hasMealTier: false),
-        'LAST 30 MIN',
-      );
-    });
-
-    test('unrecognised sub-phase type → null (no line, not a wrong one)', () {
-      expect(preWorkoutWindowLabel('mystery', hasMealTier: true), isNull);
-      expect(preWorkoutWindowLabel('mystery', hasMealTier: false), isNull);
-    });
-  });
-
-  group('preWorkoutFeedingTitle', () {
-    test('meal is sport-aware for running and cycling', () {
-      expect(
-        preWorkoutFeedingTitle('meal', sport: ActivityType.running),
+        preWorkoutFeedingTitle(PreWorkoutFeedingTier.meal),
         'Pre-Run Meal',
       );
       expect(
-        preWorkoutFeedingTitle('meal', sport: ActivityType.cycling),
-        'Pre-Ride Meal',
+        preWorkoutFeedingTitle(
+          PreWorkoutFeedingTier.meal,
+          snackCarbAimG: 500,
+          bodyWeightKg: 63,
+        ),
+        'Pre-Run Meal',
       );
     });
 
-    test('meal falls back to generic for other or unknown sports', () {
-      expect(
-        preWorkoutFeedingTitle('meal', sport: ActivityType.swimming),
-        'Pre-Workout Meal',
-      );
-      expect(
-        preWorkoutFeedingTitle('meal', sport: ActivityType.brick),
-        'Pre-Workout Meal',
-      );
-      expect(preWorkoutFeedingTitle('meal'), 'Pre-Workout Meal');
-    });
+    test(
+      'SNACK flips to "Light Meal" at LIGHT_MEAL_G_PER_KG·BW (1.0 g/kg)',
+      () {
+        // 63 kg ⇒ threshold 63 g.
+        expect(
+          preWorkoutFeedingTitle(
+            PreWorkoutFeedingTier.snack,
+            snackCarbAimG: 62.9,
+            bodyWeightKg: 63,
+          ),
+          'Pre-Workout Snack',
+        );
+        expect(
+          preWorkoutFeedingTitle(
+            PreWorkoutFeedingTier.snack,
+            snackCarbAimG: 63.0,
+            bodyWeightKg: 63,
+          ),
+          'Light Meal',
+        );
+        expect(
+          preWorkoutFeedingTitle(
+            PreWorkoutFeedingTier.snack,
+            snackCarbAimG: 75.6,
+            bodyWeightKg: 63,
+          ),
+          'Light Meal',
+        );
+      },
+    );
 
-    test('snack and top_up are sport-agnostic', () {
+    test('SNACK with no weight / no aim cannot evaluate the threshold', () {
       expect(
-        preWorkoutFeedingTitle('snack', sport: ActivityType.running),
+        preWorkoutFeedingTitle(PreWorkoutFeedingTier.snack, snackCarbAimG: 90),
         'Pre-Workout Snack',
       );
-      expect(preWorkoutFeedingTitle('top_up'), 'Top-Off');
+      expect(
+        preWorkoutFeedingTitle(PreWorkoutFeedingTier.snack, bodyWeightKg: 63),
+        'Pre-Workout Snack',
+      );
     });
 
-    test('unrecognised sub-phase type falls through to the raw type', () {
-      expect(preWorkoutFeedingTitle('mystery'), 'mystery');
+    test('TOP_OFF is "Top-Off"', () {
+      expect(preWorkoutFeedingTitle(PreWorkoutFeedingTier.topOff), 'Top-Off');
+    });
+  });
+
+  group('PreWorkoutFeedingTier.parse', () {
+    test('accepts the engine spelling and the plan sub-phase spelling', () {
+      expect(
+        PreWorkoutFeedingTier.parse('top_off'),
+        PreWorkoutFeedingTier.topOff,
+      );
+      expect(
+        PreWorkoutFeedingTier.parse('top_up'),
+        PreWorkoutFeedingTier.topOff,
+      );
+      expect(PreWorkoutFeedingTier.parse('meal'), PreWorkoutFeedingTier.meal);
+      expect(PreWorkoutFeedingTier.parse('snack'), PreWorkoutFeedingTier.snack);
+      expect(PreWorkoutFeedingTier.parse('dinner'), isNull);
+      expect(PreWorkoutFeedingTier.topOff.subPhaseType, 'top_up');
+      expect(PreWorkoutFeedingTier.topOff.engineName, 'top_off');
+    });
+  });
+
+  group('preWorkoutWindowLabel', () {
+    test('meal → FINISH BY 2H OUT; (15 MIN WINDOW) only for 2 h – 2 h 15', () {
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.meal,
+          timeBeforeMin: 180,
+          isFirstFeeding: true,
+        ),
+        'FINISH BY 2H OUT',
+      );
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.meal,
+          timeBeforeMin: 135,
+          isFirstFeeding: true,
+        ),
+        'FINISH BY 2H OUT (15 MIN WINDOW)',
+      );
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.meal,
+          timeBeforeMin: 120,
+          isFirstFeeding: true,
+        ),
+        'FINISH BY 2H OUT (15 MIN WINDOW)',
+      );
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.meal,
+          timeBeforeMin: 150,
+          isFirstFeeding: true,
+        ),
+        'FINISH BY 2H OUT',
+      );
+    });
+
+    test('snack → 2H TO 30 MIN OUT, or NOW UNTIL 30 MIN OUT when first', () {
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.snack,
+          timeBeforeMin: 180,
+          isFirstFeeding: false,
+        ),
+        '2H TO 30 MIN OUT',
+      );
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.snack,
+          timeBeforeMin: 90,
+          isFirstFeeding: true,
+        ),
+        'NOW UNTIL 30 MIN OUT',
+      );
+    });
+
+    test('top-off → LAST 30 MIN / NOW UNTIL THE START / NOW', () {
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.topOff,
+          timeBeforeMin: 180,
+          isFirstFeeding: false,
+        ),
+        'LAST 30 MIN',
+      );
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.topOff,
+          timeBeforeMin: 20,
+          isFirstFeeding: true,
+        ),
+        'NOW UNTIL THE START',
+      );
+      expect(
+        preWorkoutWindowLabel(
+          PreWorkoutFeedingTier.topOff,
+          timeBeforeMin: 0,
+          isFirstFeeding: true,
+        ),
+        'NOW',
+      );
     });
   });
 }

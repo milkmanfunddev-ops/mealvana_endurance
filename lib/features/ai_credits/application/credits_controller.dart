@@ -31,6 +31,19 @@ part 'credits_controller.g.dart';
 /// balance, which is also the better user-facing outcome: a transient network
 /// error should show a stale number, not put the whole credits UI in an error
 /// state.
+/// The auth identity the wallet belongs to, as a rebuild signal.
+///
+/// [CreditsController.build] watches this so a session APPEARING (anonymous
+/// sign-in at the end of onboarding), CHANGING (log out → log in) or ENDING
+/// rebuilds the controller — which re-runs the monthly ensure/grant, rebinds
+/// the realtime channel to the right user, and re-reads the wallet. Before
+/// this existed the only thing that ever invalidated the controller was a
+/// purchase, which is why balances "reappeared after buying".
+@Riverpod(keepAlive: true)
+Stream<String?> creditsAuthUserId(Ref ref) {
+  return ref.watch(creditsRepositoryProvider).authUserIdChanges;
+}
+
 @Riverpod(keepAlive: true)
 class CreditsController extends _$CreditsController {
   CreditsRepository get _repo => ref.read(creditsRepositoryProvider);
@@ -45,6 +58,10 @@ class CreditsController extends _$CreditsController {
   /// balance, not an [AsyncError].
   @override
   FutureOr<CreditWallet> build() async {
+    // Rebuild whenever the auth identity changes — the value itself is not
+    // needed (the repository reads the live session); the WATCH is the fix.
+    ref.watch(creditsAuthUserIdProvider);
+
     _listenForRemoteCredits();
 
     try {

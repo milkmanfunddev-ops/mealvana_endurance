@@ -13,6 +13,13 @@ class Activity {
     required this.scheduledDateTime,
     this.status = ActivityStatus.planned,
 
+    // Two-time model (platform-resolution.md ruling): plannedTime is set at
+    // scheduling and never written by gestures; actualTime is written by
+    // Garmin sync or mark-done, cleared by mark-undone. Display shows
+    // actualTime ?? plannedTime.
+    this.plannedTime,
+    this.actualTime,
+
     // Activity parameters (shared)
     this.distanceMiles,
     this.durationMinutes,
@@ -40,6 +47,7 @@ class Activity {
     this.isFasted = false,
 
     // Completion data
+    this.caloriesBurned,
     this.completedAt,
     this.completionRating,
     this.nutritionRating,
@@ -99,6 +107,18 @@ class Activity {
   final String title;
   final DateTime scheduledDateTime;
   final ActivityStatus status;
+
+  // Two-time model (never conflated; see constructor doc)
+  final DateTime? plannedTime;
+  final DateTime? actualTime;
+
+  /// Measured session energy (Garmin ActiveKilocalories); null when no
+  /// wearable recorded the session. F22 ladder: measured beats formula.
+  final double? caloriesBurned;
+
+  /// The time a card displays: `actualTime ?? plannedTime`, falling back to
+  /// the legacy scheduledDateTime for rows predating the two-time columns.
+  DateTime get displayTime => actualTime ?? plannedTime ?? scheduledDateTime;
 
   // Activity parameters (shared)
   final double? distanceMiles;
@@ -210,6 +230,9 @@ class Activity {
       'title': title,
       'scheduledDateTime': scheduledDateTime.toIso8601String(),
       'status': status.name,
+      'plannedTime': plannedTime?.toIso8601String(),
+      'actualTime': actualTime?.toIso8601String(),
+      'caloriesBurned': caloriesBurned,
       'distanceMiles': distanceMiles,
       'durationMinutes': durationMinutes,
       'paceTargetMinutesPerMile': paceTargetMinutesPerMile,
@@ -283,6 +306,12 @@ class Activity {
     IntensityDistribution? intensityDistribution,
     int? timeBeforeMinutes,
     bool? isFasted,
+    double? caloriesBurned,
+    DateTime? plannedTime,
+    DateTime? actualTime,
+    // actualTime is legitimately cleared (mark-undone); a null argument
+    // means "keep", so clearing needs its own flag.
+    bool clearActualTime = false,
     DateTime? completedAt,
     int? completionRating,
     int? nutritionRating,
@@ -345,6 +374,9 @@ class Activity {
           intensityDistribution ?? this.intensityDistribution,
       timeBeforeMinutes: timeBeforeMinutes ?? this.timeBeforeMinutes,
       isFasted: isFasted ?? this.isFasted,
+      caloriesBurned: caloriesBurned ?? this.caloriesBurned,
+      plannedTime: plannedTime ?? this.plannedTime,
+      actualTime: clearActualTime ? null : (actualTime ?? this.actualTime),
       completedAt: completedAt ?? this.completedAt,
       completionRating: completionRating ?? this.completionRating,
       nutritionRating: nutritionRating ?? this.nutritionRating,
@@ -411,6 +443,9 @@ class Activity {
         other.intensityDistribution == intensityDistribution &&
         other.timeBeforeMinutes == timeBeforeMinutes &&
         other.isFasted == isFasted &&
+        other.plannedTime == plannedTime &&
+        other.actualTime == actualTime &&
+        other.caloriesBurned == caloriesBurned &&
         other.completedAt == completedAt &&
         other.completionRating == completionRating &&
         other.nutritionRating == nutritionRating &&
@@ -467,6 +502,8 @@ class Activity {
         Object.hash(
           timeBeforeMinutes,
           isFasted,
+          plannedTime,
+          actualTime,
           completedAt,
           completionRating,
           nutritionRating,
@@ -485,6 +522,7 @@ class Activity {
           reminderRecurring,
         ) ^
         Object.hash(
+          caloriesBurned,
           syncedFromProvider,
           providerWorkoutId,
           providerWorkoutUrl,
@@ -513,6 +551,10 @@ enum ActivityStatus {
   completed, // Activity completed
   skipped, // Activity skipped/cancelled
   archivedForBrick, // Activity archived as part of a brick workout
+  deleted, // Soft-delete tombstone: the row persists so the sync import
+  // matcher can recognize it and drop the incoming platform activity
+  // instead of re-importing it. Never renders; contributes zero to every
+  // derived quantity (docs/ssot/spec/daily-macros/platform-resolution.md).
 }
 
 /// Intensity level enum

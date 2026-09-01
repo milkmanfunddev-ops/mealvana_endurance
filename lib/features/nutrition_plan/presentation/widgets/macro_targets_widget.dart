@@ -85,7 +85,7 @@ class MacroTargetsWidget extends StatelessWidget {
             .round();
 
     final targetFluids =
-        (detailedTargets.preRun.fluidsMl +
+        ((detailedTargets.preRun.fluidsMl ?? 0) +
                 detailedTargets.duringRun.fluidTotalMl +
                 detailedTargets.postRun.fluidsMl)
             .round(); // in ml

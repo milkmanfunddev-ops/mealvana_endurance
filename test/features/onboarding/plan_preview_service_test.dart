@@ -107,9 +107,13 @@ void main() {
   });
 
   group('daily tabs', () {
-    test('rest day carbs are exactly 4.0 g/kg and carb-load 9.0 g/kg', () {
+    test('rest day carbs are 4.0 g/kg plus the Q-014 cap redistribution, '
+        'carb-load 9.0 g/kg', () {
       final preview = PlanPreviewService.buildPreview(draft(), now: now);
-      expect(preview.restDay.carbGPerKg, 4.0);
+      // Baseline 4.0 g/kg; the 30 %E fat cap redistributes its excess to
+      // carb (assembly step 10b), so the displayed figure sits just above.
+      expect(preview.restDay.carbGPerKg, 4.2);
+      // Carb-load day pins fat at its floor — under the cap, so untouched.
       expect(preview.carbLoadDay.carbGPerKg, 9.0);
       expect(
         preview.workoutDay.carbGPerKg,
@@ -206,17 +210,64 @@ void main() {
       ),
     );
 
-    test('reliable insights replace the representative run duration', () {
+    test('the carb RATE ignores the imported session duration', () {
+      // The card prescribes g/hr for a long session — what to take in when
+      // the athlete does one. It must not be scaled to whatever happened to
+      // be longest in the import: a week whose only ride was 45 minutes
+      // once produced a 'long-ride carb target' of 15 g/hr, which is not a
+      // long-ride fueling rate. A thin week means we saw no long session,
+      // not that this athlete fuels long sessions differently.
       final preview = PlanPreviewService.buildPreview(
         draft(),
         insights: reliableInsights,
         now: now,
       );
       expect(preview.usedTrainingData, isTrue);
-      expect(preview.longRun!.basedOnMinutes, 130);
+      expect(
+        preview.longRun!.basedOnMinutes,
+        PlanPreviewService.defaultLongRunMinutes,
+      );
+      // Same rate a generic preview would give — 130 real minutes changed
+      // nothing about the prescription.
+      expect(
+        preview.longRun!.carbGph,
+        PlanPreviewService.buildPreview(draft(), now: now).longRun!.carbGph,
+      );
+      // The real session is still carried, for the daily screen's caption.
       expect(preview.longRun!.insightDescriptor, 'your 15-mile long run');
-      // 130 min sits in the [45,60] band: mid 52.5 under the run ceiling.
-      expect(preview.longRun!.carbGph, 52.5);
+    });
+
+    test('a short imported ride does not depress the long-ride rate', () {
+      // The reported case, in miniature: one 45-minute ride in the window.
+      final shortRide = TrainingInsights(
+        isReliable: true,
+        windowDays: 10,
+        sessionCount: 5,
+        weeklyDurationHours: 6,
+        longestRide: InsightSession(
+          activityType: ActivityType.cycling,
+          durationMinutes: 45,
+          distanceMiles: 10,
+          scheduledDateTime: DateTime(2026, 8, 9),
+        ),
+      );
+      final preview = PlanPreviewService.buildPreview(
+        draft(sports: {OnboardingSport.cycling}),
+        insights: shortRide,
+        now: now,
+      );
+
+      expect(
+        preview.longRide!.basedOnMinutes,
+        PlanPreviewService.defaultLongRideMinutes,
+      );
+      expect(
+        preview.longRide!.carbGph,
+        PlanPreviewService.buildPreview(
+          draft(sports: {OnboardingSport.cycling}),
+          now: now,
+        ).longRide!.carbGph,
+      );
     });
 
     test('unreliable insights fall back to generic constants', () {
