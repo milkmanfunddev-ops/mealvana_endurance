@@ -7,8 +7,13 @@
 - Drift schema version: read `schemaVersion` in `lib/shared/database/app_database.dart`
   (never a number from this file). Its doc comment carries the per-version changelog;
   the `onUpgrade` ladder is idempotent (`addColumn` / `ensureTable` guards) because web
-  replays steps. Latest addition: `user_entitlements` (v19) — a read-only local cache of the
-  user's Pro subscription row, written server-side by the `revenuecat-webhook`
+  replays steps. Latest addition: the meal-planning user data (v20) — `meal_plans`, `plan_meals`
+  and `user_memories` (offline-first `SyncableRepository`s keyed `meal_plans` / `user_memories`,
+  `lib/features/meal_planning/data/`), `meal_logs.plan_meal_id` and the `saved_meals` planning
+  columns (`icon notes meal_types batch library_meal_id`); see
+  `docs/implement_mealplanning/05-flutter-feature.md` §Status. `plan_meals.is_deleted` is a
+  local-only tombstone (the server hard-deletes). v19 added `user_entitlements` — a read-only
+  local cache of the user's Pro subscription row, written server-side by the `revenuecat-webhook`
   (`supabase/migrations/20260902080000_user_entitlements.sql`; see
   `docs/implement_mealplanning/04-entitlement.md`). It is not a `SyncableRepository`.
 - Drift tables are the `tables:` list in `app_database.dart`; snapshots per version live in

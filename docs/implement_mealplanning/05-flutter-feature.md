@@ -1,5 +1,66 @@
 # 05 — `lib/features/meal_planning/` (Phase 4)
 
+## Status — Phase 4b (data + application) **built 2026-09-01** (branch `mealplanning`, dev only)
+Phase 4a (`domain/`) and 4b (`data/`, `application/`, Drift v20, sync registration) are in code and unit
+tested (`test/features/meal_planning/`, `test/migrations/meal_planning_v20_migration_test.dart`).
+Phase 4c (`presentation/`, router, tabs, content keys) is next. Nothing under `supabase/` changed.
+
+| Piece | Where | State |
+|---|---|---|
+| Drift **v20** | `lib/shared/database/tables/{meal_plans,plan_meals,user_memories}_table.dart`, `meal_logs.plan_meal_id`, `saved_meals.{icon,notes,meal_types,batch,library_meal_id}`, `database_schemas/drift_schemas/drift_schema_v20.json` | in code; `from < 20` step idempotent; schema-guard test pinned. `app_config.current_schema_version` **not** bumped (bump to 20 with the build that ships this). |
+| `meal_logging` | `MealLogSource.plan`, `MealLog.planMealId`, `SavedMeal.{icon,notes,mealTypes,batch,libraryMealId}`, `SavedMealsRepository.updateNotes` | done; every existing test green. |
+| `data/vana_transport.dart` | bearer POST + NDJSON split + status→exception map (`vana_exceptions.dart`: 401 / 402 credits / 403 `ProRequiredException` / 429 `VanaRateLimitedException(retryAfterSeconds)` / offline / server) | shared by chat, action client and `ai_coach` |
+| `data/vana_chat_repository.dart` | `streamChat({message, conversationId, kind, opener, anchorDate})` → `VanaChatResponse{conversationId, kind, events}`; `fetchConversations(kind)`, `fetchMessages` (`parts` first, `content + metadata.ui_parts` fallback), `createConversation(kind)` | `ai_coach_chat_repository` delegates its transport here (`functionName: 'jade-chat'`) and keeps its API + own part parser |
+| `data/vana_action_client.dart` | `run(UiAction)` → `VanaActionResult{parts, extras}` + typed extras (`plan`, `home`, `mealDetail`, `recentMeals`, `memories`, `vote`, `notes`, `logId`) | done |
+| `data/meal_library_remote_data_source.dart` | `search_meals` (all params incl. `p_kind`, `p_include_disliked`), `library_pair_support`, `set_meal_feedback`, `getMeal`/`recentMeals` via actions; `rowToMealRef` + `attributionShort` ports | done |
+| `data/meal_plan_repository.dart` (+ `meal_plan_remote.dart` seam) | `SyncableRepository('meal_plans')`; `watchActivePlan` (join watch; confirmed wins, else newest draft); local-first `setServings/removeMeal/setSession/addComment/toggleShopping/setDaySlot`; `uploadDirtyRecords` replays; `syncFromRemote`; `applyServerPlan` | done |
+| `data/user_memory_repository.dart` | `SyncableRepository('user_memories')`; `getSetting/setSetting/watchSettings/watchMemories/deleteMemory/applyServerMemory`; upload upsert `onConflict:'id'` with setting-row id reuse | done |
+| Sync registration | `sync_dependency_graph.dart` (`meal_plans: [users, saved_meals, meal_logs]`, `user_memories: [users]`), `sync_coordinator._repositoryFor` + roster, `settings_controller._uploadDirtyBeforeLogout` (every `UploadResult` checked) | done |
+| `application/` | `meal_plan_controller` (keepAlive), `plan_day_controller`, `meal_catalog_controller`, `meal_detail_controller` (keepAlive family), `shopping_list_controller`, `vana_chat_controller` (family `kind` + `conversationId`), `vana_conversations_controller`, `vana_settings_controller`, `cooking_session_controller`, `home_service.dart` (`HomeService` + `HomeController`), `meal_ref_mapping.dart`, re-exports `plan_coverage_service.dart` / `meal_icon_classifier.dart` | done; `lib/shared/services/connectivity_checker.dart` is the offline seam |
+
+### Deviations from the spec above (and why)
+- **Drift is v20, not v19.** Phase 3 took v19 for `user_entitlements`; §2 below still says v19.
+- **Week starts on Sunday.** The server's `weekStartFor` (`_shared/vana/env.ts`) and the fixtures use a
+  Sunday-start week; `domain/week_start.dart` ports that. The `MealPlan.weekStart` doc comment says Monday —
+  the comment is wrong, the code follows the server.
+- **`streamChat` returns `VanaChatResponse`, not a bare `Stream`.** The `x-conversation-id` header must
+  reach the caller and `VanaStreamEvent` is sealed in the domain, so the id rides alongside the stream.
+- **Upload replay for `plan_meals` edits.** Removals → `plan_remove_meal`; servings → `plan_set_servings`;
+  the fields with no RPC (`session`, `comments`, `swaps_applied`) → an RLS-scoped `UPDATE plan_meals … WHERE id`.
+  `meal_plans.shopping` / `days` → `UPDATE meal_plans … WHERE id` (not an upsert: plans are only created
+  server-side, and an upsert would carry `status`). After a successful replay the controller re-reads the plan
+  (`get_plan`) so server-derived fields (`shopping`, coverage) land locally — the RPCs do not rebuild them.
+- **`plan_meals.is_deleted` is a local-only tombstone** (the server hard-deletes); the row is dropped after
+  `plan_remove_meal` succeeds.
+- **`MealPlanController` remote-ack ops do not put the notifier into `AsyncLoading`.** The Drift watch owns the
+  data state; `AsyncValue.guard` captures the action's outcome, a failure restores the previous plan and the
+  error is **rethrown** so the screen can gate navigation (and show `MealvanaSnackbar`) on the ack. Offline →
+  `NeedsConnectionException(operation)` before any request; pending local edits are flushed first.
+- **`batch` parts are never appended to a message** — they update `VanaChatState.draftPlan` and are folded into
+  `MealPlanController.applyServerPlan`. History rows have them stripped on load.
+- **Local Recents skip name-only logs** (the server's `recent_meals` does the library name match); when online
+  the server list replaces the local one.
+- **Cooking-mode timers tick per second** (deterministic under `fakeAsync`); the presentation layer owns
+  `wakelock_plus`, notifications and vibration — the controller exposes `wakeLockWanted` and `ringing`.
+- **`createConversation`** inserts into `vana_conversations` directly (owner RLS `Users manage own vana
+  conversations` is FOR ALL); the opener then streams against that id.
+
+### What 4c (presentation) needs to know
+- Strings: controllers carry **no user-facing copy**. Map `VanaChatErrorKind`, `NeedsConnectionException`,
+  `ProRequiredException` (→ `/pro`), `VanaRateLimitedException.retryAfterSeconds`, and the `MealRef.why` /
+  `attribution` server strings through `ContentKeys` (§6).
+- Remote-ack methods on `MealPlanController` **throw**; wrap them in try/catch at the call site. Local-first
+  methods return normally and the watch stream updates the state.
+- `mealPlanControllerProvider` is `keepAlive`; `mealDetailControllerProvider(id)` too (survives a network blip).
+  `vanaChatControllerProvider(kind: …, conversationId: …)` — pass `null` for a new planning chat, then
+  `loadOpener()`; the state's `conversationId` fills in from the response header.
+- `HomeController(date)` returns `null` offline — render from `mealPlanControllerProvider` alone.
+- `CookingSessionState.ringing` lists timers that hit zero; fire the alarm, then `acknowledgeTimer`.
+- `ShoppingListController.shareText()` returns the body only; the title is a content key.
+- Backend follow-ups (none required for 4c): `plan_set_servings` does not rebuild `shopping` (documented in
+  `docs/database/meal-planning-rpcs.md`); the client compensates with a `get_plan` re-read.
+
+
 FOA: `presentation → application → domain ← data`. Controllers are `@riverpod` AsyncNotifiers using
 `AsyncValue.guard()`. Strings via `ContentKeys` + `content_defaults.json` (do NOT copy `ai_coach`'s
 inline-literal shortcut — its keys were never registered). `MealvanaSnackbar` only.
@@ -66,7 +127,7 @@ lib/features/meal_planning/
              meal_icon_tile.dart slot_chip.dart stepper.dart timer_chip.dart step_progress_dots.dart
 ```
 
-## 2. Drift v19 (on top of develop's v18)
+## 2. Drift v19 (on top of develop's v18) — *shipped as v20; see Status*
 - `meal_plans` — every Supabase column (jsonb → `TEXT` JSON: `rules shopping days day_notes`) +
   `needs_upload local_updated_at`. Unique `(user_id, week_start)` only for status≠archived is a
   **partial** index on the server → **never `onConflict` on it; upsert `onConflict:'id'`**.
