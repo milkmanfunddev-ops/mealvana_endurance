@@ -129,10 +129,34 @@ export function deliversDrinkableFluid(f: FoodResult): boolean {
   return isDrinkable && (f.fluids_ml || 0) > PLAIN_FLUID_EPSILON_ML;
 }
 
-/** Electrolyte items that carry essentially no fluid of their own. */
+/**
+ * C2 (docs/ssot/spec/domain/catalog-conventions.md, RULED Xuan 2026-09-01):
+ * the pairing invariant covers every DRY item that requires water to
+ * consume, not only electrolyte-flagged ones — the C1 zero-fluid set
+ * includes carb drink mixes (nobody chews drink mix). No `requires_water`
+ * column exists; per the handback the derivation is app-side: an
+ * electrolyte item, or any drink-shaped product (`drink_mix`,
+ * `sports_drink`, `beverage`, or a liquid-flagged row) whose consumed state
+ * is dry. Twin: `_requiresWaterWhenDry` in electrolyte_water_pairing.dart.
+ */
+export function requiresWaterWhenDry(f: FoodResult): boolean {
+  if (isElectrolyteItem(f)) return true;
+  if (f.is_liquid === true || f.is_drink === true) return true;
+  return f.product_type === "drink_mix" ||
+    f.product_type === "sports_drink" ||
+    f.product_type === "beverage";
+}
+
+/**
+ * Requires-water items that carry essentially no fluid of their own (C2 —
+ * name kept from the electrolyte-only era; scope is the full dry
+ * requires-water set since catalog-conventions v1).
+ */
 export function unpairedElectrolyteItems(foods: FoodResult[]): FoodResult[] {
   return foods.filter(
-    (f) => isElectrolyteItem(f) && (f.fluids_ml || 0) <= PLAIN_FLUID_EPSILON_ML,
+    (f) =>
+      requiresWaterWhenDry(f) &&
+      (f.fluids_ml || 0) <= PLAIN_FLUID_EPSILON_ML,
   );
 }
 

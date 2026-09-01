@@ -89,9 +89,27 @@ bool isElectrolyteItem(FoodItemData item) =>
 bool deliversDrinkableFluid(FoodItemData item) =>
     item.isDrink && _fluidOf(item) > kPlainFluidEpsilonMl;
 
-/// Electrolyte items carrying essentially no fluid of their own.
+/// C2 (docs/ssot/spec/domain/catalog-conventions.md, RULED Xuan 2026-09-01):
+/// the pairing invariant covers every DRY item that requires water to
+/// consume, not only electrolyte-flagged ones — the C1 zero-fluid set
+/// includes carb drink mixes (nobody chews drink mix). Derivation is
+/// app-side (no `requires_water` column): an electrolyte item, or any
+/// drink-shaped item — [FoodItemData.isDrink], or a timing category the
+/// catalog derives from liquid/drink product types. Twin:
+/// `requiresWaterWhenDry` in electrolyte-water-pairing.ts.
+bool _requiresWaterWhenDry(FoodItemData item) =>
+    isElectrolyteItem(item) ||
+    item.isDrink ||
+    item.timingCategory == TimingCategory.fuelDrink ||
+    item.timingCategory == TimingCategory.sipThroughout;
+
+/// Requires-water items carrying essentially no fluid of their own (C2 —
+/// name kept from the electrolyte-only era; scope is the full dry
+/// requires-water set since catalog-conventions v1).
 List<FoodItemData> unpairedElectrolyteItems(List<FoodItemData> items) => items
-    .where((i) => isElectrolyteItem(i) && _fluidOf(i) <= kPlainFluidEpsilonMl)
+    .where(
+      (i) => _requiresWaterWhenDry(i) && _fluidOf(i) <= kPlainFluidEpsilonMl,
+    )
     .toList();
 
 /// Cheap gate so callers can skip building a water pool when nothing is wrong.

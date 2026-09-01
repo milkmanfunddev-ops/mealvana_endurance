@@ -290,8 +290,13 @@ async function generateTransitionPhase(
 
   // Use LP solver with 'during' phase weights (transition is similar to during)
   const weights = getOptimizationWeights("running", "during");
+  // C4 (docs/ssot/spec/domain/catalog-conventions.md, RULED Xuan
+  // 2026-09-01): max 2 items per transition — the C2 pairing water row is
+  // appended AFTER the LP, giving the ruled "2 items + water". Whole
+  // consumable units ride the catalog's is_indivisible flags (C3) through
+  // the solver's whole-serving rounding.
   const modelOptions = {
-    maxFoodItems: 3,
+    maxFoodItems: 2,
     maxServingsCap: 2,
     selectionPenalty: 0.5,
     enforceWaterMin: true,
