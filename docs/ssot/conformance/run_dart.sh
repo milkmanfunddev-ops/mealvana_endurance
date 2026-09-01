@@ -36,14 +36,36 @@ SLICE="${1:-pre-workout-carbs}"
 [ -d "$APP_ROOT" ] || { echo "ABORT: app not found: $APP_ROOT"; exit 1; }
 
 # ---- resolve the slice's `vectors:` path from the manifests ---------------------------------
-# One line per slice in bundles/*.yaml; take the LAST match so a superseding manifest wins if a
-# slice name is reused. No yq dependency: the manifest lines are single-line flow mappings.
+# Two manifest styles exist: single-line flow mappings (`- { slice: X, ..., vectors: P, ... }`,
+# daily-macros era) and block mappings (`- slice: X` / indented `vectors: P`, brick-transition
+# era). Take the LAST match so a superseding manifest wins if a slice name is reused. No yq
+# dependency. A design slice's `vectors:` is prose starting "none" — resolve it to its
+# conformance/design/<slice>.yaml manifest instead.
 VEC_PATH="$(grep -h -E "^\s*-\s*\{\s*slice:\s*${SLICE}\s*," "$QA_ROOT"/bundles/*.yaml 2>/dev/null \
   | sed -E 's/.*vectors:[[:space:]]*([^,[:space:]]+).*/\1/' | tail -1 || true)"
 if [ -z "$VEC_PATH" ]; then
-  # Not in any manifest — fall back to the legacy fueling layout so the pilot keeps working.
-  VEC_PATH="vectors/fueling/$SLICE.json"
+  VEC_PATH="$(awk -v slice="$SLICE" '
+    /^[[:space:]]*-[[:space:]]*slice:[[:space:]]*/ {
+      cur = $0; sub(/^[[:space:]]*-[[:space:]]*slice:[[:space:]]*/, "", cur);
+      sub(/[[:space:]]*(#.*)?$/, "", cur); inslice = (cur == slice); next
+    }
+    inslice && /^[[:space:]]*vectors:[[:space:]]*/ {
+      v = $0; sub(/^[[:space:]]*vectors:[[:space:]]*/, "", v);
+      sub(/[[:space:]]*#.*$/, "", v); sub(/[[:space:]].*$/, "", v);
+      print v; inslice = 0
+    }
+  ' "$QA_ROOT"/bundles/*.yaml 2>/dev/null | tail -1 || true)"
 fi
+case "$VEC_PATH" in
+  none*|"")
+    if [ -f "$QA_ROOT/conformance/design/$SLICE.yaml" ]; then
+      VEC_PATH="conformance/design/$SLICE.yaml"
+    elif [ -z "$VEC_PATH" ]; then
+      # Not in any manifest — fall back to the legacy fueling layout so the pilot keeps working.
+      VEC_PATH="vectors/fueling/$SLICE.json"
+    fi
+    ;;
+esac
 
 # ---- mirror check: the app's docs/ssot copy must be byte-identical to qa's ratified artifact ----
 require_mirror() {
@@ -79,6 +101,25 @@ case "$VEC_PATH" in
     flutter test "test/_qa_conformance_tmp_test.dart" --dart-define=QA_VECTORS="$VECTORS"
     ;;
 
+  vectors/domain/*.json)
+    # Domain family (first slice: brick-eligibility). Same copy-in harness
+    # pattern as fueling, but the vectors are mirror-checked (the family
+    # postdates the pilot's mirror exemption).
+    require_mirror "$VEC_PATH"
+    UNDER="${SLICE//-/_}"
+    VECTORS="$QA_ROOT/$VEC_PATH"
+    TEST_SRC="$QA_ROOT/conformance/${UNDER}_conformance_test.dart"
+    DEST="$APP_ROOT/test/_qa_conformance_tmp_test.dart"
+    [ -f "$VECTORS" ]  || { echo "ABORT: vectors missing: $VECTORS"; exit 1; }
+    [ -f "$TEST_SRC" ] || { echo "ABORT: test missing: $TEST_SRC"; exit 1; }
+    cleanup() { rm -f "$DEST"; }
+    trap cleanup EXIT
+    cp "$TEST_SRC" "$DEST"
+    echo "   arm:     Dart harness vs the published domain predicate"
+    cd "$APP_ROOT"
+    flutter test "test/_qa_conformance_tmp_test.dart" --dart-define=QA_VECTORS="$VECTORS"
+    ;;
+
   vectors/daily-macros/intraday-display.json)
     require_mirror "$VEC_PATH"
     echo "   arm:     Dart display-consumer suite (intraday_display_vectors_test.dart)"
@@ -105,9 +146,13 @@ case "$VEC_PATH" in
 
   conformance/design/*.yaml)
     require_mirror "$VEC_PATH"
-    echo "   arm:     design conformance suites (goldens + gesture tests) in the app repo"
+    # The manifest may name its own app-side suite (`suite: <path under app>`);
+    # default to the macro-dashboard suites for the pilot-era manifests.
+    SUITE="$(grep -E '^suite:' "$QA_ROOT/$VEC_PATH" | sed -E 's/^suite:[[:space:]]*//; s/[[:space:]]*#.*$//' | tail -1 || true)"
+    [ -n "$SUITE" ] || SUITE="test/features/macro_dashboard/"
+    echo "   arm:     design conformance suite: $SUITE"
     cd "$APP_ROOT"
-    flutter test test/features/macro_dashboard/
+    flutter test "$SUITE"
     ;;
 
   *)

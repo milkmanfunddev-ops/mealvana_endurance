@@ -3,7 +3,7 @@ commit: e7b1cfe (tag 62e77ef content + the bundle handoff, which is the next com
 branch: qa/brick-transition-nutrition (brick-transition family; supersets qa/pre-workout-design and qa/daily-macros)
 source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
 design: spec/design/** + DEVIATIONS.md at brick-transition@v1 @ e7b1cfe (2026-09-01 — adds components/transition-card.md; the pre-workout family is byte-identical to 8ab0e6d).
-conformance: docs/ssot/conformance/pre_workout_{carbs,hydration,sodium}_conformance_test.dart are the app's test/qa_conformance/* handed back verbatim to qa/conformance/ on 2026-08-26 (the qa copies were stale — intake 2026-08-25-hydration-slice-stale-v1.md).
+conformance: docs/ssot/conformance/pre_workout_{carbs,hydration,sodium}_conformance_test.dart are the app's test/qa_conformance/* handed back verbatim to qa/conformance/ on 2026-08-26 (the qa copies were stale — intake 2026-08-25-hydration-slice-stale-v1.md). run_dart.sh, transition_nutrition_conformance_test.dart, brick_eligibility_conformance_test.dart and design/transition-card.yaml mirror the qa impl/brick-transition-v1-conformance branch (2026-09-01, this bundle's harness co-evolution — commits 9adbd29 + 8d2b67e, ahead of the e7b1cfe pin by design).
 synced: 2026-09-01 (brick-transition@v1 @ e7b1cfe: both new spec families, both vector files, transition-card design spec, bundle yaml + handoff, handbacks, DEVIATIONS, deferred ledger, run log); 2026-08-26 (pre-workout-macros@v2); 2026-08-18 (daily-macros calculation bundle)
 policy: VERBATIM MIRROR of the QA repo (Lee, 2026-08-07) — no app-side edits to QA-tracked files, ever.
   The QA repo is authoritative; conflicts between its documents are resolved by ITS
