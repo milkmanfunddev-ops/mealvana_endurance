@@ -105,9 +105,9 @@ void main() {
 }
 
 /// Bump both of these together, deliberately, whenever the schema changes.
-const _pinnedVersion = 19;
+const _pinnedVersion = 20;
 const _pinnedFingerprint =
-    '241cbd8fa4647e16df78450633a86fc4cafa4189e893e5f0a129996b22653a0e';
+    '9e2fc38a978ae9e27f613faf0552ae070b53faece54c318c207350ce45e8a0d1';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.
