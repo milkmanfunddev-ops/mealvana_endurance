@@ -1,0 +1,4382 @@
+[
+ {
+  "id": "S-b-001",
+  "name": "Banana with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→almond or sunflower seed butter (peanut allergy)",
+  "approx_macros": "~280 kcal · 30g C · 8g P · 16g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018); https://www.peta.org/lifestyle/food/vegan-pre-workout-foods-perfect-athlete/ ; PETA, \"7 Vegan Pre-Workout Foods Perfect for Any Athlete\"; https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG's vegan-runner piece lists \"banana with peanut butter\" among the most repeated pre-run snacks; PETA: \"Bananas are loaded with potassium, which will help prevent muscle cramps.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-002",
+  "name": "Apple slices with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (tree nut allergy)",
+  "approx_macros": "~270 kcal · 28g C · 6g P · 17g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"; https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015); https://www.peta.org/lifestyle/food/vegan-pre-workout-foods-perfect-athlete/ ; PETA, \"7 Vegan Pre-Workout Foods Perfect for Any Athlete\"",
+  "evidence": "No Meat Athlete lists apples with peanut, almond, or sunflower seed butter as a \"go-to\"; VRG 2015: athlete \"usually eat[s]\" a bagel with PB and apple slices as the pairing base.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-003",
+  "name": "Apple slices with sunflower seed butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — nut-free by design",
+  "approx_macros": "~250 kcal · 26g C · 6g P · 15g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete: \"if you're bored of peanut and almond butters, try sunflower seed butter\" for nut-free variety.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-004",
+  "name": "Dates stuffed with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "4",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→almond butter",
+  "approx_macros": "~260 kcal · 40g C · 5g P · 10g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018); https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "VRG 2018 lists \"dates with peanut butter\" as a favorite; Amanda Wagner RD lists \"a few dates\" among her go-to pre-run picks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-005",
+  "name": "Dates with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "4",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→peanut or sunflower seed butter",
+  "approx_macros": "~255 kcal · 39g C · 4g P · 9g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; Wishes N Kisses, \"What Vegan Athlete Rich Roll Eats Daily\" (profile of ultra-endurance athlete Rich Roll)",
+  "evidence": "Profile of Rich Roll: \"snacks of dates, almond butter, bananas\" repeated through the day of the ultra-endurance athlete's diet.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-006",
+  "name": "Banana \"quesadilla\" with peanut butter and coconut oil",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole wheat tortilla",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "coconut oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fruit + nut butter",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "tortilla→corn tortilla or GF wrap (gluten); peanut butter→almond butter",
+  "approx_macros": "~340 kcal · 42g C · 8g P · 16g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's \"reward snack\": banana, nut butter and coconut oil folded into a warmed tortilla, drizzled with maple syrup.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-007",
+  "name": "Pretzels with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain pretzels",
+    "qty": "30 g",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "pretzels→GF pretzels (gluten); almond butter→sunflower seed butter (tree nut)",
+  "approx_macros": "~200 kcal · 26g C · 5g P · 9g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.peta.org/lifestyle/food/vegan-pre-workout-foods-perfect-athlete/ ; PETA, \"7 Vegan Pre-Workout Foods Perfect for Any Athlete\"",
+  "evidence": "PETA: \"Pretzels With Nut Butter... a quick and convenient way to fuel up on carbs before hitting the gym.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-008",
+  "name": "Dried tart cherries with almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dried tart cherries",
+    "qty": "30 g",
+    "role": "fruit"
+   },
+   {
+    "food": "raw almonds",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dried fruit + nuts",
+  "context": [
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almonds→pumpkin seeds",
+  "approx_macros": "~220 kcal · 26g C · 5g P · 11g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"; https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "VegNews lists \"dried tart cherries\" as a heavier pre-workout pick; No Meat Athlete's favorite trail mix and granola both center on dried tart cherries.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-009",
+  "name": "Banana mash with nut butter, apple and blueberries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium, mashed",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "apple",
+    "qty": "1/2, diced",
+    "role": "fruit"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit + nut butter + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→peanut or sunflower seed butter",
+  "approx_macros": "~300 kcal · 45g C · 6g P · 12g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's \"raw banana mash\": a non-blended smoothie of mashed banana topped with nut butter, diced apple and blueberries.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-010",
+  "name": "Sweet potato with almond butter and cinnamon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "baked sweet potato",
+    "qty": "1 medium",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter",
+  "approx_macros": "~260 kcal · 40g C · 5g P · 10g F",
+  "prep": "movement variable (bake ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; Wishes N Kisses, \"What Vegan Athlete Rich Roll Eats Daily\" (profile of ultra-endurance athlete Rich Roll); https://www.peta.org/lifestyle/food/vegan-pre-workout-foods-perfect-athlete/ ; PETA, \"7 Vegan Pre-Workout Foods Perfect for Any Athlete\"",
+  "evidence": "Rich Roll's daily grazing list includes sweet potatoes alongside nut butters; PETA cites baked sweet potato as an \"excellent complex carbohydrate.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-011",
+  "name": "Carrot sticks with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "carrot sticks",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + hummus",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip (sesame/tahini allergy)",
+  "approx_macros": "~150 kcal · 16g C · 5g P · 8g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015); https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VRG 2015 and VegNews both list carrots with hummus as a standard post-workout combination for vegan athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-012",
+  "name": "Cucumber and bell pepper with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cucumber slices",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper strips",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + veg + hummus",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip",
+  "approx_macros": "~140 kcal · 15g C · 5g P · 7g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018 lists vegetables \"such as carrots, cucumber, bell peppers, celery, grape tomatoes, and broccoli\" with hummus as a core running snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-013",
+  "name": "Celery and grape tomatoes with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "celery sticks",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "grape tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + veg + hummus",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip",
+  "approx_macros": "~130 kcal · 14g C · 4g P · 7g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018's veggie-and-hummus list names celery and grape tomatoes among the standard dippers.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-014",
+  "name": "Whole-grain crackers with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain crackers",
+    "qty": "8",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + hummus",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "crackers→GF crackers (gluten); hummus→white bean dip (sesame)",
+  "approx_macros": "~210 kcal · 26g C · 6g P · 9g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's high-protein vegan snack list pairs hummus with high-fiber crackers and vegetables for a ~9g protein snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-015",
+  "name": "Whole wheat pita with hummus and mixed vegetables",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole wheat pita",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/4 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/4 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + hummus + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "pita→GF pita; hummus→white bean dip",
+  "approx_macros": "~260 kcal · 38g C · 8g P · 8g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018 describes a pita wrap with hummus, avocado and a mix of shredded carrot, cucumber and greens as a runner's go-to.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-016",
+  "name": "Whole wheat pita with red pepper hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole wheat pita",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "red pepper hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + hummus",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "pita→GF pita; hummus→white bean dip",
+  "approx_macros": "~230 kcal · 32g C · 7g P · 8g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's pre-workout list includes \"whole wheat pita with red pepper hummus.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-017",
+  "name": "Whole grain tortilla with hummus, beans, brown rice and squash",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "black beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "1/3 cup",
+    "role": "starch"
+   },
+   {
+    "food": "roasted squash",
+    "qty": "1/3 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + hummus + protein + starch + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "tortilla→corn tortilla or GF wrap (gluten); hummus→white bean dip",
+  "approx_macros": "~420 kcal · 68g C · 15g P · 10g F",
+  "prep": "6 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout list: \"whole grain tortilla with beans, brown rice, squash and zucchini\" (hummus folded in as the spread).",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-018",
+  "name": "Roasted cauliflower with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted cauliflower",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + hummus",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip",
+  "approx_macros": "~170 kcal · 18g C · 6g P · 9g F",
+  "prep": "10 min (roast ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout list pairs hummus with \"red bell pepper, cucumber, carrots, or cauliflower.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-019",
+  "name": "Cucumber slices with edamame hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cucumber slices",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "edamame hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + hummus",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 15g C · 8g P · 6g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VegNews notes edamame hummus (blended silken tofu and edamame) as a protein-boosted alternative for post-workout dipping.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-020",
+  "name": "Soy yogurt with granola and fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "soy yogurt, plain",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "1/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy",
+   "tree_nuts"
+  ],
+  "swaps": "granola→GF/nut-free granola",
+  "approx_macros": "~320 kcal · 48g C · 12g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018); https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "VRG 2018 lists \"non-dairy yogurt with granola and fruit\" as a runner staple; MamaSezz recommends \"soy yogurt with toppings like granola or fresh fruit.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-021",
+  "name": "Soy yogurt with chia seeds and berries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "soy yogurt, plain",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + seed + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "soy yogurt→coconut or oat yogurt (soy allergy)",
+  "approx_macros": "~250 kcal · 30g C · 13g P · 7g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout list: \"soy yogurt with chia seeds and berries.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-022",
+  "name": "Oat yogurt with granola and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "oat yogurt, plain",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "1/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "granola→GF/nut-free granola",
+  "approx_macros": "~310 kcal · 50g C · 8g P · 8g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018's non-dairy yogurt + granola + fruit pattern extended to oat-milk yogurt and banana, one of the fruit options the piece lists.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-023",
+  "name": "Vegan yogurt with berries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "coconut yogurt, plain",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 22g C · 4g P · 10g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VegNews lists \"vegan yogurt with berries\" among heavier pre-workout options for athletes with more than an hour to digest.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-024",
+  "name": "Vegan yogurt bark with fruit and toppings",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "vegan greek-style yogurt",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "granola",
+    "qty": "2 tbsp",
+    "role": "starch"
+   }
+  ],
+  "pattern": "dairy + fruit + starch",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "granola→GF/nut-free granola",
+  "approx_macros": "~260 kcal · 32g C · 10g P · 9g F",
+  "prep": "10 min + freeze",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's snack list: frozen \"vegan Greek yogurt bark\" with sweetener, fruit and toppings, made ahead and broken into pieces.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-025",
+  "name": "Vegan yogurt with granola and hemp seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "vegan greek-style yogurt",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "1/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + starch + seed",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "granola→GF/nut-free granola",
+  "approx_macros": "~320 kcal · 40g C · 14g P · 11g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton lists vegan yogurt with granola and hemp seeds as a protein-forward option for athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-026",
+  "name": "Greek yogurt with nuts, seeds and fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "greek yogurt, plain",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "walnuts",
+    "qty": "15 g",
+    "role": "fat"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + nuts + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "walnuts→pumpkin seeds (tree nut); greek yogurt→soy/coconut yogurt for vegan",
+  "approx_macros": "~280 kcal · 26g C · 16g P · 12g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.33fuel.com/blogs/default-blog/vegan-snacks ; 33Fuel, \"10 Vegan Snacks\" (endurance/cycling nutrition site)",
+  "evidence": "33Fuel's vegan-leaning snack list closes with Greek yogurt topped with \"your favourite nuts, seeds or fruit\" for athletes who keep dairy in.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-027",
+  "name": "Oat milk chia pudding with berries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chia seeds",
+    "qty": "3 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "seed + dairy + fruit",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~230 kcal · 26g C · 8g P · 10g F",
+  "prep": "5 min + chill overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's chia pudding entry: vegan Greek yogurt or plant milk mixed with chia seeds, chilled, and topped with berries.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-028",
+  "name": "Roasted edamame with cucumber slices",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted edamame",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber slices",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 16g C · 13g P · 8g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton: \"roasted edamame with sliced cucumbers,\" about 13g protein from the edamame alone.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-029",
+  "name": "Edamame with chili flakes and lime",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "edamame, steamed, in pod",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "chili flakes",
+    "qty": "pinch",
+    "role": "other"
+   },
+   {
+    "food": "lime wedge",
+    "qty": "1",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~195 kcal · 15g C · 17g P · 8g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "Reasonable seasoning variant of VRG 2015's salted-edamame recovery snack, using the same base component.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-030",
+  "name": "Cold broccoli, wild rice and edamame salad",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "broccoli, blanched",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "wild rice, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "edamame",
+    "qty": "1/3 cup",
+    "role": "protein"
+   }
+  ],
+  "pattern": "veg + starch + protein",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~260 kcal · 42g C · 12g P · 4g F",
+  "prep": "10 min (batch ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VegNews lists a \"cold salad with broccoli, wild rice, and edamame\" among post-workout options for vegan athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-031",
+  "name": "Roasted chickpeas with apple slices",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "apple, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~260 kcal · 42g C · 10g P · 6g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "MamaSezz pairs roasted chickpeas (\"chickpeas with seasonings\") with fruit as a high-protein plant-based snack combination.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-032",
+  "name": "Roasted chickpeas with dried fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "dried apricots",
+    "qty": "4",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~270 kcal · 44g C · 10g P · 6g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's snack list pairs \"fruit + roasted chickpeas\" for roughly 10g of protein per portable serving.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-033",
+  "name": "Salt-and-vinegar roasted chickpeas with banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "salt-and-vinegar roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~280 kcal · 46g C · 10g P · 6g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's \"go-to\" roasted chickpeas (salt-vinegar or Italian-seasoned) paired here with the fruit the same list treats as an everyday staple alongside snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-034",
+  "name": "Italian-seasoned roasted chickpeas with dried cherries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Italian-seasoned roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "dried tart cherries",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~270 kcal · 44g C · 10g P · 6g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete lists Italian-seasoned roasted chickpeas as a favorite go-to; dried tart cherries are the same list's other repeated staple.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-035",
+  "name": "Roasted chickpeas with orange segments",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "orange, segmented",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~250 kcal · 40g C · 10g P · 6g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "Extension of MamaSezz's roasted-chickpeas-plus-fruit pattern using a common citrus fruit for post-session vitamin C.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-036",
+  "name": "Dates with tahini",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "4",
+    "role": "fruit"
+   },
+   {
+    "food": "tahini",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut/seed butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→sunflower seed butter (sesame allergy)",
+  "approx_macros": "~250 kcal · 38g C · 4g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018); https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "VRG 2018's \"dates with peanut butter\" staple extends directly to tahini, the other seed-butter pairing dietitians commonly suggest with dates; Amanda Wagner RD lists dates as a repeated pre-run pick.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-037",
+  "name": "Dates with tahini and sea salt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "4",
+    "role": "fruit"
+   },
+   {
+    "food": "tahini",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "flaky sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + nut/seed butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→sunflower seed butter",
+  "approx_macros": "~250 kcal · 38g C · 4g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "Seasoning variant on VRG 2018's dates-with-nut-butter staple; salt is the standard finishing touch dietitians add to date-and-tahini bites.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-038",
+  "name": "Date and tahini energy bites",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "6",
+    "role": "fruit"
+   },
+   {
+    "food": "tahini",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "rolled oats",
+    "qty": "1/4 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fruit + nut/seed butter + starch",
+  "context": [
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "oats→certified GF oats; tahini→sunflower seed butter",
+  "approx_macros": "~320 kcal · 50g C · 7g P · 12g F",
+  "prep": "10 min (batch ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's \"homemade energy bites\" pattern — dates, seed/nut butter, oats rolled into balls — built here around the dates-and-tahini pairing.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-039",
+  "name": "Rice cakes with tahini and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "tahini",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + nut/seed butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→sunflower seed butter",
+  "approx_macros": "~290 kcal · 46g C · 6g P · 10g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.33fuel.com/blogs/default-blog/vegan-snacks ; 33Fuel, \"10 Vegan Snacks\" (endurance/cycling nutrition site); https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "33Fuel's rice-cake spreads (peanut butter, hummus, avocado) plus No Meat Athlete's rice cracker + nut butter + banana + cinnamon pattern combine into the tahini variant.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-040",
+  "name": "Dates with tahini and cinnamon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "4",
+    "role": "fruit"
+   },
+   {
+    "food": "tahini",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + nut/seed butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→sunflower seed butter",
+  "approx_macros": "~255 kcal · 38g C · 4g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's rice-cracker pattern names \"a sprinkling of cinnamon\" as a common finish on nut/seed-butter-and-fruit snacks; applied here to dates and tahini.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-041",
+  "name": "Dates with tahini and cacao nibs",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "4",
+    "role": "fruit"
+   },
+   {
+    "food": "tahini",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "cacao nibs",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + nut/seed butter",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→sunflower seed butter",
+  "approx_macros": "~270 kcal · 40g C · 5g P · 10g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's energy-bite formula (dates, seed butter, mix-ins like dark chocolate chips) applied to a quick no-bake dates-and-tahini snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-042",
+  "name": "Avocado toast with lemon juice",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "lemon juice",
+    "qty": "squeeze",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread",
+  "approx_macros": "~230 kcal · 24g C · 5g P · 13g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015 lists \"whole wheat toast with almond butter or avocado and lemon juice\" among their pre-workout list.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-043",
+  "name": "Avocado toast with hemp seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat + seed",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread",
+  "approx_macros": "~270 kcal · 25g C · 8g P · 16g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's beans+avocado+hemp seeds+toast pairing and its bread+nut/seed butter+hemp seeds pattern combine into a straightforward avocado-and-hemp-seed toast.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-044",
+  "name": "White bean and avocado toast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/4",
+    "role": "fat"
+   },
+   {
+    "food": "white beans, mashed",
+    "qty": "1/3 cup",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + fat + protein",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread",
+  "approx_macros": "~280 kcal · 36g C · 12g P · 10g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.taylorwolfram.com/plant-based-athlete/ ; Taylor Wolfram RDN (plant-based sports dietitian), \"How to Eat Plant-Based and Succeed as an Athlete\" (quoting Matt Ruscigno RD); https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "Taylor Wolfram RDN notes mashing avocado with cooked white beans on toast turns classic avo-toast into \"a nutritional powerhouse\"; MamaSezz lists the same white-bean-avocado toast among high-protein plant-based snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-045",
+  "name": "Avocado toast with nutritional yeast and pumpkin seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "nutritional yeast",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat + other + seed",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread",
+  "approx_macros": "~290 kcal · 26g C · 8g P · 17g F",
+  "prep": "4 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.taylorwolfram.com/plant-based-athlete/ ; Taylor Wolfram RDN (plant-based sports dietitian), \"How to Eat Plant-Based and Succeed as an Athlete\" (quoting Matt Ruscigno RD)",
+  "evidence": "Taylor Wolfram's plant-based athlete guide describes topping avocado toast with \"a sprinkle of nutritional yeast for a cheesy flavor, and pumpkin seeds for added crunch.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-046",
+  "name": "Whole wheat toast with avocado, piled with greens",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + fat + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread",
+  "approx_macros": "~250 kcal · 25g C · 6g P · 14g F",
+  "prep": "4 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.taylorwolfram.com/plant-based-athlete/ ; Taylor Wolfram RDN (plant-based sports dietitian), \"How to Eat Plant-Based and Succeed as an Athlete\" (quoting Matt Ruscigno RD)",
+  "evidence": "Wolfram's guide notes athletes can \"pile your avo-toast with greens before eating,\" citing evidence that eating greens helps post-exercise cellular regeneration.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-047",
+  "name": "Bagel with avocado and jam",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole wheat bagel",
+    "qty": "1/2",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/4",
+    "role": "fat"
+   },
+   {
+    "food": "fruit jam",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat + other",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bagel→GF bagel",
+  "approx_macros": "~220 kcal · 34g C · 5g P · 7g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018 lists \"bagels with nut butters, vegan butter, or vegan cream cheese\" alongside toast with avocado, jam, or jelly as interchangeable runner staples.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-048",
+  "name": "Plant protein shake with banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "vegan protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + fruit + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "plant milk→oat or almond milk depending on allergy",
+  "approx_macros": "~270 kcal · 34g C · 22g P · 4g F",
+  "prep": "3 min (blend)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"; https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VegNews lists \"protein shakes with vegan protein powder\" as a standard post-workout choice; VRG 2015's protein smoothie pattern (soymilk, banana, peanut butter, berries) shares the same banana-plus-shake base.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-049",
+  "name": "Plant protein shake with banana and peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "vegan protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "soy milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + fruit + fat + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts",
+   "soy"
+  ],
+  "swaps": "soy milk→oat milk; peanut butter→almond butter",
+  "approx_macros": "~380 kcal · 38g C · 25g P · 14g F",
+  "prep": "3 min (blend)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout protein smoothie: \"soymilk, banana, peanut butter, and berries\" — the banana/peanut butter core repeated here with protein powder for extra recovery protein.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-050",
+  "name": "Berry and plant protein smoothie with hemp seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "vegan protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + fruit + seed + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~280 kcal · 28g C · 24g P · 8g F",
+  "prep": "3 min (blend)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's example protein smoothie (vegan milk, protein powder, hemp seeds) yields roughly 17g protein and is presented as a repeatable recovery snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-051",
+  "name": "Green smoothie with kale, apple and ginger",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "kale",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "apple",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "coconut water",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "ginger",
+    "qty": "1 tsp, grated",
+    "role": "other"
+   }
+  ],
+  "pattern": "veg + fruit + drink",
+  "context": [
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 34g C · 3g P · 1g F",
+  "prep": "4 min (blend)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout green smoothie: \"kale, lemon, coconut water, apple, and ginger.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-052",
+  "name": "Berry and white bean protein smoothie",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "strawberries",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "white beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "fruit + protein + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~230 kcal · 38g C · 10g P · 2g F",
+  "prep": "4 min (blend)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "MamaSezz's \"berry protein smoothie\" blends strawberries with beans for a bean-based protein boost, a less common but sourced whole-food protein-shake variant.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-053",
+  "name": "Trail mix: walnuts, cashews, almonds, pumpkin seeds and dried cherries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "raw walnuts",
+    "qty": "10 g",
+    "role": "fat"
+   },
+   {
+    "food": "raw cashews",
+    "qty": "10 g",
+    "role": "fat"
+   },
+   {
+    "food": "raw almonds",
+    "qty": "10 g",
+    "role": "fat"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "10 g",
+    "role": "fat"
+   },
+   {
+    "food": "vegan dark chocolate",
+    "qty": "10 g",
+    "role": "other"
+   },
+   {
+    "food": "dried tart cherries",
+    "qty": "20 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "nuts + seeds + dried fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "omit tree nuts→sunflower seeds and pumpkin seeds only",
+  "approx_macros": "~330 kcal · 26g C · 8g P · 22g F",
+  "prep": "2 min (batch ahead)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete: \"Along with fruit, trail mix is my everyday snack,\" naming this exact walnut/cashew/almond/pumpkin seed/dark chocolate/dried cherry mix as the favorite.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-054",
+  "name": "Homemade granola bars: oats, seeds, nuts and dried fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "walnuts, chopped",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "dried fruit",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + seeds + nuts + dried fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "oats→certified GF oats; walnuts→omit for nut-free",
+  "approx_macros": "~280 kcal · 34g C · 7g P · 14g F",
+  "prep": "15 min (batch ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's pre-workout homemade granola bars: oats, chia seeds, flax seeds, pumpkin seeds, sunflower seeds, nuts or nut butters, dried fruit, cinnamon and nutmeg.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-055",
+  "name": "Dried apricots and almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dried apricots",
+    "qty": "6",
+    "role": "fruit"
+   },
+   {
+    "food": "raw almonds",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dried fruit + nuts",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almonds→pumpkin seeds",
+  "approx_macros": "~210 kcal · 24g C · 4g P · 11g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.peta.org/lifestyle/food/vegan-pre-workout-foods-perfect-athlete/ ; PETA, \"7 Vegan Pre-Workout Foods Perfect for Any Athlete\"",
+  "evidence": "PETA's dried fruit-with-nuts pairing named almonds or walnuts as the standard partner.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-056",
+  "name": "Raisins and peanuts",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "raisins",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "roasted peanuts",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dried fruit + nuts",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanuts→sunflower seeds",
+  "approx_macros": "~230 kcal · 26g C · 7g P · 12g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.peta.org/lifestyle/food/vegan-pre-workout-foods-perfect-athlete/ ; PETA, \"7 Vegan Pre-Workout Foods Perfect for Any Athlete\"",
+  "evidence": "Simple, common variant of PETA's dried-fruit-with-nuts pattern using the classic gorp pairing of raisins and peanuts.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-057",
+  "name": "Almonds and pumpkin seeds mix",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole almonds",
+    "qty": "20 g",
+    "role": "fat"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "nuts + seeds",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almonds→sunflower seeds",
+  "approx_macros": "~240 kcal · 8g C · 9g P · 20g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VegNews lists \"whole almonds and pumpkin seeds\" mixed together as a post-workout snack for vegan athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-058",
+  "name": "\"S'nuts\" roasted seasoned almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "raw almonds",
+    "qty": "30 g",
+    "role": "fat"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "smoked paprika and salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "nuts",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almonds→pumpkin seeds",
+  "approx_macros": "~220 kcal · 8g C · 7g P · 18g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete: \"S'nuts\" — sweet, salty, smoky roasted almonds — \"whenever I make a batch for the week, it's gone in a day.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-059",
+  "name": "Dried fruit and unsalted mixed nuts, on the go",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dried mixed fruit",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "unsalted mixed nuts",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dried fruit + nuts",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "mixed nuts→sunflower seeds",
+  "approx_macros": "~230 kcal · 26g C · 6g P · 12g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's pre-workout list names \"dried unsweetened fruit and unsalted nuts\" as a grab-and-go option.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-060",
+  "name": "Rice cakes with peanut butter, banana and cinnamon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + nut butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter",
+  "approx_macros": "~280 kcal · 42g C · 7g P · 10g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete: \"spreading nut butter and honey on a rice cracker with a sliced banana on top sprinkled with cinnamon\" (honey omitted here to keep vegan).",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-061",
+  "name": "Rice cakes with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + hummus",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip",
+  "approx_macros": "~200 kcal · 30g C · 6g P · 7g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.33fuel.com/blogs/default-blog/vegan-snacks ; 33Fuel, \"10 Vegan Snacks\" (endurance/cycling nutrition site)",
+  "evidence": "33Fuel lists rice cakes topped with hummus among its go-to endurance-athlete snack pairings.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-062",
+  "name": "Rice cakes with avocado",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~220 kcal · 30g C · 4g P · 10g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.33fuel.com/blogs/default-blog/vegan-snacks ; 33Fuel, \"10 Vegan Snacks\" (endurance/cycling nutrition site)",
+  "evidence": "33Fuel lists rice cakes with avocado as one of its rotating vegan-friendly toppings for endurance athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-063",
+  "name": "Rice cakes with almond butter and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + nut butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→peanut or sunflower seed butter",
+  "approx_macros": "~290 kcal · 42g C · 7g P · 11g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's rice-cracker + nut butter + banana pattern names peanut, almond, or sunflower seed butter interchangeably.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-064",
+  "name": "Rice cakes with sunflower seed butter and blueberries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + seed butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — nut-free by design",
+  "approx_macros": "~270 kcal · 40g C · 6g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete offers sunflower seed butter as the nut-free swap in its rice cracker + nut butter + fruit pattern; blueberries are one of the listed fruit toppings.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-065",
+  "name": "Whole grain cereal with oat milk",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain cereal",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "cereal→GF cereal",
+  "approx_macros": "~220 kcal · 40g C · 6g P · 4g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018 lists \"whole grain cereal with almond milk or other non-dairy milks\" as a repeated runner staple; oat milk is one of the named alternatives.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-066",
+  "name": "Granola with oat milk and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "granola",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "granola→GF/nut-free granola",
+  "approx_macros": "~350 kcal · 55g C · 8g P · 12g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's peanut-butter granola (a favorite, made with dried tart cherries) served the standard way — with plant milk and banana.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-067",
+  "name": "Muesli with oat milk and dried fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "muesli",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "dried fruit",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "muesli→GF muesli",
+  "approx_macros": "~300 kcal · 52g C · 8g P · 6g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "Direct extension of VRG 2018's whole grain cereal + non-dairy milk staple, using muesli's built-in dried fruit component.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-068",
+  "name": "Oat milk overnight oats with nut butter and dates",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "medjool dates, chopped",
+    "qty": "2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + nut butter + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "oats→certified GF oats; almond butter→sunflower seed butter",
+  "approx_macros": "~380 kcal · 58g C · 10g P · 13g F",
+  "prep": "5 min + chill overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's overnight oats entry: plant-based milk, oats, nut butter and dates, some variants reaching 15g protein per serving.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-069",
+  "name": "Oats soaked in plant milk with banana and cinnamon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "oats→certified GF oats",
+  "approx_macros": "~320 kcal · 56g C · 9g P · 6g F",
+  "prep": "5 min + chill overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.33fuel.com/blogs/default-blog/vegan-snacks ; 33Fuel, \"10 Vegan Snacks\" (endurance/cycling nutrition site)",
+  "evidence": "33Fuel: \"Soak oats in your favourite milk, add half a banana and a sprinkling of cinnamon\" as a quick endurance-athlete overnight-oats snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-070",
+  "name": "Peanut butter energy balls with oats",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + nut butter + other",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "oats→certified GF oats; peanut butter→sunflower seed butter",
+  "approx_macros": "~180 kcal (per ball) · 20g C · 5g P · 9g F",
+  "prep": "15 min (batch ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "MamaSezz lists \"peanut butter energy balls\" first among its 10 plant-based athlete snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-071",
+  "name": "Oat, nut and dried fruit energy bites with chocolate chips",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "mixed nuts, chopped",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "dried fruit",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "vegan chocolate chips",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "nut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nuts + dried fruit + other + nut butter",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "oats→certified GF oats; nuts/nut butter→seeds/seed butter",
+  "approx_macros": "~190 kcal (per ball) · 22g C · 4g P · 10g F",
+  "prep": "15 min (batch ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's homemade energy bites: \"oats, nuts, seeds, chocolate chips or dried fruit, and nut butter, all smushed together and rolled into a ball.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-072",
+  "name": "No-bake date and oat energy balls",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "medjool dates",
+    "qty": "1 cup, pitted",
+    "role": "fruit"
+   },
+   {
+    "food": "rolled oats",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1/4 cup",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + starch + nut butter",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "oats→certified GF oats; almond butter→sunflower seed butter",
+  "approx_macros": "~170 kcal (per ball) · 24g C · 4g P · 7g F",
+  "prep": "15 min (batch ahead)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's plant-based snack roundup and multiple sports-dietitian sources cite date-oat-nut-butter energy balls as \"the perfect mixture of whole-food carbohydrates, protein, and fats to power you through a workout.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-073",
+  "name": "Chickpea cookie dough bites",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cooked chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "nut butter",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "vegan chocolate chips",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + nut butter + other",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "nut butter→sunflower seed butter",
+  "approx_macros": "~170 kcal (per serving) · 18g C · 6g P · 8g F",
+  "prep": "10 min (blend, batch ahead)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "MamaSezz lists \"chickpea cookie dough\" among its high-protein plant-based athlete snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-074",
+  "name": "Whole-wheat bagel with peanut butter and apple slices",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole wheat bagel",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "apple, sliced",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + nut butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "bagel→GF bagel; peanut butter→sunflower seed butter",
+  "approx_macros": "~320 kcal · 46g C · 10g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015: the athlete states they \"usually eat a small, whole-wheat bagel with natural peanut butter and apple slices\" before workouts.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-075",
+  "name": "Whole wheat toast with peanut butter and banana slices",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + nut butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "bread→GF bread; peanut butter→sunflower seed butter",
+  "approx_macros": "~300 kcal · 40g C · 9g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018's author names her pre-run favorites as including \"bagels/toast with peanut butter and banana slices.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-076",
+  "name": "Quinoa hot cereal with apple and cinnamon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cooked quinoa",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "apple, diced",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "pinch",
+    "role": "other"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + dairy",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~250 kcal · 44g C · 7g P · 4g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's pre-workout list includes \"quinoa hot cereal with apples and cinnamon.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-077",
+  "name": "Oatmeal with blueberries and walnuts",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "walnuts, chopped",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fruit + nuts",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "oats→certified GF oats; walnuts→pumpkin seeds",
+  "approx_macros": "~320 kcal · 50g C · 9g P · 10g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's pre-workout list names \"oatmeal with blueberries and walnuts\" directly; oats appear across nearly every sourced list as the most common base.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-078",
+  "name": "Oatmeal with fruit, seeds and maple syrup",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + seed + other",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "oats→certified GF oats",
+  "approx_macros": "~330 kcal · 56g C · 8g P · 8g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018: \"oatmeal with fruit, maple syrup or agave, seeds, cinnamon, and nuts\" listed as a repeated runner staple.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-079",
+  "name": "Fig bar with a glass of oat milk",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "fig bar",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "fig bar→GF fig bar",
+  "approx_macros": "~230 kcal · 38g C · 4g P · 6g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "Amanda Wagner RD lists a Nature's Bakery fig bar among her repeated pre-run snack picks, eaten roughly 30 minutes before running.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-080",
+  "name": "Rice cakes with a sports gel and water",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "vegan energy gel",
+    "qty": "1 packet",
+    "role": "other"
+   },
+   {
+    "food": "water",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + other + drink",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~180 kcal · 40g C · 2g P · 1g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "Amanda Wagner RD lists \"a couple rice cakes\" alongside a vegan gel (Spring Energy) as interchangeable last-30-minutes pre-run fuel.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-081",
+  "name": "Applesauce pouch with a bagel half",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "applesauce pouch",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "whole wheat bagel",
+    "qty": "1/2",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fruit + starch",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bagel→GF bagel",
+  "approx_macros": "~220 kcal · 46g C · 6g P · 1g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "Amanda Wagner RD's pre-run list names both a GoGo Squeeze applesauce pouch and half a bagel as repeated go-to picks, eaten together before easy runs.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-082",
+  "name": "Graham crackers with almond milk",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "graham crackers",
+    "qty": "2 sheets",
+    "role": "starch"
+   },
+   {
+    "food": "almond milk",
+    "qty": "1 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "crackers→GF graham crackers; almond milk→oat milk (tree nut)",
+  "approx_macros": "~180 kcal · 32g C · 4g P · 4g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "Amanda Wagner RD lists \"a couple graham crackers sheets\" (Partake Foods) as a standard light pre-run snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-083",
+  "name": "Fruit snacks with water before a run",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "fruit snacks (fruit-based)",
+    "qty": "1 pouch",
+    "role": "fruit"
+   },
+   {
+    "food": "water",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "fruit + drink",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~90 kcal · 22g C · 0g P · 0g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://amandawagnernutrition.com/2024/03/27/quick-vegan-pre-run-snacks/ ; Amanda Wagner Nutrition RD, \"Quick Vegan Pre-Run Snacks\"",
+  "evidence": "Amanda Wagner RD lists Annie's Homegrown or Bear brand fruit snacks among quick, easily digested pre-run options.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-084",
+  "name": "Bean dip with fresh vegetables",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "black bean dip",
+    "qty": "1/3 cup",
+    "role": "protein"
+   },
+   {
+    "food": "mixed raw vegetables",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~180 kcal · 24g C · 8g P · 5g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.taylorwolfram.com/plant-based-athlete/ ; Taylor Wolfram RDN (plant-based sports dietitian), \"How to Eat Plant-Based and Succeed as an Athlete\" (quoting Matt Ruscigno RD)",
+  "evidence": "Matt Ruscigno RD, quoted by Taylor Wolfram: \"Bean dips are so good! In taste and for easy, quick calories and protein. You can eat them with fresh veggies.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-085",
+  "name": "Whole-grain bread with nut butter and hemp seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter + seed",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "bread→GF bread; peanut butter→sunflower seed butter",
+  "approx_macros": "~280 kcal · 30g C · 11g P · 14g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's snack list: \"whole-grain bread + nut/seed butter + hemp seeds,\" yielding roughly 10g protein.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-086",
+  "name": "Tofu slices with vegetables and high-fiber crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "baked tofu, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed raw vegetables",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "high-fiber crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "tofu→tempeh (soy allergy — check tempeh separately); crackers→GF crackers",
+  "approx_macros": "~260 kcal · 26g C · 15g P · 10g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton lists \"tofu slices + vegetables + high-fiber crackers\" among its ~10g-protein plant-based snack combinations.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-087",
+  "name": "Roasted lentils with a piece of fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted lentils",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "apple",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~230 kcal · 36g C · 10g P · 4g F",
+  "prep": "20 min (roast ahead)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton lists \"roasted lentils\" (about 10g protein per half cup) as an athlete snack, commonly grabbed alongside a piece of fruit for the carb component.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-088",
+  "name": "Cooked chickpeas with lemon and salt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cooked chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "lemon juice",
+    "qty": "squeeze",
+    "role": "other"
+   },
+   {
+    "food": "sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~270 kcal · 45g C · 15g P · 4g F",
+  "prep": "2 min (from cooked/canned)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout list names plain \"cooked lentils or chickpeas\" as a simple recovery protein snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-089",
+  "name": "Quinoa crackers with guacamole and salsa",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "quinoa crackers",
+    "qty": "8",
+    "role": "starch"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "salsa",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + fat + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "quinoa crackers→GF rice crackers if quinoa allergy is a concern (rare)",
+  "approx_macros": "~230 kcal · 28g C · 5g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout list: \"quinoa crackers with guacamole and salsa.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-090",
+  "name": "Roasted white beans, seasoned",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted white beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "smoked paprika and salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 30g C · 12g P · 3g F",
+  "prep": "25 min (roast ahead)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VegNews lists \"roasted white beans\" as a post-workout snack option for vegan athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-091",
+  "name": "Beans, avocado and hemp seeds on whole-grain toast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, mashed",
+    "qty": "1/3 cup",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/4",
+    "role": "fat"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat + seed",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread",
+  "approx_macros": "~320 kcal · 38g C · 14g P · 14g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Peloton's high-protein snack list: \"beans + avocado + hemp seeds + whole-grain toast,\" roughly 11g protein per serving.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-092",
+  "name": "Baked sweet potato with vegan spread and paprika",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "baked sweet potato",
+    "qty": "1 medium",
+    "role": "starch"
+   },
+   {
+    "food": "vegan spread",
+    "qty": "1 tsp",
+    "role": "fat"
+   },
+   {
+    "food": "smoked paprika",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 38g C · 3g P · 5g F",
+  "prep": "movement variable (bake ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's pre-workout list names \"baked sweet potato with vegan spread and paprika.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-093",
+  "name": "Spinach leaves with a banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "veg + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 27g C · 2g P · 0g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://vegnews.com/vegan-snacks-athletes ; VegNews, \"How to Snack When You're a Vegan Athlete\"",
+  "evidence": "VegNews notes \"leafy green vegetables, such as spinach and romaine lettuce, are easily digestible\" and lists bananas among the lightest immediately-pre-workout carbs.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-094",
+  "name": "Romaine lettuce wraps with hummus and shredded carrot",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "romaine lettuce leaves",
+    "qty": "3",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/4 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "veg + hummus + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip",
+  "approx_macros": "~150 kcal · 16g C · 5g P · 8g F",
+  "prep": "4 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "VRG 2018's pita-wrap pattern (hummus, avocado, shredded carrot, broccoli slaw, lettuce) rebuilt here as a lighter lettuce-wrap version of the same components.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-095",
+  "name": "Whole grain crackers with tofu slices and vegetables",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole grain crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "baked tofu, sliced",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber slices",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "crackers→GF crackers",
+  "approx_macros": "~250 kcal · 26g C · 14g P · 9g F",
+  "prep": "4 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onepeloton.com/blog/high-protein-vegan-snacks ; Peloton, \"14 High-Protein Vegan Snacks That Fuel Gains and Leave You Feeling Satisfied\"",
+  "evidence": "Direct application of Peloton's \"tofu slices + vegetables + high-fiber crackers\" pattern.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-096",
+  "name": "Banana \"nicecream\" with nut butter and dark chocolate",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "frozen banana, blended",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "vegan dark chocolate, shaved",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + nut butter + other",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter",
+  "approx_macros": "~260 kcal · 34g C · 5g P · 12g F",
+  "prep": "5 min (freeze banana ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2015issue4/2015_issue4_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for Athletes\" (2015)",
+  "evidence": "VRG 2015's post-workout list: \"banana 'nicecream' — frozen banana blended with nut butter, nuts, fruit, or dark chocolate.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-097",
+  "name": "Overnight oats with soy yogurt and berries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "soy yogurt, plain",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "oats→certified GF oats; soy yogurt→coconut/oat yogurt",
+  "approx_macros": "~330 kcal · 52g C · 14g P · 6g F",
+  "prep": "5 min + chill overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.vrg.org/journal/vj2018issue1/2018_issue1_vegan_snacks.php ; Vegetarian Journal (Vegetarian Resource Group), \"Vegan Snacks for a Runner\" (2018)",
+  "evidence": "Combination of VRG 2018's oatmeal-staple pattern and its non-dairy-yogurt-with-fruit staple into a single overnight-oats snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-098",
+  "name": "Peanut butter smoothie with plant milk",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1.5 cups",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fat + drink + fruit",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter",
+  "approx_macros": "~330 kcal · 38g C · 10g P · 16g F",
+  "prep": "4 min (blend)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.taylorwolfram.com/plant-based-athlete/ ; Taylor Wolfram RDN (plant-based sports dietitian), \"How to Eat Plant-Based and Succeed as an Athlete\" (quoting Matt Ruscigno RD)",
+  "evidence": "Taylor Wolfram RDN recommends \"adding peanut butter to smoothies\" for extra protein, fat and calories for plant-based athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-099",
+  "name": "Whole wheat pita with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole wheat pita",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "pita→GF pita; almond butter→sunflower seed butter",
+  "approx_macros": "~280 kcal · 34g C · 8g P · 13g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/vegan-athlete-snacks/ ; No Meat Athlete, \"9 High-Energy Plant-Based Snacks for Athletes\"",
+  "evidence": "No Meat Athlete's go-to: whole wheat pita with almond butter or hummus, sometimes with hot sauce or maple syrup.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-b-100",
+  "name": "Trail mix bag with dried mango and cashews",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dried mango",
+    "qty": "20 g",
+    "role": "fruit"
+   },
+   {
+    "food": "raw cashews",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dried fruit + nuts",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "cashews→pumpkin seeds",
+  "approx_macros": "~210 kcal · 26g C · 4g P · 10g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mamasezz.com/blogs/recipes/plant-based-diet-for-athletes-high-protein-snacks ; MamaSezz, \"Plant-Based Diet for Athletes: 10 High Protein Vegan Snacks\"",
+  "evidence": "Variant of MamaSezz's trail-mix pattern (raw nuts and seeds with unsweetened dried fruit) using a common tropical dried-fruit substitution.",
+  "reconstructed_from_snippet": false
+ }
+]

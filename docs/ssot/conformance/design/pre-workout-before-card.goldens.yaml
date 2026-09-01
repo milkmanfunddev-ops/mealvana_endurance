@@ -1,0 +1,115 @@
+# Design conformance manifest — GOLDENS for the pre-workout BEFORE card.
+# The design analogue of a vectors file: names every golden that MUST exist, with
+# the state + canonical-mock inputs it renders from, across the surface AND its
+# three components. The PNGs are implementation-side artifacts (blessed from the
+# first correct rendering); THIS file is what qa audits against.
+#
+# Contract source: spec/design/ — surfaces/pre-workout-before-card.md,
+#   components/{hydration-check,feeding-card,fuel-stat}.md, tokens.md (RATIFIED Xuan 2026-08-26).
+# Colors resolve from tokens.md — Q-D8 (electrolyte on the per-workout fuel side) and
+# Q-D9 (dragonfruit for out-of-range caution) are RULED (Xuan 2026-08-26, option a); the
+# previously-blocked teal/overshoot goldens now bless.
+#
+# RULE: a golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass. Regeneration commits cite the spec change.
+
+manifest: pre-workout-before-card-goldens
+version: v1
+status: ratified            # RATIFIED (Xuan, 2026-08-26), with rendering pre-workout@v2
+spec_family: spec/design/
+
+mock_athlete:
+  bodyWeightKg: 63           # 16 oz meal fluid ⇒ ~63 kg; the rendering's canonical persona
+  note: >
+    Mock VALUES are illustrative (the design is directional on math); goldens pin STATE + STRUCTURE
+    + token-resolved color, not value accuracy. Implementation takes accuracy from the vectors.
+
+goldens:
+  # --- surface: the five feeding-membership scenarios (surface B-2) ---
+  - id: before_3h_targets_set
+    surface: pre-workout-before-card
+    props: { plannedAhead: "3+ hours ahead", targetState: "Targets set" }
+    notes: three feedings; solid bands, NO basis captions (M-4); sodium no band; delivered-only headers (FC-2)
+  - id: before_2h15_meal_15min_window
+    surface: pre-workout-before-card
+    props: { plannedAhead: "2h15 ahead", targetState: "Targets set" }
+    notes: meal window "(15 MIN WINDOW)"; first card "Pre-Run Meal"; snack 43 g stays "Pre-Workout Snack"
+  - id: before_90min
+    surface: pre-workout-before-card
+    props: { plannedAhead: "90 minutes ahead", targetState: "Targets set" }
+    notes: Snack + Top-off only; no basis captions (M-4); NO hydration check present (hydration-check suppression golden)
+  - id: before_20min
+    surface: pre-workout-before-card
+    props: { plannedAhead: "20 minutes ahead", targetState: "Targets set" }
+    notes: Top-off only; no basis captions (M-4)
+  - id: before_start_line
+    surface: pre-workout-before-card
+    props: { plannedAhead: "At the start line", targetState: "Targets set" }
+    notes: Top-off only, 0 g carbs + 6 oz fluid, card KEPT; NO carbs band (fuel-stat carbs-[0,0])
+
+  # --- fuel-stat component (components/fuel-stat.md) — the three no-number states (F-1) ---
+  - id: fuelstat_gated
+    surface: pre-workout-before-card
+    props: { plannedAhead: "3+ hours ahead", targetState: "Gated — no target" }
+    notes: FLUIDS "No fluid target for this session", no band/marker; carbs + feedings intact
+  - id: fuelstat_fasted
+    surface: pre-workout-before-card
+    props: { plannedAhead: "3+ hours ahead", targetState: "Fasted session" }
+    notes: CARBS "No carbs this session", no carb band/pair; fluid plan stands
+  - id: fuelstat_fluid_overshoot
+    component: fuel-stat
+    state: FLUIDS delivered above ceiling
+    notes: delivered marker recolours (overshoot); short fill (0 oz) shown separately as NO recolour
+
+  # --- feeding-card component (components/feeding-card.md) ---
+  - id: feeding_meal_expanded
+    component: feeding-card
+    state: MEAL expanded
+    notes: hydration-check row first, then food rows with steppers; header "52g · carbs" (FC-2 — no aim, no DONE/AIM)
+  - id: feeding_snack_light_meal
+    component: feeding-card
+    state: SNACK named "Light Meal"
+    notes: aim >= LIGHT_MEAL_G_PER_KG*BW -> "Light Meal" (vs "Pre-Workout Snack" at before_3h)
+  - id: feeding_topoff_zero_carb
+    component: feeding-card
+    state: TOP_OFF 0g + 6oz
+    notes: zero-carb card kept because it carries fluid (FC-4)
+
+  # --- hydration-check component (components/hydration-check.md) ---
+  - id: check_todo
+    component: hydration-check
+    state: NONE
+    notes: collapsed chip "Hydration check · adjusts your fluid target · TO-DO", teal ring
+  - id: check_expanded
+    component: hydration-check
+    state: NONE (expanded)
+    notes: question + timing line + 2x2 answers + riboflavin caveat
+  - id: check_pale
+    component: hydration-check
+    state: PALE
+    notes: "Pale yellow · target unchanged"; no water row
+  - id: check_dark
+    component: hydration-check
+    state: DARK
+    notes: "Dark · target raised to 25 oz"; 8 oz water row tagged "added by hydration check";
+      target triangle moved, band unchanged
+  - id: check_not_yet_covered
+    component: hydration-check
+    state: NOT_YET
+    notes: "Not yet · target 25 oz, already covered" — target rose, NO row added (delivered >= target)
+  - id: check_not_sure
+    component: hydration-check
+    state: NOT_SURE
+    notes: "Not sure · no change to your target"
+
+  # --- surface: fine print (B-4) ---
+  - id: before_fine_print
+    surface: pre-workout-before-card
+    state: "? open"
+    notes: "About these numbers" — the four pre-workout.notes.md §7 paragraphs verbatim
+    deferred: S-G4 (Xuan 2026-08-26) — the "?" is suppressed this iteration pending the
+      fine-print SSOT; do not bless until B-4 is live
+
+resolved_questions:  # both RULED Xuan 2026-08-26 (option a) — see spec/design/tokens.md
+  - Q-D8   # electrolyte widened to the per-workout fuel side — teal goldens bless
+  - Q-D9   # dragonfruit widened to out-of-range caution — fuelstat_fluid_overshoot blesses

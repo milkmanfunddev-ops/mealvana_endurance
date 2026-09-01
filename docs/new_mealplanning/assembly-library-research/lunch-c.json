@@ -1,0 +1,4576 @@
+[
+ {
+  "id": "L-c-001",
+  "name": "Corn tortillas, ham, cucumber & spinach with cottage cheese",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "corn tortillas",
+    "qty": "2 small",
+    "role": "starch"
+   },
+   {
+    "food": "deli ham",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cottage cheese",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + veg + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mexican-american",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→dairy-free yogurt or skip (dairy-free); corn tortillas are naturally gluten-free — confirm certified GF brand",
+  "approx_macros": "~430 kcal · 35g C · 30g P · 16g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "described as her favorite gluten-free lunch during the Iowa marathon-training block",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-002",
+  "name": "Fish nigiri & vegetable maki with wheat-free tamari",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sushi rice (in nigiri/maki)",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "fish nigiri (salmon or tuna)",
+    "qty": "6 pieces",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber maki roll",
+    "qty": "6 pieces",
+    "role": "veg"
+   },
+   {
+    "food": "wheat-free tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "tamari→coconut aminos (soy-free); confirm rice/tamari made in dedicated GF kitchen for celiac safety",
+  "approx_macros": "~520 kcal · 75g C · 28g P · 8g F",
+  "prep": "0 min (takeout)",
+  "batch": false,
+  "frequency": "common",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "her regular gluten-free sushi order from a local co-op during marathon training — \"Fish Nigiri and either fish or vegetable Maki\" with wheat-free soy sauce",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-003",
+  "name": "Gluten-free beef empanadas with side salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "GF beef empanadas",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "mixed green salad",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "argentine",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken filling (same GF bakery); confirm bakery is dedicated gluten-free (Celigourmet-style)",
+  "approx_macros": "~480 kcal · 38g C · 22g P · 24g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "\"Empanadas (usually ground beef or chicken)\" — her go-to gluten-free lunch while training in Buenos Aires",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-004",
+  "name": "Gluten-free baguette with ham & cheese",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "certified GF baguette",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "sliced ham",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "cheese slices",
+    "qty": "40 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheese→dairy-free slice (dairy-free); ham→roasted turkey",
+  "approx_macros": "~460 kcal · 48g C · 24g P · 16g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "gluten-free baguette with ham and cheese from Celigourmet, her lunch staple while training abroad",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-005",
+  "name": "White rice with fried egg & grated cheese",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "egg, fried",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "grated cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "cheese→nutritional yeast (dairy-free); rice was her single most-repeated gluten-free base food during training",
+  "approx_macros": "~560 kcal · 78g C · 22g P · 16g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "\"lots and lots of rice\" — rice with egg and cheese was one of her regular gluten-free training meals",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-006",
+  "name": "Black beans & white rice",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add avocado for extra fat; add lime and cilantro",
+  "approx_macros": "~480 kcal · 90g C · 18g P · 2g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "\"Black beans with rice\" — one of her recurring gluten-free training meals, \"lots and lots of rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-007",
+  "name": "Ground beef, pineapple salsa & rice",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "ground beef, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "pineapple salsa",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + protein + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→shredded chicken",
+  "approx_macros": "~610 kcal · 80g C · 32g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "ground beef with pineapple salsa and rice — part of her regular gluten-free training rotation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-008",
+  "name": "Large plate of white rice, grilled chicken & olive oil",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→white fish (pescatarian)",
+  "approx_macros": "~650 kcal · 85g C · 45g P · 12g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "CorrerJuntos, \"Gluten-Free Diet for Runners: 2026 Nutrition Guide\" (https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners)",
+  "evidence": "the tested pre-race meal for a celiac marathon runner — \"large plate of white rice with grilled chicken and a drizzle of olive oil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-009",
+  "name": "Corn pasta with tomato sauce",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "corn pasta",
+    "qty": "100 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "tomato sauce, homemade",
+    "qty": "1.5 cups",
+    "role": "sauce"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + sauce + fat",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add grilled chicken or canned tuna for protein",
+  "approx_macros": "~500 kcal · 90g C · 10g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "CorrerJuntos, \"Gluten-Free Diet for Runners: 2026 Nutrition Guide\" (https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners)",
+  "evidence": "alternative gluten-free pre-race dinner for a celiac runner — \"corn pasta with homemade tomato sauce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-010",
+  "name": "Chicken sandwich on GF bread with lettuce, carrot & capsicum",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "certified GF bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, sliced",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "lettuce",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "grated carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "capsicum, sliced",
+    "qty": "1/4",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→canned tuna; bread→lettuce wrap for grain-free",
+  "approx_macros": "~450 kcal · 45g C · 32g P · 10g F",
+  "prep": "6 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "low-FODMAP post-workout option — \"a chicken sandwich or salad made with lettuce, grated carrot, and green pepper/capsicum\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-011",
+  "name": "Tinned tuna & rice cakes with mayonnaise",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "4",
+    "role": "starch"
+   },
+   {
+    "food": "tinned tuna in spring water",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "mayonnaise",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "fish"
+  ],
+  "swaps": "mayo→mashed avocado (egg-free)",
+  "approx_macros": "~420 kcal · 40g C · 28g P · 16g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "low-FODMAP post-workout staple — \"tinned tuna or chicken with rice cakes or gluten free crackers, topped with mayonnaise or avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-012",
+  "name": "Rice cakes, roast chicken & avocado",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "4",
+    "role": "starch"
+   },
+   {
+    "food": "roast chicken, shredded",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→firm tofu (vegetarian, low-FODMAP)",
+  "approx_macros": "~430 kcal · 40g C · 26g P · 18g F",
+  "prep": "4 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "low-FODMAP post-workout option — \"tinned tuna or chicken with rice cakes or gluten free crackers, topped with mayonnaise or avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-013",
+  "name": "GF pasta, tuna, corn & tomatoes with parmesan",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "gluten-free pasta, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tinned tuna in spring water",
+    "qty": "95 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweetcorn",
+    "qty": "35 g",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes, chopped",
+    "qty": "6",
+    "role": "veg"
+   },
+   {
+    "food": "parmesan",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + veg + dairy",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish"
+  ],
+  "swaps": "parmesan→nutritional yeast (dairy-free); tuna→grilled chicken",
+  "approx_macros": "~560 kcal · 80g C · 32g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "Monash FODMAP calls this dish \"a popular one with athletes\" for pre-event low-FODMAP fuelling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-014",
+  "name": "Sweet potato & black bean bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "lime",
+    "qty": "wedge",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "top with avocado; add grilled chicken for higher protein",
+  "approx_macros": "~420 kcal · 78g C · 16g P · 2g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "Day 1 lunch in a dietitian-built 7-day gluten-free meal plan for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-015",
+  "name": "Quinoa salad with chickpeas & mustard dressing",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "mustard-honey dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add grilled chicken for extra protein",
+  "approx_macros": "~430 kcal · 65g C · 16g P · 10g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "Day 2 lunch in a dietitian-built 7-day gluten-free meal plan for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-016",
+  "name": "Corn tortilla tacos with lean beef",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "corn tortillas",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "lean ground beef, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "shredded lettuce",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→shredded chicken or black beans (vegan)",
+  "approx_macros": "~520 kcal · 55g C · 34g P · 16g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "Day 3 lunch in a dietitian-built 7-day gluten-free meal plan for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-017",
+  "name": "Tuna salad with mustard-honey dressing",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tinned tuna",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed leaves",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "mustard-honey dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "add quinoa or rice for more carbs on a training day",
+  "approx_macros": "~320 kcal · 12g C · 34g P · 14g F",
+  "prep": "6 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "Day 4 lunch in a dietitian-built 7-day gluten-free meal plan for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-018",
+  "name": "Chicken salad with mustard-honey dressing",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed leaves",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "mustard-honey dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add roasted sweet potato for more carbs",
+  "approx_macros": "~340 kcal · 10g C · 36g P · 14g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "Day 6 lunch in a dietitian-built 7-day gluten-free meal plan for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-019",
+  "name": "Chicken & rice bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap in cauliflower rice for lower-carb version",
+  "approx_macros": "~560 kcal · 70g C · 40g P · 8g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "Day 7 lunch in a dietitian-built 7-day gluten-free meal plan for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-020",
+  "name": "GF oats with milk, banana & honey (savoury-free lunch bowl)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "certified GF oats",
+    "qty": "60 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "milk",
+    "qty": "250 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "milk→lactose-free milk or oat milk (dairy-free)",
+  "approx_macros": "~430 kcal · 80g C · 14g P · 8g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "CorrerJuntos, \"Gluten-Free Diet for Runners: 2026 Nutrition Guide\" (https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners)",
+  "evidence": "the standard certified gluten-free pre-session porridge combo recommended for celiac runners — \"50g certified gluten-free oats, 200ml milk/rice drink, sliced banana, honey\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-021",
+  "name": "Steak & corn salad with tomatoes",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweetcorn",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "mixed leaves",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "steak→grilled chicken",
+  "approx_macros": "~460 kcal · 20g C · 38g P · 22g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "Monday lunch in a dietitian-designed one-week low-FODMAP meal plan for runners — \"Steak and Corn Salad with Tomatoes\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-022",
+  "name": "Low-FODMAP rainbow salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed leaves",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, grated",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "grilled chicken",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→firm tofu (vegetarian)",
+  "approx_macros": "~380 kcal · 14g C · 34g P · 18g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "Tuesday lunch in a dietitian-designed one-week low-FODMAP meal plan for runners — \"Low FODMAP Rainbow Salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-023",
+  "name": "Tomato soup with corn & basil",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tomato soup, homemade",
+    "qty": "2 cups",
+    "role": "sauce"
+   },
+   {
+    "food": "sweetcorn",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "basil, fresh",
+    "qty": "handful",
+    "role": "veg"
+   },
+   {
+    "food": "GF crusty bread",
+    "qty": "1 slice",
+    "role": "starch"
+   }
+  ],
+  "pattern": "sauce + veg + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add shredded chicken for more protein",
+  "approx_macros": "~340 kcal · 55g C · 8g P · 8g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "Wednesday lunch in a dietitian-designed one-week low-FODMAP meal plan for runners — \"Tomato Soup with Corn and Basil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-024",
+  "name": "Seared salmon over salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon fillet, seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed leaves",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "add roasted potato for more carbs on a heavy training day",
+  "approx_macros": "~400 kcal · 8g C · 34g P · 24g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "Thursday lunch in a dietitian-designed one-week low-FODMAP meal plan for runners — \"Fody's Seared Salmon over Salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-025",
+  "name": "Leftover turkey chili (low-FODMAP)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ground turkey, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "canned tomatoes, low-FODMAP portion",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→lean ground beef",
+  "approx_macros": "~480 kcal · 45g C · 32g P · 14g F",
+  "prep": "5 min (leftovers)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "Friday lunch in a dietitian-designed one-week low-FODMAP meal plan for runners — leftover \"Turkey Chili\" from the night before",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-026",
+  "name": "Quinoa salad with radishes & snap peas",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "radishes, sliced",
+    "qty": "4",
+    "role": "veg"
+   },
+   {
+    "food": "snap peas",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add grilled chicken or firm tofu for protein",
+  "approx_macros": "~360 kcal · 55g C · 10g P · 10g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "Saturday lunch in a dietitian-designed one-week low-FODMAP meal plan for runners — \"Quinoa Salad with Radishes and Snap Peas\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-027",
+  "name": "Banana & lactose-free milk smoothie bowl with rice cakes",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "lactose-free milk",
+    "qty": "250 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "rice cakes",
+    "qty": "3",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fruit + dairy + starch",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "milk→lactose-free yogurt for a thicker bowl",
+  "approx_macros": "~400 kcal · 75g C · 12g P · 6g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "low-FODMAP pre-workout option — \"a fruit smoothie made with lactose-free milk (ideally low fat) and low FODMAP fruit\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-028",
+  "name": "Firm tofu, rice & steamed carrots",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "firm tofu, pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, steamed",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "tofu→grilled chicken (non-vegetarian)",
+  "approx_macros": "~480 kcal · 70g C · 20g P · 12g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "low-FODMAP vegetarian protein option — \"firm tofu for a vegetarian protein option\", paired with a rice + low-FODMAP vegetable base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-029",
+  "name": "GF toast with jam & fresh orange juice",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "gluten-free toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "strawberry jam",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "orange juice",
+    "qty": "250 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + fruit + drink",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add scrambled eggs for protein on a bigger training day",
+  "approx_macros": "~360 kcal · 78g C · 6g P · 2g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "CorrerJuntos, \"Gluten-Free Diet for Runners: 2026 Nutrition Guide\" (https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners)",
+  "evidence": "pre-race gluten-free breakfast alternative — \"gluten-free bread toast with jam and fresh juice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-030",
+  "name": "Rice, chicken & courgette with olive oil (low-FODMAP travel plate)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "courgette, sliced & sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "travel",
+   "race-week",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→canned tuna for a no-cook travel version",
+  "approx_macros": "~600 kcal · 75g C · 42g P · 14g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "Monash's core low-FODMAP endurance-athlete template: rice + lean protein + low-FODMAP vegetable + oil, used as the safe base before switching to the tuna-pasta version pre-event",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-031",
+  "name": "Canned tuna, rice & avocado (dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tinned tuna in olive oil",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap in quinoa for a gluten-free grain change-up",
+  "approx_macros": "~560 kcal · 65g C · 30g P · 18g F",
+  "prep": "6 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "the low-FODMAP, dairy-free post-workout template — tinned fish + rice-based carb + avocado in place of mayonnaise or cheese",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-032",
+  "name": "Coconut yogurt, rice cakes & berries (dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "coconut yogurt",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "rice cakes",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "coconut yogurt is the standard dairy-free swap in low-FODMAP/dairy-free athlete plans for regular yogurt",
+  "approx_macros": "~380 kcal · 60g C · 6g P · 12g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Epicured, \"The Low FODMAP Athlete: How to Handle the Low FODMAP Diet While Training\" (https://www.epicured.com/blogs/the-digest/the-low-fodmap-athlete-how-to-handle-the-low-fodmap-diet-while-training/)",
+  "evidence": "documented dairy-free swap pattern for FODMAP/dairy-restricted athletes — lactose-free or coconut yogurt with fruit as a training-day lunch/snack base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-033",
+  "name": "Chicken, rice & steamed veg with coconut aminos (dairy-free, soy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed broccoli & carrot",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "coconut aminos",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "coconut aminos in place of soy sauce keeps this soy-free as well as dairy-free",
+  "approx_macros": "~590 kcal · 75g C · 44g P · 8g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "the plain-protein-plus-non-starchy-veg-plus-starch template recommended for athletes eliminating both gluten and other common triggers",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-034",
+  "name": "Lactose-free yogurt, GF granola & kiwifruit",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lactose-free yogurt",
+    "qty": "250 g",
+    "role": "dairy"
+   },
+   {
+    "food": "certified GF granola",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "kiwifruit, sliced",
+    "qty": "2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt→coconut yogurt for fully dairy-free",
+  "approx_macros": "~420 kcal · 65g C · 14g P · 10g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "low-FODMAP fruit-plus-dairy template — \"a lactose-free yoghurt with low FODMAP fruit like kiwifruit or a few strawberries\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-035",
+  "name": "Grilled salmon, sweet potato & spinach (dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon fillet, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, wilted",
+    "qty": "2 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken",
+  "approx_macros": "~540 kcal · 45g C · 38g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "the plain protein + starchy root veg + green veg template used across dairy-free/paleo endurance-athlete meal write-ups",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-036",
+  "name": "Chicken salad lettuce wraps (egg-free alternative to egg salad)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, poached & shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mayonnaise",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "celery, diced",
+    "qty": "1 stalk",
+    "role": "veg"
+   },
+   {
+    "food": "lettuce leaves",
+    "qty": "6",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + fat + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap in canned tuna for the same egg-free format",
+  "approx_macros": "~380 kcal · 6g C · 32g P · 22g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "egg-free version of the classic egg-salad lettuce wrap using shredded chicken instead of hard-boiled egg, following the same balanced-protein-plus-veg athlete template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-037",
+  "name": "Turkey, hummus & veg wrap on GF wrap (egg-free, gluten-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "GF tortilla wrap",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "sliced turkey breast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "spinach & tomato",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + fat + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "hummus→mashed avocado for a legume-free version",
+  "approx_macros": "~430 kcal · 45g C · 26g P · 14g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Greenletes, \"Best Gluten-Free Nutrition Tips For Athletes, According to an RD\" (https://greenletes.com/gluten-free-athlete/)",
+  "evidence": "gluten-free wrap template recommended for athletes — \"a gluten-free wrap filled with chickpeas, hummus, lettuce, cucumbers, and tomatoes\", adapted with turkey for extra protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-038",
+  "name": "Tofu stir-fry with brown rice, broccoli & peppers (egg-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "firm tofu, pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "bell peppers",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "GF soy sauce or coconut aminos",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "GF soy sauce→coconut aminos for soy-free as well",
+  "approx_macros": "~520 kcal · 70g C · 24g P · 14g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Greenletes, \"Best Gluten-Free Nutrition Tips For Athletes, According to an RD\" (https://greenletes.com/gluten-free-athlete/)",
+  "evidence": "\"Tofu stir-fry with brown rice (or cauliflower rice), broccoli, peppers, onions, and gluten-free soy sauce\" — a documented gluten-free, naturally egg-free dinner/lunch for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-039",
+  "name": "Lentil salad with sun-dried tomatoes (egg-free, gluten-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "green lentils, cooked",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "sun-dried tomatoes",
+    "qty": "1/4 cup",
+    "role": "veg"
+   },
+   {
+    "food": "feta",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + dairy + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "feta→dairy-free feta alternative for fully dairy-free",
+  "approx_macros": "~440 kcal · 45g C · 20g P · 18g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Greenletes, \"Best Gluten-Free Nutrition Tips For Athletes, According to an RD\" (https://greenletes.com/gluten-free-athlete/)",
+  "evidence": "\"Lentil Salad with sun-dried tomatoes and feta cheese\" — documented gluten-free athlete lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-040",
+  "name": "Rice cakes with sunflower seed butter & banana (nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "4",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "3 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fat + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "the standard nut-free swap for a peanut-butter rice-cake plate — sunflower seed butter contains no peanuts or tree nuts",
+  "approx_macros": "~420 kcal · 60g C · 10g P · 16g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Trail Runner Magazine, \"7 Runner-Friendly Seed and Nut Butters Reviewed\" (https://www.trailrunnermag.com/nutrition/daily-nutrition-nutrition/7-runner-friendly-seed-and-nut-butters-reviewed/)",
+  "evidence": "sunflower seed butter (SunButter) described as \"the most popular nut-free option\" and \"tastes most like peanut butter\"; \"1 tablespoon with a banana 60-90 minutes before is a near-perfect snack\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-041",
+  "name": "Turkey sandwich with sunflower seed butter swap-free of nuts",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-grain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "sliced turkey breast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "lettuce & tomato",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→GF bread for gluten-free as well; naturally nut-free — no nut butter or tree-nut garnish used",
+  "approx_macros": "~420 kcal · 45g C · 28g P · 8g F",
+  "prep": "4 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Marathon Handbook, \"8 Peanut Butter Alternatives: Healthier Options For Runners\" (https://marathonhandbook.com/peanut-butter-alternatives/)",
+  "evidence": "listed among peanut/tree-nut-free lunch options recommended for runners with nut allergies",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-042",
+  "name": "Oatmeal with banana & sunflower seeds (nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "70 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "milk",
+    "qty": "250 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "milk→oat milk (dairy-free); sunflower seeds replace almonds/walnuts for a nut-free topping",
+  "approx_macros": "~460 kcal · 75g C · 16g P · 10g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Trail Runner Magazine, \"7 Runner-Friendly Seed and Nut Butters Reviewed\" (https://www.trailrunnermag.com/nutrition/daily-nutrition-nutrition/7-runner-friendly-seed-and-nut-butters-reviewed/)",
+  "evidence": "sunflower seeds recommended as the nut-free topping swap for runners who can't have almonds, walnuts, or peanuts on oatmeal",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-043",
+  "name": "Rice, black beans & avocado (naturally nut-free & multi-allergen-safe)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add lime and salsa for flavour without introducing any of the top allergens",
+  "approx_macros": "~520 kcal · 85g C · 18g P · 12g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "the rice-plus-legume-plus-avocado combination is one of the most repeated gluten-free, dairy-free, egg-free, nut-free training lunches across celiac and low-FODMAP athlete logs",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-044",
+  "name": "Grilled chicken, quinoa & roasted veg (multi-allergen-safe: no gluten, dairy, egg, soy, nuts)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted courgette, pepper & carrot",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→firm tofu (vegetarian, still soy — use chickpeas to stay soy-free too)",
+  "approx_macros": "~600 kcal · 55g C · 45g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "the plain-protein + gluten-free grain + roasted-veg + oil template recommended repeatedly for athletes managing multiple food restrictions at once",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-045",
+  "name": "Grilled chicken, sauteed asparagus & apple",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "asparagus, sauteed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "apple",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + veg + fat + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "asparagus→green beans; add sweet potato on a harder training day",
+  "approx_macros": "~480 kcal · 30g C · 40g P · 18g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "The Paleo Diet®, \"Sample Menus for Endurance Athletes\" (https://thepaleodiet.com/sample-menus-for-endurance-athletes/)",
+  "evidence": "\"Grilled Chicken breast and sauteed asparagus, drizzled with olive oil. Serve with an apple on the side\" — mid-morning lunch on a two-a-day paleo endurance training menu",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-046",
+  "name": "Mixed green salad, grilled chicken, avocado & grapes",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "olive oil-lime dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + fat + fruit + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled salmon (pescatarian)",
+  "approx_macros": "~460 kcal · 25g C · 34g P · 24g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "The Paleo Diet®, \"Sample Menus for Endurance Athletes\" (https://thepaleodiet.com/sample-menus-for-endurance-athletes/)",
+  "evidence": "documented rest-day paleo lunch for endurance athletes — \"Mixed green organic salad, with olive oil and lime, served with grilled chicken, avocado, and grapes\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-047",
+  "name": "Sliced turkey & pear lettuce wraps",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sliced turkey breast",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "pear, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "lettuce leaves",
+    "qty": "6",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + fruit + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "turkey→sliced chicken breast",
+  "approx_macros": "~280 kcal · 20g C · 30g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "The Paleo Diet®, \"Sample Menus for Endurance Athletes\" (https://thepaleodiet.com/sample-menus-for-endurance-athletes/)",
+  "evidence": "documented rest-day paleo lunch for endurance athletes — \"Sliced lean turkey with pear slices wrapped in lettuce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-048",
+  "name": "Big salad with steak & avocado (paleo/keto rest-day plate)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed greens & raw veg",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "olive oil vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + fat + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "steak→grilled salmon (pescatarian)",
+  "approx_macros": "~520 kcal · 12g C · 38g P · 32g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "the Primal Blueprint lunch template followed by paleo/primal endurance athletes — \"a huge mixed salad or stir-fry with added meat or fish and a root vegetable\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-049",
+  "name": "Big salad with grilled salmon & root veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "salmon fillet, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted beetroot",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + veg + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken thigh",
+  "approx_macros": "~480 kcal · 18g C · 34g P · 26g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "the Primal Blueprint lunch template — \"a huge mixed salad or stir-fry with added meat or fish and a root vegetable\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-050",
+  "name": "Stir-fry beef, broccoli & carrot (paleo, grain-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "beef strips, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, julienned",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "coconut aminos",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "sesame oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + veg + sauce + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "sesame oil→avocado oil (sesame-free)",
+  "approx_macros": "~460 kcal · 20g C · 36g P · 24g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "the Primal Blueprint stir-fry variant of the meat-plus-root-veg lunch template used by paleo endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-051",
+  "name": "Eggs & sauteed greens (keto rest-day plate)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "eggs, fried in butter",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "paleo",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "butter→ghee or coconut oil (dairy-free, still paleo)",
+  "approx_macros": "~440 kcal · 8g C · 22g P · 36g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Zach Bitter, 100-mile world-record ultrarunner — low-carb/keto approach; Men's Journal, \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" (https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs); zachbitter.com (https://zachbitter.com/zach-bitter-low-carb)",
+  "evidence": "eggs-plus-vegetables is the most repeated keto/low-carb endurance-athlete rest-day lunch across low-carb ultrarunner write-ups following Zach Bitter's animal-based, grain-free approach",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-052",
+  "name": "Steak, eggs & sauteed spinach (keto)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "eggs, fried",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "paleo"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "butter→ghee for dairy-protein-free version (ghee is nearly lactose-free)",
+  "approx_macros": "~560 kcal · 6g C · 44g P · 38g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Zach Bitter, 100-mile world-record ultrarunner — low-carb/keto approach; Men's Journal, \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" (https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs); zachbitter.com (https://zachbitter.com/zach-bitter-low-carb)",
+  "evidence": "steak-and-eggs is the emblematic meal of Zach Bitter's low-carb, high-fat, animal-based approach to ultrarunning — \"he eats more animal products aka a ketogenic diet to support recovery\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-053",
+  "name": "Ground beef, avocado & sauteed peppers (keto)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "bell peppers, sauteed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + fat + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey for a leaner version",
+  "approx_macros": "~500 kcal · 14g C · 34g P · 32g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Zach Bitter, 100-mile world-record ultrarunner — low-carb/keto approach; Men's Journal, \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" (https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs); zachbitter.com (https://zachbitter.com/zach-bitter-low-carb)",
+  "evidence": "meat-plus-non-starchy-vegetable is the base template of the low-carb, animal-based diet Zach Bitter follows off hard-training days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-054",
+  "name": "Chicken thighs, roasted zucchini & avocado (low-carb)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken thighs, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "zucchini, roasted",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add a small portion of sweet potato on hard-training days per Bitter's carb-cycling approach",
+  "approx_macros": "~520 kcal · 14g C · 36g P · 32g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Zach Bitter, 100-mile world-record ultrarunner — low-carb/keto approach; Men's Journal, \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" (https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs); zachbitter.com (https://zachbitter.com/zach-bitter-low-carb)",
+  "evidence": "reflects Zach Bitter's stated approach of leaning on animal-protein-plus-vegetable meals on easy days and adding carbs back in — \"he eats more carb-dense foods on hard workout days and during races\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-055",
+  "name": "Shrimp, avocado & big salad (paleo, shellfish)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "shrimp, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "olive oil vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + fat + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "shrimp→grilled chicken (shellfish-free)",
+  "approx_macros": "~380 kcal · 10g C · 32g P · 22g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "shellfish variant of the Primal Blueprint \"huge mixed salad ... with added meat or fish\" lunch template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-056",
+  "name": "Turkey burger patties, big salad & avocado (bunless, paleo)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey burger patties, grilled",
+    "qty": "2 (180 g)",
+    "role": "protein"
+   },
+   {
+    "food": "mixed greens & tomato",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add a side of roasted sweet potato for the low-carb (non-keto) version",
+  "approx_macros": "~460 kcal · 10g C · 38g P · 28g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "bunless-burger-over-salad is a widely documented paleo/primal endurance-athlete lunch variant of the meat-plus-big-salad template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-057",
+  "name": "Roast pork, cabbage slaw & avocado (paleo)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roast pork loin, sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "cabbage slaw, no dressing added sugar",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "apple cider vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + fat + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pork→roast chicken thigh",
+  "approx_macros": "~500 kcal · 14g C · 36g P · 30g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "meat-plus-slaw is a standard variant of the Primal lunch template — raw or lightly-dressed cabbage in place of leafy greens",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-058",
+  "name": "Tuna, avocado & cucumber salad (keto, no grain)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tinned tuna in olive oil",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "cucumber, diced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + fat + veg + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tuna→canned salmon",
+  "approx_macros": "~420 kcal · 8g C · 32g P · 28g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "tinned-fish-plus-avocado-plus-raw-veg is a widely repeated no-grain lunch for low-carb/paleo endurance athletes on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-059",
+  "name": "Roast chicken, big salad, olives & avocado (Mediterranean-paleo)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roast chicken, shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed greens & tomato",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "kalamata olives",
+    "qty": "8",
+    "role": "fat"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat + fat + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "swap chicken for grilled white fish for a pescatarian version",
+  "approx_macros": "~520 kcal · 12g C · 36g P · 34g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "an olive-and-avocado-heavy variant of the Primal/paleo big-salad-plus-meat lunch template, reflecting the mediterranean-paleo crossover many low-carb endurance athletes eat",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-060",
+  "name": "Bison burger patty, big salad & avocado (paleo)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "bison patty, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "olive oil vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + fat + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "bison→grass-fed beef patty",
+  "approx_macros": "~500 kcal · 10g C · 38g P · 32g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "bison, elk and grass-fed beef are named among the core primal/paleo proteins used in the meat-plus-big-salad lunch template for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-061",
+  "name": "Grilled chicken, roasted sweet potato & big salad (low-carb, not keto)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "drop the sweet potato for the strict-keto version",
+  "approx_macros": "~560 kcal · 30g C · 42g P · 20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Zach Bitter, 100-mile world-record ultrarunner — low-carb/keto approach; Men's Journal, \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" (https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs); zachbitter.com (https://zachbitter.com/zach-bitter-low-carb)",
+  "evidence": "reflects the carb-cycling low-carb (not zero-carb) approach favored by fat-adapted ultrarunners — root vegetable added back in on lighter training/rest days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-062",
+  "name": "Baked cod, roasted veg & olive oil (low-carb, dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cod fillet, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted courgette, pepper & carrot",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cod→grilled chicken breast",
+  "approx_macros": "~380 kcal · 16g C · 34g P · 18g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "a fish variant of the primal/paleo meat-plus-roasted-veg lunch template, naturally dairy-free and gluten-free",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-063",
+  "name": "Lamb chops, sauteed greens & avocado (paleo)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lamb chops, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sauteed kale & spinach",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "lamb→grass-fed beef",
+  "approx_macros": "~540 kcal · 10g C · 38g P · 36g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "lamb is named among the core primal/paleo proteins; paired with sauteed greens and avocado following the standard meat-plus-veg-plus-fat lunch template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-064",
+  "name": "Grass-fed beef, roasted broccoli & avocado (keto)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "grass-fed ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, roasted",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey for a leaner keto version",
+  "approx_macros": "~500 kcal · 12g C · 36g P · 32g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "grass-fed beef named as a core primal/paleo protein; broccoli-plus-avocado is the most repeated non-starchy-veg pairing in the meat-plus-big-salad-or-stir-fry lunch template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-065",
+  "name": "Egg & avocado salad in lettuce cups (keto, no bread)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "eggs, hard-boiled & chopped",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "lettuce cups",
+    "qty": "4",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + fat + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "paleo",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "add crumbled bacon for a fuller keto lunch",
+  "approx_macros": "~360 kcal · 6g C · 18g P · 30g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Zach Bitter, 100-mile world-record ultrarunner — low-carb/keto approach; Men's Journal, \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" (https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs); zachbitter.com (https://zachbitter.com/zach-bitter-low-carb)",
+  "evidence": "egg-plus-avocado is a widely documented keto/low-carb endurance-athlete lunch, following the same animal-protein-plus-fat template Zach Bitter and other fat-adapted athletes use on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-066",
+  "name": "Rotisserie chicken, big salad & pumpkin seeds (paleo, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rotisserie chicken, shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed greens & tomato",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "olive oil vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + other + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pumpkin seeds are the standard nut-free crunch swap for walnuts/almonds on a big salad",
+  "approx_macros": "~440 kcal · 12g C · 36g P · 26g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "rotisserie chicken over a big salad is one of the most common convenience versions of the Primal lunch template, seed-topped to stay nut-free",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-067",
+  "name": "Pan-seared duck breast, wilted greens & avocado (paleo)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "duck breast, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "wilted spinach & kale",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "duck→chicken thigh for an easier weeknight version",
+  "approx_macros": "~520 kcal · 10g C · 34g P · 36g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "an easy-day meat-plus-greens-plus-fat lunch following the same primal/paleo template documented for endurance athletes eating animal-protein-forward",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-068",
+  "name": "Canned salmon, avocado & big salad (keto, dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned salmon",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "mixed greens & cucumber",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + fat + veg + sauce",
+  "context": [
+   "rest-day",
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "no-cook version travels well — canned salmon needs no refrigeration until opened",
+  "approx_macros": "~440 kcal · 8g C · 32g P · 30g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "canned-fish-plus-avocado-plus-salad is the low-effort travel variant of the meat/fish-plus-big-salad primal lunch template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-069",
+  "name": "Poached chicken, rice noodles & shredded veg (gluten-free, dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rice vermicelli, cooked",
+    "qty": "100 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "poached chicken, shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "shredded carrot & cucumber",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "lime-fish sauce dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "vietnamese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish sauce→tamari or coconut aminos for a fish-free dressing",
+  "approx_macros": "~480 kcal · 60g C · 32g P · 8g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "CorrerJuntos, \"Gluten-Free Diet for Runners: 2026 Nutrition Guide\" (https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners)",
+  "evidence": "rice noodles and rice-based carbs are the standard base recommended in gluten-free runner guides, paired here with the classic Vietnamese chicken-and-herb template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-070",
+  "name": "Grilled prawns, rice & steamed bok choy (gluten-free, dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "prawns, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "prawns→grilled chicken (shellfish-free)",
+  "approx_macros": "~480 kcal · 60g C · 30g P · 10g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "a shellfish variant of the rice-plus-lean-protein-plus-vegetable low-FODMAP endurance template Monash recommends",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-071",
+  "name": "Grilled chicken, quinoa tabbouleh-style & olive oil (gluten-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "grilled chicken, sliced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "parsley, tomato & cucumber, chopped",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "quinoa naturally replaces the bulgur in traditional tabbouleh, keeping it gluten-free",
+  "approx_macros": "~500 kcal · 55g C · 38g P · 12g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Greenletes, \"Best Gluten-Free Nutrition Tips For Athletes, According to an RD\" (https://greenletes.com/gluten-free-athlete/)",
+  "evidence": "quinoa-based bowls are repeatedly recommended as the gluten-free substitute for wheat-based grain salads like tabbouleh or couscous in athlete meal guides",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-072",
+  "name": "Grilled shrimp, rice & steamed asparagus (gluten-free, dairy-free, shellfish)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "shrimp, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "shrimp→grilled chicken (shellfish-free)",
+  "approx_macros": "~460 kcal · 60g C · 28g P · 10g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "a shellfish-plus-rice-plus-low-FODMAP-vegetable combination reflecting Monash's core endurance-athlete fuelling template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-073",
+  "name": "Quinoa, chickpea & roasted pepper Buddha bowl (gluten-free, dairy-free, egg-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted bell peppers",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add grilled chicken for a higher-protein omnivore version",
+  "approx_macros": "~460 kcal · 65g C · 18g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Taste Flavor Co., \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" (https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes)",
+  "evidence": "the \"Quinoa Buddha bowl\" from a dietitian-built 7-day gluten-free meal plan for endurance athletes, free of all nine tracked allergens as written",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-074",
+  "name": "Roasted chicken thighs, cauliflower rice & steamed green beans (keto, low-FODMAP)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken thighs, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "cauliflower rice, cooked",
+    "qty": "1.5 cups",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "cauliflower rice→white rice for a higher-carb, still low-FODMAP version",
+  "approx_macros": "~460 kcal · 14g C · 40g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "cauliflower rice is one of Monash's named low-FODMAP, low-carb grain substitutes, paired with a plain roasted protein and low-FODMAP green vegetable",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-075",
+  "name": "Grilled halloumi-free chicken skewers, rice & cucumber-tomato salad (gluten-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken skewers, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber & tomato salad",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add tzatziki with lactose-free yogurt for extra creaminess if dairy-tolerant",
+  "approx_macros": "~560 kcal · 65g C · 40g P · 14g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "CorrerJuntos, \"Gluten-Free Diet for Runners: 2026 Nutrition Guide\" (https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners)",
+  "evidence": "grilled-meat-plus-rice-plus-salad is the standard naturally gluten-free Mediterranean-style athlete lunch recommended in gluten-free runner nutrition guides",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-076",
+  "name": "Turkey mince lettuce cups with rice & lime (gluten-free, dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey mince, cooked with ginger & garlic",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce cups",
+    "qty": "6",
+    "role": "veg"
+   },
+   {
+    "food": "lime wedge",
+    "qty": "1",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→ground chicken",
+  "approx_macros": "~460 kcal · 55g C · 32g P · 10g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "ground-meat-in-lettuce-cups-with-rice is a repeatedly recommended naturally gluten-free, dairy-free athlete lunch format",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-077",
+  "name": "Canned chickpeas, roasted veg & tahini (gluten-free, dairy-free, egg-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chickpeas",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "roasted courgette & pepper",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→olive oil and lemon for a sesame-free dressing",
+  "approx_macros": "~420 kcal · 45g C · 16g P · 18g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Greenletes, \"Best Gluten-Free Nutrition Tips For Athletes, According to an RD\" (https://greenletes.com/gluten-free-athlete/)",
+  "evidence": "chickpea-and-roasted-vegetable bowls are a standard naturally gluten-free lunch recommended in gluten-free athlete meal guides",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-078",
+  "name": "Chickpea & tuna salad with olive oil (gluten-free, dairy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "tinned tuna",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "cherry tomatoes & red onion",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap chickpeas for white beans for a milder flavour",
+  "approx_macros": "~460 kcal · 40g C · 32g P · 16g F",
+  "prep": "6 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "a legume-plus-tinned-fish variant of the tuna-and-carb low-FODMAP-adjacent template Monash documents for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-079",
+  "name": "Grilled chicken, roasted potato & green beans (gluten-free, dairy-free, egg-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "baby potatoes, roasted",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "potato→sweet potato for a different micronutrient profile",
+  "approx_macros": "~580 kcal · 55g C · 42g P · 16g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "potato is named among Monash's core low-FODMAP starch options, paired with a plain roasted protein and green vegetable — the most repeated safe combination across low-FODMAP athlete guides",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-080",
+  "name": "Baked white fish, rice & courgette (gluten-free, dairy-free, egg-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white fish fillet, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "courgette, sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→chicken breast for the same free-of-eight-other-allergens profile",
+  "approx_macros": "~520 kcal · 60g C · 36g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "white fish plus rice plus a low-FODMAP vegetable is one of Monash's named safe endurance-athlete combinations",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-081",
+  "name": "Beef mince, rice & steamed carrots (gluten-free, dairy-free, egg-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "beef mince, cooked plain",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, steamed",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→turkey mince for a leaner version",
+  "approx_macros": "~560 kcal · 65g C · 34g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "plain minced meat plus rice plus a low-FODMAP root vegetable is the most repeated safe base across low-FODMAP athlete meal guides",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-082",
+  "name": "Chicken, rice & steamed spinach with lactose-free yogurt sauce (gluten-free, low-FODMAP dairy)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "lactose-free yogurt sauce",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt sauce→olive oil for fully dairy-free",
+  "approx_macros": "~570 kcal · 60g C · 42g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "lactose-free dairy is named as the low-FODMAP dairy option, used here as a sauce on the standard rice-plus-protein-plus-veg athlete template",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-083",
+  "name": "Grilled tofu, quinoa & roasted carrots (vegan, gluten-free, dairy-free, egg-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "firm tofu, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu is a low-FODMAP vegetarian protein per Monash guidance; soy allergy sufferers can swap in tempeh-free legumes like chickpeas",
+  "approx_macros": "~480 kcal · 55g C · 22g P · 16g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "A Little Bit Yummy, \"Sports Fuelling and the Low FODMAP Diet\" (https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/)",
+  "evidence": "firm tofu named as \"a vegetarian protein option\" in the low-FODMAP athlete fuelling guide, paired with quinoa and roasted low-FODMAP veg",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-084",
+  "name": "Roast chicken, GF pasta salad & pesto (gluten-free, egg-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "gluten-free pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "roast chicken, shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "basil pesto, dairy-free",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "pesto→olive oil and fresh basil for a tree-nut-free version (traditional pesto contains pine nuts)",
+  "approx_macros": "~560 kcal · 65g C · 36g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "gluten-free pasta is Monash's named GF-and-low-FODMAP carb base, paired here with the classic chicken-pasta-salad athlete lunch format",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-085",
+  "name": "Grilled chicken, rice & pineapple salsa (low-FODMAP, gluten-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "pineapple salsa",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pineapple is a low-FODMAP fruit option that adds sweetness without triggering symptoms",
+  "approx_macros": "~560 kcal · 75g C · 42g P · 8g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Gluten Free Traveller, celiac marathon runner's training-block food log — Iowa & Buenos Aires blocks (https://glutenfreetraveller.com/gluten-free-running/gluten-free-marathon-training/)",
+  "evidence": "the pineapple-salsa-and-rice combination documented in a celiac runner's gluten-free training log, made low-FODMAP with grilled chicken in place of ground beef",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-086",
+  "name": "Salmon, rice & steamed bok choy (gluten-free, dairy-free, egg-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon fillet, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken for a fish-free version with the same allergen-light profile",
+  "approx_macros": "~560 kcal · 60g C · 34g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "salmon plus rice plus a low-FODMAP green vegetable is a named safe combination in Monash's endurance-sports fuelling guidance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-087",
+  "name": "Turkey chili (low-FODMAP) with white rice",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey mince, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "canned tomatoes, no onion/garlic",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper, diced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add a low-FODMAP portion of canned kidney beans for extra protein and fibre",
+  "approx_macros": "~500 kcal · 55g C · 34g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Fody Foods, \"Designing a One-Week Low FODMAP Meal Plan for Runners\" (https://www.fodyfoods.com/blogs/news/designing-a-one-week-low-fodmap-meal-plan-for-runners)",
+  "evidence": "the FODY low-FODMAP meal plan's turkey chili, garlic- and onion-free per low-FODMAP guidance, served over rice as a lunch portion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-088",
+  "name": "Grilled chicken, rice & roasted bell peppers (gluten-free, low-FODMAP, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "bell peppers, roasted",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap in quinoa for a different gluten-free grain",
+  "approx_macros": "~590 kcal · 65g C · 42g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "bell pepper is named among Monash's low-FODMAP vegetables, paired with the standard grilled-protein-plus-rice endurance-athlete base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-089",
+  "name": "Herb-baked cod, quinoa & steamed courgette (gluten-free, dairy-free, egg-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cod fillet, baked with herbs",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "courgette, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cod→any firm white fish",
+  "approx_macros": "~500 kcal · 50g C · 36g P · 14g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "fish plus quinoa plus a low-FODMAP vegetable is a documented safe combination for low-FODMAP endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-090",
+  "name": "Beef stir-fry, rice & bok choy with coconut aminos (gluten-free, soy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "beef strips, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, stir-fried",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "coconut aminos",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "coconut aminos keeps this free of both gluten (soy sauce) and soy",
+  "approx_macros": "~580 kcal · 65g C · 38g P · 16g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "coconut aminos is the standard soy-free, gluten-free substitute for soy sauce used across allergen-restricted athlete stir-fry recipes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-091",
+  "name": "Chicken tenders (GF-breaded), rice & steamed broccoli (gluten-free, egg-free option)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken tenders, GF-breaded & baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "use an egg-free GF breading (cornflake crumb + oil, no egg wash) for a fully egg-free version",
+  "approx_macros": "~560 kcal · 60g C · 40g P · 14g F",
+  "prep": "18 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "GF-breaded chicken tenders over rice is a repeatedly recommended kid- and athlete-friendly gluten-free lunch format",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-092",
+  "name": "Ham, GF crackers, apple & cucumber snack-plate lunch (gluten-free, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sliced ham",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "GF crackers",
+    "qty": "10",
+    "role": "starch"
+   },
+   {
+    "food": "apple, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + fruit + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "ham→sliced turkey; crackers→rice cakes",
+  "approx_macros": "~420 kcal · 55g C · 22g P · 12g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "the snack-plate format (protein, GF starch, fruit, veg) is repeatedly recommended for gluten-free athletes who need a fast, no-cook lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-093",
+  "name": "Egg-free chicken caesar-style salad with GF croutons (gluten-free, egg-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "romaine lettuce",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "grilled chicken, sliced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "GF croutons",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "parmesan",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "egg-free caesar dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + starch + dairy + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "traditional caesar dressing contains raw egg and anchovy (fish); this version swaps in an egg-free, vegan-base dressing to keep it egg- and fish-free",
+  "approx_macros": "~520 kcal · 30g C · 38g P · 22g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Student Athlete Nutrition, \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (https://studentathletenutrition.com/gluten-free-athletes/)",
+  "evidence": "an egg-free adaptation of the classic chicken caesar salad, built on the same protein-plus-big-salad athlete lunch template documented for allergen-restricted athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-094",
+  "name": "Grilled chicken, roasted sweet potato & sesame-free tahini-swap dressing (gluten-free, sesame-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil-lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "olive oil and lemon replace tahini to keep this sesame-free for athletes with sesame allergy",
+  "approx_macros": "~560 kcal · 45g C · 42g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Greenletes, \"Best Gluten-Free Nutrition Tips For Athletes, According to an RD\" (https://greenletes.com/gluten-free-athlete/)",
+  "evidence": "sweet potato plus lean protein plus greens is a repeated gluten-free athlete lunch base, adapted here to avoid sesame-based dressings",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-095",
+  "name": "Rotisserie chicken, rice & steamed green beans (gluten-free, dairy-free, egg-free, nut-free, soy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rotisserie chicken, shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "the simplest fully allergen-clear combination — no swap needed for any of the nine tracked allergens",
+  "approx_macros": "~540 kcal · 60g C · 38g P · 12g F",
+  "prep": "5 min (store-bought chicken)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "plain rotisserie meat plus rice plus a low-FODMAP green vegetable is the single most repeated \"safe for everyone\" endurance-athlete lunch across gluten-free and low-FODMAP guides alike",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-096",
+  "name": "Grilled chicken thighs, roasted potatoes & steamed carrots (gluten-free, dairy-free, egg-free, nut-free, soy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken thighs, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "baby potatoes, roasted",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, steamed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "potato→rice for variety while staying allergen-clear",
+  "approx_macros": "~600 kcal · 60g C · 40g P · 18g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "chicken thigh plus potato plus a root vegetable is one of Monash's named safe low-FODMAP combinations, incidentally free of all nine tracked allergens as written",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-097",
+  "name": "Baked salmon, quinoa & roasted courgette (gluten-free, dairy-free, egg-free, nut-free, soy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon fillet, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "courgette, roasted",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→chicken breast for a fully allergen-clear (fish-free too) version",
+  "approx_macros": "~560 kcal · 45g C · 36g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "fish plus quinoa plus a roasted low-FODMAP vegetable is documented as a safe endurance-athlete combination, free of every tracked allergen except fish",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-098",
+  "name": "Beef & sweet potato hash with sauteed peppers (paleo, whole30-style)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "beef, diced & pan-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, diced & pan-fried",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "bell peppers, sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey for a leaner hash",
+  "approx_macros": "~560 kcal · 45g C · 36g P · 22g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "a hash variant of the primal/paleo meat-plus-root-vegetable-plus-non-starchy-veg lunch template, cooked together rather than plated separately",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-099",
+  "name": "Grilled chicken, wild rice & roasted zucchini (gluten-free, dairy-free, egg-free, nut-free, soy-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "wild rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, roasted",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "wild rice→white rice for faster digestion pre-session",
+  "approx_macros": "~570 kcal · 55g C · 42g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, \"FODMAPs for endurance sports\" (https://www.monashfodmap.com/blog/fodmaps-for-endurance-sports-tuna-pasta/)",
+  "evidence": "wild rice is listed among Monash's low-FODMAP grain options; paired with a plain protein and roasted vegetable it stays clear of all nine tracked allergens",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-c-100",
+  "name": "Grilled flank steak, big salad, avocado & pumpkin seeds (paleo, keto, nut-free)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "flank steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed greens & tomato",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "olive oil vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + fat + other + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pumpkin seeds keep the crunch nut-free in place of walnuts or almonds",
+  "approx_macros": "~540 kcal · 12g C · 40g P · 34g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"Primal Diet: Food Lists, Benefits, and Downsides\" — Mark Sisson's Primal Blueprint lunch template (https://www.healthline.com/nutrition/primal-diet)",
+  "evidence": "a nut-free-crunch variant of the Primal Blueprint big-salad-plus-meat-plus-avocado lunch template",
+  "reconstructed_from_snippet": false
+ }
+]

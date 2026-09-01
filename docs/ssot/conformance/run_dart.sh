@@ -1,9 +1,27 @@
 #!/usr/bin/env bash
-# QA conformance runner — pre-workout carbs (layer 1: engine vs spec).
-# Resolves app + qa via the workspace registry, copies the conformance test into the app
-# package (flutter test needs it inside the package for package: imports), runs it against
-# the REAL OfflineMacroCalculator with the golden vectors, then cleans up. Read-only on app
-# except the ephemeral temp test file, which is always removed.
+# QA conformance runner — one slice per invocation, resolved from the bundle manifests.
+#
+#   ./conformance/run_dart.sh <slice>
+#
+# The slice is looked up in bundles/*.yaml (`- { slice: <name>, ..., vectors: <path>, ... }`);
+# the `vectors:` path decides HOW it runs. Every arm runs locally and deterministically against
+# the app checkout resolved through workspace.env — no network, no cloud. Exit code is the gate.
+#
+#   vectors/fueling/<slice>.json          → the pre-workout Dart harness: copies
+#                                           conformance/<slice>_conformance_test.dart into the
+#                                           app package (package: imports) and runs it against the
+#                                           REAL OfflineMacroCalculator with the golden vectors.
+#   vectors/daily-macros/<x>.json         → the app's Deno vectors runner over the SAME vector file
+#                                           (the app keeps a verbatim mirror under docs/ssot; this
+#                                           script first proves mirror == qa, byte for byte, then
+#                                           runs `deno test --filter "vectors: <x>"`).
+#   vectors/daily-macros/intraday-display → the display-consumer Dart suite (24 vectors).
+#   conformance/design/<manifest>.yaml    → the design conformance suites in the app repo
+#                                           (goldens + gesture tests), after proving the manifest
+#                                           mirror is byte-identical.
+#
+# Adding a bundle = adding a row here (or reusing one), never editing land-bundle.
+# Read-only on app except the ephemeral fueling temp test file, which is always removed.
 set -euo pipefail
 
 find_workspace() { local d="$1"; while [ "$d" != "/" ]; do
@@ -14,24 +32,86 @@ MV_ROOT="$(find_workspace "$SCRIPT_DIR")"
 # shellcheck disable=SC1091
 source "$MV_ROOT/workspace.env"
 
-# Slice to run (default the carbs pilot). Dashes in the slice name map to underscores
-# for the test filename: pre-workout-carbs -> pre_workout_carbs_conformance_test.dart
 SLICE="${1:-pre-workout-carbs}"
-UNDER="${SLICE//-/_}"
-VECTORS="$QA_ROOT/vectors/fueling/$SLICE.json"
-TEST_SRC="$QA_ROOT/conformance/${UNDER}_conformance_test.dart"
-DEST="$APP_ROOT/test/_qa_conformance_tmp_test.dart"
-
-[ -f "$VECTORS" ]  || { echo "ABORT: vectors missing: $VECTORS"; exit 1; }
-[ -f "$TEST_SRC" ] || { echo "ABORT: test missing: $TEST_SRC"; exit 1; }
 [ -d "$APP_ROOT" ] || { echo "ABORT: app not found: $APP_ROOT"; exit 1; }
 
-cleanup() { rm -f "$DEST"; }
-trap cleanup EXIT
+# ---- resolve the slice's `vectors:` path from the manifests ---------------------------------
+# One line per slice in bundles/*.yaml; take the LAST match so a superseding manifest wins if a
+# slice name is reused. No yq dependency: the manifest lines are single-line flow mappings.
+VEC_PATH="$(grep -h -E "^\s*-\s*\{\s*slice:\s*${SLICE}\s*," "$QA_ROOT"/bundles/*.yaml 2>/dev/null \
+  | sed -E 's/.*vectors:[[:space:]]*([^,[:space:]]+).*/\1/' | tail -1 || true)"
+if [ -z "$VEC_PATH" ]; then
+  # Not in any manifest — fall back to the legacy fueling layout so the pilot keeps working.
+  VEC_PATH="vectors/fueling/$SLICE.json"
+fi
 
-cp "$TEST_SRC" "$DEST"
-echo "== QA conformance: $SLICE vs real OfflineMacroCalculator =="
+# ---- mirror check: the app's docs/ssot copy must be byte-identical to qa's ratified artifact ----
+require_mirror() {
+  local rel="$1"                       # qa-relative path
+  local mirror="$APP_ROOT/docs/ssot/$rel"
+  [ -f "$QA_ROOT/$rel" ] || { echo "ABORT: qa artifact missing: $rel"; exit 1; }
+  [ -f "$mirror" ]       || { echo "ABORT: app mirror missing: docs/ssot/$rel (re-sync docs/ssot)"; exit 1; }
+  if ! cmp -s "$QA_ROOT/$rel" "$mirror"; then
+    echo "ABORT: app mirror of $rel differs from qa — the contract the app was tested against is"
+    echo "       not the ratified one. Re-sync docs/ssot (never edit either side to make this pass)."
+    exit 1
+  fi
+  echo "   mirror:  docs/ssot/$rel == qa (byte-identical)"
+}
+
+echo "== QA conformance: $SLICE =="
 echo "   app:     $APP_ROOT"
-echo "   vectors: $VECTORS"
-cd "$APP_ROOT"
-flutter test "test/_qa_conformance_tmp_test.dart" --dart-define=QA_VECTORS="$VECTORS"
+echo "   vectors: $VEC_PATH"
+
+case "$VEC_PATH" in
+  vectors/fueling/*.json)
+    UNDER="${SLICE//-/_}"
+    VECTORS="$QA_ROOT/$VEC_PATH"
+    TEST_SRC="$QA_ROOT/conformance/${UNDER}_conformance_test.dart"
+    DEST="$APP_ROOT/test/_qa_conformance_tmp_test.dart"
+    [ -f "$VECTORS" ]  || { echo "ABORT: vectors missing: $VECTORS"; exit 1; }
+    [ -f "$TEST_SRC" ] || { echo "ABORT: test missing: $TEST_SRC"; exit 1; }
+    cleanup() { rm -f "$DEST"; }
+    trap cleanup EXIT
+    cp "$TEST_SRC" "$DEST"
+    echo "   arm:     Dart harness vs real OfflineMacroCalculator"
+    cd "$APP_ROOT"
+    flutter test "test/_qa_conformance_tmp_test.dart" --dart-define=QA_VECTORS="$VECTORS"
+    ;;
+
+  vectors/daily-macros/intraday-display.json)
+    require_mirror "$VEC_PATH"
+    echo "   arm:     Dart display-consumer suite (intraday_display_vectors_test.dart)"
+    cd "$APP_ROOT"
+    flutter test test/features/daily_macros/intraday_display_vectors_test.dart
+    ;;
+
+  vectors/daily-macros/*.json)
+    require_mirror "$VEC_PATH"
+    SECTION="$(basename "$VEC_PATH" .json)"
+    RUNNER="supabase/functions/calculate-daily-macros-v6/vectors.conformance.test.ts"
+    [ -f "$APP_ROOT/$RUNNER" ] || { echo "ABORT: app Deno runner missing: $RUNNER"; exit 1; }
+    command -v deno >/dev/null || { echo "ABORT: deno not installed — gate unrunnable"; exit 1; }
+    echo "   arm:     Deno vectors runner, --filter \"vectors: $SECTION\""
+    cd "$APP_ROOT"
+    OUT="$(deno test --allow-read --allow-env "$RUNNER" --filter "vectors: $SECTION" 2>&1)" || {
+      echo "$OUT"; exit 1; }
+    echo "$OUT" | grep -E "^\s+.*\.\.\. |passed|failed" | sed 's/\x1b\[[0-9;]*m//g'
+    # A filter that matches nothing is "0 passed" — that is NOT green.
+    if echo "$OUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -qE "^ok \| 0 passed"; then
+      echo "ABORT: no describe block matched 'vectors: $SECTION' — a missing harness is RED"; exit 1
+    fi
+    ;;
+
+  conformance/design/*.yaml)
+    require_mirror "$VEC_PATH"
+    echo "   arm:     design conformance suites (goldens + gesture tests) in the app repo"
+    cd "$APP_ROOT"
+    flutter test test/features/macro_dashboard/
+    ;;
+
+  *)
+    echo "ABORT: no runner arm for '$VEC_PATH' (slice '$SLICE') — add one to conformance/run_dart.sh"
+    exit 1
+    ;;
+esac

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/carb_loading_plan_simple.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
 /// Blue header card widget matching screenshot design exactly
 /// Shows race info, countdown, and carb loading status
@@ -30,7 +31,7 @@ class CarbLoadingHeaderCard extends StatelessWidget {
             AppTheme.primary900.withValues(alpha: 0.8),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),

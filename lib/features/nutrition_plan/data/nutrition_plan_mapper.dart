@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../domain/nutrition_plan.dart';
+import '../domain/pre_workout_hydration_check.dart';
 import '../domain/food_item_data.dart';
 import '../domain/macro_shortfall.dart';
 import '../domain/time_slot_assignment.dart';
@@ -51,6 +52,9 @@ class NutritionPlanMapper {
       isDeleted: json['isDeleted'] as bool? ?? false,
       conflictResolution:
           json['conflictResolution'] as String? ?? 'last_write_wins',
+      preWorkoutHydrationCheck: PreWorkoutHydrationCheckRecord.fromJson(
+        json[PreWorkoutHydrationCheckRecord.jsonKey],
+      ),
     );
   }
 
@@ -424,6 +428,9 @@ class NutritionPlanMapper {
           : false,
       conflictResolution:
           json['conflict_resolution'] as String? ?? 'last_write_wins',
+      preWorkoutHydrationCheck: PreWorkoutHydrationCheckRecord.fromJson(
+        planData?[PreWorkoutHydrationCheckRecord.jsonKey],
+      ),
     );
   }
 
@@ -725,6 +732,9 @@ class NutritionPlanMapper {
       'updatedAt': plan.updatedAt?.toIso8601String(),
       'isDeleted': plan.isDeleted,
       'conflictResolution': plan.conflictResolution,
+      if (plan.preWorkoutHydrationCheck != null)
+        PreWorkoutHydrationCheckRecord.jsonKey: plan.preWorkoutHydrationCheck!
+            .toJson(),
     };
   }
 }

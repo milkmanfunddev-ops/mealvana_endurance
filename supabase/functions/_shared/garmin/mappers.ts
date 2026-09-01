@@ -154,18 +154,34 @@ export function mapGarminActivityToActivity(
         garminActivity.averageSpeedInMetersPerSecond * 2.23694;
     }
     if (garminActivity.elevationGainInMeters) {
-      activity.cycling_elevation_gain_ft =
-        garminActivity.elevationGainInMeters * 3.28084;
+      // Same 22P02 hazard as the swimming branch below: this is an INTEGER
+      // column and metres x 3.28084 is a float, so any ride reporting
+      // elevation gain fails the whole insert/update. Rides only survived
+      // because indoor/trainer activities usually omit elevationGainInMeters.
+      activity.cycling_elevation_gain_ft = Math.round(
+        garminActivity.elevationGainInMeters * 3.28084,
+      );
     }
   }
 
   if (sportType === 'swimming') {
+    // `swimming_pace_per_100m_seconds` is an INTEGER column. 100 / speed is a
+    // float (94.25, 108.1, 121.0...), and PostgREST rejects it with
+    // 22P02 "invalid input syntax for type integer" — failing the WHOLE insert
+    // or update, so the activity is never imported. This silently swallowed
+    // EVERY Garmin swim, for every athlete, for the life of the integration:
+    // no row with a garmin_summary_id has ever had activity_type='swimming'.
+    // Runs and rides were unaffected because only these branches derive a
+    // float into an int column.
+    // Found 2026-08-24 from prod edge logs; see
+    // ops/data/bug-reports/2026-08-24-garmin-swims-never-imported-22P02.md
     if (
       garminActivity.averageSwimCadenceInStrokesPerMinute &&
       garminActivity.averageSpeedInMetersPerSecond
     ) {
-      activity.swimming_pace_per_100m_seconds =
-        100 / garminActivity.averageSpeedInMetersPerSecond;
+      activity.swimming_pace_per_100m_seconds = Math.round(
+        100 / garminActivity.averageSpeedInMetersPerSecond,
+      );
     }
   }
 

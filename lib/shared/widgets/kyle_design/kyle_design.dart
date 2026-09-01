@@ -20,6 +20,9 @@ export 'cards/nutrition_section_card.dart';
 export 'cards/macro_targets_table.dart';
 // export 'cards/food_item_card.dart';
 export 'data/large_stat.dart';
+export 'fueling/fuel_stat.dart';
+export 'fueling/feeding_card.dart';
+export 'fueling/hydration_check_control.dart';
 export 'theme_toggle_widget.dart';
 export 'feedback/mealvana_snackbar.dart';
 

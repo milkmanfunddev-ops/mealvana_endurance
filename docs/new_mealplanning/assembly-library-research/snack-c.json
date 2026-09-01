@@ -1,0 +1,4015 @@
+[
+ {
+  "id": "S-c-001",
+  "name": "Grapes with string cheese",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "grapes",
+    "qty": "1 cup (150g)",
+    "role": "fruit"
+   },
+   {
+    "food": "string cheese",
+    "qty": "1 stick (28g)",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + dairy",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "string cheese→dairy-free string cheese (dairy-free, allergens: none)",
+  "approx_macros": "~180 kcal · 27g C · 7g P · 5g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"1 cup of grapes with 1 (28g) string cheese\" — listed low-FODMAP athlete snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-002",
+  "name": "Rice crackers with string cheese",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice crackers, plain",
+    "qty": "20 crackers (34g)",
+    "role": "starch"
+   },
+   {
+    "food": "string cheese",
+    "qty": "1 stick (28g)",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "everyday",
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "string cheese→dairy-free cheese (dairy-free)",
+  "approx_macros": "~230 kcal · 30g C · 8g P · 8g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"20 (34g) rice crackers with 1 (28 g) string cheese\" — low-FODMAP snack pairing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-003",
+  "name": "Orange with almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "orange",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "almonds",
+    "qty": "10 whole",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almonds→pumpkin seeds (nut-free)",
+  "approx_macros": "~150 kcal · 20g C · 4g P · 7g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"1 medium orange with 10 almonds\" — low-FODMAP snack for athletes with IBS",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-004",
+  "name": "Banana chips, unsweetened",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana chips, unsweetened",
+    "qty": "15 chips",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — already allergen-free",
+  "approx_macros": "~90 kcal · 20g C · 1g P · 1g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"15 banana chips\" — low-FODMAP pre-run snack option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-005",
+  "name": "Unripe banana, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana, slightly under-ripe",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~90 kcal · 23g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"1 medium banana (unripe)\" specifically called out as the low-FODMAP form",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-006",
+  "name": "Dried pineapple, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dried pineapple, unsweetened",
+    "qty": "40 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~120 kcal · 30g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "Dried pineapple listed among low-FODMAP during-exercise carb options",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-007",
+  "name": "Hard-boiled egg, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "1 large",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "egg→low-fat cheese (same source, egg-free)",
+  "approx_macros": "~78 kcal · 1g C · 6g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "\"hard boiled egg, peanut butter, or lowfat cheese\" listed as pre-exercise, low-FODMAP options",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-008",
+  "name": "Low-lactose cheese, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Swiss or Parmesan cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "dairy",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap for lactose-free cheddar (still dairy, better tolerated)",
+  "approx_macros": "~110 kcal · 1g C · 8g P · 8g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "\"Swiss, Parmesan, Provolone and Cheddar are great low lactose cheese options\" for pre-exercise fueling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-009",
+  "name": "Chocolate milk, lactose-free",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "lactose-free chocolate milk",
+    "qty": "350 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "lactose-free milk→oat milk chocolate drink (dairy-free)",
+  "approx_macros": "~230 kcal · 36g C · 9g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "\"chocolate milk\" (made with lactose-free milk) recommended as a low-FODMAP post-exercise recovery drink",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-010",
+  "name": "Yoghurt with kiwi",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "lactose-free yoghurt",
+    "qty": "170 g",
+    "role": "dairy"
+   },
+   {
+    "food": "kiwi fruit",
+    "qty": "1, sliced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "kiwi→strawberries (low-FODMAP alt); yoghurt→coconut yoghurt (dairy-free)",
+  "approx_macros": "~190 kcal · 24g C · 12g P · 4g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Yoghurt & fruit\" listed as a go-to low-FODMAP snack pairing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-011",
+  "name": "Rice crackers with cheddar and marmalade",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free rice crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "cheddar cheese",
+    "qty": "20 g",
+    "role": "dairy"
+   },
+   {
+    "food": "marmalade",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→dairy-free cheese",
+  "approx_macros": "~200 kcal · 26g C · 6g P · 8g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Gluten free toast or rice crackers with toppings\" — peanut butter, cheese or marmalade — low-FODMAP list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-012",
+  "name": "Sweet potato chips, baked",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sweet potato chips, baked with olive oil",
+    "qty": "40 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~140 kcal · 22g C · 2g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Pre-made sweet potato chips\" baked with olive oil and a sprinkle of spices — low-FODMAP snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-013",
+  "name": "Vegetable sticks with peanut butter dip",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "carrot and cucumber sticks",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter (peanut-free)",
+  "approx_macros": "~180 kcal · 12g C · 6g P · 13g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Vegetables with dip\" listed as a low-FODMAP snack category",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-014",
+  "name": "Overnight oats, low-FODMAP (Niki's)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free rolled oats",
+    "qty": "1/4 cup (25g)",
+    "role": "starch"
+   },
+   {
+    "food": "lactose-free yoghurt",
+    "qty": "100 g",
+    "role": "dairy"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "walnuts, chopped",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "strawberry jam",
+    "qty": "1 tsp",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "walnuts→pumpkin seeds (nut-free); yoghurt→coconut yoghurt (dairy-free)",
+  "approx_macros": "~320 kcal · 34g C · 12g P · 14g F",
+  "prep": "5 min (chill overnight)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "\"Niki's Overnight Oats\": lactose-free yogurt, rice/lactose-free/coconut milk, strawberry jam, vanilla, chia seeds, rolled oats, and walnuts, limited to 1/4 cup dry oats",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-015",
+  "name": "Post-run recovery bowl, low-FODMAP",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free oats, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "banana, unripe",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "lactose-free milk",
+    "qty": "100 ml",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + fat + dairy",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "oats certified GF removes gluten risk; peanut butter→sunflower seed butter",
+  "approx_macros": "~340 kcal · 45g C · 12g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "\"oatmeal + banana + peanut butter + lactose free milk\" listed as a low-FODMAP post-exercise recovery combination",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-016",
+  "name": "Fody granola bar, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "low-FODMAP certified granola bar (e.g. Fody)",
+    "qty": "1 bar (40g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "check label for oat/gluten sourcing per brand",
+  "approx_macros": "~150 kcal · 24g C · 3g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"1 (40g) Fody low FODMAP granola bar\" listed as an athlete-tested IBS-safe snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-017",
+  "name": "Bobo's oat bar, peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Bobo's oat bar, peanut butter flavour",
+    "qty": "1 bar",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "swap to original or maple pecan flavour to change allergen profile",
+  "approx_macros": "~280 kcal · 32g C · 6g P · 14g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.fodmapeveryday.com/how-to-fuel-when-you-have-ibs-all-about-low-fodmap-sport-gels-sport-drinks-snacks/ ; FODMAP Everyday",
+  "evidence": "\"1 Bobos Bar\" in flavours including original, maple pecan oat, peanut butter oat and peanut butter chocolate chip oat, listed as low-FODMAP athlete snacks",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-018",
+  "name": "Pear with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pear",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + fat",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (nut-free)",
+  "approx_macros": "~230 kcal · 30g C · 5g P · 11g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"I like to have some fruit and nut butter 30-90 minutes before training\" — sports RD recommendation for GF athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-019",
+  "name": "Grapes, plain, quick fuel",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "grapes",
+    "qty": "150 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~100 kcal · 27g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"Fruit alone makes for the perfect fuel ~15 minutes before your workout, due to its high carbohydrate content\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-020",
+  "name": "Raisins, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "raisins",
+    "qty": "40 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~120 kcal · 32g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"dried fruits like dates and raisins... can pack a significant amount of energy\" — GF athlete pre-workout fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-021",
+  "name": "Baked sweet potato with nut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "1 small",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (nut-free)",
+  "approx_macros": "~220 kcal · 30g C · 5g P · 9g F",
+  "prep": "5 min (or reheat)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://studentathletenutrition.com/gluten-free-athletes/ ; Student Athlete Nutrition",
+  "evidence": "\"a baked sweet potato topped with nut butter as a quick snack\" — RD-authored GF athlete guide",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-022",
+  "name": "GF oat bowl with berries, walnuts & chia",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "certified gluten-free oats, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "80 g",
+    "role": "fruit"
+   },
+   {
+    "food": "walnuts, chopped",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "walnuts→sunflower seeds (nut-free)",
+  "approx_macros": "~280 kcal · 40g C · 8g P · 10g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://studentathletenutrition.com/gluten-free-athletes/ ; Student Athlete Nutrition",
+  "evidence": "\"oats can be topped with fruit, nuts, seeds, and more\" — GF athlete snack guidance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-023",
+  "name": "Cottage cheese with mixed berries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "170 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "100 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→dairy-free yoghurt (dairy-free)",
+  "approx_macros": "~200 kcal · 20g C · 20g P · 4g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"Cottage cheese & fruit\" listed as a GF athlete recovery snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-024",
+  "name": "Mixed nuts, unsalted, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed nuts, unsalted",
+    "qty": "30 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fat",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap to pumpkin/sunflower seed mix (nut-free)",
+  "approx_macros": "~180 kcal · 6g C · 6g P · 16g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"Nuts\" listed plainly as a GF athlete recovery snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-025",
+  "name": "Greek yogurt with banana & almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Greek yogurt",
+    "qty": "170 g",
+    "role": "dairy"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "sliced almonds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + fruit + fat",
+  "context": [
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "almonds→pumpkin seeds (nut-free); Greek yogurt→coconut yogurt (dairy-free, vegan)",
+  "approx_macros": "~230 kcal · 24g C · 18g P · 7g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"Greek yogurt (or plant-based yogurt) topped with fruit and nuts\" — GF athlete pre-workout snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-026",
+  "name": "Nuts stirred into yogurt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain yogurt",
+    "qty": "170 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed nuts, chopped",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + fat",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "nuts→pumpkin seeds (nut-free)",
+  "approx_macros": "~210 kcal · 12g C · 14g P · 12g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.coachup.com/nation/articles/top-5-gluten-free-snacks-for-athlete ; CoachUp Nation",
+  "evidence": "Nuts \"can be combined with yogurt for additional calcium and protein benefits\" — top-5 GF athlete snack list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-027",
+  "name": "Cold quinoa with dried cranberries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "quinoa, cooked, cold",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "dried cranberries",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~230 kcal · 44g C · 6g P · 3g F",
+  "prep": "0 min (batch-cooked)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.coachup.com/nation/articles/top-5-gluten-free-snacks-for-athlete ; CoachUp Nation",
+  "evidence": "Quinoa described as \"a healthy whole grain that's high in protein and fiber... eaten hot or cold\" — GF athlete snack list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-028",
+  "name": "Gluten-free protein bar, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free protein bar (e.g. Clif, Think!, KIND)",
+    "qty": "1 bar",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "choose a nut-free labelled variety for nut allergy",
+  "approx_macros": "~200 kcal · 22g C · 10g P · 8g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.coachup.com/nation/articles/top-5-gluten-free-snacks-for-athlete ; CoachUp Nation",
+  "evidence": "GF protein bars \"high in protein, potassium and healthy sugars\" — top-5 GF athlete snack list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-029",
+  "name": "Rice cakes with honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + other",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~140 kcal · 32g C · 2g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"GF toast or rice cakes + honey or jam\" — coach-recommended pre-run GF fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-030",
+  "name": "Nairn's GF oat biscuits, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "certified gluten-free oat biscuits (e.g. Nairn's Oaties)",
+    "qty": "2 biscuits",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~140 kcal · 20g C · 3g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"Nairns Oaties Original GF biscuits\" — named as a coach's favourite GF pre-run snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-031",
+  "name": "BAR50-style high-carb GF bar, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free high-carb sports bar (e.g. Styrkr BAR50)",
+    "qty": "1 bar",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 50g C · 3g P · 1g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"BAR50 Styrkr are my favourite high-carb gluten-free snacks. They have 50g of carbs\" — running coach, marathon fuelling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-032",
+  "name": "Corn chips with salsa",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "organic corn tortilla chips",
+    "qty": "40 g",
+    "role": "starch"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~180 kcal · 26g C · 3g P · 8g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Organic corn chips & salsa\" listed as a store-bought GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-033",
+  "name": "GF pretzels with carrots and almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free pretzels",
+    "qty": "30 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot sticks",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (nut-free)",
+  "approx_macros": "~220 kcal · 30g C · 5g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Gluten-free pretzels with carrots and nut butters\" — GF runner snack list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-034",
+  "name": "Apple with sunflower seed butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + fat",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — nut-free by default",
+  "approx_macros": "~220 kcal · 28g C · 5g P · 11g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"sunflower seed butters\" listed as the nut-free store-bought spread option for GF runners with tree-nut or peanut allergy",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-035",
+  "name": "Jicama strips with lime and cayenne",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "jicama, cut into strips",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "lime juice",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "cayenne pepper",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "veg + other",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~55 kcal · 12g C · 1g P · 0g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Jicama strips with lime juice and cayenne\" — make-ahead GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-036",
+  "name": "Turkey and cream cheese roll-ups",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sliced turkey breast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "cream cheese",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + dairy",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cream cheese→dairy-free cream cheese",
+  "approx_macros": "~230 kcal · 3g C · 26g P · 14g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Turkey and cream cheese rollups\" — make-ahead GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-037",
+  "name": "Turkey and cheese lettuce wraps",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sliced turkey breast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "sliced cheddar",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "lettuce leaves",
+    "qty": "3 large",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + dairy + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→dairy-free cheese",
+  "approx_macros": "~220 kcal · 3g C · 28g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Turkey and cheese wrapped in lettuce\" — make-ahead GF runner snack, low-carb style",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-038",
+  "name": "Tuna salad with GF crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "tuna, canned in water, mashed with mayo",
+    "qty": "85 g",
+    "role": "protein"
+   },
+   {
+    "food": "gluten-free crackers",
+    "qty": "8",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap crackers for rice cakes to keep dairy/soy free",
+  "approx_macros": "~260 kcal · 24g C · 20g P · 9g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Tuna salad with GF crackers\" — make-ahead GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-039",
+  "name": "Kale chips, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "kale chips, baked with olive oil and salt",
+    "qty": "30 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 8g C · 3g P · 7g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"kale chips\" listed among store-bought GF runner snacks",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-040",
+  "name": "Beef jerky with kale chips",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "beef jerky, plain",
+    "qty": "30 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale chips, baked",
+    "qty": "20 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~180 kcal · 10g C · 16g P · 8g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "Beef jerky and kale chips both listed as store-bought GF runner snacks, commonly paired for a travel-friendly protein + veg combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-041",
+  "name": "Nut & seed GF energy bar (homemade)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "puffed rice",
+    "qty": "20 g",
+    "role": "starch"
+   },
+   {
+    "food": "sesame seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "hazelnuts, chopped",
+    "qty": "15 g",
+    "role": "fat"
+   },
+   {
+    "food": "dried apricots",
+    "qty": "20 g",
+    "role": "fruit"
+   },
+   {
+    "food": "tahini",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "tree_nuts"
+  ],
+  "swaps": "hazelnuts→sunflower seeds (nut-free)",
+  "approx_macros": "~200 kcal · 24g C · 4g P · 10g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "Homemade \"Nut & Seed GF Energy Bar\": puffed rice, sesame seeds, coconut, hazelnuts, dried apricots, dates, almonds, tahini, honey",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-042",
+  "name": "GF berry granola, nut-free",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pumpkin seeds",
+    "qty": "20 g",
+    "role": "other"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "15 g",
+    "role": "other"
+   },
+   {
+    "food": "quinoa flakes",
+    "qty": "20 g",
+    "role": "starch"
+   },
+   {
+    "food": "dried blueberries",
+    "qty": "20 g",
+    "role": "fruit"
+   },
+   {
+    "food": "dried cranberries",
+    "qty": "15 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fruit + other",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — nut-free as written",
+  "approx_macros": "~230 kcal · 34g C · 6g P · 9g F",
+  "prep": "20 min (batch bake)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"GF Berry Granola\": pumpkin seeds, sunflower seeds, quinoa flakes, dried blueberries, cranberries — nut-free homemade GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-043",
+  "name": "Medjool dates stuffed with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Medjool dates",
+    "qty": "3",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp, piped in",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + fat",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (nut-free)",
+  "approx_macros": "~220 kcal · 42g C · 3g P · 7g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners ; CorrerJuntos",
+  "evidence": "\"Medjool dates stuffed with almond butter\" — homemade GF runner snack option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-044",
+  "name": "GF oat, honey & coconut energy balls",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "certified gluten-free oats",
+    "qty": "40 g",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "shredded coconut",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + other + fat",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~160 kcal · 26g C · 3g P · 5g F",
+  "prep": "10 min (batch, no-bake)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners ; CorrerJuntos",
+  "evidence": "\"GF oats + honey + coconut\" energy balls — GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-045",
+  "name": "Half banana with Medjool dates",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "Medjool dates",
+    "qty": "2-3",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit + fruit",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~190 kcal · 48g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners ; CorrerJuntos",
+  "evidence": "\"Half a banana or 2-3 dates\" listed as the pre-start GF snack immediately before a race",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-046",
+  "name": "Frozen banana, peanut butter & cocoa smoothie",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "frozen banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "cocoa powder",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "milk",
+    "qty": "250 ml",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + fat + dairy",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter; milk→oat milk (dairy-free)",
+  "approx_macros": "~340 kcal · 42g C · 13g P · 14g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners ; CorrerJuntos",
+  "evidence": "Post-run smoothie built from \"frozen banana\" blended with \"peanut butter\" and \"pure cocoa powder\" in milk",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-047",
+  "name": "Beef jerky with raw cheddar",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "beef jerky, plain",
+    "qty": "30 g",
+    "role": "protein"
+   },
+   {
+    "food": "raw cheddar cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→macadamia nuts (dairy-free, still keto)",
+  "approx_macros": "~260 kcal · 2g C · 20g P · 18g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Ultrarunner Zach Bitter's low-carb diet is described as built around \"fatty cuts of meat... raw cheese, and nuts\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-048",
+  "name": "Hard-boiled eggs with sliced avocado",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + fat",
+  "context": [
+   "everyday",
+   "rest-day",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none needed for keto/paleo; not vegan",
+  "approx_macros": "~250 kcal · 5g C · 14g P · 20g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Volek & Phinney identify avocados as a core fat source for low-carb athletes; Zach Bitter's diet is described as heavy in \"ground beef and eggs\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-049",
+  "name": "Mixed nuts with olives",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed nuts, unsalted",
+    "qty": "30 g",
+    "role": "fat"
+   },
+   {
+    "food": "green or Kalamata olives",
+    "qty": "10",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fat + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap to sunflower seeds + olives (nut-free)",
+  "approx_macros": "~250 kcal · 6g C · 6g P · 22g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "\"nuts, seeds, cheese, olives, avocados, heavy cream, and sour cream\" identified as the go-to fat sources for keto-adapted endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-050",
+  "name": "Sunflower seeds with Kalamata olives",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sunflower seeds, roasted",
+    "qty": "30 g",
+    "role": "fat"
+   },
+   {
+    "food": "Kalamata olives",
+    "qty": "10",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fat + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — nut-free as written",
+  "approx_macros": "~230 kcal · 8g C · 7g P · 19g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Seeds and olives both named among the fat sources Volek & Phinney recommend for keto-adapted endurance athletes; combined here as a nut-free variant",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-051",
+  "name": "Avocado with pumpkin seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "pumpkin seeds, roasted",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "fat + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~260 kcal · 10g C · 6g P · 22g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Avocados and seeds both named as staple fat sources for low-carb athletes in Volek & Phinney's guidance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-052",
+  "name": "Cheddar cubes with walnuts",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cheddar cheese, cubed",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "walnuts",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "walnuts→pumpkin seeds (nut-free)",
+  "approx_macros": "~280 kcal · 4g C · 14g P · 24g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Cheese and nuts named together as core fat/protein sources for low-carb endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-053",
+  "name": "Full-fat sour cream with raspberries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "full-fat sour cream",
+    "qty": "3 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "fresh raspberries",
+    "qty": "60 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "sour cream→coconut cream (dairy-free)",
+  "approx_macros": "~190 kcal · 8g C · 3g P · 16g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "\"sour cream\" named among the good fat sources for low-carb athletes; paired with berries, also part of Zach Bitter's fruit-in-moderation diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-054",
+  "name": "Avocado, macadamia nuts & sea salt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "macadamia nuts",
+    "qty": "6",
+    "role": "fat"
+   },
+   {
+    "food": "sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "fat + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "macadamia→pumpkin seeds (nut-free)",
+  "approx_macros": "~280 kcal · 8g C · 4g P · 27g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Avocados and nuts named as the core fat sources of the low-carb performance diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-055",
+  "name": "Kalamata olives with sharp cheddar",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Kalamata olives",
+    "qty": "12",
+    "role": "fat"
+   },
+   {
+    "food": "sharp cheddar, cubed",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fat + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→dairy-free hard cheese",
+  "approx_macros": "~210 kcal · 3g C · 8g P · 18g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Olives and cheese named together as fat sources supporting \"superior fuel flow\" for keto-adapted athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-056",
+  "name": "Cold-smoked salmon with cucumber",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cold-smoked salmon",
+    "qty": "60 g",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 3g C · 16g P · 8g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"Salmon\" is named among Zach Bitter's staple recovery-day foods in his low-carb diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-057",
+  "name": "Hard-boiled eggs with sautéed spinach",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~220 kcal · 3g C · 15g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Eggs and \"dark leafy greens, spinach\" are both named among the everyday foods in Zach Bitter's low-carb diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-058",
+  "name": "Fresh melon slices, race-fuel portion",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cantaloupe or honeydew melon",
+    "qty": "150 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~55 kcal · 14g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"Melons\" are named in Zach Bitter's diet, and he describes taking \"a couple bites of fruit at an aid station\" during ultramarathons",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-059",
+  "name": "Mixed berries, plain, pre-race",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed berries",
+    "qty": "100 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~50 kcal · 12g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"Berries\" are named among the foods in Zach Bitter's otherwise low-carb diet, used sparingly around training and racing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-060",
+  "name": "Roasted brussels sprouts, cold",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 11g C · 4g P · 6g F",
+  "prep": "0 min (batch-roasted)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"Brussels sprouts\" and \"asparagus\" are named among the vegetables in Zach Bitter's low-carb ultrarunning diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-061",
+  "name": "Cobb-style egg, chicken & avocado cups",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg, chopped",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "cooked chicken, diced",
+    "qty": "60 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, diced",
+    "qty": "1/4",
+    "role": "fat"
+   },
+   {
+    "food": "cheddar, crumbled",
+    "qty": "15 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + fat + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "omit cheddar for paleo/dairy-free",
+  "approx_macros": "~260 kcal · 3g C · 22g P · 17g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Zach Bitter's low-carb recovery-day lunch is described as \"a heart salad such as a Cobb salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-062",
+  "name": "Bacon-wrapped avocado bites",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "avocado, wedges",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "bacon, cooked",
+    "qty": "2 slices",
+    "role": "protein"
+   }
+  ],
+  "pattern": "fat + protein",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~230 kcal · 6g C · 8g P · 20g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Bacon and avocado both named as staples of Zach Bitter's low-carb, fat-forward diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-063",
+  "name": "Coconut flakes with macadamia nuts",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "unsweetened coconut flakes",
+    "qty": "20 g",
+    "role": "fat"
+   },
+   {
+    "food": "macadamia nuts",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fat + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "macadamia→pumpkin seeds (nut-free)",
+  "approx_macros": "~260 kcal · 6g C · 3g P · 26g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Coconut oil/coconut and nuts are both named among the staple fats in Zach Bitter's low-carb ultrarunning diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-064",
+  "name": "Ground beef & spinach lettuce cups",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "ground beef, cooked",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach leaves",
+    "qty": "handful",
+    "role": "veg"
+   },
+   {
+    "food": "lettuce leaves, as wraps",
+    "qty": "2",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 2g C · 18g P · 13g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"a lot of ground beef and eggs\" and \"dark leafy greens, spinach\" are named as staples of Zach Bitter's daily low-carb eating",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-065",
+  "name": "Carrot sticks with guacamole",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "carrot sticks",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "guacamole (avocado, lime, salt)",
+    "qty": "60 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~160 kcal · 14g C · 2g P · 11g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Carrots and avocado are both named among the everyday foods in Zach Bitter's low-carb diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-066",
+  "name": "Asparagus spears with olive oil, cold",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "asparagus, blanched, cold",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   },
+   {
+    "food": "sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~70 kcal · 5g C · 3g P · 5g F",
+  "prep": "0 min (batch-blanched)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"Asparagus\" named among the staple vegetables in Zach Bitter's low-carb ultrarunning diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-067",
+  "name": "Broccoli florets with cheddar",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "broccoli florets, steamed, cold",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "cheddar, shredded",
+    "qty": "20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "veg + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→dairy-free cheese (paleo/dairy-free)",
+  "approx_macros": "~110 kcal · 8g C · 6g P · 6g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "\"Broccoli\" and cheese are both named among the staples in Zach Bitter's low-carb diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-068",
+  "name": "Bone broth with shredded chicken & spinach",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "bone broth",
+    "qty": "350 ml",
+    "role": "drink"
+   },
+   {
+    "food": "shredded chicken",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, wilted in",
+    "qty": "handful",
+    "role": "veg"
+   }
+  ],
+  "pattern": "drink + protein + veg",
+  "context": [
+   "recovery",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 2g C · 20g P · 6g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Bone broth and shredded chicken as a low-carb recovery snack, echoing the meat- and greens-forward staples of Zach Bitter's diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-069",
+  "name": "Beef tri-tip strips, cold",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "tri-tip steak, cooked, sliced",
+    "qty": "90 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "recovery",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 0g C · 24g P · 11g F",
+  "prep": "0 min (batch-cooked)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Zach Bitter's recovery-day dinner is described as \"something like a tri-tip steak\" — cold leftovers make a portable protein snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-070",
+  "name": "Berries with heavy cream",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed berries",
+    "qty": "100 g",
+    "role": "fruit"
+   },
+   {
+    "food": "heavy cream, whipped",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "heavy cream→coconut cream (dairy-free)",
+  "approx_macros": "~150 kcal · 12g C · 1g P · 11g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+  "evidence": "Heavy cream and berries both named among the low-carb athlete's foods — cream as a fat source, berries as Zach Bitter's occasional fruit",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-071",
+  "name": "Prosciutto-wrapped melon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cantaloupe, wedges",
+    "qty": "120 g",
+    "role": "fruit"
+   },
+   {
+    "food": "prosciutto",
+    "qty": "3 slices",
+    "role": "protein"
+   }
+  ],
+  "pattern": "fruit + protein",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 12g C · 9g P · 7g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Melon and cured meats both named among the everyday low-carb foods favoured by fat-adapted ultrarunners like Zach Bitter",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-072",
+  "name": "Mandarin oranges, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mandarin oranges",
+    "qty": "2 small",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~80 kcal · 20g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "Mandarin listed among the low-prep, low-FODMAP whole fruits recommended for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-073",
+  "name": "Boiled egg alone, pre-exercise",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "boiled egg",
+    "qty": "1",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "swap for low-fat cheese (egg-free)",
+  "approx_macros": "~78 kcal · 1g C · 6g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "Boiled eggs listed among the low-prep low-FODMAP options for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-074",
+  "name": "Mixed nuts, unsalted, low-FODMAP portion",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed nuts, unsalted",
+    "qty": "30 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fat",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap to pumpkin seeds (nut-free)",
+  "approx_macros": "~180 kcal · 6g C · 6g P · 16g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "Mixed nuts listed among the low-prep low-FODMAP snack options for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-075",
+  "name": "Popcorn, plain air-popped, low-FODMAP",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "popcorn, air-popped",
+    "qty": "3 cups",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~90 kcal · 18g C · 3g P · 1g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "Popcorn listed among the low-prep low-FODMAP snack options for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-076",
+  "name": "Plain rice biscuits, low-FODMAP",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain rice biscuits",
+    "qty": "4",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~100 kcal · 22g C · 2g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "Plain biscuits listed among the low-prep low-FODMAP snack options for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-077",
+  "name": "Pumpkin & sunflower seed mix, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pumpkin seeds, roasted",
+    "qty": "20 g",
+    "role": "other"
+   },
+   {
+    "food": "sunflower seeds, roasted",
+    "qty": "20 g",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — nut-free by design",
+  "approx_macros": "~230 kcal · 8g C · 9g P · 19g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "Pumpkin and sunflower seeds both named as the nut-free base of the homemade GF berry granola recommended for runners with nut allergy",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-078",
+  "name": "Sunflower seed butter on rice cakes",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — peanut-free and nut-free",
+  "approx_macros": "~200 kcal · 26g C · 4g P · 10g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Peanut butter on rice cakes or gluten free toast\" is the Monash-recommended template; sunflower seed butter used here per RunnersConnect's nut-free swap for allergy-prone athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-079",
+  "name": "Dairy-free yoghurt with strawberries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "coconut or soy yoghurt, unsweetened",
+    "qty": "150 g",
+    "role": "dairy"
+   },
+   {
+    "food": "strawberries, sliced",
+    "qty": "100 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "use coconut-only yoghurt for soy-free",
+  "approx_macros": "~160 kcal · 20g C · 4g P · 6g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Yoghurt & fruit\" as a low-FODMAP snack pairing, built here from the dairy-free yoghurt swap the same source recommends for lactose intolerance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-080",
+  "name": "Rice cakes with tuna",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "tuna, canned in water",
+    "qty": "85 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 24g C · 20g P · 2g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "Rice cakes and tuna both named among GF runner snack staples; paired here as a fish-based, dairy/egg/nut-free protein snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-081",
+  "name": "Roasted chickpeas, cumin",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "cumin",
+    "qty": "1/2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~180 kcal · 27g C · 8g P · 4g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"Roasted chickpeas\" listed as a GF athlete recovery snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-082",
+  "name": "Plain oatcakes with cheddar",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free oatcakes",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "cheddar, sliced",
+    "qty": "20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→dairy-free cheese",
+  "approx_macros": "~200 kcal · 24g C · 7g P · 9g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "GF oat biscuits paired with cheese as a coach-recommended GF everyday snack, extending the \"Nairns Oaties\" recommendation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-083",
+  "name": "Sliced cucumber with hummus, GF",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cucumber, sliced",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "veg + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "use tahini-free hummus for sesame allergy",
+  "approx_macros": "~140 kcal · 14g C · 5g P · 8g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "\"Vegetables with dip\" is the Monash low-FODMAP snack category this pairing follows",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-084",
+  "name": "Plain gluten-free stroopwafel",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free stroopwafel",
+    "qty": "1",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "check label — some GF stroopwafels are also dairy-free",
+  "approx_macros": "~160 kcal · 30g C · 2g P · 4g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"GF stroopwafel\" listed among coach-recommended pre-run gluten-free fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-085",
+  "name": "Salted rice crackers with avocado",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "salted rice crackers",
+    "qty": "8",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~220 kcal · 26g C · 4g P · 12g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "Salted rice crackers listed among coach-recommended whole-food GF fuel options; paired here with avocado for a dairy/egg/nut-free snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-086",
+  "name": "Dried apricots, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dried apricots",
+    "qty": "6",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 27g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "Dried apricots named as a component of the homemade GF nut-and-seed energy bar; also stands alone as a low-prep GF runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-087",
+  "name": "Plain white rice, cold, race-week",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white rice, cooked, cold",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "carb-load",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~200 kcal · 44g C · 4g P · 0g F",
+  "prep": "0 min (batch-cooked)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"Leftover plain white rice\" listed among coach-recommended pre-run/race-week GF fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-088",
+  "name": "Mashed sweet potato, cold, race-week",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sweet potato, boiled, mashed, cold",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "carb-load",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 34g C · 3g P · 0g F",
+  "prep": "0 min (batch-cooked)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"Mashed sweet potato (cold)\" listed among coach-recommended pre-run/race-week GF fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-089",
+  "name": "GF gummy fruit snacks, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free fruit snacks / gummy candy",
+    "qty": "1 pouch (30g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [],
+  "swaps": "check for gelatin source if pescatarian-strict",
+  "approx_macros": "~100 kcal · 24g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"Gluten-free sweets (gummy bears or fruit snacks)\" listed among coach-recommended whole-food-adjacent GF race fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-090",
+  "name": "Salted popcorn, olive oil, dairy-free",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "popcorn, air-popped",
+    "qty": "3 cups",
+    "role": "starch"
+   },
+   {
+    "food": "olive oil spray",
+    "qty": "light",
+    "role": "fat"
+   },
+   {
+    "food": "salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 18g C · 3g P · 3g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "http://www.monashfodmap.com/blog/low-fodmap-snacks/ ; Monash University FODMAP blog",
+  "evidence": "Popcorn listed as a low-prep low-FODMAP snack option; olive oil used in place of butter keeps it dairy-free",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-091",
+  "name": "GF pita chips with roasted red pepper hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free pita chips",
+    "qty": "30 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted red pepper hummus",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "use tahini-free hummus for sesame allergy",
+  "approx_macros": "~200 kcal · 24g C · 6g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "\"Homemade GF Pita Chips\" seasoned with garlic, oregano and paprika, paired with homemade hummus — both featured as GF runner staples",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-092",
+  "name": "Cottage cheese with cucumber, dairy version",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "170 g",
+    "role": "dairy"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dairy + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→dairy-free cottage-style cheese",
+  "approx_macros": "~170 kcal · 8g C · 22g P · 5g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/gluten-free-athlete/ ; Greenletes (sports RD)",
+  "evidence": "\"Cottage cheese & fruit\" is the source pattern; a savoury vegetable version is a documented alternate pairing for the same protein base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-093",
+  "name": "Cold roasted chicken breast, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted chicken breast, sliced, cold",
+    "qty": "90 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 0g C · 28g P · 4g F",
+  "prep": "0 min (batch-cooked)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Plain roasted/rotisserie chicken echoes Zach Bitter's meat-forward low-carb diet, used cold as a portable protein snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-094",
+  "name": "Beef jerky, plain, travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "beef jerky, plain, no soy sauce",
+    "qty": "30 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "check label — some jerky brands use soy sauce marinade",
+  "approx_macros": "~110 kcal · 3g C · 15g P · 4g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Men's Journal, Zach Bitter profile",
+  "evidence": "Jerky-style dried meat reflects the fatty-cuts-of-meat staple of Zach Bitter's low-carb ultrarunning diet, used here plain and soy-free",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-095",
+  "name": "Sunflower seed butter & banana on GF toast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fat + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — peanut/tree-nut-free by design",
+  "approx_macros": "~230 kcal · 32g C · 6g P · 9g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "GF toast with nut butter is a documented GF runner snack; sunflower seed butter is RunnersConnect's own listed nut-free substitute",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-096",
+  "name": "Roasted pumpkin seeds, salted, travel",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pumpkin seeds, roasted, salted",
+    "qty": "30 g",
+    "role": "other"
+   }
+  ],
+  "pattern": "other",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 4g C · 8g P · 12g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/gluten-free-snacks-for-runners/ ; RunnersConnect",
+  "evidence": "Pumpkin seeds named as the nut-free base ingredient in the homemade GF berry granola recommended for GF runners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-097",
+  "name": "Plain applesauce pouch, GF race fuel",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "unsweetened applesauce pouch",
+    "qty": "1 x 113g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~50 kcal · 13g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "\"Fruit purees\" listed among coach-recommended whole-food GF pre-run fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-098",
+  "name": "Egg-free banana oat bites",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "certified gluten-free oats",
+    "qty": "30 g",
+    "role": "starch"
+   },
+   {
+    "food": "mashed banana",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — egg-free, dairy-free, nut-free as written",
+  "approx_macros": "~140 kcal · 26g C · 3g P · 2g F",
+  "prep": "10 min (batch, no-bake)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.correrjuntos.com/blog/en/gluten-free-foods-for-runners ; CorrerJuntos",
+  "evidence": "GF oat + honey + coconut energy balls are documented for GF runners; this egg-free banana variant follows the same no-bake pattern",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-099",
+  "name": "Chia pudding, coconut milk, allergen-free",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chia seeds",
+    "qty": "3 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "coconut milk",
+    "qty": "200 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "other + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — dairy-free, egg-free, nut-free, gluten-free as written",
+  "approx_macros": "~230 kcal · 18g C · 4g P · 16g F",
+  "prep": "5 min (chill overnight)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://blog.katescarlata.com/2015/04/14/tips-for-the-low-fodmap-athlete/ ; Kate Scarlata, RDN",
+  "evidence": "Chia seeds and coconut milk both named as components of the low-FODMAP athlete recipe \"Niki's Overnight Oats,\" used here without the oats for a fully allergen-free version",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-c-100",
+  "name": "Plain rice cakes with mashed avocado & lime",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "lime juice",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~220 kcal · 28g C · 4g P · 11g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://support.runna.com/en/articles/12149821-gluten-free-nutrition-for-runners ; Runna Support, Coach Anya",
+  "evidence": "Rice cakes and avocado both individually documented as coach-recommended GF fuel; combined here for a fully allergen-free pre-run snack",
+  "reconstructed_from_snippet": false
+ }
+]

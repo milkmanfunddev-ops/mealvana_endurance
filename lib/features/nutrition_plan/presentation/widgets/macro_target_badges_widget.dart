@@ -94,7 +94,9 @@ class MacroTargetBadgesWidget extends StatelessWidget {
       case RunPhase.beforeRun:
         return {
           MacroType.carbs: targets.preRun.carbsG.round(),
-          MacroType.fluids: targets.preRun.fluidsMl.round(),
+          // Gate path: this badge map predates fuel-stat F-1; the BEFORE
+          // card renders "No fluid target" itself, this surface keeps 0.
+          MacroType.fluids: (targets.preRun.fluidsMl ?? 0).round(),
           // Sodium v3: deliberately absent — there is no pre-workout target.
           MacroType.protein: targets.preRun.proteinG.round(),
         };

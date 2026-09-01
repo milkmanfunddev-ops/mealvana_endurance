@@ -1,0 +1,5116 @@
+[
+ {
+  "id": "L-b-001",
+  "name": "Greens, black beans, brown rice & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing (tahini, lemon, water)",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + bean + grain + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "beans→chickpeas; rice→quinoa; add avocado for extra fat",
+  "approx_macros": "~560 kcal · 68g C · 22g P · 20g F",
+  "prep": "15 min, everyday-assembly",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Matt Frazier, No Meat Athlete — https://sharonpalmer.com/plant-chat-matt-frazier-no-meat-athlete/ ; https://www.forksoverknives.com/wellness/meet-matt-frazier-vegan-ultrarunner-behind-no-meat-athlete/",
+  "evidence": "\"a grain, a green, and a bean\" — Frazier's stated lunch formula: big bowl of greens, beans, other veg, topped with a nut-based dressing like tahini; adds whole grains like rice, quinoa or whole wheat bread to make it filling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-002",
+  "name": "Greens, chickpeas, quinoa & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber, diced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tahini-garlic dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + bean + grain + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "chickpeas→white beans; quinoa→farro (adds gluten)",
+  "approx_macros": "~540 kcal · 62g C · 20g P · 19g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Matt Frazier, No Meat Athlete — https://sharonpalmer.com/plant-chat-matt-frazier-no-meat-athlete/ ; https://www.forksoverknives.com/wellness/meet-matt-frazier-vegan-ultrarunner-behind-no-meat-athlete/",
+  "evidence": "\"a grain, a green, and a bean\" — Frazier's stated lunch formula: big bowl of greens, beans, other veg, topped with a nut-based dressing like tahini; adds whole grains like rice, quinoa or whole wheat bread to make it filling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-003",
+  "name": "Kale, lentils, wild rice & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chopped kale, massaged",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "cooked lentils",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "wild rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted beets",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tahini-onion dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + bean + grain + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "lentils→black beans; wild rice→brown rice",
+  "approx_macros": "~570 kcal · 70g C · 23g P · 18g F",
+  "prep": "20 min, batches well",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Matt Frazier, No Meat Athlete — https://sharonpalmer.com/plant-chat-matt-frazier-no-meat-athlete/ ; https://www.forksoverknives.com/wellness/meet-matt-frazier-vegan-ultrarunner-behind-no-meat-athlete/",
+  "evidence": "\"a grain, a green, and a bean\" — Frazier's stated lunch formula: big bowl of greens, beans, other veg, topped with a nut-based dressing like tahini; adds whole grains like rice, quinoa or whole wheat bread to make it filling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-004",
+  "name": "Spinach, pinto beans, farro & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "baby spinach",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "pinto beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "farro, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted red pepper",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + bean + grain + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "farro→rice for gluten-free",
+  "approx_macros": "~550 kcal · 65g C · 21g P · 19g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Matt Frazier, No Meat Athlete — https://sharonpalmer.com/plant-chat-matt-frazier-no-meat-athlete/ ; https://www.forksoverknives.com/wellness/meet-matt-frazier-vegan-ultrarunner-behind-no-meat-athlete/",
+  "evidence": "\"a grain, a green, and a bean\" — Frazier's stated lunch formula: big bowl of greens, beans, other veg, topped with a nut-based dressing like tahini; adds whole grains like rice, quinoa or whole wheat bread to make it filling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-005",
+  "name": "Arugula, edamame, brown rice & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "arugula",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "shelled edamame",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "cherry tomatoes, halved",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tahini-lemon dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + bean + grain + sauce",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "edamame→chickpeas (soy-free)",
+  "approx_macros": "~530 kcal · 60g C · 22g P · 18g F",
+  "prep": "12 min (frozen edamame)",
+  "batch": false,
+  "frequency": "common",
+  "source": "Matt Frazier, No Meat Athlete — https://sharonpalmer.com/plant-chat-matt-frazier-no-meat-athlete/ ; https://www.forksoverknives.com/wellness/meet-matt-frazier-vegan-ultrarunner-behind-no-meat-athlete/",
+  "evidence": "\"a grain, a green, and a bean\" — Frazier's stated lunch formula: big bowl of greens, beans, other veg, topped with a nut-based dressing like tahini; adds whole grains like rice, quinoa or whole wheat bread to make it filling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-006",
+  "name": "Rice, quinoa, black beans, broccoli & hot sauce bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + grain + bean + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "hot sauce optional; swap broccoli for whatever's on hand",
+  "approx_macros": "~640 kcal · 82g C · 24g P · 20g F",
+  "prep": "15 min (rice/quinoa pre-cooked)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Rich Roll — https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/",
+  "evidence": "Roll is reported to be \"partial to bowls of rice and quinoa with black beans, topped with hot sauce and guacamole,\" built out with spinach, asparagus, broccoli or green beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-007",
+  "name": "Rice, quinoa, black beans, asparagus & hot sauce bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed asparagus",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + grain + bean + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "asparagus→green beans or spinach",
+  "approx_macros": "~640 kcal · 82g C · 24g P · 20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Rich Roll — https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/",
+  "evidence": "Roll is reported to be \"partial to bowls of rice and quinoa with black beans, topped with hot sauce and guacamole,\" built out with spinach, asparagus, broccoli or green beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-008",
+  "name": "Rice, quinoa, black beans, green beans & hot sauce bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed green beans",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + grain + bean + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "green beans→broccoli or spinach",
+  "approx_macros": "~640 kcal · 82g C · 24g P · 20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Rich Roll — https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/",
+  "evidence": "Roll is reported to be \"partial to bowls of rice and quinoa with black beans, topped with hot sauce and guacamole,\" built out with spinach, asparagus, broccoli or green beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-009",
+  "name": "Quinoa, black beans, spinach & hot sauce bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + bean + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "rice-free version for a lighter bowl",
+  "approx_macros": "~560 kcal · 66g C · 20g P · 20g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Rich Roll — https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/",
+  "evidence": "Roll is reported to be \"partial to bowls of rice and quinoa with black beans, topped with hot sauce and guacamole,\" built out with spinach, asparagus, broccoli or green beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-010",
+  "name": "Rice, black beans, broccoli & hot sauce bowl with kombucha",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + bean + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add kombucha as a side, a habit Roll is known for",
+  "approx_macros": "~600 kcal · 78g C · 22g P · 19g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Rich Roll — https://wishesnkisses.com/what-vegan-athlete-rich-roll-eats-daily/ ; https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/",
+  "evidence": "Roll is reported to be \"partial to bowls of rice and quinoa with black beans, topped with hot sauce and guacamole,\" built out with spinach, asparagus, broccoli or green beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-011",
+  "name": "Rice, black beans, lentils & mixed veg plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "cooked green lentils",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed mixed vegetables",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + bean + lentil + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "lentils→chickpeas; add fruit on the side",
+  "approx_macros": "~600 kcal · 90g C · 26g P · 12g F",
+  "prep": "20 min (batch lentils ahead)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Trevor Fuchs, vegan ultrarunner, quoted at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "diet described as \"a steady dose of fruits, vegetables, rice, beans and lentils\" that fuelled his shift to ultrarunning",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-012",
+  "name": "Brown rice, lentils, roasted carrots & orange",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "cooked lentils",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted carrots",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "orange, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + lentil + veg + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "fruit can be any seasonal piece",
+  "approx_macros": "~540 kcal · 88g C · 20g P · 6g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Trevor Fuchs, vegan ultrarunner, quoted at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "diet described as \"a steady dose of fruits, vegetables, rice, beans and lentils\" that fuelled his shift to ultrarunning",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-013",
+  "name": "Rice, kidney beans, lentils & steamed spinach",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kidney beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "cooked lentils",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + bean + lentil + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "kidney beans→black beans",
+  "approx_macros": "~570 kcal · 92g C · 24g P · 5g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Trevor Fuchs, vegan ultrarunner, quoted at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "diet described as \"a steady dose of fruits, vegetables, rice, beans and lentils\" that fuelled his shift to ultrarunning",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-014",
+  "name": "Quinoa, black beans, lentils, banana & steamed broccoli",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "cooked lentils",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + bean + lentil + veg + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "quinoa→rice",
+  "approx_macros": "~600 kcal · 90g C · 26g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Trevor Fuchs, vegan ultrarunner, quoted at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "diet described as \"a steady dose of fruits, vegetables, rice, beans and lentils\" that fuelled his shift to ultrarunning",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-015",
+  "name": "Sweet potato, rice, avocado & hummus plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roasted sweet potato",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + starch + fat + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap rice for quinoa; add any leftover veg on top",
+  "approx_macros": "~600 kcal · 90g C · 14g P · 22g F",
+  "prep": "10 min (sweet potato + rice batch-roasted)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Ultrarunner \"go-to work lunch,\" reported at https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners",
+  "evidence": "\"my go-to work lunch of sweet potato, rice, avocado, hummus, and leftovers... I've eaten this for about 75% of my work lunches over four years\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-016",
+  "name": "Sweet potato, quinoa, avocado & hummus plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roasted sweet potato",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + starch + fat + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "quinoa→rice",
+  "approx_macros": "~610 kcal · 84g C · 18g P · 24g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Ultrarunner \"go-to work lunch,\" reported at https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners",
+  "evidence": "\"my go-to work lunch of sweet potato, rice, avocado, hummus, and leftovers... I've eaten this for about 75% of my work lunches over four years\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-017",
+  "name": "Sweet potato, rice, avocado, hummus & leftover greens",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roasted sweet potato",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "sauteed greens (leftover)",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + starch + fat + protein + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any leftover veg works — the point is using up dinner extras",
+  "approx_macros": "~640 kcal · 92g C · 16g P · 24g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Ultrarunner \"go-to work lunch,\" reported at https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners",
+  "evidence": "\"my go-to work lunch of sweet potato, rice, avocado, hummus, and leftovers... I've eaten this for about 75% of my work lunches over four years\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-018",
+  "name": "Sweet potato, brown rice, avocado & hummus with hot sauce",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roasted sweet potato",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + starch + fat + protein + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "brown rice→white rice for faster digestion pre-session",
+  "approx_macros": "~610 kcal · 88g C · 15g P · 22g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Ultrarunner \"go-to work lunch,\" reported at https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners",
+  "evidence": "\"my go-to work lunch of sweet potato, rice, avocado, hummus, and leftovers... I've eaten this for about 75% of my work lunches over four years\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-019",
+  "name": "Rice, plant-based meat, avocado, hummus & kimchi bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based ground meat, browned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "kimchi",
+    "qty": "1/3 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + plant-meat + fat + protein + ferment",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "plant meat→black beans for soy-free/whole-food version",
+  "approx_macros": "~650 kcal · 70g C · 26g P · 26g F",
+  "prep": "10 min (plant meat browns fast)",
+  "batch": false,
+  "frequency": "common",
+  "source": "Vegan runner \"go-to favorite right now,\" reported at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "described bowl of \"white rice, Impossible plant-based meat, avocado, hummus, and kimchi\" as his current go-to",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-020",
+  "name": "Rice, plant-based meat, hummus & kimchi (no avocado)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based ground meat, browned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "kimchi",
+    "qty": "1/3 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + plant-meat + protein + ferment",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "add avocado when available",
+  "approx_macros": "~560 kcal · 68g C · 25g P · 18g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Vegan runner \"go-to favorite right now,\" reported at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "described bowl of \"white rice, Impossible plant-based meat, avocado, hummus, and kimchi\" as his current go-to",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-021",
+  "name": "Brown rice, plant-based meat, avocado & kimchi bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based ground meat, browned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "kimchi",
+    "qty": "1/3 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + plant-meat + fat + ferment",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "brown rice→white rice",
+  "approx_macros": "~620 kcal · 66g C · 24g P · 24g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Vegan runner \"go-to favorite right now,\" reported at https://www.runspirited.com/single-post/2020/08/01/vegan-meals-for-ultra-runners",
+  "evidence": "described bowl of \"white rice, Impossible plant-based meat, avocado, hummus, and kimchi\" as his current go-to",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-022",
+  "name": "Basmati rice, baked beans, tofu & nutritional yeast bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "basmati rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "baked beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "extra-firm tofu, pan-seared",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "nutritional yeast",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "olives",
+    "qty": "6",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + bean + protein + toppings",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "baked beans→black beans (less sweet); olives optional",
+  "approx_macros": "~700 kcal · 100g C · 34g P · 16g F",
+  "prep": "12 min (tofu pan-seared, beans from a can)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Elite vegan athlete meal, reported by Men's Journal — https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "lunch built from \"1 1/4 cups cooked basmati rice, 1 1/2 cups baked beans, and around 3 to 3.5oz extra-firm tofu\" with nutritional yeast and olives",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-023",
+  "name": "Rice, baked beans, tofu, nutritional yeast & olives (double tofu)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "basmati rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "baked beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "extra-firm tofu, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "nutritional yeast",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "olives",
+    "qty": "6",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + bean + protein + toppings",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "increase tofu for extra protein on heavy training days",
+  "approx_macros": "~700 kcal · 88g C · 40g P · 18g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Elite vegan athlete meal, reported by Men's Journal — https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "lunch built from \"1 1/4 cups cooked basmati rice, 1 1/2 cups baked beans, and around 3 to 3.5oz extra-firm tofu\" with nutritional yeast and olives",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-024",
+  "name": "Basmati rice, black beans, tofu & nutritional yeast bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "basmati rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "extra-firm tofu, pan-seared",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "nutritional yeast",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "grain + bean + protein + toppings",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "black beans in place of baked beans for less added sugar",
+  "approx_macros": "~680 kcal · 96g C · 34g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Elite vegan athlete meal, reported by Men's Journal — https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "lunch built from \"1 1/4 cups cooked basmati rice, 1 1/2 cups baked beans, and around 3 to 3.5oz extra-firm tofu\" with nutritional yeast and olives",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-025",
+  "name": "Rice, baked beans & tofu bowl (no yeast/olives)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "basmati rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "baked beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "extra-firm tofu, pan-seared",
+    "qty": "100 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "grain + bean + protein",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "simplest version — travel-friendly with a rice cooker",
+  "approx_macros": "~660 kcal · 98g C · 32g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Elite vegan athlete meal, reported by Men's Journal — https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "lunch built from \"1 1/4 cups cooked basmati rice, 1 1/2 cups baked beans, and around 3 to 3.5oz extra-firm tofu\" with nutritional yeast and olives",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-026",
+  "name": "Quinoa, chickpeas, roasted sweet potato, kale & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted sweet potato",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "massaged kale",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + starch veg + green + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "sweet potato→butternut squash; chickpeas→white beans",
+  "approx_macros": "~640 kcal · 90g C · 22g P · 20g F",
+  "prep": "20 min (batch-roast sweet potato)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Vegan athlete buddha bowl, per https://www.organicmuscle.com/blogs/organic-health-wellness/vegan-athlete-meal-plan and https://livingtheveganlifestyle.org/vegan-meal-plan-for-athletes/",
+  "evidence": "lunch example given as \"quinoa, chickpeas, roasted sweet potato, kale, and tahini dressing\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-027",
+  "name": "Quinoa, chickpeas, butternut squash, kale & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted butternut squash",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "massaged kale",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + starch veg + green + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "squash→sweet potato",
+  "approx_macros": "~620 kcal · 86g C · 21g P · 19g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Vegan athlete buddha bowl, per https://www.organicmuscle.com/blogs/organic-health-wellness/vegan-athlete-meal-plan and https://livingtheveganlifestyle.org/vegan-meal-plan-for-athletes/",
+  "evidence": "lunch example given as \"quinoa, chickpeas, roasted sweet potato, kale, and tahini dressing\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-028",
+  "name": "Farro, chickpeas, roasted sweet potato, kale & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "farro, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted sweet potato",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "massaged kale",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + starch veg + green + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "farro→quinoa for gluten-free",
+  "approx_macros": "~650 kcal · 92g C · 22g P · 19g F",
+  "prep": "22 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Vegan athlete buddha bowl, per https://www.organicmuscle.com/blogs/organic-health-wellness/vegan-athlete-meal-plan and https://livingtheveganlifestyle.org/vegan-meal-plan-for-athletes/",
+  "evidence": "lunch example given as \"quinoa, chickpeas, roasted sweet potato, kale, and tahini dressing\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-029",
+  "name": "Quinoa, white beans, roasted sweet potato, kale & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "white beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted sweet potato",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "massaged kale",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + starch veg + green + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "white beans→chickpeas",
+  "approx_macros": "~630 kcal · 88g C · 20g P · 19g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Vegan athlete buddha bowl, per https://www.organicmuscle.com/blogs/organic-health-wellness/vegan-athlete-meal-plan and https://livingtheveganlifestyle.org/vegan-meal-plan-for-athletes/",
+  "evidence": "lunch example given as \"quinoa, chickpeas, roasted sweet potato, kale, and tahini dressing\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-030",
+  "name": "Brown rice, chickpeas, roasted sweet potato, kale & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "roasted sweet potato",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "massaged kale",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + starch veg + green + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "brown rice→quinoa",
+  "approx_macros": "~650 kcal · 92g C · 22g P · 19g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Vegan athlete buddha bowl, per https://www.organicmuscle.com/blogs/organic-health-wellness/vegan-athlete-meal-plan and https://livingtheveganlifestyle.org/vegan-meal-plan-for-athletes/",
+  "evidence": "lunch example given as \"quinoa, chickpeas, roasted sweet potato, kale, and tahini dressing\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-031",
+  "name": "Tofu, avocado, spinach & pickled veg sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-grain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "baked tofu, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "pickled vegetables",
+    "qty": "1/4 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "bread + protein + fat + green + pickle",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "bread→lettuce wrap for gluten-free",
+  "approx_macros": "~520 kcal · 48g C · 22g P · 26g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Elite vegan athlete Hodo tofu sandwich, per https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "\"protein-packed sandwich with Hodo tofu paired with avocado, spinach, basil, garlic, and pickled vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-032",
+  "name": "Tofu, avocado, basil & pickled veg wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "baked tofu, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "fresh basil leaves",
+    "qty": "1/4 cup",
+    "role": "veg"
+   },
+   {
+    "food": "pickled vegetables",
+    "qty": "1/4 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + protein + fat + herb + pickle",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "tortilla→collard leaf wrap",
+  "approx_macros": "~500 kcal · 46g C · 20g P · 25g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Elite vegan athlete Hodo tofu sandwich, per https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "\"protein-packed sandwich with Hodo tofu paired with avocado, spinach, basil, garlic, and pickled vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-033",
+  "name": "Tofu, avocado & pickled veg sandwich with garlic aioli",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sourdough bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "baked tofu, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "pickled vegetables",
+    "qty": "1/4 cup",
+    "role": "veg"
+   },
+   {
+    "food": "vegan garlic aioli",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "bread + protein + fat + pickle + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "vegan aioli→plain hummus",
+  "approx_macros": "~540 kcal · 50g C · 22g P · 27g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Elite vegan athlete Hodo tofu sandwich, per https://www.mensjournal.com/food/what-7-elite-vegan-athletes-eat-get-and-stay-ultra-jacked",
+  "evidence": "\"protein-packed sandwich with Hodo tofu paired with avocado, spinach, basil, garlic, and pickled vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-034",
+  "name": "Hummus & crunchy veg wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber, julienned",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "red cabbage, shredded",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + hummus + veg + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "tortilla→large lettuce leaf for gluten-free",
+  "approx_macros": "~420 kcal · 58g C · 14g P · 15g F",
+  "prep": "8 min, no cooking",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/super-simple-hummus-veggie-wraps/",
+  "evidence": "\"whole wheat tortillas slathered with creamy hummus and piled high with crunchy veggies\" — the site's staple no-cook wrap for a quick plant-based lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-035",
+  "name": "Hummus, spinach & bell pepper wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper strips",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + hummus + veg + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "add avocado for more fat/calories",
+  "approx_macros": "~400 kcal · 54g C · 13g P · 14g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/super-simple-hummus-veggie-wraps/",
+  "evidence": "\"whole wheat tortillas slathered with creamy hummus and piled high with crunchy veggies\" — the site's staple no-cook wrap for a quick plant-based lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-036",
+  "name": "Hummus, cucumber & sprouts wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "alfalfa sprouts",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + hummus + veg + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "sprouts→shredded lettuce",
+  "approx_macros": "~390 kcal · 52g C · 13g P · 13g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/super-simple-hummus-veggie-wraps/",
+  "evidence": "\"whole wheat tortillas slathered with creamy hummus and piled high with crunchy veggies\" — the site's staple no-cook wrap for a quick plant-based lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-037",
+  "name": "Hummus, shredded carrot & red cabbage wrap with avocado",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "red cabbage, shredded",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4",
+    "role": "fat"
+   }
+  ],
+  "pattern": "wrap + hummus + veg + veg + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "avocado optional for lighter pre-session version",
+  "approx_macros": "~460 kcal · 58g C · 13g P · 20g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/super-simple-hummus-veggie-wraps/",
+  "evidence": "\"whole wheat tortillas slathered with creamy hummus and piled high with crunchy veggies\" — the site's staple no-cook wrap for a quick plant-based lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-038",
+  "name": "Hummus & mixed veg wrap, double veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/3 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber",
+    "qty": "1/3 cup",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "1/3 cup",
+    "role": "veg"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + hummus + veg + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "use whatever veg is in the fridge",
+  "approx_macros": "~420 kcal · 56g C · 14g P · 15g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/super-simple-hummus-veggie-wraps/",
+  "evidence": "\"whole wheat tortillas slathered with creamy hummus and piled high with crunchy veggies\" — the site's staple no-cook wrap for a quick plant-based lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-039",
+  "name": "Quinoa, hummus, spinach & tomato wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + grain + hummus + green + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "make-ahead: rolls fine the night before for a grab-and-go lunch",
+  "approx_macros": "~460 kcal · 62g C · 16g P · 16g F",
+  "prep": "10 min, make-ahead",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/quick-hummus-quinoa-vegan-wraps/",
+  "evidence": "\"quinoa and hummus rolled in a tortilla with fresh spinach and tomato for a great make-and-take lunch\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-040",
+  "name": "Quinoa, hummus, spinach & cucumber wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + grain + hummus + green + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "tomato→cucumber when tomatoes aren't in season",
+  "approx_macros": "~450 kcal · 60g C · 16g P · 15g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/quick-hummus-quinoa-vegan-wraps/",
+  "evidence": "\"quinoa and hummus rolled in a tortilla with fresh spinach and tomato for a great make-and-take lunch\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-041",
+  "name": "Quinoa, hummus, tomato & shredded carrot wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "wrap + grain + hummus + veg + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "carrot adds crunch when spinach isn't on hand",
+  "approx_macros": "~460 kcal · 62g C · 16g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/quick-hummus-quinoa-vegan-wraps/",
+  "evidence": "\"quinoa and hummus rolled in a tortilla with fresh spinach and tomato for a great make-and-take lunch\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-042",
+  "name": "Quinoa, hummus, spinach, tomato & olives wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "olives, sliced",
+    "qty": "6",
+    "role": "fat"
+   }
+  ],
+  "pattern": "wrap + grain + hummus + green + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "olives are a common Mediterranean-leaning add-in",
+  "approx_macros": "~500 kcal · 63g C · 16g P · 19g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Forks Over Knives — https://www.forksoverknives.com/recipes/vegan-burgers-wraps/quick-hummus-quinoa-vegan-wraps/",
+  "evidence": "\"quinoa and hummus rolled in a tortilla with fresh spinach and tomato for a great make-and-take lunch\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-043",
+  "name": "Big salad — avocado, bell pepper, carrot, beet & tahini",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "bell pepper, sliced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "roasted beets",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + fat + veg + veg + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "add quinoa or beans to make it more filling for training days",
+  "approx_macros": "~420 kcal · 30g C · 8g P · 30g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Dotsie Bausch, Olympic cyclist — https://www.wellandgood.com/food/dotsie-bausch-diet ; https://thebeet.com/how-olympic-athlete-dotsie-bausch-fuels-with-a-vegan-diet/",
+  "evidence": "\"lunch and dinner are iterations of the same concept: greens, grains, beans, nuts, or seeds — all drizzled with a yummy sauce like tahini\"; her salads run avocado, bell pepper, carrot, beets, onion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-044",
+  "name": "Greens, quinoa, black beans, seeds & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + bean + seed + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "seeds→walnuts (tree nuts)",
+  "approx_macros": "~560 kcal · 66g C · 22g P · 22g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Dotsie Bausch, Olympic cyclist — https://www.wellandgood.com/food/dotsie-bausch-diet ; https://thebeet.com/how-olympic-athlete-dotsie-bausch-fuels-with-a-vegan-diet/",
+  "evidence": "\"lunch and dinner are iterations of the same concept: greens, grains, beans, nuts, or seeds — all drizzled with a yummy sauce like tahini\"; her salads run avocado, bell pepper, carrot, beets, onion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-045",
+  "name": "Greens, brown rice, chickpeas, walnuts & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "walnuts, chopped",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + bean + nut + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "tree_nuts"
+  ],
+  "swaps": "walnuts→pumpkin seeds for nut-free",
+  "approx_macros": "~570 kcal · 64g C · 20g P · 24g F",
+  "prep": "14 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Dotsie Bausch, Olympic cyclist — https://www.wellandgood.com/food/dotsie-bausch-diet ; https://thebeet.com/how-olympic-athlete-dotsie-bausch-fuels-with-a-vegan-diet/",
+  "evidence": "\"lunch and dinner are iterations of the same concept: greens, grains, beans, nuts, or seeds — all drizzled with a yummy sauce like tahini\"; her salads run avocado, bell pepper, carrot, beets, onion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-046",
+  "name": "Rainbow salad — bell pepper, carrot, beet, onion & avocado",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper, sliced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "shredded carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "roasted beets",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "red onion, thin-sliced",
+    "qty": "2 tbsp",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "green + veg + veg + veg + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "her stated staple veg lineup — swap in whatever's colorful and in-season",
+  "approx_macros": "~380 kcal · 26g C · 6g P · 28g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Dotsie Bausch, Olympic cyclist — https://www.wellandgood.com/food/dotsie-bausch-diet ; https://thebeet.com/how-olympic-athlete-dotsie-bausch-fuels-with-a-vegan-diet/",
+  "evidence": "\"lunch and dinner are iterations of the same concept: greens, grains, beans, nuts, or seeds — all drizzled with a yummy sauce like tahini\"; her salads run avocado, bell pepper, carrot, beets, onion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-047",
+  "name": "Greens, farro, white beans, seeds & tahini bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed salad greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "farro, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "white beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + bean + seed + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "farro→quinoa for gluten-free",
+  "approx_macros": "~560 kcal · 68g C · 20g P · 20g F",
+  "prep": "14 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Dotsie Bausch, Olympic cyclist — https://www.wellandgood.com/food/dotsie-bausch-diet ; https://thebeet.com/how-olympic-athlete-dotsie-bausch-fuels-with-a-vegan-diet/",
+  "evidence": "\"lunch and dinner are iterations of the same concept: greens, grains, beans, nuts, or seeds — all drizzled with a yummy sauce like tahini\"; her salads run avocado, bell pepper, carrot, beets, onion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-048",
+  "name": "Rice & hummus bowl with steamed veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "steamed mixed vegetables",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + hummus + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "rice→sweet potato on lower-mileage days",
+  "approx_macros": "~560 kcal · 92g C · 16g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Hellah Sidibe, vegan ultrarunner (HellahGood), reported at https://plantbasednews.org/lifestyle/health-and-fitness/eat-in-a-day-vegan-runner/",
+  "evidence": "high-mileage-day meal plan leaning on hummus (chickpeas) for \"protein and fiber\" and rice for \"fast-digesting carbohydrates to restore glycogen stores after long runs\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-049",
+  "name": "Rice, hummus & roasted carrots (high-mileage plate)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "roasted carrots",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + hummus + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "portion scales up on 20+ mile days",
+  "approx_macros": "~620 kcal · 106g C · 16g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Hellah Sidibe, vegan ultrarunner (HellahGood), reported at https://plantbasednews.org/lifestyle/health-and-fitness/eat-in-a-day-vegan-runner/",
+  "evidence": "high-mileage-day meal plan leaning on hummus (chickpeas) for \"protein and fiber\" and rice for \"fast-digesting carbohydrates to restore glycogen stores after long runs\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-050",
+  "name": "Rice, hummus & steamed broccoli plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + hummus + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "add chili flakes for flavor",
+  "approx_macros": "~530 kcal · 88g C · 14g P · 11g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Hellah Sidibe, vegan ultrarunner (HellahGood), reported at https://plantbasednews.org/lifestyle/health-and-fitness/eat-in-a-day-vegan-runner/",
+  "evidence": "high-mileage-day meal plan leaning on hummus (chickpeas) for \"protein and fiber\" and rice for \"fast-digesting carbohydrates to restore glycogen stores after long runs\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-051",
+  "name": "Brown rice, hummus & greens plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "4 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "sauteed greens",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + hummus + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "brown rice for lower-intensity training days",
+  "approx_macros": "~550 kcal · 86g C · 15g P · 13g F",
+  "prep": "14 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Hellah Sidibe, vegan ultrarunner (HellahGood), reported at https://plantbasednews.org/lifestyle/health-and-fitness/eat-in-a-day-vegan-runner/",
+  "evidence": "high-mileage-day meal plan leaning on hummus (chickpeas) for \"protein and fiber\" and rice for \"fast-digesting carbohydrates to restore glycogen stores after long runs\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-052",
+  "name": "Canned tuna, microwave rice & tomato plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned tuna in water",
+    "qty": "1 can (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "microwavable white rice packet",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + grain + veg + fat",
+  "context": [
+   "travel",
+   "race-week",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tuna→canned salmon; add salt for race-week sodium needs",
+  "approx_macros": "~440 kcal · 60g C · 32g P · 8g F",
+  "prep": "5 min, travel-friendly",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Triathlete magazine nutrition Q&A on race-week/travel eating — https://www.triathlete.com/nutrition/race-fueling/nutrition-qa-eating-on-the-road",
+  "evidence": "recommended travel combo: \"canned tuna, partially cooked rice packets (microwavable) and a juicy tomato\" for a low-fiber, easy-to-source meal before racing",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-053",
+  "name": "Canned tuna, rice & cucumber plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned tuna in water",
+    "qty": "1 can (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "microwavable white rice packet",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + grain + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cucumber in place of tomato when traveling somewhere tomatoes are risky",
+  "approx_macros": "~410 kcal · 58g C · 32g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Triathlete magazine nutrition Q&A on race-week/travel eating — https://www.triathlete.com/nutrition/race-fueling/nutrition-qa-eating-on-the-road",
+  "evidence": "recommended travel combo: \"canned tuna, partially cooked rice packets (microwavable) and a juicy tomato\" for a low-fiber, easy-to-source meal before racing",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-054",
+  "name": "Canned salmon, rice & tomato plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned salmon",
+    "qty": "1 can (130 g)",
+    "role": "protein"
+   },
+   {
+    "food": "microwavable white rice packet",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + grain + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon adds omega-3s vs. tuna",
+  "approx_macros": "~460 kcal · 58g C · 30g P · 12g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Triathlete magazine nutrition Q&A on race-week/travel eating — https://www.triathlete.com/nutrition/race-fueling/nutrition-qa-eating-on-the-road",
+  "evidence": "recommended travel combo: \"canned tuna, partially cooked rice packets (microwavable) and a juicy tomato\" for a low-fiber, easy-to-source meal before racing",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-055",
+  "name": "Canned tuna, rice, tomato & olive oil (race-week plate)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned tuna in water",
+    "qty": "1 can (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "microwavable white rice packet",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + grain + veg + fat",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "extra oil and salt for race-week carb/sodium loading",
+  "approx_macros": "~500 kcal · 60g C · 32g P · 14g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Triathlete magazine nutrition Q&A on race-week/travel eating — https://www.triathlete.com/nutrition/race-fueling/nutrition-qa-eating-on-the-road",
+  "evidence": "recommended travel combo: \"canned tuna, partially cooked rice packets (microwavable) and a juicy tomato\" for a low-fiber, easy-to-source meal before racing",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-056",
+  "name": "Tamari-lime tempeh, brown rice & almond sauce",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, crumbled & pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "red curry almond sauce (jarred/simple)",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "cabbage slaw",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + protein + sauce + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy",
+   "tree_nuts"
+  ],
+  "swaps": "almond sauce→peanut sauce (swap tree nut for peanut)",
+  "approx_macros": "~620 kcal · 62g C · 32g P · 24g F",
+  "prep": "15 min (with rice pre-cooked)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Scott Jurek, ultrarunner, \"Tamari-Lime Tempeh and Brown Rice\" — https://www.outsideonline.com/health/nutrition/scott-jureks-tamari-lime-tempeh-and-brown-rice/",
+  "evidence": "recipe direction: \"a cup of brown rice on a plate or in a bowl, crumble several pieces of tempeh on top and drizzle with Red Curry Almond Sauce,\" served with Indonesian Cabbage Salad",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-057",
+  "name": "Tamari-lime tempeh, brown rice, almond sauce & extra veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, crumbled & pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "red curry almond sauce",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + protein + sauce + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy",
+   "tree_nuts"
+  ],
+  "swaps": "broccoli in place of the cabbage salad when short on time",
+  "approx_macros": "~630 kcal · 64g C · 32g P · 24g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Scott Jurek, ultrarunner, \"Tamari-Lime Tempeh and Brown Rice\" — https://www.outsideonline.com/health/nutrition/scott-jureks-tamari-lime-tempeh-and-brown-rice/",
+  "evidence": "recipe direction: \"a cup of brown rice on a plate or in a bowl, crumble several pieces of tempeh on top and drizzle with Red Curry Almond Sauce,\" served with Indonesian Cabbage Salad",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-058",
+  "name": "Tempeh, white rice & almond sauce bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, crumbled & pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "red curry almond sauce",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "cabbage slaw",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + protein + sauce + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy",
+   "tree_nuts"
+  ],
+  "swaps": "white rice for faster pre-session digestion",
+  "approx_macros": "~610 kcal · 66g C · 32g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Scott Jurek, ultrarunner, \"Tamari-Lime Tempeh and Brown Rice\" — https://www.outsideonline.com/health/nutrition/scott-jureks-tamari-lime-tempeh-and-brown-rice/",
+  "evidence": "recipe direction: \"a cup of brown rice on a plate or in a bowl, crumble several pieces of tempeh on top and drizzle with Red Curry Almond Sauce,\" served with Indonesian Cabbage Salad",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-059",
+  "name": "Tamari-lime tempeh, quinoa & almond sauce",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, crumbled & pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "red curry almond sauce",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "cabbage slaw",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "grain + protein + sauce + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy",
+   "tree_nuts"
+  ],
+  "swaps": "quinoa in place of rice for more protein",
+  "approx_macros": "~630 kcal · 60g C · 36g P · 24g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Scott Jurek, ultrarunner, \"Tamari-Lime Tempeh and Brown Rice\" — https://www.outsideonline.com/health/nutrition/scott-jureks-tamari-lime-tempeh-and-brown-rice/",
+  "evidence": "recipe direction: \"a cup of brown rice on a plate or in a bowl, crumble several pieces of tempeh on top and drizzle with Red Curry Almond Sauce,\" served with Indonesian Cabbage Salad",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-060",
+  "name": "Tofu, broccoli, red pepper stir-fry & rice (leftover lunch)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu, stir-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, stir-fried",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "red bell pepper, stir-fried",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + protein + veg + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "batch the stir-fry big on Sunday, eat for several lunches",
+  "approx_macros": "~560 kcal · 66g C · 28g P · 16g F",
+  "prep": "reheat 3 min, cooked in batch",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Matt Ruscigno, RD (co-author, Plant-Based Sports Nutrition) — https://www.nutribullet.com/blog/plant-based-nutrition-for-athletes-qa-with-dietitian-matt-ruscigno/ ; https://bitesizevegan.org/lifestyle/what-a-vegan-ultra-athlete-registered-dietitian-eats-in-a-day-matt-ruscigno",
+  "evidence": "eats \"a huge amount\" of stir-fried veg (broccoli, purple cabbage, arugula, kale, red bell pepper) with tofu or tempeh and rice or noodles, then lunches on the leftovers for a few days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-061",
+  "name": "Tempeh, purple cabbage & arugula stir-fry with rice",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, stir-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "purple cabbage, stir-fried",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "arugula, wilted in",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + protein + veg + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tempeh swaps in for tofu for variety",
+  "approx_macros": "~580 kcal · 64g C · 30g P · 18g F",
+  "prep": "reheat 3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Matt Ruscigno, RD (co-author, Plant-Based Sports Nutrition) — https://www.nutribullet.com/blog/plant-based-nutrition-for-athletes-qa-with-dietitian-matt-ruscigno/ ; https://bitesizevegan.org/lifestyle/what-a-vegan-ultra-athlete-registered-dietitian-eats-in-a-day-matt-ruscigno",
+  "evidence": "eats \"a huge amount\" of stir-fried veg (broccoli, purple cabbage, arugula, kale, red bell pepper) with tofu or tempeh and rice or noodles, then lunches on the leftovers for a few days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-062",
+  "name": "Tofu, kale & broccoli stir-fry with noodles",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rice noodles, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu, stir-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, stir-fried",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, stir-fried",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "noodle + protein + veg + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "noodles in place of rice for the same leftover formula",
+  "approx_macros": "~570 kcal · 68g C · 26g P · 16g F",
+  "prep": "reheat 3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Matt Ruscigno, RD (co-author, Plant-Based Sports Nutrition) — https://www.nutribullet.com/blog/plant-based-nutrition-for-athletes-qa-with-dietitian-matt-ruscigno/ ; https://bitesizevegan.org/lifestyle/what-a-vegan-ultra-athlete-registered-dietitian-eats-in-a-day-matt-ruscigno",
+  "evidence": "eats \"a huge amount\" of stir-fried veg (broccoli, purple cabbage, arugula, kale, red bell pepper) with tofu or tempeh and rice or noodles, then lunches on the leftovers for a few days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-063",
+  "name": "Tempeh, broccoli & red pepper stir-fry with rice noodles",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rice noodles, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, stir-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, stir-fried",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "red bell pepper, stir-fried",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "noodle + protein + veg + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap protein/veg each batch for variety over the week",
+  "approx_macros": "~580 kcal · 66g C · 28g P · 18g F",
+  "prep": "reheat 3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Matt Ruscigno, RD (co-author, Plant-Based Sports Nutrition) — https://www.nutribullet.com/blog/plant-based-nutrition-for-athletes-qa-with-dietitian-matt-ruscigno/ ; https://bitesizevegan.org/lifestyle/what-a-vegan-ultra-athlete-registered-dietitian-eats-in-a-day-matt-ruscigno",
+  "evidence": "eats \"a huge amount\" of stir-fried veg (broccoli, purple cabbage, arugula, kale, red bell pepper) with tofu or tempeh and rice or noodles, then lunches on the leftovers for a few days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-064",
+  "name": "Tofu, arugula & purple cabbage stir-fry with rice",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu, stir-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "arugula, wilted in",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "purple cabbage, stir-fried",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + protein + veg + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "purple cabbage and arugula are Ruscigno's stated regulars",
+  "approx_macros": "~560 kcal · 64g C · 27g P · 16g F",
+  "prep": "reheat 3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Matt Ruscigno, RD (co-author, Plant-Based Sports Nutrition) — https://www.nutribullet.com/blog/plant-based-nutrition-for-athletes-qa-with-dietitian-matt-ruscigno/ ; https://bitesizevegan.org/lifestyle/what-a-vegan-ultra-athlete-registered-dietitian-eats-in-a-day-matt-ruscigno",
+  "evidence": "eats \"a huge amount\" of stir-fried veg (broccoli, purple cabbage, arugula, kale, red bell pepper) with tofu or tempeh and rice or noodles, then lunches on the leftovers for a few days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-065",
+  "name": "Rice, lentils, bread & fruit plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cooked lentils",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "bread, sliced",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "apple",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + pulse + bread + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→rice cakes for gluten-free",
+  "approx_macros": "~520 kcal · 96g C · 18g P · 4g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Fiona Oakes, vegan marathon world-record holder — https://www.veganeasy.org/discover/news/eat-like-a-vegan-athlete-fiona-oakes/",
+  "evidence": "\"very basic stuff\" — when hungry she eats \"nuts, fresh fruit, rice, pulses, and bread,\" no set meal pattern, no gels or shakes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-066",
+  "name": "Rice, chickpeas, bread & nuts plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "bread, sliced",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "mixed nuts",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + pulse + bread + nut",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "\"basic stuff\" — whatever pulse and bread is on hand",
+  "approx_macros": "~560 kcal · 92g C · 18g P · 12g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Fiona Oakes, vegan marathon world-record holder — https://www.veganeasy.org/discover/news/eat-like-a-vegan-athlete-fiona-oakes/",
+  "evidence": "\"very basic stuff\" — when hungry she eats \"nuts, fresh fruit, rice, pulses, and bread,\" no set meal pattern, no gels or shakes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-067",
+  "name": "Rice, black beans, bread & banana plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "bread, sliced",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + pulse + bread + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "no dressing, no sauce — a deliberately minimal plate",
+  "approx_macros": "~540 kcal · 100g C · 18g P · 3g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Fiona Oakes, vegan marathon world-record holder — https://www.veganeasy.org/discover/news/eat-like-a-vegan-athlete-fiona-oakes/",
+  "evidence": "\"very basic stuff\" — when hungry she eats \"nuts, fresh fruit, rice, pulses, and bread,\" no set meal pattern, no gels or shakes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-068",
+  "name": "Rice, split peas & bread plate with grapes",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cooked split peas",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "bread, sliced",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + pulse + bread + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "any pulse works — the plate is deliberately unfussy",
+  "approx_macros": "~510 kcal · 94g C · 17g P · 3g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Fiona Oakes, vegan marathon world-record holder — https://www.veganeasy.org/discover/news/eat-like-a-vegan-athlete-fiona-oakes/",
+  "evidence": "\"very basic stuff\" — when hungry she eats \"nuts, fresh fruit, rice, pulses, and bread,\" no set meal pattern, no gels or shakes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-069",
+  "name": "Big leafy salad, rice & avocado",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed leafy greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "lemon-olive oil dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + fat + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "rice→quinoa; add hemp seeds for extra protein",
+  "approx_macros": "~460 kcal · 60g C · 10g P · 20g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Brendan Brazier, vegan Ironman triathlete — https://responsibleeatingandliving.com/favorites/brendan-brazier-interview/ ; https://www.goodreads.com/en/book/show/5984097",
+  "evidence": "reported meal pattern: \"a big leafy green salad, with rice or quinoa and avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-070",
+  "name": "Big leafy salad, quinoa & avocado",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed leafy greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "lemon-olive oil dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + fat + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "quinoa bumps protein above rice",
+  "approx_macros": "~480 kcal · 56g C · 14g P · 21g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Brendan Brazier, vegan Ironman triathlete — https://responsibleeatingandliving.com/favorites/brendan-brazier-interview/ ; https://www.goodreads.com/en/book/show/5984097",
+  "evidence": "reported meal pattern: \"a big leafy green salad, with rice or quinoa and avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-071",
+  "name": "Big leafy salad, quinoa, avocado & hemp seeds",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed leafy greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "lemon-olive oil dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + fat + seed + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "hemp seeds are a Brazier/Vega staple add-in for protein",
+  "approx_macros": "~520 kcal · 58g C · 17g P · 24g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Brendan Brazier, vegan Ironman triathlete — https://responsibleeatingandliving.com/favorites/brendan-brazier-interview/ ; https://www.goodreads.com/en/book/show/5984097",
+  "evidence": "reported meal pattern: \"a big leafy green salad, with rice or quinoa and avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-072",
+  "name": "Big leafy salad, rice, avocado & sprouted bread",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mixed leafy greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "sprouted whole-grain bread",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "lemon-olive oil dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "green + grain + fat + bread + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "sprouted bread is a stated Brazier staple",
+  "approx_macros": "~470 kcal · 58g C · 12g P · 21g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Brendan Brazier, vegan Ironman triathlete — https://responsibleeatingandliving.com/favorites/brendan-brazier-interview/ ; https://www.goodreads.com/en/book/show/5984097",
+  "evidence": "reported meal pattern: \"a big leafy green salad, with rice or quinoa and avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-073",
+  "name": "Rice & black beans post-ride recovery bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add avocado or hot sauce to taste",
+  "approx_macros": "~560 kcal · 96g C · 24g P · 4g F",
+  "prep": "10 min (canned beans)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Vegan cyclist post-ride recovery formula — https://pedalynx.com/vegan-cycling-nutrition/ ; Lotto Soudal's Adam Hansen (vegan pro cyclist) referenced at same source",
+  "evidence": "\"rice and beans being a perennial (and inexpensive) favorite post-ride recovery meal\" among vegan cyclists",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-074",
+  "name": "Rice & pinto beans post-ride recovery bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "pinto beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "pinto in place of black beans — whatever tin is in the cupboard",
+  "approx_macros": "~560 kcal · 96g C · 24g P · 4g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Vegan cyclist post-ride recovery formula — https://pedalynx.com/vegan-cycling-nutrition/ ; Lotto Soudal's Adam Hansen (vegan pro cyclist) referenced at same source",
+  "evidence": "\"rice and beans being a perennial (and inexpensive) favorite post-ride recovery meal\" among vegan cyclists",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-075",
+  "name": "Brown rice & kidney beans post-ride bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "kidney beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "brown rice for a lower-intensity recovery day",
+  "approx_macros": "~570 kcal · 92g C · 24g P · 5g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Vegan cyclist post-ride recovery formula — https://pedalynx.com/vegan-cycling-nutrition/ ; Lotto Soudal's Adam Hansen (vegan pro cyclist) referenced at same source",
+  "evidence": "\"rice and beans being a perennial (and inexpensive) favorite post-ride recovery meal\" among vegan cyclists",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-076",
+  "name": "Rice, black beans & corn post-ride bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "sweetcorn",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "corn adds a little extra volume and sweetness",
+  "approx_macros": "~580 kcal · 100g C · 24g P · 4g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Vegan cyclist post-ride recovery formula — https://pedalynx.com/vegan-cycling-nutrition/ ; Lotto Soudal's Adam Hansen (vegan pro cyclist) referenced at same source",
+  "evidence": "\"rice and beans being a perennial (and inexpensive) favorite post-ride recovery meal\" among vegan cyclists",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-077",
+  "name": "Tofu, quinoa, spinach & chard bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "swiss chard, sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + protein + green + green + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "chard→kale",
+  "approx_macros": "~540 kcal · 56g C · 30g P · 20g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Vegan cycling nutrition guidance — https://www.trainerroad.com/blog/the-basics-of-plant-based-nutrition-for-cyclists-and-endurance-athletes/ ; https://www.britishcycling.org.uk/knowledge/nutrition/get-started/article/izn20150310-Intermediate-Cycling-on-a-vegetarian-or-vegan-diet-0",
+  "evidence": "cyclist protein-source list names tofu, tempeh, beans and lentils paired with wild rice or quinoa and dark leafy greens (broccoli rabe, spinach, chard, kale) as the standard plant-based training-plate build",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-078",
+  "name": "Tempeh, wild rice, broccoli rabe & lentils bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "wild rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, pan-fried",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "cooked lentils",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli rabe, sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + protein + lentil + green + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "broccoli rabe→broccoli when unavailable",
+  "approx_macros": "~600 kcal · 64g C · 32g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Vegan cycling nutrition guidance — https://www.trainerroad.com/blog/the-basics-of-plant-based-nutrition-for-cyclists-and-endurance-athletes/ ; https://www.britishcycling.org.uk/knowledge/nutrition/get-started/article/izn20150310-Intermediate-Cycling-on-a-vegetarian-or-vegan-diet-0",
+  "evidence": "cyclist protein-source list names tofu, tempeh, beans and lentils paired with wild rice or quinoa and dark leafy greens (broccoli rabe, spinach, chard, kale) as the standard plant-based training-plate build",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-079",
+  "name": "Tofu, wild rice, kale & beans bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "wild rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "white beans",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + protein + green + bean + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "double protein (tofu+beans) on high-volume training days",
+  "approx_macros": "~600 kcal · 62g C · 34g P · 20g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Vegan cycling nutrition guidance — https://www.trainerroad.com/blog/the-basics-of-plant-based-nutrition-for-cyclists-and-endurance-athletes/ ; https://www.britishcycling.org.uk/knowledge/nutrition/get-started/article/izn20150310-Intermediate-Cycling-on-a-vegetarian-or-vegan-diet-0",
+  "evidence": "cyclist protein-source list names tofu, tempeh, beans and lentils paired with wild rice or quinoa and dark leafy greens (broccoli rabe, spinach, chard, kale) as the standard plant-based training-plate build",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-080",
+  "name": "Tempeh, quinoa, spinach & broccoli rabe bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, pan-fried",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli rabe, sauteed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + protein + green + green + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "spinach→arugula",
+  "approx_macros": "~570 kcal · 58g C · 30g P · 20g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Vegan cycling nutrition guidance — https://www.trainerroad.com/blog/the-basics-of-plant-based-nutrition-for-cyclists-and-endurance-athletes/ ; https://www.britishcycling.org.uk/knowledge/nutrition/get-started/article/izn20150310-Intermediate-Cycling-on-a-vegetarian-or-vegan-diet-0",
+  "evidence": "cyclist protein-source list names tofu, tempeh, beans and lentils paired with wild rice or quinoa and dark leafy greens (broccoli rabe, spinach, chard, kale) as the standard plant-based training-plate build",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-081",
+  "name": "Rice & black bean burrito bowl with avocado & salsa",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "tortilla chips",
+    "qty": "1 oz",
+    "role": "other"
+   }
+  ],
+  "pattern": "grain + bean + fat + sauce + crunch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "corn tortilla chips keep it gluten-free",
+  "approx_macros": "~600 kcal · 90g C · 20g P · 20g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "\"Rice and beans is a vegetarian runner's standby\" — https://www.nomeatathlete.com/rice-and-beans/ ; https://runningonrealfood.com/vegan-black-beans-rice/",
+  "evidence": "\"rice and beans is a vegetarian runner's standby\"; served \"on their own, topped with avocado and salsa or added to tacos, salads and burritos\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-082",
+  "name": "Rice & black beans with salsa (no toppings)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "the plainest version — no avocado, no chips, still a full meal",
+  "approx_macros": "~540 kcal · 96g C · 22g P · 4g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "\"Rice and beans is a vegetarian runner's standby\" — https://www.nomeatathlete.com/rice-and-beans/ ; https://runningonrealfood.com/vegan-black-beans-rice/",
+  "evidence": "\"rice and beans is a vegetarian runner's standby\"; served \"on their own, topped with avocado and salsa or added to tacos, salads and burritos\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-083",
+  "name": "Rice, black beans & salsa taco plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "corn tortillas",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "shredded lettuce",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "tortilla + bean + grain + sauce + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "rice and beans repurposed into tacos — the standby's most common variation",
+  "approx_macros": "~560 kcal · 88g C · 20g P · 10g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "\"Rice and beans is a vegetarian runner's standby\" — https://www.nomeatathlete.com/rice-and-beans/ ; https://runningonrealfood.com/vegan-black-beans-rice/",
+  "evidence": "\"rice and beans is a vegetarian runner's standby\"; served \"on their own, topped with avocado and salsa or added to tacos, salads and burritos\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-084",
+  "name": "Rice, black bean & salsa salad bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "romaine lettuce, chopped",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + bean + green + sauce + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "salad-bowl version of the same standby",
+  "approx_macros": "~540 kcal · 78g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "\"Rice and beans is a vegetarian runner's standby\" — https://www.nomeatathlete.com/rice-and-beans/ ; https://runningonrealfood.com/vegan-black-beans-rice/",
+  "evidence": "\"rice and beans is a vegetarian runner's standby\"; served \"on their own, topped with avocado and salsa or added to tacos, salads and burritos\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-085",
+  "name": "Rice & pinto beans burrito bowl with guacamole & salsa",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "pinto beans",
+    "qty": "1 cup",
+    "role": "protein"
+   },
+   {
+    "food": "guacamole",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "grain + bean + fat + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "pinto in place of black beans",
+  "approx_macros": "~570 kcal · 92g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "\"Rice and beans is a vegetarian runner's standby\" — https://www.nomeatathlete.com/rice-and-beans/ ; https://runningonrealfood.com/vegan-black-beans-rice/",
+  "evidence": "\"rice and beans is a vegetarian runner's standby\"; served \"on their own, topped with avocado and salsa or added to tacos, salads and burritos\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-086",
+  "name": "Boiled eggs, potato salad & mixed greens",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "boiled new potatoes",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed salad greens",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil & vinegar dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + green + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "potatoes→sweet potato for more carotenoids",
+  "approx_macros": "~460 kcal · 42g C · 20g P · 22g F",
+  "prep": "15 min (potatoes pre-boiled)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Runner's World Australia, vegetarian marathoner meal plan — https://runnersworldonline.com.au/vegetarian/",
+  "evidence": "vegetarian marathon meal plan built lunches around eggs and vegetables as the standard protein-plus-produce combination for runners avoiding meat",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-087",
+  "name": "Egg salad plate with potatoes & tomato",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "boiled new potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "mayo or plain yogurt",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "mayo→plain yogurt for less fat",
+  "approx_macros": "~470 kcal · 38g C · 24g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Runner's World Australia, vegetarian marathoner meal plan — https://runnersworldonline.com.au/vegetarian/",
+  "evidence": "vegetarian marathon meal plan built lunches around eggs and vegetables as the standard protein-plus-produce combination for runners avoiding meat",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-088",
+  "name": "Boiled eggs, potatoes & steamed green beans plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "boiled new potatoes",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed green beans",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "green beans→broccoli",
+  "approx_macros": "~420 kcal · 40g C · 18g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Runner's World Australia, vegetarian marathoner meal plan — https://runnersworldonline.com.au/vegetarian/",
+  "evidence": "vegetarian marathon meal plan built lunches around eggs and vegetables as the standard protein-plus-produce combination for runners avoiding meat",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-089",
+  "name": "Hard-boiled eggs, lentil soup & side salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "lentil soup",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "side salad (mixed greens, tomato, cucumber)",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + soup + salad + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "lentil soup can be a canned or leftover batch",
+  "approx_macros": "~500 kcal · 46g C · 30g P · 18g F",
+  "prep": "10 min (soup pre-made)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "New England Nutrition & Exercise, 7-day runner meal plan — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "lunch options in the plan include \"hard boiled eggs, lentil soup, and various salads\" as protein-plus-produce combinations for runners",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-090",
+  "name": "Boiled eggs & lentil soup with bread",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "lentil soup",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain bread",
+    "qty": "1 slice",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + soup + bread",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "bread on the side rather than in the soup",
+  "approx_macros": "~460 kcal · 48g C · 28g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "New England Nutrition & Exercise, 7-day runner meal plan — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "lunch options in the plan include \"hard boiled eggs, lentil soup, and various salads\" as protein-plus-produce combinations for runners",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-091",
+  "name": "Egg & lentil soup lunch with roasted veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "lentil soup",
+    "qty": "1.5 cups",
+    "role": "protein"
+   },
+   {
+    "food": "roasted mixed vegetables",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + soup + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "roasted veg in place of a raw salad in colder months",
+  "approx_macros": "~470 kcal · 44g C · 30g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "New England Nutrition & Exercise, 7-day runner meal plan — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "lunch options in the plan include \"hard boiled eggs, lentil soup, and various salads\" as protein-plus-produce combinations for runners",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-092",
+  "name": "Veggie burger, sweet potato & side salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "veggie burger patty",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain bun",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "roasted sweet potato wedges",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad",
+    "qty": "1.5 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + bun + starch + salad",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "bun→lettuce wrap for gluten-free",
+  "approx_macros": "~600 kcal · 76g C · 22g P · 20g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Bianca Phillips, vegan marathon runner, food-diary blog — https://www.goodreads.com/author/show/6495111.Bianca_Phillips/blog",
+  "evidence": "training-diary lunches logged as veggie burgers, big salads and sweet-potato-based plates during marathon build-up",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-093",
+  "name": "Veggie burger & big salad plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "veggie burger patty, crumbled",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "mixed salad greens",
+    "qty": "3 cups",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "balsamic vinaigrette",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + salad + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "no bun — crumbled over a big salad instead",
+  "approx_macros": "~420 kcal · 30g C · 20g P · 22g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Bianca Phillips, vegan marathon runner, food-diary blog — https://www.goodreads.com/author/show/6495111.Bianca_Phillips/blog",
+  "evidence": "training-diary lunches logged as veggie burgers, big salads and sweet-potato-based plates during marathon build-up",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-094",
+  "name": "Sweet potato curry-style plate with rice & greens",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "sauteed greens",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + starch + bean + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "logged pre-marathon as a heavier, higher-carb lunch",
+  "approx_macros": "~600 kcal · 100g C · 18g P · 10g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Bianca Phillips, vegan marathon runner, food-diary blog — https://www.goodreads.com/author/show/6495111.Bianca_Phillips/blog",
+  "evidence": "training-diary lunches logged as veggie burgers, big salads and sweet-potato-based plates during marathon build-up",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-095",
+  "name": "Canned sardines, rice & steamed greens",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned sardines in olive oil",
+    "qty": "1 tin (100 g)",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed greens (spinach or chard)",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + grain + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "sardines are naturally high in calcium (bones) and omega-3s",
+  "approx_macros": "~500 kcal · 62g C · 28g P · 16g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Pescatarian shelf-stable seafood guidance — https://chickenofthesea.com/blog/pescatarian-diet/",
+  "evidence": "\"canned tuna, salmon, sardines, and mackerel can make pescatarian eating easier, especially for quick lunches and high-protein meals\"; a plant-forward week layers in \"a couple of quick canned-fish lunches\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-096",
+  "name": "Canned mackerel, quinoa & roasted veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned mackerel",
+    "qty": "1 tin (110 g)",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted mixed vegetables",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + grain + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "mackerel→sardines or tuna",
+  "approx_macros": "~530 kcal · 60g C · 30g P · 16g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Pescatarian shelf-stable seafood guidance — https://chickenofthesea.com/blog/pescatarian-diet/",
+  "evidence": "\"canned tuna, salmon, sardines, and mackerel can make pescatarian eating easier, especially for quick lunches and high-protein meals\"; a plant-forward week layers in \"a couple of quick canned-fish lunches\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-097",
+  "name": "Canned salmon, rice & side salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned salmon",
+    "qty": "1 can (130 g)",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad",
+    "qty": "1.5 cups",
+    "role": "veg"
+   },
+   {
+    "food": "lemon dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + grain + salad + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "one of the \"quick canned-fish lunches\" in a mostly plant-forward week",
+  "approx_macros": "~520 kcal · 58g C · 30g P · 16g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Pescatarian shelf-stable seafood guidance — https://chickenofthesea.com/blog/pescatarian-diet/",
+  "evidence": "\"canned tuna, salmon, sardines, and mackerel can make pescatarian eating easier, especially for quick lunches and high-protein meals\"; a plant-forward week layers in \"a couple of quick canned-fish lunches\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-b-098",
+  "name": "Bagel with hummus & tomato",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat bagel",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1/2",
+    "role": "veg"
+   }
+  ],
+  "pattern": "bread + hummus + veg",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "logged before a 12-mile trail run in 50K training",
+  "approx_macros": "~420 kcal · 66g C · 16g P · 10g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "r/veganfitness / vegan-runner community pattern — bagel-and-hummus pre-run snapshot, https://www.goodreads.com/author_blog_posts/19322839-health-made-simple-for-athletes-days-5-7 ; general vegan-runner practice noted across r/veganfitness threads (snippet-level, thread content not directly fetchable)",
+  "evidence": "a vegan runner logged a bagel with hummus before a 12-mile trail run during 50K training, alongside a falafel wrap (hummus, tomato, avocado, olives) as a repeated lunch choice",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-099",
+  "name": "Falafel, hummus, tomato, avocado & olive wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat pita",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "falafel",
+    "qty": "4 pieces",
+    "role": "protein"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "tomato, diced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4",
+    "role": "fat"
+   },
+   {
+    "food": "olives",
+    "qty": "5",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + protein + hummus + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "a repeated lunch choice through the same training block",
+  "approx_macros": "~560 kcal · 68g C · 18g P · 24g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "r/veganfitness / vegan-runner community pattern — bagel-and-hummus pre-run snapshot, https://www.goodreads.com/author_blog_posts/19322839-health-made-simple-for-athletes-days-5-7 ; general vegan-runner practice noted across r/veganfitness threads (snippet-level, thread content not directly fetchable)",
+  "evidence": "a vegan runner logged a bagel with hummus before a 12-mile trail run during 50K training, alongside a falafel wrap (hummus, tomato, avocado, olives) as a repeated lunch choice",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "L-b-100",
+  "name": "Bagel, hummus & cucumber",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole-wheat bagel",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "bread + hummus + veg",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "cucumber swapped in for tomato depending on what's in the fridge",
+  "approx_macros": "~400 kcal · 62g C · 15g P · 9g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "r/veganfitness / vegan-runner community pattern — bagel-and-hummus pre-run snapshot, https://www.goodreads.com/author_blog_posts/19322839-health-made-simple-for-athletes-days-5-7 ; general vegan-runner practice noted across r/veganfitness threads (snippet-level, thread content not directly fetchable)",
+  "evidence": "a vegan runner logged a bagel with hummus before a 12-mile trail run during 50K training, alongside a falafel wrap (hummus, tomato, avocado, olives) as a repeated lunch choice",
+  "reconstructed_from_snippet": true
+ }
+]

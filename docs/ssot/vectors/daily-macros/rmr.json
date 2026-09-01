@@ -1,0 +1,93 @@
+{
+  "section": "rmr",
+  "engine": "calculate-daily-macros (rmr)",
+  "specVersion": "v1 (2026-08-14, ratified)",
+  "note": "Pins RATIFIED v1 (Xuan, 2026-08-14). EXPECTED-RED until calculate-daily-macros implements the ruled specs. Expected values follow R1: the UNROUNDED chain, abs tol 1e-3 (display rounding is half-up, pinned by F10's 136.5->137). Source tables that used rounded intermediates (NEAT 378 vs 377.784) drift <=1.5 kcal from these vectors; R1 governs, the vectors are the truth. F1 Cunningham-first + F24 source-first (Q-011 ruled).",
+  "toleranceKcal": 0.001,
+  "vectors": [
+    {
+      "id": "cunningham-ref",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "bodyFatPct": 14.66666666666666
+      },
+      "expected": {
+        "rmr": 1908.0,
+        "path": "cunningham"
+      },
+      "why": "500+22*64; the reference athlete"
+    },
+    {
+      "id": "mifflin-male",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "heightCm": 178,
+        "age": 34,
+        "sex": "male"
+      },
+      "expected": {
+        "rmr": 1697.5,
+        "path": "mifflin"
+      },
+      "why": "no BF -> Mifflin; 750+1112.5-170+5"
+    },
+    {
+      "id": "mifflin-female",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 62,
+        "heightCm": 165,
+        "age": 29,
+        "sex": "female"
+      },
+      "expected": {
+        "rmr": 1345.25,
+        "path": "mifflin"
+      },
+      "why": "sex offset -161"
+    },
+    {
+      "id": "bf-zero-edge",
+      "status": "ratified",
+      "inputs": {
+        "weightKg": 75,
+        "bodyFatPct": 0
+      },
+      "expected": {
+        "rmr": 2150.0,
+        "path": "cunningham"
+      },
+      "why": "LBM=weight; must not error"
+    },
+    {
+      "id": "garmin-wins",
+      "status": "ratified",
+      "inputs": {
+        "garminBmrKcal": 1920,
+        "weightKg": 75,
+        "bodyFatPct": 14.7
+      },
+      "expected": {
+        "rmr": 1920,
+        "source": "GARMIN"
+      },
+      "why": "F24: Garmin BMR beats Cunningham, mode-independent (Q-011)"
+    },
+    {
+      "id": "no-garmin-formula",
+      "status": "ratified",
+      "inputs": {
+        "garminBmrKcal": null,
+        "weightKg": 75,
+        "bodyFatPct": 14.66666666666666
+      },
+      "expected": {
+        "rmr": 1908.0,
+        "source": "FORMULA"
+      },
+      "why": "F24 fallback"
+    }
+  ]
+}

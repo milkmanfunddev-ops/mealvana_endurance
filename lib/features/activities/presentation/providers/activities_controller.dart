@@ -302,8 +302,98 @@ class ActivitiesController extends _$ActivitiesController {
     }
   }
 
+  /// Mark a workout done (macro-dashboard G1): actual_time = planned_time
+  /// (the confirmation says "it happened as planned" — the card stays on
+  /// its day and slot; ruled 2026-08-18, see the repository), planned_time
+  /// untouched. Optimistic in-place update — same no-loading-flash
+  /// reasoning as [deleteActivity].
+  Future<void> markWorkoutDone(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    state = AsyncData([
+      for (final a in previous)
+        if (a.id == activityId)
+          a.copyWith(
+            status: ActivityStatus.completed,
+            actualTime: a.plannedTime ?? a.scheduledDateTime,
+            completedAt: a.plannedTime ?? a.scheduledDateTime,
+          )
+        else
+          a,
+    ]);
+    try {
+      await _service.markWorkoutDone(activityId: activityId);
+    } catch (e) {
+      _logger.error('Error marking workout done', error: e);
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
+  /// Mark a workout not-done (macro-dashboard G2): actual_time CLEARED to
+  /// null so the card returns to planned_time.
+  Future<void> markWorkoutUndone(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    state = AsyncData([
+      for (final a in previous)
+        if (a.id == activityId)
+          a.copyWith(status: ActivityStatus.planned, clearActualTime: true)
+        else
+          a,
+    ]);
+    try {
+      await _service.markWorkoutUndone(activityId: activityId);
+    } catch (e) {
+      _logger.error('Error marking workout undone', error: e);
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
+  /// Skip a workout (macro-dashboard G5, v2 unified-skip model): status =
+  /// 'skipped', actual_time CLEARED (skipping asserts it did not happen),
+  /// planned_time untouched. Optimistic in-place update — the whole day
+  /// recomputes in one frame (S-2) with no loading flash.
+  Future<void> skipWorkout(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    state = AsyncData([
+      for (final a in previous)
+        if (a.id == activityId)
+          a.copyWith(status: ActivityStatus.skipped, clearActualTime: true)
+        else
+          a,
+    ]);
+    try {
+      await _service.skipWorkout(activityId: activityId);
+    } catch (e) {
+      _logger.error('Error skipping workout', error: e);
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
+  /// Unskip a workout (macro-dashboard G5): status back to planned;
+  /// planned_time untouched so the card returns to its time-ordered slot.
+  Future<void> unskipWorkout(String activityId) async {
+    final previous = state.value ?? const <Activity>[];
+    state = AsyncData([
+      for (final a in previous)
+        if (a.id == activityId)
+          a.copyWith(status: ActivityStatus.planned)
+        else
+          a,
+    ]);
+    try {
+      await _service.unskipWorkout(activityId: activityId);
+    } catch (e) {
+      _logger.error('Error unskipping workout', error: e);
+      if (ref.mounted) state = AsyncData(previous);
+      rethrow;
+    }
+  }
+
   /// Restore a just-deleted activity — the "Undo" affordance on the fuel
-  /// timeline's swipe-delete.
+  /// timeline's swipe-delete — and the "Undo" of a dashboard Skip/Unskip
+  /// (writes the exact prior row back).
   ///
   /// Optimistically re-inserts [activity] into list state (ordered by schedule)
   /// and persists WITHOUT `invalidateSelf()`, exactly mirroring [deleteActivity]

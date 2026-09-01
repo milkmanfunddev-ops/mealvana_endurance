@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -34,10 +37,48 @@ class DailyMacroTargetsRepository {
   final SentryReporter _sentry;
   bool _reportedRemoteSaveFailureThisSession = false;
 
-  /// Algorithm version this client expects. Cached rows from older versions
-  /// are treated as misses so the next read recalculates with the current
-  /// pipeline (e.g., picks up Garmin source attribution introduced in v5).
-  static const String _expectedAlgorithmVersion = 'v5.0.0';
+  /// The engine version a cached day must carry to be served. Rows with an
+  /// OLDER `algorithm_version` are treated as misses so the next read
+  /// recalculates with the current pipeline; rows with a NEWER one are
+  /// accepted as-is.
+  ///
+  /// Why "older", not "different" (2026-08-19, Phase C of
+  /// daily-macros-dashboard@v3 — Lee/Xuan ruling): an equality gate made the
+  /// engine deploy and the app release inseparable. Deploy a newer engine
+  /// first and every installed build read a day → judged it stale (v6 ≠ v5)
+  /// → recalculated → got v6 again → still stale — an invalidation loop that
+  /// strobed every consumer of dailyMacrosControllerProvider (the
+  /// 2026-08-14 dashboard flicker). Accepting newer rows lets the engine move
+  /// ahead of the client; raising this floor later invalidates the leftover
+  /// old rows exactly once. The schema-change resync (app_config
+  /// current_schema_version / VersionCheckService) stays the only forced
+  /// wipe. Today's pre-v6 installs are served by the frozen legacy function
+  /// `calculate-daily-macros`; this build calls `calculate-daily-macros-v6`.
+  static const String _minAlgorithmVersion = 'v6.0.0';
+
+  /// Semantic-ish compare of `vN.N.N` strings; anything unparsable is treated
+  /// as older than everything (→ recalculated once).
+  static bool _isOlderThan(String cached, String floor) {
+    List<int> parse(String v) => v
+        .replaceFirst(RegExp(r'^[vV]'), '')
+        .split('.')
+        .map((p) => int.tryParse(p) ?? -1)
+        .toList();
+    final a = parse(cached);
+    final b = parse(floor);
+    for (var i = 0; i < 3; i++) {
+      final x = i < a.length ? a[i] : 0;
+      final y = i < b.length ? b[i] : 0;
+      if (x < 0) return true;
+      if (x != y) return x < y;
+    }
+    return false;
+  }
+
+  /// Whether a cached row's engine version is stale (older than the floor).
+  @visibleForTesting
+  static bool isStaleAlgorithmVersion(String cachedVersion) =>
+      _isOlderThan(cachedVersion, _minAlgorithmVersion);
 
   /// Get cached macro targets for a specific date
   Future<DailyMacroTargets?> getCachedForDate(
@@ -60,7 +101,7 @@ class DailyMacroTargetsRepository {
 
     final row = results.first;
     final cachedVersion = row.read<String>('algorithm_version');
-    if (cachedVersion != _expectedAlgorithmVersion) {
+    if (isStaleAlgorithmVersion(cachedVersion)) {
       // Stale cache — drop it so the caller recalculates fresh.
       await invalidateForDate(userId, normalizedDate);
       return null;
@@ -106,7 +147,7 @@ class DailyMacroTargetsRepository {
     for (final row in results) {
       final targetMillis = row.read<int>('target_date');
       final cachedVersion = row.read<String>('algorithm_version');
-      if (cachedVersion != _expectedAlgorithmVersion) {
+      if (isStaleAlgorithmVersion(cachedVersion)) {
         staleDates.add(DateTime.fromMillisecondsSinceEpoch(targetMillis));
         continue;
       }
@@ -133,9 +174,9 @@ class DailyMacroTargetsRepository {
     await _database.customStatement(
       '''INSERT OR REPLACE INTO daily_macro_targets
          (id, user_id, target_date, carb_g, prot_g, fat_g, tdee, rmr, session_kcal,
-          neat_kcal, tef_kcal, mode, ea, ea_status, algorithm_version, needs_upload,
-          created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          neat_kcal, tef_kcal, mode, ea, ea_status, calculation_input,
+          algorithm_version, needs_upload, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
         targets.id,
         targets.userId,
@@ -151,12 +192,48 @@ class DailyMacroTargetsRepository {
         targets.mode,
         targets.ea,
         targets.eaStatus?.dbValue,
+        _encodeCalculationInput(targets),
         targets.algorithmVersion,
         0, // needs_upload = false (just calculated)
         targets.createdAt.millisecondsSinceEpoch,
         targets.updatedAt.millisecondsSinceEpoch,
       ],
     );
+  }
+
+  /// The engine inputs the domain model carries but the scalar columns don't.
+  ///
+  /// Bug 2026-08-20-dashboard-weight-fallback-70kg: this column was never
+  /// written by the local save path, so every cached read handed the display
+  /// layer `weightKg == null` and the assembler priced EVERY athlete's
+  /// formula-rung sessions at a silent 70 kg. F4 session cost is exactly
+  /// linear in body weight (docs/ssot — invariant I6), so a wrong weight is a
+  /// wrong number on every surface. Persist EVERY calculation_input field the
+  /// domain models (`sources` and `delta` are documented fresh-calculation
+  /// transients and intentionally not cached); the I7 seam round-trip test
+  /// (test/features/daily_macros/daily_macro_targets_roundtrip_test.dart)
+  /// fails if a field is added to the domain but dropped here or in
+  /// [_mapRowToDomain].
+  static String _encodeCalculationInput(DailyMacroTargets targets) {
+    return jsonEncode({
+      if (targets.weightKg != null) 'weight_kg': targets.weightKg,
+      if (targets.bodyFatPct != null) 'body_fat_pct': targets.bodyFatPct,
+      'energy_basis': targets.energyBasis,
+    });
+  }
+
+  /// Parse the `calculation_input` JSON of a cached row. Legacy rows (written
+  /// before the column was populated) and corrupt payloads read as absent —
+  /// the domain's own defaults then apply, and the display layer must treat a
+  /// missing weight as missing, never as a stand-in constant.
+  static Map<String, dynamic>? _decodeCalculationInput(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? decoded.cast<String, dynamic>() : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Save macro targets to Supabase
@@ -267,6 +344,24 @@ class DailyMacroTargetsRepository {
     }
   }
 
+  /// Invalidate every cached day from [fromDate] (inclusive) forward — today
+  /// and all future cached days — leaving earlier days untouched.
+  ///
+  /// This is the Q-016 window (platform-resolution.md, "Manual profile
+  /// edits — which cached days recalculate", RULED 2026-08-17): a MANUAL
+  /// write to an engine input recalculates today + future; past days are
+  /// the historical record of what the athlete was told to eat and are
+  /// never touched. Prefer this over [invalidateAllForUser] for any
+  /// profile-driven invalidation.
+  Future<void> invalidateFromDate(String userId, DateTime fromDate) async {
+    final from = DateTime(fromDate.year, fromDate.month, fromDate.day);
+    await _database.customStatement(
+      'DELETE FROM daily_macro_targets '
+      'WHERE user_id = ? AND target_date >= ?',
+      [userId, from.millisecondsSinceEpoch],
+    );
+  }
+
   /// Invalidate ALL cached records for a user — every date, for all time.
   ///
   /// Blunt instrument, kept as an escape hatch (e.g. an algorithm-version bump
@@ -283,6 +378,14 @@ class DailyMacroTargetsRepository {
   }
 
   DailyMacroTargets _mapRowToDomain(QueryRow row) {
+    // Bug 2026-08-20-dashboard-weight-fallback-70kg: the read path must map
+    // every calculation_input field the domain carries (weight_kg,
+    // body_fat_pct, energy_basis) — this mapper previously dropped all of
+    // them, which is how the dashboard lost the athlete's weight on every
+    // locally-cached day.
+    final input = _decodeCalculationInput(
+      row.readNullable<String>('calculation_input'),
+    );
     return DailyMacroTargets(
       id: row.read<String>('id'),
       userId: row.read<String>('user_id'),
@@ -307,6 +410,11 @@ class DailyMacroTargetsRepository {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(
         row.read<int>('updated_at'),
       ),
+      weightKg: (input?['weight_kg'] as num?)?.toDouble(),
+      bodyFatPct: (input?['body_fat_pct'] as num?)?.toDouble(),
+      // Q-009: pre_override days suppress surplus copy; a cached read that
+      // forgot this basis would lie a day after the EA gate raised the plan.
+      energyBasis: input?['energy_basis'] as String? ?? 'as_computed',
     );
   }
 }

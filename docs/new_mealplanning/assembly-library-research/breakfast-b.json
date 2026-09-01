@@ -1,0 +1,2695 @@
+[
+ {
+  "id": "B-b-001",
+  "name": "Green smoothie with berries (Rich Roll's daily start)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "spinach or kale",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed blackberries/blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "coconut water",
+    "qty": "300 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "veg + fruit + drink",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "coconut water→almond milk (same profile); add hemp/chia for more protein",
+  "approx_macros": "~280 kcal · 55g C · 6g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "livekindly.com \"What Vegan Ultra-Endurance Athlete Rich Roll Eats\"; richroll.com blog \"Morning & Pre-Race Nutrition\"",
+  "evidence": "\"He starts the day with a green smoothie ... packed with dark leafy greens and lots of berries\" — described as a must to start the day",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-002",
+  "name": "Cold quinoa with berries & coconut milk (Rich Roll's cereal swap)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "quinoa, cooked & chilled",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "100 g",
+    "role": "fruit"
+   },
+   {
+    "food": "coconut milk",
+    "qty": "100 ml",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "coconut milk→almond milk (Rich Roll offers both); quinoa→millet for variety",
+  "approx_macros": "~340 kcal · 55g C · 9g P · 9g F",
+  "prep": "3 min (quinoa pre-cooked)",
+  "batch": true,
+  "frequency": "common",
+  "source": "thechalkboardmag.com \"What Vegan Athlete Rich Roll Eats Daily\"",
+  "evidence": "\"Instead of eating cereal, try cold quinoa ... put all types of berries on top of that and some coconut milk or almond milk\" — his own breakfast tip",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-003",
+  "name": "Gluten-free toast with almond butter (Rich Roll's go-to)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (nut-free)",
+  "approx_macros": "~380 kcal · 35g C · 10g P · 22g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "thechalkboardmag.com \"What Vegan Athlete Rich Roll Eats Daily\"",
+  "evidence": "\"He gravitates to almond butter on gluten-free toast\" as a go-to breakfast option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-004",
+  "name": "Avocado on gluten-free toast (Rich Roll)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add lemon + chilli flakes for flavour",
+  "approx_macros": "~360 kcal · 30g C · 7g P · 24g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "livekindly.com \"What Vegan Ultra-Endurance Athlete Rich Roll Eats\"",
+  "evidence": "\"Sometimes he'll have granola, oatmeal, or avo on gluten-free bread\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-005",
+  "name": "Green smoothie with pineapple, mango & pea protein (Scott Jurek)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "mixed greens or barley grass",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "frozen pineapple & mango",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "cooked brown rice",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "pea protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   }
+  ],
+  "pattern": "veg + fruit + starch + protein",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "brown rice→cooked oats for a thicker smoothie",
+  "approx_macros": "~420 kcal · 75g C · 18g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "onegreenplanet.org \"What Plant-Based Runners Eat to Fuel their Endurance\"",
+  "evidence": "Jurek: \"For breakfast, I'm really into green drinks, so I might do barley grass, or blend greens into my smoothie\" with banana, pineapple, mango, berries, brown rice and pea protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-006",
+  "name": "Sprouted-grain toast with nut butter (Scott Jurek)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sprouted whole-grain bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→tahini (nut-free, adds sesame)",
+  "approx_macros": "~360 kcal · 34g C · 11g P · 20g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "happyhealthylonglife.com \"Eat and Run: Scott Jurek Talks Diet\"",
+  "evidence": "Jurek describes a grain source such as sprouted-whole-grain toast with nut butter as part of his regular breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-007",
+  "name": "Sprouted multigrain porridge (Scott Jurek)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sprouted multigrain cereal, cooked as porridge",
+    "qty": "80 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "water or plant milk",
+    "qty": "300 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + drink",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "top with banana or berries",
+  "approx_macros": "~300 kcal · 55g C · 10g P · 4g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "happyhealthylonglife.com \"Eat and Run: Scott Jurek Talks Diet\"",
+  "evidence": "Jurek: some mornings a sprouted-grain cereal or porridge stands in for toast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-008",
+  "name": "Ultra Power Smoothie (Scott Jurek, peak training)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "soaked almonds",
+    "qty": "1/4 cup",
+    "role": "protein"
+   },
+   {
+    "food": "dates",
+    "qty": "3",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "vegan protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap dates for maple syrup if lower-fibre is wanted pre-race",
+  "approx_macros": "~450 kcal · 60g C · 20g P · 14g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "runningmagazine.ca \"Scott Jurek talks whole foods for runners\"",
+  "evidence": "During peak training Jurek drinks 3–4 servings of an \"Ultra Power Smoothie\" (soaked almonds, dates, banana, blueberries, vegan protein) roughly 75 minutes before a workout",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-009",
+  "name": "Soy yogurt with hemp protein & banana (Scott Jurek)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "soy or coconut yogurt",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "hemp protein powder",
+    "qty": "2 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + protein + fruit",
+  "context": [
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "coconut yogurt for a soy-free version",
+  "approx_macros": "~320 kcal · 40g C · 18g P · 9g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "runningmagazine.ca \"Scott Jurek talks whole foods for runners\"",
+  "evidence": "Alongside his smoothie, Jurek's morning includes 6–8 oz soy or coconut milk yogurt mixed with hemp protein powder and a ripe banana",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-010",
+  "name": "JUST Egg on toast (Scott Jurek)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "JUST Egg (mung-bean egg substitute), folded",
+    "qty": "1 serving",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "add hot sauce or avocado",
+  "approx_macros": "~320 kcal · 30g C · 14g P · 12g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "ju.st \"Q+A with Scott Jurek\"",
+  "evidence": "Jurek: \"Having a product like Just Egg Folded and being able to pop it in the toaster has been really helpful\" for quick family breakfasts",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-011",
+  "name": "Dried dates & pine nuts (Fiona Oakes race-day carry)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "dried dates",
+    "qty": "6",
+    "role": "fruit"
+   },
+   {
+    "food": "pine nuts",
+    "qty": "30 g",
+    "role": "fat"
+   },
+   {
+    "food": "flapjack bar",
+    "qty": "1",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + fat + other",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "flapjack→oat energy bar of choice",
+  "approx_macros": "~350 kcal · 45g C · 6g P · 16g F",
+  "prep": "0 min (pre-packed)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "veggievagabonds.com \"The Vegan Runner That Ran the World\"; onegreenplanet.org runner feature",
+  "evidence": "For multi-day races like the Marathon des Sables, Oakes carries dried fruits (especially dates), pine nuts and basic flapjack bars rather than eating a sit-down breakfast",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "B-b-012",
+  "name": "Daily green smoothie (Matt Frazier / No Meat Athlete)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "mixed frozen berries",
+    "qty": "2 handfuls",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "spinach",
+    "qty": "2 handfuls",
+    "role": "veg"
+   },
+   {
+    "food": "walnuts",
+    "qty": "1/3 cup",
+    "role": "fat"
+   },
+   {
+    "food": "ground flaxseed",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "add plant protein powder on hard-training days",
+  "approx_macros": "~420 kcal · 50g C · 10g P · 22g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "nomeatathlete.com \"The Plant-Based Diet for Athletes: A Typical Day\"",
+  "evidence": "\"My first meal of almost every day is a smoothie\" — described as the consistent breakfast staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-013",
+  "name": "Bagel with hummus or nut butter (No Meat Athlete)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "whole wheat bagel or English muffin",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus or nut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "hummus keeps it nut-free",
+  "approx_macros": "~340 kcal · 45g C · 12g P · 12g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "nomeatathlete.com \"The Plant-Based Diet for Athletes: A Typical Day\"",
+  "evidence": "Listed as his optional mid-morning follow-up when the smoothie alone isn't enough",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-014",
+  "name": "Berry-mango-kale smoothie (Matt Frazier, maintenance training)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "frozen berries",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "frozen mango",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "kale",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "ground flaxseed & walnuts",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + veg + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap walnuts for hemp hearts",
+  "approx_macros": "~400 kcal · 55g C · 9g P · 18g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\"",
+  "evidence": "Frazier: \"My typical breakfast when I'm trying to maintain weight or during periods of normal training\" is this smoothie",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-015",
+  "name": "Oatmeal with flax, seeds & soy milk (No Meat Athlete)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1 cup cooked",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "ground flaxseed",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "pumpkin or sunflower seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "soy milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + fat + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "sunflower seeds keep it peanut/tree-nut-free",
+  "approx_macros": "~420 kcal · 65g C · 15g P · 12g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "nomeatathlete.com breakfast recipe guidance",
+  "evidence": "One breakfast option given as a repeatable formula for plant-based runners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-016",
+  "name": "Marathon-training smoothie (No Meat Athlete Marathon Roadmap)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "strawberries",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "almond-cashew milk",
+    "qty": "1.5 cups",
+    "role": "drink"
+   },
+   {
+    "food": "hemp protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + drink + protein + fat",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "sunflower butter keeps it peanut-free",
+  "approx_macros": "~380 kcal · 45g C · 18g P · 14g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "nomeatathlete.com Marathon Roadmap plan",
+  "evidence": "The Marathon Roadmap training plan \"calls for a smoothie for breakfast every day\" during the marathon block",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-017",
+  "name": "Overnight oats with vegan yogurt, fruit & granola (No Meat Athlete, post-run)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, soaked overnight",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "vegan yogurt",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "fresh fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "granola",
+    "qty": "1/4 cup",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + dairy + fruit + other",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "use certified GF oats and granola for a gluten-free version",
+  "approx_macros": "~400 kcal · 60g C · 12g P · 12g F",
+  "prep": "5 min (prepped ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "goodreads.com/author_blog_posts \"Marathon Road Map, Day 12\" (No Meat Athlete community write-up)",
+  "evidence": "One plant-based marathoner describes making a smoothie after her run for post-run carbs, then having overnight oats topped with vegan yogurt, fruit and granola for breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-018",
+  "name": "Oatmeal with banana, blueberries & brown sugar (Heather McDougall)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "brown sugar",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap brown sugar for maple syrup",
+  "approx_macros": "~380 kcal · 68g C · 10g P · 6g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\" (Heather McDougall, CEO, The McDougall Program)",
+  "evidence": "McDougall: \"My two favorite breakfasts are easy: oatmeal and hash browns\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-019",
+  "name": "Hash browns with salsa (Heather McDougall)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "hash browns, pan-cooked oil-free",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add black beans for more protein",
+  "approx_macros": "~260 kcal · 45g C · 5g P · 6g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\"",
+  "evidence": "McDougall's other go-to breakfast, alongside oatmeal, is hash browns with homemade salsa",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-020",
+  "name": "Fruit bowl breakfast (Robert Cheeke)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "raspberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "grapes",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "applesauce",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit + fruit + fruit",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add oats or potatoes on training days for more calories, per Cheeke",
+  "approx_macros": "~280 kcal · 70g C · 3g P · 1g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\" (Robert Cheeke, founder, Vegan Bodybuilding & Fitness)",
+  "evidence": "Cheeke: \"If it's just another day working from home, I usually eat fruit for breakfast\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-021",
+  "name": "Overnight oats with flaxseed & seasonal fruit (Ashley Madden)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, soaked overnight",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "dairy-free milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "ground flaxseed",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "seasonal fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap seasonal fruit for whatever is in season locally",
+  "approx_macros": "~340 kcal · 55g C · 9g P · 8g F",
+  "prep": "5 min (prepped ahead)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\" (Ashley Madden, CHNC, author of The Plant-Based Cookbook)",
+  "evidence": "Madden's favorite quick breakfast is overnight oats made with dairy-free milk, ground flaxseed and whatever fruit is in season",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-022",
+  "name": "Avocado toast with tomato & balsamic (Dr. Will Bulsiewicz)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "whole-grain toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "tomato or sprouts",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "balsamic vinegar & spices",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + fat + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "sprouts instead of tomato for a different crunch",
+  "approx_macros": "~380 kcal · 40g C · 9g P · 22g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\" (Will Bulsiewicz, MD, gastroenterologist)",
+  "evidence": "Bulsiewicz: \"You can never go wrong with avocado toast, in my opinion\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-023",
+  "name": "Beans & tempeh bacon over toast (Cleodia Martinez)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cooked beans",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "tempeh bacon, pan-fried",
+    "qty": "50 g",
+    "role": "protein"
+   },
+   {
+    "food": "toast",
+    "qty": "2 slices",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + protein + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "serve over rice instead of toast for a gluten-free version",
+  "approx_macros": "~450 kcal · 55g C · 25g P · 12g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "forksoverknives.com \"Plant-Based Pros Share Their Favorite Quick Breakfasts\" (Cleodia Martinez, author of Ay Sus!)",
+  "evidence": "Martinez's favorite quick breakfast is beans with tempeh bacon over toast or rice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-024",
+  "name": "Bagel with peanut butter, jelly & tofu scramble (PCRM ultra-athlete plan)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "whole-wheat bagel",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "jelly",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "scrambled tofu",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "soy milk",
+    "qty": "8 oz",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fat + fruit + protein + dairy",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts",
+   "soy"
+  ],
+  "swaps": "sunflower seed butter for a peanut-free version",
+  "approx_macros": "~750 kcal · 95g C · 32g P · 24g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "pcrm.org \"Vegan Diet for the Ultra-Athlete\" (Susan Levin, MS, RD, CSSD)",
+  "evidence": "Breakfast portion of the 4,500-calorie plant-based meal plan built specifically for ultra-endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-025",
+  "name": "Tofu scramble with broccoli & brown rice (David Goldman, RD)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "firm tofu, scrambled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap broccoli for whatever's on hand from Sunday prep",
+  "approx_macros": "~480 kcal · 60g C · 28g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "greenmatters.com \"We Asked a Dietitian: How to Build the Ultimate Plant-Based Meal Plan for Athletes\"",
+  "evidence": "Registered dietitian David Goldman's Sunday meal-prep breakfast that \"sets the tone for the coming week\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-026",
+  "name": "Overnight oats with vanilla protein & banana (Nutritional Revolution)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, soaked overnight",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "vanilla plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + protein + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add cinnamon for flavour without added sugar",
+  "approx_macros": "~360 kcal · 50g C · 22g P · 6g F",
+  "prep": "5 min (prepped ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "greenmatters.com \"We Asked a Dietitian: How to Build the Ultimate Plant-Based Meal Plan for Athletes\"",
+  "evidence": "Featured as one of Nutritional Revolution's recommended plant-based athlete breakfasts",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-027",
+  "name": "Blueberry protein smoothie with rice cakes & almond butter (Nutritional Revolution)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "blueberry protein smoothie",
+    "qty": "400 ml",
+    "role": "drink"
+   },
+   {
+    "food": "rice cakes",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "drink + starch + fat + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "sunflower seed butter for a nut-free version",
+  "approx_macros": "~500 kcal · 75g C · 20g P · 14g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "greenmatters.com \"We Asked a Dietitian: How to Build the Ultimate Plant-Based Meal Plan for Athletes\"",
+  "evidence": "Recommended pre-training combo pairing a protein smoothie with rice cakes, almond butter and banana",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-028",
+  "name": "Sweet potato, kale & tofu scramble bowl (Natalie Rizzo, RD)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "firm tofu, scrambled",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap kale for spinach",
+  "approx_macros": "~430 kcal · 50g C · 24g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "greenletes.com \"Everything You Need to Know About a Plant-Based Diet for Athletes\" (Natalie Rizzo, MS, RD)",
+  "evidence": "Featured as a recipe favorite for fueling protein at every meal, including breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-029",
+  "name": "Super seed avocado toast (Natalie Rizzo, RD)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "whole-grain toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "mixed seeds (chia, hemp, sesame)",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "omit sesame seeds for a sesame-free version",
+  "approx_macros": "~380 kcal · 35g C · 9g P · 24g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "greenletes.com recipe collection (Natalie Rizzo, MS, RD)",
+  "evidence": "Described as \"filling, takes minutes to make\" — a quick breakfast/brunch staple on the site",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-030",
+  "name": "Tropical smoothie bowl (Natalie Rizzo, RD)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "frozen mango",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + fruit + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "top with granola and coconut flakes",
+  "approx_macros": "~300 kcal · 60g C · 6g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "greenletes.com recipe collection (Natalie Rizzo, MS, RD)",
+  "evidence": "\"High-Protein Plant-Based Tropical Smoothie Bowl\" made from four simple ingredients, thick and naturally sweet from frozen mango and banana",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-031",
+  "name": "Turmeric-cumin tofu scramble over rice (Melissa Sundermann)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "firm tofu, scrambled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach & bell peppers",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "brown rice for more fibre",
+  "approx_macros": "~460 kcal · 55g C · 26g P · 13g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "onegreenplanet.org \"What Plant-Based Runners Eat to Fuel their Endurance\"",
+  "evidence": "Sundermann scrambles tofu with turmeric, cumin, spinach and peppers as a regular plant-based meal",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-032",
+  "name": "Oatmeal with cinnamon, berries & banana (Gwen Jorgensen)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked in water",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "fresh berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fruit + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "cook the night before for easier digestion before long runs, per Jorgensen",
+  "approx_macros": "~420 kcal · 85g C · 12g P · 5g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "espn.com \"What Athletes Eat: Gwen Jorgensen's Triathlon-Training Power Breakfast\"; outsideonline.com \"Oatmeal Is Still the World's Best Performance Breakfast\"",
+  "evidence": "Her breakfast staple, \"the world's biggest bowl of oatmeal,\" eaten at least six days a week, including before races — \"no added fats or sweeteners\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-033",
+  "name": "Rolled oats with banana, blueberries & walnuts (Gwen Jorgensen, sweet version)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked in water",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "walnuts",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fruit + fruit + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap in a poached egg for the savory version she also makes",
+  "approx_macros": "~440 kcal · 70g C · 12g P · 14g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "active.com \"How to Fuel Like Gwen Jorgensen\"",
+  "evidence": "\"Jorgensen eats the same meal for breakfast 90 percent of the time\" — 1 cup rolled oats, banana, salt, topped with blueberries and/or walnuts",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-034",
+  "name": "Overnight oats with orange juice & milk (Gwen Jorgensen, cold version)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, soaked overnight",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "orange juice",
+    "qty": "1.5 cups",
+    "role": "drink"
+   },
+   {
+    "food": "milk",
+    "qty": "1/4 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + drink + dairy",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "use a dairy-free milk to make it vegan",
+  "approx_macros": "~380 kcal · 75g C · 12g P · 3g F",
+  "prep": "5 min (prepped ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "active.com \"How to Fuel Like Gwen Jorgensen\"",
+  "evidence": "Her cold alternative to cooked oatmeal for travel days or race mornings — oats soaked in orange juice and milk",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-035",
+  "name": "Oats with coconut oil, fruit & nuts (Gwen Jorgensen, training camp)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "coconut oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   },
+   {
+    "food": "fresh fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed nuts",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat + fruit + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap nuts for seeds if needed",
+  "approx_macros": "~430 kcal · 60g C · 10g P · 18g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "fueltoperformance.wordpress.com \"Gwen Jorgensen | Nutrition for Performance\"",
+  "evidence": "Listed as a top training-camp food: \"oats with coconut oil, fruit, nuts\" — oatmeal described as a dietary staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-036",
+  "name": "Race-morning oats with berries & peanut butter (Gwen Jorgensen)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "coconut oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fruit + fat",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "sunflower seed butter for a peanut-free race morning",
+  "approx_macros": "~460 kcal · 65g C · 13g P · 18g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "fueltoperformance.wordpress.com \"Gwen Jorgensen | Nutrition for Performance\"",
+  "evidence": "Her race-morning oats: \"Oats (with fruit/berries and peanut butter and coconut oil)\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-037",
+  "name": "Rice cake with yogurt (Gwen Jorgensen pre-workout snack)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rice cake",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "plain yogurt",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "use a dairy-free yogurt to make it vegan",
+  "approx_macros": "~150 kcal · 22g C · 6g P · 3g F",
+  "prep": "2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "runonveg.com \"Gwen Jorgensen Professional Triathlete Workout Wednesday\"",
+  "evidence": "Her pre-workout snack at 7:15am before run drills, ahead of a larger breakfast later in the morning",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-038",
+  "name": "Oatmeal with poached egg (Gwen Jorgensen, savory version)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked in water",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "poached egg",
+    "qty": "1",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + fruit + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "the sweet version (berries/walnuts) is the vegan alternative to this savory one",
+  "approx_macros": "~400 kcal · 65g C · 15g P · 8g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "active.com \"How to Fuel Like Gwen Jorgensen\"",
+  "evidence": "Her savory garnish on the same base oatmeal recipe she eats 90% of the time",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-039",
+  "name": "Sweet potato with almond butter (Timothy Olson)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "on weekdays he adds 2oz lean protein; as written (weekend version) this base is vegan",
+  "approx_macros": "~320 kcal · 45g C · 6g P · 14g F",
+  "prep": "8 min (microwave)",
+  "batch": false,
+  "frequency": "staple",
+  "source": "timothyallenolson.com \"Nutrition\"; nogluten-noproblem.com \"Athlete Insight: Timothy Olson\"",
+  "evidence": "\"Every day for breakfast Timothy Olson eats a cooked sweet potato with almond butter\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-040",
+  "name": "Vega shake with pear, banana & soaked almonds (Brendan Brazier, Thrive Diet)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chocolate Vega plant protein shake",
+    "qty": "1/2 serving",
+    "role": "protein"
+   },
+   {
+    "food": "pear",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "soaked almonds",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "water",
+    "qty": "450 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + fruit + fat + drink",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap almonds for sunflower seeds",
+  "approx_macros": "~380 kcal · 40g C · 20g P · 16g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "freedieting.com \"Thrive: Vegan Athlete Diet\" (Brendan Brazier's Thrive Diet 12-week meal plan)",
+  "evidence": "Sample breakfast from the Thrive Diet meal plan Brazier designed as a former Ironman triathlete and 2x Canadian 50km Ultra Marathon Champion",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-041",
+  "name": "Chickpea or tofu scramble with potatoes (Dotsie Bausch)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chickpeas or firm tofu, scrambled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "coffee with plant creamer",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + starch + drink",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "chickpeas keep it soy-free instead of tofu",
+  "approx_macros": "~420 kcal · 55g C · 20g P · 13g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "thebeet.com \"How Olympic Athlete Dotsie Bausch Fuels With a Vegan Diet\"",
+  "evidence": "\"She uses either chickpeas or soft tofu in place of eggs and scrambles them ... She enjoys her scramble with a side of potatoes\" and coffee with Silk vanilla creamer",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-042",
+  "name": "Savory tofu scramble bowl (vegan pre-workout breakfast)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "firm tofu, crumbled & scrambled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "onion & bell pepper",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach",
+    "qty": "50 g",
+    "role": "veg"
+   },
+   {
+    "food": "nutritional yeast",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + veg + veg",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "serve with toast or rice to add carbs pre-session",
+  "approx_macros": "~280 kcal · 12g C · 35g P · 12g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "aol.com \"Looking for vegan breakfast foods? Here's how to get started, plus a versatile tofu scramble recipe\"",
+  "evidence": "Described as delivering close to 40g protein and \"one of the best vegan pre-workout breakfasts ever\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-043",
+  "name": "Overnight oats with peanut butter & banana (vegan, high-protein)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, soaked overnight",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "plant milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fat + fruit + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "almond butter for variety",
+  "approx_macros": "~420 kcal · 55g C · 16g P · 16g F",
+  "prep": "5 min (prepped ahead)",
+  "batch": true,
+  "frequency": "common",
+  "source": "aol.com \"19 High-Protein Vegan Breakfasts that Are Plant-Based and Totally Satisfying\"",
+  "evidence": "Cited at roughly 29g protein, \"can keep you full until lunchtime\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-044",
+  "name": "Raspberry-nectarine smoothie (Daniela Ryf)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "frozen raspberries",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "nectarine",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "vanilla yogurt",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "sesame seeds",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "lupine protein powder",
+    "qty": "2 tbsp",
+    "role": "protein"
+   }
+  ],
+  "pattern": "fruit + fruit + dairy + protein",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "sesame"
+  ],
+  "swaps": "dairy-free yogurt + plant protein for a vegan version",
+  "approx_macros": "~380 kcal · 55g C · 18g P · 9g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "espn.com \"Daniela Ryf's Triathlon-Training Smoothie\"",
+  "evidence": "Ryf: \"I have this in the morning to fuel me for a busy day of school and training\" after a hard turbo/treadmill session",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-045",
+  "name": "Berry-banana smoothie with granola & chia (vegan athlete meal plan, Day 1)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "plant milk",
+    "qty": "1.5 cups",
+    "role": "dairy"
+   },
+   {
+    "food": "frozen banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "frozen blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "vegan protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "granola",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + fruit + protein + other",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "certified GF granola for a gluten-free version",
+  "approx_macros": "~400 kcal · 55g C · 22g P · 9g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "soccermomnutrition.com \"Vegan Athlete Meal Plans: 7 Days of Ideas\"",
+  "evidence": "Day 1 breakfast in a 7-day vegan athlete plan; topped fresh with blueberries, banana, granola, nuts and chia seeds",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-046",
+  "name": "Warm oatmeal with almond butter & banana (vegan athlete meal plan, Day 2)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked in water or plant milk",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, mashed",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed berries & chia",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fat + fruit + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "sunflower seed butter for a nut-free version",
+  "approx_macros": "~420 kcal · 60g C · 12g P · 16g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "soccermomnutrition.com \"Vegan Athlete Meal Plans: 7 Days of Ideas\"",
+  "evidence": "Day 2 breakfast, topped with sliced berries, nuts and chia seeds",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-047",
+  "name": "Tofu scramble with toast & jam (vegan athlete meal plan, Day 3)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "firm tofu, crumbled & scrambled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "onion & garlic",
+    "qty": "50 g",
+    "role": "veg"
+   },
+   {
+    "food": "whole-wheat toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "vegan butter or jam",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + starch + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "swap jam for avocado for a savory version",
+  "approx_macros": "~440 kcal · 40g C · 26g P · 16g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "soccermomnutrition.com \"Vegan Athlete Meal Plans: 7 Days of Ideas\"",
+  "evidence": "Day 3 breakfast: savory scramble with crumbled tofu, onion, garlic, turmeric and nutritional yeast, served with whole-wheat toast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-048",
+  "name": "Avocado toast with tofu scramble & berries (vegan athlete meal plan, Day 5)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "whole-wheat bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "firm tofu, scrambled with nutritional yeast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "fresh berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fat + protein + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "gluten-free bread for a coeliac-friendly version",
+  "approx_macros": "~450 kcal · 45g C · 20g P · 22g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "soccermomnutrition.com \"Vegan Athlete Meal Plans: 7 Days of Ideas\"",
+  "evidence": "Day 5 breakfast: whole-wheat bread with mashed avocado, topped with scrambled tofu and nutritional yeast, served with fresh berries",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-049",
+  "name": "Granola with vegan yogurt, berries & nuts (vegan athlete meal plan, Day 6)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "granola",
+    "qty": "1/2 cup",
+    "role": "other"
+   },
+   {
+    "food": "vegan yogurt",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "fresh or frozen berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "almonds & walnuts",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "other + dairy + fruit + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "nut-free granola + sunflower seeds only for a tree-nut-free version",
+  "approx_macros": "~430 kcal · 55g C · 12g P · 18g F",
+  "prep": "3 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "soccermomnutrition.com \"Vegan Athlete Meal Plans: 7 Days of Ideas\"",
+  "evidence": "Day 6 breakfast: granola combined with vegan yogurt, topped with fresh berries, almonds, walnuts and sunflower seeds",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-050",
+  "name": "Oatmeal with fruit & nuts (pre-competition, plant-based pro)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed nuts",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fruit + fat",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap nuts for seeds if needed",
+  "approx_macros": "~400 kcal · 60g C · 11g P · 14g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "homediningkitchen.com \"Fueling the Plant-Based Athlete: A Day in the Life of a Vegan Sports Star\"",
+  "evidence": "A plant-based pro athlete quoted: \"Before a big competition, I like to fuel up with a hearty bowl of oatmeal with fruit and nuts\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-051",
+  "name": "Porridge with soya milk & yogurt (Danny Webber, performance nutritionist)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked in soya milk",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based yogurt",
+    "qty": "100 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed fruit, nuts & seeds",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "soy",
+   "tree_nuts"
+  ],
+  "swaps": "seed-only topping for a nut-free version",
+  "approx_macros": "~420 kcal · 60g C · 14g P · 12g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "newsweek.com \"This vegan breakfast is loved by sports nutritionists\" (Danny Webber, performance nutritionist)",
+  "evidence": "Webber's top recommendation: porridge with soya milk and plant yogurt, topped with fruits, nuts and seeds \"to provide carbohydrates, fats and proteins and a lot of vitamins and minerals\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-052",
+  "name": "Turmeric tofu scramble on granary toast with cherry tomatoes (Danny Webber)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "firm tofu, scrambled with turmeric",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach",
+    "qty": "50 g",
+    "role": "veg"
+   },
+   {
+    "food": "granary toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "swap granary for gluten-free toast",
+  "approx_macros": "~420 kcal · 40g C · 24g P · 14g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "newsweek.com \"This vegan breakfast is loved by sports nutritionists\" (Danny Webber, performance nutritionist)",
+  "evidence": "Webber's alternative recommendation: scrambled tofu with turmeric and vegetables like spinach, served on granary toast with cherry tomatoes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-053",
+  "name": "Yogurt-based smoothie bowl (Danny Webber)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "plant-based yogurt",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "granola",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + fruit + other",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "certified GF granola for a gluten-free version",
+  "approx_macros": "~350 kcal · 50g C · 10g P · 10g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "newsweek.com \"This vegan breakfast is loved by sports nutritionists\" (Danny Webber, performance nutritionist)",
+  "evidence": "Webber's other suggestion alongside porridge and tofu scramble: a plant-yogurt-based smoothie bowl",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "B-b-054",
+  "name": "Rice pudding with plant milk (Trek-Segafredo pre-ride)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based milk",
+    "qty": "300 ml",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add cinnamon or maple syrup to taste",
+  "approx_macros": "~350 kcal · 65g C · 8g P · 4g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "cyclist.co.uk \"Should cyclists adopt a plant-based diet?\" (Trek-Segafredo team chef Mirko Sut)",
+  "evidence": "Sut's pre-ride suggestion: \"Rice pudding with plant-based milk, or oatmeal but it just depends on the quantity of fibre\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-055",
+  "name": "Plain oats, pre-ride (Trek-Segafredo)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked in water",
+    "qty": "1 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add fruit or plant milk to taste depending on fibre tolerance before racing",
+  "approx_macros": "~300 kcal · 55g C · 10g P · 5g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "cyclist.co.uk \"Should cyclists adopt a plant-based diet?\" (Trek-Segafredo team chef Mirko Sut)",
+  "evidence": "Sut's alternative pre-ride option to rice pudding, chosen depending on \"the quantity of fibre\" a rider can tolerate",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-056",
+  "name": "Rice with tofu & beans (Trek-Segafredo, post-ride)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "beans",
+    "qty": "100 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein + protein",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap tofu for tempeh for variety",
+  "approx_macros": "~480 kcal · 65g C · 28g P · 10g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "cyclist.co.uk \"Should cyclists adopt a plant-based diet?\" (Trek-Segafredo team chef Mirko Sut)",
+  "evidence": "Sut's post-ride recovery suggestion: \"Some rice with a protein such as tofu and some beans\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-b-057",
+  "name": "Homemade porridge with blueberries & strawberries (cyclist nutritionist)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats, cooked",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "strawberries",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fruit + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add plant milk or nut butter for extra calories on hard days",
+  "approx_macros": "~340 kcal · 60g C · 10g P · 6g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "alpecincycling.com \"Plant Power: how a vegan diet could boost your cycling performance\" (Alex Parren, cycling nutritionist)",
+  "evidence": "Parren's sample vegan cyclist breakfast: \"homemade porridge, perhaps with a topping of blueberries and strawberries\" for slow-release carbohydrates",
+  "reconstructed_from_snippet": false
+ }
+]

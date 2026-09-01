@@ -1,0 +1,4208 @@
+[
+ {
+  "id": "S-a-001",
+  "name": "Banana with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 30g C · 9g P · 16g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Bicycling Australia, \"Chocolate Milk The Ultimate Recovery Food\" (bicyclingaustralia.com.au); snackinginsneakers.com \"25 Healthy Snacks for Runners\"; marathonsandmotivation.com",
+  "evidence": "\"A banana with peanut butter combo delivers what your body needs\" — described as a standard pre/post-ride pairing distinct from the almond-butter version already logged",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-002",
+  "name": "Whole-grain toast with almond butter and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + nut butter + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~300 kcal · 38g C · 8g P · 13g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "HIGH5, \"What to Eat Before Training\" (highfive.co.uk); On, \"What to eat before a run\" (on.com)",
+  "evidence": "\"a piece of whole-grain toast with a smear of nut butter and a banana\" — offered as the go-to substantial pre-run combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-003",
+  "name": "Apple slices with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 25g C · 7g P · 17g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TeriLyn Adams, \"What are Good Foods to Eat Before a Run\" (terilynadams.com); runtothefinish.com \"19 Best Pre-Workout Snacks\"",
+  "evidence": "listed among the most repeated fruit+nut-butter pre-run pairings across runner-nutrition roundups",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-004",
+  "name": "Pear with sunflower seed butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pear",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + seed butter",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 28g C · 5g P · 14g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as the nut-free alternative pairing alongside apple+almond-butter in the same roundup",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-005",
+  "name": "Banana with almond butter on toast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + fruit + nut butter",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~310 kcal · 40g C · 8g P · 13g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "KURU Footwear, \"32 Easy Snacks for Runners\" (kurufootwear.com)",
+  "evidence": "\"Bananas are rich in potassium and carbohydrates... Almond butter provides healthy fats and protein for sustained energy\" — listed as a post-run recovery pairing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-006",
+  "name": "Nut butter packet with banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "almond butter",
+    "qty": "1 single-serve packet",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "nut butter + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~270 kcal · 30g C · 8g P · 14g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "runna.com, \"What to Eat Before a Run (And What to Avoid)\"",
+  "evidence": "\"Nut Butter Packet + Banana – convenient potassium-rich pairing\" listed as a pre-run staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-007",
+  "name": "Sweet potato toast with almond butter and apple",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sweet potato toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "apple",
+    "qty": "1/2, sliced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + nut butter + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 30g C · 5g P · 10g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"",
+  "evidence": "one of the sweet-potato-toast topping combos the (RD) author lists as a favourite runner snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-008",
+  "name": "Dates stuffed with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dates",
+    "qty": "2-3, pitted",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tsp per date",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 27g C · 4g P · 7g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "fANNEtastic food, \"Easy Peanut Butter Stuffed Dates\" (fannetasticfood.com); Stevie Lyn Nutrition RD, \"Pre-Run Fuel: Peanut Butter Stuffed Dates\" (stevielynrd.com)",
+  "evidence": "\"One of my favorite snacks when I have 60-75 minutes before heading out the door are peanut butter stuffed dates\" — RD's stated pre-run go-to",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-009",
+  "name": "Rice cakes with tuna",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "tuna",
+    "qty": "1 small pouch, ~90g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 24g C · 20g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as one of the standard rice-cake toppings alongside nut butter and turkey breast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-010",
+  "name": "Rice cakes with turkey breast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast",
+    "qty": "60g, sliced",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 22g C · 18g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "same rice-cake-toppings list; presented as a standard savoury option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-011",
+  "name": "Rice cakes with hummus",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + dip",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~210 kcal · 26g C · 6g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed among the rice-cake toppings recommended for runners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-012",
+  "name": "Rice cakes with ricotta and sliced fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "ricotta cheese",
+    "qty": "3 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "strawberries",
+    "qty": "1/2 cup, sliced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 28g C · 9g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "presented as a sweeter rice-cake variant alongside the savoury toppings",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-013",
+  "name": "Rice cakes with peanut butter and honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + nut butter + sweetener",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 32g C · 7g P · 12g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "ROUVY, \"Boost Your Cycling Performance: Discover the Best Snacks\" (rouvy.com/blog/top-cycling-snacks)",
+  "evidence": "listed as a post-ride recovery rice-cake combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-014",
+  "name": "Rice cakes with honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "1.5 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + sweetener",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~150 kcal · 33g C · 2g P · 1g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "On, \"What to eat before a run\" (on.com/en-us/stories/performance-running-the-best-foods-to-eat-before-a-run-athlete-nutrition)",
+  "evidence": "\"A drizzle of honey adds a quick glucose boost\" — listed as an easily digestible pre-run rice-cake option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-015",
+  "name": "Bagel with jam",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "bagel",
+    "qty": "1 medium",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + spread",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~320 kcal · 65g C · 9g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "RunnersConnect, \"What to Eat Before a Run\" (runnersconnect.net)",
+  "evidence": "listed as an \"ideal pre-run carbohydrate source\" alongside toast+jam and oatmeal+berries",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-016",
+  "name": "Half English muffin with honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "english muffin",
+    "qty": "1/2",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + sweetener",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~150 kcal · 32g C · 3g P · 1g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"What to Eat Before Running\" (healthline.com/nutrition/what-to-eat-before-running)",
+  "evidence": "\"half an English muffin with honey or jelly\" — cited as one of the recommended pre-run snacks",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-017",
+  "name": "Bagel with deli turkey, mustard and grapes",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "bagel",
+    "qty": "1 medium",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast",
+    "qty": "2 slices",
+    "role": "protein"
+   },
+   {
+    "food": "mustard",
+    "qty": "1 tsp",
+    "role": "sauce"
+   },
+   {
+    "food": "grapes",
+    "qty": "30, ~1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + protein + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~420 kcal · 70g C · 22g P · 4g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Healthline, \"What to Eat Before Running\" (healthline.com/nutrition/what-to-eat-before-running)",
+  "evidence": "\"One medium-sized white bagel with two slices of deli turkey and mustard with 30 grapes\" — given as a full pre-run snack example",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-018",
+  "name": "Toast with avocado",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4, mashed",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 20g C · 5g P · 9g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "HIGH5, \"What to Eat Before Training\" (highfive.co.uk/blogs/guides/what-to-eat-before-run)",
+  "evidence": "listed as a good pre-run savoury toast option alongside the nut-butter version",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-019",
+  "name": "Whole grain toast with smoked salmon",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "smoked salmon",
+    "qty": "40g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "bread + protein",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 18g C · 12g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "runna.com, \"8 Post-Run Snacks That Will Seriously Improve Your Recovery\"",
+  "evidence": "\"Whole grain toast offers complex carbohydrates for sustained energy. Smoked salmon provides omega-3 fatty acids\" — listed post-run recovery combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-020",
+  "name": "Oatcakes with cottage cheese and blueberries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice, sub. for oatcakes",
+    "role": "starch"
+   },
+   {
+    "food": "cottage cheese",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~380 kcal · 45g C · 30g P · 4g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Healthline, \"What to Eat Before Running\" (healthline.com/nutrition/what-to-eat-before-running)",
+  "evidence": "\"One cup (225 g) of low-fat cottage cheese with one cup (150 g) of blueberries. One slice of white toast with a tablespoon of honey\" (combined here as one plate) — cited as a full pre-run snack example",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-021",
+  "name": "Greek yogurt with berries and honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "greek yogurt",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + fruit + sweetener",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 30g C · 18g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "runna.com, \"8 Post-Run Snacks\"; CSU Northridge Marilyn Magaram Center, \"Pre-Workout Snack: Greek Yogurt with Granola and Berries\" (csun.edu)",
+  "evidence": "\"Greek yogurt with berries and honey is an excellent example, as Greek yogurt is high in protein, and berries and honey add sweetness and a boost of antioxidants\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-022",
+  "name": "Greek yogurt parfait with seasonal fruit and granola",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "greek yogurt",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "1/3 cup",
+    "role": "other"
+   },
+   {
+    "food": "mango",
+    "qty": "1/2 cup, diced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~380 kcal · 50g C · 22g P · 9g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Alex Larson Nutrition (endurance-athlete dietitian), \"Easy Protein Snack Pack Ideas for Endurance Athletes\" (alexlarsonnutrition.com)",
+  "evidence": "listed as a ~22g-protein \"go-to\" parfait pack for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-023",
+  "name": "Clementine with yogurt and granola",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "clementine",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "greek yogurt",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "1/4 cup",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + dairy + starch",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 38g C · 18g P · 5g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Triathlete.com, \"My Day On A Plate\" feature series",
+  "evidence": "athlete's mid-morning post-brick snack recorded as \"a clementine with yogurt and granola\" in the feature's daily log",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-a-024",
+  "name": "Oatmeal with nut milk, berries and chia seeds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup dry",
+    "role": "starch"
+   },
+   {
+    "food": "almond milk",
+    "qty": "3/4 cup",
+    "role": "drink"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "grain + fruit + seed",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~320 kcal · 45g C · 10g P · 11g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as a make-ahead oatmeal snack pairing in the same roundup as the yogurt-and-granola combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-025",
+  "name": "Açaí bowl with granola and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "greek yogurt",
+    "qty": "1 cup, sub. açaí base",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "1/3 cup",
+    "role": "other"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2, sliced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~350 kcal · 55g C · 15g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Triathlete.com athlete recovery-snack features (aggregated \"day on a plate\" pattern)",
+  "evidence": "recorded as a recurring post-session snack bowl in athlete-nutrition day-logs",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-a-026",
+  "name": "Cottage cheese with orange",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "orange",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~170 kcal · 21g C · 15g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "onepeloton.com, \"Is Cottage Cheese a Good Post-Workout Snack?\"",
+  "evidence": "\"A post-workout snack of 1/2 cup of 2% cottage cheese and 1 orange provides an average of 15 grams of protein and 21 grams of carbohydrates\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-027",
+  "name": "Cottage cheese with berries and almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "almonds",
+    "qty": "10",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + fruit + nuts",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 20g C · 22g P · 10g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "ROUVY, \"Boost Your Cycling Performance\" (rouvy.com/blog/top-cycling-snacks)",
+  "evidence": "listed as a post-ride recovery combination alongside chocolate milk and Greek yogurt+fruit+granola",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-028",
+  "name": "Cottage cheese dip with apple slices",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "1/2 cup, blended",
+    "role": "dairy"
+   },
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 20g C · 18g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Alex Larson Nutrition, \"Easy Protein Snack Pack Ideas for Endurance Athletes\" (alexlarsonnutrition.com)",
+  "evidence": "listed as a ~20g-protein cottage-cheese-dip pack, blended with seasoning and served with apple or veggie slices",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-029",
+  "name": "Cottage cheese with pineapple and whole-grain crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "pineapple",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "dairy + fruit + starch",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 35g C · 22g P · 4g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Nutrition By Mandy RD, \"Cottage Cheese with Fruit - Great Snack for Athletes\" (nutritionbymandy.com)",
+  "evidence": "described as a well-rounded athlete recovery snack combining dairy protein, fruit carbs, and a starch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-030",
+  "name": "Apple with cheddar",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "cheddar cheese",
+    "qty": "30g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + cheese",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 22g C · 9g P · 12g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TrueSport (Stephanie Miezin MS RD CSSD, KC Current NWSL Director of Nutrition), \"What Simple Snacks Would a Sport Dietitian Pack?\" (truesport.org)",
+  "evidence": "\"A sweet-tart apple pairs well with sharp cheddar for a balanced pre-workout bite\" — dietitian-recommended pre-workout combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-031",
+  "name": "Grapes with mozzarella",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "mozzarella",
+    "qty": "30g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + cheese",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 24g C · 7g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "TrueSport, \"What Simple Snacks Would a Sport Dietitian Pack?\" (truesport.org)",
+  "evidence": "listed as a milder alternative to the apple+cheddar pairing in the same dietitian roundup",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-032",
+  "name": "String cheese with fresh fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "string cheese",
+    "qty": "1 stick",
+    "role": "dairy"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "cheese + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 20g C · 9g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed among the standard string-cheese pairings (fresh fruit / dried fruit / crackers) in the roundup",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-033",
+  "name": "String cheese with dried fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "string cheese",
+    "qty": "1 stick",
+    "role": "dairy"
+   },
+   {
+    "food": "dried apricots",
+    "qty": "6 halves",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "cheese + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~190 kcal · 18g C · 8g P · 7g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "same string-cheese-pairings list as the fresh-fruit variant",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-034",
+  "name": "String cheese with whole-grain crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "string cheese",
+    "qty": "1 stick",
+    "role": "dairy"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "cheese + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 20g C · 10g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "same string-cheese-pairings list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-035",
+  "name": "Whole-grain crackers with cheese",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole-grain crackers",
+    "qty": "8",
+    "role": "starch"
+   },
+   {
+    "food": "cheddar cheese",
+    "qty": "40g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + cheese",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 24g C · 10g P · 14g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\" (RD-authored)",
+  "evidence": "described by the author, \"whole-grain crackers + cheese\" — offering \"complex carbs, providing energy, plus a deliciously salty crunch\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-036",
+  "name": "Crackers with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 26g C · 9g P · 16g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "KURU Footwear, \"32 Easy Snacks for Runners\" (kurufootwear.com); marathonsandmotivation.com",
+  "evidence": "\"Marathoners or other long-distance runners will appreciate crackers with peanut butter as an energy-boosting snack\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-037",
+  "name": "Whole-grain crackers with turkey breast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast",
+    "qty": "50g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 18g C · 16g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "turkey listed against crackers as one of the standard turkey pairings (with grapes, cherries, pretzels)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-038",
+  "name": "Hard-boiled egg with whole-grain crackers and cherry tomatoes",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 18g C · 16g P · 12g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"",
+  "evidence": "suggested as \"a more substantial snack\" combining boiled egg, crackers and cherry tomatoes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-039",
+  "name": "Trail mix with dark chocolate",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed nuts",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "raisins",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "dark chocolate chips",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "nuts + dried fruit + treat",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~300 kcal · 28g C · 8g P · 19g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Wikipedia \"Trail mix\"; The Healthy Maven, \"How To Build a Healthy Trail Mix\" (thehealthymaven.com); ROUVY \"Boost Your Cycling Performance\"",
+  "evidence": "\"Trail mix is a delightful blend of protein, carbs and fats for energy... simple to whip up, easy to transport and can be eaten by the handful\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-040",
+  "name": "High-protein trail mix (edamame, pumpkin seeds, popcorn, pretzels)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "edamame",
+    "qty": "2 tbsp roasted",
+    "role": "other"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "popcorn",
+    "qty": "1 cup air-popped",
+    "role": "other"
+   },
+   {
+    "food": "pretzels",
+    "qty": "1/4 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "legume + seed + grain + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 30g C · 12g P · 9g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Alex Larson Nutrition, \"Easy Protein Snack Pack Ideas for Endurance Athletes\" (alexlarsonnutrition.com)",
+  "evidence": "listed as a ~15g-protein high-protein trail mix pack, described as a \"favorite\" among the author's endurance-athlete clients",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-041",
+  "name": "Nut and seed mix with electrolyte salt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed nuts",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "dried apricots",
+    "qty": "4",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "nuts + seeds + dried fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 20g C · 8g P · 20g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "KURU Footwear, \"32 Easy Snacks for Runners\" (kurufootwear.com)",
+  "evidence": "\"trail mix + electrolyte-rich nuts – sustained energy with mineral replenishment\" listed as a pre-run option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-042",
+  "name": "Charcuterie-style pack: ham, Swiss cheese, crackers, hummus, grapes and edamame",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "deli ham",
+    "qty": "2 slices",
+    "role": "protein"
+   },
+   {
+    "food": "swiss cheese",
+    "qty": "30g",
+    "role": "dairy"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "grapes",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "edamame",
+    "qty": "2 tbsp, dried",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + cheese + starch + dip + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "sesame",
+   "soy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~420 kcal · 35g C · 22g P · 20g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Alex Larson Nutrition, \"Easy Protein Snack Pack Ideas for Endurance Athletes\" (alexlarsonnutrition.com)",
+  "evidence": "described as \"one of our favorite... staples\" for endurance-athlete clients, ~22g protein per pack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-043",
+  "name": "Popcorn with nutritional yeast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "popcorn",
+    "qty": "3 cups air-popped",
+    "role": "other"
+   },
+   {
+    "food": "nutritional yeast",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "grain + seasoning",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~140 kcal · 22g C · 6g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as a savoury low-effort snack alongside the sweet-potato-toast toppings",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-044",
+  "name": "Roasted edamame with fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "edamame",
+    "qty": "1/2 cup roasted",
+    "role": "other"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "legume + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 30g C · 14g P · 5g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TrueSport (Stephanie Miezin MS RD CSSD), \"What Simple Snacks Would a Sport Dietitian Pack?\" (truesport.org)",
+  "evidence": "listed as one of the dietitian's \"post-exercise/anytime\" combinations",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-045",
+  "name": "Chocolate milk with banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chocolate milk",
+    "qty": "350ml",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "drink + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~330 kcal · 60g C · 12g P · 5g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Bicycling Australia, \"Chocolate Milk The Ultimate Recovery Food\" (bicyclingaustralia.com.au)",
+  "evidence": "\"A banana and a glass of milk beats a perfectly optimized meal eaten two hours later\" — cited as the classic post-ride recovery pairing, chocolate milk's carb:protein ratio noted as ~4:1",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-046",
+  "name": "Chocolate milk with pretzels",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chocolate milk",
+    "qty": "350ml",
+    "role": "drink"
+   },
+   {
+    "food": "pretzels",
+    "qty": "1/2 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "drink + starch",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~350 kcal · 65g C · 12g P · 4g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "ROUVY, \"Boost Your Cycling Performance\" (rouvy.com/blog/top-cycling-snacks)",
+  "evidence": "chocolate milk repeatedly listed as the top post-ride recovery drink, paired here with salty pretzels for sodium replacement",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-047",
+  "name": "Pretzels with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pretzels",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~340 kcal · 40g C · 10g P · 16g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "KURU Footwear, \"32 Easy Snacks for Runners\"; The Run Experience \"What to Eat Before Running Any Distance\"",
+  "evidence": "\"Pretzels with nut butter are recommended as portable snacks for runners during training. The nut butter provides a hefty dose of protein and healthy fats\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-048",
+  "name": "Pretzels with almond butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pretzels",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~330 kcal · 38g C · 9g P · 17g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "The Run Experience, \"What to Eat Before Running Any Distance\" (therunexperience.com)",
+  "evidence": "listed as the tree-nut alternative to the pretzels+peanut-butter combo for pre-run fuelling",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-049",
+  "name": "Salted pretzel nuggets for long rides",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pretzels",
+    "qty": "10 nuggets",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch (single)",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~130 kcal · 27g C · 3g P · 1g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "KURU Footwear, \"32 Easy Snacks for Runners\" (kurufootwear.com)",
+  "evidence": "\"Some endurance athletes pack peanut butter pretzel nuggets as a snack, putting 5 to 10 pretzel nuggets in a snack bag for rides longer than 50+ miles and 3 to 5 in a fuel belt for long runs over 14-15 miles\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-050",
+  "name": "Pretzels with jerky",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pretzels",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "beef jerky",
+    "qty": "30g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "jerky→dried chickpeas (vegan, soy-free protein)",
+  "approx_macros": "~250 kcal · 30g C · 10g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TrueSport (Stephanie Miezin MS RD CSSD), \"What Simple Snacks Would a Sport Dietitian Pack?\" (truesport.org)",
+  "evidence": "\"jerky + pretzels\" listed as one of the dietitian's post-exercise/anytime combinations",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-051",
+  "name": "Dates with almonds",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dates",
+    "qty": "3",
+    "role": "fruit"
+   },
+   {
+    "food": "almonds",
+    "qty": "10",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nuts",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 30g C · 5g P · 10g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Runna, \"What to Eat Before a Run (And What to Avoid)\" (runna.com)",
+  "evidence": "\"Dates + Almonds – natural sugars and healthy fats\" listed as a pre-run pairing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-052",
+  "name": "Dates blended into a protein shake",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dates",
+    "qty": "3",
+    "role": "fruit"
+   },
+   {
+    "food": "plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "fruit + protein + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~350 kcal · 55g C · 20g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Performance Lab, \"6 Best Snacks for Endurance Athletes\" (performancelab.com)",
+  "evidence": "\"throwing them in a green smoothie or a protein shake\" for natural sweetening and sustained energy — described as a common way endurance athletes use dates",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-053",
+  "name": "Dates stuffed with almond butter and sea salt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dates",
+    "qty": "3, pitted",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tsp per date",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~190 kcal · 26g C · 4g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "fANNEtastic food, \"Easy Peanut Butter Stuffed Dates\" (fannetasticfood.com)",
+  "evidence": "\"Almond butter works great too\" — noted as the tree-nut variant of the same stuffed-date recipe",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-054",
+  "name": "Low-fibre cereal with milk",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "low-fibre cereal",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "whole milk",
+    "qty": "3/4 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "grain + dairy",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 40g C · 8g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "On, \"What to eat before a run\" (on.com/en-us/stories/performance-running-the-best-foods-to-eat-before-a-run-athlete-nutrition)",
+  "evidence": "\"Low-fiber cereal with milk or dairy-free alternative — pair with milk or a dairy-free alternative\" cited as an easy-digest pre-run choice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-055",
+  "name": "Bran flakes with milk and berries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "bran flakes",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "whole milk",
+    "qty": "3/4 cup",
+    "role": "drink"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 50g C · 10g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "On, \"What to eat before a run\" (general cereal+milk guidance cross-referenced with berries-for-runners recommendations in the same source family)",
+  "evidence": "cereal-and-milk listed as a base pre-run option with fruit commonly added for extra carbs/antioxidants",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-056",
+  "name": "Cereal with soy milk",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "low-fibre cereal",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "soy yogurt",
+    "qty": "3/4 cup, sub. soy milk",
+    "role": "drink"
+   }
+  ],
+  "pattern": "grain + dairy-free milk",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 38g C · 7g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "On, \"What to eat before a run\" (on.com)",
+  "evidence": "dairy-free milk explicitly offered as the substitute for cereal+milk in the same recommendation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-057",
+  "name": "Hard-boiled eggs with fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "apple",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 20g C · 13g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as a standard hard-boiled-egg pairing alongside the whole-wheat-English-muffin version",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-058",
+  "name": "Hard-boiled eggs with whole-wheat English muffin",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "english muffin",
+    "qty": "1",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 30g C · 18g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as a classic high-protein/carb runner snack pairing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-059",
+  "name": "Hard-boiled eggs with avocado toast",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + fat",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~300 kcal · 20g C · 18g P · 16g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "runna.com, \"8 Post-Run Snacks That Will Seriously Improve Your Recovery\"",
+  "evidence": "\"Hard-Boiled Eggs + Avocado Toast – amino acids with healthy fats\" listed as a post-run recovery option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-060",
+  "name": "Eggs with toast slice",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "white toast",
+    "qty": "1 slice",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 22g C · 16g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"",
+  "evidence": "\"Hard-Boiled Eggs + Toast slice – high-protein with carbohydrate pairing\" listed as a pre-run snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-061",
+  "name": "Protein shake with banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whey protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + drink + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~350 kcal · 45g C · 28g P · 5g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\" (RD-authored)",
+  "evidence": "\"Protein shake + banana or Clif bar — recommended after tough runs for optimal recovery\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-062",
+  "name": "Chocolate protein smoothie with cherries and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whey protein powder",
+    "qty": "1 scoop, chocolate",
+    "role": "protein"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "cherries",
+    "qty": "1/2 cup, frozen",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + drink + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~380 kcal · 45g C · 30g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Alex Larson Nutrition, \"Easy Protein Snack Pack Ideas for Endurance Athletes\" (alexlarsonnutrition.com)",
+  "evidence": "\"chocolate cherry smoothie\" listed as a ~25g-protein recovery smoothie pack for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-063",
+  "name": "Smoothie with protein powder, banana and oats",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "rolled oats",
+    "qty": "1/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + fruit + grain + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~400 kcal · 55g C · 25g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "ROUVY, \"Boost Your Cycling Performance\" (rouvy.com/blog/top-cycling-snacks)",
+  "evidence": "listed as a post-ride recovery smoothie combination alongside chocolate milk and rice cakes+PB+honey",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-064",
+  "name": "Chocolate protein smoothie with almond butter and banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whey protein powder",
+    "qty": "1 scoop, chocolate",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + fruit + fat + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~420 kcal · 45g C · 30g P · 14g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Runna, \"8 Post-Run Snacks That Will Seriously Improve Your Recovery\" (runna.com)",
+  "evidence": "\"Chocolate Protein Smoothie — Blends chocolate protein powder, banana, almond butter, and milk for muscle repair support\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-065",
+  "name": "Spinach and banana protein smoothie",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "veg + fruit + protein + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~330 kcal · 40g C · 26g P · 5g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "greatist.com, \"Mid-Run Snacks: 17 Surprising Mid-Marathon Energy Boosters\" (referenced via marathon-nutrition roundups)",
+  "evidence": "spinach+banana smoothie repeatedly listed as an iron- and potassium-rich post-run recovery option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-066",
+  "name": "Protein shake with Clif bar",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whey protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "whole milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "protein + drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 12g C · 25g P · 4g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"",
+  "evidence": "protein shake explicitly paired with \"a banana or Clif bar\" as the recommended tough-run recovery combo (Clif bar side noted, not modelled as a component here)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-067",
+  "name": "Turkey with grapes",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "turkey breast",
+    "qty": "60g, sliced",
+    "role": "protein"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 25g C · 18g P · 1g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as one of the standard turkey pairings (grapes / cherries / pretzels / crackers)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-068",
+  "name": "Turkey with cherries",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "turkey breast",
+    "qty": "60g, sliced",
+    "role": "protein"
+   },
+   {
+    "food": "cherries",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 25g C · 18g P · 1g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "same turkey-pairings list as turkey+grapes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-069",
+  "name": "Turkey with pretzels",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "turkey breast",
+    "qty": "60g, sliced",
+    "role": "protein"
+   },
+   {
+    "food": "pretzels",
+    "qty": "1/2 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 28g C · 20g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "same turkey-pairings list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-070",
+  "name": "Wrap with lean protein and veg",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wrap (tortilla)",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast",
+    "qty": "60g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~350 kcal · 30g C · 22g P · 15g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "\"Wrap with lean protein + spinach, carrots, sprouts, avocado\" listed as a substantial snack option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-071",
+  "name": "Hummus with pre-cut veg sticks",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hummus",
+    "qty": "1/3 cup",
+    "role": "fat"
+   },
+   {
+    "food": "carrot sticks",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber slices",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dip + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 20g C · 8g P · 9g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"; TrueSport (Stephanie Miezin MS RD CSSD)",
+  "evidence": "\"Pre-cut veggies + hummus or dips — noted for making the snack more satisfying\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-072",
+  "name": "Hummus with crudités (carrots, cucumber, pepper, celery)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hummus",
+    "qty": "1/3 cup",
+    "role": "fat"
+   },
+   {
+    "food": "carrot sticks",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber slices",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "pepper strips",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "celery sticks",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dip + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 24g C · 8g P · 9g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "listed as one of the classic \"healthy snacks\" recommended in the roundup",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-073",
+  "name": "Fresh fruit with Greek yogurt dip",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "greek yogurt",
+    "qty": "1/2 cup, as dip",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "fruit + dairy dip",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~180 kcal · 25g C · 12g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"",
+  "evidence": "\"Fresh fruit + Greek yogurt dip or peanut butter — paired to make fruit a more substantial snack\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-074",
+  "name": "Fresh fruit with peanut butter dip",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp, as dip",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter dip",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 26g C · 8g P · 16g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "snackinginsneakers.com, \"25 Healthy Snacks for Runners\"",
+  "evidence": "same pairing list as the yogurt-dip version",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-075",
+  "name": "Savoury ham, egg and rice cake",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cooked white rice",
+    "qty": "1/2 cup, in cake form",
+    "role": "starch"
+   },
+   {
+    "food": "hard-boiled egg",
+    "qty": "1, mixed in",
+    "role": "protein"
+   },
+   {
+    "food": "jamon serrano",
+    "qty": "20g",
+    "role": "protein"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + protein + sweetener",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 25g C · 10g P · 8g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "ESPN espnW, \"Sarah Groff: True Triathlon Training Snack\" (espn.com/espnw/athletes-life/article/12376803)",
+  "evidence": "Olympic triathlete Sarah Groff's go-to training snack, \"a savory ham-and-egg rice cake\": \"Rice and eggs are easy to digest, and a savory snack is a nice break from the typically sweet energy food\" (recipe from The Feed Zone Cookbook, made with Vermont maple syrup)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-076",
+  "name": "Clif Bar and coffee",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dates",
+    "qty": "3, sub. bar base",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bar + drink",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 45g C · 5g P · 6g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Triathlete.com, \"My Day On A Plate\" feature series",
+  "evidence": "athlete's 5:30am pre-brick fuel recorded as \"a Clif Bar and coffee\" before a brick workout",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-a-077",
+  "name": "Peanut butter and cracker snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 24g C · 9g P · 15g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Triathlete.com, \"My Day On A Plate\" feature series",
+  "evidence": "logged mid-afternoon snack in the athlete's daily food log: \"a peanut butter and cracker snack\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-a-078",
+  "name": "Toast with jam and a banana",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + spread + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~380 kcal · 80g C · 8g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Triathlete.com carb-loading guidance (t100triathlon.com, \"Best Foods for Carb Loading: A Triathlete's Guide\"); Healthline \"What to Eat Before Running\"",
+  "evidence": "\"Two pieces of white toast with jelly and a banana\" given as a standard pre-run/carb-load combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-079",
+  "name": "Applesauce with crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "applesauce",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fruit + starch",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 45g C · 3g P · 3g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"What to Eat Before Running\" (healthline.com/nutrition/what-to-eat-before-running)",
+  "evidence": "\"45 grams carbs, 2g protein, 1g fat\" — listed among the standard easy-to-digest pre-run snack combos at 60-75 min timing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-080",
+  "name": "White bread with honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + sweetener",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 55g C · 6g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Healthline, \"What to Eat Before Running\" (healthline.com)",
+  "evidence": "\"45 grams carbs, 3g protein, 1g fat\" pre-run snack listed at 75-90 min timing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-081",
+  "name": "Toast with jam, 60-90 minutes pre-run",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + spread",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~190 kcal · 40g C · 4g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "RunnersConnect, \"What to Eat Before a Run\" (runnersconnect.net)",
+  "evidence": "\"40 grams carbs, 4g protein, 2g fat\" listed as the standard 60-90-minute pre-easy-run snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-082",
+  "name": "Four dates as a 30-minute pre-run snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dates",
+    "qty": "4",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit (single)",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~110 kcal · 30g C · 1g P · 0g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "RunnersConnect, \"What to Eat Before a Run\" (runnersconnect.net)",
+  "evidence": "\"A slice of toast with jam, four dates, or a small sports drink\" — listed as the 30-minute pre-run window option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-083",
+  "name": "Banana alone, 90 minutes pre-run",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 large",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit (single)",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~120 kcal · 31g C · 1g P · 0g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "RunnersConnect, \"What to Eat Before a Run\" (runnersconnect.net)",
+  "evidence": "\"Banana alone – Described as reliable baseline test at 90 minutes pre-run\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-084",
+  "name": "Oatmeal with berries, 90-120 minutes pre-run",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup dry",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "grain + fruit",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~220 kcal · 40g C · 7g P · 4g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "RunnersConnect, \"What to Eat Before a Run\" (runnersconnect.net)",
+  "evidence": "listed as the 90-120-minute pre-run window recommendation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-085",
+  "name": "Whole-grain bread with banana, honey and peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + fruit + sweetener + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~320 kcal · 45g C · 9g P · 12g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "On, \"What to eat before a run\" (on.com)",
+  "evidence": "\"Multigrain/wholemeal bread with banana slices, honey and peanut butter — described as a more substantial pre-run choice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-086",
+  "name": "Yogurt with fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "greek yogurt",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "mango",
+    "qty": "1/2 cup, diced",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 28g C · 16g P · 1g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "On, \"What to eat before a run\" (on.com)",
+  "evidence": "\"Yogurt with fruit — mentioned as providing a digestible ratio of nutrients\" for pre-run use",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-087",
+  "name": "Quinoa with fruit and honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cooked white rice",
+    "qty": "1/2 cup, sub. quinoa",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "grain + fruit + sweetener",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 45g C · 6g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "On, \"What to eat before a run\" (on.com)",
+  "evidence": "listed as an alternative sweet grain-bowl pre-run snack to savoury quinoa preparations",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-088",
+  "name": "Hummus and vegetables, everyday snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hummus",
+    "qty": "1/3 cup",
+    "role": "fat"
+   },
+   {
+    "food": "carrot sticks",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dip + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "hummus→white bean dip (sesame-free)",
+  "approx_macros": "~180 kcal · 18g C · 7g P · 9g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Performance Lab, \"6 Best Snacks for Endurance Athletes\" (performancelab.com)",
+  "evidence": "hummus with vegetables and legume-based snacks are listed as staple protein/low-GI-carb options for endurance athletes; roasted chickpeas is the standard preparation cited across running-nutrition roundups",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-089",
+  "name": "Cheese slice with whole-grain crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cheddar cheese",
+    "qty": "30g, sliced",
+    "role": "dairy"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "cheese + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 20g C · 10g P · 12g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "TrueSport (Stephanie Miezin MS RD CSSD), \"What Simple Snacks Would a Sport Dietitian Pack?\" (truesport.org)",
+  "evidence": "\"cheese slices or cheese stick + crackers\" listed as one of the dietitian's standard post-exercise/anytime combinations",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-090",
+  "name": "Nut butter on toast, banana or crackers",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + nut butter",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 24g C · 8g P · 13g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "TrueSport (Stephanie Miezin MS RD CSSD), \"What Simple Snacks Would a Sport Dietitian Pack?\" (truesport.org)",
+  "evidence": "\"nut butter + banana, apple, or toast\" listed as the dietitian's go-to post-exercise combination, toast variant modelled here",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-091",
+  "name": "Cheese and grapes plate",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cheddar cheese",
+    "qty": "40g",
+    "role": "dairy"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "cheese + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~250 kcal · 24g C · 10g P · 14g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TrueSport apple+cheddar dietitian guidance cross-referenced with marathonhandbook string-cheese-and-fruit list",
+  "evidence": "cheese-and-fruit pairing repeatedly recommended by sport dietitians as a balanced everyday snack",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-092",
+  "name": "Whole-grain toast with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + nut butter",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~230 kcal · 22g C · 8g P · 13g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "The Run Experience, \"What to Eat Before Running Any Distance\" (therunexperience.com)",
+  "evidence": "\"whole grain toast with peanut butter and banana slices are recommended pre-run options\" (banana variant logged separately; plain toast+PB modelled here as its own common combo)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-093",
+  "name": "Two slices of toast with honey",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + sweetener",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~300 kcal · 60g C · 6g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "The Run Experience, \"What to Eat Before Running Any Distance\" (therunexperience.com)",
+  "evidence": "\"Two slices of toast with honey delivers 30 to 60 grams of carbohydrate 90 to 120 minutes before a workout, making it suitable for tempo runs and intervals\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-094",
+  "name": "Toast with jam plus a banana on race morning",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + spread + fruit",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 60g C · 6g P · 2g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "The Run Experience, \"What to Eat Before Running Any Distance\" (therunexperience.com)",
+  "evidence": "\"Toast with jam plus a banana gives you sustained carbohydrate without the risk of novelty on race morning\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-095",
+  "name": "Whole grain toast with peanut butter and avocado",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "wholegrain toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/4",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + nut butter + fat",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 22g C · 8g P · 18g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "The Run Experience, \"What to Eat Before Running Any Distance\" (therunexperience.com)",
+  "evidence": "toast+nut-butter and toast+avocado both listed side by side as good pre-run options in the same guide; combined variant modelled here",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-096",
+  "name": "Fruit and nut butter, general pairing",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + nut butter",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 25g C · 7g P · 17g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "The Run Experience, \"What to Eat Before Running Any Distance\" (therunexperience.com)",
+  "evidence": "\"Fruit + nut butter — general pairing mentioned for sustained energy\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-097",
+  "name": "Hummus and roasted vegetable snack plate",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hummus",
+    "qty": "1/3 cup",
+    "role": "fat"
+   },
+   {
+    "food": "carrot sticks",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dip + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~200 kcal · 20g C · 8g P · 10g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Performance Lab, \"6 Best Snacks for Endurance Athletes\" (performancelab.com)",
+  "evidence": "\"Hummus with vegetables — listed as a single snack category, combining chickpea-based hummus with veggie accompaniments for protein and low-glycemic carbs\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-098",
+  "name": "Boiled new potatoes with salt",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "boiled new potatoes",
+    "qty": "6 small",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch (single)",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none noted",
+  "approx_macros": "~150 kcal · 34g C · 3g P · 0g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "ROUVY, \"Boost Your Cycling Performance\" (rouvy.com/blog/top-cycling-snacks)",
+  "evidence": "listed among \"long-ride staples\" alongside sweet potatoes and oat-based energy balls",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-099",
+  "name": "Greek yogurt with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "greek yogurt",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + nut butter",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "peanuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~260 kcal · 15g C · 20g P · 14g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Alex Larson Nutrition, protein-snack-pack guidance (alexlarsonnutrition.com); TrueSport nut-butter-pairings list (truesport.org)",
+  "evidence": "yogurt+nut-butter is the dairy variant of the dietitian-recommended \"nut butter + banana, apple or toast\" post-exercise formula, cross-referenced against protein-pack guidance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-a-100",
+  "name": "Oatmeal with fruit and nuts",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup dry",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1/2, sliced",
+    "role": "fruit"
+   },
+   {
+    "food": "walnuts",
+    "qty": "1 tbsp, chopped",
+    "role": "fat"
+   }
+  ],
+  "pattern": "grain + fruit + nuts",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "none noted",
+  "approx_macros": "~280 kcal · 40g C · 8g P · 11g F",
+  "prep": "0-2 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "marathonhandbook.com, \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "\"Oatmeal + fruit + nuts\" listed among the classic healthy runner snacks",
+  "reconstructed_from_snippet": false
+ }
+]

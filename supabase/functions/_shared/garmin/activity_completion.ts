@@ -66,20 +66,171 @@ export function getGarminLocalDayBounds(activity: GarminActivityTiming): {
 }
 
 /**
+ * Tombstone check — MUST run before any completion match or insert.
+ *
+ * Soft-delete ruling (Xuan 2026-08-14, docs/ssot/spec/daily-macros/
+ * platform-resolution.md): a deleted activity keeps its row with
+ * status='deleted', and the sync import matcher must match against those
+ * rows too — an incoming platform activity that hits a tombstone is
+ * DROPPED, not re-imported. Filtering deleted rows out before matching is
+ * exactly the bug the tombstone exists to prevent (deleted workouts
+ * reappearing after every sync).
+ *
+ * Match key (ruled): platform activity id (garmin_summary_id) first; else
+ * same sport with start time within ±15 minutes. The window is deliberately
+ * NARROW — a genuine second session 30 minutes away must import normally —
+ * unlike the day-wide window findMatchingPlannedActivity uses for
+ * completion matching (a 5:30 PM plan done at 3 PM should still complete).
+ */
+export async function findMatchingTombstone(
+  supabase: any,
+  userId: string,
+  sportType: string,
+  activity: GarminActivityTiming,
+  summaryId: string | null | undefined,
+): Promise<{ id: string; reason: string } | null> {
+  try {
+    // Tier 1: platform activity id.
+    if (summaryId) {
+      const { data } = await supabase
+        .from("activities")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "deleted")
+        .eq("garmin_summary_id", summaryId)
+        .limit(1);
+      if (data && data.length > 0) {
+        return { id: String(data[0].id), reason: "matched tombstone (summary id)" };
+      }
+    }
+
+    // Tier 2: same sport, start within ±15 minutes (naive local time,
+    // matching how scheduled_date_time is stored).
+    if (!sportType || sportType === "other") return null;
+    const startNaive = garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    );
+    const startMs = new Date(startNaive.replace(" ", "T") + "Z").getTime();
+    const windowMs = 15 * 60 * 1000;
+    const toNaive = (ms: number) =>
+      new Date(ms).toISOString().slice(0, 19).replace("T", " ");
+
+    const { data } = await supabase
+      .from("activities")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("status", "deleted")
+      .eq("activity_type", sportType)
+      .gte("scheduled_date_time", toNaive(startMs - windowMs))
+      .lte("scheduled_date_time", toNaive(startMs + windowMs))
+      .limit(1);
+    if (data && data.length > 0) {
+      return {
+        id: String(data[0].id),
+        reason: "matched tombstone (sport + start ±15 min)",
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error("[garmin] Tombstone lookup error:", err);
+    return null;
+  }
+}
+
+/**
+ * Statuses a Garmin completion may land on. `skipped` is the athlete's
+ * "didn't happen" write (workout-card v2, Q-D6 — platform-resolution.md
+ * SKIPPED addition, 2026-08-17): SYNC BEATS SKIP, so a skipped row is a
+ * legitimate completion target and the matcher MUST NOT filter it out —
+ * for the same reason it must not filter tombstones. Every atomic
+ * "win-the-race" completion update uses this same list, so the match and
+ * the write cannot drift.
+ */
+export const GARMIN_COMPLETABLE_STATUSES = ["planned", "draft", "skipped"];
+
+/**
+ * Sync beats skip (G6): a platform activity matching a `status = 'skipped'`
+ * row upgrades it to DONE_VERIFIED. The match key is the RULED one
+ * (platform-resolution.md, 2026-08-14 — the same key the tombstone matcher
+ * uses): platform activity id first, else same sport with start within
+ * ±15 minutes. Deliberately narrower than the day-wide planned window
+ * below: a skipped 5:30 PM run and a genuine 3:00 PM session are two
+ * different facts, and the athlete's skip stands unless the measured
+ * session is the one they skipped.
+ */
+export async function findMatchingSkippedActivity(
+  supabase: any,
+  userId: string,
+  sportType: string,
+  activity: GarminActivityTiming,
+  summaryId: string | null | undefined,
+): Promise<MatchingPlannedActivity> {
+  try {
+    if (summaryId) {
+      const { data } = await supabase
+        .from("activities")
+        .select("id, title")
+        .eq("user_id", userId)
+        .eq("status", "skipped")
+        .eq("garmin_summary_id", summaryId)
+        .limit(1);
+      if (data && data.length > 0) {
+        return { id: String(data[0].id), title: data[0].title?.toString() };
+      }
+    }
+
+    if (!sportType || sportType === "other") return null;
+    const startNaive = garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    );
+    const startMs = new Date(startNaive.replace(" ", "T") + "Z").getTime();
+    const windowMs = 15 * 60 * 1000;
+    const toNaive = (ms: number) =>
+      new Date(ms).toISOString().slice(0, 19).replace("T", " ");
+
+    const { data } = await supabase
+      .from("activities")
+      .select("id, title")
+      .eq("user_id", userId)
+      .eq("status", "skipped")
+      .eq("activity_type", sportType)
+      .is("deleted_at", null)
+      .gte("scheduled_date_time", toNaive(startMs - windowMs))
+      .lte("scheduled_date_time", toNaive(startMs + windowMs))
+      .order("scheduled_date_time", { ascending: true })
+      .limit(1);
+    if (data && data.length > 0) {
+      return { id: String(data[0].id), title: data[0].title?.toString() };
+    }
+    return null;
+  } catch (err) {
+    console.error("[garmin] Skipped-row lookup error:", err);
+    return null;
+  }
+}
+
+/**
  * Find an existing planned/draft activity that matches the Garmin upload.
  *
  * Matching is based on:
  * - same user
  * - same sport type
  * - same local Garmin calendar date
- * - activity not deleted
+ * - activity not deleted (tombstones are handled FIRST, by
+ *   findMatchingTombstone — never skip that call)
  * - activity not already completed
+ *
+ * Runs the SKIPPED tier first (findMatchingSkippedActivity — the ruled
+ * ±15 min key), then the day-wide planned/draft window.
  */
 export async function findMatchingPlannedActivity(
   supabase: any,
   userId: string,
   sportType: string,
   activity: GarminActivityTiming,
+  summaryId?: string | null,
 ): Promise<MatchingPlannedActivity> {
   // Refuse to match unknown/unmapped sport types. Falling back to "other"
   // would let any generic planned activity get silently completed by an
@@ -90,6 +241,17 @@ export async function findMatchingPlannedActivity(
     );
     return null;
   }
+
+  // Sync beats skip: a skipped row that this activity matches under the
+  // ruled key is completed (and un-skipped) before any planned match.
+  const skipped = await findMatchingSkippedActivity(
+    supabase,
+    userId,
+    sportType,
+    activity,
+    summaryId,
+  );
+  if (skipped) return skipped;
 
   try {
     const { startOfDayNaive, endOfDayNaiveExclusive } =
@@ -164,6 +326,18 @@ export function buildGarminCompletionUpdate(
     // (bug 3a6e3fdb: a run scheduled for 1:30 PM but started at 12:30 PM
     // kept showing 1:30 PM). Local-naive form — see garminTimestampToLocalNaiveISO.
     scheduled_date_time: garminTimestampToLocalNaiveISO(
+      activity.startTimeInSeconds,
+      activity.startTimeOffsetInSeconds,
+    ),
+    // Two-time model (ruled 2026-08-14): actual_time carries the measured
+    // start — this also upgrades a mark-done (MANUAL) actual_time to the
+    // GARMIN one. planned_time is deliberately untouched, so the athlete's
+    // scheduled time survives completion (unlike scheduled_date_time above).
+    // NAIVE LOCAL, like scheduled_date_time above — the activities table's
+    // time convention (the column is timestamp WITHOUT time zone; a UTC ISO
+    // here would store the UTC clock as local and shift the card by the
+    // athlete's offset — caught on dev 2026-08-19).
+    actual_time: garminTimestampToLocalNaiveISO(
       activity.startTimeInSeconds,
       activity.startTimeOffsetInSeconds,
     ),

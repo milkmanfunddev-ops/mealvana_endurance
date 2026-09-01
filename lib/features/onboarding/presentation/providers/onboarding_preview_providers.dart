@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../activities/domain/activity.dart';
+import '../../../integrations/domain/integration.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
 import '../../application/plan_preview_service.dart';
 import '../../application/training_insight_service.dart';
+import '../../domain/onboarding_integration_profile.dart';
 import '../../domain/onboarding_plan_preview.dart';
 import '../../domain/training_insights.dart';
 import 'onboarding_controller.dart';
@@ -35,14 +39,39 @@ class OnboardingPreviewBundle {
   final TrainingInsights insights;
 }
 
-/// The user id the onboarding auto-import wrote activities under: the (often
-/// anonymous) Supabase auth uid when a session exists, else the persisted
-/// temp uid — mirroring ConnectTrainingController's id resolution.
-String? _onboardingDataUserId(Ref ref) {
+/// Every id the onboarding import might have written under, most likely
+/// first.
+///
+/// ConnectTrainingController picks its id through a richer path than a
+/// single lookup can reproduce: it prefers the LOCAL PROFILE id
+/// (`user.id`) whenever one exists and looks real, only then the anonymous
+/// `auth.uid`, and a temp UUID last. For a returning athlete the profile id
+/// and the auth uid are not the same value, so reading under just one of
+/// them silently finds nothing — the import is fine, we are looking in the
+/// wrong place.
+///
+/// Rather than duplicate that decision tree (and drift from it again), read
+/// under each candidate and take the first that actually holds data.
+Future<List<String>> _candidateDataUserIds(Ref ref) async {
   final deps = ref.read(appExternalDepsProvider);
-  final authUserId = deps.supabaseClient.auth.currentUser?.id;
-  if (authUserId != null && authUserId.isNotEmpty) return authUserId;
-  return deps.sharedPreferences.getString(_onboardingTempUserIdKey);
+  final ids = <String>[];
+
+  void add(String? id) {
+    if (id != null && id.isNotEmpty && !ids.contains(id)) ids.add(id);
+  }
+
+  try {
+    final profile = await ref
+        .read(appDatabaseProvider)
+        .userDao
+        .getLocalUserProfile();
+    add(profile?.id);
+  } catch (_) {
+    // No local profile yet (first run) — the ids below still apply.
+  }
+  add(deps.supabaseClient.auth.currentUser?.id);
+  add(deps.sharedPreferences.getString(_onboardingTempUserIdKey));
+  return ids;
 }
 
 /// The single draft field the imported-workout digest depends on, exposed as
@@ -98,25 +127,35 @@ Future<TrainingInsights> onboardingTrainingInsights(Ref ref) async {
 }
 
 Future<TrainingInsights> _digestImportedActivities(Ref ref) async {
-  final userId = _onboardingDataUserId(ref);
-  if (userId == null) return TrainingInsights.none;
+  final candidates = await _candidateDataUserIds(ref);
+  if (candidates.isEmpty) return TrainingInsights.none;
 
   // Reuse the existing date-range read (no new repository API): wide enough
   // to cover every provider's import window — completed Garmin history
   // backwards, planned FS/TP/VDOT/Runna calendars forwards. The digest
   // derives its own window span from the data.
   final now = DateTime.now();
-  final activities = await ref
-      .read(activitiesRepositoryProvider)
-      .getActivitiesForDateRange(
-        userId,
-        now.subtract(const Duration(days: 90)),
-        now.add(const Duration(days: 366)),
-      );
+  final repo = ref.read(activitiesRepositoryProvider);
+
+  var readUnder = candidates.first;
+  var activities = const <Activity>[];
+  for (final candidate in candidates) {
+    final rows = await repo.getActivitiesForDateRange(
+      candidate,
+      now.subtract(const Duration(days: 90)),
+      now.add(const Duration(days: 366)),
+    );
+    if (rows.isNotEmpty) {
+      readUnder = candidate;
+      activities = rows;
+      break;
+    }
+  }
+
   // Tag with the id we read under so the reveal's diagnostic sheet can show
   // whether an empty digest means "nothing was there" or "we looked in the
   // wrong place".
-  return TrainingInsightService.digest(activities).withDataUserId(userId);
+  return TrainingInsightService.digest(activities).withDataUserId(readUnder);
 }
 
 /// The plan preview both reveal screens render, personalized from imported
@@ -134,40 +173,111 @@ Future<OnboardingPreviewBundle> onboardingPlanPreview(Ref ref) async {
   );
 }
 
-/// Weight (lbs) reported by an integration connected during onboarding, for
-/// pre-filling the body-composition weight wheel. Lifted from the old
-/// user_profile_screen autofill: prefer Garmin (scale data) over the
-/// TrainingPeaks/FinalSurge athlete profile. Best-effort — any failure
-/// resolves to null (no autofill), never an error.
+/// Athlete details from the platforms connected during onboarding, used to
+/// pre-fill the personal-info and body-composition steps.
+///
+/// Per-field precedence, and the reason for it:
+///
+///  - **weight**: Garmin first (it is scale data, and the freshest), then
+///    TrainingPeaks' profile figure.
+///  - **birth year / gender**: TrainingPeaks only — it is the sole provider
+///    that returns them.
+///  - **name / email**: TrainingPeaks, then Final Surge. Deliberately NOT
+///    Garmin or V.O2: those store the literal strings 'Garmin Connect' and
+///    'V.O2' in `providerAthleteName`, so trusting them would write
+///    "Garmin"/"Connect" into someone's name fields.
+///
+/// No provider reports height, so the height wheels keep their defaults.
+///
+/// Best-effort throughout: any failure resolves to an empty profile (no
+/// autofill), never an error — a convenience must not block onboarding.
 @Riverpod(keepAlive: true)
-Future<double?> onboardingIntegrationWeightLbs(Ref ref) async {
-  final userId = _onboardingDataUserId(ref);
-  if (userId == null) return null;
-
+Future<OnboardingIntegrationProfile> onboardingIntegrationProfile(
+  Ref ref,
+) async {
+  // Deliberately does NOT watch onboardingControllerProvider. The screens
+  // that consume this write the pre-filled values back into the draft,
+  // which notifies controller listeners — watching here would invalidate
+  // this provider on its own consumers' writes and spin forever, starving
+  // onboardingPlanPreview (which does watch the controller) so the plan
+  // reveal never leaves its loader. Staleness isn't a concern in practice:
+  // the first read happens on personal-info (step 4), after the connect
+  // step has already run.
   try {
-    final integrationsRepo = ref.read(integrationsRepositoryProvider);
+    final repo = ref.read(integrationsRepositoryProvider);
+    final candidates = await _candidateDataUserIds(ref);
+    if (candidates.isEmpty) return OnboardingIntegrationProfile.empty;
 
-    final garmin = await integrationsRepo.getIntegration(userId, 'garmin');
-    if (garmin != null &&
-        garmin.isActive &&
-        garmin.providerAthleteWeightLbs != null) {
-      return garmin.providerAthleteWeightLbs;
+    // Use the first id that actually has integrations — see
+    // _candidateDataUserIds for why more than one is in play.
+    var userId = candidates.first;
+    for (final candidate in candidates) {
+      final existing = await repo.getIntegrationsForUser(candidate);
+      if (existing.any((i) => i.isActive)) {
+        userId = candidate;
+        break;
+      }
     }
 
-    var integration = await integrationsRepo.getIntegration(
-      userId,
-      'training_peaks',
-    );
-    integration ??= await integrationsRepo.getIntegration(
-      userId,
-      'final_surge',
-    );
-    if (integration != null && integration.isActive) {
-      return integration.providerAthleteWeightLbs;
+    Future<IntegrationModel?> active(String provider) async {
+      final integration = await repo.getIntegration(userId, provider);
+      return (integration != null && integration.isActive) ? integration : null;
     }
-    return null;
+
+    final garmin = await active('garmin');
+    final trainingPeaks = await active('training_peaks');
+    final finalSurge = await active('final_surge');
+
+    // Weight: scale data beats a self-reported profile figure.
+    final weightSource = garmin?.providerAthleteWeightLbs != null
+        ? garmin
+        : (trainingPeaks?.providerAthleteWeightLbs != null
+              ? trainingPeaks
+              : null);
+
+    // Name/email: only providers that return a real athlete identity.
+    final identity = trainingPeaks?.providerAthleteName != null
+        ? trainingPeaks
+        : (finalSurge?.providerAthleteName != null ? finalSurge : null);
+    final name = OnboardingIntegrationProfile.splitFullName(
+      identity?.providerAthleteName,
+    );
+
+    final email = trainingPeaks?.providerAthleteEmail?.trim().isNotEmpty == true
+        ? trainingPeaks!.providerAthleteEmail!.trim()
+        : (finalSurge?.providerAthleteEmail?.trim().isNotEmpty == true
+              ? finalSurge!.providerAthleteEmail!.trim()
+              : null);
+
+    return OnboardingIntegrationProfile(
+      firstName: name.first,
+      lastName: name.last,
+      email: email,
+      gender: OnboardingIntegrationProfile.parseGender(
+        trainingPeaks?.providerAthleteGender,
+      ),
+      birthYear: trainingPeaks?.providerAthleteBirthday?.year,
+      weightLbs: weightSource?.providerAthleteWeightLbs,
+      // Whoever supplied the personal details on that screen: the identity
+      // provider when there's a name/email, else TrainingPeaks when it was
+      // only good for gender/birth year. Never left null while something
+      // was filled — an unattributed pre-fill is the thing to avoid.
+      detailsSource:
+          identity?.providerDisplayName ??
+          ((trainingPeaks?.providerAthleteGender != null ||
+                  trainingPeaks?.providerAthleteBirthday != null)
+              ? trainingPeaks?.providerDisplayName
+              : null),
+      weightSource: weightSource?.providerDisplayName,
+    );
   } catch (_) {
-    // Autofill is a convenience; the wheels keep their defaults.
-    return null;
+    // Autofill is a convenience; the forms keep their defaults.
+    return OnboardingIntegrationProfile.empty;
   }
 }
+
+/// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
+/// provider so the body-composition wheel can listen to just that value.
+@Riverpod(keepAlive: true)
+Future<double?> onboardingIntegrationWeightLbs(Ref ref) async =>
+    (await ref.watch(onboardingIntegrationProfileProvider.future)).weightLbs;

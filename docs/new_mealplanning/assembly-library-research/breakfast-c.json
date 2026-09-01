@@ -1,0 +1,4637 @@
+[
+ {
+  "id": "B-c-001",
+  "name": "Rice cakes, PB&J & almond-milk Gorilla Munch cereal",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rice cakes",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "jam",
+    "qty": "1 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "puffed corn cereal (Gorilla Munch)",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "almond milk",
+    "qty": "200 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + spread + fruit + cereal + drink",
+  "context": [
+   "everyday",
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts",
+   "tree_nuts"
+  ],
+  "swaps": "almond milk→oat milk (removes tree_nuts)",
+  "approx_macros": "~520 kcal · 85g C · 12g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Jesse Thomas, pro triathlete, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "listed as his standard pre-race/training breakfast spread",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-002",
+  "name": "Gluten-free oats with almond butter & coffee",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "70 g",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "water",
+    "qty": "250 ml",
+    "role": "other"
+   },
+   {
+    "food": "black coffee",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + fat + drink",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (removes tree_nuts)",
+  "approx_macros": "~430 kcal · 45g C · 12g P · 22g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Caroline Gregory, pro triathlete/elite runner, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "\"gluten-free oats and almond butter\" as her standard breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-003",
+  "name": "Rudi's gluten-free cinnamon raisin toast with peanut butter",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "Rudi's gluten-free cinnamon raisin bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "protein"
+   }
+  ],
+  "pattern": "bread + spread",
+  "context": [
+   "everyday",
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter (removes peanuts)",
+  "approx_macros": "~380 kcal · 48g C · 12g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Beth Walsh, pro triathlete, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "\"2 or 3 slices of Rudi's gluten-free cinnamon raisin toast with peanut butter\" as go-to race breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-004",
+  "name": "Rice cereal with banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "puffed rice cereal",
+    "qty": "70 g",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "200 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens (oat milk used; swap for dairy milk if preferred)",
+  "approx_macros": "~350 kcal · 68g C · 10g P · 4g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Charisa Wernick, pro triathlete, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "listed simply as \"rice cereal and a banana\" for her race-morning breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-005",
+  "name": "Toasted PopTart, gluten-free-ish toast with almond butter & coffee",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "toaster pastry",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "black coffee",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + starch + fat + drink",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "toast→gluten-free bread (removes gluten)",
+  "approx_macros": "~460 kcal · 62g C · 9g P · 18g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Keith Busko, pro triathlete, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "\"Fit Food by Jess Bars or Pop Tarts and toast with almond butter (and lots of coffee)\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-006",
+  "name": "Justin's nut butter & honey on toast",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + spread + sweetener",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (removes tree_nuts)",
+  "approx_macros": "~360 kcal · 44g C · 9g P · 16g F",
+  "prep": "4 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Katya Meyers, endurance coach/author, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "her own go-to described as \"Justin's nut butter and honey on English muffin\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-007",
+  "name": "Nut butter on toast",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "almond or cashew butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + spread",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap nut butter for sunflower seed butter to make nut-free",
+  "approx_macros": "~350 kcal · 38g C · 9g P · 18g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Bree Wee, pro triathlete, via Active.com \"What Do Pro Triathletes Eat for Breakfast?\"",
+  "evidence": "listed simply as \"nut butter on toast or pancakes\" for race morning",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-008",
+  "name": "Gluten-free toast with almond butter & banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + spread + fruit",
+  "context": [
+   "everyday",
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (removes tree_nuts)",
+  "approx_macros": "~400 kcal · 55g C · 9g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TriGirl UK, \"Tips for the Gluten-Free or Dairy-Free Triathlete\"",
+  "evidence": "given as a standard pre-long-run/race breakfast for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-009",
+  "name": "Gluten-free toast with mashed banana & honey",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "banana, mashed",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + fruit + sweetener",
+  "context": [
+   "everyday",
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — already free of the 9 tracked allergens",
+  "approx_macros": "~330 kcal · 62g C · 6g P · 4g F",
+  "prep": "4 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TriGirl UK, \"Tips for the Gluten-Free or Dairy-Free Triathlete\"",
+  "evidence": "listed as an alternative GF/DF pre-run breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-010",
+  "name": "Gluten-free porridge oats with almond milk",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free porridge oats",
+    "qty": "70 g",
+    "role": "starch"
+   },
+   {
+    "food": "almond milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "berries",
+    "qty": "80 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond milk→soya or oat milk (removes tree_nuts)",
+  "approx_macros": "~340 kcal · 52g C · 10g P · 10g F",
+  "prep": "6 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "TriGirl UK, \"Tips for the Gluten-Free or Dairy-Free Triathlete\"",
+  "evidence": "\"gluten-free porridge oats or quinoa flakes, with almond or soya milk\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-011",
+  "name": "Gluten-free quinoa flake porridge with soya milk",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "quinoa flakes",
+    "qty": "70 g",
+    "role": "starch"
+   },
+   {
+    "food": "soya milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "soya milk→oat milk (removes soy)",
+  "approx_macros": "~360 kcal · 58g C · 11g P · 8g F",
+  "prep": "6 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TriGirl UK, \"Tips for the Gluten-Free or Dairy-Free Triathlete\"",
+  "evidence": "\"gluten-free porridge oats or quinoa flakes, with almond or soya milk\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-012",
+  "name": "Plain white rice with a poached egg",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "poached egg",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "salt & pepper",
+    "qty": "to taste",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~330 kcal · 62g C · 12g P · 4g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Life on a Rice Cake, \"How to Run a Gluten-Free Marathon\"",
+  "evidence": "\"Before my long run, I eat plain white rice with a poached egg\" — daily pre-long-run breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-013",
+  "name": "Eggs with cottage cheese & fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "scrambled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "cottage cheese",
+    "qty": "150 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "cottage cheese→dairy-free yogurt (removes dairy)",
+  "approx_macros": "~360 kcal · 24g C · 30g P · 14g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Life on a Rice Cake, \"How to Run a Gluten-Free Marathon\"",
+  "evidence": "listed as an alternative daily gluten-free breakfast the author rotates in",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-014",
+  "name": "Eggs with avocado & fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "scrambled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fat + fruit",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~340 kcal · 24g C · 16g P · 20g F",
+  "prep": "6 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Life on a Rice Cake, \"How to Run a Gluten-Free Marathon\"",
+  "evidence": "given as her other regular gluten-free breakfast rotation, avoiding \"pancakes, muffins, and toast\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-015",
+  "name": "White rice, sliced banana & honey",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + sweetener",
+  "context": [
+   "carb-load",
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~420 kcal · 95g C · 6g P · 1g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Kate Scarlata, RDN, \"Tips for the low FODMAP Athlete\"",
+  "evidence": "rice and bananas listed among her core low-FODMAP high-carb pre-event choices",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-016",
+  "name": "Bacon, eggs & sautéed spinach",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "bacon",
+    "qty": "3 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "eggs, fried",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + protein + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~430 kcal · 4g C · 28g P · 33g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Zach Bitter, ultrarunning 100-mile American record holder, via Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\"",
+  "evidence": "\"For breakfast, he eats eggs and bacon with some spinach\" as his standard rest-day/easy-day meal",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "B-c-017",
+  "name": "Classic bacon and eggs",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "bacon",
+    "qty": "3 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "eggs, fried",
+    "qty": "2",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein + protein",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~400 kcal · 2g C · 26g P · 32g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Diet Doctor, \"Breakfast options\" (low-carb/keto guide, referencing Dr. Stephen Phinney's low-carb performance research)",
+  "evidence": "described as \"a perfect breakfast for any day\" on a keto/low-carb plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-018",
+  "name": "Scrambled eggs with spinach & smoked salmon",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, scrambled",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "smoked salmon",
+    "qty": "60 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "protein + veg + protein",
+  "context": [
+   "rest-day",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "fish"
+  ],
+  "swaps": "none needed beyond fish/egg allergy substitution",
+  "approx_macros": "~380 kcal · 3g C · 32g P · 25g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Breakfast options\" (low-carb/keto guide)",
+  "evidence": "listed as one of the standard low-carb keto breakfast plates, ~2g net carbs",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-019",
+  "name": "Boiled eggs with mayonnaise & avocado",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "mayonnaise",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + sauce + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~350 kcal · 4g C · 16g P · 30g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Breakfast options\" (low-carb/keto guide)",
+  "evidence": "listed as a ~3g-carb keto breakfast, optionally with avocado or asparagus",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-020",
+  "name": "Fried eggs with tomato & cheese",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, fried",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "cheddar cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + veg + dairy",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "cheese→dairy-free cheese (removes dairy)",
+  "approx_macros": "~340 kcal · 4g C · 22g P · 26g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Breakfast options\" (low-carb/keto guide)",
+  "evidence": "listed as a ~4g-carb keto breakfast plate",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-021",
+  "name": "Mexican scrambled eggs with jalapeños",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, scrambled",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "pickled jalapeños",
+    "qty": "2 tbsp",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~370 kcal · 4g C · 22g P · 28g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Breakfast options\" (low-carb/keto guide)",
+  "evidence": "listed as a ~4g-carb keto breakfast variant",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-022",
+  "name": "Coffee with bacon",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "black coffee",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "bacon",
+    "qty": "4 rashers",
+    "role": "protein"
+   }
+  ],
+  "pattern": "drink + protein",
+  "context": [
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~260 kcal · 1g C · 16g P · 20g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as the go-to egg-free keto breakfast: \"coffee with bacon, ham, sausage, or another breakfast protein\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-023",
+  "name": "Coffee with breakfast sausage",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "black coffee",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "breakfast sausage",
+    "qty": "3 links",
+    "role": "protein"
+   }
+  ],
+  "pattern": "drink + protein",
+  "context": [
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 2g C · 18g P · 22g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "egg-free keto option pairing coffee with a breakfast protein such as sausage",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-024",
+  "name": "Shrimp & avocado boat",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cooked shrimp",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "lime juice",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + fat + sauce",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "shrimp→cooked chicken (removes shellfish)",
+  "approx_macros": "~340 kcal · 8g C · 22g P · 24g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as the \"keto shrimp avocado boat\" egg-free breakfast option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-025",
+  "name": "Tuna stuffed avocado",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "tuna, drained",
+    "qty": "1 can (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "lemon juice",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + fat + sauce",
+  "context": [
+   "rest-day",
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tuna→cooked chicken (removes fish)",
+  "approx_macros": "~360 kcal · 9g C · 26g P · 24g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as \"tuna stuffed avocado\", an egg-free keto breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-026",
+  "name": "Cottage cheese bowl with berries",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "100 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→coconut yogurt (removes dairy)",
+  "approx_macros": "~250 kcal · 14g C · 24g P · 8g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as the \"cottage cheese breakfast bowl\", an egg-free keto option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-027",
+  "name": "Salmon-filled avocado",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cooked salmon, flaked",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "dill",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→cooked chicken (removes fish)",
+  "approx_macros": "~400 kcal · 8g C · 26g P · 30g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as \"keto salmon-filled avocados\", an egg-free keto breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-028",
+  "name": "Leftover burger patty with mayo & avocado",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "beef patty, cooked (leftover)",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mayonnaise",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + sauce + fat",
+  "context": [
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "mayonnaise→avocado oil (removes eggs)",
+  "approx_macros": "~420 kcal · 3g C · 26g P · 34g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as a reheated \"leftover burger\" topped with mayo and avocado, an egg-free keto breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-029",
+  "name": "Keto vegan tofu scramble",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "firm tofu, crumbled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "turmeric",
+    "qty": "1/2 tsp",
+    "role": "other"
+   },
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "none for soy allergy — tofu is the core ingredient",
+  "approx_macros": "~220 kcal · 6g C · 20g P · 14g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Low-Carb Breakfasts Without Eggs\"",
+  "evidence": "listed as \"keto vegan tofu scramble\", the egg-free vegan keto breakfast option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-030",
+  "name": "Baked yam, hard-boiled egg whites, olive oil & banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "baked yam",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "hard-boiled egg whites",
+    "qty": "4",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + protein + fat + fruit",
+  "context": [
+   "pre-session",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~420 kcal · 75g C · 18g P · 8g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Paleo Diet, \"Sample Menus for Endurance Athletes\"",
+  "evidence": "given as a pre-workout paleo breakfast option for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-031",
+  "name": "Baked sweet potato, applesauce, turkey breast & olive oil",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "baked sweet potato",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "unsweetened applesauce",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "sliced turkey breast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + fruit + protein + fat",
+  "context": [
+   "pre-session",
+   "carb-load",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~440 kcal · 65g C · 26g P · 8g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Paleo Diet, \"Sample Menus for Endurance Athletes\"",
+  "evidence": "given as a paleo breakfast option for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-032",
+  "name": "Poached cod on sautéed spinach with berries",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "poached cod",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "garlic",
+    "qty": "1 clove",
+    "role": "other"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "fresh berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + veg + fat + fruit",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cod→chicken breast (removes fish)",
+  "approx_macros": "~340 kcal · 12g C · 30g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "TrainingPeaks, \"Paleo Breakfast for Champions\"",
+  "evidence": "given as the rest-day paleo breakfast option for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-033",
+  "name": "Green tea smoothie with egg white protein, almond butter & sweet potato",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chilled decaf green tea",
+    "qty": "8 oz",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "egg white protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "baked sweet potato",
+    "qty": "1 medium",
+    "role": "starch"
+   }
+  ],
+  "pattern": "drink + fruit + protein + fat + starch",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (removes tree_nuts)",
+  "approx_macros": "~430 kcal · 60g C · 24g P · 10g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TrainingPeaks / The Paleo Diet, \"Paleo Breakfast for Champions\" and \"Sample Menus for Endurance Athletes\"",
+  "evidence": "given as the early two-a-day-workout paleo breakfast for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-034",
+  "name": "Ground beef, sweet potato & kale hash",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "lean ground beef",
+    "qty": "250 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, diced",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, chopped",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~520 kcal · 40g C · 32g P · 24g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Paleo Running Momma, high-protein paleo breakfast collection",
+  "evidence": "hash-style breakfast built from the site's staple paleo breakfast combination of ground meat, sweet potato & greens",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-035",
+  "name": "Eggs, bacon & roasted sweet potato",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, scrambled",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "bacon",
+    "qty": "2 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + protein + starch",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~460 kcal · 30g C · 26g P · 26g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Paleo Running Momma, \"healthy breakfast casserole packed with eggs, bacon, sweet potatoes and veggies\"",
+  "evidence": "described as a protein-packed, make-ahead paleo/Whole30 breakfast for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-036",
+  "name": "Chicken sausage, crispy potatoes & jammy eggs with salsa verde",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chicken sausage",
+    "qty": "2 links",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, crisped",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "jammy soft-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "salsa verde",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + protein + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~520 kcal · 35g C · 34g P · 26g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Paleo Running Momma, \"high protein chicken sausage breakfast bowls\"",
+  "evidence": "described as a meal-prep-friendly, dairy-free paleo breakfast bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-037",
+  "name": "Sunflower seed butter & apple slices with gluten-free granola",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "apple, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "certified gluten-free granola",
+    "qty": "30 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fruit + fat + starch",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~340 kcal · 40g C · 8g P · 16g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+  "evidence": "\"a classic combo of carbs and essential fats that is peanut free\" with a granola boost",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-038",
+  "name": "Gluten-free oat & sunflower-butter energy bites with dried fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1/2 cup",
+    "role": "fat"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1/4 cup",
+    "role": "other"
+   },
+   {
+    "food": "dried fruit",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fat + sweetener + fruit",
+  "context": [
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~320 kcal (per 2 bites) · 44g C · 7g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+  "evidence": "\"oat energy bites combining oats, maple syrup, sunflower butter, and dried fruit\" for pre-training fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-039",
+  "name": "Rice cakes with sunflower seed butter, banana & cinnamon",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free rice cakes",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "to taste",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~360 kcal · 58g C · 8g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as a nut-free grab-and-go option: \"almond or sunflower seed butter on gluten-free rice cakes, banana slices, cinnamon\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-040",
+  "name": "Roasted chickpeas with banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~280 kcal · 45g C · 12g P · 5g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+  "evidence": "roasted chickpeas listed as a nut-free \"crunchy, salty, and packed with protein\" option paired here with fruit",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-041",
+  "name": "Sunflower seed butter avocado toast",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + fat + topping",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~320 kcal · 32g C · 8g P · 18g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Breakfast Feast, \"10 Egg-Free Breakfast Ideas For Allergies\"",
+  "evidence": "listed as \"sunflower seed avocado toast\" — mashed avocado on gluten-free bread with sunflower seeds",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-042",
+  "name": "Pumpkin-seed & GF pretzel snack mix with dried cherries",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "pumpkin seeds",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "gluten-free pretzels",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "dried cherries",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "dark chocolate chips",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fat + starch + fruit",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 42g C · 7g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+  "evidence": "homemade nut-free snack mix built from \"pumpkin seeds, gluten-free pretzels, dried fruit, dark chocolate chips\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-043",
+  "name": "Green detox smoothie with plant protein & almond milk",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "spinach",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "green apple",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "lemon juice",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "unsweetened almond milk",
+    "qty": "300 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "veg + veg + fruit + protein + drink",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond milk→oat milk (removes tree_nuts)",
+  "approx_macros": "~260 kcal · 32g C · 20g P · 6g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as the \"green detox smoothie\", a gluten-free, dairy-free breakfast for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-044",
+  "name": "Berry protein shake with dairy-free protein & chia",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "mixed berries",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "unsweetened almond milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "dairy-free protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + fruit + drink + protein",
+  "context": [
+   "everyday",
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond milk→oat milk (removes tree_nuts)",
+  "approx_macros": "~320 kcal · 42g C · 22g P · 8g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as the \"berry protein shake\", a gluten-free, dairy-free breakfast for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-045",
+  "name": "Quinoa breakfast bowl with almond butter & hemp seeds",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cooked quinoa",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "80 g",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "hemp seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + fruit + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (removes tree_nuts)",
+  "approx_macros": "~420 kcal · 62g C · 14g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as the \"quinoa breakfast bowl\", a gluten-free, dairy-free athlete breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-046",
+  "name": "Chia pudding with mango & coconut",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chia seeds",
+    "qty": "3 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "coconut milk",
+    "qty": "300 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "mango, diced",
+    "qty": "120 g",
+    "role": "fruit"
+   },
+   {
+    "food": "shredded coconut",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "pudding base + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~380 kcal · 42g C · 8g P · 22g F",
+  "prep": "5 min + overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as the \"chia pudding bowl\": chia seeds soaked in coconut milk topped with mango and coconut",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-047",
+  "name": "Sweet potato hash with peppers & onion",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato, diced",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "bell peppers, diced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "onion, diced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "smoked paprika",
+    "qty": "1/2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + veg + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 45g C · 5g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as the \"sweet potato hash\", a gluten-free dairy-free breakfast for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-048",
+  "name": "Veggie egg scramble with mushrooms & tomatoes",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, scrambled",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "mushrooms, sautéed",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + veg + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~300 kcal · 8g C · 22g P · 20g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "E3 Energy Cubes, \"Gluten-Free Dairy-Free Breakfast Ideas for Athletes\"",
+  "evidence": "listed as the \"veggie-stuffed omelet\" reworked as a dairy-free scramble",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-049",
+  "name": "Vanilla oat-milk smoothie with plant protein",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "oat milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "30 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "drink + fruit + protein + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~340 kcal · 52g C · 22g P · 6g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "general oat-milk smoothie coverage (Healthful Blondie, \"Snickerdoodle Oat Milk Smoothie\" and related oat-milk-smoothie roundups)",
+  "evidence": "oat milk + banana + protein + oats framed as the standard dairy-free breakfast/post-workout smoothie base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-050",
+  "name": "Snickerdoodle oat-milk smoothie with peanut butter",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "oat milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "1/2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "drink + fruit + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter (removes peanuts)",
+  "approx_macros": "~320 kcal · 45g C · 10g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Healthful Blondie, \"Snickerdoodle Oat Milk Smoothie\"",
+  "evidence": "described as \"perfect for breakfast, a midday pick-me-up, or even a light dessert\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-051",
+  "name": "Low-FODMAP overnight oats with strawberry & chia",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "lactose-free milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "lactose-free yogurt",
+    "qty": "1/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "strawberry jam",
+    "qty": "1.5 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + dairy + dairy + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "oats→certified gluten-free oats to remove the gluten flag",
+  "approx_macros": "~380 kcal · 58g C · 14g P · 10g F",
+  "prep": "5 min + overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "\"Niki's Overnight Oats\", via Kate Scarlata RDN, \"Tips for the low FODMAP Athlete\"",
+  "evidence": "given as the go-to make-ahead low-FODMAP athlete breakfast recipe",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-052",
+  "name": "Low-FODMAP oatmeal with banana & peanut butter",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "1/4 cup dry",
+    "role": "starch"
+   },
+   {
+    "food": "water",
+    "qty": "1/2 cup",
+    "role": "other"
+   },
+   {
+    "food": "banana, unripe, half",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "lactose-free milk",
+    "qty": "100 ml",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + protein + dairy",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "peanuts"
+  ],
+  "swaps": "peanut butter→sunflower seed butter (removes peanuts)",
+  "approx_macros": "~340 kcal · 46g C · 14g P · 12g F",
+  "prep": "6 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Dietetic Directions RD, \"10 Low FODMAP Breakfast Ideas\"",
+  "evidence": "peanut butter + banana oatmeal listed as the top low-FODMAP breakfast recipe",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-053",
+  "name": "Lactose-free Greek yogurt parfait with GF granola & pomegranate",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "lactose-free Greek yogurt",
+    "qty": "3/4 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "certified gluten-free oats",
+    "qty": "1/3 cup",
+    "role": "starch"
+   },
+   {
+    "food": "pomegranate seeds",
+    "qty": "1/3 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt→coconut yogurt (removes dairy)",
+  "approx_macros": "~340 kcal · 48g C · 20g P · 8g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Dietetic Directions RD, \"10 Low FODMAP Breakfast Ideas\"",
+  "evidence": "the yogurt-parfait breakfast listed for low-FODMAP athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-054",
+  "name": "Low-FODMAP rice cereal with lactose-free milk & banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rice cereal (e.g. Rice Krispies)",
+    "qty": "1 cup",
+    "role": "starch"
+   },
+   {
+    "food": "lactose-free milk",
+    "qty": "250 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "banana, half",
+    "qty": "1/2",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "milk→lactose-free oat-based alternative (removes dairy)",
+  "approx_macros": "~300 kcal · 55g C · 10g P · 4g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Dietetic Directions RD, \"10 Low FODMAP Breakfast Ideas\"",
+  "evidence": "cereal bowl option: \"Rice Krispies, Corn Flakes, or Cheerios... lactose-free milk and half a banana\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-055",
+  "name": "Hard-boiled egg, GF toast & unripe banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "hard-boiled egg",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "banana, unripe",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "pre-session",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~280 kcal · 38g C · 12g P · 8g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Kate Scarlata RDN, \"Tips for the low FODMAP Athlete\"",
+  "evidence": "hard-boiled egg listed among her recommended pre-exercise protein + grain + fruit combinations",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-056",
+  "name": "Low-fat cheddar on gluten-free toast with grapes",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "low-fat cheddar cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheddar→dairy-free cheese (removes dairy)",
+  "approx_macros": "~320 kcal · 42g C · 12g P · 10g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Kate Scarlata RDN, \"Tips for the low FODMAP Athlete\"",
+  "evidence": "low-fat cheese (Swiss, Parmesan, Provolone, Cheddar) listed among her recommended low-FODMAP pre-exercise proteins",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-057",
+  "name": "Low-FODMAP chocolate chia pudding with berries",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chia seeds",
+    "qty": "2 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "lactose-free milk",
+    "qty": "1/2 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "cocoa powder",
+    "qty": "1/2 tsp",
+    "role": "other"
+   },
+   {
+    "food": "banana, unripe",
+    "qty": "1/3",
+    "role": "fruit"
+   },
+   {
+    "food": "strawberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "pudding base + fruit + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "milk→lactose-free oat-based alternative (removes dairy)",
+  "approx_macros": "~260 kcal · 32g C · 9g P · 10g F",
+  "prep": "5 min + 4h chill",
+  "batch": true,
+  "frequency": "common",
+  "source": "IBS Dietitian, \"Low FODMAP Overnight Oats\" (chia pudding variant)",
+  "evidence": "recipe built around lactose-free milk, chia, cocoa, unripe banana and low-FODMAP berries",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-058",
+  "name": "Low-FODMAP quinoa porridge with banana & lactose-free yogurt",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "80 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "lactose-free plain yogurt",
+    "qty": "150 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + fruit + dairy",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt→coconut yogurt (removes dairy)",
+  "approx_macros": "~380 kcal · 62g C · 15g P · 8g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, low FODMAP recipe index (Quinoa Porridge with Banana & Yoghurt)",
+  "evidence": "listed among Monash University's official low-FODMAP breakfast recipes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-059",
+  "name": "Cottage cheese with pineapple (low-FODMAP)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "lactose-free cottage cheese",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "pineapple chunks",
+    "qty": "150 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→dairy-free yogurt (removes dairy)",
+  "approx_macros": "~250 kcal · 26g C · 22g P · 4g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Rebecca Bitzer & Associates RD, \"15 Low FODMAP Breakfast Ideas\"",
+  "evidence": "lactose-free cottage cheese paired with pineapple listed as a sweet low-FODMAP breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-060",
+  "name": "Low-FODMAP breakfast tacos with eggs & bacon",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "corn tortillas",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "eggs, scrambled",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "bacon",
+    "qty": "2 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "cheddar cheese",
+    "qty": "20 g",
+    "role": "dairy"
+   },
+   {
+    "food": "bell peppers, diced",
+    "qty": "1/2",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + protein + dairy + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "cheese→dairy-free cheese (removes dairy)",
+  "approx_macros": "~460 kcal · 30g C · 28g P · 24g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Dietetic Directions RD, \"10 Low FODMAP Breakfast Ideas\"",
+  "evidence": "listed as the low-FODMAP breakfast taco: corn tortillas, scrambled eggs, bacon, cheddar, peppers",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-061",
+  "name": "Low-FODMAP eggs with potatoes & ham",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "aged cheese",
+    "qty": "20 g",
+    "role": "dairy"
+   },
+   {
+    "food": "ham, sliced",
+    "qty": "60 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell peppers, diced",
+    "qty": "1/2",
+    "role": "veg"
+   },
+   {
+    "food": "gluten-free bread",
+    "qty": "1 slice",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + dairy + protein + veg + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "cheese→dairy-free cheese (removes dairy)",
+  "approx_macros": "~420 kcal · 28g C · 28g P · 22g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Dietetic Directions RD, \"10 Low FODMAP Breakfast Ideas\"",
+  "evidence": "listed low-FODMAP breakfast: eggs, aged cheese, ham, peppers, gluten-free bread",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-062",
+  "name": "Cream of rice cereal with dairy-free milk & fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cream of rice cereal",
+    "qty": "1 cup cooked",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "200 ml",
+    "role": "drink"
+   },
+   {
+    "food": "mixed fresh fruit",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~280 kcal · 60g C · 6g P · 3g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness, \"150+ Allergy Friendly Breakfast Ideas\"",
+  "evidence": "cream of rice with dairy-free milk (rice, oat, or coconut) and fresh fruit listed as a top-9-allergen-free breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-063",
+  "name": "Allergy-friendly Chex cereal with dairy-free milk",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "rice or corn Chex cereal",
+    "qty": "1.5 cups",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "250 ml",
+    "role": "drink"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 62g C · 6g P · 3g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness, \"150+ Allergy Friendly Breakfast Ideas\"",
+  "evidence": "\"Chex cereal (various flavors) — paired with safe milk alternative\" listed as top-9-allergen-free",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-064",
+  "name": "Bacon, hash browns & fresh fruit (allergen-free plate)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "bacon",
+    "qty": "3 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "hash browns",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "fresh fruit",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~440 kcal · 45g C · 16g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness, \"150+ Allergy Friendly Breakfast Ideas\"",
+  "evidence": "\"bacon or turkey sausage — with hash browns and fresh fruit\" listed as a top-9-allergen-free combination",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-065",
+  "name": "Avocado toast, allergy-friendly",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "allergen-friendly gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "dairy-free spread",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "bread + fat + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 30g C · 6g P · 18g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness, \"150+ Allergy Friendly Breakfast Ideas\"",
+  "evidence": "\"Avocado Toast — using allergen-friendly bread and dairy-free spread\" listed in the top-9-allergen-free section",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-066",
+  "name": "Overnight chia oats, dairy-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "3 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "dairy-free milk",
+    "qty": "1.25 cups",
+    "role": "drink"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "fresh fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~380 kcal · 58g C · 12g P · 12g F",
+  "prep": "5 min + overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "MyFoodAllergyTeam, \"3 Easy Allergy-Friendly Breakfasts\"",
+  "evidence": "overnight chia oats recipe built to avoid the top nine food allergens",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-067",
+  "name": "Sweet potato & butternut squash puree with fruit and syrup (allergy-friendly)",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato/butternut squash puree",
+    "qty": "3/4 cup",
+    "role": "starch"
+   },
+   {
+    "food": "rice milk",
+    "qty": "1/2 cup",
+    "role": "drink"
+   },
+   {
+    "food": "fresh fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + drink + fruit + sweetener",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~260 kcal · 55g C · 4g P · 2g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "MyFoodAllergyTeam, \"3 Easy Allergy-Friendly Breakfasts\"",
+  "evidence": "the allergy-friendly \"family French toast\" batter reworked here as a spoonable squash-and-fruit bowl, free of the top nine allergens",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-068",
+  "name": "Mixed berry chia pudding with oat milk & protein",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "chia seeds",
+    "qty": "3 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "oat milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "allergen-safe protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "pudding base + protein + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~320 kcal · 34g C · 20g P · 10g F",
+  "prep": "5 min + overnight",
+  "batch": true,
+  "frequency": "common",
+  "source": "Breakfast Feast, \"10 Egg-Free Breakfast Ideas For Allergies\"",
+  "evidence": "listed as \"mixed berry chia pudding — chia seeds soaked in oat milk, topped with safe protein powder and blueberries\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-069",
+  "name": "Sweet potato hash with spinach, egg-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato, diced",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "paprika",
+    "qty": "1/2 tsp",
+    "role": "other"
+   },
+   {
+    "food": "avocado oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~280 kcal · 42g C · 4g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Breakfast Feast, \"10 Egg-Free Breakfast Ideas For Allergies\"",
+  "evidence": "listed as the \"sweet potato breakfast hash\" egg-free allergy-friendly option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-070",
+  "name": "Quinoa bowl with mushrooms & tahini, egg-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cooked quinoa",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mushrooms, sautéed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "tahini",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "tahini→olive oil (removes sesame)",
+  "approx_macros": "~340 kcal · 46g C · 12g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Breakfast Feast, \"10 Egg-Free Breakfast Ideas For Allergies\"",
+  "evidence": "listed as the \"quinoa breakfast bowl — cooked quinoa topped with sautéed mushrooms and tahini\", an egg-free breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-071",
+  "name": "Turkey sausage patties with sweet potato",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "turkey sausage patties",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~360 kcal · 30g C · 24g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Breakfast Feast, \"10 Egg-Free Breakfast Ideas For Allergies\"",
+  "evidence": "listed as \"lentil or turkey sausage patties\", an egg-free breakfast protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-072",
+  "name": "Lentil patties with roasted vegetables, egg-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "spiced lentil patties",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "roasted mixed vegetables",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 38g C · 16g P · 9g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Breakfast Feast, \"10 Egg-Free Breakfast Ideas For Allergies\"",
+  "evidence": "listed as \"lentil or turkey sausage patties — spiced lentils... shaped into patties and pan-seared\", an egg-free option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-073",
+  "name": "Low-carb blueberry protein smoothie",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "unsweetened almond milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "whey or plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "ice",
+    "qty": "1 cup",
+    "role": "other"
+   }
+  ],
+  "pattern": "drink + fruit + protein",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "almond milk→coconut milk (removes tree_nuts)",
+  "approx_macros": "~260 kcal · 12g C · 24g P · 10g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, \"Top Low-Carb and Keto Egg Breakfasts\" / low-carb smoothie collection",
+  "evidence": "listed among their named low-carb blueberry smoothie breakfasts",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-074",
+  "name": "Low-carb vegan vanilla protein shake",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "unsweetened coconut milk",
+    "qty": "300 ml",
+    "role": "drink"
+   },
+   {
+    "food": "vanilla plant protein powder",
+    "qty": "1 scoop",
+    "role": "protein"
+   },
+   {
+    "food": "ice",
+    "qty": "1 cup",
+    "role": "other"
+   }
+  ],
+  "pattern": "drink + protein",
+  "context": [
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~220 kcal · 6g C · 22g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Diet Doctor, low-carb vegan vanilla protein shake breakfast collection",
+  "evidence": "listed among their named low-carb vegan protein shake breakfasts",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-075",
+  "name": "Protein-packed scrambled eggs with gluten-free toast & fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, scrambled",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "gluten-free bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "mixed fruit",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~420 kcal · 48g C · 26g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Nancy Clark, MS RD CSSD, \"Nancy Clark's Sports Nutrition Guidebook\", 6th ed. gluten-free recipe section",
+  "evidence": "protein-packed scrambled eggs listed among her gluten-free breakfast recipes for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-076",
+  "name": "Purition protein shake with dairy yogurt & GF granola",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "Purition protein blend",
+    "qty": "1 sachet",
+    "role": "protein"
+   },
+   {
+    "food": "plain yogurt",
+    "qty": "150 g",
+    "role": "dairy"
+   },
+   {
+    "food": "certified gluten-free granola",
+    "qty": "30 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + dairy + starch",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt→coconut yogurt (removes dairy)",
+  "approx_macros": "~380 kcal · 40g C · 26g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Gluten-free triathlete meal plan blog (runtothefinish.com, \"Gluten Free Meal Plan for Runners\")",
+  "evidence": "listed as a Friday gluten-free breakfast in her weekly training meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-077",
+  "name": "Buckwheat flake bircher with grated carrot & raisins",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "buckwheat flakes",
+    "qty": "60 g",
+    "role": "starch"
+   },
+   {
+    "food": "grated carrot",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "raisins",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "milk",
+    "qty": "150 ml",
+    "role": "dairy"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "1/2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + veg + fruit + dairy",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "milk→oat milk (removes dairy); already gluten-free",
+  "approx_macros": "~340 kcal · 58g C · 9g P · 8g F",
+  "prep": "5 min + soak",
+  "batch": true,
+  "frequency": "common",
+  "source": "Gluten-free triathlete meal plan blog (runtothefinish.com, \"Gluten Free Meal Plan for Runners\")",
+  "evidence": "\"On weekdays I make a very quick 'carrot cake' for breakfast\" using buckwheat flakes in place of oats",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-078",
+  "name": "Nut-free overnight oats with oat milk & chopped fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1/2 cup",
+    "role": "drink"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "chopped fruit",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~320 kcal · 50g C · 9g P · 8g F",
+  "prep": "5 min + overnight",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Recipes Tribe, \"Nut-Free Breakfast Ideas for Allergies and Sensitivities\"",
+  "evidence": "listed as \"classic overnight oats\" using oat milk, the top nut-free breakfast recipe on the list",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-079",
+  "name": "Scrambled eggs with spinach & tomatoes, nut-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "eggs, scrambled",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "spinach",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tomatoes, diced",
+    "qty": "1/4 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~260 kcal · 4g C · 16g P · 20g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Recipes Tribe, \"Nut-Free Breakfast Ideas for Allergies and Sensitivities\"",
+  "evidence": "listed as \"scrambled eggs with veggies\", a nut-free breakfast recipe",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-080",
+  "name": "Apple-cinnamon oatmeal with oat milk, nut-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "certified gluten-free rolled oats",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "apple, diced",
+    "qty": "1/2",
+    "role": "fruit"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "1 tsp",
+    "role": "other"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + drink + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~340 kcal · 62g C · 8g P · 6g F",
+  "prep": "6 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Recipes Tribe, \"Nut-Free Breakfast Ideas for Allergies and Sensitivities\"",
+  "evidence": "listed as \"apple cinnamon oatmeal\", a nut-free breakfast recipe",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-081",
+  "name": "Sunflower seed butter & jelly on toast",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "bread, toasted",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "fruit jam",
+    "qty": "1 tbsp",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "bread + fat + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→gluten-free bread (removes gluten)",
+  "approx_macros": "~300 kcal · 42g C · 7g P · 12g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Recipes Tribe, \"Nut-Free Breakfast Ideas for Allergies and Sensitivities\"",
+  "evidence": "listed as the \"sunflower butter & jelly sandwich\", the classic school-safe nut-free swap for PB&J",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-082",
+  "name": "Berry smoothie with oat milk & flaxseed, nut-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "frozen mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "oat milk",
+    "qty": "1 cup",
+    "role": "drink"
+   },
+   {
+    "food": "flaxseeds, ground",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + fruit + drink",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~260 kcal · 48g C · 6g P · 6g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Recipes Tribe, \"Nut-Free Breakfast Ideas for Allergies and Sensitivities\"",
+  "evidence": "listed as the \"berry smoothie\", a nut-free breakfast recipe (dairy-free variant using oat milk in place of Greek yogurt)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-083",
+  "name": "Lactose-free yogurt parfait with berries & maple syrup",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "lactose-free plain yogurt",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "low-FODMAP granola",
+    "qty": "1/2 cup",
+    "role": "starch"
+   },
+   {
+    "food": "strawberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "yogurt→coconut yogurt (removes dairy)",
+  "approx_macros": "~360 kcal · 50g C · 18g P · 9g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "FODMAP Everyday, \"Lactose-Free Yogurt and the Low FODMAP Diet\"",
+  "evidence": "lactose-free yogurt parfait with low-FODMAP granola and fresh fruit given as the standard low-FODMAP breakfast build",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-084",
+  "name": "Lactose-free yogurt & spinach smoothie",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "lactose-free plain yogurt",
+    "qty": "1 cup",
+    "role": "dairy"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "blueberries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dairy + fruit + fruit + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt→coconut yogurt (removes dairy)",
+  "approx_macros": "~280 kcal · 42g C · 14g P · 6g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "FODMAP Everyday, \"Lactose-Free Yogurt and the Low FODMAP Diet\"",
+  "evidence": "\"blend yogurt with low FODMAP fruits like banana, blueberries, and spinach\" given as a low-FODMAP smoothie combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-085",
+  "name": "Coconut yogurt with GF seed granola & mango",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "coconut yogurt",
+    "qty": "250 g",
+    "role": "dairy"
+   },
+   {
+    "food": "certified gluten-free seed-based granola",
+    "qty": "50 g",
+    "role": "starch"
+   },
+   {
+    "food": "mango, diced",
+    "qty": "120 g",
+    "role": "fruit"
+   },
+   {
+    "food": "chia seeds",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + starch + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~380 kcal · 52g C · 8g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, low FODMAP recipe index (coconut-yogurt breakfast bowls); Kate Scarlata RDN, \"Tips for the low FODMAP Athlete\"",
+  "evidence": "coconut yogurt bowl with GF granola and low-FODMAP fruit, a dairy-free staple across low-FODMAP athlete guidance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-086",
+  "name": "Quinoa porridge with berries, banana & maple syrup",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "80 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "80 g",
+    "role": "fruit"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + fruit + sweetener",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~380 kcal · 68g C · 12g P · 6g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Monash FODMAP, low FODMAP recipe index (Quinoa Porridge with Banana & Yoghurt variant)",
+  "evidence": "quinoa porridge listed among Monash's official low-FODMAP breakfast recipes, adapted dairy-free with maple syrup",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-087",
+  "name": "Buckwheat porridge with honey & berries",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "buckwheat groats, cooked",
+    "qty": "80 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "80 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + sweetener + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~340 kcal · 62g C · 10g P · 3g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "naturally gluten-free grain staple documented across GF athlete resources (TriGirl UK, \"Tips for the Gluten-Free or Dairy-Free Triathlete\"; runtothefinish.com buckwheat breakfast)",
+  "evidence": "buckwheat repeatedly named as the go-to naturally gluten-free porridge grain for GF endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-088",
+  "name": "Rice porridge (congee) with tofu & scallion",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "white rice, cooked to porridge",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "firm tofu, cubed",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "scallion, sliced",
+    "qty": "1",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tamari→coconut aminos (removes soy)",
+  "approx_macros": "~340 kcal · 52g C · 16g P · 6g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "naturally gluten-free, egg-free breakfast pattern documented for GF/allergen-avoiding endurance athletes (Life on a Rice Cake, \"How to Run a Gluten-Free Marathon\", rice-based breakfast staple)",
+  "evidence": "rice-based breakfast pattern, reworked egg-free/dairy-free with tofu, following the site's stated preference for rice over \"pancakes, muffins, and toast\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-089",
+  "name": "Roasted chickpeas with dried apricots",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "1/2 cup",
+    "role": "protein"
+   },
+   {
+    "food": "dried apricots",
+    "qty": "4",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~260 kcal · 42g C · 10g P · 4g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+  "evidence": "roasted chickpeas listed as a nut-free, allergy-friendly protein snack, paired here with dried fruit",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-090",
+  "name": "Beef jerky with dried fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "beef jerky",
+    "qty": "40 g",
+    "role": "protein"
+   },
+   {
+    "food": "dried fruit mix",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~220 kcal · 28g C · 14g P · 4g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Sports & Medicine Nutrition RD, \"Allergy Friendly Snacks for High School Athletes\"",
+  "evidence": "\"beef jerky + dried fruit — a protein rich snack that travels well\" listed as an allergy-friendly athlete option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-091",
+  "name": "Sweet potato with almond butter & banana",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "almond butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "cinnamon",
+    "qty": "1/2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fat + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "almond butter→sunflower seed butter (removes tree_nuts)",
+  "approx_macros": "~420 kcal · 68g C · 9g P · 14g F",
+  "prep": "8 min (microwave)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition (Kelly Jones, MS RD CSSD), \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\"",
+  "evidence": "\"my personal favorite — a baked sweet potato topped with nut butter\" as her go-to gluten-free fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-092",
+  "name": "Sweet potato topped with sunflower seed butter, nut-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + fat + fruit",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~410 kcal · 66g C · 8g P · 13g F",
+  "prep": "8 min (microwave)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition (Kelly Jones, MS RD CSSD), \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\" (nut-free variant)",
+  "evidence": "baked sweet potato with nut butter given as her go-to gluten-free fuel, made nut-free with sunflower seed butter",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-093",
+  "name": "Fruit with sunflower seed butter, pre-workout",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "apple or banana",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "sunflower seed butter",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "fruit + fat",
+  "context": [
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~220 kcal · 26g C · 6g P · 12g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Student Athlete Nutrition (Kelly Jones, MS RD CSSD), \"Gluten Free Athletes: Fueling Tips, Best Foods, & More\"",
+  "evidence": "\"fruit with nut butter — recommended 30–90 minutes before training\" as effective pre-workout fuel, made nut-free",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-094",
+  "name": "Baked sweet potato, egg whites & olive oil, egg-yolk-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "baked sweet potato",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "egg whites, cooked",
+    "qty": "4",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "pre-session",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~380 kcal · 65g C · 20g P · 6g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Paleo Diet, \"Sample Menus for Endurance Athletes\"",
+  "evidence": "male-athlete protein guideline example (4–6 egg whites) paired with the sample menu's baked yam/sweet potato base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-095",
+  "name": "Turkey breast, avocado & spinach plate",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "sliced turkey breast",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1",
+    "role": "fat"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "2 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + fat + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~340 kcal · 12g C · 24g P · 22g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Paleo Diet, \"Sample Menus for Endurance Athletes\" (turkey breast paleo breakfast component)",
+  "evidence": "sliced turkey breast listed as the paleo sample-menu protein, reassembled here as a savoury rest-day plate",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-096",
+  "name": "Bacon, avocado & tomato plate",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "bacon",
+    "qty": "3 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "tomato, sliced",
+    "qty": "1",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + fat + veg",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~350 kcal · 6g C · 14g P · 30g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Diet Doctor, \"Breakfast options\" (low-carb/keto guide); Zach Bitter's bacon-based breakfast pattern via Men's Journal",
+  "evidence": "bacon-and-fat-forward plate reflecting the standard egg-free keto/paleo athlete breakfast documented across low-carb sources",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-097",
+  "name": "Cottage cheese with berries, gluten-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "100 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→coconut yogurt (removes dairy)",
+  "approx_macros": "~230 kcal · 16g C · 24g P · 6g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "nutritionbymandy.com, \"10 Gluten-Free Breakfast On-the-Go Ideas for Athletes\"",
+  "evidence": "\"cottage cheese topped with pineapple, peaches, or berries\" listed as a gluten-free grab-and-go athlete breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-098",
+  "name": "Cottage cheese with pineapple & juice, gluten-free",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "pineapple chunks",
+    "qty": "150 g",
+    "role": "fruit"
+   },
+   {
+    "food": "100% fruit juice",
+    "qty": "150 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "dairy + fruit + drink",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→coconut yogurt (removes dairy)",
+  "approx_macros": "~280 kcal · 38g C · 22g P · 4g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "nutritionbymandy.com, \"10 Gluten-Free Breakfast On-the-Go Ideas for Athletes\"",
+  "evidence": "\"cottage cheese topped with pineapple... served with 100% fruit juice\" listed as a gluten-free grab-and-go athlete breakfast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-099",
+  "name": "Trail mix with GF cereal, seeds & dried fruit",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "pumpkin & sunflower seeds",
+    "qty": "1/4 cup",
+    "role": "fat"
+   },
+   {
+    "food": "dried fruit",
+    "qty": "1/4 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "certified gluten-free breakfast cereal",
+    "qty": "1/2 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fat + fruit + starch",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none — already free of the 9 tracked allergens",
+  "approx_macros": "~300 kcal · 42g C · 7g P · 12g F",
+  "prep": "1 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "nutritionbymandy.com, \"10 Gluten-Free Breakfast On-the-Go Ideas for Athletes\" (nut-free variant)",
+  "evidence": "trail mix of \"nuts, seeds, dried fruit, and gluten-free breakfast cereal\" listed as a gluten-free on-the-go athlete breakfast, made nut-free with seeds only",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "B-c-100",
+  "name": "Gluten-free hard-boiled eggs with fig bars & grapes",
+  "meal_type": "breakfast",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "gluten-free fig bars",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none — already gluten-free, dairy-free, nut-free",
+  "approx_macros": "~380 kcal · 55g C · 14g P · 10g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "nutritionbymandy.com, \"10 Gluten-Free Breakfast On-the-Go Ideas for Athletes\"",
+  "evidence": "\"hard-boiled eggs with gluten-free fig bars (Nature's Bakery) and grapes\" listed as a gluten-free grab-and-go athlete breakfast",
+  "reconstructed_from_snippet": false
+ }
+]

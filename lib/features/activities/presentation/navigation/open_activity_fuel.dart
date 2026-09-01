@@ -10,7 +10,8 @@ import '../../domain/activity.dart';
 /// content is a "Generate Plan" placeholder. Import-only activities never get
 /// a plan and still land on Detail (read-only).
 void openActivityFuel(BuildContext context, Activity activity) {
-  if (activity.activityType.isImportOnly || activity.nutritionPlanData != null) {
+  if (activity.activityType.isImportOnly ||
+      activity.nutritionPlanData != null) {
     context.push('/plan', extra: {'mode': 'view', 'activityId': activity.id});
     return;
   }
