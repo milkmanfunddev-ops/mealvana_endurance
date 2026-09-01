@@ -120,10 +120,58 @@ class MacroExplanationService {
           actuals,
         );
       case ExplanationPhase.transition1:
-        return _transitionExplanations(1, actuals, useImperial: useImperial);
+        return _transitionExplanations(
+          1,
+          macroTargets,
+          actuals,
+          useImperial: useImperial,
+        );
       case ExplanationPhase.transition2:
-        return _transitionExplanations(2, actuals, useImperial: useImperial);
+        return _transitionExplanations(
+          2,
+          macroTargets,
+          actuals,
+          useImperial: useImperial,
+        );
     }
+  }
+
+  /// The sport pair around transition [index] (0-based), for COPY only —
+  /// identity is positional (brick.md R8). Derived from the brick's own
+  /// legs; null when segment data is unavailable (copy then stays neutral,
+  /// TC-5).
+  ({String from, String to})? transitionSportPair(
+    MacroTargets macroTargets,
+    int index,
+  ) {
+    final segs = macroTargets.brickSegments;
+    if (segs == null || segs.length < index + 2) return null;
+    final ordered = [...segs]..sort((a, b) => a.order.compareTo(b.order));
+    String short(String sport) {
+      switch (sport.toLowerCase()) {
+        case 'swimming':
+          return 'swim';
+        case 'cycling':
+          return 'bike';
+        case 'running':
+          return 'run';
+        default:
+          return sport.toLowerCase();
+      }
+    }
+
+    return (
+      from: short(ordered[index].sport),
+      to: short(ordered[index + 1].sport),
+    );
+  }
+
+  /// Compact numeric formatting for formula lines: drop a trailing ".0".
+  String _fmtNum(double value) {
+    final rounded = (value * 10).round() / 10.0;
+    return rounded == rounded.roundToDouble()
+        ? '${rounded.round()}'
+        : '$rounded';
   }
 
   /// Sport-specific carb ceiling for during phase (g/hr)

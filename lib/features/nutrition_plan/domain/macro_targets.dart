@@ -464,6 +464,11 @@ class BrickTransitionMacroTarget {
     this.safetyFlags = const [],
     this.isTested = false,
     this.isTestedSodium = false,
+    // T-1 transparency (transition-nutrition.md v1)
+    this.carbsRateGPerH,
+    this.effectiveGapMin,
+    this.transitionMin,
+    this.sportPair,
   });
 
   final String transitionName;
@@ -502,6 +507,20 @@ class BrickTransitionMacroTarget {
   /// Whether sweat sodium concentration was sourced from a personal test.
   final bool isTestedSodium;
 
+  // T-1 transparency (transition-nutrition.md v1 — the drawer renders the
+  // ratified formula from these; TC-4 drawer number == engine number).
+  /// The next leg's during-carb rate that sized the dose (g/h).
+  final double? carbsRateGPerH;
+
+  /// pre_buffer + transition_min + settle(next sport), minutes.
+  final double? effectiveGapMin;
+
+  /// The stop time used (provided, or the ratified default 3 — Q-TN3 open).
+  final double? transitionMin;
+
+  /// Display label only, no identity (brick.md R8), e.g. 'cycling→running'.
+  final String? sportPair;
+
   Map<String, dynamic> toJson() {
     return {
       'transitionName': transitionName,
@@ -524,6 +543,10 @@ class BrickTransitionMacroTarget {
       if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
       if (isTested) 'isTested': isTested,
       if (isTestedSodium) 'isTestedSodium': isTestedSodium,
+      if (carbsRateGPerH != null) 'carbsRateGPerH': carbsRateGPerH,
+      if (effectiveGapMin != null) 'effectiveGapMin': effectiveGapMin,
+      if (transitionMin != null) 'transitionMin': transitionMin,
+      if (sportPair != null) 'sportPair': sportPair,
     };
   }
 
@@ -549,6 +572,10 @@ class BrickTransitionMacroTarget {
       safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
       isTested: json['isTested'] as bool? ?? false,
       isTestedSodium: json['isTestedSodium'] as bool? ?? false,
+      carbsRateGPerH: (json['carbsRateGPerH'] as num?)?.toDouble(),
+      effectiveGapMin: (json['effectiveGapMin'] as num?)?.toDouble(),
+      transitionMin: (json['transitionMin'] as num?)?.toDouble(),
+      sportPair: json['sportPair'] as String?,
     );
   }
 
@@ -573,7 +600,11 @@ class BrickTransitionMacroTarget {
         other.ceilingMlPerH == ceilingMlPerH &&
         _listEquals(other.safetyFlags, safetyFlags) &&
         other.isTested == isTested &&
-        other.isTestedSodium == isTestedSodium;
+        other.isTestedSodium == isTestedSodium &&
+        other.carbsRateGPerH == carbsRateGPerH &&
+        other.effectiveGapMin == effectiveGapMin &&
+        other.transitionMin == transitionMin &&
+        other.sportPair == sportPair;
   }
 
   @override
@@ -597,6 +628,7 @@ class BrickTransitionMacroTarget {
       Object.hashAll(safetyFlags),
       isTested,
       isTestedSodium,
+      Object.hash(carbsRateGPerH, effectiveGapMin, transitionMin, sportPair),
     ),
   );
 }

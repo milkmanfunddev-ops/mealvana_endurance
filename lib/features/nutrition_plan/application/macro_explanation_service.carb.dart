@@ -460,30 +460,58 @@ extension _$CarbExt on MacroExplanationService {
   // BRICK TRANSITION (T1 / T2)
   // ---------------------------------------------------------------------------
 
+  // SSOT: docs/ssot/spec/design/components/transition-card.md TC-4/TC-5 and
+  // spec/fueling/transition-nutrition.md T-1 (RATIFIED Xuan 2026-09-01).
+  // Identity is positional (brick.md R8); the sport pair is derived from the
+  // brick's own legs for copy only \u2014 never hardwired swim\u2192bike / bike\u2192run
+  // (the as-built wording was the TC-5 defect, run log F-D).
   NutrientTransparencyData _brickTransitionTransparency({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
   }) {
     final isT1 = phase == ExplanationPhase.transition1;
     final transitionName = isT1 ? 'T1' : 'T2';
-    final fromSport = isT1 ? 'swim' : 'bike';
-    final toSport = isT1 ? 'bike' : 'run';
-
-    // Look up transition targets if available
-    final transitions = macroTargets.brickPhaseTargets?.transitions;
     final tIdx = isT1 ? 0 : 1;
+
+    final transitions = macroTargets.brickPhaseTargets?.transitions;
     final transition = (transitions != null && tIdx < transitions.length)
         ? transitions[tIdx]
         : null;
     final targetG = transition?.carbsG.round();
 
-    final tldrBody =
-        'Transition $transitionName is a short window between the $fromSport '
-        'and $toSport segments. Use this time to take in quick-digesting carbs '
-        'and fluids before the next leg begins.';
+    final pair = transitionSportPair(macroTargets, tIdx);
+    final betweenClause = pair == null
+        ? 'between two segments'
+        : 'between the ${pair.from} and ${pair.to} segments';
 
+    // TC-5 (F-C): the "take in quick-digesting carbs" cue must agree with a
+    // nonzero target \u2014 a 0 g dose (e.g. into a swim) gets honest copy.
+    final tldrBody = (targetG != null && targetG == 0)
+        ? 'Transition $transitionName is a short window $betweenClause. Your '
+              'hourly fuelling schedule places no carb tick in this gap \u2014 '
+              '0 g is a legitimate dose, not an error.'
+        : 'Transition $transitionName is a short window $betweenClause. Use '
+              'this time to take in quick-digesting carbs before the next leg '
+              'begins \u2014 the dose is the next tick of your hourly fuelling '
+              'schedule, placed at the gap.';
+
+    // T-1 formula line in accent (TC-4: drawer number == engine number).
+    final rate = transition?.carbsRateGPerH;
+    final gap = transition?.effectiveGapMin;
     final tldrLines = <FormulaLine>[];
-    if (targetG != null) {
+    if (targetG != null && rate != null && gap != null) {
+      tldrLines.add(
+        FormulaLine([
+          fAccent('${_fmtNum(rate)} g/h '),
+          fOp('\u00d7 '),
+          fAccent('${_fmtNum(gap)} min '),
+          fOp('\u00f7 60 '),
+          fOp('\u2192 clamp [0, 30] '),
+          fOp('= '),
+          fResult('${targetG}g'),
+        ]),
+      );
+    } else if (targetG != null) {
       tldrLines.add(
         FormulaLine([
           fAccent('$transitionName target '),
@@ -503,10 +531,12 @@ extension _$CarbExt on MacroExplanationService {
         StorySection(
           question: 'Why eat during a transition?',
           answer:
-              'Transitions are your only chance to refuel between segments. Even '
-              'though they are short, consuming **quick-digesting carbs** here helps '
-              'maintain blood glucose for the next leg \u2014 especially important before '
-              'the $toSport where intensity often increases.',
+              'Fuelling is one continuous, duration-scaled hourly schedule '
+              '\u2014 the transition is an **ingestion opportunity**, not a '
+              'separately dosed segment. The dose here is the schedule\u2019s '
+              'next tick: your next leg\u2019s carb rate spread over the '
+              'effective gap (a 15-min pre-buffer, the stop itself, and a '
+              'settle window on the next leg), capped at 30 g.',
         ),
         StorySection(
           question: 'What kinds of food work best?',

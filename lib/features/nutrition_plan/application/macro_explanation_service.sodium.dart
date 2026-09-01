@@ -744,6 +744,11 @@ extension _$SodiumExt on MacroExplanationService {
   // TRANSITION SODIUM
   // ---------------------------------------------------------------------------
 
+  // SSOT: transition-card.md TC-4 + transition-nutrition.md T-5 (RATIFIED
+  // Xuan 2026-09-01): sodium is a TALLY, never a target \u2014 the as-built
+  // 265/248 pair dropped its target half, and the drawer must not render a
+  // formula implying one. The continuous during schedule owns sodium; salt
+  // taken here rides whatever is drunk, at sweat concentration.
   NutrientTransparencyData _transitionSodiumTransparency({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
@@ -751,40 +756,13 @@ extension _$SodiumExt on MacroExplanationService {
   }) {
     final isT1 = phase == ExplanationPhase.transition1;
     final transitionName = isT1 ? 'T1' : 'T2';
+    final tIdx = isT1 ? 0 : 1;
 
     final transitions = macroTargets.brickPhaseTargets?.transitions;
-    final tIdx = isT1 ? 0 : 1;
     final transition = (transitions != null && tIdx < transitions.length)
         ? transitions[tIdx]
         : null;
-    final sodiumMg = transition?.sodiumMg.round() ?? 90;
-    final sodiumConc = transition?.sodiumConcMgPerL;
     final isTested = transition?.isTested ?? false;
-    final transitionWaterMl = transition?.waterMl.round() ?? 300;
-
-    final List<FormulaLine> tldrLines;
-    if (sodiumConc != null) {
-      tldrLines = [
-        FormulaLine([
-          fAccent('${_fmtMlAmount(transitionWaterMl, useImperial)} '),
-          fOp('\u00d7 '),
-          fAccent('conc '),
-          fDim('$sodiumConc mg/L '),
-          fOp('\u00f7 '),
-          fAccent('1000 '),
-          fOp('= '),
-          fResult('${sodiumMg}mg'),
-        ]),
-      ];
-    } else {
-      tldrLines = [
-        FormulaLine([
-          fAccent('$transitionName fixed '),
-          fOp('= '),
-          fResult('${sodiumMg}mg'),
-        ]),
-      ];
-    }
 
     return NutrientTransparencyData(
       nutrientLabel: 'Sodium',
@@ -793,31 +771,28 @@ extension _$SodiumExt on MacroExplanationService {
       phase: 'transition',
       isTested: isTested,
       tldrBody:
-          'Transition sodium rides on the fixed ${_fmtMlAmount(transitionWaterMl, useImperial)} fluid bolus at your '
-          'sweat sodium concentration. It matches the sweat [Na+] in whatever '
-          'you drink during the brief stop \u2014 no extra factor applied.',
-      tldrLines: tldrLines,
-      calculationSections: sodiumConc != null
-          ? _buildTransitionSodiumCalculationSections(
-              waterMl: transitionWaterMl,
-              concMgPerL: sodiumConc,
-              useImperial: useImperial,
-            )
-          : const [],
+          'There is no transition-specific sodium target \u2014 the figure on '
+          'the card is a tally of what your planned foods deliver here. '
+          'Sodium replacement lives on the continuous during schedule: the '
+          'legs carry the per-hour replacement across their full durations, '
+          'and anything taken in $transitionName simply counts toward it.',
+      tldrLines: const [],
+      calculationSections: const [],
       storySections: [
         StorySection(
-          question: 'How is T1/T2 sodium calculated?',
+          question: 'Why is there no transition sodium target?',
           answer:
-              'It\'s the fixed 300 mL transition bolus multiplied by your sweat '
-              'sodium concentration (e.g. 300 mL \u00d7 825 mg/L = 248 mg at AVERAGE). '
-              'Sodium rides on fluid \u2014 the bike and run legs carry the per-hour '
-              'replacement across their full durations.',
-          dataChips: ['T1/T2 sodium \u00b7 (300 / 1000) \u00d7 conc'],
+              'No position stand or practitioner source suggests a fixed '
+              'transition sodium amount. Sodium rides on fluid at your sweat '
+              'concentration \u2014 the per-leg schedule already replaces it '
+              'across the event, so a transition drink is placement of that '
+              'schedule, not an extra requirement.',
+          dataChips: const ['No target \u00b7 tally only (T-5)'],
         ),
       ],
-      targetGrams: sodiumMg.toDouble(),
-      rangeLow: transition?.sodiumLowMg,
-      rangeHigh: transition?.sodiumHighMg,
+      targetGrams: null,
+      rangeLow: null,
+      rangeHigh: null,
       sportLabel: transitionName,
     );
   }

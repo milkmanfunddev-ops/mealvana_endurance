@@ -563,15 +563,11 @@ class BrickNutritionSections extends StatelessWidget {
   ) {
     String message;
     if (isTransition) {
-      // Determine transition type from section ID
-      final transitionNumber = int.tryParse(
-        section.id.replaceAll(RegExp(r'[^0-9]'), ''),
-      );
-      if (transitionNumber == 1) {
-        message = 'Quick transition - start fueling on the bike';
-      } else {
-        message = 'Quick transition - fuel at first aid station';
-      }
+      // Sport-neutral by design (transition-card.md TC-5): the old copy
+      // hardwired "on the bike" / "first aid station" to T1/T2, which reads
+      // wrong on any non-swim-bike-run brick. A 0 g transition dose is a
+      // legitimate T-1 value, not an error.
+      message = 'Quick transition - resume fueling on the next leg';
     } else {
       message = 'No foods recommended - mouth rinse only';
     }

@@ -824,6 +824,15 @@ class BrickMacroService {
             isTested: transitionData['is_tested'] as bool? ?? false,
             isTestedSodium:
                 transitionData['is_tested_sodium'] as bool? ?? false,
+            // T-1 transparency (transition-nutrition.md v1)
+            carbsRateGPerH: _toDoubleOrNull(
+              transitionData['carbs_rate_g_per_h'],
+            ),
+            effectiveGapMin: _toDoubleOrNull(
+              transitionData['effective_gap_min'],
+            ),
+            transitionMin: _toDoubleOrNull(transitionData['transition_min']),
+            sportPair: transitionData['sport_pair'] as String?,
           ),
         );
       }

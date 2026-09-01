@@ -422,59 +422,71 @@ extension _$ExplanationsExt on MacroExplanationService {
 
   // ── Transition Phase ────────────────────────────────────────────────
 
+  // SSOT: transition-card.md TC-4 + transition-nutrition.md v1 (RATIFIED
+  // Xuan 2026-09-01). Numbers come from the engine's transition targets —
+  // the pre-ratification fixed 20/25 g · 150/100 mg · 200/150 mL values were
+  // fabricated and are retired. Carbs is the only stat with a target (T-1);
+  // fluid and sodium are tallies (T-5) — no formula implying a target.
   List<MacroExplanation> _transitionExplanations(
     int transitionNumber,
+    MacroTargets macroTargets,
     Map<String, int>? actuals, {
     bool useImperial = false,
   }) {
-    final isT1 = transitionNumber == 1;
-    final carbs = isT1 ? 20 : 25;
-    final sodium = isT1 ? 150 : 100;
-    final water = isT1 ? 200 : 150;
-    final waterVal = useImperial ? (water * 0.033814).round() : water;
-    final waterUnit = useImperial ? 'oz' : 'mL';
+    final tIdx = transitionNumber - 1;
+    final transitions = macroTargets.brickPhaseTargets?.transitions;
+    final transition = (transitions != null && tIdx < transitions.length)
+        ? transitions[tIdx]
+        : null;
+    final carbs = transition?.carbsG.round();
+    final rate = transition?.carbsRateGPerH;
+    final gap = transition?.effectiveGapMin;
+
+    final carbFormula = (carbs != null && rate != null && gap != null)
+        ? 'Formula:  clamp(round(${_fmtNum(rate)} g/h × ${_fmtNum(gap)} min ÷ 60), 0, 30) = ${carbs}g'
+        : (carbs != null ? 'Target:  ${carbs}g' : 'Target:  —');
 
     return [
       MacroExplanation(
         macroName: 'Carbohydrates',
-        value: '$carbs',
+        value: carbs != null ? '$carbs' : '—',
         unit: 'g',
         actualValue: actuals != null ? '${actuals['carbs'] ?? 0}' : null,
         formulaText:
-            'Quick, easily-digestible carbs to keep your blood sugar '
-            'steady during the ${isT1 ? "first" : "second"} transition.\n\n'
-            'Formula:  fixed ${carbs}g (${isT1 ? "T1" : "T2"} transition)\n\n'
-            'Transition targets are fixed values based on race distance. '
-            'Sprint (<90 min) and short Olympic (<3 hr) use reduced values.',
+            'The dose is the next tick of your hourly fuelling schedule, '
+            'placed at the gap: your next leg’s carb rate over the '
+            'effective gap (15-min pre-buffer + the stop + a settle window), '
+            'capped at 30 g.\n\n'
+            '$carbFormula',
         rangeRationale:
-            'Transitions are quick — these are fixed targets designed '
-            'for fast absorption.',
+            'Band is 0–30 g on every transition; 0 is a legitimate '
+            'value (e.g. into a swim).',
       ),
       MacroExplanation(
         macroName: 'Fluids',
-        value: '$waterVal',
-        unit: waterUnit,
-        actualValue: actuals != null
+        value: actuals != null
             ? '${useImperial ? ((actuals['fluids'] ?? 0) * 0.033814).round() : actuals['fluids'] ?? 0}'
-            : null,
+            : '—',
+        unit: useImperial ? 'oz' : 'mL',
+        actualValue: null,
         formulaText:
-            'A small drink during transition to stay on top of '
-            'hydration without overfilling your stomach.\n\n'
-            'Formula:  fixed ${_fmtMlAmount(water, useImperial)} (${isT1 ? "T1" : "T2"} transition)',
-        rangeRationale:
-            'Keep it small — you\'ll resume full hydration '
-            'in the next segment.',
+            'No transition fluid target exists — your continuous hydration '
+            'schedule owns fluids, and a drink taken here is placement of '
+            'that schedule. The figure is a tally of what your planned '
+            'foods deliver.',
+        rangeRationale: 'Tally only — no target, no range (T-5).',
       ),
       MacroExplanation(
         macroName: 'Sodium',
-        value: '$sodium',
+        value: actuals != null ? '${actuals['sodium'] ?? 0}' : '—',
         unit: 'mg',
-        actualValue: actuals != null ? '${actuals['sodium'] ?? 0}' : null,
+        actualValue: null,
         formulaText:
-            'Sodium from your sports drink or gel supports fluid '
-            'absorption during the transition.\n\n'
-            'Formula:  fixed ${sodium}mg (${isT1 ? "T1" : "T2"} transition)',
-        rangeRationale: 'A small amount to bridge between segments.',
+            'No transition sodium target exists — replacement lives on the '
+            'per-leg during schedule; salt taken here rides whatever you '
+            'drink. The figure is a tally of what your planned foods '
+            'deliver.',
+        rangeRationale: 'Tally only — no target, no range (T-5).',
       ),
     ];
   }

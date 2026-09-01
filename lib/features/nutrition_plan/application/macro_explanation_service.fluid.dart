@@ -1360,6 +1360,13 @@ extension _$FluidExt on MacroExplanationService {
   // TRANSITION FLUID
   // ---------------------------------------------------------------------------
 
+  // SSOT: transition-card.md TC-4 + transition-nutrition.md T-5 (RATIFIED
+  // Xuan 2026-09-01): fluid is a TALLY, never a target \u2014 no position stand
+  // or practitioner source suggests a fixed transition fluid amount; the
+  // continuous during schedule owns hydration and a drink taken here is
+  // *placement* of that schedule. No formula line may imply a target. Copy
+  // is sport-aware or neutral (TC-5 \u2014 the hardwired swim/wetsuit wording was
+  // the F-D defect).
   NutrientTransparencyData _transitionFluidTransparency({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
@@ -1367,14 +1374,18 @@ extension _$FluidExt on MacroExplanationService {
   }) {
     final isT1 = phase == ExplanationPhase.transition1;
     final transitionName = isT1 ? 'T1' : 'T2';
+    final tIdx = isT1 ? 0 : 1;
 
     final transitions = macroTargets.brickPhaseTargets?.transitions;
-    final tIdx = isT1 ? 0 : 1;
     final transition = (transitions != null && tIdx < transitions.length)
         ? transitions[tIdx]
         : null;
-    final waterMl = transition?.waterMl.round() ?? 300;
     final isTested = transition?.isTested ?? false;
+
+    final pair = transitionSportPair(macroTargets, tIdx);
+    final nextLegClause = pair == null
+        ? 'the next leg'
+        : 'the ${pair.to} leg';
 
     return NutrientTransparencyData(
       nutrientLabel: 'Fluids',
@@ -1383,42 +1394,28 @@ extension _$FluidExt on MacroExplanationService {
       phase: 'transition',
       isTested: isTested,
       tldrBody:
-          'Transitions are brief, fixed hydration windows \u2014 not a '
-          'calculated segment. The ${_fmtMlAmount(waterMl, useImperial)} target '
-          "isn't derived from your sweat rate; it's a conservative bolus sized "
-          'for what you can comfortably take in during a 2\u20135 minute stop. '
-          '**$transitionName** '
-          '${isT1 ? "bridges the swim gap and offsets wetsuit heat." : "is your last easy opportunity before running GI tolerance drops."}',
-      tldrLines: [
-        FormulaLine([
-          fAccent('$transitionName '),
-          fOp('= '),
-          fAccent('fixed ${_fmtMlAmount(waterMl, useImperial)} '),
-          fOp('\u2192 '),
-          fResult(_fmtMlAmount(waterMl, useImperial)),
-        ]),
-      ],
-      calculationSections: _buildTransitionFluidCalculationSections(
-        waterMl: waterMl,
-        isT1: isT1,
-        useImperial: useImperial,
-      ),
+          'There is no transition-specific fluid target \u2014 the figure on the '
+          'card is a tally of what your planned foods deliver here. Your '
+          'continuous hydration schedule owns fluids; a drink taken in '
+          '$transitionName is placement of that schedule before '
+          '$nextLegClause, not an extra requirement.',
+      tldrLines: const [],
+      calculationSections: const [],
       storySections: [
         StorySection(
-          question: 'Why is the transition fluid fixed at 300 mL?',
+          question: 'Why is there no transition fluid target?',
           answer:
-              'Transition windows are too short to calculate a precise sweat-rate-based '
-              'target. 300 mL is a conservative bolus sized to what most athletes can '
-              'comfortably consume and absorb during a 2\u20135 minute stop without '
-              'causing GI distress when movement resumes.',
-          citation:
-              'Consensus recommendation \u2014 USA Triathlon / ITU nutrition guidelines',
-          dataChips: ['T1/T2 fixed \u00b7 300 mL', 'Confidence \u00b7 LOW'],
+              'No position stand or practitioner source suggests a fixed '
+              'transition fluid amount \u2014 the closest is the "gel with a sip '
+              'of water" cue, which is placement guidance, not a quantity. '
+              'Your per-leg hydration rates already cover the event; '
+              'whatever you drink here simply counts toward them.',
+          dataChips: const ['No target \u00b7 tally only (T-5)'],
         ),
       ],
-      targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
-      rangeLow: _mlToDisplayOrNull(transition?.waterLowMl, useImperial),
-      rangeHigh: _mlToDisplayOrNull(transition?.waterHighMl, useImperial),
+      targetGrams: null,
+      rangeLow: null,
+      rangeHigh: null,
       sportLabel: transitionName,
     );
   }
