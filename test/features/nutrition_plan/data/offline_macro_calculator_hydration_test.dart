@@ -366,13 +366,13 @@ void main() {
   group('calculateBrickHydration', () {
     // Example 6: bike 90 + run 45, 72 kg, MEDIUM, 27°C, 50%, outdoor
     test(
-      'Example 6: bike 90min + run 45min, 72kg, MEDIUM, 27°C — bike=789, T2=300, run=789',
+      'Example 6: bike 90min + run 45min, 72kg, MEDIUM, 27°C — bike=789, T1=300, run=789',
       () {
         // effective = 1.28 * clamp(1+(27-22)*0.04, 0.5, 1.8) * 1.0 * 1.0
         //           = 1.28 * 1.20 = 1.536 L/hr
         // total duration = 135 min → replacementPct = 0.60
         // losses: bike = 1536*1.5 = 2304; run = 1536*0.75 = 1152; total = 3456
-        // required = 3456 * 0.60 = 2074; transitions (T2 only) = 300
+        // required = 3456 * 0.60 = 2074; transitions (one gap = T1) = 300
         // remaining = 1774; drinkable = (90+45)/60 = 2.25 hr
         // recommended = round(1774/2.25) = 789
         // floor: (3456 - 72*1000*0.02)=3456-1440=2016; remaining=2016-300=1716; floor=round(1716/2.25)=763
@@ -412,7 +412,10 @@ void main() {
           789,
           reason: 'run segment rate ml/hr',
         );
-        expect(t2.transitionName, 'T2');
+        // Positional identity (brick.md R8, fixes D-008): the single
+        // bike→run gap is T1; the sport pair survives as a label only.
+        expect(t2.transitionName, 'T1');
+        expect(t2.sportPair, 'cycling→running');
         expect(t2.waterMl, 300);
         expect(result.safetyFlags, isEmpty, reason: 'no flags expected');
       },

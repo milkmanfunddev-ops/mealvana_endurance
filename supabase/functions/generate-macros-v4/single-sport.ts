@@ -624,6 +624,10 @@ export interface MacroInputV4 {
     pace_minutes_per_mile?: number;
   }>;
   segment_order?: string[];
+  /** Measured/planned stop time per transition, minutes. The creation form
+   * collects none today (Q-TN3 open) — absent ⇒ the engine's ratified
+   * default 3 (transition-nutrition.md §Constants). A provided value wins. */
+  transition_minutes?: number;
   gut_training: string;
   sweat_rate_category: string;
   sweat_sodium: string; // 'low' | 'average' | 'high' (or legacy 'medium' = alias for 'average')
