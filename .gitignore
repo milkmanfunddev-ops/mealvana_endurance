@@ -142,3 +142,5 @@ ds-bundle/
 .design-sync/node_modules
 design/ds/node_modules/
 design/ds/dist/
+# Scraped source pages (regenerate with scripts/fetch_recipe_sources.mjs)
+.cache/
