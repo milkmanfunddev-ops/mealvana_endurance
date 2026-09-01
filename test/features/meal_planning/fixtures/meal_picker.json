@@ -1,0 +1,109 @@
+{
+  "kind": "meal_picker",
+  "title": "Three dinners to start",
+  "mealType": "dinner",
+  "meals": [
+    {
+      "source": "saved",
+      "id": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+      "name": "Egg & Veggie Scramble",
+      "mealType": "dinner",
+      "contexts": [],
+      "batch": false,
+      "prepMinutes": null,
+      "kcal": 280,
+      "carbsG": 8,
+      "proteinG": 22,
+      "fatG": 18,
+      "allergens": [],
+      "dietsOk": [],
+      "swaps": null,
+      "why": "one of your saved meals",
+      "attribution": "your saved meal",
+      "attributionShort": "your saved meal",
+      "ingredients": "Egg & Veggie Scramble",
+      "libraryMealId": null,
+      "score": 0.65,
+      "kind": "assembly",
+      "pattern": null,
+      "frequency": "staple",
+      "icon": "egg",
+      "myVote": 0
+    },
+    {
+      "source": "library",
+      "id": "AD-105",
+      "name": "Wheatberries, white bean & raw cabbage-carrot bowl with hummus",
+      "mealType": "dinner",
+      "contexts": [
+        "everyday",
+        "recovery"
+      ],
+      "batch": true,
+      "prepMinutes": 15,
+      "kcal": null,
+      "carbsG": null,
+      "proteinG": null,
+      "fatG": null,
+      "allergens": [],
+      "dietsOk": [
+        "omnivore",
+        "pescatarian",
+        "vegan",
+        "vegetarian"
+      ],
+      "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+      "why": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+      "attribution": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+      "attributionShort": "",
+      "ingredients": "wheatberries, cooked 200 g, white beans, canned 150 g, cabbage, shredded 80 g, carrot, shredded 60 g, hummus 3 tbsp",
+      "libraryMealId": "AD-105",
+      "score": 0.54,
+      "kind": "assembly",
+      "pattern": "starch + protein + veg + sauce",
+      "frequency": "staple",
+      "icon": "beans",
+      "myVote": 0
+    },
+    {
+      "source": "library",
+      "id": "AD-014",
+      "name": "Wholewheat pasta, mixed veg & avocado",
+      "mealType": "dinner",
+      "contexts": [
+        "everyday",
+        "recovery"
+      ],
+      "batch": true,
+      "prepMinutes": 20,
+      "kcal": 520,
+      "carbsG": 75,
+      "proteinG": 15,
+      "fatG": 18,
+      "allergens": [
+        "gluten"
+      ],
+      "dietsOk": [
+        "mediterranean",
+        "omnivore",
+        "pescatarian",
+        "vegan",
+        "vegetarian"
+      ],
+      "swaps": "pasta→rice or quinoa; avocado→nuts or seeds",
+      "why": "his dinner base is \"rice, quinoa or wholewheat pasta\" with vegetables \"heated in whatever way is easiest\" plus \"an avocado, nuts, or seeds\"",
+      "attribution": "David Rother, pro triathlete, \"What I Eat In A Day\" — https://www.sundried.com/blogs/nutrition/what-i-eat-in-a-day-david-rother-pro-triathlete",
+      "attributionShort": "David Rother, pro triathlete, \"What I…",
+      "ingredients": "wholewheat pasta, cooked 200 g, mixed vegetables, steamed 200 g, avocado 0.5",
+      "libraryMealId": "AD-014",
+      "score": 0.54,
+      "kind": "assembly",
+      "pattern": "starch + veg + fat",
+      "frequency": "staple",
+      "icon": "pasta",
+      "myVote": 0
+    }
+  ],
+  "multi": true,
+  "defaultServings": 4
+}
