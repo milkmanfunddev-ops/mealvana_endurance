@@ -33,6 +33,10 @@ class SyncDependencyGraph {
     'personal_formulas': ['users'],
     'meal_logs': ['users'],
     'saved_meals': ['users'],
+    // plan_meals.saved_meal_id → saved_meals; the local Recents rail and
+    // `plan_log_from_plan` read meal_logs, so both must be remote first.
+    'meal_plans': ['users', 'saved_meals', 'meal_logs'],
+    'user_memories': ['users'],
   };
 
   static List<String> dependenciesFor(String repositoryKey) {
