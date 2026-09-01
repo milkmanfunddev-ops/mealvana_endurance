@@ -48,6 +48,7 @@ flutter test test/migrations/v1_to_v2_migration_test.dart
 - Web database docs align with `connection_web.dart` implementation.
 
 ## Related Docs
+- `meal-planning-rpcs.md` — the Vana meal-planning SQL functions (`confirm_meal_plan`, `plan_log_from_plan`, …) and who calls them
 - `/docs/technical/sync-architecture.md`
 - `/docs/architecture/README.md`
 - `/docs/web_mode/README.md`

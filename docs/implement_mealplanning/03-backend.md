@@ -74,3 +74,46 @@ via the AI Gateway key already in edge secrets. Open-Meteo/holidays: unchanged (
 - `vana_calls` has one row per model call; 429 after 5 rapid chats; **no** credit debit for Pro users; 403 for a
   non-pro user when the gate is on.
 - `run-algorithm-tests.sh` green incl. the new vana suite.
+
+## 5. Status — **done on dev 2026-09-01** (branch `mealplanning`, worktree commits f64bec32 · 507474c1 · c30e3afe + docs)
+
+Deployed to dev with `--no-verify-jwt`: `vana-chat` v1, `vana-action` v1, `vana-day-notes` v1, `jade-chat` v27
+(alias). Migration `20260902090000_meal_planning_rpcs.sql` applied to dev via the Supabase MCP `apply_migration`.
+Dev secret `PRO_GATE_ENABLED=false` set. Prod: nothing (Phase 5 runbook).
+
+Smoke as the QA user (`test@test.com`) against dev, plan state restored afterwards — all green:
+opener → `status` · `ui:meal_picker` (3 dinners, diet respected, no allergen hits) · `text` · `done{usage}`; second
+turn round-trips history from `vana_messages.parts` and the next picker never repeats; `pick_meals` → `batch`;
+`confirm_plan` → `batch` (status `confirmed`) + `shopping_list` (6 items) and the week's other plans archived;
+`log_from_plan` → `meal_logs` row `source='plan'`, `plan_meal_id` set, `servings_left` 4→3; `get_home` / `get_meal`
+/ `recent_meals` / `set_meal_feedback` toggle; general turn + `jade-chat` opener; 401 `unauthenticated`, 400
+`message_required`; one `vana_calls` row per model call (opener, chat, embed, daynotes).
+Tests: `supabase/functions/tests/vana/{grocery,context,contract}.test.ts` (12 tests) — auto-discovered by
+`run-algorithm-tests.sh` (88/88 local files green).
+
+### Deviations from the plan above (and from the prototype)
+- **RPC set** — `confirm_meal_plan(p_plan_id, p_shopping)` archives *every* other non-archived plan of the
+  athlete-week (drafts from other conversations too), not only a previously confirmed one as the prototype did: one
+  active plan per week after confirm is what the Plan tab expects. `plan_log_from_plan` writes the plan_meals macros
+  **as stored (per serving)** — they are already per serving (`coverageOf` multiplies by servings), so no `÷ servings`.
+  The TS uses the RPCs for the two remote-ack writes (`confirmPlan`, `logFromPlan`); the other edits stay as RLS
+  row updates in TS, with `plan_set_servings` / `plan_remove_meal` / `plan_toggle_shopping` / `plan_set_day_slot`
+  there for the Dart replays. `plan_set_servings` does not rebuild `shopping` (TS does).
+- **`new_plan`** — declared in `contracts.ts` but never implemented in the prototype; `vana-action` implements it
+  (archive the scope's plan → fresh empty draft with the same conversation ownership → `{parts:[batch]}`).
+- **Entitlement fallback** — `PRO_GATE_ENABLED` missing ⇒ gate **on** everywhere except the dev project ref (so a
+  forgotten prod secret cannot open the feature). `has_entitlement()` not existing (Phase 3 in flight) ⇒ logged and
+  treated as not entitled; `users.is_internal = true` passes.
+- **`jade-chat`** — now the Vana general chat under the old route: `GENERAL_PROMPT` + general tool set, `vana_*`
+  tables, credits unchanged, opener still ephemeral (no row, empty `x-conversation-id`). The shipped client renders
+  `choices` and drops the other Vana part kinds (its parser already ignores unknown kinds). `location` is ignored.
+  General openers in `vana-chat` (`kind:'general', opener:true`) ARE persisted (the prototype's general opener was a no-op).
+- **Day notes** — `refreshDayNotesSoon` is a `vana-day-notes` invocation under `EdgeRuntime.waitUntil` (with the
+  athlete's JWT), not an in-process promise; `ensureDayNotes` still generates inline when a day has no note at all.
+  After confirm this can cost two Haiku calls (waitUntil + a `get_home` before it lands) — within the 4/min bucket.
+- **Smoke test** lives outside the repo (scratchpad `smoke.ts`); the prototype's `smoke-vana.test.ts` was not ported
+  because it needs a service-role `.env` — the contract test over the frozen fixtures covers the shapes.
+- **Persona walkthrough mismatches** listed in the README (pre-tool narration on general turns, batch-cooking fork,
+  `setSetting` follow-up wording) are **not** fixed here — the prompts are verbatim `contract-v1`; the general turn in
+  the smoke still streamed "I need to check…" before its tools. Fix in `persona.ts` and back-port to the prototype.
+- `supabase/config.toml` has no `[functions.vana-*]` entries (deploy is via the `--no-verify-jwt` flag, as for `jade-chat`).

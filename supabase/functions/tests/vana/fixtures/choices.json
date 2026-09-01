@@ -1,0 +1,8 @@
+{
+  "kind": "choices",
+  "question": "What next?",
+  "options": [
+    "What should I eat today?",
+    "Start a meal plan"
+  ]
+}

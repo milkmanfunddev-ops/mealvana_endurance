@@ -1,0 +1,631 @@
+{
+  "parts": [
+    {
+      "kind": "batch",
+      "plan": {
+        "id": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+        "weekStart": "2026-08-30",
+        "status": "confirmed",
+        "batchCooking": true,
+        "conversationId": "a73f6db2-352e-4d92-bad1-defd605d4516",
+        "brief": null,
+        "days": {},
+        "rules": [],
+        "meals": [
+          {
+            "id": "ec906825-ca28-4540-b55c-5ec6be601aec",
+            "planId": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+            "source": "saved",
+            "libraryMealId": null,
+            "savedMealId": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+            "name": "Egg & Veggie Scramble",
+            "mealType": "dinner",
+            "session": "fresh-fri",
+            "servings": 4,
+            "servingsLeft": 4,
+            "kcal": 280,
+            "carbsG": 8,
+            "proteinG": 22,
+            "fatG": 18,
+            "swapsApplied": [],
+            "comments": [],
+            "position": 0,
+            "icon": "egg"
+          },
+          {
+            "id": "27f80b00-9a1f-492f-9ac5-8bbaa67b5250",
+            "planId": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+            "source": "library",
+            "libraryMealId": "AD-105",
+            "savedMealId": null,
+            "name": "Wheatberries, white bean & raw cabbage-carrot bowl with hummus",
+            "mealType": "dinner",
+            "session": "cook-sun",
+            "servings": 4,
+            "servingsLeft": 4,
+            "kcal": null,
+            "carbsG": null,
+            "proteinG": null,
+            "fatG": null,
+            "swapsApplied": [],
+            "comments": [],
+            "position": 1,
+            "icon": "beans"
+          }
+        ],
+        "shopping": [
+          {
+            "qty": "320 g",
+            "have": false,
+            "name": "Cabbage",
+            "aisle": "Produce",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "240 g",
+            "have": false,
+            "name": "Carrot",
+            "aisle": "Produce",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "4 serving",
+            "have": false,
+            "name": "Egg & veggie scramble",
+            "aisle": "Protein",
+            "checked": false,
+            "fromMealIds": [
+              "ec906825-ca28-4540-b55c-5ec6be601aec"
+            ]
+          },
+          {
+            "qty": "600 g",
+            "have": false,
+            "name": "White beans",
+            "aisle": "Pantry",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "12 tbsp",
+            "have": false,
+            "name": "Hummus",
+            "aisle": "Other",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "800 g",
+            "have": false,
+            "name": "Wheatberries",
+            "aisle": "Other",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          }
+        ],
+        "coverage": {
+          "lunchDinnerSlots": 14,
+          "covered": 8,
+          "perDay": {
+            "kcal": 160,
+            "carbsG": 5,
+            "proteinG": 13
+          }
+        },
+        "dayNotes": {
+          "2026-09-01": "Rest day—keep meals steady. Egg & Veggie Scramble at dinner to start the week.",
+          "2026-09-02": "Rest day—standard fueling. Wheatberries bowl at dinner for plant protein and carbs.",
+          "2026-09-03": "Rest day—maintain rhythm. Egg & Veggie Scramble covers your needs well tonight.",
+          "2026-09-04": "Rest day—stick to plan. Wheatberries bowl again; carbs and protein are on target.",
+          "2026-09-05": "Rest day—light and balanced. Egg & Veggie Scramble to finish the batch.",
+          "2026-09-06": "Rest day—finish strong. Wheatberries bowl wraps out your week's dinners.",
+          "2026-09-07": "Labor Day—enjoy your day. Light meals work best on full rest."
+        },
+        "dayNotesStale": true
+      }
+    }
+  ],
+  "home": {
+    "context": {
+      "profile": {
+        "firstName": null,
+        "diet": "vegetarian",
+        "allergies": [],
+        "gutTraining": "high"
+      },
+      "week": {
+        "start": "2026-08-30",
+        "character": "full rest",
+        "anchor": null,
+        "loadScore": 0,
+        "workouts": []
+      },
+      "race": null,
+      "budget": {
+        "today": {
+          "date": "2026-09-01",
+          "kcal": 2640,
+          "carbsG": 336,
+          "proteinG": 117,
+          "fatG": 92,
+          "sessionKcal": 0,
+          "planningKcal": 2640,
+          "lunchDinnerKcal": 1452,
+          "mode": "prospective"
+        },
+        "week": [
+          {
+            "date": "2026-09-01",
+            "kcal": 2640,
+            "carbsG": 336,
+            "proteinG": 117,
+            "fatG": 92,
+            "sessionKcal": 0,
+            "planningKcal": 2640,
+            "lunchDinnerKcal": 1452,
+            "mode": "prospective"
+          },
+          {
+            "date": "2026-09-02",
+            "kcal": 2640,
+            "carbsG": 336,
+            "proteinG": 117,
+            "fatG": 92,
+            "sessionKcal": 0,
+            "planningKcal": 2640,
+            "lunchDinnerKcal": 1452,
+            "mode": "prospective"
+          },
+          {
+            "date": "2026-09-03",
+            "kcal": 2640,
+            "carbsG": 336,
+            "proteinG": 117,
+            "fatG": 92,
+            "sessionKcal": 0,
+            "planningKcal": 2640,
+            "lunchDinnerKcal": 1452,
+            "mode": "prospective"
+          },
+          {
+            "date": "2026-09-04",
+            "kcal": 2640,
+            "carbsG": 336,
+            "proteinG": 117,
+            "fatG": 92,
+            "sessionKcal": 0,
+            "planningKcal": 2640,
+            "lunchDinnerKcal": 1452,
+            "mode": "prospective"
+          },
+          {
+            "date": "2026-09-05",
+            "kcal": 2640,
+            "carbsG": 336,
+            "proteinG": 117,
+            "fatG": 92,
+            "sessionKcal": 0,
+            "planningKcal": 2640,
+            "lunchDinnerKcal": 1452,
+            "mode": "prospective"
+          }
+        ],
+        "raceWeekCarbsG": null
+      },
+      "weather": {
+        "today": null,
+        "raceDay": null
+      },
+      "holidays": [
+        {
+          "date": "2026-09-07",
+          "name": "Labor Day",
+          "daysOut": 6
+        }
+      ],
+      "loggedToday": {
+        "count": 0,
+        "carbsG": 0
+      },
+      "plan": {
+        "exists": true,
+        "status": "confirmed",
+        "mealsLeft": 8,
+        "batchCooking": true
+      },
+      "memories": [
+        {
+          "id": "22cf8398-ebc9-471c-b9f8-bb0d2a7312d8",
+          "kind": "setting",
+          "key": "batch_cooking",
+          "fact": "Cooks in batches (cook once, eat across the week)",
+          "value": true,
+          "confidence": 1,
+          "lastConfirmedAt": "2026-09-01T12:49:33.504+00:00"
+        }
+      ]
+    },
+    "brief": null,
+    "day": {
+      "kind": "day_guidance",
+      "date": "2026-09-01",
+      "label": "Rest day",
+      "workout": null,
+      "minCarbsG": 336,
+      "note": "At least 336g carbs, protein at every meal. No need to top up around training.",
+      "suggestions": [
+        {
+          "source": "saved",
+          "id": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+          "name": "Egg & Veggie Scramble",
+          "mealType": "dinner",
+          "contexts": [],
+          "batch": false,
+          "prepMinutes": null,
+          "kcal": 280,
+          "carbsG": 8,
+          "proteinG": 22,
+          "fatG": 18,
+          "allergens": [],
+          "dietsOk": [],
+          "swaps": null,
+          "why": "one of your saved meals",
+          "attribution": "your saved meal",
+          "attributionShort": "your saved meal",
+          "ingredients": "Egg & Veggie Scramble",
+          "libraryMealId": null,
+          "score": 0.65,
+          "kind": "assembly",
+          "pattern": null,
+          "frequency": "staple",
+          "icon": "egg",
+          "myVote": 0
+        },
+        {
+          "source": "library",
+          "id": "AS-232",
+          "name": "Hard-boiled eggs with sliced avocado",
+          "mealType": "snack",
+          "contexts": [
+            "everyday",
+            "rest-day",
+            "race-week"
+          ],
+          "batch": true,
+          "prepMinutes": 0,
+          "kcal": 250,
+          "carbsG": 5,
+          "proteinG": 14,
+          "fatG": 20,
+          "allergens": [
+            "eggs"
+          ],
+          "dietsOk": [
+            "keto",
+            "low_carb",
+            "omnivore",
+            "paleo",
+            "pescatarian",
+            "vegetarian"
+          ],
+          "swaps": "none needed for keto/paleo; not vegan",
+          "why": "Volek & Phinney identify avocados as a core fat source for low-carb athletes; Zach Bitter's diet is described as heavy in \"ground beef and eggs\"",
+          "attribution": "https://www.ketogains.com/2015/10/the-art-and-science-of-low-carbohydrate-performance-by-jeff-s-volek-and-stephen-d-phinney-a-summary/ ; Volek & Phinney, The Art and Science of Low Carbohydrate Performance (Ketogains summary)",
+          "attributionShort": "",
+          "ingredients": "hard-boiled eggs 2, avocado, sliced 1/2, sea salt pinch",
+          "libraryMealId": "AS-232",
+          "score": 0.54,
+          "kind": "assembly",
+          "pattern": "protein + fat",
+          "frequency": "staple",
+          "icon": "egg",
+          "myVote": 0
+        }
+      ]
+    },
+    "target": {
+      "date": "2026-09-01",
+      "kcal": 2640,
+      "carbsG": 336,
+      "proteinG": 117,
+      "fatG": 92,
+      "sessionKcal": 0,
+      "planningKcal": 2640,
+      "lunchDinnerKcal": 1452,
+      "mode": "prospective"
+    },
+    "weekTargets": [
+      {
+        "date": "2026-09-01",
+        "kcal": 2640,
+        "carbsG": 336,
+        "proteinG": 117,
+        "fatG": 92,
+        "sessionKcal": 0,
+        "planningKcal": 2640,
+        "lunchDinnerKcal": 1452,
+        "mode": "prospective"
+      },
+      {
+        "date": "2026-09-02",
+        "kcal": 2640,
+        "carbsG": 336,
+        "proteinG": 117,
+        "fatG": 92,
+        "sessionKcal": 0,
+        "planningKcal": 2640,
+        "lunchDinnerKcal": 1452,
+        "mode": "prospective"
+      },
+      {
+        "date": "2026-09-03",
+        "kcal": 2640,
+        "carbsG": 336,
+        "proteinG": 117,
+        "fatG": 92,
+        "sessionKcal": 0,
+        "planningKcal": 2640,
+        "lunchDinnerKcal": 1452,
+        "mode": "prospective"
+      },
+      {
+        "date": "2026-09-04",
+        "kcal": 2640,
+        "carbsG": 336,
+        "proteinG": 117,
+        "fatG": 92,
+        "sessionKcal": 0,
+        "planningKcal": 2640,
+        "lunchDinnerKcal": 1452,
+        "mode": "prospective"
+      },
+      {
+        "date": "2026-09-05",
+        "kcal": 2640,
+        "carbsG": 336,
+        "proteinG": 117,
+        "fatG": 92,
+        "sessionKcal": 0,
+        "planningKcal": 2640,
+        "lunchDinnerKcal": 1452,
+        "mode": "prospective"
+      }
+    ],
+    "staples": null,
+    "batch": {
+      "kind": "batch",
+      "plan": {
+        "id": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+        "weekStart": "2026-08-30",
+        "status": "confirmed",
+        "batchCooking": true,
+        "conversationId": "a73f6db2-352e-4d92-bad1-defd605d4516",
+        "brief": null,
+        "days": {},
+        "rules": [],
+        "meals": [
+          {
+            "id": "ec906825-ca28-4540-b55c-5ec6be601aec",
+            "planId": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+            "source": "saved",
+            "libraryMealId": null,
+            "savedMealId": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+            "name": "Egg & Veggie Scramble",
+            "mealType": "dinner",
+            "session": "fresh-fri",
+            "servings": 4,
+            "servingsLeft": 4,
+            "kcal": 280,
+            "carbsG": 8,
+            "proteinG": 22,
+            "fatG": 18,
+            "swapsApplied": [],
+            "comments": [],
+            "position": 0,
+            "icon": "egg"
+          },
+          {
+            "id": "27f80b00-9a1f-492f-9ac5-8bbaa67b5250",
+            "planId": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+            "source": "library",
+            "libraryMealId": "AD-105",
+            "savedMealId": null,
+            "name": "Wheatberries, white bean & raw cabbage-carrot bowl with hummus",
+            "mealType": "dinner",
+            "session": "cook-sun",
+            "servings": 4,
+            "servingsLeft": 4,
+            "kcal": null,
+            "carbsG": null,
+            "proteinG": null,
+            "fatG": null,
+            "swapsApplied": [],
+            "comments": [],
+            "position": 1,
+            "icon": "beans"
+          }
+        ],
+        "shopping": [
+          {
+            "qty": "320 g",
+            "have": false,
+            "name": "Cabbage",
+            "aisle": "Produce",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "240 g",
+            "have": false,
+            "name": "Carrot",
+            "aisle": "Produce",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "4 serving",
+            "have": false,
+            "name": "Egg & veggie scramble",
+            "aisle": "Protein",
+            "checked": false,
+            "fromMealIds": [
+              "ec906825-ca28-4540-b55c-5ec6be601aec"
+            ]
+          },
+          {
+            "qty": "600 g",
+            "have": false,
+            "name": "White beans",
+            "aisle": "Pantry",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "12 tbsp",
+            "have": false,
+            "name": "Hummus",
+            "aisle": "Other",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "qty": "800 g",
+            "have": false,
+            "name": "Wheatberries",
+            "aisle": "Other",
+            "checked": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          }
+        ],
+        "coverage": {
+          "lunchDinnerSlots": 14,
+          "covered": 8,
+          "perDay": {
+            "kcal": 160,
+            "carbsG": 5,
+            "proteinG": 13
+          }
+        },
+        "dayNotes": {
+          "2026-09-01": "Rest day—keep meals steady. Egg & Veggie Scramble at dinner to start the week.",
+          "2026-09-02": "Rest day—standard fueling. Wheatberries bowl at dinner for plant protein and carbs.",
+          "2026-09-03": "Rest day—maintain rhythm. Egg & Veggie Scramble covers your needs well tonight.",
+          "2026-09-04": "Rest day—stick to plan. Wheatberries bowl again; carbs and protein are on target.",
+          "2026-09-05": "Rest day—light and balanced. Egg & Veggie Scramble to finish the batch.",
+          "2026-09-06": "Rest day—finish strong. Wheatberries bowl wraps out your week's dinners.",
+          "2026-09-07": "Labor Day—enjoy your day. Light meals work best on full rest."
+        },
+        "dayNotesStale": true
+      }
+    },
+    "shopping": {
+      "kind": "shopping_list",
+      "items": [
+        {
+          "qty": "320 g",
+          "have": false,
+          "name": "Cabbage",
+          "aisle": "Produce",
+          "checked": false,
+          "fromMealIds": [
+            "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+          ]
+        },
+        {
+          "qty": "240 g",
+          "have": false,
+          "name": "Carrot",
+          "aisle": "Produce",
+          "checked": false,
+          "fromMealIds": [
+            "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+          ]
+        },
+        {
+          "qty": "4 serving",
+          "have": false,
+          "name": "Egg & veggie scramble",
+          "aisle": "Protein",
+          "checked": false,
+          "fromMealIds": [
+            "ec906825-ca28-4540-b55c-5ec6be601aec"
+          ]
+        },
+        {
+          "qty": "600 g",
+          "have": false,
+          "name": "White beans",
+          "aisle": "Pantry",
+          "checked": false,
+          "fromMealIds": [
+            "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+          ]
+        },
+        {
+          "qty": "12 tbsp",
+          "have": false,
+          "name": "Hummus",
+          "aisle": "Other",
+          "checked": false,
+          "fromMealIds": [
+            "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+          ]
+        },
+        {
+          "qty": "800 g",
+          "have": false,
+          "name": "Wheatberries",
+          "aisle": "Other",
+          "checked": false,
+          "fromMealIds": [
+            "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+          ]
+        }
+      ],
+      "itemCount": 6,
+      "skipped": []
+    },
+    "days": {
+      "date": "2026-09-01",
+      "slots": {}
+    },
+    "vana": {
+      "date": "2026-09-01",
+      "stale": false,
+      "text": "Rest day—keep meals steady. Egg & Veggie Scramble at dinner to start the week."
+    },
+    "memories": [
+      {
+        "id": "22cf8398-ebc9-471c-b9f8-bb0d2a7312d8",
+        "kind": "setting",
+        "key": "batch_cooking",
+        "fact": "Cooks in batches (cook once, eat across the week)",
+        "value": true,
+        "confidence": 1,
+        "lastConfirmedAt": "2026-09-01T12:49:33.504+00:00"
+      }
+    ]
+  }
+}
