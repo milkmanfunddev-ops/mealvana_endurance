@@ -9,22 +9,19 @@ Research corpus + specs stay in `docs/new_mealplanning/`. Updated 2026-09-01 aft
 | `02-contract.md` | 1 — the frozen Dart↔TS contract (types, parts, actions, wire protocol) | **done 2026-09-01 — prototype tag `contract-v1`** |
 | `03-backend.md` | 2 — `vana-chat` / `vana-action` / `vana-day-notes` edge fns + RPCs | **done on dev 2026-09-01** — see 03 §5 for deviations |
 | `04-entitlement.md` | 3 — Pro entitlement: store products, `user_entitlements`, `subscription/` feature, gate | **built 2026-09-01 (dev only)** — see its Status table; prod DDL/webhook/app_config bump in Phase 5 |
-| `05-flutter-feature.md` | 4 — `lib/features/meal_planning/`: file tree, Drift v20, reuse map, screen specs | **4a domain + 4b data/application done 2026-09-01** (see its Status section); **4c presentation/router/tabs is NEXT — not started** |
+| `05-flutter-feature.md` | 4 — `lib/features/meal_planning/`: file tree, Drift v20, reuse map, screen specs | **4a + 4b + 4c (presentation, router, tabs, content keys) done 2026-09-01** — see its Status section. Remaining in 4: simulator walkthrough; goldens + Patrol are Phase 6 |
 | `06-sync-schema-envs.md` | 5 — sync registration, schema bumps, prod DDL + seed runbook | spec ready |
 | `07-verification-release.md` | 6 — tests, Patrol, manual verification, dark launch | spec ready |
 
-## NEXT SESSION STARTS HERE — Phase 4c (presentation)
-Branch `mealplanning` @ `175f66e4` (== origin, clean tree). Everything below the "Where we are" heading is
-history; the live state is:
+## NEXT SESSION STARTS HERE — simulator walkthrough, then Phase 5
+Branch `mealplanning` (docs + Phase 4c code; see 05's 4c Status). Everything below the "Where we are"
+heading is history; the live state is:
 - **Done and merged:** Phases 0, 1 (prototype `contract-v1`), 2 (edge fns on dev), 3 (Pro entitlement on dev),
-  4a (`domain/`), 4b (`data/` + `application/` + Drift **v20** + sync registration), meal-icon glyphs.
-- **Next:** Phase 4c — `presentation/` (widgets + 9 screens), router routes, the Food tab in `TabsScreen`,
-  `meal_planning.*` content keys, widget/golden tests, simulator verification. The brief is `05-flutter-feature.md`
-  §1 (`presentation/` tree), §4 (per-screen behaviour), §5 (router/tabs), §6 (content keys), plus
-  `02-contract.md` §3 (parts → widgets) and §6 (client-drawn chips). **Read `05` "What 4c needs to know" first** —
-  it lists provider names, which controller methods throw, and the error types to map.
-- Then Phase 5 (`06-…`: prod DDL + `meal_library` seed from the snapshot + `app_config` → 20 + deploy fns to prod)
-  and Phase 6 (`07-…`: Patrol flows, dark-launch release).
+  4a (`domain/`), 4b (`data/` + `application/` + Drift **v20** + sync registration), 4c (`presentation/` widgets +
+  screens + router + Food tab + content keys; tests green; deviations in 05's 4c Status).
+- **Next:** `/verify-app` simulator walkthrough of the 4c screens against dev (walkthrough steps 1–10),
+  then Phase 5 (`06-…`: prod DDL + `meal_library` seed from the snapshot + `app_config` → 20 + deploy fns to
+  prod) and Phase 6 (`07-…`: Patrol flows, dark-launch release).
 - Still open: the App Review screenshot for the two ASC subscriptions (needs the paywall UI, blocks
   `PRO_PURCHASE_ENABLED=true`); a sandbox purchase→webhook→flip run on a **release-mode** build (debug uses the RC
   Test Store key); the Phase 1 persona/walkthrough mismatches (prompts are verbatim `contract-v1`).

@@ -1,5 +1,46 @@
 # 05 — `lib/features/meal_planning/` (Phase 4)
 
+## Status — Phase 4c (presentation) **built 2026-09-01** (branch `mealplanning`, dev only)
+On top of 4a/4b: 27 widgets + 10 screens + router/tabs wiring + `meal_planning.*` content keys
+(122 keys; parity test pins ContentKeys ↔ `content_defaults.json`). Widget tests: chips, part
+renderer (driven by the frozen fixtures), plan bar, shopping list — 25 new tests, full suite
+4,275 pass with only the 4 pre-existing environmental failures (macro goldens ×2, TP live API,
+CI-config contract — reproduced on the branch base). `flutter analyze` 0 errors on touched files.
+
+| Piece | Where |
+|---|---|
+| Content keys | `ContentKeys.mp*` + `ContentKeys.format` ({n} interpolation); `assets/config/content_defaults.json` `meal_planning` section |
+| Widgets | `presentation/widgets/`: slot/session/rule chips, `ServingsStepper`, `MealCard`/`MealRailCard`/`MealRail`, `PlanTile`/`PlanList`/`PlanSummary`, `StaplesCard`, `DayCard`, `ChoiceChips`, `PickerChips`, `MealPickerCarousel`, `VanaPartRenderer`, `VanaMessageCard`, `PlanBar`, tile/servings/meal/review sheets, `SwapPicker`, `ConfirmedCard`, `ShoppingList`, `MemoryDrawer`, `TimerChip`, `StepProgressDots`, `VanaAvatar` |
+| Screens | `screens/`: `FoodScreen` (Plan · Meals · Shopping), plan/meals/shopping tabs, `MealDetailScreen` (`?swap=`), `CookingModeScreen`, `SwapMealScreen`, `RecentsScreen`, `VanaChatScreen`, `VanaConversationsScreen`, `VanaSettingsScreen` |
+| Router | `/food` (+`meals/recents`, `meals/:id?swap=`, `cook/:id`, `swap/:planMealId`), `/vana?mode=&c=` (+`conversations`), `/settings/vana`; `/jade` → redirects `/vana?mode=general` (the jade-chat fn IS the general alias) |
+| Tabs | Food tab (bowl icon) in the pill + rail behind `proUnlockedProvider`; `/main?tab=` resolves by **name** in TabsScreen (index math shifts with the Pro status) |
+| New deps | `wakelock_plus`, `vibration`, `share_plus` (cooking-mode wake lock/alarm, Shopping share) |
+
+### Deviations from the spec above (and why)
+- **`ServingsStepper` is a compact feature widget, not `KylePlusMinusControl`.** The Kyle control
+  is a full-width form control (internal `Expanded`) and cannot sit as a plain `Row` child — every
+  dense row (plan tiles, plan bar, review sheet) needs a flex-free −/+ stepper. The tree's own
+  `stepper.dart` line is this widget.
+- **Food tab segments are a custom selector**, not `KyleSegmentedControl`: that control renders
+  enum names, and the labels must come from content keys.
+- **Plan list swipes**: swipe **right** → Remove (Undo snackbar re-picks via `pick_meals`),
+  swipe **left** → Swap (`/food/swap/:id`), tap → tile sheet (stepper · Swap · Remove). Rows snap
+  back — the Drift watch re-renders the list; actions fire in `confirmDismiss`.
+- **`?swap=` servings adjustment is name-matched.** `swap_meal` does not return the new
+  `plan_meal` id; after the ack the screen finds the refreshed plan's newest row for the meal name
+  and `setServings` it. Fragile — revisit when `VanaActionResult` exposes the swapped row id.
+- **Chat `accept_rule` sends a chat message** ("Accept the rule: …") rather than the
+  `accept_rule` UiAction — `MealPlanController` has no acceptRule method yet. Replace with the
+  remote-ack action in a follow-up.
+- **Picker chips "Next: <type>"** uses the last picker's own `mealType` as the next slot — the
+  wire never says which slot comes next.
+- **Cooking timer notification** calls `FlutterLocalNotificationsPlugin().show` directly (caught
+  exceptions; the ringing chip is the fallback) — the shared `NotificationService` is OneSignal
+  oriented with no immediate-show API.
+- **`catalog_row.dart` was not created** — flat search results reuse `MealCard` directly.
+- **Goldens**: only the pre-existing glyph grid; screen goldens and Patrol flows are Phase 6
+  (they need the controller-test provider scaffolding).
+
 ## Status — Phase 4b (data + application) **built 2026-09-01** (branch `mealplanning`, dev only)
 Phase 4a (`domain/`) and 4b (`data/`, `application/`, Drift v20, sync registration) are in code and unit
 tested (`test/features/meal_planning/`, `test/migrations/meal_planning_v20_migration_test.dart`).
