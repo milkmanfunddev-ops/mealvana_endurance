@@ -1,5 +1,6 @@
 import 'dart:async';
 
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
@@ -163,6 +164,10 @@ class VanaChatController extends _$VanaChatController {
   /// when there is none. Failures leave the empty state (an opener is a
   /// nicety, except `pro_required`, which is surfaced).
   Future<void> loadOpener({String? anchorDate}) async {
+    // The opener can be requested in the screen's first post-frame callback,
+    // before this notifier's async build() has resolved — writes made before
+    // initialization completes are clobbered by the initializer's return.
+    await future;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming || current.messages.isNotEmpty) return;
     await _turn(current, message: null, opener: true, anchorDate: anchorDate);

@@ -45,7 +45,7 @@ class ContentRepository {
     }
 
     // Fallback to local defaults
-    return await _loadDefaultContent();
+    return await loadDefaultContent();
   }
 
   /// Get content from local cache
@@ -99,7 +99,7 @@ class ContentRepository {
   }
 
   /// Load default content from assets
-  Future<AppContent> _loadDefaultContent() async {
+  Future<AppContent> loadDefaultContent() async {
     try {
       final String jsonString = await rootBundle.loadString(_defaultsAssetPath);
       final Map<String, dynamic> jsonMap = json.decode(jsonString);
@@ -140,7 +140,7 @@ class ContentRepository {
       environment: environment,
       locale: locale,
     );
-    return content ?? await _loadDefaultContent();
+    return content ?? await loadDefaultContent();
   }
 
   /// Get specific content value by key path (dot notation)

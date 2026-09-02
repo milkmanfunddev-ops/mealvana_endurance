@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
-import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_meal.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/plan_bar.dart';
 
@@ -13,16 +11,19 @@ import '../helpers/test_content.dart';
 /// and `minimize()` collapses it again (the chat screen calls it on every
 /// new turn).
 void main() {
-  final meals = List.generate(3, (i) => PlanMeal.fromJson({
-    'id': 'pm-$i',
-    'planId': 'plan-1',
-    'source': 'library',
-    'name': 'Meal $i',
-    'mealType': 'dinner',
-    'servings': 4,
-    'servingsLeft': 4,
-    'position': i,
-  }));
+  final meals = List.generate(
+    3,
+    (i) => PlanMeal.fromJson({
+      'id': 'pm-$i',
+      'planId': 'plan-1',
+      'source': 'library',
+      'name': 'Meal $i',
+      'mealType': 'dinner',
+      'servings': 4,
+      'servingsLeft': 4,
+      'position': i,
+    }),
+  );
 
   Future<void> pumpBar(WidgetTester tester, GlobalKey<PlanBarState> key) async {
     await tester.pumpWidget(
@@ -66,7 +67,9 @@ void main() {
 
   testWidgets('tap expands: tiles, steppers, review button', (tester) async {
     await pumpBar(tester, GlobalKey<PlanBarState>());
-    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_bar.minimized')));
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_bar.minimized')),
+    );
     await tester.pumpAndSettle();
     expect(
       find.byKey(const ValueKey('meal_planning.plan_bar.expanded')),
@@ -85,7 +88,9 @@ void main() {
   testWidgets('minimize() collapses an expanded bar', (tester) async {
     final key = GlobalKey<PlanBarState>();
     await pumpBar(tester, key);
-    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_bar.minimized')));
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_bar.minimized')),
+    );
     await tester.pumpAndSettle();
     key.currentState!.minimize();
     await tester.pumpAndSettle();

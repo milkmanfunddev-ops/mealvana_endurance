@@ -2,7 +2,6 @@
 /// 350 ms debounce and the filter → search wiring.
 library;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
