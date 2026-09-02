@@ -79,7 +79,15 @@ import '../../features/coach_mode/presentation/screens/coach_chat_screen.dart';
 import '../../features/coach_mode/presentation/screens/coach_portal_screen.dart';
 import '../../features/coach_mode/application/coach_service.dart';
 // Mealvana AI AI coach
-import '../../features/ai_coach/presentation/screens/ai_coach_chat_screen.dart';
+import '../../features/meal_planning/domain/vana_conversation_kind.dart';
+import '../../features/meal_planning/presentation/screens/cooking_mode_screen.dart';
+import '../../features/meal_planning/presentation/screens/food_screen.dart';
+import '../../features/meal_planning/presentation/screens/meal_detail_screen.dart';
+import '../../features/meal_planning/presentation/screens/recents_screen.dart';
+import '../../features/meal_planning/presentation/screens/swap_meal_screen.dart';
+import '../../features/meal_planning/presentation/screens/vana_chat_screen.dart';
+import '../../features/meal_planning/presentation/screens/vana_conversations_screen.dart';
+import '../../features/meal_planning/presentation/screens/vana_settings_screen.dart';
 // Meal logging screens
 import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
@@ -125,15 +133,13 @@ class AppRouter {
 
         // Metered meal-AI routes fail closed. Hiding the entry points is the
         // primary UX, while this guard also blocks stale deep links from an
-        // older build when the release flag is off. `/jade` rides the same
-        // flag: its banner entry point is intentionally unrendered, and the
-        // chat screen calls the jade-chat edge function on every send.
+        // older build when the release flag is off. `/jade` no longer rides
+        // this flag — it redirects to `/vana`, which is Pro-gated instead.
         // `/buy-credits` rides it too — with every AI surface hidden there is
         // nothing to buy credits for, and the 402 paywall flows that push it
         // all originate from the gated AI calls.
         if ((currentPath == '/meal-log/photo' ||
                 currentPath == '/meal-log/describe' ||
-                currentPath == '/jade' ||
                 currentPath == '/buy-credits') &&
             !ref.read(appConfigProvider).describeMealEnabled) {
           return '/';
@@ -450,36 +456,30 @@ class AppRouter {
           path: '/main',
           name: 'main',
           builder: (context, state) {
-            // Support tab query parameter to navigate to specific tab
+            // Support tab query parameter to navigate to specific tab — by
+            // name, so the index math (Food tab appears with Pro) stays in
+            // TabsScreen.
             final tabParam = state.uri.queryParameters['tab'];
-            int initialTab = 0;
+            final knownTabNames = const {
+              'food',
+              'coach',
+              'events',
+              'notes',
+              'workout-notes',
+              'learn',
+              'survey',
+              'nutrition',
+              'activities',
+              'calendar',
+            };
+            final tabName = tabParam != null && knownTabNames.contains(tabParam)
+                ? tabParam
+                : null;
 
-            // Tab indices:
-            // Mobile: 0=activities, 1=nutrition, 2=events, 3=learn
-            // Web:    0=activities, 1=nutrition, 2=coach, 3=events, 4=learn
-            final hasCoachTab = kIsWeb;
-
-            // Activities + Nutrition merged into the single Fuel Timeline tab (0).
-            switch (tabParam) {
-              case 'nutrition':
-              case 'activities':
-              case 'calendar':
-                initialTab = 0;
-                break;
-              case 'notes':
-              case 'workout-notes':
-              case 'events':
-                initialTab = hasCoachTab ? 2 : 1;
-                break;
-              case 'survey':
-              case 'learn':
-                initialTab = hasCoachTab ? 3 : 2;
-                break;
-              default:
-                initialTab = 0;
-            }
-
-            return TabsScreen(initialTabIndex: initialTab);
+            return TabsScreen(
+              initialTabIndex: 0,
+              initialTabName: tabName,
+            );
           },
         ),
 
@@ -1052,12 +1052,93 @@ class AppRouter {
         ),
 
         // ====================================================================
-        // MEALVANA AI COACH
+        // MEAL PLANNING (Vana) — Pro-gated via isProGatedPath above
+        // ====================================================================
+        GoRoute(
+          path: '/food',
+          name: 'food',
+          builder: (context, state) => FoodScreen(
+            initialTab: switch (state.uri.queryParameters['tab']) {
+              'meals' => FoodTab.meals,
+              'shopping' => FoodTab.shopping,
+              _ => FoodTab.plan,
+            },
+          ),
+          routes: [
+            // Static sibling must precede the :id route.
+            GoRoute(
+              path: 'meals/recents',
+              name: 'food-meals-recents',
+              builder: (context, state) => const RecentsScreen(),
+            ),
+            GoRoute(
+              path: 'meals/:id',
+              name: 'food-meal-detail',
+              builder: (context, state) => MealDetailScreen(
+                id: state.pathParameters['id']!,
+                swapPlanMealId: state.uri.queryParameters['swap'],
+              ),
+            ),
+            GoRoute(
+              path: 'cook/:id',
+              name: 'food-cooking-mode',
+              builder: (context, state) => CookingModeScreen(
+                mealId: state.pathParameters['id']!,
+              ),
+            ),
+            GoRoute(
+              path: 'swap/:planMealId',
+              name: 'food-swap-meal',
+              builder: (context, state) => SwapMealScreen(
+                planMealId: state.pathParameters['planMealId']!,
+              ),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/vana',
+          name: 'vana-chat',
+          builder: (context, state) {
+            final kind = switch (state.uri.queryParameters['mode']) {
+              'general' => VanaConversationKind.general,
+              _ => VanaConversationKind.mealPlanning,
+            };
+            final c = state.uri.queryParameters['c'];
+            return VanaChatScreen(
+              kind: kind,
+              // `c=new` starts a fresh conversation and streams the opener;
+              // any other id resumes that conversation.
+              conversationId: (c == null || c == 'new') ? null : c,
+              startOpener: c == 'new',
+            );
+          },
+          routes: [
+            GoRoute(
+              path: 'conversations',
+              name: 'vana-conversations',
+              builder: (context, state) => VanaConversationsScreen(
+                initialKind: switch (state.uri.queryParameters['kind']) {
+                  'meal_planning' => VanaConversationKind.mealPlanning,
+                  _ => VanaConversationKind.general,
+                },
+              ),
+            ),
+          ],
+        ),
+        GoRoute(
+          path: '/settings/vana',
+          name: 'settings-vana',
+          builder: (context, state) => const VanaSettingsScreen(),
+        ),
+
+        // ====================================================================
+        // MEALVANA AI COACH — /jade now redirects to the Vana general chat
+        // (the jade-chat edge function IS the Vana general alias).
         // ====================================================================
         GoRoute(
           path: '/jade',
           name: 'jade-chat',
-          builder: (context, state) => const AiCoachChatScreen(),
+          redirect: (context, state) => '/vana?mode=general',
         ),
       ],
 

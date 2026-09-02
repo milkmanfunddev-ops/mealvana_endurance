@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
+import '../../features/meal_planning/presentation/screens/food_screen.dart';
 import '../../features/subscription/application/pro_gate.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
@@ -14,9 +15,14 @@ import 'kyle_design/navigation/floating_action_buttons_bar.dart';
 import 'sync_status_indicator.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
-  const TabsScreen({super.key, this.initialTabIndex = 0});
+  const TabsScreen({super.key, this.initialTabIndex = 0, this.initialTabName});
 
   final int initialTabIndex;
+
+  /// Tab by name ('food', 'events', 'learn', …) — resolved against the live
+  /// tab list, so it survives the Food tab appearing/disappearing with the
+  /// Pro status. Wins over [initialTabIndex].
+  final String? initialTabName;
 
   @override
   ConsumerState<TabsScreen> createState() => _TabsScreenState();
@@ -31,11 +37,33 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     _currentIndex = widget.initialTabIndex;
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final name = widget.initialTabName;
+    if (name == null) return;
+    // Resolve once, after the first build computed the index getters.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final index = switch (name) {
+        'food' => _showFoodTab ? _foodTabIndex : -1,
+        'coach' => kIsWeb ? _coachTabIndex : -1,
+        'events' || 'notes' || 'workout-notes' => _eventsTabIndex,
+        'learn' || 'survey' => _learnTabIndex,
+        _ => 0,
+      };
+      if (index >= 0) setState(() => _currentIndex = index);
+    });
+  }
+
   // Tab indices (Activities + Nutrition merged into one Fuel Timeline tab):
-  // FuelTimeline(0) -> Coach(1, web only) -> Events(1 or 2) -> Learn(2 or 3)
-  int get _coachTabIndex => 1; // Only on web
-  int get _eventsTabIndex => kIsWeb ? 2 : 1;
-  int get _learnTabIndex => kIsWeb ? 3 : 2;
+  // FuelTimeline(0) -> Food(1, Pro) -> Coach(web) -> Events -> Learn.
+  // Food exists only while Pro is unlocked; every index after it shifts.
+  bool get _showFoodTab => ref.watch(proUnlockedProvider);
+  int get _foodTabIndex => 1;
+  int get _coachTabIndex => _showFoodTab ? 2 : 1; // Only on web
+  int get _eventsTabIndex => kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
+  int get _learnTabIndex => kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
@@ -46,12 +74,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final showCoachTab = kIsWeb;
+    final showFoodTab = _showFoodTab;
     final useRail = context.useNavigationRail;
-    // Pro gate subscription. The Food tab (meal planning, Phase 4) will be
-    // included only when Pro is unlocked; watching here already means the
-    // tab list rebuilds the moment a purchase / restore flips the status,
-    // without a restart. Index math is untouched until the tab exists.
-    ref.watch(proUnlockedProvider);
 
     // Navigate to coach portal route when coach tab is selected on web
     if (showCoachTab && _currentIndex == _coachTabIndex) {
@@ -69,12 +93,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // daily-macros-dashboard@v3) IS the surface — the MACRO_DASHBOARD_ENABLED
     // flag was deleted per Lee's 2026-08-20 ruling ("no more hide-flags for
     // dev features"); the legacy FuelTimelineScreen is retired from this tab.
+    // The Food tab (meal planning, Pro) sits right after it while unlocked.
     final screens = [
       const MacroDashboardScreen(), // 0: macro dashboard
+      if (showFoodTab) const FoodScreen(), // 1: Food (Pro)
       if (showCoachTab)
-        const SizedBox.shrink(), // 1: placeholder (coach portal rendered above)
-      const EventsListScreen(), // 1 or 2: Events
-      const EducationScreen(), // 2 or 3: Learn
+        const SizedBox.shrink(), // placeholder (coach portal rendered above)
+      const EventsListScreen(), // Events
+      const EducationScreen(), // Learn
     ];
 
     // Adjust current index if it's out of bounds (safety check)
@@ -99,6 +125,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             _NavigationRailSection(
               currentIndex: _currentIndex,
               showCoachTab: showCoachTab,
+              showFoodTab: showFoodTab,
               onTabSelected: _onTabSelected,
             ),
             const VerticalDivider(width: 1, thickness: 1),
@@ -166,7 +193,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           FloatingActionButtonsBar(
             activeButton: _currentIndex,
             showCoachTab: showCoachTab,
+            showFoodTab: showFoodTab,
             onTimelineTap: () => _onTabSelected(0),
+            onFoodTap: showFoodTab ? () => _onTabSelected(_foodTabIndex) : null,
             onCoachTap: () => _onTabSelected(_coachTabIndex),
             onEventsTap: () => _onTabSelected(_eventsTabIndex),
             onLearnTap: () => _onTabSelected(_learnTabIndex),
@@ -185,11 +214,13 @@ class _NavigationRailSection extends StatelessWidget {
   const _NavigationRailSection({
     required this.currentIndex,
     required this.showCoachTab,
+    required this.showFoodTab,
     required this.onTabSelected,
   });
 
   final int currentIndex;
   final bool showCoachTab;
+  final bool showFoodTab;
   final ValueChanged<int> onTabSelected;
 
   @override
@@ -204,6 +235,12 @@ class _NavigationRailSection extends StatelessWidget {
         selectedIcon: FaIcon(FontAwesomeIcons.solidCalendar),
         label: Text('Today'),
       ),
+      if (showFoodTab)
+        const NavigationRailDestination(
+          icon: FaIcon(FontAwesomeIcons.bowlFood),
+          selectedIcon: FaIcon(FontAwesomeIcons.bowlFood),
+          label: Text('Food'),
+        ),
       if (showCoachTab)
         const NavigationRailDestination(
           icon: FaIcon(FontAwesomeIcons.userTie),

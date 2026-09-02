@@ -11,9 +11,9 @@ import '../buttons/circular_action_button.dart';
 /// The Activities + Nutrition tabs are merged into a single **Fuel Timeline**
 /// tab (the combined day/food/workout page), so the destinations are:
 /// - Fuel Timeline (left, calendar icon) — index 0
-/// - Coach (optional, web only) — index 1
-/// - Events — index 1 (mobile) / 2 (web)
-/// - Learn (right) — index 2 (mobile) / 3 (web)
+/// - Food (optional, Pro-unlocked) — index 1
+/// - Coach (optional, web only) — after Food when present
+/// - Events / Learn (right)
 ///
 /// The orange "new activity" FAB is gone — activities are created from the
 /// "+ Add Activity" button on the Fuel Timeline itself.
@@ -24,16 +24,22 @@ class FloatingActionButtonsBar extends StatelessWidget {
     required this.onCoachTap,
     required this.onEventsTap,
     required this.onLearnTap,
+    this.onFoodTap,
     this.activeButton,
     this.showCoachTab = false,
+    this.showFoodTab = false,
   });
 
   final VoidCallback onTimelineTap;
   final VoidCallback onCoachTap;
   final VoidCallback onEventsTap;
   final VoidCallback onLearnTap;
+
+  /// Food tab (meal planning) — only when Pro is unlocked.
+  final VoidCallback? onFoodTap;
   final int? activeButton;
   final bool showCoachTab;
+  final bool showFoodTab;
 
   @override
   Widget build(BuildContext context) {
@@ -54,8 +60,11 @@ class FloatingActionButtonsBar extends StatelessWidget {
         : (isDark ? AppColors.cream : AppColors.blackberry);
     Color bg(bool active) => active ? activeBackground : inactiveBackground;
 
-    final eventsIndex = showCoachTab ? 2 : 1;
-    final learnIndex = showCoachTab ? 3 : 2;
+    final foodTap = onFoodTap;
+    final foodIndex = 1;
+    final coachIndex = showFoodTab ? 2 : 1;
+    final eventsIndex = (showCoachTab ? coachIndex + 1 : coachIndex);
+    final learnIndex = eventsIndex + 1;
 
     return Positioned(
       bottom: 16,
@@ -89,13 +98,24 @@ class FloatingActionButtonsBar extends StatelessWidget {
                     iconColor: iconColor(activeButton == 0),
                   ),
                   const SizedBox(width: 8),
+                  if (showFoodTab && foodTap != null) ...[
+                    CircularActionButton(
+                      key: const ValueKey('bottom_nav.food_tab'),
+                      icon: FontAwesomeIcons.bowlFood.data,
+                      onPressed: foodTap,
+                      semanticLabel: 'Food',
+                      backgroundColor: bg(activeButton == foodIndex),
+                      iconColor: iconColor(activeButton == foodIndex),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   if (showCoachTab) ...[
                     CircularActionButton(
                       icon: FontAwesomeIcons.userTie.data,
                       onPressed: onCoachTap,
                       semanticLabel: 'Coach',
-                      backgroundColor: bg(activeButton == 1),
-                      iconColor: iconColor(activeButton == 1),
+                      backgroundColor: bg(activeButton == coachIndex),
+                      iconColor: iconColor(activeButton == coachIndex),
                     ),
                     const SizedBox(width: 8),
                   ],
