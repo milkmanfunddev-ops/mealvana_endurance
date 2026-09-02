@@ -86,7 +86,7 @@ function getTransitionTargets(
   };
 }
 
-function normalizeTransitionName(name?: string | null): string | null {
+export function normalizeTransitionName(name?: string | null): string | null {
   if (!name) return null;
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -95,7 +95,10 @@ function normalizeTransitionName(name?: string | null): string | null {
   return `T${match[1]}`;
 }
 
-function collectTransitionTargets(
+// Exported for the R8 producer-shaped seam test (transition-seam.test.ts):
+// the generate-macros-v4 payload's transition keys must equal this
+// function's lookup keys — a single-engine vector cannot see that seam.
+export function collectTransitionTargets(
   input: PlanInputV2,
 ): Map<string, MacroTargets> {
   const collected: Array<Record<string, unknown>> = [];
@@ -287,8 +290,13 @@ async function generateTransitionPhase(
 
   // Use LP solver with 'during' phase weights (transition is similar to during)
   const weights = getOptimizationWeights("running", "during");
+  // C4 (docs/ssot/spec/domain/catalog-conventions.md, RULED Xuan
+  // 2026-09-01): max 2 items per transition — the C2 pairing water row is
+  // appended AFTER the LP, giving the ruled "2 items + water". Whole
+  // consumable units ride the catalog's is_indivisible flags (C3) through
+  // the solver's whole-serving rounding.
   const modelOptions = {
-    maxFoodItems: 3,
+    maxFoodItems: 2,
     maxServingsCap: 2,
     selectionPenalty: 0.5,
     enforceWaterMin: true,

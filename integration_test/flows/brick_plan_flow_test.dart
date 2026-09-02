@@ -11,7 +11,7 @@
 ///   launchApp (flavor-aware) → ensureAuthenticated (reuse session, else login)
 ///     → Fuel Timeline → "+ Add Activity" → Brick tab
 ///     → name the brick uniquely
-///     → select Bike + Run (two disciplines is the minimum for a brick)
+///     → add a Bike leg to the default Swim → Run (legs append, max 3)
 ///     → Generate Plan → adjust-macros
 ///     → ASSERT the fluid row is in a plausible imperial range (the "3105oz"
 ///       guard — see below)
@@ -39,7 +39,7 @@
 /// flow reads the `activities` row back out of Supabase via
 /// `helpers/supabase_probe.dart` and asserts what no pixel can show: that the
 /// row exists for this athlete, is typed `brick`, is not tombstoned, stores
-/// exactly two segments for the two disciplines selected, and is NOT flagged
+/// exactly the three ordered legs the form held, and is NOT flagged
 /// `created_from_existing` — the provenance pair bf0b591f had to check by hand
 /// in Drift, because a brick with wrong metadata renders a perfectly normal
 /// card.
@@ -107,7 +107,11 @@ void main() {
       final stamp = '${DateTime.now().millisecondsSinceEpoch}';
       final brickName = 'Patrol Brick $stamp';
 
-      // ---- 1. Fuel Timeline → "+ Add Activity" --------------------------
+      // ---- 1. Timeline tab → "+ Add Activity" ----------------------------
+      // Since 1baebd06 the timeline tab mounts MacroDashboardScreen, whose add
+      // row is keyed `macro_dashboard.*` (the old `fuel_timeline.*` keys never
+      // appear there). The dashboard still renders bricks with
+      // TimelineBrickTile, so the later steps are unchanged.
       // Put the timeline on today with the All filter first. Both "+ Add
       // Activity" and the workout cards only render under All/Workout, and
       // both the selected day and the filter are app-level state that survive
@@ -124,10 +128,10 @@ void main() {
       final bricksBefore = find.byType(TimelineBrickTile).evaluate().length;
 
       await $(
-        const ValueKey('fuel_timeline.add_activity'),
+        const ValueKey('macro_dashboard.add_activity'),
       ).waitUntilVisible(timeout: const Duration(seconds: 25));
       await $(
-        const ValueKey('fuel_timeline.add_activity'),
+        const ValueKey('macro_dashboard.add_activity'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
       // ---- 2. Brick tab --------------------------------------------------
@@ -151,23 +155,26 @@ void main() {
       FocusManager.instance.primaryFocus?.unfocus();
       await $.pump(const Duration(milliseconds: 300));
 
-      // ---- 4. Two disciplines — the minimum that makes it a brick --------
+      // ---- 4. Add a Bike leg to the default Swim → Run --------------------
+      // Since 00fc59bd the brick tab opens with two legs already in place
+      // (Swim → Run) and the Swim/Bike/Run buttons APPEND a leg each, capped
+      // at BrickFormState.maxLegs (3) — they are not toggles. One Bike tap
+      // therefore yields the ordered legs swimming → running → cycling, and
+      // that exact order is what the persisted-state step asserts below. (The
+      // pre-00fc59bd version of this flow tapped Bike + Run and expected two
+      // legs; the second tap is now rejected at the cap and the row honestly
+      // holds three.)
       await $(
         const ValueKey('brick.discipline_bike_chip'),
-      ).tap(settlePolicy: SettlePolicy.noSettle);
-      await $.pump(const Duration(milliseconds: 300));
-      await $(
-        const ValueKey('brick.discipline_run_chip'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 500));
 
       // The total-duration label is the brick tab's own summary; its presence
-      // confirms both segments registered.
+      // confirms the legs registered.
       expect(
         $(const ValueKey('brick.total_duration_label')).exists,
         isTrue,
-        reason:
-            'Selecting two disciplines should produce a brick duration total.',
+        reason: 'A three-leg brick should produce a brick duration total.',
       );
 
       // ---- 5. Generate the plan -----------------------------------------
@@ -249,10 +256,15 @@ void main() {
       );
 
       // ---- 9. Back to the timeline; a brick tile is rendered -------------
+      // Phase prints: nothing below is a logged Patrol step, so without them a
+      // hang in this tail shows up only as the 5-minute test timeout.
+      debugPrint('[brick_plan_flow] phase: returning to timeline');
       await _returnToTimeline($);
+      debugPrint('[brick_plan_flow] phase: on timeline; resetting day/filter');
       // Re-assert day + filter after the create stack unwinds: a workout card
       // is hidden under the Meals filter, and both are shared app state.
       await ensureTimelineOnToday($);
+      debugPrint('[brick_plan_flow] phase: waiting for a brick tile');
 
       // A RENDERING check, not an identity one — and deliberately labelled as
       // such so nobody mistakes it for proof that *this* brick is on screen.
@@ -293,7 +305,11 @@ void main() {
       // re-saving a grouped brick erased originalActivityIds /
       // createdFromExisting, and every pixel stayed the same. Assert against
       // the row itself.
+      debugPrint('[brick_plan_flow] phase: tile check done; signing in probe');
       final probe = await SupabaseProbe.signIn();
+      debugPrint(
+        '[brick_plan_flow] phase: probe ${probe == null ? 'unavailable' : 'ready'}',
+      );
       if (probe == null) {
         // Never fail on an unavailable probe — that would turn a healthy flow
         // red for an infrastructure reason. The CI skip-guard is what stops
@@ -303,14 +319,21 @@ void main() {
           'persisted-state assertions (UI assertions above still ran).',
         );
       } else {
-        final row = await probe.activityByTitle(brickName);
+        // Local-first: plan detail confirms the Drift write, and the upload
+        // follows on its own — run 5 on 2026-09-01 read one second too early
+        // and found nothing, while the row landed moments later.
+        final row = await probe.activityByTitle(
+          brickName,
+          waitFor: const Duration(seconds: 30),
+        );
         expect(
           row,
           isNotNull,
           reason:
-              'No activities row titled "$brickName" for this athlete. Plan '
-              'detail rendered the title, so the UI believed it saved — a '
-              'missing row here means the write never reached Supabase.',
+              'No activities row titled "$brickName" for this athlete within '
+              '30 s. Plan detail rendered the title, so the UI believed it '
+              'saved — a missing row here means the upload never reached '
+              'Supabase.',
         );
 
         expect(
@@ -326,15 +349,24 @@ void main() {
           reason: 'The brick was written already tombstoned.',
         );
 
-        // Two disciplines were selected, so the stored metadata must describe
-        // two legs. A brick that persists with the wrong segment count still
-        // renders a perfectly normal-looking card.
+        // Default Swim → Run plus one Bike tap: the stored metadata must
+        // describe exactly those three legs, in that order (legs are ordered —
+        // Lee's 2026-08-26 ruling). A brick that persists with the wrong
+        // segment count or order still renders a perfectly normal-looking
+        // card.
         expect(
           brickSegmentCount(row),
-          2,
+          3,
           reason:
-              'Selected Bike + Run, but brick_metadata stores '
+              'Swim → Run default + Bike, but brick_metadata stores '
               '${brickSegmentCount(row)} segment(s): '
+              '${brickMetadataOf(row)}',
+        );
+        expect(
+          brickSegmentSports(row),
+          ['swimming', 'running', 'cycling'],
+          reason:
+              'Legs persisted out of order or with the wrong sport: '
               '${brickMetadataOf(row)}',
         );
 

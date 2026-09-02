@@ -217,4 +217,48 @@ void main() {
       expect(items.length, 2);
     });
   });
+
+  // C2 scope extension — docs/ssot/spec/domain/catalog-conventions.md
+  // (RULED Xuan 2026-09-01): every DRY requires-water item is covered, not
+  // only electrolyte-flagged ones. With the C1 catalog zeros a carb drink
+  // mix row is dry — nobody chews drink mix. Twin of the TS C2 tests.
+  group('C2 — dry requires-water scope', () {
+    test('a dry carb drink mix (no electrolyte flags) gets water', () {
+      final dryMix = item(
+        id: 'carb-mix',
+        name: 'Carb Drink Mix',
+        carbs: 45,
+        fluids: 0, // C1: dry as catalogued
+        category: TimingCategory.fuelDrink,
+      );
+      expect(needsWaterPairing([dryMix]), isTrue);
+      final res = ensureElectrolyteWaterPairing([dryMix], pool);
+      expect(res.changed, isTrue);
+      expect(res.items.any(deliversDrinkableFluid), isTrue);
+    });
+
+    test('a hydrated sports drink is self-satisfying (no double count)', () {
+      final mixed = item(
+        id: 'sports-drink',
+        name: 'Sports Drink',
+        carbs: 30,
+        fluids: 500,
+        isDrink: true,
+        category: TimingCategory.fuelDrink,
+      );
+      expect(ensureElectrolyteWaterPairing([mixed], pool).changed, isFalse);
+    });
+
+    test('a plain solid food stays outside the pairing scope', () {
+      final banana = item(
+        id: 'banana',
+        name: 'Banana',
+        carbs: 27,
+        fluids: 0,
+        category: TimingCategory.slowConsume,
+      );
+      expect(unpairedElectrolyteItems([banana]), isEmpty);
+      expect(needsWaterPairing([banana]), isFalse);
+    });
+  });
 }

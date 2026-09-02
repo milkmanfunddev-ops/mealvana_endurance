@@ -84,10 +84,10 @@ void main() {
         const ValueKey('bottom_nav.timeline_tab'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
-        const ValueKey('fuel_timeline.add_activity'),
+        const ValueKey('macro_dashboard.add_activity'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(
-        const ValueKey('fuel_timeline.add_activity'),
+        const ValueKey('macro_dashboard.add_activity'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('activity_create.tab_running'),

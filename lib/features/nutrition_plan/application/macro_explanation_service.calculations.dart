@@ -491,7 +491,8 @@ extension _$CalculationsExt on MacroExplanationService {
       // total-event fluid requirement, keeping per-leg rates within
       // segment ceilings and avoiding the need for redistribution.
       final totalAbsorbedMl = transitionCount * 300;
-      final transitionsLabel = transitionCount == 1 ? 'T2' : 'T1 and T2';
+      // Positional naming (brick.md R8): a single gap is T1.
+      final transitionsLabel = transitionCount == 1 ? 'T1' : 'T1 and T2';
       footerNote =
           '$transitionsLabel ${transitionCount == 1 ? "provides" : "each provide"} '
           '${_fmtMlAmount(300, useImperial)}. '
@@ -563,80 +564,10 @@ extension _$CalculationsExt on MacroExplanationService {
     ];
   }
 
-  /// Transition fluid: fixed 300 ml (T1/T2 per spec). Shows the bolus math
-  /// and the sodium derivation side-by-side for the sodium variant.
-  List<CalculationSection> _buildTransitionFluidCalculationSections({
-    required int waterMl,
-    bool isT1 = true,
-    bool useImperial = false,
-  }) {
-    // Spec `transparency_during_hydration.md` §T1 / T2 — show fixed bolus,
-    // range band, and T1 vs T2 differentiation lines. Not body-weight
-    // scaled (noted explicitly).
-    final rangeLow = (waterMl * 0.80).round();
-    final rangeHigh = (waterMl * 1.20).round();
-    final transitionLabel = isT1 ? 'T1' : 'T2';
-    return [
-      CalculationSection(
-        header: 'TRANSITION BOLUS',
-        lines: [
-          FormulaLine([
-            fAccent('$transitionLabel '),
-            fOp('→ '),
-            fResult('${_fmtMlAmount(waterMl, useImperial)} fixed'),
-            fDim(' (sip, then go)'),
-          ], stepNumber: '①'),
-          FormulaLine([
-            fOp('range '),
-            fOp('→ '),
-            fDim(_fmtMlRange(rangeLow, rangeHigh, useImperial)),
-          ]),
-          FormulaLine([
-            fOp(isT1 ? 'T1: ' : 'T2: '),
-            fDim(
-              isT1
-                  ? 'bridges swim hydration gap + wetsuit heat'
-                  : 'last easy window before run GI tolerance drops',
-            ),
-          ]),
-          const FormulaLine([
-            FormulaSegment('# ', style: SegmentStyle.op),
-            FormulaSegment(
-              'not body-weight scaled (conservative fixed bolus)',
-              style: SegmentStyle.dim,
-            ),
-          ]),
-        ],
-      ),
-    ];
-  }
-
-  List<CalculationSection> _buildTransitionSodiumCalculationSections({
-    required int waterMl,
-    required int concMgPerL,
-    bool useImperial = false,
-  }) {
-    final sodium = ((waterMl / 1000) * concMgPerL).round();
-    return [
-      CalculationSection(
-        header: 'TRANSITION SODIUM',
-        lines: [
-          FormulaLine([
-            fAccent('${_sodiumSaltLabel(concMgPerL)} salt '),
-            fOp('→ '),
-            fDim('$concMgPerL mg/L'),
-          ], stepNumber: '①'),
-          FormulaLine([
-            fAccent('${_fmtMlAmount(waterMl, useImperial)} '),
-            fOp('× '),
-            fDim('($concMgPerL ÷ 1000) '),
-            fOp('= '),
-            fResult('$sodium mg'),
-          ], stepNumber: '②'),
-        ],
-      ),
-    ];
-  }
+  // The transition fluid/sodium calculation builders were removed with the
+  // transition-card v1 ratification (TC-4 / transition-nutrition.md T-5,
+  // Xuan 2026-09-01): fluid and sodium are tallies on a transition — the
+  // drawer must never render a formula implying a target.
 
   /// Pre-workout fluid math.
   ///

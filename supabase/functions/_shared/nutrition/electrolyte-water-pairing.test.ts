@@ -15,6 +15,8 @@ import {
   ensureElectrolyteWaterPairing,
   isElectrolyteItem,
   needsWaterPairing,
+  requiresWaterWhenDry,
+  unpairedElectrolyteItems,
 } from "./electrolyte-water-pairing.ts";
 import type { Food, FoodResult } from "./types.ts";
 
@@ -307,4 +309,56 @@ Deno.test("input array is never mutated", () => {
   const before = foods.length;
   ensureElectrolyteWaterPairing(foods, WATER_POOL, OPTS);
   assertEquals(foods.length, before);
+});
+
+// ---------------------------------------------------------------------------
+// C2 scope extension — docs/ssot/spec/domain/catalog-conventions.md (RULED
+// Xuan 2026-09-01): every DRY requires-water item is covered, not only
+// electrolyte-flagged ones. With the C1 catalog zeros in place a carb drink
+// mix row is dry — nobody chews drink mix.
+// ---------------------------------------------------------------------------
+
+Deno.test("C2: a dry carb drink mix (no electrolyte flags) gets water", () => {
+  const dryMix = item({
+    food_id: "carb-mix",
+    display_name: "Carb Drink Mix",
+    carbs_grams: 45,
+    sodium_mg: 0,
+    fluids_ml: 0, // C1: dry as catalogued
+    product_type: "drink_mix",
+  });
+  assert(requiresWaterWhenDry(dryMix), "drink_mix is drink-shaped");
+  assert(needsWaterPairing([dryMix]));
+
+  const result = ensureElectrolyteWaterPairing([dryMix], WATER_POOL, OPTS);
+  assert(result.changed, "water appended for the dry mix");
+  assert(
+    result.foods.some((f) => deliversDrinkableFluid(f)),
+    "invariant satisfied",
+  );
+});
+
+Deno.test("C2: a hydrated sports drink is self-satisfying (no double count)", () => {
+  const mixed = item({
+    food_id: "sports-drink",
+    display_name: "Sports Drink",
+    carbs_grams: 30,
+    fluids_ml: 500,
+    is_drink: true,
+    product_type: "sports_drink",
+  });
+  const result = ensureElectrolyteWaterPairing([mixed], WATER_POOL, OPTS);
+  assertEquals(result.changed, false, "already delivers its own fluid");
+});
+
+Deno.test("C2: a plain solid food stays outside the pairing scope", () => {
+  const banana = item({
+    food_id: "banana",
+    display_name: "Banana",
+    carbs_grams: 27,
+    fluids_ml: 0,
+    product_type: "real_food",
+  });
+  assertEquals(requiresWaterWhenDry(banana), false);
+  assertEquals(unpairedElectrolyteItems([banana]).length, 0);
 });

@@ -16,6 +16,7 @@ import { describe, it } from 'https://deno.land/std@0.168.0/testing/bdd.ts';
 
 import { calculateBrickHydration } from './brick-workout.ts';
 import { calculateBrickMacrosV4 } from './brick-workout.ts';
+import { calculateTransitionCarbDose } from './brick-workout.ts';
 import {
   applyPreWorkoutHydrationOverlay,
   calculatePreWorkoutHydration,
@@ -123,8 +124,9 @@ describe('Example 6: Brick (bike 90 min → run 45 min), 27°C', () => {
     const bikeSeg = result.segments.find(s => s.sport === 'cycling')!;
     assertMlClose(bikeSeg.hydration_rate_mlph, 789, 'bike rate');
 
-    const t2 = result.transitions.find(t => t.transition_name === 'T2')!;
-    assertEquals(t2.water_ml, 300, 'T2 = 300 ml');
+    // Single gap = T1 (positional, brick.md R8)
+    const t2 = result.transitions.find(t => t.transition_name === 'T1')!;
+    assertEquals(t2.water_ml, 300, 'T1 = 300 ml');
 
     const runSeg = result.segments.find(s => s.sport === 'running')!;
     assertMlClose(runSeg.hydration_rate_mlph, 789, 'run rate');
@@ -170,8 +172,9 @@ describe('Redistribution: heavy sweater, run ceiling hit, shift to bike', () => 
     const bikeSeg = result.segments.find(s => s.sport === 'cycling')!;
     assertEquals(bikeSeg.hydration_rate_mlph, 1200, 'bike capped at 1200');
 
-    const t2 = result.transitions.find(t => t.transition_name === 'T2')!;
-    assertEquals(t2.water_ml, 300, 'T2 = 300 ml');
+    // Single gap = T1 (positional, brick.md R8)
+    const t2 = result.transitions.find(t => t.transition_name === 'T1')!;
+    assertEquals(t2.water_ml, 300, 'T1 = 300 ml');
 
     const runSeg = result.segments.find(s => s.sport === 'running')!;
     assertEquals(runSeg.hydration_rate_mlph, 800, 'run capped at 800');
@@ -228,7 +231,7 @@ describe('Transition sodium matches spec (no 0.3 factor)', () => {
       knownSweatRateMlPerHour: null,
       knownSodiumConcMgPerL: null,
     });
-    const t2 = result.transitions.find(t => t.transition_name === 'T2')!;
+    const t2 = result.transitions.find(t => t.transition_name === 'T1')!;
     assertEquals(t2.sodium_mg, 300);
   });
 
@@ -245,18 +248,19 @@ describe('Transition sodium matches spec (no 0.3 factor)', () => {
       knownSweatRateMlPerHour: null,
       knownSodiumConcMgPerL: 900,
     });
-    const t2 = result.transitions.find(t => t.transition_name === 'T2')!;
+    const t2 = result.transitions.find(t => t.transition_name === 'T1')!;
     // (300/1000) × 900 = 270
     assertEquals(t2.sodium_mg, 270);
   });
 });
 
 // ============================================================================
-// Transition detection: swim→bike = T1, bike→run = T2
+// Transition detection: POSITIONAL T{i+1} — brick.md R8 (fixes D-008); the
+// sport pair is a display label only (sport_pair field).
 // ============================================================================
 
-describe('Transition naming', () => {
-  it('swim→bike is T1, bike→run is T2 in Olympic tri', () => {
+describe('Transition naming (positional, brick.md R8)', () => {
+  it('Olympic tri: gap after leg 1 is T1, after leg 2 is T2', () => {
     const result = calculateBrickHydration({
       weightKg: 70,
       segments: [
@@ -279,11 +283,16 @@ describe('Transition naming', () => {
     assert(t2 !== undefined, 'T2 exists');
     assertEquals(t1!.after_sport, 'swimming', 'T1 after swim');
     assertEquals(t2!.after_sport, 'cycling', 'T2 after bike');
+    assertEquals(t1!.sport_pair, 'swimming→cycling', 'T1 label');
+    assertEquals(t2!.sport_pair, 'cycling→running', 'T2 label');
     assertEquals(t1!.water_ml, 300, 'T1 = 300 ml fixed');
     assertEquals(t2!.water_ml, 300, 'T2 = 300 ml fixed');
   });
 
-  it('bike→run only brick has T2 (not T1)', () => {
+  // brick.md R8 ruled AGAINST the old sport-pair naming: a plain bike→run
+  // brick used to emit T2 with no T1 (D-008 — the consumer looks up T1 and
+  // fell to zero-defaults). Positionally the single gap IS T1.
+  it('bike→run only brick has T1 (positional; D-008 fixed)', () => {
     const result = calculateBrickHydration({
       weightKg: 70,
       segments: [
@@ -301,9 +310,35 @@ describe('Transition naming', () => {
 
     const t1 = result.transitions.find(t => t.transition_name === 'T1');
     const t2 = result.transitions.find(t => t.transition_name === 'T2');
-    assert(t1 === undefined || t1.after_sport !== 'swimming', 'no swim→bike T1');
-    assert(t2 !== undefined, 'T2 exists for bike→run');
-    assertEquals(t2!.water_ml, 300, 'T2 = 300 ml');
+    assert(t1 !== undefined, 'T1 exists for the single bike→run gap');
+    assertEquals(t1!.sport_pair, 'cycling→running', 'pair is a label only');
+    assert(t2 === undefined, 'no T2 on a 2-leg brick');
+    assertEquals(t1!.water_ml, 300, 'T1 = 300 ml');
+  });
+
+  it('repeat-leg brick (bike→run→bike) gets T1 and T2, no collision', () => {
+    const result = calculateBrickHydration({
+      weightKg: 70,
+      segments: [
+        { sport: 'cycling', durationMin: 40, order: 1 },
+        { sport: 'running', durationMin: 30, order: 2 },
+        { sport: 'cycling', durationMin: 40, order: 3 },
+      ],
+      sweatRateCategory: 'medium',
+      sweatSodiumCat: 'average',
+      tempC: 22,
+      humidityPct: 50,
+      isIndoor: false,
+      knownSweatRateMlPerHour: null,
+      knownSodiumConcMgPerL: null,
+    });
+
+    assertEquals(
+      result.transitions.map(t => t.transition_name), ['T1', 'T2'],
+      'positional names never collide on repeat legs',
+    );
+    assertEquals(result.transitions[0].sport_pair, 'cycling→running');
+    assertEquals(result.transitions[1].sport_pair, 'running→cycling');
   });
 });
 
@@ -414,10 +449,10 @@ describe('calculateBrickMacrosV4 — Example 6 integration (bike→run)', () => 
     assertMlClose(bikeSeg.water_ml, expectedBikeWater, 'bike water_ml from rate×duration');
     assertMlClose(runSeg.water_ml, expectedRunWater, 'run water_ml from rate×duration');
 
-    // T2 transition water = 300 ml
-    const t2 = result.phases.transitions.find((t: { transition_name: string }) =>
-      t.transition_name === 'T2')!;
-    assertEquals(t2.water_ml, 300, 'T2 water = 300 ml');
+    // The single bike→run gap is T1 (positional, brick.md R8), 300 ml
+    const t1 = result.phases.transitions.find((t: { transition_name: string }) =>
+      t.transition_name === 'T1')!;
+    assertEquals(t1.water_ml, 300, 'T1 water = 300 ml');
 
     // Carbs are untouched (non-zero for drinkable segments)
     assert(bikeSeg.carbs_g > 0, 'bike carbs preserved');
@@ -485,5 +520,101 @@ describe('calculateBrickMacrosV4 — Example 6 integration (bike→run)', () => 
     const swimSeg = result.phases.during_segments.find((s: { sport: string }) => s.sport === 'swimming')!;
     assertEquals(swimSeg.hydration_rate_ml_per_h, 0, 'swim hydration_rate_ml_per_h = 0');
     assertEquals(swimSeg.water_ml, 0, 'swim water_ml = 0');
+  });
+});
+
+// ============================================================================
+// Transition carb dose — SSOT: docs/ssot/spec/fueling/transition-nutrition.md
+// v1 (RATIFIED Xuan 2026-09-01). The spec's worked examples W1–W4; the full
+// 10-vector sweep runs Dart-side via qa run_dart.sh transition-nutrition.
+// Replaces the retired weight×0.3/0.35 g/kg tiers over a 180-min cliff.
+// ============================================================================
+
+describe('Transition carb dose (T-1..T-4)', () => {
+  it('W1: bike 60 → run 45, tmin 5 → clamp 30 g', () => {
+    const d = calculateTransitionCarbDose(
+      [
+        { sport: 'cycling', durationMin: 60 },
+        { sport: 'running', durationMin: 45 },
+      ],
+      0, 'moderate', 5,
+    );
+    // cum 105 → band 45-60 mid 52.5, run ceil 70; gap 15+5+15=35;
+    // 52.5×35/60 = 30.625 → 31 → clamp 30
+    assertEquals(d.dose_g, 30);
+    assertEquals(d.band_low_g, 0);
+    assertEquals(d.band_high_g, 30);
+  });
+
+  it('W2: run 20 → bike 20, tmin 2 → 7 g (short bricks are nonzero)', () => {
+    const d = calculateTransitionCarbDose(
+      [
+        { sport: 'running', durationMin: 20 },
+        { sport: 'cycling', durationMin: 20 },
+      ],
+      0, 'moderate', 2,
+    );
+    // cum 40 → band 0-30 mid 15; gap 15+2+10=27; 6.75 → 7
+    assertEquals(d.dose_g, 7);
+  });
+
+  it('W3: swim extends the gap (T-3) — full swim duration, not pre-buffer', () => {
+    const d = calculateTransitionCarbDose(
+      [
+        { sport: 'swimming', durationMin: 35 },
+        { sport: 'cycling', durationMin: 180 },
+        { sport: 'running', durationMin: 110 },
+      ],
+      0, 'moderate', 3,
+    );
+    // cum through bike 215 → band 60-90 mid 75; gap 35+3+10=48; 60 → clamp 30
+    assertEquals(d.dose_g, 30);
+    assertEquals(d.effective_gap_min, 48);
+  });
+
+  it('W4: any → swim doses 0 (swim ceiling 0; 0 is legitimate)', () => {
+    const d = calculateTransitionCarbDose(
+      [
+        { sport: 'cycling', durationMin: 60 },
+        { sport: 'swimming', durationMin: 30 },
+      ],
+      0, 'moderate', 2,
+    );
+    assertEquals(d.dose_g, 0);
+  });
+
+  it('transition_min defaults to 3 when absent (Q-TN3 ratified default)', () => {
+    const d = calculateTransitionCarbDose(
+      [
+        { sport: 'running', durationMin: 20 },
+        { sport: 'cycling', durationMin: 20 },
+      ],
+      0, 'moderate', null,
+    );
+    // gap 15+3+10=28; 15×28/60 = 7.0 → 7
+    assertEquals(d.dose_g, 7);
+    assertEquals(d.transition_min, 3);
+  });
+
+  it('macros payload carries the T-1 dose + band, not weight tiers', () => {
+    const input = {
+      weight: 73, weight_unit: 'kg', activity_type: 'brick',
+      hours_before: 2, is_fasted: false, gut_training: 'moderate',
+      sweat_rate_category: 'medium', sweat_sodium: 'average',
+      brick_segments: [
+        { sport: 'cycling', order: 1, duration_minutes: 60, intensity: 'moderate' },
+        { sport: 'running', order: 2, duration_minutes: 45, intensity: 'moderate',
+          pace_minutes_per_mile: 9 },
+      ],
+    } as Parameters<typeof calculateBrickMacrosV4>[0];
+    const result = calculateBrickMacrosV4(input, makePreTargets());
+    const t1 = result.phases.transitions[0];
+    assertEquals(t1.transition_name, 'T1');
+    assertEquals(t1.sport_pair, 'cycling→running');
+    // W1 with the default tmin 3: gap 15+3+15=33; 52.5×33/60=28.875 → 29
+    assertEquals(t1.carbs_g, 29);
+    assertEquals(t1.carbs_low_g, 0);
+    assertEquals(t1.carbs_high_g, 30);
+    // The retired tiers would have given 0 here (105 min < 180 cliff)
   });
 });

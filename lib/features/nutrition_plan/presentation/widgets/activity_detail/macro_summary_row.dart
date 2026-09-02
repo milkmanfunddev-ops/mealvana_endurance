@@ -116,18 +116,29 @@ class MacroSummaryRow extends StatelessWidget {
     final categoryLower = category.toLowerCase();
     final isDuringSection = categoryLower.contains('during');
     final isBeforeSection = categoryLower.contains('before');
-    final showFluids = isBeforeSection || isDuringSection;
+    // Transition card — SSOT: docs/ssot/spec/design/components/transition-card.md
+    // TC-2 (RATIFIED Xuan 2026-09-01): stat trio is CARBS · FLUIDS · SODIUM.
+    // CARBS is the only stat with a target (delivered/target + band [0,30],
+    // T-1); FLUIDS and SODIUM are plain tallies — no transition-specific
+    // target exists in any position stand (T-5). PROTEIN is dropped (it
+    // rendered a permanently-0 stat with no basis).
+    final isTransitionSection = categoryLower.contains('transition');
+    final showFluids =
+        isBeforeSection || isDuringSection || isTransitionSection;
 
     // BEFORE-phase absences (docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md §3 and §5).
     //
     // Sodium: Mealvana sets no pre-workout sodium target at all, so the figure
     // is reported as delivered — no band, no marker, no in-range state. This
     // follows from the phase itself, so it holds even for a legacy cached plan
-    // that still carries the retired sodium band.
-    final sodiumHasNoTarget = isBeforeSection;
+    // that still carries the retired sodium band. Transitions likewise (TC-2:
+    // the as-built 265/248mg pair drops its target half).
+    final sodiumHasNoTarget = isBeforeSection || isTransitionSection;
     // Fluid: the hydration gate fired — a short, mild session gets no target.
+    // On a transition the fluid figure is a tally by design (T-5).
     final fluidsHasNoTarget =
-        isBeforeSection && (preRun?.isHydrationGated ?? false);
+        isTransitionSection ||
+        (isBeforeSection && (preRun?.isHydrationGated ?? false));
     // Carbohydrate: the athlete is fasted — no recommendation is being made.
     // Distinct from `carbsG == 0` at t−0, which *is* a recommendation.
     final carbsHasNoTarget =
@@ -169,6 +180,9 @@ class MacroSummaryRow extends StatelessWidget {
                 ? 'training fasted — no recommendation'
                 : null,
             prominent: isBeforeSection,
+            // TC-2: the transition carb stat reads delivered/target above its
+            // [0,30] band rail.
+            showTargetInValue: isTransitionSection,
           ),
         ),
         if (showFluids)
@@ -193,7 +207,9 @@ class MacroSummaryRow extends StatelessWidget {
               isOverridden: fluidsOverridden,
               overrideLabel: fluidsOverrideLabel,
               hasNoTarget: fluidsHasNoTarget,
-              noTargetNote: fluidsHasNoTarget
+              // A transition fluid tally carries no note — the drawer
+              // explains that the continuous schedule owns fluids (TC-4).
+              noTargetNote: fluidsHasNoTarget && !isTransitionSection
                   ? 'no target for this session'
                   : null,
               prominent: isBeforeSection,
@@ -272,6 +288,7 @@ class MacroSummaryItem extends StatelessWidget {
     this.hasNoTarget = false,
     this.noTargetNote,
     this.prominent = false,
+    this.showTargetInValue = false,
   });
 
   final int actual;
@@ -301,6 +318,11 @@ class MacroSummaryItem extends StatelessWidget {
 
   /// One-line reason shown beneath the label when [hasNoTarget] is set.
   final String? noTargetNote;
+
+  /// Render the value line as `delivered/target` even in range mode —
+  /// transition-card TC-2: the carb stat pairs delivered with its T-1 target
+  /// above the [0,30] band rail.
+  final bool showTargetInValue;
 
   bool get _hasRange =>
       !hasNoTarget && low != null && high != null && (low! > 0 || high! > 0);
@@ -417,16 +439,34 @@ class MacroSummaryItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '$actual$unit',
-                style: prominent
-                    ? _valueStyle(actualColor)
-                    : AppTextStyles.dataNumber.copyWith(
-                        color: actualColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+              if (showTargetInValue)
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$actual',
+                        style: _valueStyle(actualColor),
                       ),
-              ),
+                      TextSpan(
+                        text: '/$target$unit',
+                        style: _valueStyle(
+                          Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Text(
+                  '$actual$unit',
+                  style: prominent
+                      ? _valueStyle(actualColor)
+                      : AppTextStyles.dataNumber.copyWith(
+                          color: actualColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                ),
               if (isOverridden) _buildOverrideIcon(context),
             ],
           ),

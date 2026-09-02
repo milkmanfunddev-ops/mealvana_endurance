@@ -110,6 +110,85 @@ class OfflineMacroCalculator {
     };
   }
 
+  // ===========================================================================
+  // TRANSITION CARBS — SSOT: docs/ssot/spec/fueling/transition-nutrition.md v1
+  // (RATIFIED Xuan 2026-09-01). Conformance vectors:
+  // docs/ssot/vectors/fueling/transition-nutrition.json.
+  // Twin: calculateTransitionCarbDose in
+  // supabase/functions/generate-macros-v4/brick-workout.ts — change both or
+  // neither.
+  // ===========================================================================
+
+  /// T-1 constants (spec §Constants — Mealvana design choices, notes L2/L3/L5).
+  static const double transitionPreBufferMin = 15.0;
+  static const Map<String, double> transitionSettleMin = {
+    'cycling': 10.0,
+    'running': 15.0,
+    // Oracle convention: the rate into a swim is 0, so the gap never matters.
+    'swimming': 0.0,
+  };
+
+  /// Flat by ratified default (Q-TN4 open: gut-scaled clamp).
+  static const int transitionClampG = 30;
+
+  /// Silent default when no stop time arrives (Q-TN3 open: form input).
+  static const double transitionMinDefault = 3.0;
+
+  /// The transition carb dose for the gap after segment [transitionIndex].
+  ///
+  /// T-1: `dose_g = clamp(round(rate_gph × effective_gap_min / 60), 0, 30)`;
+  /// band `[0, 30]` on every transition; 0 is a legitimate value.
+  ///
+  /// T-2 (rate source — no new rate math): the during-carbs core for the
+  /// NEXT segment — band keyed by cumulative event time THROUGH that
+  /// segment, gut multiplier, midpoint, next sport's ceiling. The brick
+  /// ×0.8 penalty and personal overrides do NOT apply here.
+  ///
+  /// T-3: a zero-intake previous leg (swim: ceiling 0) contributes its whole
+  /// duration to the gap INSTEAD OF the 15-min pre-buffer.
+  ///
+  /// T-4: whole grams (half-away-from-zero — Dart's `round()`).
+  static TransitionCarbDoseResult calculateTransitionCarbDose({
+    required List<TransitionDoseSegment> segments,
+    required int transitionIndex,
+    String gutTraining = 'moderate',
+    double? transitionMin,
+  }) {
+    final prev = segments[transitionIndex];
+    final next = segments[transitionIndex + 1];
+    final tMin = transitionMin ?? transitionMinDefault;
+
+    double cumThroughNextMin = 0.0;
+    for (int i = 0; i <= transitionIndex + 1; i++) {
+      cumThroughNextMin += segments[i].durationMin;
+    }
+    final band = getDurationCarbBand(cumThroughNextMin);
+    final gutMult = getGutTrainingMultiplier(gutTraining);
+    final midpoint = ((band[0] * gutMult) + (band[1] * gutMult)) / 2.0;
+    final nextSport = next.sport.toLowerCase();
+    final rate = math.min(midpoint, getSportCarbCeiling(nextSport).toDouble());
+
+    final prevSport = prev.sport.toLowerCase();
+    final leadInMin = getSportCarbCeiling(prevSport) == 0
+        ? prev.durationMin
+        : transitionPreBufferMin;
+    final settleMin =
+        transitionSettleMin[nextSport] ?? transitionSettleMin['running']!;
+    final effectiveGapMin = leadInMin + tMin + settleMin;
+
+    final rawDose = rate * effectiveGapMin / 60.0;
+    final dose = rawDose.round().clamp(0, transitionClampG);
+
+    return TransitionCarbDoseResult(
+      doseG: dose,
+      bandLowG: 0,
+      bandHighG: transitionClampG,
+      rateGPerH: rate,
+      effectiveGapMin: effectiveGapMin,
+      transitionMin: tMin,
+    );
+  }
+
   // ============================================================================
   // PRE-WORKOUT CARBOHYDRATE — SSOT: docs/ssot/spec/fueling/pre-workout-carbs.md v2
   // ============================================================================
@@ -1602,25 +1681,18 @@ class OfflineMacroCalculator {
       }
     }
 
-    // Detect transitions
+    // Detect transitions — identity is POSITIONAL `T{i+1}` per brick.md R8
+    // (fixes D-008: the sport-pair naming collided on repeat legs and made a
+    // plain bike→run brick emit T2); the sport pair survives as a display
+    // label only.
     final transitions = <_BrickTransitionRaw>[];
     for (int i = 0; i < segments.length - 1; i++) {
-      final afterSport = segments[i].sport.toLowerCase();
-      final beforeSport = segments[i + 1].sport.toLowerCase();
-      String transitionName;
-      if (afterSport == 'swimming' && beforeSport == 'cycling') {
-        transitionName = 'T1';
-      } else if (afterSport == 'cycling' && beforeSport == 'running') {
-        transitionName = 'T2';
-      } else {
-        transitionName = 'T${i + 1}';
-      }
       transitions.add(
         _BrickTransitionRaw(
           index: i,
-          name: transitionName,
-          afterSport: afterSport,
-          beforeSport: beforeSport,
+          name: 'T${i + 1}',
+          afterSport: segments[i].sport.toLowerCase(),
+          beforeSport: segments[i + 1].sport.toLowerCase(),
         ),
       );
     }
@@ -1791,6 +1863,7 @@ class OfflineMacroCalculator {
           .round();
       return BrickHydrationTransitionResult(
         transitionName: t.name,
+        sportPair: '${t.afterSport}→${t.beforeSport}',
         afterSport: t.afterSport,
         beforeSport: t.beforeSport,
         waterMl: _transitionFluidMl,
@@ -2066,17 +2139,52 @@ class BrickHydrationSegmentResult {
   final double effectiveSweatRateLph;
 }
 
+/// Segment descriptor for [OfflineMacroCalculator.calculateTransitionCarbDose].
+class TransitionDoseSegment {
+  const TransitionDoseSegment({required this.sport, required this.durationMin});
+
+  /// 'running' | 'cycling' | 'swimming'.
+  final String sport;
+  final double durationMin;
+}
+
+/// Result of [OfflineMacroCalculator.calculateTransitionCarbDose] —
+/// transition-nutrition.md T-1. [doseG] is whole grams (T-4); the band is
+/// `[0, 30]` on every transition.
+class TransitionCarbDoseResult {
+  const TransitionCarbDoseResult({
+    required this.doseG,
+    required this.bandLowG,
+    required this.bandHighG,
+    required this.rateGPerH,
+    required this.effectiveGapMin,
+    required this.transitionMin,
+  });
+
+  final int doseG;
+  final int bandLowG;
+  final int bandHighG;
+  final double rateGPerH;
+  final double effectiveGapMin;
+  final double transitionMin;
+}
+
 /// Per-transition output from [OfflineMacroCalculator.calculateBrickHydration].
 class BrickHydrationTransitionResult {
   const BrickHydrationTransitionResult({
     required this.transitionName,
+    required this.sportPair,
     required this.afterSport,
     required this.beforeSport,
     required this.waterMl,
     required this.sodiumMg,
   });
 
+  /// Positional identity `T{i+1}` — brick.md R8 (fixes D-008).
   final String transitionName;
+
+  /// Display label only, no identity (brick.md R8), e.g. 'cycling→running'.
+  final String sportPair;
   final String afterSport;
   final String beforeSport;
   final int waterMl;

@@ -20,7 +20,10 @@ import {
   calculatePostWorkoutCarbs,
   calculatePostWorkoutProtein,
   calculatePostWorkoutHydration,
+  getDurationCarbBand,
+  getGutTrainingMultiplier,
   getIntensityDistribution,
+  getSportCarbCeiling,
   type MacroInputV4,
   type NutritionOverrides,
 } from "./single-sport.ts";
@@ -149,6 +152,96 @@ function resolveBrickSegmentCarbRateOverride(
 }
 
 // ============================================================================
+// Transition carb dose — SSOT: docs/ssot/spec/fueling/transition-nutrition.md
+// v1 (RATIFIED Xuan 2026-09-01). Twin: OfflineMacroCalculator
+// .calculateTransitionCarbDose (offline_macro_calculator.dart) — change both
+// or neither. Replaces the retired weight×0.3/0.35 g/kg tiers over a 180-min
+// cliff (characterization, never ratified).
+// ============================================================================
+
+/** T-1 constants (spec §Constants — Mealvana design choices, notes L2/L3/L5). */
+export const TRANSITION_PRE_BUFFER_MIN = 15;
+export const TRANSITION_SETTLE_MIN: Record<string, number> = {
+  cycling: 10,
+  running: 15,
+  swimming: 0, // oracle convention: rate into a swim is 0, gap never matters
+};
+export const TRANSITION_CLAMP_G = 30; // flat by ratified default (Q-TN4 open)
+export const TRANSITION_MIN_DEFAULT = 3; // silent default (Q-TN3 open)
+
+export interface TransitionDoseSegment {
+  sport: string;
+  durationMin: number;
+}
+
+export interface TransitionDoseResult {
+  dose_g: number;
+  band_low_g: number;
+  band_high_g: number;
+  rate_g_per_h: number;
+  effective_gap_min: number;
+  transition_min: number;
+}
+
+/**
+ * T-1: dose_g = clamp(round(rate_gph × effective_gap_min / 60), 0, 30);
+ * band [0, 30] on every transition; 0 is a legitimate value.
+ *
+ * T-2 (rate source — no new rate math): the during-carbs core for the NEXT
+ * segment, band keyed by cumulative event time THROUGH that segment, gut
+ * multiplier, midpoint, next sport's ceiling. The brick ×0.8 penalty and
+ * personal overrides do NOT apply here — the spec's chain is exhaustive.
+ *
+ * T-3: a zero-intake previous leg (swim: ceiling 0) contributes its whole
+ * duration to the gap INSTEAD OF the 15-min pre-buffer.
+ *
+ * T-4: whole grams, half-away-from-zero.
+ */
+export function calculateTransitionCarbDose(
+  segments: TransitionDoseSegment[],
+  transitionIndex: number,
+  gutTraining: string,
+  transitionMin?: number | null,
+): TransitionDoseResult {
+  const prev = segments[transitionIndex];
+  const next = segments[transitionIndex + 1];
+  const tMin = transitionMin ?? TRANSITION_MIN_DEFAULT;
+
+  let cumThroughNextMin = 0;
+  for (let i = 0; i <= transitionIndex + 1; i++) {
+    cumThroughNextMin += segments[i].durationMin;
+  }
+  const [rawLow, rawHigh] = getDurationCarbBand(cumThroughNextMin);
+  const gutMult = getGutTrainingMultiplier(gutTraining);
+  const midpoint = ((rawLow * gutMult) + (rawHigh * gutMult)) / 2;
+  const nextSport = next.sport.toLowerCase();
+  const rate = Math.min(midpoint, getSportCarbCeiling(nextSport));
+
+  const prevSport = prev.sport.toLowerCase();
+  const leadInMin = getSportCarbCeiling(prevSport) === 0
+    ? prev.durationMin
+    : TRANSITION_PRE_BUFFER_MIN;
+  const settleMin = TRANSITION_SETTLE_MIN[nextSport] ??
+    TRANSITION_SETTLE_MIN["running"];
+  const effectiveGapMin = leadInMin + tMin + settleMin;
+
+  const rawDose = rate * effectiveGapMin / 60;
+  const dose = Math.min(
+    TRANSITION_CLAMP_G,
+    Math.max(0, Math.round(rawDose)),
+  );
+
+  return {
+    dose_g: dose,
+    band_low_g: 0,
+    band_high_g: TRANSITION_CLAMP_G,
+    rate_g_per_h: rate,
+    effective_gap_min: effectiveGapMin,
+    transition_min: tMin,
+  };
+}
+
+// ============================================================================
 // MAIN BRICK CALCULATION
 // ============================================================================
 
@@ -186,7 +279,10 @@ interface BrickHydrationSegmentResult {
 }
 
 interface BrickHydrationTransitionResult {
+  /** Positional identity `T{i+1}` — brick.md R8 (fixes D-008). */
   transition_name: string;
+  /** Display label only, no identity (brick.md R8), e.g. "cycling→running". */
+  sport_pair: string;
   after_sport: string;
   before_sport: string;
   water_ml: number;
@@ -274,32 +370,17 @@ export function calculateBrickHydration(
     }
   }
 
-  // Detect transitions (ordered by segment)
-  // Transition occurs between each adjacent pair of segments
-  // swim→bike = T1, bike→run = T2
+  // Detect transitions (ordered by segment) — one between each adjacent
+  // pair. Identity is POSITIONAL `T{i+1}` per brick.md R8 (the sport-pair
+  // naming that collided on repeat legs and skipped T1 on a plain bike→run
+  // brick is retired — D-008); the pair survives as a display label.
   const transitionsRaw: Array<{ index: number; afterSport: string; beforeSport: string }> = [];
   for (let i = 0; i < segments.length - 1; i++) {
-    const afterSport = segments[i].sport.toLowerCase();
-    const beforeSport = segments[i + 1].sport.toLowerCase();
-
-    // Naming convention: swim→bike = T1, bike→run = T2, otherwise index-based
-    let transitionName: string;
-    if (afterSport === 'swimming' && beforeSport === 'cycling') {
-      transitionName = 'T1';
-    } else if (afterSport === 'cycling' && beforeSport === 'running') {
-      transitionName = 'T2';
-    } else {
-      transitionName = `T${i + 1}`;
-    }
-    transitionsRaw.push({ index: i, afterSport, beforeSport });
-    // Store with the name for output
-    transitionsRaw[transitionsRaw.length - 1] = {
+    transitionsRaw.push({
       index: i,
-      afterSport,
-      beforeSport,
-      // deno-lint-ignore no-explicit-any
-      ...(transitionName ? { name: transitionName } as any : {}),
-    };
+      afterSport: segments[i].sport.toLowerCase(),
+      beforeSport: segments[i + 1].sport.toLowerCase(),
+    });
   }
 
   const transitionCount = transitionsRaw.length;
@@ -443,21 +524,12 @@ export function calculateBrickHydration(
     };
   });
 
-  // Build output transitions
+  // Build output transitions — positional identity (brick.md R8).
   const resultTransitions: BrickHydrationTransitionResult[] = transitionsRaw.map((t, idx) => {
-    const afterSport = t.afterSport;
-    const beforeSport = t.beforeSport;
-    let transitionName: string;
-    if (afterSport === 'swimming' && beforeSport === 'cycling') {
-      transitionName = 'T1';
-    } else if (afterSport === 'cycling' && beforeSport === 'running') {
-      transitionName = 'T2';
-    } else {
-      transitionName = `T${idx + 1}`;
-    }
     const sodiumMg = Math.round((TRANSITION_FLUID_ML / 1000) * sodiumConcMgPerL);
     return {
-      transition_name: transitionName,
+      transition_name: `T${idx + 1}`,
+      sport_pair: `${t.afterSport}→${t.beforeSport}`,
       after_sport: t.afterSport,
       before_sport: t.beforeSport,
       water_ml: TRANSITION_FLUID_ML,
@@ -740,73 +812,75 @@ export function calculateBrickMacrosV4(
     }
   }
 
-  // Transitions — water_ml and sodium_mg come from calculateBrickHydration.
-  // Carb logic is unchanged (based on total duration).
-  // Build a lookup from transition_name → hydration result.
-  const hydrationTransitionByName: Record<string, typeof brickHydration.transitions[0]> = {};
-  for (const ht of brickHydration.transitions) {
-    hydrationTransitionByName[ht.transition_name] = ht;
-  }
+  // Transitions — water_ml and sodium_mg come from calculateBrickHydration
+  // (fixed 300 ml carve-out; its fate belongs to the reserved multi-segment
+  // hydration slice, T-5 note — they are TALLIES, not targets). Carbs come
+  // from the ratified T-1 dose (transition-nutrition.md v1); the weight-tier
+  // math over a 180-min cliff is retired. Identity is positional (R8) —
+  // brickHydration.transitions[i] IS the transition after segment i.
+  const transitionMinInput = input.transition_minutes ?? null;
 
   const transitions: Array<{
     transition_name: string;
+    sport_pair: string;
     after_sport: string;
     before_sport: string;
     carbs_g: number;
+    carbs_low_g: number;
+    carbs_high_g: number;
     protein_g: number;
     fat_g: number;
     sodium_mg: number;
     water_ml: number;
     timing_note: string;
     food_categories: string[];
+    // T-1 transparency (drawer renders the ratified formula from these)
+    carbs_rate_g_per_h: number;
+    effective_gap_min: number;
+    transition_min: number;
     // Hydration transparency (propagated from brickHydration so the UI can
-    // render the inherited sodium formula + known-rate badges on T1/T2 cards)
+    // render the inherited sodium derivation + known-rate badges)
     sodium_conc_mg_per_l: number;
     is_tested: boolean;
     is_tested_sodium: boolean;
   }> = [];
 
   for (let i = 0; i < segments.length - 1; i++) {
-    const afterSport = segments[i].sport.toLowerCase();
-    const beforeSport = segments[i + 1].sport.toLowerCase();
-    let transitionName: string;
-    if (afterSport === 'swimming' && beforeSport === 'cycling') {
-      transitionName = 'T1';
-    } else if (afterSport === 'cycling' && beforeSport === 'running') {
-      transitionName = 'T2';
-    } else {
-      transitionName = `T${i + 1}`;
-    }
+    const dose = calculateTransitionCarbDose(
+      segments.map((s) => ({
+        sport: s.sport,
+        durationMin: s.duration_minutes,
+      })),
+      i,
+      gutTraining,
+      transitionMinInput,
+    );
 
-    // Carbs: preserve existing carb logic based on total duration (unchanged)
-    let transitionCarbs: number;
-    if (totalDurationMin < 90) {
-      transitionCarbs = 0;
-    } else if (totalDurationMin < 180) {
-      transitionCarbs = 0;
-    } else {
-      const carbsPerKg = i === 0 ? 0.3 : 0.35;
-      transitionCarbs = Math.round(weightKg * carbsPerKg);
-    }
-
-    // Water and sodium from calculateBrickHydration (fixed 300 ml + 0.3×sodiumConc mg)
-    const ht = hydrationTransitionByName[transitionName];
+    const ht = brickHydration.transitions[i];
     const transitionWaterMl = ht?.water_ml ?? 300;
     const transitionSodiumMg = ht?.sodium_mg ?? 0;
 
     transitions.push({
-      transition_name: transitionName,
+      transition_name: `T${i + 1}`,
+      sport_pair: `${segments[i].sport.toLowerCase()}→${
+        segments[i + 1].sport.toLowerCase()
+      }`,
       after_sport: segments[i].sport,
       before_sport: segments[i + 1].sport,
-      carbs_g: transitionCarbs,
+      carbs_g: dose.dose_g,
+      carbs_low_g: dose.band_low_g,
+      carbs_high_g: dose.band_high_g,
       protein_g: 0,
       fat_g: 0,
       sodium_mg: transitionSodiumMg,
       water_ml: transitionWaterMl,
-      timing_note: transitionName === "T1"
+      timing_note: i === 0
         ? "Within first 5-10 minutes after first segment"
-        : "Final 5-10 minutes of second segment",
+        : `Final 5-10 minutes of segment ${i + 1}`,
       food_categories: ["transition"],
+      carbs_rate_g_per_h: dose.rate_g_per_h,
+      effective_gap_min: dose.effective_gap_min,
+      transition_min: dose.transition_min,
       sodium_conc_mg_per_l: brickHydration.sodium_conc_mg_per_l,
       is_tested: brickHydration.is_tested,
       is_tested_sodium: brickHydration.is_tested_sodium,
