@@ -194,4 +194,161 @@ class ContentKeys {
   // Success Messages
   static const String successFeedbackSubmitted = 'success.feedback_submitted';
   static const String successProfileSaved = 'success.profile_saved';
+
+  // Meal planning (Vana) — lib/features/meal_planning. Values with `{x}`
+  // placeholders are interpolated at the call site with `ContentKeys.format`.
+  static const String mpFoodTitle = 'meal_planning.food_title';
+  static const String mpTabPlan = 'meal_planning.tab_plan';
+  static const String mpTabMeals = 'meal_planning.tab_meals';
+  static const String mpTabShopping = 'meal_planning.tab_shopping';
+  static const String mpNeedsConnection = 'meal_planning.needs_connection';
+  static const String mpVanaOffline = 'meal_planning.vana_offline';
+  static const String mpProRequired = 'meal_planning.pro_required';
+  static const String mpRateLimited = 'meal_planning.rate_limited';
+  static const String mpServerError = 'meal_planning.server_error';
+  static const String mpConfirmedToast = 'meal_planning.confirmed_toast';
+  static const String mpShoppingShareTitle = 'meal_planning.shopping_share_title';
+  static const String mpPlanSectionTitle = 'meal_planning.plan_section_title';
+  static const String mpCoverageLine = 'meal_planning.coverage_line';
+  static const String mpEmptyPlanTitle = 'meal_planning.empty_plan_title';
+  static const String mpEmptyPlanBody = 'meal_planning.empty_plan_body';
+  static const String mpBtnAddMeal = 'meal_planning.btn_add_meal';
+  static const String mpBtnNewPlan = 'meal_planning.btn_new_plan';
+  static const String mpBtnConfirm = 'meal_planning.btn_confirm';
+  static const String mpBtnSwap = 'meal_planning.btn_swap';
+  static const String mpBtnSwapIn = 'meal_planning.btn_swap_in';
+  static const String mpBtnRemove = 'meal_planning.btn_remove';
+  static const String mpTodayTargetLine = 'meal_planning.today_target_line';
+  static const String mpRemoveUndone = 'meal_planning.remove_undone';
+  static const String mpUndo = 'meal_planning.undo';
+  static const String mpMealsSearchHint = 'meal_planning.meals_search_hint';
+  static const String mpRailRecents = 'meal_planning.rail_recents';
+  static const String mpRailMyFoods = 'meal_planning.rail_my_foods';
+  static const String mpRailAssemblies = 'meal_planning.rail_assemblies';
+  static const String mpRailRecipes = 'meal_planning.rail_recipes';
+  static const String mpSeeAll = 'meal_planning.see_all';
+  static const String mpRecentsEmpty = 'meal_planning.recents_empty';
+  static const String mpRetry = 'meal_planning.retry';
+  static const String mpFilterTitle = 'meal_planning.filter_title';
+  static const String mpFilterAnyType = 'meal_planning.filter_any_type';
+  static const String mpFilterAssemblies = 'meal_planning.filter_assemblies';
+  static const String mpFilterRecipes = 'meal_planning.filter_recipes';
+  static const String mpFilterClear = 'meal_planning.filter_clear';
+  static const String mpSearchEmpty = 'meal_planning.search_empty';
+  static const String mpFilterNoRecipe = 'meal_planning.filter_no_recipe';
+  static const String mpFilterProtein = 'meal_planning.filter_protein';
+  static const String mpFilterUnder20 = 'meal_planning.filter_under_20';
+  static const String mpVanaCta = 'meal_planning.vana_cta';
+  static const String mpChipLikeThese = 'meal_planning.chip_like_these';
+  static const String mpChipNextLabel = 'meal_planning.chip_next';
+  static const String mpChipThatsMyWeek = 'meal_planning.chip_thats_my_week';
+  static const String mpChipOther = 'meal_planning.chip_other';
+  static const String mpChipSomethingElse = 'meal_planning.chip_something_else';
+  static const String mpPickerPlaceholderPlanning =
+      'meal_planning.picker_placeholder_planning';
+  static const String mpPickerPlaceholderGeneral =
+      'meal_planning.picker_placeholder_general';
+  static const String mpOpenerLoading = 'meal_planning.opener_loading';
+  static const String mpStatusThinking = 'meal_planning.status_thinking';
+  static const String mpPlanBarReview = 'meal_planning.plan_bar_review';
+  static const String mpPlanBarMeals = 'meal_planning.plan_bar_meals';
+  static const String mpReviewTitle = 'meal_planning.review_title';
+  static const String mpReviewConfirm = 'meal_planning.review_confirm';
+  static const String mpReviewConfirmed = 'meal_planning.review_confirmed';
+  static const String mpReviewShoppingLink = 'meal_planning.review_shopping_link';
+  static const String mpServingsLabel = 'meal_planning.servings_label';
+  static const String mpSessionCookSun = 'meal_planning.session_cook_sun';
+  static const String mpSessionTopupWed = 'meal_planning.session_topup_wed';
+  static const String mpSessionFreshFri = 'meal_planning.session_fresh_fri';
+  static const String mpSessionNone = 'meal_planning.session_none';
+  static const String mpDetailIngredients = 'meal_planning.detail_ingredients';
+  static const String mpDetailOneServing = 'meal_planning.detail_one_serving';
+  static const String mpDetailMakes = 'meal_planning.detail_makes';
+  static const String mpDetailHowToCook = 'meal_planning.detail_how_to_cook';
+  static const String mpDetailStartCooking = 'meal_planning.detail_start_cooking';
+  static const String mpDetailSeeOriginal = 'meal_planning.detail_see_original';
+  static const String mpDetailYourDirections =
+      'meal_planning.detail_your_directions';
+  static const String mpDetailYourDirectionsHint =
+      'meal_planning.detail_your_directions_hint';
+  static const String mpDetailDirectionsSaved =
+      'meal_planning.detail_directions_saved';
+  static const String mpDetailSaveToMine = 'meal_planning.detail_save_to_mine';
+  static const String mpDetailSavedToast = 'meal_planning.detail_saved_toast';
+  static const String mpDetailThumbsDownNote =
+      'meal_planning.detail_thumbs_down_note';
+  static const String mpDetailMacrosNote = 'meal_planning.detail_macros_note';
+  static const String mpDetailSwapsTitle = 'meal_planning.detail_swaps_title';
+  static const String mpBadgeAiGenerated = 'meal_planning.badge_ai_generated';
+  static const String mpBadgeAssemblySimple =
+      'meal_planning.badge_assembly_simple';
+  static const String mpBadgeAltSource = 'meal_planning.badge_alt_source';
+  static const String mpBadgeVerbatim = 'meal_planning.badge_verbatim';
+  static const String mpCookStart = 'meal_planning.cook_start';
+  static const String mpCookStepOf = 'meal_planning.cook_step_of';
+  static const String mpCookStartStep = 'meal_planning.cook_start_step';
+  static const String mpCookNext = 'meal_planning.cook_next';
+  static const String mpCookBack = 'meal_planning.cook_back';
+  static const String mpCookDone = 'meal_planning.cook_done';
+  static const String mpCookStartOver = 'meal_planning.cook_start_over';
+  static const String mpCookAiDisclaimer = 'meal_planning.cook_ai_disclaimer';
+  static const String mpCookIngredients = 'meal_planning.cook_ingredients';
+  static const String mpCookNoStepsTitle = 'meal_planning.cook_no_steps_title';
+  static const String mpCookNoStepsBody = 'meal_planning.cook_no_steps_body';
+  static const String mpCookTimerStart = 'meal_planning.cook_timer_start';
+  static const String mpCookTimerNotification =
+      'meal_planning.cook_timer_notification';
+  static const String mpCookTimerPause = 'meal_planning.cook_timer_pause';
+  static const String mpCookTimerReset = 'meal_planning.cook_timer_reset';
+  static const String mpCookDoneThanks = 'meal_planning.cook_done_thanks';
+  static const String mpShoppingItemCount = 'meal_planning.shopping_item_count';
+  static const String mpShoppingTotals = 'meal_planning.shopping_totals';
+  static const String mpShoppingAddBack = 'meal_planning.shopping_add_back';
+  static const String mpShoppingShare = 'meal_planning.shopping_share';
+  static const String mpShoppingHave = 'meal_planning.shopping_have';
+  static const String mpShoppingEmptyTitle = 'meal_planning.shopping_empty_title';
+  static const String mpShoppingEmptyBody = 'meal_planning.shopping_empty_body';
+  static const String mpSettingsVanaTitle = 'meal_planning.settings_vana_title';
+  static const String mpSettingsBatch = 'meal_planning.settings_batch';
+  static const String mpSettingsBatchSub = 'meal_planning.settings_batch_sub';
+  static const String mpSettingsMacros = 'meal_planning.settings_macros';
+  static const String mpSettingsMacrosSub = 'meal_planning.settings_macros_sub';
+  static const String mpSettingsMemories = 'meal_planning.settings_memories';
+  static const String mpSettingsMemoriesBody =
+      'meal_planning.settings_memories_body';
+  static const String mpSettingsDeleteMemory =
+      'meal_planning.settings_delete_memory';
+  static const String mpMemoryDeletedToast = 'meal_planning.memory_deleted_toast';
+  static const String mpConvTitle = 'meal_planning.conv_title';
+  static const String mpConvAsk = 'meal_planning.conv_ask';
+  static const String mpConvPlans = 'meal_planning.conv_plans';
+  static const String mpConvNew = 'meal_planning.conv_new';
+  static const String mpConvEmpty = 'meal_planning.conv_empty';
+  static const String mpSwapTitle = 'meal_planning.swap_title';
+  static const String mpSwapReplacing = 'meal_planning.swap_replacing';
+  static const String mpStaplesTitle = 'meal_planning.staples_title';
+  static const String mpStaplesCarbLine = 'meal_planning.staples_carb_line';
+  static const String mpLoggedServingsLeft =
+      'meal_planning.logged_servings_left';
+  static const String mpLoggedRow = 'meal_planning.logged_row';
+  static const String mpMemorySavedRow = 'meal_planning.memory_saved_row';
+  static const String mpLoggedDoneToast = 'meal_planning.logged_done_toast';
+  static const String mpAteIt = 'meal_planning.ate_it';
+  static const String mpGeneralExample1 = 'meal_planning.general_example_1';
+  static const String mpGeneralExample2 = 'meal_planning.general_example_2';
+  static const String mpGeneralExample3 = 'meal_planning.general_example_3';
+  static const String mpMealTypeBreakfast = 'meal_planning.meal_type_breakfast';
+  static const String mpMealTypeLunch = 'meal_planning.meal_type_lunch';
+  static const String mpMealTypeDinner = 'meal_planning.meal_type_dinner';
+  static const String mpMealTypeSnack = 'meal_planning.meal_type_snack';
+
+  /// Interpolates `{name}` placeholders in a content value:
+  /// `format('Give me {n} seconds', {'n': 30})`.
+  static String format(String value, Map<String, Object?> params) {
+    var result = value;
+    for (final entry in params.entries) {
+      result = result.replaceAll('{${entry.key}}', '${entry.value}');
+    }
+    return result;
+  }
 }
