@@ -1,11 +1,18 @@
 /// Design SSOT surface — **Pre-Workout BEFORE Card**.
 ///
 /// Spec: `docs/ssot/spec/design/surfaces/pre-workout-before-card.md` **v1**
-/// (RATIFIED Xuan 2026-08-26); composes the library components
-/// `FuelStat` (fuel-stat v1), `FeedingCard` (feeding-card v1) and
-/// `HydrationCheckControl` (hydration-check v1) from
+/// (RATIFIED Xuan 2026-08-26) **+ PHASE-CARD VISUAL PARITY ruling as AMENDED**
+/// (Xuan 2026-09-01, qa `127e993`; intake
+/// `2026-09-01-before-card-visual-parity-with-during.md`): the compact shared
+/// phase style is authoritative for this surface's format — header
+/// `sectionTitle` 18 px in the phase colour, figures the shared
+/// `MacroSummaryRow` style, food-row icons the shared per-food disc. The
+/// dashed "+ Add Food" pill is EXCLUDED and stays per FC-7. Composes the
+/// library components `FuelStat` (fuel-stat v1), `FeedingCard` (feeding-card
+/// v1) and `HydrationCheckControl` (hydration-check v1) from
 /// `lib/shared/widgets/kyle_design/fueling/`. Reference rendering
-/// `docs/ssot/spec/design/renderings/pre-workout@v2.html`.
+/// `docs/ssot/spec/design/renderings/pre-workout@v2.html` (typography/format
+/// SUPERSEDED by the ruling; the goldens are the reference from here).
 ///
 /// One summary row (three fuel-stats) above the ordered feeding cards.
 /// UI-only: every figure arrives in [PreWorkoutBeforeCardData] (built by
@@ -28,6 +35,7 @@ import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../domain/pre_workout_before_card_model.dart';
 import '../../../domain/pre_workout_hydration_check.dart';
+import '../../utils/activity_detail_helpers.dart';
 
 class PreWorkoutBeforeCard extends StatelessWidget {
   const PreWorkoutBeforeCard({
@@ -78,16 +86,15 @@ class PreWorkoutBeforeCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header: "BEFORE". The `?` fine-print control is deliberately
-          // absent (S-G4) — no node, not an inert one.
+          // Header: "BEFORE" in the shared phase-section header style
+          // (parity ruling; same as `during_phase_section_widget.dart`). The
+          // `?` fine-print control is deliberately absent (S-G4) — no node,
+          // not an inert one.
           Text(
             title,
-            style: const TextStyle(
-              fontFamily: AppTextStyles.sansita,
-              fontWeight: FontWeight.w700,
-              fontSize: 22,
-              letterSpacing: 22 * .02,
+            style: AppTextStyles.sectionTitle.copyWith(
               color: AppColors.orange,
+              fontSize: 18,
             ),
           ),
           const SizedBox(height: 18),
@@ -111,6 +118,11 @@ class PreWorkoutBeforeCard extends StatelessWidget {
               ),
               onStep: onStep,
               onAddFood: onAddFood,
+              // Parity ruling: the shared per-food icon resolvers (the same
+              // ones the DURING rows get via `dismissible_food_item.dart`).
+              rowIcon: (row) => ActivityDetailHelpers.getFoodIcon(row.name),
+              rowIconColor: (row) =>
+                  ActivityDetailHelpers.getFoodIconColorForName(row.name),
               hydrationCheck:
                   (feeding.hostsHydrationCheck && data.hydrationCheck != null)
                   ? HydrationCheckControl(

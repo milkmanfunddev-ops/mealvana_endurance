@@ -26,6 +26,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/application/pre_worko
 import 'package:mealvana_endurance/features/nutrition_plan/application/pre_workout_hydration_check_service.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_before_card_model.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_hydration_check.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/presentation/utils/activity_detail_helpers.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/activity_detail/pre_workout_before_card.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/fueling/feeding_card.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/fueling/fuel_stat.dart';
@@ -43,6 +44,22 @@ Future<void> _loadFont(String family, List<String> paths) async {
     );
   }
   await loader.load();
+}
+
+/// Resolve a file inside a pub package via `.dart_tool/package_config.json`.
+String? _packageFontPath(String package, String relative) {
+  final config = File('.dart_tool/package_config.json');
+  if (!config.existsSync()) return null;
+  final match = RegExp(
+    '"name":\\s*"$package",\\s*"rootUri":\\s*"([^"]+)"',
+  ).firstMatch(config.readAsStringSync());
+  if (match == null) return null;
+  final root = Uri.parse(match.group(1)!);
+  final dir = root.isAbsolute
+      ? root.toFilePath()
+      : Directory('.dart_tool').uri.resolveUri(root).toFilePath();
+  final path = '$dir/$relative';
+  return File(path).existsSync() ? path : null;
 }
 
 /// The rendering's phone frame: 428 px wide, 17 px side padding on the
@@ -78,6 +95,12 @@ PreWorkoutBeforeCardData _data(
   bodyWeightKg: kMockBodyWeightKg,
   hydrationCheck: record,
 );
+
+/// The shared per-food icon resolvers the surface injects (parity ruling).
+IconData _rowIcon(FeedingFoodRow row) =>
+    ActivityDetailHelpers.getFoodIcon(row.name);
+Color _rowIconColor(FeedingFoodRow row) =>
+    ActivityDetailHelpers.getFoodIconColorForName(row.name);
 
 Widget _card(
   PreWorkoutBeforeCardData data, {
@@ -140,6 +163,17 @@ void main() {
     await _loadFont('Compadre', [
       'assets/fonts/Compadre/Compadre-Demo-Regular.otf',
     ]);
+    // Food-row glyphs are FontAwesome solid (parity ruling); without the
+    // face they render as placeholder boxes.
+    final faSolid = _packageFontPath(
+      'font_awesome_flutter',
+      'lib/fonts/Font-Awesome-7-Free-Solid-900.otf',
+    );
+    if (faSolid != null) {
+      await _loadFont('packages/font_awesome_flutter/FontAwesomeSolid', [
+        faSolid,
+      ]);
+    }
   });
 
   Future<void> golden(
@@ -260,6 +294,8 @@ void main() {
           initiallyExpanded: true,
           onStep: (_, __) {},
           onAddFood: (_) {},
+          rowIcon: _rowIcon,
+          rowIconColor: _rowIconColor,
         ),
         'feeding_meal_expanded',
         height: 360,
@@ -271,7 +307,13 @@ void main() {
       final snack = _data(240).feedings[1];
       await golden(
         tester,
-        FeedingCard(data: snack, onStep: (_, __) {}, onAddFood: (_) {}),
+        FeedingCard(
+          data: snack,
+          onStep: (_, __) {},
+          onAddFood: (_) {},
+          rowIcon: _rowIcon,
+          rowIconColor: _rowIconColor,
+        ),
         'feeding_snack_light_meal',
         height: 160,
       );
@@ -282,7 +324,13 @@ void main() {
       final topOff = _data(0).feedings.single;
       await golden(
         tester,
-        FeedingCard(data: topOff, onStep: (_, __) {}, onAddFood: (_) {}),
+        FeedingCard(
+          data: topOff,
+          onStep: (_, __) {},
+          onAddFood: (_) {},
+          rowIcon: _rowIcon,
+          rowIconColor: _rowIconColor,
+        ),
         'feeding_topoff_zero_carb',
         height: 160,
       );

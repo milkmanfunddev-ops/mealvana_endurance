@@ -219,8 +219,13 @@ class ActivityDetailHelpers {
   }
 
   /// Determine if a food is user-imported (vs generic system food)
-  static bool isUserImportedFood(FoodItemData food) {
-    final name = food.name.toLowerCase();
+  static bool isUserImportedFood(FoodItemData food) =>
+      isUserImportedFoodName(food.name);
+
+  /// Name-only form of [isUserImportedFood] — for rows that carry a food name
+  /// but no [FoodItemData] (the BEFORE card's feeding rows).
+  static bool isUserImportedFoodName(String foodName) {
+    final name = foodName.toLowerCase();
 
     final knownGenericFoods = [
       'apple',
@@ -262,9 +267,13 @@ class ActivityDetailHelpers {
   }
 
   /// Get the background color for the food icon
-  static Color getFoodIconColor(FoodItemData food) {
-    // Use different color for user-imported foods
-    if (isUserImportedFood(food)) {
+  static Color getFoodIconColor(FoodItemData food) =>
+      getFoodIconColorForName(food.name);
+
+  /// Name-only form of [getFoodIconColor] (same rule: user-imported foods
+  /// get `orange`, generic system foods `electrolyte`).
+  static Color getFoodIconColorForName(String foodName) {
+    if (isUserImportedFoodName(foodName)) {
       return AppColors.orange;
     }
     return AppColors.electrolyte;
