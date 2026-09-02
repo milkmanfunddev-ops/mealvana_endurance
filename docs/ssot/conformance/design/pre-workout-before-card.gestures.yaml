@@ -131,3 +131,6 @@ resolved_questions:  # both RULED Xuan 2026-08-26 (option a) — see spec/design
 # Known reference-rendering scaffold — do NOT encode as truth:
 #  - switching the plannedAhead prop resets the hydration answer + clears the added row
 #    (demo scenario-switcher artifact; the shipping app has one plan, not a switcher).
+
+# App-side suite run_dart.sh executes for this manifest (2026-09-01: was defaulting to the macro-dashboard suites).
+suite: test/features/nutrition_plan/

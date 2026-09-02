@@ -113,3 +113,6 @@ goldens:
 resolved_questions:  # both RULED Xuan 2026-08-26 (option a) — see spec/design/tokens.md
   - Q-D8   # electrolyte widened to the per-workout fuel side — teal goldens bless
   - Q-D9   # dragonfruit widened to out-of-range caution — fuelstat_fluid_overshoot blesses
+
+# App-side suite run_dart.sh executes for this manifest (2026-09-01: was defaulting to the macro-dashboard suites).
+suite: test/features/nutrition_plan/
