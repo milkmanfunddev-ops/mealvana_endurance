@@ -70,3 +70,29 @@ Surface-level flows (L2): B-1 (a stepper change re-totals the right fuel-stat); 
 answer moves the fluid target + delivered and inserts the tagged water row in one frame, band
 unchanged); B-2 three-membership + no-live-clock negative; B-4 fine-print register matches notes §7.
 Component flows and goldens are enumerated in the component specs and rolled into the two manifests.
+
+---
+
+**PHASE-CARD VISUAL PARITY — RULED (Xuan, 2026-09-01, post-ratification addition).**
+The COMPACT SHARED PHASE STYLE is authoritative for every phase card's visual format on the
+plan-detail screen, this surface included. The BEFORE card conforms to what DURING/TRANSITION/
+AFTER already use — "the same as the rest of the page": header `sectionTitle` 18 px in the phase
+colour; macro figures the shared `MacroSummaryRow` style (`dataNumber` 16 px bold — the sub-choice
+in the intake resolves to *exactly the shared size*, not a compromise 18); food-row icons = the
+shared per-food colour disc + white glyph.
+**AMENDED (Xuan, 2026-09-01, same day): the Add Food button is EXCLUDED from the parity change** —
+the BEFORE card keeps its ratified dashed "+ Add Food" pill exactly as FC-7 specifies (which also
+means feeding-card v1 needs no erratum; the original (a) button swap would have contradicted FC-7).
+Scope of the change is therefore: header + macro figures (font family, size, weight) + food-row
+icons. No ratified CONTRACT changes anywhere: fuel-stat v1 (F/M rows) carries no sizes; feeding-card
+v1 (FC rows incl. FC-7) is untouched; bands, states, captions, and copy are untouched.
+**Rendering supersession:** `renderings/pre-workout@v2.html`'s typography/format (Sansita 22/30 px
+hero, dashed pill, orange-disc stroke glyphs) is SUPERSEDED for this surface by this ruling — the
+HTML stays as the historical v2 record; the app's regenerated goldens are the reference for
+phase-card format from here (the screenshot test owns sizes). No new prototype HTML is
+commissioned. Note for the register: Kyle is the external brand source (source-authority rule 2c),
+not an approver — the intake's "visible to Kyle" caution is satisfied by this record.
+Source: `intake/2026-09-01-before-card-visual-parity-with-during.md`, option (a).
+Gates the app-side change + `pre_workout_before_card_goldens_test` regeneration (commit citing
+this ruling) + a `/design-sync` run after it lands. Recommend point re-tag
+`pre-workout-macros@v2.1` once folded (ship-bundle's act).

@@ -2,8 +2,13 @@
 ///
 /// Spec: `docs/ssot/spec/design/components/fuel-stat.md` **v1** (RATIFIED
 /// Xuan 2026-08-26). Reference rendering
-/// `docs/ssot/spec/design/renderings/pre-workout@v2.html` — the values below
-/// (sizes, opacities, offsets) are that rendering's, verbatim.
+/// `docs/ssot/spec/design/renderings/pre-workout@v2.html` — the band/marker
+/// values below (opacities, offsets) are that rendering's, verbatim. The
+/// FIGURE typography follows the PHASE-CARD VISUAL PARITY ruling as AMENDED
+/// (surface `pre-workout-before-card.md`, Xuan 2026-09-01, qa `127e993`):
+/// the shared `MacroSummaryRow` figure style — `dataNumber` 16 px bold,
+/// exactly the shared size — replaces the rendering's Sansita 30 hero.
+/// Display only: every contract below (F-1/F-2, M-1…M-5) is unchanged.
 ///
 /// One summary quantity (carbs · fluids · sodium) with its optional band.
 /// Three instances compose the BEFORE summary row (surface
@@ -60,12 +65,11 @@ class FuelStat extends StatelessWidget {
             '${data.delivered}${data.unit}',
             key: figureKey(data.quantity),
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: AppTextStyles.sansita,
-              fontWeight: FontWeight.w700,
-              fontSize: 30,
-              height: 1,
+            // Parity ruling: the shared `MacroSummaryRow` figure style.
+            style: AppTextStyles.dataNumber.copyWith(
               color: isSodium ? creamAlpha(.8) : AppColors.electrolyte,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
           ),
         const SizedBox(height: 6),

@@ -4,6 +4,12 @@
 /// Xuan 2026-08-26). Reference rendering
 /// `docs/ssot/spec/design/renderings/pre-workout@v2.html` — the steppers'
 /// at-rest look, disc size and row layout are screenshot-held from it.
+/// Food-row ICONS follow the PHASE-CARD VISUAL PARITY ruling as AMENDED
+/// (surface `pre-workout-before-card.md`, Xuan 2026-09-01, qa `127e993`):
+/// the shared per-food colour disc + white glyph, resolved by the surface
+/// through [rowIcon] / [rowIconColor] (the `ExpandableFoodItemWidget`
+/// pattern) — not the rendering's orange stroke-glyph discs. The dashed
+/// "+ Add Food" pill is EXCLUDED from that ruling and stays as FC-7 specifies.
 ///
 /// One pre-workout feeding (meal · snack · top-off) with its window label,
 /// its DELIVERED header figure and its food rows. Which feedings exist, and
@@ -34,6 +40,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../features/nutrition_plan/domain/pre_workout_before_card_model.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import 'fueling_glyphs.dart';
 
@@ -43,6 +50,8 @@ class FeedingCard extends StatefulWidget {
     required this.data,
     required this.onStep,
     required this.onAddFood,
+    required this.rowIcon,
+    required this.rowIconColor,
     this.hydrationCheck,
     this.initiallyExpanded = false,
   });
@@ -54,6 +63,11 @@ class FeedingCard extends StatefulWidget {
 
   /// FC-7.
   final ValueChanged<String> onAddFood;
+
+  /// Parity ruling: the row's glyph and disc colour come from the shared
+  /// per-food resolvers the surface injects (see `ActivityDetailHelpers`).
+  final IconData Function(FeedingFoodRow row) rowIcon;
+  final Color Function(FeedingFoodRow row) rowIconColor;
 
   /// FC-6: the hydration-check control, rendered as the first row when
   /// [FeedingCardData.hostsHydrationCheck] is true.
@@ -215,7 +229,13 @@ class _FeedingCardState extends State<FeedingCard> {
     final children = <Widget>[
       if (d.hostsHydrationCheck && widget.hydrationCheck != null)
         widget.hydrationCheck!,
-      for (final row in d.rows) _FoodRow(row: row, onStep: widget.onStep),
+      for (final row in d.rows)
+        _FoodRow(
+          row: row,
+          onStep: widget.onStep,
+          icon: widget.rowIcon(row),
+          iconColor: widget.rowIconColor(row),
+        ),
       Padding(
         padding: const EdgeInsets.only(top: 4),
         child: Center(
@@ -246,10 +266,17 @@ class _FeedingCardState extends State<FeedingCard> {
 
 /// FC-5: name · macros-as-observation · ± stepper (36 px discs).
 class _FoodRow extends StatelessWidget {
-  const _FoodRow({required this.row, required this.onStep});
+  const _FoodRow({
+    required this.row,
+    required this.onStep,
+    required this.icon,
+    required this.iconColor,
+  });
 
   final FeedingFoodRow row;
   final void Function(FeedingFoodRow row, double newQuantity) onStep;
+  final IconData icon;
+  final Color iconColor;
 
   String get _sub {
     final parts = <String>[];
@@ -262,19 +289,6 @@ class _FoodRow extends StatelessWidget {
   static String formatQuantity(double q) =>
       q % 1 == 0 ? q.toInt().toString() : q.toStringAsFixed(1);
 
-  String get _iconPath {
-    switch (row.icon) {
-      case FeedingRowIcon.drop:
-        return FuelingGlyphPaths.drop;
-      case FeedingRowIcon.bowl:
-        return FuelingGlyphPaths.bowl;
-      case FeedingRowIcon.bar:
-        return FuelingGlyphPaths.bar;
-      case FeedingRowIcon.chew:
-        return FuelingGlyphPaths.chew;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -286,20 +300,14 @@ class _FoodRow extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Parity ruling: the shared food-row chip
+          // (`expandable_food_item_widget.dart` — per-food colour disc,
+          // white glyph, `foodIcon` / `controlIcon` sizes).
           Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.orange,
-            ),
-            alignment: Alignment.center,
-            child: FuelingGlyph(
-              path: _iconPath,
-              size: 16,
-              color: AppColors.blackberry,
-              strokeWidth: 1.9,
-            ),
+            width: AppIconSizes.foodIcon,
+            height: AppIconSizes.foodIcon,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: iconColor),
+            child: Icon(icon, size: AppIconSizes.controlIcon, color: Colors.white),
           ),
           const SizedBox(width: 11),
           Expanded(
