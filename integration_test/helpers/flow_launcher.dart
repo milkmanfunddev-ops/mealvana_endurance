@@ -17,6 +17,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mealvana_endurance/main_dev.dart' as dev;
 import 'package:mealvana_endurance/main_prod.dart' as prod;
 
@@ -26,11 +27,35 @@ import 'test_config.dart';
 /// pump briefly — do NOT pumpAndSettle (startup may show a persistent
 /// spinner); [ensureAuthenticated] uses explicit visibility gates instead.
 Future<void> launchApp() async {
+  _testErrorHandler = FlutterError.onError;
   if (TestConfig.isProd) {
     await prod.main();
   } else {
     await dev.main();
   }
+}
+
+/// flutter_test's own `FlutterError.onError`, captured before the app boots.
+void Function(FlutterErrorDetails)? _testErrorHandler;
+
+/// Put flutter_test's error handler back after the app has replaced it.
+///
+/// `main()` installs a Sentry handler on `FlutterError.onError` (after
+/// `SentryFlutter.init`, inside an un-awaited `runZonedGuarded`), so it lands
+/// some time AFTER [launchApp] returns. That matters more than it looks: when
+/// an `expect` fails, flutter_test routes the `TestFailure` through
+/// `FlutterError.reportError` and relies on its own handler to record it. With
+/// Sentry's handler in place nothing is recorded, the binding hits its
+/// `'_pendingExceptionDetails != null'` assertion inside the error path, and
+/// the test never completes — every assertion failure turns into the 5-minute
+/// test timeout with no message (brick_plan_flow, 2026-09-01: three runs of
+/// "hang after step 15" that were really a failed segment-count expect).
+///
+/// Called once the tabs shell is on screen: Sentry init precedes `runApp`, so
+/// by then the override has definitely happened.
+void restoreTestErrorHandler() {
+  final handler = _testErrorHandler;
+  if (handler != null) FlutterError.onError = handler;
 }
 
 /// The landed-marker for the post-login tabs shell. Lives in the always-on
@@ -72,8 +97,24 @@ Future<bool> ensureAuthenticated(
   }
 
   if (sentinelFound) {
-    await _resetSharedAppState($);
-    return true;
+    restoreTestErrorHandler();
+    if (!TestConfig.hasLoginCredentials || _sessionIsTestAccount()) {
+      await _resetSharedAppState($);
+      return true;
+    }
+    // Signed in, but as someone else — typically the `sim-dev-login`
+    // Keychain account left on the simulator from a manual smoke test. The
+    // UI steps would still pass, but every persisted-state assertion goes
+    // through SupabaseProbe, which signs in as INTEGRATION_TEST_EMAIL, and
+    // RLS then hides the rows this session wrote: "no activities row titled
+    // …" while the row sits in the table under the other user (brick flow,
+    // 2026-09-01). Sign out — the app's auth listener routes to /welcome —
+    // and take the login path below as that account.
+    await Supabase.instance.client.auth.signOut();
+    for (var i = 0; i < 40 && !$(welcome).exists; i++) {
+      await $.pump(const Duration(milliseconds: 500));
+    }
+    welcomeFound = $(welcome).exists;
   }
   if (!welcomeFound || !TestConfig.hasLoginCredentials) return false;
 
@@ -93,8 +134,17 @@ Future<bool> ensureAuthenticated(
 
   await $(sentinel).waitUntilVisible(timeout: loginTimeout);
   if (!$(sentinel).exists) return false;
+  restoreTestErrorHandler();
   await _resetSharedAppState($);
   return true;
+}
+
+/// True when the live Supabase session belongs to this flavor's
+/// INTEGRATION_TEST account — the identity [SupabaseProbe] queries as.
+bool _sessionIsTestAccount() {
+  final email = Supabase.instance.client.auth.currentUser?.email;
+  return email != null &&
+      email.toLowerCase() == TestConfig.loginEmail.toLowerCase();
 }
 
 /// Return the app to a known baseline before a flow starts.
