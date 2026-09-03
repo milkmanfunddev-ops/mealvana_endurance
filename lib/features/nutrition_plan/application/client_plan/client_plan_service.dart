@@ -11,6 +11,7 @@ import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
 import '../../../formula_kit/data/formula_pins_repository.dart';
+import '../../domain/selection_practicality.dart';
 import 'electrolyte_source_policy.dart';
 import '../../../formula_kit/data/personal_formulas_repository.dart';
 import '../../../formula_kit/domain/formula_macros.dart';
@@ -883,10 +884,14 @@ class ClientPlanService {
     final templates = await _templatesRepo.getAllTemplates();
     if (templates.isEmpty) return null;
 
-    // Determine meal type from hoursBefore
-    final targetMealType = hoursBefore >= 2
+    // Determine meal type from hoursBefore — the ratified tier thresholds
+    // (carbs v2 / v4 engine TIER_MEAL_MIN=120 / TIER_TOPOFF_MAX=30). The old
+    // 2h/1h boundaries were a live twin divergence against the server
+    // (food-recommendation@v1 finding; §8 twin contract).
+    final minutesBefore = hoursBefore * 60;
+    final targetMealType = minutesBefore >= 120
         ? 'full_meal'
-        : hoursBefore >= 1
+        : minutesBefore >= 30
         ? 'snack'
         : 'top_up';
 
@@ -946,6 +951,22 @@ class ClientPlanService {
 
     // Score by carb proximity to target (prefer templates where scale 0.5-2.0x)
     final carbTarget = macroTargets.preRun.carbsG;
+
+    // §6(a) practicality (RULED 2026-09-03), selection paths only — the MEAL
+    // tier prefers composed templates: a single-item candidate is out when
+    // hitting the carb target would scale it past 2×, and otherwise needs
+    // the single_food_sufficient flag. Empty pool ⇒ honest fallthrough (W8).
+    if (targetMealType == 'full_meal') {
+      candidates.removeWhere((t) {
+        final componentCount = _parseJsonList(t.foodNames).length;
+        return !mealTierCandidateCheck(
+          componentCount: componentCount,
+          carbsPerServingG: t.totalCarbsG,
+          carbTargetG: carbTarget,
+        ).allowed;
+      });
+      if (candidates.isEmpty) return null;
+    }
     candidates.sort((a, b) {
       final scaleA = a.totalCarbsG > 0
           ? (carbTarget / a.totalCarbsG).abs()

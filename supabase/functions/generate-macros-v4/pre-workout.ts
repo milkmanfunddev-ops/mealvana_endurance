@@ -35,6 +35,8 @@ import {
   logFormulaCascade,
 } from '../_shared/nutrition/formula-decision.ts';
 
+import { mealTierCandidateCheck } from '../_shared/nutrition/practicality.ts';
+
 import {
   ADDON_GAP_THRESHOLD,
   STACK_THRESHOLD,
@@ -1401,6 +1403,23 @@ export function selectPreWorkoutFoods(
           );
         });
         if (deduped.length > 0) candidates = deduped;
+      }
+
+      // §6(a) practicality (RULED 2026-09-03), selection paths only — pins
+      // bypass above: the MEAL tier prefers composed templates. A single-item
+      // candidate is out when hitting the tier's carb target would scale it
+      // past 2×, and otherwise needs the single_food_sufficient flag. If this
+      // empties the pool the phase takes the honest-shortfall path below —
+      // never a single food scaled past 2× to fake a meal (W8).
+      if (phase === 'meal') {
+        candidates = candidates.filter((t) =>
+          mealTierCandidateCheck({
+            componentCount: (t.component_food_names ?? []).length,
+            singleFoodSufficient: t.single_food_sufficient ?? false,
+            carbsPerServingG: t.carbs_per_serving,
+            carbTargetG: carbTarget,
+          }).allowed
+        );
       }
     }
 

@@ -318,6 +318,7 @@ export function buildFoodResult(food: Food, quantity: number): FoodResult {
     is_indivisible: food.is_indivisible,
     timing_category: tc,
     product_type: food.product_type,
+    solvent_min_ml: food.solvent_min_ml ?? null,
   };
 }
 

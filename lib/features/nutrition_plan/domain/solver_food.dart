@@ -189,6 +189,8 @@ class SolverFood {
       isDrink: isLiquid,
       isIndivisible: isIndivisible,
       timingCategory: timingCat,
+      numericQuantity: quantity,
+      solventMinMlPerServing: solventMinMl,
     );
   }
 

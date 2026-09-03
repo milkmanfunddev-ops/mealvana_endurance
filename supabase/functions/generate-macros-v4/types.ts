@@ -67,6 +67,10 @@ export interface PreWorkoutTemplate {
   is_active: boolean;
   component_food_names: string[];
   component_quantities: Record<string, number>;
+  /** food-recommendation §6(a): licenses a single-component template in the
+   * MEAL tier (a meal-tier feeding otherwise needs ≥ 2 components). Absent on
+   * catalogs predating the 2026-09-03 catalog v1.1 migration → false. */
+  single_food_sufficient?: boolean;
   /** When `false`, this template may be selected in 0.5-serving increments
    * instead of whole servings (e.g. a divisible electrolyte packet).
    * Mirrors `FoodResult.is_indivisible` used elsewhere in the solver.

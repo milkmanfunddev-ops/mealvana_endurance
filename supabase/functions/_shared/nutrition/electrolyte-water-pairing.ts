@@ -161,10 +161,64 @@ export function unpairedElectrolyteItems(foods: FoodResult[]): FoodResult[] {
 }
 
 /**
+ * Catalog-conventions v1.1 / food-recommendation §6(e) (RULED Xuan,
+ * 2026-09-03): the phase's plain-water requirement from solvent dependencies.
+ * A row with a declared `solvent_min_ml` needs that much water PER SERVING
+ * (label dilution — the per-product minimum supersedes C2's flat constant);
+ * an undeclared dry requires-water row falls back to [fallbackMl] per serving
+ * (250 — never 0, which would silently remove the pairing). Items that carry
+ * their own drinkable fluid (a premixed sports drink) need no solvent.
+ * Dart twin: `solventRequirementMl` in electrolyte_water_pairing.dart.
+ */
+export function solventRequirementMl(
+  foods: FoodResult[],
+  fallbackMl: number = DEFAULT_PAIRING_VOLUME_ML,
+): number {
+  let total = 0;
+  for (const f of foods) {
+    const qty = f.quantity || 0;
+    if (qty <= 0) continue;
+    const declared = f.solvent_min_ml ?? null;
+    if (declared != null && declared > 0) {
+      total += declared * qty;
+    } else if (
+      requiresWaterWhenDry(f) && (f.fluids_ml || 0) <= PLAIN_FLUID_EPSILON_ML
+    ) {
+      total += fallbackMl * qty;
+    }
+  }
+  return total;
+}
+
+/** Plain water already on the plate: fluid-bearing rows with no carbs and no
+ * sodium (the same shape `pickWaterSource` selects). Counts toward the
+ * solvent requirement — solvent water IS hydration water (§6(e): no double
+ * demand). */
+export function plainWaterMl(foods: FoodResult[]): number {
+  let total = 0;
+  for (const f of foods) {
+    if (!deliversDrinkableFluid(f)) continue; // broth/melon water can't dilute
+    const qty = Math.max(f.quantity || 1, 0.0001);
+    const carbsPer = (f.carbs_grams || 0) / qty;
+    const sodiumPer = (f.sodium_mg || 0) / qty;
+    if (carbsPer <= 0 && sodiumPer <= 0) total += f.fluids_ml || 0;
+  }
+  return total;
+}
+
+/**
  * Cheap check so callers can avoid fetching a water pool when nothing is
  * wrong (mirrors the lazy `fluidSodiumDeficits` gate in `pin-backfill.ts`).
+ * True when the legacy C2 gate fires (dry requires-water item, no drink
+ * alongside) OR when declared solvent minima exceed the plain water present.
  */
 export function needsWaterPairing(foods: FoodResult[]): boolean {
+  const hasDeclared = foods.some(
+    (f) => (f.solvent_min_ml ?? 0) > 0 && (f.quantity || 0) > 0,
+  );
+  if (hasDeclared) {
+    return solventRequirementMl(foods) > plainWaterMl(foods);
+  }
   if (unpairedElectrolyteItems(foods).length === 0) return false;
   return !foods.some(deliversDrinkableFluid);
 }
@@ -275,16 +329,28 @@ export function ensureElectrolyteWaterPairing(
     conflict: null,
   };
 
-  // Nothing dry to pair, or a drink is already on the plate.
-  if (unpaired.length === 0) return noop;
-  if (foods.some(deliversDrinkableFluid)) return noop;
+  // Catalog-conventions v1.1 (§6(e)): rows with a DECLARED solvent_min_ml
+  // demand plain water regardless of other drinks on the plate (a sports
+  // drink does not dilute a 90 g mix). With no declared rows, the legacy C2
+  // gate stands: nothing dry to pair, or a drink alongside, means no-op.
+  const declared = foods.filter(
+    (f) => (f.solvent_min_ml ?? 0) > 0 && (f.quantity || 0) > 0,
+  );
+  if (declared.length === 0) {
+    if (unpaired.length === 0) return noop;
+    if (foods.some(deliversDrinkableFluid)) return noop;
+  }
 
   const { timing, logPrefix } = options;
-  const electrolyteIds = unpaired.map((f) => f.food_id);
-  const wantedMl = Math.max(
-    MIN_PAIRING_VOLUME_ML,
-    options.pairingVolumeMl ?? DEFAULT_PAIRING_VOLUME_ML,
-  );
+  const electrolyteIds = (declared.length > 0 ? declared : unpaired)
+    .map((f) => f.food_id);
+  // Session-total requirement minus the plain water already scheduled
+  // (solvent water counts toward the hydration total — no double demand).
+  const fallbackMl = options.pairingVolumeMl ?? DEFAULT_PAIRING_VOLUME_ML;
+  const requirementMl = solventRequirementMl(foods, fallbackMl);
+  const deficitMl = requirementMl - plainWaterMl(foods);
+  if (deficitMl <= 0) return noop;
+  const wantedMl = Math.max(MIN_PAIRING_VOLUME_ML, deficitMl);
   const ceiling =
     options.fluidCeilingMl != null && Number.isFinite(options.fluidCeilingMl) &&
       options.fluidCeilingMl > 0

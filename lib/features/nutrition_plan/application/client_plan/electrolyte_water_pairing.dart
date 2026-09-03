@@ -112,8 +112,53 @@ List<FoodItemData> unpairedElectrolyteItems(List<FoodItemData> items) => items
     )
     .toList();
 
-/// Cheap gate so callers can skip building a water pool when nothing is wrong.
+/// Catalog-conventions v1.1 / food-recommendation §6(e) (RULED Xuan,
+/// 2026-09-03): the phase's plain-water requirement from solvent
+/// dependencies. A row with a declared per-serving solvent minimum needs that
+/// much water PER SERVING (label dilution — supersedes C2's flat constant);
+/// an undeclared dry requires-water row falls back to
+/// [kDefaultPairingVolumeMl] per serving. TS twin: `solventRequirementMl` in
+/// electrolyte-water-pairing.ts.
+double solventRequirementMl(List<FoodItemData> items) {
+  var total = 0.0;
+  for (final i in items) {
+    final qty = i.numericQuantity ?? 1.0;
+    if (qty <= 0) continue;
+    final declared = i.solventMinMlPerServing;
+    if (declared != null && declared > 0) {
+      total += declared * qty;
+    } else if (_requiresWaterWhenDry(i) &&
+        _fluidOf(i) <= kPlainFluidEpsilonMl) {
+      total += kDefaultPairingVolumeMl * qty;
+    }
+  }
+  return total;
+}
+
+/// Plain drinkable water already on the plate (no carbs, no sodium). Counts
+/// toward the solvent requirement — solvent water IS hydration water
+/// (§6(e): no double demand).
+double plainWaterMl(List<FoodItemData> items) {
+  var total = 0.0;
+  for (final i in items) {
+    if (!deliversDrinkableFluid(i)) continue;
+    final info = i.nutritionalInfo;
+    if ((info?.carbs ?? 0) <= 0 && (info?.sodium ?? 0) <= 0) {
+      total += _fluidOf(i);
+    }
+  }
+  return total;
+}
+
+/// Cheap gate so callers can skip building a water pool when nothing is
+/// wrong. True on the legacy C2 gate (dry requires-water item, no drink
+/// alongside) OR when declared solvent minima exceed the plain water present.
 bool needsWaterPairing(List<FoodItemData> items) {
+  final hasDeclared = items.any(
+    (i) =>
+        (i.solventMinMlPerServing ?? 0) > 0 && (i.numericQuantity ?? 1) > 0,
+  );
+  if (hasDeclared) return solventRequirementMl(items) > plainWaterMl(items);
   if (unpairedElectrolyteItems(items).isEmpty) return false;
   return !items.any(deliversDrinkableFluid);
 }
@@ -162,8 +207,19 @@ ElectrolytePairingResult ensureElectrolyteWaterPairing(
   );
 
   final unpaired = unpairedElectrolyteItems(items);
-  if (unpaired.isEmpty) return noop;
-  if (items.any(deliversDrinkableFluid)) return noop;
+  // v1.1 (§6(e)): declared solvent rows demand plain water regardless of
+  // other drinks on the plate; with none, the legacy C2 gate stands.
+  final declared = items
+      .where(
+        (i) =>
+            (i.solventMinMlPerServing ?? 0) > 0 &&
+            (i.numericQuantity ?? 1) > 0,
+      )
+      .toList();
+  if (declared.isEmpty) {
+    if (unpaired.isEmpty) return noop;
+    if (items.any(deliversDrinkableFluid)) return noop;
+  }
 
   final water = _pickWaterSource(waterPool);
   if (water == null) {
@@ -174,9 +230,13 @@ ElectrolytePairingResult ensureElectrolyteWaterPairing(
     );
   }
 
-  final wantedMl = pairingVolumeMl < _minPairingVolumeMl
+  // Session-total requirement minus plain water already scheduled (solvent
+  // water counts toward the hydration total — no double demand).
+  final deficitMl = solventRequirementMl(items) - plainWaterMl(items);
+  if (deficitMl <= 0) return noop;
+  final wantedMl = deficitMl < _minPairingVolumeMl
       ? _minPairingVolumeMl
-      : pairingVolumeMl;
+      : deficitMl;
   final ceiling = (fluidCeilingMl != null && fluidCeilingMl > 0)
       ? fluidCeilingMl
       : null;

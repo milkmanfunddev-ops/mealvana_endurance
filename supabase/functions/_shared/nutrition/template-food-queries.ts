@@ -164,7 +164,7 @@ export async function getTemplateFoodsForPhase(
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
-      min_servings_during,
+      min_servings_during, solvent_min_ml,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
       categories, activity_types, is_liquid, product_type, default_during,
       allergens, excluded_diets
@@ -174,6 +174,7 @@ export async function getTemplateFoodsForPhase(
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
+      solvent_min_ml,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
       categories, activity_types, is_liquid, product_type,
       allergens, excluded_diets
@@ -499,6 +500,7 @@ export async function getTemplateFoodsForPhase(
         is_essential: (f.is_essential as boolean) || false,
         is_user_food: false,
         is_indivisible: (f.is_indivisible as boolean) || false,
+        solvent_min_ml: (f.solvent_min_ml as number | null) ?? null,
         product_type: (f.product_type as string) ?? undefined,
       };
     });
@@ -781,6 +783,7 @@ export async function getTransitionFoods(
         is_essential: (f.is_essential as boolean) || false,
         is_user_food: false,
         is_indivisible: (f.is_indivisible as boolean) || false,
+        solvent_min_ml: (f.solvent_min_ml as number | null) ?? null,
         product_type: (f.product_type as string) ?? undefined,
       };
     });
@@ -921,7 +924,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
       calories, carbs_g, protein_g, fat_g, sodium_mg, fluid_ml,
       serving_amount, serving_size, serving_unit, serving_qualifier,
       max_servings_before, max_servings_during, max_servings_after,
-      min_servings_during,
+      min_servings_during, solvent_min_ml,
       is_electrolyte, to_exclude_from_solver, is_essential, is_indivisible,
       categories, activity_types, is_liquid, product_type, default_during,
       allergens, excluded_diets,
@@ -1108,6 +1111,7 @@ export async function getTemplateFoodsForDuringWithConstraints(
         is_essential: (f.is_essential as boolean) || false,
         is_user_food: false,
         is_indivisible: (f.is_indivisible as boolean) || false,
+        solvent_min_ml: (f.solvent_min_ml as number | null) ?? null,
         product_type: (f.product_type as string) ?? undefined,
         // Constraint columns
         max_per_hr_low: f.max_per_hr_low as number | null ?? null,
