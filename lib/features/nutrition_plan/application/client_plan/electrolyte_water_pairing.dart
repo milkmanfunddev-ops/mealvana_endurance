@@ -34,6 +34,8 @@
 /// carrier, so a second run sees the invariant already satisfied.
 library;
 
+import 'dart:math';
+
 import '../../domain/food_item_data.dart';
 import '../../domain/solver_food.dart';
 
@@ -120,17 +122,17 @@ List<FoodItemData> unpairedElectrolyteItems(List<FoodItemData> items) => items
 /// [kDefaultPairingVolumeMl] per serving. TS twin: `solventRequirementMl` in
 /// electrolyte-water-pairing.ts.
 double solventRequirementMl(List<FoodItemData> items) {
+  // DECLARED rows only: the ruled session total is "plain water ≥ Σ solvent
+  // minima of scheduled CONCENTRATED products". Undeclared dry requires-water
+  // items (capsules, tablets) keep C2 semantics — any drinkable fluid
+  // alongside satisfies them, with the 250 ml fallback used only as the
+  // pairing volume when nothing drinkable is present.
   var total = 0.0;
   for (final i in items) {
     final qty = i.numericQuantity ?? 1.0;
     if (qty <= 0) continue;
     final declared = i.solventMinMlPerServing;
-    if (declared != null && declared > 0) {
-      total += declared * qty;
-    } else if (_requiresWaterWhenDry(i) &&
-        _fluidOf(i) <= kPlainFluidEpsilonMl) {
-      total += kDefaultPairingVolumeMl * qty;
-    }
+    if (declared != null && declared > 0) total += declared * qty;
   }
   return total;
 }
@@ -154,12 +156,20 @@ double plainWaterMl(List<FoodItemData> items) {
 /// wrong. True on the legacy C2 gate (dry requires-water item, no drink
 /// alongside) OR when declared solvent minima exceed the plain water present.
 bool needsWaterPairing(List<FoodItemData> items) {
-  final hasDeclared = items.any(
-    (i) =>
-        (i.solventMinMlPerServing ?? 0) > 0 && (i.numericQuantity ?? 1) > 0,
-  );
-  if (hasDeclared) return solventRequirementMl(items) > plainWaterMl(items);
-  if (unpairedElectrolyteItems(items).isEmpty) return false;
+  // Declared-solvent half. A sub-minimum shortfall next to plain water
+  // already on the plate is close enough — the spec's solvent lines are
+  // approximate ("gels chase ~150 ml"), and the pairing minimum exists
+  // because a smaller splash is a meaningless recommendation (symmetrically,
+  // a smaller shortfall is a meaningless conflict). TS twin.
+  final declaredDeficit = solventRequirementMl(items) - plainWaterMl(items);
+  if (declaredDeficit > 0 &&
+      (plainWaterMl(items) <= 0 || declaredDeficit >= _minPairingVolumeMl)) {
+    return true;
+  }
+  final undeclaredUnpaired = unpairedElectrolyteItems(items)
+      .where((i) => (i.solventMinMlPerServing ?? 0) <= 0)
+      .toList();
+  if (undeclaredUnpaired.isEmpty) return false;
   return !items.any(deliversDrinkableFluid);
 }
 
@@ -207,19 +217,34 @@ ElectrolytePairingResult ensureElectrolyteWaterPairing(
   );
 
   final unpaired = unpairedElectrolyteItems(items);
-  // v1.1 (§6(e)): declared solvent rows demand plain water regardless of
-  // other drinks on the plate; with none, the legacy C2 gate stands.
-  final declared = items
-      .where(
-        (i) =>
-            (i.solventMinMlPerServing ?? 0) > 0 &&
-            (i.numericQuantity ?? 1) > 0,
-      )
-      .toList();
-  if (declared.isEmpty) {
-    if (unpaired.isEmpty) return noop;
-    if (items.any(deliversDrinkableFluid)) return noop;
+  // v1.1 (§6(e)): DECLARED solvent rows demand PLAIN water regardless of
+  // other drinks on the plate (the requirement is the session total minus
+  // plain water already scheduled — solvent water counts toward the
+  // hydration total, no double demand). Undeclared dry requires-water items
+  // keep C2 semantics: any drinkable fluid alongside satisfies them; with
+  // none, they want the flat pairing fallback per serving. A sub-minimum
+  // declared shortfall next to existing plain water is close enough — never
+  // a hard conflict over a splash. TS twin, kept line-for-line.
+  var declaredDeficitMl =
+      max(0.0, solventRequirementMl(items) - plainWaterMl(items));
+  if (declaredDeficitMl > 0 &&
+      declaredDeficitMl < _minPairingVolumeMl &&
+      plainWaterMl(items) > 0) {
+    declaredDeficitMl = 0;
   }
+  final undeclaredUnpaired = unpaired
+      .where((i) => (i.solventMinMlPerServing ?? 0) <= 0)
+      .toList();
+  final c2WantedMl =
+      undeclaredUnpaired.isNotEmpty && !items.any(deliversDrinkableFluid)
+          ? undeclaredUnpaired.fold<double>(
+              0,
+              (sum, i) =>
+                  sum + kDefaultPairingVolumeMl * (i.numericQuantity ?? 1.0),
+            )
+          : 0.0;
+  final deficitMl = declaredDeficitMl + c2WantedMl;
+  if (deficitMl <= 0) return noop;
 
   final water = _pickWaterSource(waterPool);
   if (water == null) {
@@ -230,10 +255,6 @@ ElectrolytePairingResult ensureElectrolyteWaterPairing(
     );
   }
 
-  // Session-total requirement minus plain water already scheduled (solvent
-  // water counts toward the hydration total — no double demand).
-  final deficitMl = solventRequirementMl(items) - plainWaterMl(items);
-  if (deficitMl <= 0) return noop;
   final wantedMl = deficitMl < _minPairingVolumeMl
       ? _minPairingVolumeMl
       : deficitMl;
