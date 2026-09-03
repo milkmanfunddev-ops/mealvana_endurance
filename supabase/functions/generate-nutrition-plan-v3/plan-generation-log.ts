@@ -24,11 +24,52 @@ export interface PlanGenerationLogRow {
   duration_minutes: number | null;
   gut_training_level: string | null;
   during_path: string | null;
+  /** food-recommendation §10 (migration 20260903121000): before-phase
+   * resolution, derived from the slot pin decisions + foods — the step
+   * funnel's before leg. */
+  before_path: string | null;
+  /** After-phase generation_path (personal_formula / template / lp). */
+  after_path: string | null;
+  /** §10 test-traffic marker: the raw `x-mealvana-test` request header when
+   * present, else null. Funnel queries exclude non-null rows. */
+  source: string | null;
+  /** Brick only: per-segment during generation paths, keyed by segment
+   * order — without it brick cascade coverage is unmeasurable (bench
+   * finding B-2). */
+  during_segment_paths: Record<string, string | null> | null;
   targets: Record<string, unknown>;
   delivered: Record<string, unknown>;
   shortfalls: Record<string, unknown> | null;
   pin_decision: Record<string, unknown> | null;
   warnings: string[] | null;
+}
+
+/**
+ * §10 funnel: derive the before-phase resolution from the per-slot results.
+ * Order mirrors the §1 cascade — the phase records the HIGHEST face any slot
+ * resolved at (a plan with one pinned slot and two default slots reads as
+ * the pin step; the per-slot split stays derivable from pin_decision).
+ */
+export function deriveBeforePath(
+  beforeResult: Record<
+    string,
+    { foods?: FoodResult[]; pin_decision?: Record<string, unknown> }
+  > | null,
+): string | null {
+  if (!beforeResult) return null;
+  const slots = Object.values(beforeResult);
+  if (slots.length === 0) return null;
+  let sawFoods = false;
+  let sawUserPin = false;
+  for (const slot of slots) {
+    if ((slot.foods?.length ?? 0) > 0) sawFoods = true;
+    const d = slot.pin_decision;
+    if (!d || d.used_pin !== true || d.ephemeral === true) continue;
+    if (d.decision_source === "personal_formula") return "personal_formula";
+    sawUserPin = true;
+  }
+  if (sawUserPin) return "pinned_template";
+  return sawFoods ? "template" : "empty";
 }
 
 function phaseTotals(foods: FoodResult[]): Record<string, number> {
@@ -51,6 +92,15 @@ export function buildPlanGenerationLogRow(params: {
   duringResult: LPPhaseResult;
   afterResult: LPPhaseResult;
   warnings: string[];
+  /** The raw sub-phase before result, for §10's before_path derivation. */
+  beforeResult?: Record<
+    string,
+    { foods?: FoodResult[]; pin_decision?: Record<string, unknown> }
+  > | null;
+  /** §10 test-traffic marker (the `x-mealvana-test` request header). */
+  testSource?: string | null;
+  /** Brick: per-segment during generation paths, keyed by segment order. */
+  duringSegmentPaths?: Record<string, string | null> | null;
 }): PlanGenerationLogRow {
   const {
     planId,
@@ -81,6 +131,10 @@ export function buildPlanGenerationLogRow(params: {
     // levels arrive (the normalized value is derivable, the raw one is not).
     gut_training_level: input.gut_training_level ?? null,
     during_path: duringResult.generation_path ?? null,
+    before_path: deriveBeforePath(params.beforeResult ?? null),
+    after_path: afterResult.generation_path ?? null,
+    source: params.testSource ?? null,
+    during_segment_paths: params.duringSegmentPaths ?? null,
     targets: {
       pre_run: input.macro_targets.pre_run ?? null,
       during_run: input.macro_targets.during_run ?? null,

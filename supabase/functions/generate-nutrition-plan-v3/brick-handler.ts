@@ -354,6 +354,8 @@ export async function handleBrickPlan(
    * handler 2026-07-21 — previously deferred, which silently ignored a
    * triathlete's pins across every phase. */
   userPins: UserPinSets,
+  /** §10 test-traffic marker (the `x-mealvana-test` request header). */
+  testSource: string | null = null,
 ): Promise<Response> {
   const segments = input.brick_segments ?? [];
   if (segments.length === 0) {
@@ -407,6 +409,9 @@ export async function handleBrickPlan(
 
   // 2. Generate during phase for each segment + transitions between them
   const duringSegments: Record<string, FoodResult[]> = {};
+  // §10 / bench B-2: record each segment's cascade path — during_path alone
+  // ("brick") left brick coverage unmeasurable.
+  const duringSegmentPaths: Record<string, string | null> = {};
   // Segment shortfalls ride as a SIBLING key (additive; old clients ignore it)
   // so brick segments get the same honest-shortfall contract as single-
   // activity during phases instead of silently dropping them. 2026-07-21.
@@ -509,6 +514,8 @@ export async function handleBrickPlan(
 
     // Invariant: electrolyte never ships without water (see
     // `electrolyte-water-pairing.ts`). Each brick segment is its own phase.
+    duringSegmentPaths[String(segmentOrder)] = duringResult.generation_path ??
+      null;
     duringSegments[String(segmentOrder)] = await applyElectrolyteWaterPairing(
       duringResult.foods,
       {
@@ -699,8 +706,15 @@ export async function handleBrickPlan(
         ...(allSegmentShortfalls.length > 0 &&
           { shortfalls: allSegmentShortfalls }),
       },
+      // §10: before/after paths, per-segment during paths, test marker.
+      beforeResult: beforeResult as Record<
+        string,
+        { foods?: FoodResult[]; pin_decision?: Record<string, unknown> }
+      >,
+      duringSegmentPaths,
       afterResult,
       warnings: [],
+      testSource,
     }),
   );
   // deno-lint-ignore no-explicit-any
