@@ -84,6 +84,26 @@ function ceilHalf(v: number): number {
   return Math.ceil(v * 2) / 2;
 }
 
+/**
+ * RULED food-recommendation §4.5 (Xuan, 2026-09-03): the sodium backfill
+ * essential prefers an electrolyte capsule/tablet; a salt packet is the LAST
+ * resort. Within a class, higher sodium density (mg per ml carried) still
+ * wins — the pre-ruling order. Dart twin:
+ * `client_plan_service.dart#_backfillPinnedFluidsAndSodium` (§8 contract).
+ */
+export function sortSodiumBackfillCandidates(pool: Food[]): Food[] {
+  const isSaltPacket = (f: Food): boolean =>
+    (f.name ?? "").toLowerCase().includes("salt") ||
+    (f.display_name ?? "").toLowerCase().includes("salt");
+  const density = (f: Food): number =>
+    f.per_serving.sodium_mg / Math.max(1, f.per_serving.water_ml);
+  return [...pool].sort((a, b) => {
+    const saltRank = (isSaltPacket(a) ? 1 : 0) - (isSaltPacket(b) ? 1 : 0);
+    if (saltRank !== 0) return saltRank;
+    return density(b) - density(a);
+  });
+}
+
 /** Re-derive a FoodResult's per-serving macros from its totals. */
 function perServing(f: FoodResult): {
   carbs: number;
@@ -166,17 +186,13 @@ export function backfillPinnedFluidsAndSodium(
         );
       }
     } else {
-      // No carb-free sodium component — append from the essential pool.
-      const candidates = backfillPool
-        .filter((f) =>
+      // No carb-free sodium component — append from the essential pool,
+      // ranked by the ruled §4.5 preference.
+      const candidates = sortSodiumBackfillCandidates(
+        backfillPool.filter((f) =>
           f.per_serving.sodium_mg > 0 && f.per_serving.carbs_g <= 0
-        )
-        // Tablets over drinks: high sodium, low water (matches the
-        // deprecated during post-processor's preference).
-        .sort((a, b) =>
-          b.per_serving.sodium_mg / Math.max(1, b.per_serving.water_ml) -
-          a.per_serving.sodium_mg / Math.max(1, a.per_serving.water_ml)
-        );
+        ),
+      );
       const best = candidates[0];
       if (best) {
         const currentSodium = totalsOf(out).sodiumMg;

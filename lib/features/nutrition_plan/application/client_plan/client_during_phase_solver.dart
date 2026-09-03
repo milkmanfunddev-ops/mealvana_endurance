@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../../../shared/domain/activity_type.dart';
 import '../../domain/solver_food.dart';
 import '../../domain/solver_types.dart';
+import 'electrolyte_source_policy.dart';
 
 // ---------------------------------------------------------------------------
 // Category types (mirrors during-utils.ts ProductCategory)
@@ -253,6 +254,13 @@ class _ElecPick {
   });
 }
 
+// RULED food-recommendation §4 (Xuan, 2026-09-03): the picker itself lives in
+// electrolyte_source_policy.dart — the Dart twin of the server's
+// pickBestElectrolyte — so the conformance harness and the solver drive the
+// same code. This adapter only converts the pick shape. The old inline picker
+// (asymmetric baseline, capsulePenalty steer, floor-rescue accepting an
+// in-range score-worsening pick, no min_servings) was the F-22/46/47 half of
+// the divergence the ruling closes.
 _ElecPick? _pickBestElectrolyte(
   List<SolverFood> pool,
   double currentSodium,
@@ -267,93 +275,31 @@ _ElecPick? _pickBestElectrolyte(
   double carbUpper,
   String? gutTrainingLevel,
 ) {
-  final baselineSodiumScore = sodiumTarget > 0
-      ? (max(0.0, sodiumTarget - currentSodium) +
-                max(0.0, currentSodium - sodiumUpper)) /
-            sodiumTarget
-      : 0.0;
-  final baselineFluidPenalty = (fluidTarget > 0 && currentFluid > fluidUpper)
-      ? ((currentFluid - fluidUpper) / fluidTarget) * 3
-      : 0.0;
-  final baselineCarbPenalty = (carbTarget > 0 && currentCarbs > carbUpper)
-      ? ((currentCarbs - carbUpper) / carbTarget) * 2
-      : 0.0;
-  final baselineScore =
-      baselineSodiumScore + baselineFluidPenalty + baselineCarbPenalty;
-
-  _ElecPick? best;
-
-  for (final elec in pool) {
-    if (elec.sodiumMg <= 0) continue;
-    final gutMax = _maxServingsForGut(elec, gutTrainingLevel);
-    // Build candidate serving increments (0.5 steps for divisible, 1 for indivisible)
-    final candidates = <double>[];
-    final isSupp = elec.productType == 'supplement' && !elec.isLiquid;
-    final step = elec.isIndivisible ? 1.0 : 0.5;
-    final start = elec.isIndivisible ? 1.0 : 0.5;
-    // The food's own (gut-adjusted) max servings is the only hard cap — a
-    // synthetic 4-serving supplement ceiling used to stop the top-up below
-    // the range floor even when more capsules were allowed (bug 3abe3fdb).
-    // The capsulePenalty below still steers toward fewer capsules when a
-    // smaller count scores equally.
-    final maxCandidateServings = gutMax;
-    for (double s = start; s <= maxCandidateServings + 1e-9; s += step) {
-      candidates.add(s);
-    }
-
-    for (final servings in candidates) {
-      final sodium = currentSodium + elec.sodiumMg * servings;
-      final fluid = currentFluid + elec.fluidMl * servings;
-      final carbs = currentCarbs + elec.carbsG * servings;
-
-      if (sodium > sodiumUpper + 1e-9) continue;
-      if (fluid > fluidUpper + 1e-9) continue;
-      if (carbs > carbUpper + 1e-9) continue;
-
-      final sodiumPenalty = sodiumTarget > 0
-          ? (max(0.0, sodiumTarget - sodium) +
-                    max(0.0, sodium - sodiumUpper) * 2) /
-                sodiumTarget
-          : 0.0;
-      final fluidPenalty = (fluidTarget > 0 && fluid > fluidUpper)
-          ? ((fluid - fluidUpper) / fluidTarget) * 3
-          : 0.0;
-      final carbPenalty = (carbTarget > 0 && carbs > carbUpper)
-          ? ((carbs - carbUpper) / carbTarget) * 1.5
-          : 0.0;
-      final capsulePenalty = (isSupp && servings > 2)
-          ? 0.05 * (servings - 2)
-          : 0.0;
-      final prefBonus = elec.preferenceScore >= kPrefScoreLiked ? -0.02 : 0.0;
-      final score =
-          sodiumPenalty +
-          fluidPenalty +
-          carbPenalty +
-          capsulePenalty +
-          prefBonus;
-
-      final candidate = _ElecPick(
-        food: elec,
-        servings: servings,
-        sodiumAfter: sodium,
-        fluidAfter: fluid,
-        carbsAfter: carbs,
-        score: score,
-      );
-
-      if (best == null ||
-          score < best.score - 1e-9 ||
-          ((score - best.score).abs() < 1e-9 &&
-              (sodiumTarget - sodium).abs() <
-                  (sodiumTarget - best.sodiumAfter).abs())) {
-        best = candidate;
-      }
-    }
-  }
-
-  if (best == null) return null;
-  if (best.sodiumAfter >= sodiumLower) return best;
-  return best.score < baselineScore ? best : null;
+  final pick = pickBestElectrolyteSource(
+    pool,
+    currentSodium,
+    currentFluid,
+    currentCarbs,
+    ElectrolyteSourceBounds(
+      sodiumTarget: sodiumTarget,
+      sodiumLower: sodiumLower,
+      sodiumUpper: sodiumUpper,
+      fluidTarget: fluidTarget,
+      fluidUpper: fluidUpper,
+      carbTarget: carbTarget,
+      carbUpper: carbUpper,
+      gutLevel: gutTrainingLevel,
+    ),
+  );
+  if (pick == null) return null;
+  return _ElecPick(
+    food: pick.food,
+    servings: pick.servings,
+    sodiumAfter: pick.sodiumAfter,
+    fluidAfter: pick.fluidAfter,
+    carbsAfter: pick.carbsAfter,
+    score: pick.score,
+  );
 }
 
 // ---------------------------------------------------------------------------

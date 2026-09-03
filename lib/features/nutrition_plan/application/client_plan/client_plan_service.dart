@@ -11,6 +11,7 @@ import '../../../auth/application/auth_service.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../food_preferences/data/food_preferences_repository.dart';
 import '../../../formula_kit/data/formula_pins_repository.dart';
+import 'electrolyte_source_policy.dart';
 import '../../../formula_kit/data/personal_formulas_repository.dart';
 import '../../../formula_kit/domain/formula_macros.dart';
 import '../../../formula_kit/domain/formula_phase.dart';
@@ -745,13 +746,10 @@ class ClientPlanService {
         final additional = min(wanted, max(0.0, maxForCap));
         if (additional > 0) best.quantity += additional;
       } else {
-        final salt =
-            essentials.where((f) => f.sodiumMg > 0 && f.carbsG <= 0).toList()
-              ..sort(
-                (a, b) => (b.sodiumMg / max(1.0, b.fluidMl)).compareTo(
-                  a.sodiumMg / max(1.0, a.fluidMl),
-                ),
-              );
+        // RULED §4.5: capsule/tablet preferred, salt packet last resort.
+        final salt = sortSodiumBackfillCandidates(
+          essentials.where((f) => f.sodiumMg > 0 && f.carbsG <= 0).toList(),
+        );
         if (salt.isNotEmpty) {
           final f = salt.first;
           final wanted = (sodiumDeficit / f.sodiumMg).ceilToDouble();

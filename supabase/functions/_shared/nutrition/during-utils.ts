@@ -50,6 +50,10 @@ export interface ElectrolyteBounds {
   fluidUpper: number;
   carbTarget: number;
   carbUpper: number;
+  /** Athlete gut level — the §4.2 one-cap rule gut-adjusts the row's
+   * max_servings_during identically on both engines (low ×0.5, floor 1;
+   * high never exceeds the row cap). Absent = moderate. */
+  gutLevel?: "low" | "moderate" | "high";
 }
 
 // ============================================================================
@@ -333,6 +337,49 @@ export function buildFoodResult(food: Food, quantity: number): FoodResult {
  *
  * Returns the best pick, or null if no electrolyte improves the score.
  */
+/** §4.3 carryable-first tolerance: two fits are "comparable" when their
+ * sodium distances-to-target differ by no more than this fraction of the
+ * target (RULED Xuan, 2026-09-03). */
+export const CARRYABLE_FIT_TOLERANCE = 0.10;
+
+/** §4.3 carryable form: capsule/tablet/gel/chew outrank liquid/mix volume
+ * when fits are comparable. */
+export function isCarryableForm(food: Food): boolean {
+  return (food.product_type === "supplement" && !food.is_liquid) ||
+    food.product_type === "gel" || food.product_type === "chew";
+}
+
+/** §4.2 one-cap rule: the catalog row's max_servings_during is THE cap, both
+ * engines, gut-adjusted identically — low gut halves it (floor 1); high gut
+ * never exceeds the row's value (the row cap is authoritative upward).
+ * Mirror: `gutAdjustedMaxServings` in the Dart electrolyte source policy. */
+export function gutAdjustedMaxServings(
+  maxServings: number,
+  gutLevel?: "low" | "moderate" | "high" | null,
+): number {
+  const mult = gutLevel === "low" ? 0.5 : 1.0;
+  return Math.min(maxServings, Math.max(1, maxServings * mult));
+}
+
+// RULED food-recommendation §4 (Xuan, 2026-09-03) — the F-22/46/47 twin port.
+// One algorithm, both engines (Dart mirror:
+// `client_plan/electrolyte_source_policy.dart`, §8 twin contract):
+//   1. Symmetric target-seeking: the sodium score is |target − delivered| /
+//      target — overshoot above the TARGET costs the same as undershoot, so a
+//      one-big-hit source no longer beats honest scaling for free. The hard
+//      sodiumUpper filter still applies.
+//   2. The serving cap is the catalog row's max_servings_during (gut-adjusted
+//      via gutAdjustedMaxServings) — the synthetic server-side 4-serving
+//      supplement cap is retired.
+//   3. Carryable-first: when the best carryable pick's distance-to-target is
+//      within CARRYABLE_FIT_TOLERANCE × target of the best pick overall, the
+//      carryable one wins (it supersedes the old capsulePenalty steer, which
+//      pushed the opposite way).
+//   4. Baseline ("add nothing") uses the SAME formula as the candidate score
+//      — including the 1.5× carb-overshoot weight (the old baseline's 2× was
+//      a like-for-like violation on both engines).
+//   5. Floor rescue keeps the 2026-07-29 form: only a start below the band
+//      floor accepts a score-worsening pick that clears it.
 export function pickBestElectrolyte(
   pool: Food[],
   currentSodium: number,
@@ -348,38 +395,39 @@ export function pickBestElectrolyte(
     fluidUpper,
     carbTarget,
     carbUpper,
+    gutLevel,
   } = bounds;
-  const MAX_SUPPLEMENT_SERVINGS = 4;
 
-  // Baseline = "add nothing". Must use the SAME formula as the candidate
-  // score below (target-relative undershoot, 2x-weighted overshoot), or the
-  // `best.score < baselineScore` comparison compares two different scales.
-  const baselineSodiumScore = sodiumTarget > 0
-    ? (Math.max(0, sodiumTarget - currentSodium) +
-      Math.max(0, currentSodium - sodiumUpper) * 2) / sodiumTarget
-    : 0;
-  const baselineFluidPenalty = fluidTarget > 0 && currentFluid > fluidUpper
-    ? ((currentFluid - fluidUpper) / fluidTarget) * 3
-    : 0;
-  const baselineCarbPenalty = carbTarget > 0 && currentCarbs > carbUpper
-    ? ((currentCarbs - carbUpper) / carbTarget) * 2
-    : 0;
-  const baselineScore = baselineSodiumScore + baselineFluidPenalty +
-    baselineCarbPenalty;
+  const sodiumScore = (sodium: number): number =>
+    sodiumTarget > 0 ? Math.abs(sodiumTarget - sodium) / sodiumTarget : 0;
+  const fluidScore = (fluid: number): number =>
+    fluidTarget > 0 && fluid > fluidUpper
+      ? ((fluid - fluidUpper) / fluidTarget) * 3
+      : 0;
+  const carbScore = (carbs: number): number =>
+    carbTarget > 0 && carbs > carbUpper
+      ? ((carbs - carbUpper) / carbTarget) * 1.5
+      : 0;
+
+  const baselineScore = sodiumScore(currentSodium) +
+    fluidScore(currentFluid) + carbScore(currentCarbs);
 
   let best: ElectrolytePickResult | null = null;
+  let bestCarryable: ElectrolytePickResult | null = null;
+  let bestIsCarryable = false;
 
   for (const electrolyte of pool) {
     if (electrolyte.per_serving.sodium_mg <= 0) continue;
 
-    const candidates = getServingCandidates(electrolyte);
-    // Cap supplement (non-liquid) servings to prevent excessive capsule counts
-    const cappedCandidates =
-      electrolyte.product_type === "supplement" && !electrolyte.is_liquid
-        ? candidates.filter((s) => s <= MAX_SUPPLEMENT_SERVINGS)
-        : candidates;
+    const carryable = isCarryableForm(electrolyte);
+    const effectiveMax = gutAdjustedMaxServings(
+      electrolyte.max_servings,
+      gutLevel,
+    );
+    const candidates = getServingCandidates(electrolyte)
+      .filter((s) => s <= effectiveMax + 1e-6);
 
-    for (const servings of cappedCandidates) {
+    for (const servings of candidates) {
       const sodium = currentSodium +
         (electrolyte.per_serving.sodium_mg * servings);
       const fluid = currentFluid +
@@ -389,58 +437,56 @@ export function pickBestElectrolyte(
       if (fluid > fluidUpper + 1e-6) continue;
       if (carbs > carbUpper + 1e-6) continue;
 
-      // Undershoot is measured against sodium_TARGET, not sodium_lower
-      // (2026-07-29). Against the floor, every candidate that merely cleared
-      // sodiumLower scored an identical 0 penalty, so the tie-break decided
-      // selection and a pick sitting at the bottom of the band was as "good"
-      // as one sitting on the target. Measuring from the target makes the
-      // penalty strictly decrease as the pick approaches it. This also brings
-      // Deno into line with the Dart mirror (`client_during_phase_solver.dart`
-      // `_pickBestElectrolyte`), which has always used the target here.
-      const sodiumPenalty = sodiumTarget > 0
-        ? (Math.max(0, sodiumTarget - sodium) +
-          Math.max(0, sodium - sodiumUpper) * 2) / sodiumTarget
-        : 0;
-      const fluidPenalty = fluidTarget > 0 && fluid > fluidUpper
-        ? ((fluid - fluidUpper) / fluidTarget) * 3
-        : 0;
-      const carbPenalty = carbTarget > 0 && carbs > carbUpper
-        ? ((carbs - carbUpper) / carbTarget) * 1.5
-        : 0;
-      // Progressive penalty for dry capsules/supplements > 2 servings
-      const capsulePenalty =
-        electrolyte.product_type === "supplement" && !electrolyte.is_liquid &&
-          servings > 2
-          ? 0.05 * (servings - 2)
-          : 0;
       const preferenceBonus =
         electrolyte.preference_score >= PREFERENCE_SCORE_MAP.liked ? -0.02 : 0;
-      const score = sodiumPenalty + fluidPenalty + carbPenalty +
-        capsulePenalty + preferenceBonus;
+      const score = sodiumScore(sodium) + fluidScore(fluid) +
+        carbScore(carbs) + preferenceBonus;
 
-      if (
-        !best || score < best.score ||
-        (Math.abs(score - best.score) < 1e-6 &&
-          Math.abs(sodiumTarget - sodium) <
-            Math.abs(sodiumTarget - best.sodium))
-      ) {
-        best = { food: electrolyte, servings, score, sodium, fluid, carbs };
+      const pick: ElectrolytePickResult = {
+        food: electrolyte,
+        servings,
+        score,
+        sodium,
+        fluid,
+        carbs,
+      };
+      const beats = (incumbent: ElectrolytePickResult | null): boolean =>
+        !incumbent || score < incumbent.score - 1e-9 ||
+        (Math.abs(score - incumbent.score) < 1e-9 &&
+          (Math.abs(sodiumTarget - sodium) <
+              Math.abs(sodiumTarget - incumbent.sodium) - 1e-9 ||
+            (Math.abs(
+                  Math.abs(sodiumTarget - sodium) -
+                    Math.abs(sodiumTarget - incumbent.sodium),
+                ) < 1e-9 && servings < incumbent.servings)));
+
+      if (beats(best)) {
+        best = pick;
+        bestIsCarryable = carryable;
       }
+      if (carryable && beats(bestCarryable)) bestCarryable = pick;
     }
   }
 
   if (!best) return null;
-  // Floor rescue: when we started BELOW the band floor, take any pick that
-  // clears it even if the score says otherwise. Gated on `currentSodium <
-  // sodiumLower` (2026-07-29) — previously this read `best.sodium >=
-  // sodiumLower`, which, once the penalty became target-relative, would also
-  // accept a *score-worsening* pick made from an already-in-range state and
-  // push sodium away from target. Above the floor, the score is the only
-  // arbiter and it minimizes distance to target.
-  if (currentSodium < sodiumLower - 1e-6 && best.sodium >= sodiumLower) {
-    return best;
+
+  // §4.3 carryable-first on comparable fits (sodium distance, mg).
+  let chosen = best;
+  if (!bestIsCarryable && bestCarryable && sodiumTarget > 0) {
+    const distBest = Math.abs(sodiumTarget - best.sodium);
+    const distCarry = Math.abs(sodiumTarget - bestCarryable.sodium);
+    if (distCarry - distBest <= CARRYABLE_FIT_TOLERANCE * sodiumTarget + 1e-9) {
+      chosen = bestCarryable;
+    }
   }
-  return best.score < baselineScore ? best : null;
+
+  // Floor rescue (2026-07-29 form): only a start below the band floor accepts
+  // a score-worsening pick that clears it; above the floor the score is the
+  // only arbiter and it minimizes distance to target.
+  if (currentSodium < sodiumLower - 1e-6 && chosen.sodium >= sodiumLower) {
+    return chosen;
+  }
+  return chosen.score < baselineScore ? chosen : null;
 }
 
 /**

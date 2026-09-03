@@ -557,6 +557,7 @@ export function generateDuringPhaseRuleBased(
       fluidUpper,
       carbTarget: carbTarget,
       carbUpper,
+      gutLevel: gutTrainingLevel,
     };
     const elecResult = fillElectrolytes(
       categorized.electrolyte,
