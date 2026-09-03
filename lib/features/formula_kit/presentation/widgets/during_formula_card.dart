@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
+import '../../application/formula_pin_controller.dart';
 import '../../domain/formula_view.dart';
+import 'pin_conflict_card_state.dart';
 import 'pin_toggle.dart';
 
 /// List card for a During formula. Mirrors the design's `DuringCard` —
 /// formula string, components, activity + duration tags.
-class DuringFormulaCard extends StatelessWidget {
+///
+/// Carries the FP-4a inline pre-pin warning and FP-4b post-pin conflict
+/// label (`formula-pin-surface.md`, RATIFIED Xuan 2026-09-03).
+class DuringFormulaCard extends ConsumerStatefulWidget {
   const DuringFormulaCard({
     super.key,
     required this.formula,
@@ -17,11 +23,33 @@ class DuringFormulaCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  ConsumerState<DuringFormulaCard> createState() => _DuringFormulaCardState();
+}
+
+class _DuringFormulaCardState extends ConsumerState<DuringFormulaCard>
+    with PinConflictCardState<DuringFormulaCard> {
+  DuringFormulaView get formula => widget.formula;
+
+  @override
+  String get templateId => formula.id;
+
+  @override
+  List<String> get templateAllergens => formula.allergens;
+
+  @override
+  List<String> get excludedDiets => formula.excludedDiets;
+
+  @override
+  Future<void> completePin() => ref
+      .read(formulaPinControllerProvider.notifier)
+      .toggleDuring(formula: formula, source: 'card');
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return BaseCard(
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: AppRadius.cardRadius,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -45,6 +73,9 @@ class DuringFormulaCard extends StatelessWidget {
                     key: ValueKey('formula_kit.during_card_pin_${formula.id}'),
                     formula: formula,
                     source: 'card',
+                    conflict: conflict,
+                    onAllergyConflictPinAttempt: showAllergyWarning,
+                    onDietConflictPinned: showDietNote,
                   ),
                 ],
               ),
@@ -62,6 +93,7 @@ class DuringFormulaCard extends StatelessWidget {
                     _Tag(label: d, color: AppColors.orange),
                 ],
               ),
+              ...conflictFooter(),
             ],
           ),
         ),

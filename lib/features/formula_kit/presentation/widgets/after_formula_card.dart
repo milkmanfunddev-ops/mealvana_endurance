@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 
+import '../../application/formula_pin_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/formula_view.dart';
+import 'pin_conflict_card_state.dart';
 import 'pin_toggle.dart';
 
 /// List card for an After formula. Spare by design: name + travel-friendliness
@@ -11,7 +14,10 @@ import 'pin_toggle.dart';
 ///
 /// Pin toggle is always rendered — every after template is pinnable in V1
 /// (`AfterFormulaView.isPinnable` is hard-coded `true`).
-class AfterFormulaCard extends StatelessWidget {
+///
+/// Carries the FP-4a inline pre-pin warning and FP-4b post-pin conflict
+/// label (`formula-pin-surface.md`, RATIFIED Xuan 2026-09-03).
+class AfterFormulaCard extends ConsumerStatefulWidget {
   const AfterFormulaCard({
     super.key,
     required this.formula,
@@ -22,6 +28,28 @@ class AfterFormulaCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  ConsumerState<AfterFormulaCard> createState() => _AfterFormulaCardState();
+}
+
+class _AfterFormulaCardState extends ConsumerState<AfterFormulaCard>
+    with PinConflictCardState<AfterFormulaCard> {
+  AfterFormulaView get formula => widget.formula;
+
+  @override
+  String get templateId => formula.id;
+
+  @override
+  List<String> get templateAllergens => formula.allergens;
+
+  @override
+  List<String> get excludedDiets => formula.excludedDiets;
+
+  @override
+  Future<void> completePin() => ref
+      .read(formulaPinControllerProvider.notifier)
+      .toggleAfter(formula: formula, source: 'card');
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final travel = TravelFriendliness.fromStorageValue(
@@ -29,7 +57,7 @@ class AfterFormulaCard extends StatelessWidget {
     );
     return BaseCard(
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: AppRadius.cardRadius,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -58,6 +86,9 @@ class AfterFormulaCard extends StatelessWidget {
                     key: ValueKey('formula_kit.after_card_pin_${formula.id}'),
                     formula: formula,
                     source: 'card',
+                    conflict: conflict,
+                    onAllergyConflictPinAttempt: showAllergyWarning,
+                    onDietConflictPinned: showDietNote,
                   ),
                 ],
               ),
@@ -72,6 +103,7 @@ class AfterFormulaCard extends StatelessWidget {
                   ],
                 ),
               ],
+              ...conflictFooter(),
             ],
           ),
         ),

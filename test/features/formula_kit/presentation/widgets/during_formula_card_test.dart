@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/formula_kit/application/athlete_conflict_profile_provider.dart';
 import 'package:mealvana_endurance/features/formula_kit/application/formula_pin_controller.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/formula_profile_conflict.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/formula_view.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/during_formula_card.dart';
 
@@ -48,6 +50,12 @@ Widget _wrap(Widget child, {Set<String> pinned = const <String>{}}) {
     overrides: [
       formulaPinControllerProvider.overrideWith(
         () => _StubPinController(pinned: pinned),
+      ),
+      // The card now watches the athlete conflict profile (FP-4a/4b,
+      // formula-pin-surface). Stub it so these unit tests never touch the
+      // auth service / Drift.
+      athleteConflictProfileProvider.overrideWith(
+        (ref) async => AthleteConflictProfile.empty,
       ),
     ],
     child: MaterialApp(home: Scaffold(body: child)),

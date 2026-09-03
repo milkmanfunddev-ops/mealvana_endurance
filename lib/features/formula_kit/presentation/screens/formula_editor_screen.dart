@@ -11,6 +11,7 @@ import '../../../nutrition_plan/domain/solver_food.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart'
     show SwapFoodSelection;
 import '../../../nutrition_plan/presentation/widgets/activity_detail/dismissible_food_item.dart';
+import '../../application/athlete_conflict_profile_provider.dart';
 import '../../application/formula_editor_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
@@ -18,8 +19,10 @@ import '../../domain/coach_insight.dart';
 import '../../domain/during_filter_options.dart';
 import '../../domain/formula_macros.dart';
 import '../../domain/formula_phase.dart';
+import '../../domain/formula_profile_conflict.dart';
 import '../widgets/coach_insight_panel.dart';
 import '../widgets/filter_chip_row.dart';
+import '../widgets/save_conflict_disclosure.dart';
 
 /// Create / edit screen for a personal formula. State-driven by
 /// [FormulaEditorController]. `formulaId == null` → create-from-scratch (with
@@ -239,11 +242,23 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                 left: AppSpacing.md,
                 right: AppSpacing.md,
                 bottom: AppSpacing.md,
-                child: KylePrimaryButton(
-                  key: const ValueKey('formula_kit.editor_save'),
-                  text: 'Save formula',
-                  isLoading: _saving,
-                  onPressed: (draft.canSave && !_saving) ? _save : null,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // FP-8 save-time conflict disclosure (formula-pin-surface,
+                    // RATIFIED Xuan 2026-09-03): a conflicting component is
+                    // DISCLOSED above Save — Save is never disabled (§1a
+                    // disclose-never-block; onPressed below gates on canSave
+                    // only, never on the conflict).
+                    ..._saveConflictDisclosure(draft),
+                    KylePrimaryButton(
+                      key: const ValueKey('formula_kit.editor_save'),
+                      text: 'Save formula',
+                      isLoading: _saving,
+                      onPressed: (draft.canSave && !_saving) ? _save : null,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -251,6 +266,21 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
         },
       ),
     );
+  }
+
+  /// FP-8: the disclosure widget for the first component conflicting with
+  /// the athlete's profile, or nothing. Detection is pure domain
+  /// ([firstComponentConflict]); the profile read is the shared provider.
+  List<Widget> _saveConflictDisclosure(FormulaDraft draft) {
+    final profile = ref
+        .watch(athleteConflictProfileProvider)
+        .maybeWhen(data: (p) => p, orElse: () => null);
+    if (profile == null) return const [];
+    final hit = firstComponentConflict(draft.components, profile);
+    if (hit == null) return const [];
+    return [
+      SaveConflictDisclosure(foodName: hit.foodName, conflict: hit.conflict),
+    ];
   }
 
   Future<void> _addFood() async {
