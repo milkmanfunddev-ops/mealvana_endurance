@@ -8,8 +8,7 @@ import '../../../integrations/presentation/providers/athlete_zones_provider.dart
 import '../../domain/fueling_window_limits.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
-import '../../domain/meal_type.dart';
-import '../../../../shared/domain/activity_type.dart';
+import '../../domain/fueling_window_authority.dart';
 import '../../../activities/domain/activity_title_formatter.dart';
 import 'macro_targets_controller.dart';
 import '../../../weather/domain/location.dart' as weather_domain;
@@ -189,16 +188,16 @@ class RunningInputController extends _$RunningInputController {
               .round(),
     );
 
-    // V3: Pre-fill timing from recommendation based on default intensity
+    // §3a (food-recommendation, RATIFIED 2026-09-03): the default window
+    // comes from the ratified table — the sport-specific formula is retired.
     final defaultIntensity = IntensityDistribution.defaultDistribution();
-    final recommendedMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.running,
-                  defaultIntensity,
-                  durationMinutes: initialDuration.inMinutes,
-                ) *
-                60)
-            .round();
+    const defaultStart = TimeOfDay(hour: 7, minute: 0);
+    final recommendedMinutes = defaultFuelingWindowMinutes(
+      durationMinutes: initialDuration.inMinutes,
+      intensity: defaultIntensity,
+      startHour: defaultStart.hour,
+      minutesUntilStart: _minutesUntil(now, now, defaultStart),
+    );
 
     final initialState = RunningFormState(
       activityTitle: ActivityTitleFormatter.formatRunningTitle(defaultDistance),
@@ -440,17 +439,34 @@ class RunningInputController extends _$RunningInputController {
     );
   }
 
-  /// Auto-update fueling window when duration or intensity changes,
-  /// unless user has manually overridden it.
+  /// Auto-update fueling window when duration, intensity or schedule
+  /// changes, unless user has manually overridden it. Default and clamp per
+  /// food-recommendation §3/§3a (the ratified table replaces the retired
+  /// recommendedHoursBefore formula; CF-1/CF-2).
   void _autoUpdateFuelingWindow() {
     if (!state.preRunMinutesManuallySet) {
-      final recommended = recommendedHoursBefore(
-        ActivityType.running,
-        state.intensity,
+      final recommended = defaultFuelingWindowMinutes(
         durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+        intensity: state.intensity,
+        startHour: state.selectedTime.hour,
+        minutesUntilStart: _minutesUntil(
+          DateTime.now(),
+          state.selectedDate,
+          state.selectedTime,
+        ),
       );
-      state = state.copyWith(preRunMinutes: (recommended * 60).round());
+      state = state.copyWith(
+        preRunMinutes: clampFuelingWindowMinutes(recommended),
+      );
     }
+  }
+
+  /// Whole minutes between [now] and the scheduled start; never negative.
+  static int _minutesUntil(DateTime now, DateTime date, TimeOfDay time) {
+    final scheduled =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final diff = scheduled.difference(now).inMinutes;
+    return diff > 0 ? diff : 0;
   }
 
   /// V3: Update fasted workout toggle
@@ -510,6 +526,10 @@ class RunningInputController extends _$RunningInputController {
       temperatureC: 20.0,
       humidityPct: 60.0,
     );
+
+    // §3a: the default window depends on start time (early-start overlay +
+    // clamp), so a schedule change re-derives it unless manually set.
+    _autoUpdateFuelingWindow();
 
     // Auto-fetch weather when date/time changes if location is set
     // or if weather was previously fetched successfully (via GPS fallback).

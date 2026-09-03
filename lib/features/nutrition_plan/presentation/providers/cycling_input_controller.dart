@@ -4,8 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/fueling_window_limits.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
-import '../../domain/meal_type.dart';
-import '../../../../shared/domain/activity_type.dart';
+import '../../domain/fueling_window_authority.dart';
 import '../../../activities/domain/activity_title_formatter.dart';
 import '../../../auth/data/user_repository.dart';
 import 'macro_targets_controller.dart';
@@ -195,14 +194,15 @@ class CyclingInputController extends _$CyclingInputController {
       tempoPct: 20,
       allOutPct: 10,
     );
-    final recommendedMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.cycling,
-                  defaultIntensity,
-                  durationMinutes: initialDurationMinutes,
-                ) *
-                60)
-            .round();
+    // §3a (food-recommendation, RATIFIED 2026-09-03): default from the
+    // ratified sport-neutral table; the per-sport formula is retired.
+    const defaultStart = TimeOfDay(hour: 7, minute: 0);
+    final recommendedMinutes = defaultFuelingWindowMinutes(
+      durationMinutes: initialDurationMinutes,
+      intensity: defaultIntensity,
+      startHour: defaultStart.hour,
+      minutesUntilStart: _minutesUntil(now, now, defaultStart),
+    );
 
     final initialState = CyclingFormState(
       activityTitle: ActivityTitleFormatter.formatCyclingTitle(25.0),
@@ -358,17 +358,33 @@ class CyclingInputController extends _$CyclingInputController {
     );
   }
 
-  /// Auto-update fueling window when duration or intensity changes,
-  /// unless user has manually overridden it.
+  /// Auto-update fueling window when duration, intensity or schedule
+  /// changes, unless user has manually overridden it (food-recommendation
+  /// §3/§3a: table default + clamp; CF-1/CF-2).
   void _autoUpdateFuelingWindow() {
     if (!state.preRideMinutesManuallySet) {
-      final recommended = recommendedHoursBefore(
-        ActivityType.cycling,
-        state.intensity,
+      final recommended = defaultFuelingWindowMinutes(
         durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+        intensity: state.intensity,
+        startHour: state.selectedTime.hour,
+        minutesUntilStart: _minutesUntil(
+          DateTime.now(),
+          state.selectedDate,
+          state.selectedTime,
+        ),
       );
-      state = state.copyWith(preRideMinutes: (recommended * 60).round());
+      state = state.copyWith(
+        preRideMinutes: clampFuelingWindowMinutes(recommended),
+      );
     }
+  }
+
+  /// Whole minutes between [now] and the scheduled start; never negative.
+  static int _minutesUntil(DateTime now, DateTime date, TimeOfDay time) {
+    final scheduled =
+        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final diff = scheduled.difference(now).inMinutes;
+    return diff > 0 ? diff : 0;
   }
 
   /// V3: Update fasted workout toggle
@@ -494,6 +510,10 @@ class CyclingInputController extends _$CyclingInputController {
       temperatureC: 20.0,
       humidityPct: isIndoor ? 45.0 : 60.0,
     );
+
+    // §3a: the default window depends on start time (early-start overlay +
+    // clamp), so a schedule change re-derives it unless manually set.
+    _autoUpdateFuelingWindow();
 
     // Auto-fetch weather when date/time changes for outdoor rides if location is set
     // or if weather was previously fetched successfully (via GPS fallback).
