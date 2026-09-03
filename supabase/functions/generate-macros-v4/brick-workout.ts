@@ -568,7 +568,9 @@ export function calculateBrickMacrosV4(
 ) {
   const weightKg = toKg(input.weight, input.weight_unit);
   const segments = input.brick_segments!;
-  const isFasted = input.is_fasted;
+  // is_fasted retired (food-recommendation §7, D-001, 2026-09-03) —
+  // tolerated on the wire, ignored.
+  const isFasted = false;
   const sweatRateCategory = input.sweat_rate_category || "medium";
   const sweatSodiumCat = input.sweat_sodium || "medium";
   const gutTraining = input.gut_training || "moderate";

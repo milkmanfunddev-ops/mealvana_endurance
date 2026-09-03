@@ -243,23 +243,37 @@ describe('Pre-workout overlay — the gate', () => {
   });
 });
 
-describe('Pre-workout overlay — fasted', () => {
-  it('fasted zeroes carbs but still hydrates (the gate is duration/temp only)', async () => {
-    const result = await calculateMacrosV4(
+describe('Pre-workout overlay — is_fasted retired (tolerate-and-ignore)', () => {
+  // food-recommendation §7 / D-001 (RULED Xuan, 2026-09-03): the fasted state
+  // is no longer a product state. Installed builds still send the field, so
+  // the wire tolerates it — and the engine must IGNORE it: a `true` produces
+  // the same plan as a `false`, and an absent field is not a 400.
+  it('is_fasted:true on the wire changes nothing', async () => {
+    const fasted = await calculateMacrosV4(
       baseRunningInput({ hours_before: 3, is_fasted: true, run_distance: 10 }),
       EMPTY_TEMPLATES,
     );
-    assertEquals(result.pre_run_water_ml, 525);
-    assertEquals(result.pre_run_hydration_regime, 'cited');
-    assertEquals(result.pre_run_sodium_mg, null);
-    assertEquals(result.pre_run_meal_type, 'fasted');
-    assertEquals(result.pre_run_carbs_g, 0);
-    assertEquals(result.pre_run_protein_g, 0);
-    // The two zeros are DIFFERENT: fasted means "no recommendation is being
-    // made", so the tiers are EMPTY and the basis is `none` -- distinct from a
-    // t = 0 plan, which carries a top_off tier holding 0 g.
-    assertEquals(result.pre_run_carb_tiers.length, 0);
-    assertEquals(result.pre_run_carb_target_basis, 'none');
+    const fed = await calculateMacrosV4(
+      baseRunningInput({ hours_before: 3, is_fasted: false, run_distance: 10 }),
+      EMPTY_TEMPLATES,
+    );
+    assertEquals(fasted.pre_run_carbs_g, fed.pre_run_carbs_g);
+    assertEquals(fasted.pre_run_protein_g, fed.pre_run_protein_g);
+    assertEquals(fasted.pre_run_meal_type, fed.pre_run_meal_type);
+    assertEquals(
+      fasted.pre_run_carb_tiers.length,
+      fed.pre_run_carb_tiers.length,
+    );
+    assertEquals(fasted.pre_run_carb_target_basis, fed.pre_run_carb_target_basis);
+    assertEquals(fasted.post_run_carbs_g, fed.post_run_carbs_g);
+    assertEquals(fasted.post_run_protein_g, fed.post_run_protein_g);
+  });
+
+  it('an absent is_fasted field is accepted (no 400)', async () => {
+    const input = baseRunningInput({ hours_before: 3, run_distance: 10 });
+    delete (input as unknown as Record<string, unknown>).is_fasted;
+    const result = await calculateMacrosV4(input, EMPTY_TEMPLATES);
+    assertEquals(result.pre_run_carbs_g > 0, true);
   });
 });
 
