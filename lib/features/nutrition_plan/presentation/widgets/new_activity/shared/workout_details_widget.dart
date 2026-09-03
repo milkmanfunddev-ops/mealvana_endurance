@@ -199,7 +199,9 @@ class WorkoutDetailsWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (derivedEstimateLabel != null)
-                Row(
+                Flexible(
+                  child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   key: const ValueKey('activity_create.est_badge'),
                   children: [
                     Container(
@@ -226,14 +228,19 @@ class WorkoutDetailsWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      derivedEstimateLabel!,
-                      style: AppTextStyles.smallLabel.copyWith(
-                        color: (isDark ? AppColors.cream : AppColors.blackberry)
-                            .withValues(alpha: 0.8),
+                    Flexible(
+                      child: Text(
+                        derivedEstimateLabel!,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.smallLabel.copyWith(
+                          color:
+                              (isDark ? AppColors.cream : AppColors.blackberry)
+                                  .withValues(alpha: 0.8),
+                        ),
                       ),
                     ),
                   ],
+                  ),
                 )
               else
                 const SizedBox.shrink(),
@@ -253,6 +260,7 @@ class WorkoutDetailsWidget extends StatelessWidget {
                   ),
                   child: Text(
                     usualPaceChipLabel!,
+                    overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.smallLabel.copyWith(
                       fontSize: 11,
                       color: isDark ? AppColors.cream : AppColors.blackberry,

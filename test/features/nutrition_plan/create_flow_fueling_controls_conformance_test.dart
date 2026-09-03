@@ -30,13 +30,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:mealvana_endurance/features/nutrition_plan/domain/fueling_window_authority.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/intensity_distribution.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/workout_preset.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/brick_input_controller.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/cycling_input_controller.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/running_input_controller.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/swimming_input_controller.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/new_activity/brick/brick_tab_content.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/new_activity/cycling_tab_content.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/new_activity/running_tab_content.dart';
