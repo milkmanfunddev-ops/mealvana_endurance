@@ -261,4 +261,66 @@ void main() {
       expect(needsWaterPairing([banana]), isFalse);
     });
   });
+
+  group('catalog-conventions v1.1 — per-product solvent minima (§6(e))', () {
+    FoodItemData mix({double qty = 2, double solventMin = 600}) => FoodItemData(
+      id: 'high-carb-mix',
+      name: 'High-Carb Drink Mix',
+      quantity: qty.toStringAsFixed(0),
+      nutritionalInfo: NutritionalInfo(
+        calories: (240 * qty).round(),
+        carbs: (90 * qty).round(),
+        sodium: 0,
+        fluids: 0, // C1: dry as consumed
+      ),
+      isDrink: true,
+      timingCategory: TimingCategory.fuelDrink,
+      numericQuantity: qty,
+      solventMinMlPerServing: solventMin,
+    );
+
+    test('declared solvent_min supersedes the flat constant (W7: 2x600=1200)',
+        () {
+      final items = [mix()];
+      expect(solventRequirementMl(items), 1200);
+      expect(needsWaterPairing(items), isTrue);
+
+      final res = ensureElectrolyteWaterPairing(items, pool);
+      expect(res.changed, isTrue);
+      expect(res.conflict, isNull);
+      expect(plainWaterMl(res.items), greaterThanOrEqualTo(1200));
+    });
+
+    test('a drink on the plate does not satisfy a declared solvent need', () {
+      final sportsDrink = item(
+        id: 'sports-drink',
+        name: 'Sports Drink',
+        carbs: 15,
+        fluids: 240,
+        isDrink: true,
+        category: TimingCategory.fuelDrink,
+      );
+      final res =
+          ensureElectrolyteWaterPairing([mix(qty: 1), sportsDrink], pool);
+      expect(res.changed, isTrue);
+      expect(plainWaterMl(res.items), greaterThanOrEqualTo(600));
+    });
+
+    test('existing plain water counts toward the total (no double demand)',
+        () {
+      final water = FoodItemData(
+        id: 'water',
+        name: 'Water',
+        quantity: '3',
+        nutritionalInfo:
+            const NutritionalInfo(calories: 0, carbs: 0, sodium: 0, fluids: 720),
+        isDrink: true,
+        timingCategory: TimingCategory.sipThroughout,
+        numericQuantity: 3,
+      );
+      final res = ensureElectrolyteWaterPairing([mix(qty: 1), water], pool);
+      expect(res.changed, isFalse);
+      expect(res.conflict, isNull);
+    });
+  });
 }

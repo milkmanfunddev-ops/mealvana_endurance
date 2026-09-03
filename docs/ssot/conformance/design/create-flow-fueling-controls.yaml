@@ -1,0 +1,83 @@
+# Design conformance — create-flow fueling controls (window · fasted · weather)
+#
+# Written at implementation of food-recommendation@v1 from the ratified CF-
+# rows of spec/design/surfaces/create-flow-fueling-controls.md (RATIFIED Xuan,
+# 2026-09-03). Math authority: spec/fueling/food-recommendation.md §3/§3a.
+# The suite must execute the REAL code paths — the §3a defaults come from the
+# controllers' own derivation (fueling_window_authority.dart), never from
+# constants restated in the test.
+#
+# A golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass. Regeneration commits cite the spec change.
+
+manifest: create-flow-fueling-controls
+version: v1
+status: ratified            # spec RATIFIED Xuan 2026-09-03; manifest written at implementation
+spec_family: spec/design/
+spec: spec/design/surfaces/create-flow-fueling-controls.md
+suite: test/features/nutrition_plan/create_flow_fueling_controls_conformance_test.dart
+
+contracts:
+  - id: CF-1
+    check: >
+      The fueling-window stepper steps in 15-min increments and renders the
+      `N HOUR[S] M MIN` label; its DEFAULT equals the §3a oracle for the
+      session (class from duration+intensity, early-start overlay, race rule)
+      and its MAXIMUM is min(table cap 240, time-until-start) floored at 15 —
+      values above the clamp are unreachable. A manual change persists
+      (preRunMinutesManuallySet) and wins within the clamp.
+  - id: CF-2
+    check: >
+      When the clamp binds (short-notice plan) the stepper opens AT the clamp
+      and stepping up is inert — the athlete sees the real ceiling, never a
+      window implying a feeding in the past.  # NEGATIVE TEST — required
+  - id: CF-3
+    check: >
+      The Fasted Workout toggle is ABSENT from every create-flow tab
+      (running, cycling, brick; swimming never had one) — §7 fasted retired,
+      feeding-card/fuel-stat AMENDMENT A1.  # NEGATIVE TEST — required
+  - id: CF-5
+    check: >
+      Copy register: the window header is sport-dynamic — PRE-RUN / PRE-RIDE /
+      PRE-SWIM per single sport, PRE-ACTIVITY for brick; the forecast
+      affordance reads "View Forecast" once auto-filled (supersedes
+      "Get Forecast").
+  - id: CF-6
+    check: >
+      Pace ⇄ duration are bidirectionally linked and the derived side wears
+      the EST. badge; with no saved usual pace the run fallback is 9:00 /mi.
+  - id: CF-7
+    check: >
+      Weather values carry the AUTO badge while forecast-filled; a manual
+      step removes it (the value is now the athlete's); a forecast refresh
+      restores it.
+  - id: CF-8
+    check: >
+      ENVIRONMENT · OUTDOOR / INDOOR segmented toggle feeds the engine's
+      existing is_indoor input; selecting INDOOR hides the
+      TEMPERATURE/HUMIDITY block entirely; switching back restores it with
+      prior values.
+
+goldens:
+  - id: cf_window_stepper_default
+    surface: create-flow-fueling-controls
+    notes: the shared fueling-window control at a §3a table default (2 HOURS 30 MIN), hours/min label, −/+ affordances
+  - id: cf_window_stepper_clamped
+    surface: create-flow-fueling-controls
+    notes: clamp-bound state — opens AT the ceiling (45 MIN), + rendered inert
+  - id: cf_environment_auto_badge
+    surface: create-flow-fueling-controls
+    notes: temperature/humidity steppers wearing AUTO badges with the "View Forecast" affordance
+
+not_covered:
+  - CF-4 (location-permission degrade) — needs a device-permission harness;
+    its artboard is also still owed (spec follow-up frames, D-02). The
+    "Location permission blocked" + "Open app settings" copy ships untested
+    here and is recorded in the bundle findings.
+  - date/time pickers — manifest exclusion (Xuan, 2026-09-03); the clamp is
+    asserted through controller state, not through picker interaction.
+
+done_when: every contract row above has a test executing the real
+  controller/widget path, the goldens exist and render from engine-derived
+  state, and the suite runs green via qa/conformance/run_dart.sh
+  create-flow-fueling-controls (mirror-checked).

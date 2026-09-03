@@ -273,9 +273,6 @@ class BrickFormState {
   /// Tracks whether the user manually changed the pre-activity timing
   final bool preActivityMinutesManuallySet;
 
-  /// Brick-level fasted toggle (applies to pre-activity fueling only)
-  final bool isFasted;
-
   /// Date and time for the brick activity
   final DateTime selectedDate;
   final TimeOfDay selectedTime;
@@ -286,7 +283,6 @@ class BrickFormState {
     required this.legs,
     required this.preActivityMinutes,
     required this.preActivityMinutesManuallySet,
-    required this.isFasted,
     required this.selectedDate,
     required this.selectedTime,
   });
@@ -314,7 +310,6 @@ class BrickFormState {
     List<BrickSegmentInput>? legs,
     int? preActivityMinutes,
     bool? preActivityMinutesManuallySet,
-    bool? isFasted,
     DateTime? selectedDate,
     TimeOfDay? selectedTime,
   }) {
@@ -326,7 +321,6 @@ class BrickFormState {
       preActivityMinutes: preActivityMinutes ?? this.preActivityMinutes,
       preActivityMinutesManuallySet:
           preActivityMinutesManuallySet ?? this.preActivityMinutesManuallySet,
-      isFasted: isFasted ?? this.isFasted,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
     );
@@ -365,7 +359,6 @@ class BrickInputController extends _$BrickInputController {
         time: const TimeOfDay(hour: 7, minute: 0),
       ),
       preActivityMinutesManuallySet: false,
-      isFasted: false,
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
     );
@@ -473,23 +466,6 @@ class BrickInputController extends _$BrickInputController {
       preActivityMinutes: clampFuelingWindowMinutes(minutes),
       preActivityMinutesManuallySet: true,
     );
-  }
-
-  void updateFasted(bool isFasted) {
-    state = state.copyWith(isFasted: isFasted);
-  }
-
-  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
-  ///
-  /// The init-from-metadata/event paths already rebuild state with
-  /// `isFasted: false`, but the plain "start fresh" brick path keeps the
-  /// keepAlive leftovers — without this reset, a fasted toggle left ON by a
-  /// previous brick silently zeroes the next one's pre-workout targets.
-  /// See RunningInputController.resetFasted for the full rationale.
-  void resetFasted() {
-    if (state.isFasted) {
-      state = state.copyWith(isFasted: false);
-    }
   }
 
   /// Update intensity distribution for the leg at [index]
@@ -635,7 +611,6 @@ class BrickInputController extends _$BrickInputController {
       legs: legs,
       preActivityMinutes: _recommendedPreActivityMinutes(legs: legs),
       preActivityMinutesManuallySet: false,
-      isFasted: false,
       selectedDate: state.selectedDate,
       selectedTime: state.selectedTime,
     );
@@ -712,7 +687,6 @@ class BrickInputController extends _$BrickInputController {
       legs: legs,
       preActivityMinutes: _recommendedPreActivityMinutes(legs: legs),
       preActivityMinutesManuallySet: false,
-      isFasted: false,
       selectedDate: activityDate,
       selectedTime: TimeOfDay(
         hour: activityDate.hour,

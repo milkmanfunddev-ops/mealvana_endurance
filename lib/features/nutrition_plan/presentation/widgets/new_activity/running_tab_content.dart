@@ -15,7 +15,6 @@ import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
 import 'shared/activity_name_field.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
-import 'shared/fasted_toggle.dart';
 
 /// Running Tab Content
 ///
@@ -168,20 +167,6 @@ class RunningTabContent extends ConsumerWidget {
               onChanged: controller.updatePreRunMinutes,
             ),
           ],
-        ),
-
-        // FASTED TOGGLE
-        FastedToggle(
-          isFasted: formState.isFasted,
-          onChanged: controller.updateFasted,
-          showWarning: !FastedToggle.isSuitable(
-            conversationalPct: formState.intensity.conversationalPct,
-            estimatedDurationMinutes:
-                formState.estimatedDuration?.inMinutes ?? 0,
-            isSwimming: false,
-          ),
-          warningText:
-              'Fasted training is not recommended for longer or harder runs. Consider fueling before.',
         ),
 
         const SizedBox(height: AppSpacing.xl),

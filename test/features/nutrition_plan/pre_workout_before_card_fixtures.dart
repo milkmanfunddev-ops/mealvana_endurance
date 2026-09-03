@@ -30,11 +30,11 @@ const double kCupMl = 236.588;
 ///
 /// [gated] uses a 45-minute session at 22 °C — hydration v6's gate
 /// (`< 60 min AND < 30 °C`) — so `fluidMl` is `null`, `regime: gated`.
-/// [fasted] takes carbs v2's D-001 path (`tiers: []`, `targetBasis: none`).
+/// (The former `fasted` parameter is gone: the fasted product state is
+/// retired — food-recommendation §7 / D-001, Xuan 2026-09-03.)
 PreRunMacros mockPreRun({
   required double t,
   bool gated = false,
-  bool fasted = false,
   double bodyWeightKg = kMockBodyWeightKg,
   HydrationCheck hydrationCheck = HydrationCheck.unknown,
 }) {
@@ -43,7 +43,6 @@ PreRunMacros mockPreRun({
     bodyWeightKg: bodyWeightKg,
     timeBeforeWorkoutMin: t,
     workoutDurationMin: durationMin,
-    isFasted: fasted,
   );
   final hydration = OfflineMacroCalculator.calculatePreWorkoutHydration(
     bodyWeightKg: bodyWeightKg,
@@ -294,12 +293,10 @@ PreRunMacros serverPreRun({
   required double weightLb,
   double durationMin = kMockDurationMin,
   bool gated = false,
-  bool fasted = false,
 }) {
   final pre = mockPreRun(
     t: t,
     gated: gated,
-    fasted: fasted,
     bodyWeightKg: weightLb * kServerKgPerLb,
   );
   // The wire rounds to 3 decimals (generate-macros-v4 `round3`); mirror it.

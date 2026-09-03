@@ -14,7 +14,6 @@ import '../../../../../shared/domain/activity_type.dart';
 
 import '../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import 'shared/environment_section.dart';
-import 'shared/fasted_toggle.dart';
 
 /// Cycling Tab Content
 ///
@@ -92,20 +91,6 @@ class CyclingTabContent extends ConsumerWidget {
           max: FuelingWindowLimits.maxMinutes,
           step: FuelingWindowLimits.stepMinutes,
           unit: 'minutes',
-        ),
-
-        // FASTED TOGGLE
-        FastedToggle(
-          isFasted: formState.isFasted,
-          onChanged: controller.updateFasted,
-          showWarning: !FastedToggle.isSuitable(
-            conversationalPct: formState.intensity.conversationalPct,
-            estimatedDurationMinutes:
-                formState.estimatedDuration?.inMinutes ?? 0,
-            isSwimming: false,
-          ),
-          warningText:
-              'Fasted training is not recommended for longer or harder rides. Consider fueling before.',
         ),
 
         const SizedBox(height: AppSpacing.xl),

@@ -343,20 +343,17 @@ extension _$SodiumExt on MacroExplanationService {
   }) {
     final pre = macroTargets.preRun;
 
-    // Three states that must never read alike (digest §5): the hydration gate
-    // fired (short + mild session — we set nothing), the athlete is fasted (no
-    // recommendation is being made at all), or the ordinary case where sodium
-    // simply isn't something we set a number for.
+    // Two states that must never read alike (digest §5, as narrowed by the
+    // fasted retirement — food-recommendation §7 / D-001, Xuan 2026-09-03):
+    // the hydration gate fired (short + mild session — we set nothing), or
+    // the ordinary case where sodium simply isn't something we set a number
+    // for.
     final String tldrBody;
     if (pre.isHydrationGated) {
       tldrBody =
           'This session is short and mild, so there\'s no pre-workout '
           'hydration plan — and no sodium plan either. Eat and drink normally '
           'beforehand.';
-    } else if (pre.isCarbRecommendationAbsent) {
-      tldrBody =
-          'You\'ve chosen to train fasted, so we\'re not recommending anything '
-          'before this session — including sodium.';
     } else {
       tldrBody =
           'We don\'t set a pre-workout sodium target. A salty snack or an '

@@ -42,9 +42,6 @@ class CyclingFormState {
   final DurationPaceMode durationPaceMode;
   final Duration? estimatedDuration;
 
-  // V3: Fasted workout toggle
-  final bool isFasted;
-
   // V3: Track if user manually changed the pre-ride timing
   final bool preRideMinutesManuallySet;
 
@@ -82,7 +79,6 @@ class CyclingFormState {
     IntensityDistribution? intensity,
     this.durationPaceMode = DurationPaceMode.byDuration,
     this.estimatedDuration,
-    this.isFasted = false,
     this.preRideMinutesManuallySet = false,
     this.unitSystem = UnitSystem.imperial,
     this.location,
@@ -120,7 +116,6 @@ class CyclingFormState {
     IntensityDistribution? intensity,
     DurationPaceMode? durationPaceMode,
     Duration? estimatedDuration,
-    bool? isFasted,
     bool? preRideMinutesManuallySet,
     UnitSystem? unitSystem,
     weather_domain.Location? location,
@@ -152,7 +147,6 @@ class CyclingFormState {
       intensity: intensity ?? this.intensity,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
-      isFasted: isFasted ?? this.isFasted,
       preRideMinutesManuallySet:
           preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
       unitSystem: unitSystem ?? this.unitSystem,
@@ -385,23 +379,6 @@ class CyclingInputController extends _$CyclingInputController {
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     final diff = scheduled.difference(now).inMinutes;
     return diff > 0 ? diff : 0;
-  }
-
-  /// V3: Update fasted workout toggle
-  void updateFasted(bool isFasted) {
-    state = state.copyWith(isFasted: isFasted);
-  }
-
-  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
-  ///
-  /// This controller is keepAlive, so a fasted toggle left ON by a previous
-  /// ride would otherwise silently send `is_fasted: true` for the next
-  /// activity and zero its pre-workout targets on the Adjust Macros screen.
-  /// See RunningInputController.resetFasted for the full rationale.
-  void resetFasted() {
-    if (state.isFasted) {
-      state = state.copyWith(isFasted: false);
-    }
   }
 
   void updateIntensityTarget(String intensityTarget) {
@@ -746,7 +723,6 @@ class CyclingInputController extends _$CyclingInputController {
           scheduledTime: currentState.selectedTime,
           temperatureC: currentState.temperatureC,
           humidityPct: currentState.humidityPct,
-          isFasted: currentState.isFasted,
           intensity: currentState.intensity,
           activityTitle: currentState.activityTitleManuallySet
               ? currentState.activityTitle

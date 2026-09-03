@@ -277,12 +277,6 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   void _initializeRunningController() {
     final controller = ref.read(runningInputControllerProvider.notifier);
 
-    // isFasted is per-activity state with no seed source (Activity doesn't
-    // persist it). The controller is keepAlive, so clear any leftover fasted
-    // toggle from a previous workout — otherwise this activity would silently
-    // generate with is_fasted=true and show 0g pre-workout targets.
-    controller.resetFasted();
-
     if (widget.initialDistance != null) {
       DebugLogger.info(
         '📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles',
@@ -329,10 +323,6 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// Initialize cycling controller with synced activity data
   Future<void> _initializeCyclingController() async {
     final controller = ref.read(cyclingInputControllerProvider.notifier);
-
-    // Clear any keepAlive leftover fasted toggle from a previous workout
-    // (see _initializeRunningController for rationale).
-    controller.resetFasted();
 
     await controller.waitForPreferencesLoaded();
 
@@ -470,12 +460,6 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// 3. Otherwise → start fresh with defaults
   void _initializeBrickController() {
     final initialTitle = widget.initialTitle;
-
-    // Clear any keepAlive leftover fasted toggle from a previous workout.
-    // The metadata/event init paths below rebuild state with isFasted: false
-    // anyway; this covers the plain "start fresh" path (see
-    // _initializeRunningController for rationale).
-    ref.read(brickInputControllerProvider.notifier).resetFasted();
 
     if (widget.activityId != null) {
       DebugLogger.info(

@@ -283,12 +283,9 @@ void main() {
   });
 
   group('assembler — the surface arithmetic (B-1, B-2, B-5, F-1)', () {
-    PreWorkoutBeforeCardData data(
-      double t, {
-      bool gated = false,
-      bool fasted = false,
-    }) => PreWorkoutBeforeCardAssembler.assemble(
-      preRun: mockPreRun(t: t, gated: gated, fasted: fasted),
+    PreWorkoutBeforeCardData data(double t, {bool gated = false}) =>
+        PreWorkoutBeforeCardAssembler.assemble(
+      preRun: mockPreRun(t: t, gated: gated),
       subPhases: mockSubPhases(t),
       timeBeforeWorkoutMin: t,
       bodyWeightKg: 63,
@@ -350,8 +347,10 @@ void main() {
       },
     );
 
+    // F-1 as amended by AMENDMENT A1 (Xuan, 2026-09-03): the fasted NONE
+    // arm is retired; the pair that remains is the gate vs a real 0 g.
     test(
-      'F-1: gated → NO_TARGET fluids; fasted → NONE carbs; t = 0 → real 0 g, band suppressed',
+      'F-1 (A1): gated → NO_TARGET fluids; t = 0 → real 0 g, band suppressed',
       () {
         final g = data(180, gated: true);
         expect(g.fluids.mode, FuelStatMode.noTarget);
@@ -361,13 +360,6 @@ void main() {
         expect(g.carbs.mode, FuelStatMode.targeted);
         expect(g.hydrationCheck, isNull, reason: 'P1');
         expect(g.feedings.every((f) => f.fluidOz == null), isTrue);
-
-        final f = data(180, fasted: true);
-        expect(f.carbs.mode, FuelStatMode.none);
-        expect(f.carbs.absentLine, 'No carbs this session');
-        expect(f.carbs.showBand, isFalse);
-        expect(f.fluids.mode, FuelStatMode.targeted);
-        expect(f.feedings.every((c) => c.carbsDelivered == null), isTrue);
 
         final z = data(0);
         expect(z.carbs.mode, FuelStatMode.targeted);

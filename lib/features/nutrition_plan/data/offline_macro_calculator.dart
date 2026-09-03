@@ -265,6 +265,9 @@ class OfflineMacroCalculator {
     required double bodyWeightKg,
     required double timeBeforeWorkoutMin,
     required double workoutDurationMin,
+    // Retained solely because pre-workout-carbs@v2's ratified vectors pin
+    // D-001's zero path (vector fasted-180-65 + invariant 8); production
+    // never passes true (fasted retired, food-recommendation §7).
     bool isFasted = false,
   }) {
     assert(_crossSpecPinHolds, _crossSpecPinMessage);
@@ -395,7 +398,10 @@ class OfflineMacroCalculator {
   static Map<String, dynamic> calculatePreWorkoutTargets({
     required double weightKg,
     required double hoursBefore,
-    required bool isFasted,
+    // Retained solely because pre-workout-carbs@v2's ratified vectors pin
+    // D-001's zero path; production never passes true (fasted retired,
+    // food-recommendation §7).
+    bool isFasted = false,
     String sweatSodiumCat = 'average',
     String envLabel = 'normal',
     double? workoutDurationMin,
@@ -533,21 +539,24 @@ class OfflineMacroCalculator {
   // ============================================================================
 
   /// Post-workout carbs (mirrors calculatePostWorkoutCarbs).
+  ///
+  /// The fasted 1.2x boost is gone with the fasted product state
+  /// (food-recommendation §7 / D-001, Xuan 2026-09-03).
   static int calculatePostWorkoutCarbs({
     required double weightKg,
     required double durationH,
-    required bool isFasted,
   }) {
     final durationMultiplier = durationH > 2 ? 1.2 : 1.0;
-    final fastedMultiplier = isFasted ? 1.2 : 1.0;
-    return (weightKg * durationMultiplier * fastedMultiplier).round();
+    return (weightKg * durationMultiplier).round();
   }
 
   /// Post-workout protein (mirrors calculatePostWorkoutProtein).
+  ///
+  /// The fasted +0.05 g/kg bump is gone with the fasted product state
+  /// (food-recommendation §7 / D-001, Xuan 2026-09-03).
   static int calculatePostWorkoutProtein({
     required double weightKg,
     required double durationH,
-    required bool isFasted,
   }) {
     double proteinPerKg;
     if (durationH <= 0.75) {
@@ -559,7 +568,6 @@ class OfflineMacroCalculator {
     } else {
       proteinPerKg = 0.40;
     }
-    if (isFasted) proteinPerKg += 0.05;
     return math.min(40, math.max(20, (weightKg * proteinPerKg).round()));
   }
 
@@ -717,7 +725,6 @@ class OfflineMacroCalculator {
     required String gutTraining,
     required int age, // kept for API compatibility (unused)
     required String gender, // kept for API compatibility (unused)
-    bool isFasted = false,
   }) {
     final weightKg = weightUnit.toLowerCase() == 'kg'
         ? weight
@@ -731,7 +738,6 @@ class OfflineMacroCalculator {
       distanceMiles: distanceMiles,
       paceMinPerMile: paceMinPerMile,
       hoursBefore: timeBeforeRunMin / 60.0,
-      isFasted: isFasted,
       gutTraining: gutTraining,
     );
     return {'success': true, 'macros': macros};
@@ -761,7 +767,6 @@ class OfflineMacroCalculator {
     required double distanceMiles,
     required double paceMinPerMile,
     required double hoursBefore,
-    required bool isFasted,
     required String gutTraining,
     String sweatRateCategory = 'medium',
     String sweatSodiumCat = 'average',
@@ -787,7 +792,6 @@ class OfflineMacroCalculator {
       met: met,
       speedKph: speedKph,
       hoursBefore: hoursBefore,
-      isFasted: isFasted,
       gutTraining: gutTraining,
       sweatRateCategory: sweatRateCategory,
       sweatSodiumCat: sweatSodiumCat,
@@ -806,7 +810,6 @@ class OfflineMacroCalculator {
     required double speedMph,
     required String terrain,
     required double hoursBefore,
-    required bool isFasted,
     required String gutTraining,
     String sweatRateCategory = 'medium',
     String sweatSodiumCat = 'average',
@@ -832,7 +835,6 @@ class OfflineMacroCalculator {
       met: met,
       speedKph: speedKph,
       hoursBefore: hoursBefore,
-      isFasted: isFasted,
       gutTraining: gutTraining,
       sweatRateCategory: sweatRateCategory,
       sweatSodiumCat: sweatSodiumCat,
@@ -877,9 +879,7 @@ class OfflineMacroCalculator {
       durationH: durationH,
       met: met,
       speedKph: null,
-      // Swimming doesn't support fasted in the service, always false
       hoursBefore: hoursBefore,
-      isFasted: false,
       gutTraining: 'moderate',
       sweatRateCategory: sweatRateCategory,
       sweatSodiumCat: sweatSodiumCat,
@@ -904,7 +904,6 @@ class OfflineMacroCalculator {
     required double met,
     required double? speedKph,
     required double hoursBefore,
-    required bool isFasted,
     required String gutTraining,
     required String sweatRateCategory,
     required String sweatSodiumCat,
@@ -918,7 +917,6 @@ class OfflineMacroCalculator {
     final pre = calculatePreWorkoutTargets(
       weightKg: weightKg,
       hoursBefore: hoursBefore,
-      isFasted: isFasted,
       sweatSodiumCat: sweatSodiumCat,
       // Lets the carbohydrate plan band claim Thomas 2016's cited [1,4] g/kg
       // when the session is >= 60 min. SSOT: pre-workout-carbs.md v2.
@@ -952,12 +950,10 @@ class OfflineMacroCalculator {
     final postCarbs = calculatePostWorkoutCarbs(
       weightKg: weightKg,
       durationH: durationH,
-      isFasted: isFasted,
     );
     final postProtein = calculatePostWorkoutProtein(
       weightKg: weightKg,
       durationH: durationH,
-      isFasted: isFasted,
     );
     final postFat = calculatePostWorkoutFat(weightKg);
     final postHydration = calculatePostWorkoutHydration(

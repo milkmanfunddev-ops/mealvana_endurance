@@ -85,11 +85,10 @@ Widget _frame(Widget child, {double height = 1180}) => MaterialApp(
 PreWorkoutBeforeCardData _data(
   double t, {
   bool gated = false,
-  bool fasted = false,
   PreWorkoutHydrationCheckRecord? record,
   List<dynamic>? subPhases,
 }) => PreWorkoutBeforeCardAssembler.assemble(
-  preRun: mockPreRun(t: t, gated: gated, fasted: fasted),
+  preRun: mockPreRun(t: t, gated: gated),
   subPhases: subPhases?.cast() ?? mockSubPhases(t),
   timeBeforeWorkoutMin: t,
   bodyWeightKg: kMockBodyWeightKg,
@@ -227,21 +226,15 @@ void main() {
     });
   });
 
-  group('fuel-stat: the three no-number states (F-1) + overshoot (M-2)', () {
+  // F-1 as amended by AMENDMENT A1 (Xuan, 2026-09-03): the fasted golden is
+  // retired with the fasted product state; the gate is the only remaining
+  // no-number state (the real-0g start-line golden lives above).
+  group('fuel-stat: the no-number states (F-1/A1) + overshoot (M-2)', () {
     testWidgets('fuelstat_gated', (tester) async {
       await golden(
         tester,
         _card(_data(180, gated: true)),
         'fuelstat_gated',
-        height: 720,
-      );
-    });
-
-    testWidgets('fuelstat_fasted', (tester) async {
-      await golden(
-        tester,
-        _card(_data(180, fasted: true)),
-        'fuelstat_fasted',
         height: 720,
       );
     });

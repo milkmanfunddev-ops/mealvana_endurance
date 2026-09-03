@@ -49,9 +49,6 @@ class RunningFormState {
   final bool zonePaceApplied;
   final double? zoneSuggestedPace;
 
-  // V3: Fasted workout toggle
-  final bool isFasted;
-
   // V3: Track if user manually changed the pre-run timing
   final bool preRunMinutesManuallySet;
 
@@ -84,7 +81,6 @@ class RunningFormState {
     IntensityDistribution? intensity,
     this.durationPaceMode = DurationPaceMode.byDuration,
     this.estimatedDuration,
-    this.isFasted = false,
     this.preRunMinutesManuallySet = false,
     this.zonePaceApplied = false,
     this.zoneSuggestedPace,
@@ -114,7 +110,6 @@ class RunningFormState {
     IntensityDistribution? intensity,
     DurationPaceMode? durationPaceMode,
     Duration? estimatedDuration,
-    bool? isFasted,
     bool? preRunMinutesManuallySet,
     bool? zonePaceApplied,
     double? zoneSuggestedPace,
@@ -144,7 +139,6 @@ class RunningFormState {
       intensity: intensity ?? this.intensity,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
-      isFasted: isFasted ?? this.isFasted,
       preRunMinutesManuallySet:
           preRunMinutesManuallySet ?? this.preRunMinutesManuallySet,
       zonePaceApplied: zonePaceApplied ?? this.zonePaceApplied,
@@ -469,28 +463,6 @@ class RunningInputController extends _$RunningInputController {
     return diff > 0 ? diff : 0;
   }
 
-  /// V3: Update fasted workout toggle
-  void updateFasted(bool isFasted) {
-    state = state.copyWith(isFasted: isFasted);
-  }
-
-  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
-  ///
-  /// This controller is keepAlive, so form state survives navigation for the
-  /// whole app session. Every other field is re-seeded on screen entry, but
-  /// `isFasted` has no seed source (Activity doesn't persist it) — without
-  /// this reset, a fasted toggle left ON by a previous workout silently sends
-  /// `is_fasted: true` for the next one, and generate-macros-v4 then zeroes
-  /// all pre-workout targets (Adjust Macros shows 0g BEFORE carbs even though
-  /// the user set a fueling window). Mirrors the stale-title reset in
-  /// NewActivityScreen._initializeRunningController and the brick
-  /// controller's `isFasted: false` re-initialization.
-  void resetFasted() {
-    if (state.isFasted) {
-      state = state.copyWith(isFasted: false);
-    }
-  }
-
   void updateGutTraining(GutTraining gutTraining) {
     state = state.copyWith(gutTraining: gutTraining);
   }
@@ -681,7 +653,6 @@ class RunningInputController extends _$RunningInputController {
           sweatRateCat: currentState.sweatRate,
           temperatureC: currentState.temperatureC,
           humidityPct: currentState.humidityPct,
-          isFasted: currentState.isFasted,
           intensity: currentState.intensity,
           activityTitle: currentState.activityTitleManuallySet
               ? currentState.activityTitle

@@ -52,10 +52,10 @@ goldens:
     surface: pre-workout-before-card
     props: { plannedAhead: "3+ hours ahead", targetState: "Gated — no target" }
     notes: FLUIDS "No fluid target for this session", no band/marker; carbs + feedings intact
-  - id: fuelstat_fasted
-    surface: pre-workout-before-card
-    props: { plannedAhead: "3+ hours ahead", targetState: "Fasted session" }
-    notes: CARBS "No carbs this session", no carb band/pair; fluid plan stands
+  # fuelstat_fasted — RETIRED by fuel-stat AMENDMENT A1 (Xuan, 2026-09-03;
+  # food-recommendation@v1 §7/D-001: the fasted state is no longer a product
+  # state, and CARBS · NONE had no other producer). The golden and its PNG
+  # are dropped in the same commit, citing the amendment.
   - id: fuelstat_fluid_overshoot
     component: fuel-stat
     state: FLUIDS delivered above ceiling

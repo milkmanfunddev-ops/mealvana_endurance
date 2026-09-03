@@ -659,7 +659,10 @@ abstract final class PreRunTargetBasis {
   /// The band is a Mealvana design choice (the ±12.5 % solver tolerance).
   static const String designChoice = 'design_choice';
 
-  /// No target is being made at all (gated fluid / fasted carbohydrate).
+  /// No target is being made at all (gated fluid). Historically also the
+  /// retired fasted carbohydrate path (food-recommendation §7 / D-001,
+  /// Xuan 2026-09-03) — a legacy cached plan may still carry it on
+  /// `carbTargetBasis`, where it is now ignored.
   static const String none = 'none';
 }
 
@@ -761,9 +764,10 @@ class PreRunCarbTier {
 /// Pre-run nutrition targets (up to 4 hours before).
 ///
 /// Implements the consumer side of hydration v6 / carbs v2 / sodium v3 — see
-/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. Three states must never be
-/// rendered alike: a real zero, *no target set* ([isHydrationGated]) and
-/// *no recommendation at all* ([isCarbRecommendationAbsent]).
+/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. Two states must never be
+/// rendered alike: a real zero and *no target set* ([isHydrationGated]).
+/// (The third, fasted "no recommendation at all", was retired with the
+/// fasted product state — food-recommendation §7 / D-001, Xuan 2026-09-03.)
 class PreRunMacros {
   const PreRunMacros({
     required this.carbsG,
@@ -832,14 +836,14 @@ class PreRunMacros {
   final String? fluidTargetBasis;
 
   /// Provenance of the carbohydrate band — one of [PreRunTargetBasis].
-  /// [PreRunTargetBasis.none] means the athlete is fasted and no
-  /// recommendation is being made.
+  /// [PreRunTargetBasis.none] only appears on legacy cached fasted plans
+  /// (the fasted state is retired) and is not branched on anywhere.
   final String? carbTargetBasis;
 
   /// Per-feeding fluid split, furthest-out first. Empty on the gate path.
   final List<PreRunFluidTier>? fluidTiers;
 
-  /// Per-feeding carbohydrate split, furthest-out first. Empty when fasted.
+  /// Per-feeding carbohydrate split, furthest-out first.
   final List<PreRunCarbTier>? carbTiers;
 
   /// Urine-colour reading actually used — `pale` | `dark` | `unknown`.
@@ -857,12 +861,6 @@ class PreRunMacros {
 
   /// True when a pre-workout fluid target exists and may be shown.
   bool get hasFluidTarget => !isHydrationGated;
-
-  /// True when no carbohydrate recommendation is being made at all (fasted),
-  /// as opposed to a recommendation of zero grams (no time to eat).
-  bool get isCarbRecommendationAbsent =>
-      carbTargetBasis == PreRunTargetBasis.none ||
-      (carbTiers != null && carbTiers!.isEmpty);
 
   /// Sodium v3: always false for new plans. Only legacy cached plans that
   /// still carry a figure return true.

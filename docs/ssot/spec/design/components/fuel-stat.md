@@ -96,3 +96,16 @@ sum (B-1). This component invents no arithmetic and no threshold.
   side**; the carbs/fluids delivered figures may render teal. `tokens.md`.
 - **Q-D9 — RULED (Xuan, 2026-08-26, option a):** `dragonfruit` is widened to **out-of-range
   caution**; the overshoot marker may render magenta. `tokens.md`.
+
+---
+
+## AMENDMENT A1 — `CARBS · NONE` retired (staged; Xuan, 2026-09-03)
+**Authority:** RULING-DESK 2026-09-03 option 2 (fasted retired; class-c, food-recommendation
+bundle). **Effective at that bundle's implementation — the ratified text above stands until then.**
+- The `CARBS · NONE` row of the mode table **retires** — `isFasted` is its only trigger and the
+  state has no other producer. `No carbs this session` leaves the copy register.
+- **F-1** narrows from three "no number" states to **two**: *"we recommend none"* (real `0g`,
+  carbs † / `[0,0]`) vs *"we're not stating a target"* (the fluid gate). The distinctness rule is
+  unchanged for the remaining pair — a consumer rendering the gate as `0 oz` still fails.
+- Any golden/widget test asserting the fasted stat line retires with the FC goldens, same commit,
+  citing this amendment.

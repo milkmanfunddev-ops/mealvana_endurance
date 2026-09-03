@@ -12,7 +12,12 @@ import 'pre_workout_hydration_check.dart';
 /// Which summary quantity a fuel-stat shows.
 enum FuelQuantity { carbs, fluids, sodium }
 
-/// fuel-stat state model: `mode ∈ { TARGETED, NO_TARGET, NONE }`.
+/// fuel-stat state model: `mode ∈ { TARGETED, NO_TARGET }`.
+///
+/// AMENDMENT A1 (Xuan, 2026-09-03): the fasted `NONE` mode is retired with
+/// the fasted product state (food-recommendation §7 / D-001). "We recommend
+/// none" is a real `0g` TARGETED figure; NO_TARGET (the fluid gate) is the
+/// only remaining no-number state.
 enum FuelStatMode {
   /// A target and (usually) a band exist.
   targeted,
@@ -20,10 +25,6 @@ enum FuelStatMode {
   /// The gate path: `fluidMl: null`, `regime: gated` — "we're not stating a
   /// target". Renders "No fluid target for this session".
   noTarget,
-
-  /// The fasted path: `tiers: []`, `targetBasis: none` — "there is nothing to
-  /// recommend". Renders "No carbs this session".
-  none,
 }
 
 /// One summary quantity with its optional band (fuel-stat v1).
@@ -107,13 +108,11 @@ class FuelStatData {
     }
   }
 
-  /// The no-number line for the two absent modes (F-1).
+  /// The no-number line for the gate mode (F-1 as amended by A1).
   String? get absentLine {
     switch (mode) {
       case FuelStatMode.noTarget:
         return 'No fluid target for this session';
-      case FuelStatMode.none:
-        return 'No carbs this session';
       case FuelStatMode.targeted:
         return null;
     }
@@ -204,9 +203,10 @@ class FeedingCardData {
 
   final List<FeedingFoodRow> rows;
 
-  /// Header DELIVERED carbs (FC-2) — Σ this card's rows; null on the fasted
-  /// path (the card carries no carb figure, FC-4).
-  final int? carbsDelivered;
+  /// Header DELIVERED carbs (FC-2) — Σ this card's rows. Always present:
+  /// feeding-card AMENDMENT A1 (Xuan, 2026-09-03) retired the fasted
+  /// `| none` arm.
+  final int carbsDelivered;
 
   /// The tier's engine fluid in oz (`fluidTiers[].fluidMl`), null when this
   /// tier carries no fluid.

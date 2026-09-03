@@ -1,0 +1,91 @@
+# Design conformance — formula-pin surface (plan-detail banner + rows,
+# library, detail, authoring)
+#
+# Written at implementation of food-recommendation@v1 from the ratified FP-
+# rows of spec/design/components/formula-pin-surface.md (RATIFIED Xuan,
+# 2026-09-03; conflict-label system FP-4a/4b, detail emphasis FP-7, save-time
+# disclosure FP-8). Policy authority: food-recommendation.md §1/§1a (labeled
+# override — disclose, never block). Wire authority: pin_decision.
+#
+# FP-9 (Coach insight) is OUT of this bundle by manifest exclusion —
+# conformance never checks it and no golden may contain it.
+#
+# A golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass. Regeneration commits cite the spec change.
+
+manifest: formula-pin-surface
+version: v1
+status: ratified            # spec RATIFIED Xuan 2026-09-03; manifest written at implementation
+spec_family: spec/design/
+spec: spec/design/components/formula-pin-surface.md
+suite: test/features/formula_kit/formula_pin_surface_conformance_test.dart
+
+contracts:
+  - id: FP-2
+    check: >
+      Expanded banner rows derive strictly from the pin_decision wire — one
+      row per scope; an EPHEMERAL default-formula decision renders NO pin row
+      (the F-31 guard), except the audit-hardened skipped-formulas carve-out.
+      # NEGATIVE TEST — required (ephemeral row absence)
+  - id: FP-4a
+    check: >
+      Pinning a conflicting formula shows the INLINE in-card warning at the
+      decision moment — never a modal. Allergy: the full warning naming the
+      allergen ("This formula contains gluten, which you've listed as an
+      allergy. Pinning it means Mealvana will always include it.") with two
+      actions, "Choose another" as the FILLED primary and "Pin anyway" as the
+      outline (R-01 option 1). Diet: the softer one-line note ("Doesn't match
+      your keto preference."), no interrupting action pair (R-02 option 1).
+  - id: FP-4b
+    check: >
+      An honored conflicting pin carries the persistent COLLAPSIBLE label in
+      dragonfruit — collapsed "Pinned despite your gluten allergy"; expanded
+      adds the policy sentence ("Pins always win: this formula stays in your
+      plans even though it conflicts with the profile you added later.") +
+      Keep pin / Unpin; the pin glyph carries a conflict dot. Never
+      auto-unpinned when allergies change after the pin.
+  - id: FP-7
+    check: >
+      Formula detail DIETARY section renders allergen + diet chips in human
+      copy (no machine strings), with the S-04 emphasis rule — an allergen the
+      athlete HAS renders personalized and emphasized ("Contains gluten — your
+      allergy", dragonfruit); one they do NOT have renders neutral ("Contains
+      peanut"); diet exclusions render neutral ("Not Keto").
+  - id: FP-8
+    check: >
+      New-formula authoring: a component conflicting with the profile renders
+      the save-time disclosure above Save — allergy: the full note naming the
+      food and allergen, ending "You can still save — Mealvana will always
+      include your own formulas."; diet: the softer one-liner. Save is NEVER
+      disabled (disclose-never-block, §1a).  # includes the negative half:
+      # Save stays enabled with a conflict present
+
+goldens:
+  - id: fp_banner_collapsed_mixed
+    surface: formula-pin-surface
+    notes: collapsed banner, "Some pins honored, some skipped" state (FP-1)
+  - id: fp_banner_collapsed_none_applied
+    surface: formula-pin-surface
+    notes: collapsed banner, "Pin didn't apply to this workout" state (FP-1)
+  - id: fp_banner_collapsed_invitation
+    surface: formula-pin-surface
+    notes: collapsed banner, "Pin formulas you love" invitation state (FP-1)
+  - id: fp_banner_expanded_rows
+    surface: formula-pin-surface
+    notes: expanded row set — ✓ honored rows + ⓘ "No pin found" + CTA (FP-2)
+  - id: fp_conflict_label_collapsed
+    surface: formula-pin-surface
+    notes: FP-4b collapsed dragonfruit label on an honored conflicting pin
+
+not_covered:
+  - FP-1/FP-3 copy defect ("M skipped" counts scopes without a pin) — Q-FP1
+    stays open, copy-only, non-blocking; the goldens bless the CURRENT
+    ratified copy.
+  - FP-5/FP-6 (library screen renders live catalog; v2 prototype caution) —
+    asserted by the existing formula_kit suites; this manifest adds no second
+    copy of them.
+  - FP-9 Coach insight — manifest exclusion; MUST stay out of every golden.
+
+done_when: every contract row above has a test executing the real
+  wire-derivation/controller path, the goldens exist, and the suite runs
+  green via qa/conformance/run_dart.sh formula-pin-surface (mirror-checked).

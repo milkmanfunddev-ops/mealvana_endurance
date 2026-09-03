@@ -515,7 +515,6 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     String? activityTitle,
     String? activityId, // Link to calendar activity/event
@@ -545,8 +544,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         sweatRateCat: sweatRateCat,
         temperatureC: temperatureC,
         humidityPct: humidityPct,
-        isFasted: isFasted,
-        intensity: intensity,
+          intensity: intensity,
         activityTitle: activityTitle,
         activityId: activityId,
         eventId: eventId,
@@ -639,8 +637,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             paceTargetMinutesPerMile: paceMinutes,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeRunMinutes,
-            isFasted: isFasted,
-            notes: 'Draft activity - nutrition plan being generated',
+              notes: 'Draft activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -666,8 +663,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 durationMinutes: estimatedDurationMinutes,
                 paceTargetMinutesPerMile: paceMinutes,
                 timeBeforeMinutes: timeBeforeRunMinutes,
-                isFasted: isFasted,
-                // Keep whatever the user wrote. The "Draft activity…" note
+                      // Keep whatever the user wrote. The "Draft activity…" note
                 // belongs to the create branch, where the row really is a
                 // placeholder; stamping it on an update overwrites real notes
                 // every time the plan is regenerated.
@@ -702,7 +698,6 @@ class MacroTargetsController extends _$MacroTargetsController {
           sweatRateCat: sweatRateCat,
           temperatureC: temperatureC,
           humidityPct: humidityPct,
-          isFasted: isFasted,
           intensity: intensity,
           overrides: overrides,
         );
@@ -776,7 +771,6 @@ class MacroTargetsController extends _$MacroTargetsController {
     required TimeOfDay scheduledTime,
     required double temperatureC,
     required double humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     String? activityTitle,
     String? activityId,
@@ -876,8 +870,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             intensityTarget: intensityTarget,
             intensityLevel: domain.IntensityLevel.moderate,
             timeBeforeMinutes: timeBeforeMinutes,
-            isFasted: isFasted,
-            notes: 'Draft cycling activity - nutrition plan being generated',
+              notes: 'Draft cycling activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -910,8 +903,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 cyclingSessionGoal: sessionGoal,
                 intensityTarget: intensityTarget,
                 timeBeforeMinutes: timeBeforeMinutes,
-                isFasted: isFasted,
-                // See the running branch: never clobber user notes on update.
+                      // See the running branch: never clobber user notes on update.
                 notes: existingActivity.notes,
               ),
             );
@@ -946,7 +938,6 @@ class MacroTargetsController extends _$MacroTargetsController {
           sessionGoal: sessionGoal,
           temperatureC: temperatureC,
           humidityPct: humidityPct,
-          isFasted: isFasted,
           intensity: intensity,
           overrides: overrides,
         );
@@ -1020,7 +1011,6 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     String? activityTitle,
     String? activityId,
@@ -1041,7 +1031,6 @@ class MacroTargetsController extends _$MacroTargetsController {
       sweatRateCat: sweatRateCat,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
-      isFasted: isFasted,
       intensity: intensity,
       activityTitle: activityTitle,
       activityId: activityId,
@@ -1289,7 +1278,6 @@ class MacroTargetsController extends _$MacroTargetsController {
     required List<String> segmentOrder,
     required DateTime scheduledDate,
     required TimeOfDay scheduledTime,
-    required bool isFasted,
     required int preActivityMinutes,
     String? activityTitle,
     String? activityId,
@@ -1399,8 +1387,7 @@ class MacroTargetsController extends _$MacroTargetsController {
             durationMinutes: totalDurationMinutes,
             brickMetadata: brickMetadata,
             timeBeforeMinutes: preActivityMinutes,
-            isFasted: isFasted,
-            notes: 'Draft brick activity - nutrition plan being generated',
+              notes: 'Draft brick activity - nutrition plan being generated',
             status: domain.ActivityStatus.draft,
           );
           finalActivityId = createdActivity.id;
@@ -1450,8 +1437,7 @@ class MacroTargetsController extends _$MacroTargetsController {
                 brickMetadata: preservedMetadata,
                 durationMinutes: totalDurationMinutes,
                 timeBeforeMinutes: preActivityMinutes,
-                isFasted: isFasted,
-                // See the running branch: never clobber user notes on update.
+                      // See the running branch: never clobber user notes on update.
                 notes: existingActivity.notes,
               ),
             );
@@ -1483,7 +1469,6 @@ class MacroTargetsController extends _$MacroTargetsController {
           deviceId: deviceId,
           segments: segments,
           segmentOrder: segmentOrder,
-          isFasted: isFasted,
           preActivityMinutes: preActivityMinutes,
           overrides: overrides,
         );

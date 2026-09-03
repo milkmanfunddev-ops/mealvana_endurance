@@ -14,10 +14,13 @@
 /// Three instances compose the BEFORE summary row (surface
 /// `pre-workout-before-card.md` v1).
 ///
-/// Contracts held here:
-/// * **F-1** — the three no-number states are three different trees: a real
-///   `0g` (band suppressed), "No fluid target for this session" (gate) and
-///   "No carbs this session" (fasted).
+/// Contracts held here (as amended by **AMENDMENT A1**, Xuan 2026-09-03 —
+/// the fasted product state is retired, food-recommendation §7 / D-001):
+/// * **F-1 (A1)** — two distinct "no number" states, not three: a real `0g`
+///   TARGETED figure ("we recommend none", band suppressed) and "No fluid
+///   target for this session" (the gate — "we're not stating a target").
+///   The fasted `CARBS · NONE` row and its "No carbs this session" copy are
+///   retired; the distinctness rule is unchanged for the remaining pair.
 /// * **F-2** — sodium has no band, ever.
 /// * **M-1** — two markers: the *delivered* diamond (moves with food rows)
 ///   and the *suggested* triangle (moves only with the engine target).

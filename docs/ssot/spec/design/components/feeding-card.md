@@ -87,3 +87,17 @@ renders in `electrolyte` — permitted by **Q-D8 (RULED Xuan 2026-08-26, option 
   a row changes delivered only, aim unchanged, emission fires); FC-6 hydration-check row present on
   ≥ 2 h SNACK, absent otherwise.
 - **A golden may only be regenerated after this spec changes** — never to make a red test pass.
+
+---
+
+## AMENDMENT A1 — fasted path retired (staged; Xuan, 2026-09-03)
+**Authority:** RULING-DESK 2026-09-03 option 2 on `intake/2026-08-31-fasted-food-suppression-mechanism.md`
+(fasted is no longer a product state; class-c change staged in the food-recommendation bundle).
+**Effective at that bundle's implementation — the ratified text above stands until then.**
+- Inputs: `carbs` loses the `| none` arm and its comment "none on the fasted path" — carbs is
+  always `{ delivered, aim }`. (The zero-carb case remains FC-4's *targeted* `[0,0]` — carbs † —
+  not a `none`.)
+- **FC-4** drops its second sentence ("On the **fasted** path …"); the zero-carb-with-fluid
+  rendering rule is unchanged.
+- Conformance golden list: "a fasted card (no carb figure)" **retires**; the app's mirror and the
+  design manifest drop that golden in the same commit, message citing this amendment.

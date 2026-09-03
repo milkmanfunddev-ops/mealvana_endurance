@@ -249,7 +249,6 @@ void main() {
             distanceMiles: distanceMiles,
             paceMinPerMile: 10,
             hoursBefore: 3,
-            isFasted: false,
             gutTraining: 'moderate',
           );
 
@@ -266,7 +265,6 @@ void main() {
             map,
             weightKg: 63,
             hoursBefore: 3,
-            isFasted: false,
             tempC: 22,
           );
           expect(overlaid['pre_run_water_ml'], isNull);
@@ -295,7 +293,6 @@ void main() {
           map,
           weightKg: 63,
           hoursBefore: 3,
-          isFasted: false,
           tempC: 22,
         );
         expect(overlaid['pre_run_water_ml'], closeTo(7.5 * 63, 1e-6));
@@ -314,7 +311,6 @@ void main() {
           legacy(distanceMiles: 9),
           weightKg: 63,
           hoursBefore: 3,
-          isFasted: false,
           tempC: 22,
           hydrationCheck: HydrationCheck.dark,
         );
