@@ -48,6 +48,11 @@ class CyclingFormState {
   // Unit system preference (imperial = °F, metric = °C)
   final UnitSystem unitSystem;
 
+  // CF-7 (RULED 2026-09-03): a manual step on a forecast-filled value makes
+  // it the athlete's — the AUTO badge drops until the next forecast refresh.
+  final bool temperatureManuallySet;
+  final bool humidityManuallySet;
+
   // Weather integration fields
   final weather_domain.Location? location;
   final WeatherForecast? weatherForecast;
@@ -81,6 +86,8 @@ class CyclingFormState {
     this.estimatedDuration,
     this.preRideMinutesManuallySet = false,
     this.unitSystem = UnitSystem.imperial,
+    this.temperatureManuallySet = false,
+    this.humidityManuallySet = false,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -118,6 +125,8 @@ class CyclingFormState {
     Duration? estimatedDuration,
     bool? preRideMinutesManuallySet,
     UnitSystem? unitSystem,
+    bool? temperatureManuallySet,
+    bool? humidityManuallySet,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -150,6 +159,9 @@ class CyclingFormState {
       preRideMinutesManuallySet:
           preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
       unitSystem: unitSystem ?? this.unitSystem,
+      temperatureManuallySet:
+          temperatureManuallySet ?? this.temperatureManuallySet,
+      humidityManuallySet: humidityManuallySet ?? this.humidityManuallySet,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -346,8 +358,10 @@ class CyclingInputController extends _$CyclingInputController {
   void updatePreRideMinutes(int minutes) {
     // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
     // carry persisted lead times up to 480 (see FuelingWindowLimits).
+    final cap = fuelingWindowMaxMinutes();
+    final capped = minutes < cap ? minutes : cap;
     state = state.copyWith(
-      preRideMinutes: clampFuelingWindowMinutes(minutes),
+      preRideMinutes: clampFuelingWindowMinutes(capped),
       preRideMinutesManuallySet: true,
     );
   }
@@ -379,6 +393,21 @@ class CyclingInputController extends _$CyclingInputController {
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     final diff = scheduled.difference(now).inMinutes;
     return diff > 0 ? diff : 0;
+  }
+
+  /// CF-1: the stepper's MAXIMUM is the ruled clamp —
+  /// min(table cap 240, time-until-start), floor 15 (food-recommendation §3).
+  int fuelingWindowMaxMinutes() {
+    final untilStart = _minutesUntil(
+      DateTime.now(),
+      state.selectedDate,
+      state.selectedTime,
+    );
+    final floored =
+        untilStart > kFuelingWindowFloorMin ? untilStart : kFuelingWindowFloorMin;
+    return floored < FuelingWindowLimits.maxMinutes
+        ? floored
+        : FuelingWindowLimits.maxMinutes;
   }
 
   void updateIntensityTarget(String intensityTarget) {
@@ -428,11 +457,15 @@ class CyclingInputController extends _$CyclingInputController {
   }
 
   void updateTemperature(double temperatureC) {
-    state = state.copyWith(temperatureC: temperatureC);
+    // CF-7: a manual step makes the value the athlete's — AUTO badge drops.
+    state = state.copyWith(
+      temperatureC: temperatureC,
+      temperatureManuallySet: true,
+    );
   }
 
   void updateHumidity(double humidityPct) {
-    state = state.copyWith(humidityPct: humidityPct);
+    state = state.copyWith(humidityPct: humidityPct, humidityManuallySet: true);
   }
 
   void updateWindCondition(String windCondition) {
@@ -614,6 +647,9 @@ class CyclingInputController extends _$CyclingInputController {
           weatherForecast: forecast,
           temperatureC: forecast.temperatureC,
           humidityPct: forecast.humidityPct.toDouble(),
+          // CF-7: a refresh restores the AUTO badge on both values.
+          temperatureManuallySet: false,
+          humidityManuallySet: false,
           isLoadingWeather: false,
           locationFailureReason: null,
         );

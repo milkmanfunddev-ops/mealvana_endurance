@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
-import '../../../domain/fueling_window_limits.dart';
-import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../providers/cycling_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../theme/kyle_design/app_text_styles.dart';
@@ -14,6 +12,7 @@ import '../../../../../shared/domain/activity_type.dart';
 
 import '../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import 'shared/environment_section.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/fueling/fueling_window_control.dart';
 
 /// Cycling Tab Content
 ///
@@ -82,15 +81,14 @@ class CyclingTabContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xl),
 
         // Time before Ride
-        KylePlusMinusControl(
+        // CF-1/CF-2/CF-5: the shared design-SSOT stepper (hours/min label,
+        // sport-dynamic header, max = the ruled clamp).
+        FuelingWindowControl(
           key: const ValueKey('activity_create.fueling_window_control'),
           label: 'Pre-Ride Fueling Window',
-          value: formState.preRideMinutes,
+          minutes: formState.preRideMinutes,
+          maxMinutes: controller.fuelingWindowMaxMinutes(),
           onChanged: controller.updatePreRideMinutes,
-          min: FuelingWindowLimits.minMinutes,
-          max: FuelingWindowLimits.maxMinutes,
-          step: FuelingWindowLimits.stepMinutes,
-          unit: 'minutes',
         ),
 
         const SizedBox(height: AppSpacing.xl),
@@ -117,8 +115,11 @@ class CyclingTabContent extends ConsumerWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // Collapsible Environment Section
-        EnvironmentSection(
+        // Collapsible Environment Section — CF-8 (RULED 2026-09-03):
+        // INDOOR hides the TEMPERATURE/HUMIDITY block entirely; switching
+        // back restores it with prior values (state is untouched).
+        if (!isIndoor)
+          EnvironmentSection(
           isExpanded: formState.showEnvironment,
           onToggle: controller.toggleEnvironmentSection,
           temperatureC: formState.temperatureC,
@@ -136,6 +137,9 @@ class CyclingTabContent extends ConsumerWidget {
           onFetchWeather: controller.fetchWeatherForecast,
           weatherSource: formState.weatherForecast?.source,
           hasAttemptedWeatherFetch: formState.hasAttemptedWeatherFetch,
+          // CF-7: manual step drops the AUTO badge until the next refresh.
+          valuesManuallyAdjusted: formState.temperatureManuallySet ||
+              formState.humidityManuallySet,
           locationFailureReason: formState.locationFailureReason,
           onRequestPermission: controller.requestLocationPermissionAndFetch,
           onOpenSettings: controller.openLocationSettings,

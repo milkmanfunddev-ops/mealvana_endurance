@@ -339,8 +339,10 @@ class SwimmingInputController extends _$SwimmingInputController {
   void updatePreSwimMinutes(int minutes) {
     // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
     // carry persisted lead times up to 480 (see FuelingWindowLimits).
+    final cap = fuelingWindowMaxMinutes();
+    final capped = minutes < cap ? minutes : cap;
     state = state.copyWith(
-      preSwimMinutes: clampFuelingWindowMinutes(minutes),
+      preSwimMinutes: clampFuelingWindowMinutes(capped),
       preSwimMinutesManuallySet: true,
     );
   }
@@ -372,6 +374,21 @@ class SwimmingInputController extends _$SwimmingInputController {
         DateTime(date.year, date.month, date.day, time.hour, time.minute);
     final diff = scheduled.difference(now).inMinutes;
     return diff > 0 ? diff : 0;
+  }
+
+  /// CF-1: the stepper's MAXIMUM is the ruled clamp —
+  /// min(table cap 240, time-until-start), floor 15 (food-recommendation §3).
+  int fuelingWindowMaxMinutes() {
+    final untilStart = _minutesUntil(
+      DateTime.now(),
+      state.selectedDate,
+      state.selectedTime,
+    );
+    final floored =
+        untilStart > kFuelingWindowFloorMin ? untilStart : kFuelingWindowFloorMin;
+    return floored < FuelingWindowLimits.maxMinutes
+        ? floored
+        : FuelingWindowLimits.maxMinutes;
   }
 
   void updateIntensityTarget(String intensityTarget) {

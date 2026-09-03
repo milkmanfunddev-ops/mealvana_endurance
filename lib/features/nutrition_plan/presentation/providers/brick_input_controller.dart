@@ -462,10 +462,27 @@ class BrickInputController extends _$BrickInputController {
   void updatePreActivityMinutes(int minutes) {
     // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
     // carry persisted lead times up to 480 (see FuelingWindowLimits).
+    final cap = fuelingWindowMaxMinutes();
+    final capped = minutes < cap ? minutes : cap;
     state = state.copyWith(
-      preActivityMinutes: clampFuelingWindowMinutes(minutes),
+      preActivityMinutes: clampFuelingWindowMinutes(capped),
       preActivityMinutesManuallySet: true,
     );
+  }
+
+  /// CF-1: the stepper's MAXIMUM is the ruled clamp —
+  /// min(table cap 240, time-until-start), floor 15 (food-recommendation §3).
+  int fuelingWindowMaxMinutes() {
+    final untilStart = _minutesUntil(
+      DateTime.now(),
+      state.selectedDate,
+      state.selectedTime,
+    );
+    final floored =
+        untilStart > kFuelingWindowFloorMin ? untilStart : kFuelingWindowFloorMin;
+    return floored < FuelingWindowLimits.maxMinutes
+        ? floored
+        : FuelingWindowLimits.maxMinutes;
   }
 
   /// Update intensity distribution for the leg at [index]

@@ -24,10 +24,18 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/provider
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/providers/brick_input_controller.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 
+import 'package:flutter/material.dart';
+
 import '../../../../helpers/widget_test_harness.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  // CF-1 (create-flow-fueling-controls, RATIFIED 2026-09-03): the manual
+  // setters now also cap at min(240, time-until-start). The D-016 assertions
+  // below move the schedule a week out first so only the 240 table cap binds.
+  final farOut = DateTime.now().add(const Duration(days: 7));
+  const morning = TimeOfDay(hour: 7, minute: 0);
 
   ProviderContainer makeContainer() {
     final container = ProviderContainer(
@@ -62,6 +70,7 @@ void main() {
     test('RunningInputController', () {
       final container = makeContainer();
       final notifier = container.read(runningInputControllerProvider.notifier);
+      notifier.updateDateTime(farOut, morning);
 
       // Simulates NewActivityScreen prefilling from an activity saved with
       // the old 480-minute ceiling.
@@ -72,6 +81,7 @@ void main() {
     test('CyclingInputController', () {
       final container = makeContainer();
       final notifier = container.read(cyclingInputControllerProvider.notifier);
+      notifier.updateDateTime(farOut, morning);
 
       notifier.updatePreRideMinutes(480);
       expect(
@@ -83,6 +93,7 @@ void main() {
     test('SwimmingInputController', () {
       final container = makeContainer();
       final notifier = container.read(swimmingInputControllerProvider.notifier);
+      notifier.updateDateTime(farOut, morning);
 
       notifier.updatePreSwimMinutes(480);
       expect(
@@ -94,6 +105,7 @@ void main() {
     test('BrickInputController', () {
       final container = makeContainer();
       final notifier = container.read(brickInputControllerProvider.notifier);
+      notifier.updateDateTime(farOut, morning);
 
       notifier.updatePreActivityMinutes(480);
       expect(
@@ -108,6 +120,7 @@ void main() {
       final container = makeContainer();
       final notifier = container.read(runningInputControllerProvider.notifier);
 
+      notifier.updateDateTime(farOut, morning);
       notifier.updatePreRunMinutes(240);
       // The stepper disables + at 240; even if a raw +15 slips through, the
       // controller must not leave the ratified domain.
@@ -119,6 +132,7 @@ void main() {
       final container = makeContainer();
       final notifier = container.read(brickInputControllerProvider.notifier);
 
+      notifier.updateDateTime(farOut, morning);
       notifier.updatePreActivityMinutes(240);
       notifier.updatePreActivityMinutes(240 + FuelingWindowLimits.stepMinutes);
       expect(
@@ -131,11 +145,42 @@ void main() {
       final container = makeContainer();
       final notifier = container.read(runningInputControllerProvider.notifier);
 
+      notifier.updateDateTime(farOut, morning);
       notifier.updatePreRunMinutes(0);
       expect(container.read(runningInputControllerProvider).preRunMinutes, 0);
 
       notifier.updatePreRunMinutes(135);
       expect(container.read(runningInputControllerProvider).preRunMinutes, 135);
+    });
+  });
+
+  group('CF-1 — time-until-start caps the manual setter (ruled clamp)', () {
+    test('a short-notice schedule makes values above the gap unreachable', () {
+      final container = makeContainer();
+      final notifier = container.read(runningInputControllerProvider.notifier);
+
+      // Session ~60 min from now: the clamp is min(240, ~60) — a manual 240
+      // lands at the real ceiling, never a window implying a past feeding.
+      final start = DateTime.now().add(const Duration(minutes: 60));
+      notifier.updateDateTime(
+        start,
+        TimeOfDay(hour: start.hour, minute: start.minute),
+      );
+      notifier.updatePreRunMinutes(240);
+      final v = container.read(runningInputControllerProvider).preRunMinutes;
+      expect(v, lessThanOrEqualTo(60));
+      expect(v, greaterThanOrEqualTo(15)); // clamp floor
+    });
+
+    test('fuelingWindowMaxMinutes floors at 15 for an imminent start', () {
+      final container = makeContainer();
+      final notifier = container.read(runningInputControllerProvider.notifier);
+      final start = DateTime.now().add(const Duration(minutes: 5));
+      notifier.updateDateTime(
+        start,
+        TimeOfDay(hour: start.hour, minute: start.minute),
+      );
+      expect(notifier.fuelingWindowMaxMinutes(), 15);
     });
   });
 }

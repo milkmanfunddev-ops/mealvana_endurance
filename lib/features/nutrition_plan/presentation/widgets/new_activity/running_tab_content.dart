@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
-import '../../../domain/fueling_window_limits.dart';
+import '../../../../../shared/widgets/kyle_design/fueling/fueling_window_control.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../providers/running_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
@@ -15,6 +14,7 @@ import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
 import 'shared/activity_name_field.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
+import '../../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 /// Running Tab Content
 ///
@@ -57,7 +57,7 @@ class RunningTabContent extends ConsumerWidget {
     final canOpenForecast = isAutoFilled;
     final forecastActionLabel = formState.isLoadingWeather
         ? 'Loading...'
-        : (canOpenForecast ? 'View Forecast' : 'Get Forecast');
+        : 'View Forecast'; // CF-5 (RULED 2026-09-03): supersedes 'Get Forecast'
 
     Widget buildAutoBadge() {
       return Container(
@@ -106,6 +106,18 @@ class RunningTabContent extends ConsumerWidget {
           onModeChanged: controller.updateDurationPaceMode,
           onPaceChanged: controller.updatePace,
           onDurationChanged: controller.updateDuration,
+          // CF-6 (RULED 2026-09-03): the derived side wears EST.; the usual
+          // pace surfaces as a chip (zone suggestion when available, else
+          // the ruled 9:00 /mi fallback — closes the F-27 4:30/mi class).
+          derivedEstimateLabel:
+              formState.durationPaceMode == DurationPaceMode.byDuration
+                  ? _formatPaceLabel(
+                      formState.paceMinutes,
+                      formState.paceUnit,
+                    )
+                  : _formatDurationLabel(formState.estimatedDuration),
+          usualPaceChipLabel:
+              'your usual · ${_formatPaceLabel(formState.zoneSuggestedPace ?? 9.0, formState.paceUnit)}',
           enabled: true,
         ),
 
@@ -162,8 +174,12 @@ class RunningTabContent extends ConsumerWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _TimeBeforeRunControl(
-              value: formState.preRunMinutes,
+            // CF-1/CF-2: the shared design-SSOT stepper — §3a default from
+            // the controller, max = the ruled clamp.
+            FuelingWindowControl(
+              label: 'Pre-Run Fueling Window',
+              minutes: formState.preRunMinutes,
+              maxMinutes: controller.fuelingWindowMaxMinutes(),
               onChanged: controller.updatePreRunMinutes,
             ),
           ],
@@ -194,7 +210,8 @@ class RunningTabContent extends ConsumerWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (isAutoFilled) ...[
+                    // CF-7: manual step drops the badge; refresh restores it.
+                    if (isAutoFilled && !formState.temperatureManuallySet) ...[
                       const SizedBox(width: 8),
                       buildAutoBadge(),
                     ],
@@ -485,7 +502,8 @@ class RunningTabContent extends ConsumerWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                if (isAutoFilled) ...[
+                // CF-7: manual step drops the badge; refresh restores it.
+                if (isAutoFilled && !formState.humidityManuallySet) ...[
                   const SizedBox(width: 8),
                   buildAutoBadge(),
                 ],
@@ -512,135 +530,19 @@ class RunningTabContent extends ConsumerWidget {
 }
 
 /// Control button for plus/minus controls (copied from kyle_design for consistency)
-class _ControlButton extends StatelessWidget {
-  const _ControlButton({
-    super.key,
-    required this.icon,
-    required this.onPressed,
-    required this.enabled,
-  });
 
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final bool enabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final enabledIconColor = isDark ? AppColors.cream : AppColors.orange;
-    final disabledIconColor = enabledIconColor.withValues(alpha: 0.4);
-
-    return SizedBox(
-      width: AppSizes.controlSize,
-      height: AppSizes.controlSize,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          foregroundColor: enabled
-              ? Colors.orange
-              : Colors.orange.withValues(alpha: 0.4),
-          disabledBackgroundColor: Colors.transparent,
-          disabledForegroundColor: Colors.orange.withValues(alpha: 0.4),
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          side: BorderSide(
-            color: enabled
-                ? Colors.orange
-                : Colors.orange.withValues(alpha: 0.4),
-            width: 2,
-          ),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.circularRadius),
-          padding: EdgeInsets.zero,
-        ),
-        child: Icon(
-          icon,
-          size: AppIconSizes.controlIcon,
-          color: enabled ? enabledIconColor : disabledIconColor,
-        ),
-      ),
-    );
-  }
+/// CF-6 label helpers — pace as `M:SS /unit`, duration as `H HR M MIN`.
+String _formatPaceLabel(double paceMinutes, PaceUnit unit) {
+  final mins = paceMinutes.floor();
+  final secs = ((paceMinutes - mins) * 60).round();
+  final unitLabel = unit == PaceUnit.minPerKm ? '/km' : '/mi';
+  return '$mins:${secs.toString().padLeft(2, '0')} $unitLabel';
 }
 
-/// Custom time before run control that formats as hours
-class _TimeBeforeRunControl extends StatelessWidget {
-  const _TimeBeforeRunControl({required this.value, required this.onChanged});
-
-  final int value;
-  final ValueChanged<int> onChanged;
-
-  String _formatTime(int minutes) {
-    if (minutes == 0) return '0 MINUTES';
-    if (minutes < 60) return '$minutes MINUTES';
-
-    final hours = minutes ~/ 60;
-    final remainingMinutes = minutes % 60;
-
-    if (remainingMinutes == 0) {
-      // Exactly on the hour - show as optimal
-      return '$hours ${hours == 1 ? 'HOUR' : 'HOURS'}';
-    } else {
-      // Show both hours and minutes
-      return '$hours ${hours == 1 ? 'HOUR' : 'HOURS'} $remainingMinutes MIN';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final canIncrement =
-        value + FuelingWindowLimits.stepMinutes <=
-        FuelingWindowLimits.maxMinutes;
-    final canDecrement =
-        value - FuelingWindowLimits.stepMinutes >=
-        FuelingWindowLimits.minMinutes;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Pre-Run Fueling Window',
-          style: AppTextStyles.descriptor.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Minus button
-            _ControlButton(
-              key: const ValueKey('activity_create.fueling_window_minus'),
-              icon: FontAwesomeIcons.minus.data,
-              onPressed: canDecrement ? () => onChanged(value - 15) : null,
-              enabled: canDecrement,
-            ),
-            const SizedBox(width: AppSpacing.xl),
-            // Value display
-            Expanded(
-              child: Text(
-                key: const ValueKey('activity_create.fueling_window_value'),
-                _formatTime(value),
-                style: AppTextStyles.dataNumber.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xl),
-            // Plus button
-            _ControlButton(
-              key: const ValueKey('activity_create.fueling_window_plus'),
-              icon: FontAwesomeIcons.plus.data,
-              onPressed: canIncrement ? () => onChanged(value + 15) : null,
-              enabled: canIncrement,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+String? _formatDurationLabel(Duration? d) {
+  if (d == null) return null;
+  final h = d.inHours;
+  final m = d.inMinutes.remainder(60);
+  if (h == 0) return '$m MIN';
+  return '$h HR $m MIN';
 }

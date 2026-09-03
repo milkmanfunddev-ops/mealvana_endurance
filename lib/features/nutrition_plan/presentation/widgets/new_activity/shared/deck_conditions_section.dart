@@ -72,7 +72,7 @@ class DeckConditionsSection extends StatelessWidget {
         locationFailureReason == LocationFailureReason.permissionDeniedForever;
     final forecastActionLabel = isLoadingWeather
         ? 'Loading forecast...'
-        : (isAutoFilled ? 'Refetch Forecast' : 'Get Forecast');
+        : 'View Forecast'; // CF-5 (RULED 2026-09-03): supersedes 'Get Forecast'
 
     Widget buildAutoBadge() {
       return Container(

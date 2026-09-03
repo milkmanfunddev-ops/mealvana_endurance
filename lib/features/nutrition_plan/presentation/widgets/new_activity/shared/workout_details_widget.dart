@@ -45,6 +45,8 @@ class WorkoutDetailsWidget extends StatelessWidget {
     required this.onPaceChanged,
     this.onDurationChanged,
     this.enabled = true,
+    this.derivedEstimateLabel,
+    this.usualPaceChipLabel,
   });
 
   static Duration _paceMinutesToDuration(double paceMinutes) {
@@ -64,6 +66,15 @@ class WorkoutDetailsWidget extends StatelessWidget {
   final ValueChanged<double> onPaceChanged;
   final ValueChanged<Duration>? onDurationChanged;
   final bool enabled;
+
+  /// CF-6 (RULED 2026-09-03): pace ⇄ duration are bidirectionally linked and
+  /// the DERIVED side wears the EST. badge — e.g. `9:00 /mi` while editing
+  /// duration, `1 HR 48 MIN` while editing pace. Null hides the line.
+  final String? derivedEstimateLabel;
+
+  /// CF-6: the saved "usual pace" chip (`your usual · 9:00 /mi`); the value
+  /// falls back to the ruled sport default when no usual pace is saved.
+  final String? usualPaceChipLabel;
 
   String get _secondaryFieldLabel {
     if (mode == DurationPaceMode.byDuration) {
@@ -178,6 +189,79 @@ class WorkoutDetailsWidget extends StatelessWidget {
             enabled: enabled,
             onChanged: onPaceChanged,
           ),
+
+        // CF-6: the derived side of the pace ⇄ duration link + the usual-pace
+        // chip (closes the F-27 4:30/mi class: the default is visible and
+        // honest, never an invisible absurd pace).
+        if (derivedEstimateLabel != null || usualPaceChipLabel != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (derivedEstimateLabel != null)
+                Row(
+                  key: const ValueKey('activity_create.est_badge'),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.cream.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: (isDark ? AppColors.cream : AppColors.blackberry)
+                              .withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Text(
+                        'EST.',
+                        style: AppTextStyles.smallLabel.copyWith(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color:
+                              isDark ? AppColors.cream : AppColors.blackberry,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      derivedEstimateLabel!,
+                      style: AppTextStyles.smallLabel.copyWith(
+                        color: (isDark ? AppColors.cream : AppColors.blackberry)
+                            .withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                const SizedBox.shrink(),
+              if (usualPaceChipLabel != null)
+                Container(
+                  key: const ValueKey('activity_create.usual_pace_chip'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.electrolyte.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.electrolyte.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  child: Text(
+                    usualPaceChipLabel!,
+                    style: AppTextStyles.smallLabel.copyWith(
+                      fontSize: 11,
+                      color: isDark ? AppColors.cream : AppColors.blackberry,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ],
     );
   }
