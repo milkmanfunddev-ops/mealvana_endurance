@@ -61,3 +61,11 @@ alter table public.pre_workout_templates
 
 comment on column public.pre_workout_templates.single_food_sufficient is
   'food-recommendation §6(a): a meal-tier feeding has >= 2 components unless this flag licenses the single food. Default false; setting it is a curation act.';
+
+-- Data correction ridden along (verified against the live rows 2026-09-03):
+-- pickle_juice_shot is a LIQUID (70 ml shot) but carried is_liquid = false,
+-- which made the §4.3 carryable-form derivation (supplement AND NOT liquid)
+-- read it as carryable — the exact opposite of the ruled carryable-first
+-- example (W5: capsules outrank the pickle shot when fits are comparable).
+update public.template_foods set is_liquid = true
+  where name = 'pickle_juice_shot' and is_liquid is distinct from true;

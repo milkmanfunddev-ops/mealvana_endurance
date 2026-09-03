@@ -64,3 +64,10 @@ MealTierCheck mealTierCandidateCheck({
   }
   return const MealTierCheck.allowed();
 }
+
+/// §6(e): the solvent session-total constraint binds SELECTION paths only —
+/// a pinned personal formula's composition is the athlete's own and is never
+/// rewritten (pins unchanged; §1a).
+bool solventConstraintApplies(String generationPath) =>
+    generationPath != 'personal_formula' &&
+    generationPath != 'personal_formula_pin';
