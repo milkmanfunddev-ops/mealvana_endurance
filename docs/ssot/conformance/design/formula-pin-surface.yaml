@@ -51,13 +51,15 @@ contracts:
       athlete HAS renders personalized and emphasized ("Contains gluten — your
       allergy", dragonfruit); one they do NOT have renders neutral ("Contains
       peanut"); diet exclusions render neutral ("Not Keto").
-  - id: FP-4c
+  - id: FP-4d
     check: >
-      A personal formula whose components conflict with the profile carries a
-      persistent compact dragonfruit line on its library card (S-04 register)
-      and, when pinned, the FP-4b conflict dot on its glyph — not gated on
-      pinning (personal formulas are standing auto-includes). RULED Xuan
-      on-device 2026-09-03 evening.
+      Personal formulas follow the library-card contract exactly (supersedes
+      FP-4c, whose auto-include premise was false — pins.ts honors personal
+      formulas only when pinned; RULED Xuan 2026-09-03 late): pre-pin allergy
+      conflicts mount the inline FP-4a warning, a pinned conflicting formula
+      carries the FP-4b collapsible label + glyph dot, an UNPINNED formula
+      carries no persistent label (NEGATIVE half). Conflicts evaluate over
+      COMPONENTS (no formula-level allergen columns).
   - id: FP-8
     check: >
       New-formula authoring: a component conflicting with the profile renders
