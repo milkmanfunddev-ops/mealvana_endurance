@@ -14,22 +14,36 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/activities/presentation/providers/activities_controller.dart';
+import 'package:mealvana_endurance/features/auth/application/auth_service.dart'
+    show currentUserProvider;
+import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
+import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
 import 'package:mealvana_endurance/features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
+import 'package:mealvana_endurance/features/meal_logging/data/meal_log_repository.dart';
+import 'package:mealvana_endurance/features/meal_logging/data/saved_meals_repository.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log_source.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
+import 'package:mealvana_endurance/shared/database/app_database.dart'
+    hide Activity;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
+import 'package:mealvana_endurance/shared/services/app_config.dart';
+import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 
 import '../../helpers/widget_test_harness.dart';
 
@@ -117,6 +131,39 @@ class _FixedSelectedDate extends CalendarSelectedDate {
   DateTime build() => _day;
 }
 
+class _MockUserRepository extends Mock implements UserRepository {}
+
+/// Records delete/restore calls so the screen-wiring test can assert the
+/// pills reach the controller without dragging real async into the fake zone.
+class _RecordingMealLogController extends MealLogController {
+  static final deleted = <String>[];
+  static final restored = <String>[];
+
+  @override
+  Future<void> deleteLog(String logId) async {
+    deleted.add(logId);
+  }
+
+  @override
+  Future<void> restoreLog(String logId) async {
+    restored.add(logId);
+  }
+}
+
+UserProfile _userProfile() => UserProfile(
+  id: 'u1',
+  deviceId: 'd1',
+  gender: Gender.male,
+  birthday: DateTime(1985, 3, 20),
+  heightFeet: 5,
+  heightInches: 11,
+  weightPounds: 165,
+  runsWithWaterBottle: false,
+  createdAt: DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+  appVersion: '1.0.0',
+);
+
 /// A run planned — and confirmed done — the day BEFORE the mock day, with
 /// actual_time = planned_time (the mark-done write). It must render on ITS
 /// day, never leak onto the selected one.
@@ -173,7 +220,10 @@ class _SwitchableDailyMacrosController extends DailyMacrosController {
         );
 }
 
-List<Override> _dayOverrides({bool switchableMacros = false}) => [
+List<Override> _dayOverrides({
+  bool switchableMacros = false,
+  Override? mealLogs,
+}) => [
   userIdProvider.overrideWith((ref) async => 'u1'),
   calendarSelectedDateProvider.overrideWith(_FixedSelectedDate.new),
   activitiesControllerProvider.overrideWith(_SeededActivitiesController.new),
@@ -182,7 +232,10 @@ List<Override> _dayOverrides({bool switchableMacros = false}) => [
         ? _SwitchableDailyMacrosController.new
         : _SeededDailyMacrosController.new,
   ),
-  mealLogsForDateProvider.overrideWith((ref, date) => Stream.value([_bagel()])),
+  mealLogs ??
+      mealLogsForDateProvider.overrideWith(
+        (ref, date) => Stream.value([_bagel()]),
+      ),
   consumedTotalsForDateProvider.overrideWith(
     (ref, date) => Stream.value(_consumed),
   ),
@@ -452,4 +505,159 @@ void main() {
       expect(find.text('ACTIVE ENERGY'), findsOneWidget);
     },
   );
+
+  // Bug 2026-09-03: the expanded meal card's action pills were rendered with
+  // null callbacks — dead to the touch. These tests pin the wiring (screen →
+  // controller / editor route) and the delete path through the real notifier.
+
+  testWidgets('Remove pill deletes via the controller and offers Undo', (
+    tester,
+  ) async {
+    _RecordingMealLogController.deleted.clear();
+    _RecordingMealLogController.restored.clear();
+
+    await pumpSeeded(
+      tester,
+      const Scaffold(body: MacroDashboardScreen()),
+      settle: true,
+      overrides: [
+        ..._dayOverrides(),
+        mealLogControllerProvider.overrideWith(
+          _RecordingMealLogController.new,
+        ),
+      ],
+    );
+
+    // Expand the card, then hit Remove.
+    await tester.tap(find.byKey(const ValueKey('macro_dashboard.meal_m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remove'));
+    await tester.pumpAndSettle();
+
+    expect(_RecordingMealLogController.deleted, ['m1']);
+    expect(find.text('Meal deleted'), findsOneWidget);
+
+    // Undo restores through the controller.
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+    expect(_RecordingMealLogController.restored, ['m1']);
+  });
+
+  // The delete/restore write path through the REAL notifier → repository →
+  // Drift: the tombstone lands with needsUpload for the sync sweep, and the
+  // assembler drops tombstoned rows from the surface.
+  test('deleteLog tombstones through the real notifier; restoreLog undoes', () async {
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+    final mealRepo = MealLogRepository(
+      supabase: fakeSupabaseClient(),
+      database: db,
+      logger: MockAppLogger(),
+      sentry: mockSentryReporter(),
+    );
+    await mealRepo.insertLog(_bagel());
+
+    final userRepo = _MockUserRepository();
+    when(
+      () => userRepo.getCurrentUser(),
+    ).thenAnswer((_) async => _userProfile());
+
+    final container = ProviderContainer(
+      overrides: [
+        mockAppExternalDeps(),
+        userRepositoryProvider.overrideWith((_) async => userRepo),
+        mealLogRepositoryProvider.overrideWithValue(mealRepo),
+        // The controller's guard eagerly builds the logging service, whose
+        // saved-meals repo reads Supabase.instance — keep it off the network.
+        savedMealsRepositoryProvider.overrideWith(
+          (ref) => SavedMealsRepository(
+            supabase: fakeSupabaseClient(),
+            database: db,
+            logger: MockAppLogger(),
+            sentry: mockSentryReporter(),
+          ),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    // Keep the auto-dispose controller alive across the awaits.
+    container.listen(mealLogControllerProvider, (_, __) {});
+
+    await container
+        .read(mealLogControllerProvider.notifier)
+        .deleteLog('m1');
+    expect(container.read(mealLogControllerProvider), isA<AsyncData<void>>());
+
+    final row = await (db.select(
+      db.mealLogsTable,
+    )..where((t) => t.id.equals('m1'))).getSingle();
+    expect(row.isDeleted, isTrue);
+    expect(row.needsUpload, isTrue, reason: 'the tombstone must sync up');
+
+    await container
+        .read(mealLogControllerProvider.notifier)
+        .restoreLog('m1');
+    final restored = await (db.select(
+      db.mealLogsTable,
+    )..where((t) => t.id.equals('m1'))).getSingle();
+    expect(restored.isDeleted, isFalse);
+    expect(restored.needsUpload, isTrue);
+  });
+
+  testWidgets('Edit food opens the meal-log editor carrying the tapped log', (
+    tester,
+  ) async {
+    Object? pushedExtra;
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (_, __) => const Scaffold(body: MacroDashboardScreen()),
+        ),
+        GoRoute(
+          path: '/meal-log/edit',
+          builder: (_, state) {
+            pushedExtra = state.extra;
+            return const Scaffold(body: Text('EDITOR'));
+          },
+        ),
+      ],
+    );
+
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final db = AppDatabase.memory();
+    addTearDown(db.close);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          mockAppExternalDeps(),
+          appConfigProvider.overrideWithValue(AppConfig.forTesting()),
+          inMemoryDatabaseOverride(db),
+          preferencesServiceProvider.overrideWith(
+            (ref) => PreferencesService(prefs),
+          ),
+          currentUserProvider.overrideWith((ref) async => null),
+          ..._dayOverrides(),
+        ],
+        child: ScreenUtilInit(
+          designSize: const Size(393, 852),
+          minTextAdapt: true,
+          splitScreenMode: true,
+          builder: (_, __) => MaterialApp.router(routerConfig: router),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('macro_dashboard.meal_m1')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit food'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('EDITOR'), findsOneWidget);
+    final extra = pushedExtra! as Map<String, dynamic>;
+    expect((extra['log'] as MealLog?)?.id, 'm1');
+  });
 }

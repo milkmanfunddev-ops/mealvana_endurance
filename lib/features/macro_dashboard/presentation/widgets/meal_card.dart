@@ -14,7 +14,7 @@ class MealCard extends StatelessWidget {
     required this.showMacros,
     this.onToggle,
     this.onRemove,
-    this.onSwap,
+    this.onEdit,
   });
 
   final MealItemData item;
@@ -24,7 +24,7 @@ class MealCard extends StatelessWidget {
   final bool showMacros;
   final VoidCallback? onToggle;
   final VoidCallback? onRemove;
-  final VoidCallback? onSwap;
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -138,8 +138,8 @@ class MealCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _pillButton(
-                      label: 'Swap food',
-                      onTap: onSwap,
+                      label: 'Edit food',
+                      onTap: onEdit,
                       background: Colors.white.withValues(alpha: 0.05),
                       borderColor: MeTokens.creamAlpha(0.12),
                       ink: MeTokens.cream,

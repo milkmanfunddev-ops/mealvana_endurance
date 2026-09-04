@@ -18,6 +18,7 @@ import '../../../activities/presentation/widgets/brick_validation_error_dialog.d
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
 import '../../../fuel_timeline/presentation/widgets/fuel_timeline_day_header.dart';
 import '../../../fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
+import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
 import '../../application/dashboard_assembler.dart';
 import '../../domain/dashboard_models.dart';
@@ -458,7 +459,7 @@ class MacroDashboardScreen extends ConsumerWidget {
                   ? picking
                         ? _pickableWorkout(ref, node.workout!, dayWorkouts)
                         : _workout(context, ref, node.workout!)
-                  : _meals(ref, view, node),
+                  : _meals(context, ref, view, node),
             ),
           ),
         ],
@@ -1139,6 +1140,7 @@ class MacroDashboardScreen extends ConsumerWidget {
   }
 
   Widget _meals(
+    BuildContext context,
     WidgetRef ref,
     MacroDashboardViewState view,
     DashboardNode node,
@@ -1154,9 +1156,39 @@ class MacroDashboardScreen extends ConsumerWidget {
             expanded: view.expandedMealId == item.id,
             showMacros: view.trackingOn,
             onToggle: () => notifier.toggleMealExpanded(item.id),
+            onRemove: () => _removeMeal(context, ref, item.id),
+            onEdit: () => _editMeal(context, ref, item.id),
           ),
       ],
     );
+  }
+
+  /// Soft-deletes the meal with undo — same contract as the diary's
+  /// today-log section: applied immediately (offline-first), the tombstone
+  /// syncs up, and the dashboard stream drops the card and retotals the day.
+  void _removeMeal(BuildContext context, WidgetRef ref, String logId) {
+    final messenger = ScaffoldMessenger.of(context);
+    ref.read(mealLogControllerProvider.notifier).deleteLog(logId);
+    messenger.clearSnackBars();
+
+    MealvanaSnackbar.showInfo(
+      context,
+      'Meal deleted',
+      actionLabel: 'Undo',
+      onAction: () =>
+          ref.read(mealLogControllerProvider.notifier).restoreLog(logId),
+    );
+  }
+
+  void _editMeal(BuildContext context, WidgetRef ref, String logId) {
+    final dateStr = _ymd(ref.read(calendarSelectedDateProvider));
+    final logs = ref.read(mealLogsForDateProvider(dateStr)).value ?? const [];
+    for (final log in logs) {
+      if (log.id == logId) {
+        context.push('/meal-log/edit', extra: {'log': log});
+        return;
+      }
+    }
   }
 }
 
