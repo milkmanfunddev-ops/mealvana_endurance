@@ -85,6 +85,55 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
   }
 
+  group('regression — a stepped window must not outlive its activity', () {
+    // Xuan, on-device 2026-09-03: schedule a run ~47 min out (clamp correct),
+    // step the window once, then create a NEW activity for tomorrow — the stale
+    // 47 rode over, and because the manual flag had latched on the keepAlive
+    // singleton, Race Pace could no longer reach the ruled 3 h. Two symptoms,
+    // one cause. Ops bug 2026-09-03-fueling-window-sticks-across-activities.md.
+    test('reset clears the latched manual flag and re-derives §3a', () {
+      final container = makeContainer();
+      final n = container.read(runningInputControllerProvider.notifier);
+
+      // Activity 1: soon-ish session; athlete steps the window by hand.
+      n.updateDateTime(DateTime.now().add(const Duration(minutes: 47)),
+          TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 47))));
+      n.updatePreRunMinutes(45);
+      expect(container.read(runningInputControllerProvider).preRunMinutes, 45);
+      expect(
+        container.read(runningInputControllerProvider).preRunMinutesManuallySet,
+        isTrue,
+        reason: 'a hand step is a manual set — CF-1',
+      );
+
+      // Activity 2 opens: the create flow resets the window for the new activity.
+      n.resetFuelingWindowForNewActivity();
+      n.updateDateTime(farOut, nineAm);
+      n.updateDuration(const Duration(hours: 2));
+
+      expect(
+        container.read(runningInputControllerProvider).preRunMinutesManuallySet,
+        isFalse,
+        reason: 'the flag must not outlive the activity it was set on',
+      );
+      expect(
+        container.read(runningInputControllerProvider).preRunMinutes,
+        150,
+        reason: 'the §3a 1.5–2.5 h row re-derives; the stale 45 is gone',
+      );
+
+      // And the ruled preset mapping works again (the second symptom).
+      n.updateIntensityDistribution(
+        WorkoutPresetData.presetDistributions[WorkoutPreset.racePace]!,
+      );
+      expect(
+        container.read(runningInputControllerProvider).preRunMinutes,
+        180,
+        reason: 'Race Pace ⇒ race row, unreachable while the flag was latched',
+      );
+    });
+  });
+
   group('CF-1 — stepper label, steps, §3a default, ruled max', () {
     test('the DEFAULT is the §3a oracle through the real controller', () {
       final container = makeContainer();

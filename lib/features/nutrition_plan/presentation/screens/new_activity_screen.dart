@@ -158,6 +158,29 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
     final coordinatorState = ref.read(newActivityCoordinatorProvider);
 
+    // Fueling window belongs to the activity being created, not to the app
+    // session. The sport controllers are keepAlive singletons, so a window the
+    // athlete stepped on a previous activity — and the *ManuallySet flag that
+    // step latched — otherwise rides into this one and permanently suppresses
+    // the ratified §3a re-derivation (Race Pace ⇒ 3 h could never fire again).
+    // Same shape, and same remedy, as the stale-title reset further down.
+    // Xuan, on-device 2026-09-03; ops bug
+    // 2026-09-03-fueling-window-sticks-across-activities.md.
+    // An explicit widget.timeBeforeMinutes seed still wins: it is applied after
+    // this reset and marks the window manually-set, which is correct.
+    ref
+        .read(runningInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+    ref
+        .read(cyclingInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+    ref
+        .read(swimmingInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+    ref
+        .read(brickInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+
     // Select the appropriate sport tab based on activity type
     if (widget.activityType != null) {
       final sportTab = _getSportTabFromActivityType(widget.activityType!);

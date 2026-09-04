@@ -357,6 +357,24 @@ class CyclingInputController extends _$CyclingInputController {
     _autoUpdateFuelingWindow();
   }
 
+    /// Reset the fueling window to its ratified default for a NEW activity.
+  ///
+  /// The sport input controllers are `keepAlive` singletons, so without this a
+  /// window the athlete stepped on one activity — and the `preRideMinutesManuallySet`
+  /// flag that step latched — rode into every later activity and permanently
+  /// suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h, could never
+  /// fire again). CF-1's "a manual change persists" means *within the activity
+  /// being edited*. Xuan, on-device 2026-09-03;
+  /// ops/data/bug-reports/2026-09-03-fueling-window-sticks-across-activities.md
+  ///
+  /// Deliberately narrow: only the fueling window is reset here. The lifetime of
+  /// the other form state (title / temperature / humidity flags) is the deferred
+  /// ruling qa/intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
+  void resetFuelingWindowForNewActivity() {
+    state = state.copyWith(preRideMinutesManuallySet: false);
+    _autoUpdateFuelingWindow();
+  }
+
   void updatePreRideMinutes(int minutes) {
     // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
     // carry persisted lead times up to 480 (see FuelingWindowLimits).
