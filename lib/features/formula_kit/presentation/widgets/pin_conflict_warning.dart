@@ -100,13 +100,15 @@ class PinConflictWarning extends StatelessWidget {
           Row(
             children: [
               // R-01 option 1: the safe default is the FILLED primary…
+              // 44 is the floor: the buttons' 16px/1.2 label + their 12pt
+              // vertical padding clip below it (38 shore the descenders off).
               Expanded(
                 child: KylePrimaryButton(
                   key: const ValueKey(
                     'formula_kit.pin_conflict_choose_another',
                   ),
                   text: 'Choose another',
-                  height: 38,
+                  height: 44,
                   onPressed: onChooseAnother,
                 ),
               ),
@@ -116,7 +118,7 @@ class PinConflictWarning extends StatelessWidget {
                 child: KyleSecondaryButton(
                   key: const ValueKey('formula_kit.pin_conflict_pin_anyway'),
                   text: 'Pin anyway',
-                  height: 38,
+                  height: 44,
                   onPressed: onPinAnyway,
                 ),
               ),
