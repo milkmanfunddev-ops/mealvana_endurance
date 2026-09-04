@@ -425,4 +425,64 @@ void main() {
       expect(sectionLabel('mystery'), 'mystery');
     });
   });
+
+  group('collectPinBannerRows — brick per-leg During sections', () {
+    // A brick plan carries one During section per leg (during_segment_N).
+    // Until 2026-09-04 those ids were unrecognized: a brick banner listed
+    // only Snack/Top-Off/After and the athlete's During pins had no
+    // on-screen trace (Lee's Sept 5 RUN/BIKE/RUN brick — bug
+    // 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
+    PlanSection segment(
+      int order,
+      String sportName, {
+      PinDecision? pin,
+    }) => PlanSection(
+      id: 'during_segment_$order',
+      title: 'During $sportName',
+      foodItems: const [],
+      pinDecision: pin,
+    );
+
+    test('each leg gets its OWN row, labeled by the section title', () {
+      final data = collectPinBannerRows([
+        segment(1, 'Run', pin: _honored(name: 'Gel + Water')),
+        segment(2, 'Bike', pin: _fallthroughNoScope),
+        segment(3, 'Run'),
+      ]);
+
+      expect(data.isOnboarding, isFalse);
+      expect(data.rows, hasLength(3));
+      expect(data.rows[0].label, 'During Run');
+      expect(data.rows[0].decision.usedPin, isTrue);
+      expect(data.rows[1].label, 'During Bike');
+      expect(data.rows[1].decision.usedPin, isFalse);
+      // A decision-less leg still gets an honest synthetic row.
+      expect(data.rows[2].label, 'During Run');
+      expect(
+        data.rows[2].decision.fallthroughReason,
+        PinFallthroughReason.noPinForScope,
+      );
+    });
+
+    test('brick segments count as pinnable phases for the onboarding state',
+        () {
+      // Segments alone, zero decisions anywhere, user has no pins → the
+      // banner must offer discovery, not hide.
+      final data = collectPinBannerRows([
+        segment(1, 'Run'),
+        segment(2, 'Bike'),
+      ]);
+      expect(data.isOnboarding, isTrue);
+      expect(data.rows, isEmpty);
+    });
+
+    test('transition sections (T1/T2) stay non-pinnable', () {
+      final data = collectPinBannerRows([
+        PlanSection(id: 'T1', title: 'Transition (T1)', foodItems: const []),
+        segment(1, 'Run', pin: _honored()),
+      ]);
+      expect(data.rows, hasLength(1));
+      expect(data.rows.single.label, 'During Run');
+    });
+  });
 }

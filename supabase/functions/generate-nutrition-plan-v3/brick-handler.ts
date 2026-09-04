@@ -419,6 +419,16 @@ export async function handleBrickPlan(
     string,
     NonNullable<LPPhaseResult["shortfalls"]>
   > = {};
+  // Per-segment pin decisions ride as a SIBLING key like paths/shortfalls
+  // (additive; old clients ignore it). Until 2026-09-04 each segment's
+  // decision was computed and then DROPPED here, so a brick plan carried no
+  // During pin telemetry at all — the activity-detail banner listed only
+  // Snack/Top-Off/After and the user's During pins looked ignored
+  // (bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
+  const duringSegmentPinDecisions: Record<
+    string,
+    NonNullable<LPPhaseResult["pin_decision"]>
+  > = {};
   const transitions: Record<string, FoodResult[]> = {};
   const segmentTargetsList: Array<{
     segment_order: number;
@@ -493,6 +503,16 @@ export async function handleBrickPlan(
         { water_high_ml: segmentTargets.water_high_ml }),
     });
 
+    // Pin scope for a brick LEG (ruled by Lee 2026-09-04): a leg matches its
+    // own discipline's formulas — bare sport AND the tri-equivalent scope.
+    // Passing only `sport` made a "Tri — Bike"-scoped pin unreachable for a
+    // brick's bike leg.
+    const pinScopeActivities = sport === "running"
+      ? ["running", "triathlon_run"]
+      : sport === "cycling"
+      ? ["cycling", "triathlon_bike"]
+      : [sport as string];
+
     // Generate during phase for this segment
     const duringResult = await generateDuringPhase(
       supabase,
@@ -510,12 +530,17 @@ export async function handleBrickPlan(
       pinsActive,
       userPins.personalFormulas,
       emitEphemeralDefault,
+      pinScopeActivities,
     );
 
     // Invariant: electrolyte never ships without water (see
     // `electrolyte-water-pairing.ts`). Each brick segment is its own phase.
     duringSegmentPaths[String(segmentOrder)] = duringResult.generation_path ??
       null;
+    if (duringResult.pin_decision) {
+      duringSegmentPinDecisions[String(segmentOrder)] =
+        duringResult.pin_decision;
+    }
     duringSegments[String(segmentOrder)] = await applyElectrolyteWaterPairing(
       duringResult.foods,
       {
@@ -654,6 +679,8 @@ export async function handleBrickPlan(
       during_segments: duringSegments,
       ...(Object.keys(duringSegmentShortfalls).length > 0 &&
         { during_segment_shortfalls: duringSegmentShortfalls }),
+      ...(Object.keys(duringSegmentPinDecisions).length > 0 &&
+        { during_segment_pin_decisions: duringSegmentPinDecisions }),
       transitions: transitions,
       after: afterResult.foods,
       // Additive siblings, same contract as single-activity plans; old

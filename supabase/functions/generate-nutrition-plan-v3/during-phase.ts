@@ -221,6 +221,13 @@ export async function generateDuringPhase(
    * old clients omit it and stay byte-identical to pre-safety-net v3.
    * 2026-07-03. */
   emitEphemeralDefault = false,
+  /** Pin-scope override for BRICK legs (ruled by Lee 2026-09-04): a run leg
+   * matches running + triathlon_run scoped pins, a bike leg cycling +
+   * triathlon_bike. Forwarded to the personal-formula matcher, the skip
+   * collector, and the template pin filters ONLY — food pools, essentials
+   * and unpinned template selection keep using [activityType]. Undefined
+   * for single-activity workouts (unchanged behavior). */
+  pinScopeActivities?: string[],
 ): Promise<LPPhaseResult> {
   const phaseStart = performance.now();
   const elapsed = (start: number) => Math.round(performance.now() - start);
@@ -278,6 +285,7 @@ export async function generateDuringPhase(
       "during",
       activityType,
       durationMinutes,
+      pinScopeActivities,
     );
     if (match) {
       // During formulas are quantity-less by design (decided 2026-06-11):
@@ -383,6 +391,7 @@ export async function generateDuringPhase(
         "during",
         activityType,
         durationMinutes,
+        pinScopeActivities,
       );
       if (skips.length > 0) {
         for (const s of skips) {
@@ -427,6 +436,7 @@ export async function generateDuringPhase(
         activityType,
         durationMinutes,
         pinnedTemplateIds ?? new Set(),
+        pinScopeActivities,
       )
       : [];
   if (pinsSupplied) {
@@ -483,6 +493,7 @@ export async function generateDuringPhase(
         allergies,
         dietaryPreference,
         pinnedTemplateIds,
+        pinScopeActivities,
       );
 
       // Refine pin telemetry: the selector returns ONLY pinned templates

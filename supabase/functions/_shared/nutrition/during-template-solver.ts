@@ -212,8 +212,15 @@ export function filterPinnedTemplatesInScope(
   activityType: ActivityType,
   durationMinutes: number,
   pinnedTemplateIds: Set<string>,
+  /** Replaces the [mapActivityTypeForTemplate] mapping for PIN scope when
+   * supplied. A brick leg passes its discipline pair (run leg →
+   * running + triathlon_run; bike leg → cycling + triathlon_bike — ruled by
+   * Lee 2026-09-04), since the bare leg sport alone can never match a
+   * Tri-scoped pin. Normal (unpinned) template filtering is unaffected. */
+  pinScopeActivities?: string[],
 ): DuringWorkoutTemplate[] {
-  const mappedActivities = mapActivityTypeForTemplate(activityType);
+  const mappedActivities = pinScopeActivities ??
+    mapActivityTypeForTemplate(activityType);
   const durationBracket = getDurationBracket(durationMinutes);
   return templates
     .filter(
@@ -248,6 +255,10 @@ export function selectTemplateCandidates(
    * Formula Kit PR 2 substep 5a.
    */
   pinnedTemplateIds?: Set<string>,
+  /** Pin-scope override for brick legs — forwarded to
+   * [filterPinnedTemplatesInScope] only; normal candidate filtering keeps
+   * the standard activity mapping. */
+  pinScopeActivities?: string[],
 ): DuringWorkoutTemplate[] {
   const mappedActivities = mapActivityTypeForTemplate(activityType);
   const durationBracket = getDurationBracket(durationMinutes);
@@ -275,6 +286,7 @@ export function selectTemplateCandidates(
       activityType,
       durationMinutes,
       pinnedTemplateIds,
+      pinScopeActivities,
     );
     if (pinnedInScope.length > 0) {
       console.log(

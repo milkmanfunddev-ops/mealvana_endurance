@@ -544,6 +544,13 @@ class NutritionPlanMapper {
         plan['during_segments'] as Map<String, dynamic>? ?? {};
     final duringSegmentShortfalls =
         plan['during_segment_shortfalls'] as Map<String, dynamic>? ?? {};
+    // Per-segment pin decisions — additive sibling key emitted by the brick
+    // handler since 2026-09-04; older payloads simply lack it and every
+    // segment section stays decision-less (the banner then synthesizes
+    // "No pin found" rows). Bug
+    // 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable.
+    final duringSegmentPinDecisions =
+        plan['during_segment_pin_decisions'] as Map<String, dynamic>? ?? {};
     final transitionsData = plan['transitions'] as Map<String, dynamic>? ?? {};
 
     // Build segment targets map from phases.during_segments
@@ -600,11 +607,17 @@ class NutritionPlanMapper {
               )
               .toList();
 
+      final segmentPinDecisionJson =
+          duringSegmentPinDecisions[segmentOrder] as Map<String, dynamic>?;
+
       sections.add(
         PlanSection(
           id: 'during_segment_$segmentOrder',
           title: 'During $sportName',
           subtitle: null,
+          pinDecision: segmentPinDecisionJson != null
+              ? PinDecision.fromJson(segmentPinDecisionJson)
+              : null,
           foodItems: foodItems,
           carbsTarget: (segTargets?['carbs_g'] as num?)?.toDouble(),
           sodiumTarget: (segTargets?['sodium_mg'] as num?)?.toDouble(),

@@ -326,3 +326,80 @@ Deno.test("skips: formulas for other phases are ignored", () => {
     0,
   );
 });
+
+// ---------------------------------------------------------------------------
+// Brick-leg pin scope override (ruled by Lee 2026-09-04: a leg matches its
+// own discipline's formulas — bare sport AND the tri-equivalent scope).
+// Bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable:
+// the brick handler calls per-leg with the bare sport, so a "Tri — Bike"
+// scoped pin could never match a brick's bike leg.
+// ---------------------------------------------------------------------------
+
+Deno.test("brick bike leg: tri_bike-scoped pin matches via scope override", () => {
+  const f = pin({ phase: "during", activities: ["triathlon_bike"] });
+  // Bare sport (single-activity semantics): no match — unchanged.
+  assertEquals(matchPersonalFormulaPin([f], "during", "cycling", 100), null);
+  // Brick leg passes its discipline pair: match.
+  assertEquals(
+    matchPersonalFormulaPin([f], "during", "cycling", 100, [
+      "cycling",
+      "triathlon_bike",
+    ])?.id,
+    "f1",
+  );
+});
+
+Deno.test("brick run leg: tri_run-scoped pin matches, tri_bike does not", () => {
+  const triRun = pin({ id: "fr", phase: "during", activities: ["triathlon_run"] });
+  const triBike = pin({
+    id: "fb",
+    phase: "during",
+    activities: ["triathlon_bike"],
+  });
+  const runLegScope = ["running", "triathlon_run"];
+  assertEquals(
+    matchPersonalFormulaPin([triBike, triRun], "during", "running", 144, runLegScope)
+      ?.id,
+    "fr",
+  );
+});
+
+Deno.test("brick leg override still enforces duration brackets", () => {
+  const f = pin({
+    phase: "during",
+    activities: ["triathlon_run"],
+    durations: ["90-150 min"],
+  });
+  const runLegScope = ["running", "triathlon_run"];
+  // 65-min run leg → "< 90 min" bracket: out of scope even with override.
+  assertEquals(
+    matchPersonalFormulaPin([f], "during", "running", 65, runLegScope),
+    null,
+  );
+  // 144-min run leg → "90-150 min": in scope.
+  assertEquals(
+    matchPersonalFormulaPin([f], "during", "running", 144, runLegScope)?.id,
+    "f1",
+  );
+});
+
+Deno.test("skip collector honors the same override (no false activity_out_of_scope)", () => {
+  const f = pin({
+    phase: "during",
+    activities: ["triathlon_bike"],
+    durations: ["> 240 min"],
+  });
+  const bikeLegScope = ["cycling", "triathlon_bike"];
+  // Without override: reported as activity_out_of_scope (misleading for a
+  // brick bike leg). With override: the honest reason is the duration.
+  const without = collectPersonalFormulaSkips([f], "during", "cycling", 100);
+  assertEquals(without[0].reason, "activity_out_of_scope");
+  const withOverride = collectPersonalFormulaSkips(
+    [f],
+    "during",
+    "cycling",
+    100,
+    bikeLegScope,
+  );
+  assertEquals(withOverride[0].reason, "duration_out_of_scope");
+});

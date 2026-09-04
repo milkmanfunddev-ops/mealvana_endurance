@@ -26,6 +26,7 @@ import { describe, it } from "https://deno.land/std@0.168.0/testing/bdd.ts";
 
 import {
   type DuringWorkoutTemplate,
+  filterPinnedTemplatesInScope,
   type FoodWithConstraints,
   selectTemplateCandidates,
 } from "./during-template-solver.ts";
@@ -416,5 +417,73 @@ describe("selectTemplateCandidates pin override", () => {
       "Empty Set must produce byte-identical ordering to omitted param",
     );
     assert(withoutPin.length >= 1, "Expected normal selection to return candidates");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Brick-leg pin scope override (Lee 2026-09-04): a brick's bike leg matches
+// Cycling AND Tri — Bike scoped pins; run leg Running AND Tri — Run. The
+// override widens PIN scope only — unpinned candidate selection is untouched.
+// ---------------------------------------------------------------------------
+
+describe("brick-leg pin scope override", () => {
+  const triBikeTemplate = makeTemplate({
+    template_number: 7,
+    name: "High Carb Drink Mix + Water",
+    activity_types: ["triathlon_bike"],
+    duration_brackets: ["90-150 min"],
+  });
+
+  it("tri_bike pinned template is OUT of scope for bare cycling", () => {
+    const result = filterPinnedTemplatesInScope(
+      [triBikeTemplate],
+      "cycling",
+      100,
+      new Set([triBikeTemplate.id]),
+    );
+    assertEquals(result.length, 0);
+  });
+
+  it("tri_bike pinned template matches a brick bike leg via the override", () => {
+    const result = filterPinnedTemplatesInScope(
+      [triBikeTemplate],
+      "cycling",
+      100,
+      new Set([triBikeTemplate.id]),
+      ["cycling", "triathlon_bike"],
+    );
+    assertEquals(result.length, 1);
+    assertEquals(result[0].id, triBikeTemplate.id);
+  });
+
+  it("override does not defeat the duration bracket", () => {
+    const result = filterPinnedTemplatesInScope(
+      [triBikeTemplate],
+      "cycling",
+      300, // "> 240 min" — template targets 90-150 only
+      new Set([triBikeTemplate.id]),
+      ["cycling", "triathlon_bike"],
+    );
+    assertEquals(result.length, 0);
+  });
+
+  it("selectTemplateCandidates pin override honors the scope override", () => {
+    const foodsByName = new Map<string, FoodWithConstraints>();
+    const result = selectTemplateCandidates(
+      [triBikeTemplate],
+      "cycling",
+      100,
+      "moderate",
+      foodsByName,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      new Set([triBikeTemplate.id]),
+      ["cycling", "triathlon_bike"],
+    );
+    assertEquals(result.length, 1);
+    assertEquals(result[0].id, triBikeTemplate.id);
   });
 });

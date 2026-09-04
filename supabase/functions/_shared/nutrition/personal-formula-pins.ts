@@ -69,9 +69,10 @@ function durationBracket(durationMinutes: number): string {
 function activityInScope(
   formulaActivities: string[] | null,
   activityType: string,
+  activityScopeOverride?: string[],
 ): boolean {
   if (formulaActivities === null || formulaActivities.length === 0) return true;
-  const mapped = mapActivity(activityType);
+  const mapped = activityScopeOverride ?? mapActivity(activityType);
   return formulaActivities.some((a) => mapped.includes(a));
 }
 
@@ -79,17 +80,28 @@ function activityInScope(
  * Find the first in-scope pinned personal formula for [phase], or null.
  * Personal formulas come newest-first from `pins.ts` (preserves
  * `personal_formulas.updated_at DESC` ordering of the underlying query).
+ *
+ * [activityScopeOverride] replaces the [mapActivity] mapping when supplied.
+ * A BRICK leg passes its discipline pair — a run leg matches
+ * running + triathlon_run scoped formulas, a bike leg cycling +
+ * triathlon_bike (ruled by Lee 2026-09-04: leg matches its discipline's
+ * formulas) — because the brick handler calls per-leg with the bare leg
+ * sport, which alone would never match a Tri-scoped pin
+ * (bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
  */
 export function matchPersonalFormulaPin(
   personalFormulas: PersonalFormulaPin[],
   phase: "before" | "during" | "after",
   activityType: string,
   durationMinutes?: number,
+  activityScopeOverride?: string[],
 ): PersonalFormulaPin | null {
   for (const f of personalFormulas) {
     if (f.phase !== phase) continue;
     if (phase === "before") return f;
-    if (!activityInScope(f.activities, activityType)) continue;
+    if (!activityInScope(f.activities, activityType, activityScopeOverride)) {
+      continue;
+    }
     if (phase === "during") {
       const durs = f.durations;
       if (durs !== null && durs.length > 0 && durationMinutes !== undefined) {
@@ -145,6 +157,7 @@ export function collectPersonalFormulaSkips(
   phase: "before" | "during" | "after",
   activityType: string,
   durationMinutes?: number,
+  activityScopeOverride?: string[],
 ): PersonalFormulaSkip[] {
   // `before` has no activity/duration axis — a before formula is never
   // scope-excluded, so there is nothing to report.
@@ -158,7 +171,7 @@ export function collectPersonalFormulaSkips(
   for (const f of personalFormulas) {
     if (f.phase !== phase) continue;
 
-    if (!activityInScope(f.activities, activityType)) {
+    if (!activityInScope(f.activities, activityType, activityScopeOverride)) {
       skips.push({
         id: f.id,
         name: f.name,
