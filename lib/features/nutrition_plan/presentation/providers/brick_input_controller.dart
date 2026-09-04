@@ -459,7 +459,6 @@ class BrickInputController extends _$BrickInputController {
     DebugLogger.info('🧱 BRICK CONTROLLER: Updated leg $index input');
   }
 
-
   /// Reset the fueling window to its ratified default for a NEW activity.
   ///
   /// The sport input controllers are `keepAlive` singletons, so without this a

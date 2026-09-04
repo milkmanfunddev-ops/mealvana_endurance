@@ -422,7 +422,7 @@ class RunningInputController extends _$RunningInputController {
     return totalMinutes / currentDistance;
   }
 
-    /// Reset the fueling window to its ratified default for a NEW activity.
+  /// Reset the fueling window to its ratified default for a NEW activity.
   ///
   /// The sport input controllers are `keepAlive` singletons, so without this a
   /// window the athlete stepped on one activity — and the `preRunMinutesManuallySet`
