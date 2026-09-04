@@ -588,7 +588,12 @@ void main() {
     });
   });
 
-  group('FP-4c — personal-formula card conflict label (RULED 2026-09-03)', () {
+  group('FP-4d — personal formulas follow the library-card contract', () {
+    // RULED (Xuan, 2026-09-03 late): "make the general formula the reference
+    // point." Supersedes FP-4c, whose "standing auto-include" premise was
+    // false — pins.ts resolvePersonalFormulaPins honors a personal formula
+    // ONLY when pinned, so the pin gesture is the same decision moment as on a
+    // library card. Spec: formula-pin-surface.md FP-4d.
     PersonalFormula personal(List<String> allergens) => PersonalFormula(
       id: 'pf-1',
       userId: 'u-1',
@@ -630,26 +635,46 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('conflicting personal card carries the persistent S-04 line, '
-        'not gated on pinning', (tester) async {
+    testWidgets('FP-4d(a) — pinning a conflicting personal formula raises the '
+        'FP-4a warning instead of pinning silently', (tester) async {
       await pumpCard(
         tester,
         formula: personal(const ['dairy']),
         profile: const AthleteConflictProfile(allergyDbValues: ['dairy']),
       );
-      expect(find.text('Contains dairy — your allergy'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('formula_kit.personal_card_pin_pf-1')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choose another'), findsOneWidget,
+          reason: 'the safer action is offered, as on a library card');
+      expect(find.text('Pin anyway'), findsOneWidget);
     });
 
-    testWidgets('no conflict → no label (NEGATIVE)', (tester) async {
+    testWidgets('FP-4d(c) — an UNPINNED conflicting personal formula carries '
+        'no persistent label (NEGATIVE — supersedes FP-4c)', (tester) async {
+      await pumpCard(
+        tester,
+        formula: personal(const ['dairy']),
+        profile: const AthleteConflictProfile(allergyDbValues: ['dairy']),
+      );
+      expect(find.text('Contains dairy — your allergy'), findsNothing,
+          reason: 'unpinned ⇒ not in any plan ⇒ nothing to warn about');
+    });
+
+    testWidgets('no conflict → the pin gesture is never intercepted '
+        '(NEGATIVE)', (tester) async {
       await pumpCard(
         tester,
         formula: personal(const []),
         profile: const AthleteConflictProfile(allergyDbValues: ['dairy']),
       );
-      expect(
-        find.byKey(const ValueKey('formula_kit.personal_card_conflict_pf-1')),
-        findsNothing,
+      await tester.tap(
+        find.byKey(const ValueKey('formula_kit.personal_card_pin_pf-1')),
       );
+      await tester.pumpAndSettle();
+      expect(find.text('Choose another'), findsNothing);
     });
   });
 

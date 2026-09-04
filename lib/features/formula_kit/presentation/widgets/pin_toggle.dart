@@ -138,11 +138,20 @@ class PinTogglePersonalFormula extends ConsumerWidget {
     required this.phase,
     required this.source,
     this.conflict,
+    this.onAllergyConflictPinAttempt,
+    this.onDietConflictPinned,
   });
 
   final String formulaId;
   final FormulaPhase phase;
   final String source;
+
+  /// FP-4a: personal formulas are honored ONLY when pinned (the engine reads
+  /// `personal_formulas` through the pin set — `pins.ts`
+  /// resolvePersonalFormulaPins), so the pin gesture is the same decision
+  /// moment as on a library card and gets the same warning. Xuan, 2026-09-03.
+  final VoidCallback? onAllergyConflictPinAttempt;
+  final VoidCallback? onDietConflictPinned;
 
   /// FP-4b: a pinned conflicting personal formula's glyph carries the
   /// conflict dot, same as the system cards (Xuan, 2026-09-03 evening).
@@ -155,8 +164,8 @@ class PinTogglePersonalFormula extends ConsumerWidget {
       ref: ref,
       templateId: formulaId,
       conflict: conflict,
-      onAllergyConflictPinAttempt: null,
-      onDietConflictPinned: null,
+      onAllergyConflictPinAttempt: onAllergyConflictPinAttempt,
+      onDietConflictPinned: onDietConflictPinned,
       toggle: () => ref
           .read(formulaPinControllerProvider.notifier)
           .togglePersonalFormula(
