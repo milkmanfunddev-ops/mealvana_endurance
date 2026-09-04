@@ -76,6 +76,7 @@ class BrickTabContent extends ConsumerWidget {
           label: 'Pre-Activity Fueling Window',
           minutes: formState.preActivityMinutes,
           maxMinutes: controller.fuelingWindowMaxMinutes(),
+          caption: controller.fuelingWindowCaption(),
           onChanged: controller.updatePreActivityMinutes,
           keyPrefix: 'brick.fueling_window',
         ),
@@ -750,22 +751,23 @@ class _BrickCyclingInputs extends StatelessWidget {
         // are kept in state and restore on switch-back.
         if (!isIndoor)
           EnvironmentSection(
-          isExpanded: input.showEnvironment,
-          onToggle: () =>
-              onUpdate(input.copyWith(showEnvironment: !input.showEnvironment)),
-          temperatureC: input.temperatureC,
-          onTemperatureChanged: (v) =>
-              onUpdate(input.copyWith(temperatureC: v)),
-          humidityPct: input.humidityPct,
-          onHumidityChanged: (v) => onUpdate(input.copyWith(humidityPct: v)),
-          windCondition: input.windCondition,
-          onWindChanged: (v) => onUpdate(input.copyWith(windCondition: v)),
-          sunExposure: input.sunExposure,
-          onSunChanged: (v) => onUpdate(input.copyWith(sunExposure: v)),
-          isIndoor: isIndoor,
-          showWindAndSun: false,
-          useImperial: useImperial,
-        ),
+            isExpanded: input.showEnvironment,
+            onToggle: () => onUpdate(
+              input.copyWith(showEnvironment: !input.showEnvironment),
+            ),
+            temperatureC: input.temperatureC,
+            onTemperatureChanged: (v) =>
+                onUpdate(input.copyWith(temperatureC: v)),
+            humidityPct: input.humidityPct,
+            onHumidityChanged: (v) => onUpdate(input.copyWith(humidityPct: v)),
+            windCondition: input.windCondition,
+            onWindChanged: (v) => onUpdate(input.copyWith(windCondition: v)),
+            sunExposure: input.sunExposure,
+            onSunChanged: (v) => onUpdate(input.copyWith(sunExposure: v)),
+            isIndoor: isIndoor,
+            showWindAndSun: false,
+            useImperial: useImperial,
+          ),
       ],
     );
   }

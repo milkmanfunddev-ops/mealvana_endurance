@@ -26,6 +26,7 @@
 /// contract — every rule binds both engines).
 library;
 
+import 'fueling_window_limits.dart';
 import 'intensity_distribution.dart';
 import 'workout_preset.dart';
 
@@ -42,10 +43,11 @@ enum FuelingSessionClass {
   const FuelingSessionClass(this.wireName);
   final String wireName;
 
-  static FuelingSessionClass fromWire(String wire) =>
-      values.firstWhere((c) => c.wireName == wire,
-          orElse: () =>
-              throw ArgumentError.value(wire, 'wire', 'unknown session class'));
+  static FuelingSessionClass fromWire(String wire) => values.firstWhere(
+    (c) => c.wireName == wire,
+    orElse: () =>
+        throw ArgumentError.value(wire, 'wire', 'unknown session class'),
+  );
 }
 
 /// Training sessions starting strictly before this hour take the early-start
@@ -125,12 +127,12 @@ FuelingWindowResolution resolveFuelingWindow({
 /// One row up the table (§3a note: "intensity nudges one row up"). The race
 /// and long rows are already the top.
 FuelingSessionClass nudgeOneRowUp(FuelingSessionClass c) => switch (c) {
-      FuelingSessionClass.under60 => FuelingSessionClass.easy60to90,
-      FuelingSessionClass.easy60to90 => FuelingSessionClass.moderate60to90,
-      FuelingSessionClass.moderate60to90 => FuelingSessionClass.midSession,
-      FuelingSessionClass.midSession => FuelingSessionClass.longSession,
-      _ => c,
-    };
+  FuelingSessionClass.under60 => FuelingSessionClass.easy60to90,
+  FuelingSessionClass.easy60to90 => FuelingSessionClass.moderate60to90,
+  FuelingSessionClass.moderate60to90 => FuelingSessionClass.midSession,
+  FuelingSessionClass.midSession => FuelingSessionClass.longSession,
+  _ => c,
+};
 
 /// Recover the preset a distribution came from, if it exactly matches one
 /// (the preset chips write these exact distributions; a hand-tuned slider
@@ -166,7 +168,8 @@ FuelingSessionClass classifySession({
   } else if (durationMinutes >= 90) {
     base = FuelingSessionClass.midSession;
   } else if (durationMinutes >= 60) {
-    final easy = preset == WorkoutPreset.easy ||
+    final easy =
+        preset == WorkoutPreset.easy ||
         preset == WorkoutPreset.recovery ||
         (preset == null && intensity.conversationalPct >= 70);
     base = easy
@@ -178,6 +181,67 @@ FuelingSessionClass classifySession({
 
   return preset == WorkoutPreset.long ? nudgeOneRowUp(base) : base;
 }
+
+/// Q-CF1 caption label for a §3a session class (RULED Xuan, 2026-09-03:
+/// "the caption ships" — examples '2.5 h — mid-distance', '3 h — long
+/// session'; remaining rows' labels follow the same register).
+String fuelingClassLabel(FuelingSessionClass c) => switch (c) {
+  FuelingSessionClass.race => 'race day',
+  FuelingSessionClass.longSession => 'long session',
+  FuelingSessionClass.midSession => 'mid-distance',
+  FuelingSessionClass.moderate60to90 => 'moderate session',
+  FuelingSessionClass.easy60to90 => 'easy session',
+  FuelingSessionClass.under60 => 'short session',
+};
+
+/// Compact duration register used by the stepper captions ('45 min',
+/// '1 h', '2.5 h', '1 h 3 min') — matches Q-CF1's ruled examples.
+String formatCompactWindow(int minutes) {
+  if (minutes < 60) return '$minutes min';
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  if (m == 0) return '$h h';
+  if (m == 30) return '$h.5 h';
+  return '$h h $m min';
+}
+
+/// The caption under the fueling-window stepper (Q-CF1 + the CF-2 clamp
+/// frame — both RULED Xuan, 2026-09-03; clamp copy provisional pending the
+/// D-02 artboard).
+///
+/// Precedence: a binding clamp explains itself ('Capped: session in …' —
+/// without it a short-notice stepper reads as stuck at an arbitrary value);
+/// otherwise the §3a class caption, but only while the value is still the
+/// engine's default — a manual override is the athlete's number, not the
+/// table's, and wears no class label.
+String? fuelingWindowCaptionText({
+  required FuelingSessionClass sessionClass,
+  required bool earlyStartApplied,
+  required int currentMinutes,
+  required int maxMinutes,
+  required bool manuallySet,
+}) {
+  if (maxMinutes < FuelingWindowLimits.maxMinutes &&
+      currentMinutes >= maxMinutes) {
+    return 'Capped: session in ${formatCompactWindow(maxMinutes)}';
+  }
+  if (manuallySet) return null;
+  if (earlyStartApplied) {
+    return '${formatCompactWindow(kEarlyStartWindowMin)} — early start';
+  }
+  return '${formatCompactWindow(tableDefaultWindowMin(sessionClass))}'
+      ' — ${fuelingClassLabel(sessionClass)}';
+}
+
+/// Whether the §3a early-start overlay applies (training before 07:00 with
+/// a table default above the snack window; races exempt — never raises).
+bool earlyStartOverlayApplies({
+  required FuelingSessionClass sessionClass,
+  required int startHour,
+}) =>
+    sessionClass != FuelingSessionClass.race &&
+    startHour < kEarlyStartHourExclusive &&
+    tableDefaultWindowMin(sessionClass) > kEarlyStartWindowMin;
 
 /// Convenience for the create-flow controllers: the §3a default in minutes
 /// for a session, replacing the retired `recommendedHoursBefore` at its four

@@ -123,6 +123,7 @@ class SwimmingTabContent extends ConsumerWidget {
           label: 'Pre-Swim Fueling Window',
           minutes: formState.preSwimMinutes,
           maxMinutes: controller.fuelingWindowMaxMinutes(),
+          caption: controller.fuelingWindowCaption(),
           onChanged: controller.updatePreSwimMinutes,
         ),
 

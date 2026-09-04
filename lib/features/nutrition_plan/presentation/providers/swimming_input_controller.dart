@@ -372,8 +372,13 @@ class SwimmingInputController extends _$SwimmingInputController {
 
   /// Whole minutes between [now] and the scheduled start; never negative.
   static int _minutesUntil(DateTime now, DateTime date, TimeOfDay time) {
-    final scheduled =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final scheduled = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
     final diff = scheduled.difference(now).inMinutes;
     return diff > 0 ? diff : 0;
   }
@@ -386,11 +391,31 @@ class SwimmingInputController extends _$SwimmingInputController {
       state.selectedDate,
       state.selectedTime,
     );
-    final floored =
-        untilStart > kFuelingWindowFloorMin ? untilStart : kFuelingWindowFloorMin;
+    final floored = untilStart > kFuelingWindowFloorMin
+        ? untilStart
+        : kFuelingWindowFloorMin;
     return floored < FuelingWindowLimits.maxMinutes
         ? floored
         : FuelingWindowLimits.maxMinutes;
+  }
+
+  /// Q-CF1 class caption / CF-2 clamp explanation for the stepper (RULED
+  /// Xuan, 2026-09-03) — null when the athlete's manual value needs no label.
+  String? fuelingWindowCaption() {
+    final sessionClass = classifySession(
+      durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+      intensity: state.intensity,
+    );
+    return fuelingWindowCaptionText(
+      sessionClass: sessionClass,
+      earlyStartApplied: earlyStartOverlayApplies(
+        sessionClass: sessionClass,
+        startHour: state.selectedTime.hour,
+      ),
+      currentMinutes: state.preSwimMinutes,
+      maxMinutes: fuelingWindowMaxMinutes(),
+      manuallySet: state.preSwimMinutesManuallySet,
+    );
   }
 
   void updateIntensityTarget(String intensityTarget) {

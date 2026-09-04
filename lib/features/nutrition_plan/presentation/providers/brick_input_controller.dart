@@ -478,11 +478,44 @@ class BrickInputController extends _$BrickInputController {
       state.selectedDate,
       state.selectedTime,
     );
-    final floored =
-        untilStart > kFuelingWindowFloorMin ? untilStart : kFuelingWindowFloorMin;
+    final floored = untilStart > kFuelingWindowFloorMin
+        ? untilStart
+        : kFuelingWindowFloorMin;
     return floored < FuelingWindowLimits.maxMinutes
         ? floored
         : FuelingWindowLimits.maxMinutes;
+  }
+
+  /// Q-CF1 class caption / CF-2 clamp explanation for the brick stepper
+  /// (RULED Xuan, 2026-09-03), from the same W-10 mapping the default uses
+  /// (total duration + hardest leg).
+  String? fuelingWindowCaption() {
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+    var totalMinutes = 0;
+    IntensityDistribution hardest = defaultIntensity;
+    var hardestConversational = 1 << 30;
+    for (final input in state.legs) {
+      totalMinutes += input.durationMinutes;
+      final intensity = input.intensityDistribution ?? defaultIntensity;
+      if (intensity.conversationalPct < hardestConversational) {
+        hardestConversational = intensity.conversationalPct;
+        hardest = intensity;
+      }
+    }
+    final sessionClass = classifySession(
+      durationMinutes: totalMinutes,
+      intensity: hardest,
+    );
+    return fuelingWindowCaptionText(
+      sessionClass: sessionClass,
+      earlyStartApplied: earlyStartOverlayApplies(
+        sessionClass: sessionClass,
+        startHour: state.selectedTime.hour,
+      ),
+      currentMinutes: state.preActivityMinutes,
+      maxMinutes: fuelingWindowMaxMinutes(),
+      manuallySet: state.preActivityMinutesManuallySet,
+    );
   }
 
   /// Update intensity distribution for the leg at [index]
@@ -775,8 +808,13 @@ class BrickInputController extends _$BrickInputController {
 
   /// Whole minutes between [now] and the scheduled start; never negative.
   static int _minutesUntil(DateTime now, DateTime date, TimeOfDay time) {
-    final scheduled =
-        DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    final scheduled = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
     final diff = scheduled.difference(now).inMinutes;
     return diff > 0 ? diff : 0;
   }

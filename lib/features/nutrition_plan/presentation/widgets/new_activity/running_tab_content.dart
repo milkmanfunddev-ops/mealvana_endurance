@@ -172,6 +172,7 @@ class RunningTabContent extends ConsumerWidget {
               label: 'Pre-Run Fueling Window',
               minutes: formState.preRunMinutes,
               maxMinutes: controller.fuelingWindowMaxMinutes(),
+              caption: controller.fuelingWindowCaption(),
               onChanged: controller.updatePreRunMinutes,
             ),
           ],

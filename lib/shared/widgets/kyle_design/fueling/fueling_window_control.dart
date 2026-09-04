@@ -9,14 +9,23 @@
 /// computed here.
 ///
 /// Contracts held here:
-/// * **CF-1** — −/+ in 15-min steps; label `N HOUR[S] M MIN`; the MAXIMUM is
-///   the ruled clamp `min(table cap 240, time-until-start)` (passed in as
-///   [maxMinutes]) — values above it are unreachable, not disabled-but-
-///   visible. Persistence of a manual change (`preRunMinutesManuallySet`)
-///   is the owning controller's contract.
+/// * **CF-1** — −/+ walk the 15-min GRID (00/15/30/45 anchors — RULED Xuan,
+///   2026-09-03: a clamp-seeded off-grid value snaps onto the grid on the
+///   first step, it does not propagate its offset); label `N HOUR[S] M MIN`;
+///   the MAXIMUM is the ruled clamp `min(table cap 240, time-until-start)`
+///   (passed in as [maxMinutes]) — values above it are unreachable, and the
+///   ceiling itself IS reachable from below even when off-grid (it is the
+///   real one, CF-2). Persistence of a manual change
+///   (`preRunMinutesManuallySet`) is the owning controller's contract.
 /// * **CF-2** — when the clamp binds, the control opens AT the clamp and
 ///   stepping up is inert (the + affordance disables): the athlete sees the
-///   real ceiling, never a window implying a feeding in the past.
+///   real ceiling, never a window implying a feeding in the past. The
+///   clamp-bound state carries its explanation via [caption]
+///   ("Capped: session in …" — RULED Xuan, 2026-09-03; copy provisional
+///   pending the D-02 artboard).
+/// * **Q-CF1** — the class caption ("3 h — long session") renders under the
+///   stepper while the value is the §3a default; text supplied by the
+///   owning controller (`fuelingWindowCaption`), never derived here.
 /// * **CF-5** (surface's copy register) — the [label] is sport-dynamic
 ///   (`Pre-Run` / `Pre-Ride` / `Pre-Swim` / `Pre-Activity`), supplied by the
 ///   mounting tab.
@@ -45,6 +54,7 @@ class FuelingWindowControl extends StatelessWidget {
     required this.minutes,
     required this.maxMinutes,
     required this.onChanged,
+    this.caption,
     this.keyPrefix = 'activity_create.fueling_window',
   });
 
@@ -60,7 +70,12 @@ class FuelingWindowControl extends StatelessWidget {
 
   final ValueChanged<int> onChanged;
 
-  /// Test-key prefix — `<prefix>_minus` / `<prefix>_value` / `<prefix>_plus`.
+  /// Q-CF1 class caption / CF-2 clamp explanation, from the owning
+  /// controller's `fuelingWindowCaption`; hidden when null.
+  final String? caption;
+
+  /// Test-key prefix — `<prefix>_minus` / `<prefix>_value` / `<prefix>_plus`
+  /// / `<prefix>_caption`.
   final String keyPrefix;
 
   /// CF-1 label: `N HOUR[S] M MIN` (minutes-only below the hour).
@@ -74,13 +89,31 @@ class FuelingWindowControl extends StatelessWidget {
     return '$hours $hourWord $remaining MIN';
   }
 
+  /// Largest 15-min grid value strictly below [m] (CF-1 grid rule): a
+  /// clamp-seeded 63 steps to 60, not 48.
+  static int _snapDown(int m) {
+    final snapped =
+        ((m - 1) ~/ FuelingWindowLimits.stepMinutes) *
+        FuelingWindowLimits.stepMinutes;
+    return snapped < FuelingWindowLimits.minMinutes
+        ? FuelingWindowLimits.minMinutes
+        : snapped;
+  }
+
+  /// Smallest 15-min grid value strictly above [m], capped at [maxMinutes]:
+  /// the off-grid ceiling stays reachable (it is the real one, CF-2).
+  int _snapUp(int m) {
+    final next =
+        (m ~/ FuelingWindowLimits.stepMinutes + 1) *
+        FuelingWindowLimits.stepMinutes;
+    return next > maxMinutes ? maxMinutes : next;
+  }
+
   @override
   Widget build(BuildContext context) {
     final onSurface = Theme.of(context).colorScheme.onSurface;
-    final canIncrement = minutes + FuelingWindowLimits.stepMinutes <=
-        maxMinutes;
-    final canDecrement = minutes - FuelingWindowLimits.stepMinutes >=
-        FuelingWindowLimits.minMinutes;
+    final canIncrement = minutes < maxMinutes;
+    final canDecrement = minutes > FuelingWindowLimits.minMinutes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,8 +134,7 @@ class FuelingWindowControl extends StatelessWidget {
               icon: FontAwesomeIcons.minus.data,
               enabled: canDecrement,
               onPressed: canDecrement
-                  ? () =>
-                      onChanged(minutes - FuelingWindowLimits.stepMinutes)
+                  ? () => onChanged(_snapDown(minutes))
                   : null,
             ),
             const SizedBox(width: AppSpacing.xl),
@@ -125,12 +157,23 @@ class FuelingWindowControl extends StatelessWidget {
               icon: FontAwesomeIcons.plus.data,
               enabled: canIncrement,
               onPressed: canIncrement
-                  ? () =>
-                      onChanged(minutes + FuelingWindowLimits.stepMinutes)
+                  ? () => onChanged(_snapUp(minutes))
                   : null,
             ),
           ],
         ),
+        if (caption != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Center(
+            child: Text(
+              key: ValueKey('${keyPrefix}_caption'),
+              caption!,
+              style: AppTextStyles.descriptor.copyWith(
+                color: onSurface.withValues(alpha: 0.65),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -153,8 +196,9 @@ class _StepButton extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final enabledIconColor = isDark ? AppColors.cream : AppColors.orange;
     final disabledIconColor = enabledIconColor.withValues(alpha: 0.4);
-    final borderColor =
-        enabled ? AppColors.orange : AppColors.orange.withValues(alpha: 0.4);
+    final borderColor = enabled
+        ? AppColors.orange
+        : AppColors.orange.withValues(alpha: 0.4);
 
     return SizedBox(
       width: AppSizes.controlSize,

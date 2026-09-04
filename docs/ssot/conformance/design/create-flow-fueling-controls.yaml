@@ -20,7 +20,9 @@ suite: test/features/nutrition_plan/create_flow_fueling_controls_conformance_tes
 contracts:
   - id: CF-1
     check: >
-      The fueling-window stepper steps in 15-min increments and renders the
+      The fueling-window stepper walks the 15-min grid (00/15/30/45 anchors
+      — a clamp-seeded off-grid value snaps onto the grid on its first step;
+      the off-grid ceiling stays reachable from below) and renders the
       `N HOUR[S] M MIN` label; its DEFAULT equals the §3a oracle for the
       session (class from duration+intensity, early-start overlay, race rule)
       and its MAXIMUM is min(table cap 240, time-until-start) floored at 15 —
@@ -30,7 +32,17 @@ contracts:
     check: >
       When the clamp binds (short-notice plan) the stepper opens AT the clamp
       and stepping up is inert — the athlete sees the real ceiling, never a
-      window implying a feeding in the past.  # NEGATIVE TEST — required
+      window implying a feeding in the past — and the clamp-bound state
+      carries the "Capped: session in ‹remaining›" caption (AMENDED Xuan,
+      2026-09-03; copy provisional pending D-02).  # NEGATIVE TEST — required
+  - id: Q-CF1
+    check: >
+      The class caption renders under the stepper while the value is the §3a
+      default ("3 h — long session" register; early start labeled as such);
+      it disappears on a manual override (the athlete's number wears no class
+      label). RULED Xuan 2026-09-03 — omitted from this manifest at first
+      writing; the omission let the ruled caption go unimplemented (found by
+      Xuan on-device 2026-09-03).
   - id: CF-3
     check: >
       The Fasted Workout toggle is ABSENT from every create-flow tab
@@ -61,10 +73,10 @@ contracts:
 goldens:
   - id: cf_window_stepper_default
     surface: create-flow-fueling-controls
-    notes: the shared fueling-window control at a §3a table default (2 HOURS 30 MIN), hours/min label, −/+ affordances
+    notes: the shared fueling-window control at a §3a table default (2 HOURS 30 MIN), hours/min label, −/+ affordances, class caption ("2.5 h — mid-distance")
   - id: cf_window_stepper_clamped
     surface: create-flow-fueling-controls
-    notes: clamp-bound state — opens AT the ceiling (45 MIN), + rendered inert
+    notes: clamp-bound state — opens AT the ceiling (45 MIN), + rendered inert, "Capped:" caption below
   - id: cf_environment_auto_badge
     surface: create-flow-fueling-controls
     notes: temperature/humidity steppers wearing AUTO badges with the "View Forecast" affordance

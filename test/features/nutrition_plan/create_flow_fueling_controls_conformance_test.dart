@@ -47,6 +47,8 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/duration_pa
 
 import '../../helpers/widget_test_harness.dart';
 
+void _noop(int _) {}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -162,6 +164,88 @@ void main() {
       expect(FuelingWindowControl.formatWindow(75), '1 HOUR 15 MIN');
       expect(FuelingWindowControl.formatWindow(45), '45 MINUTES');
     });
+
+    testWidgets(
+        'a clamp-seeded off-grid value snaps onto the 15-min grid '
+        '(AMENDED Xuan 2026-09-03)', (t) async {
+      // The live defect: session 63 min out → clamp seeds 63; − must land
+      // on 60 (not 48), and + from 60 must reach the real ceiling 63.
+      var value = 63;
+      await pumpBoxed(
+        t,
+        StatefulBuilder(
+          builder: (context, setState) => FuelingWindowControl(
+            label: 'Pre-Run Fueling Window',
+            minutes: value,
+            maxMinutes: 63,
+            onChanged: (v) => setState(() => value = v),
+          ),
+        ),
+      );
+      final minus =
+          find.byKey(const ValueKey('activity_create.fueling_window_minus'));
+      final plus =
+          find.byKey(const ValueKey('activity_create.fueling_window_plus'));
+
+      await t.tap(minus);
+      await t.pump();
+      expect(value, 60, reason: 'off-grid 63 snaps down to the grid');
+      await t.tap(minus);
+      await t.pump();
+      expect(value, 45);
+      await t.tap(plus);
+      await t.pump();
+      expect(value, 60);
+      await t.tap(plus);
+      await t.pump();
+      expect(value, 63, reason: 'the real (off-grid) ceiling stays reachable');
+    });
+  });
+
+  group('Q-CF1 — class caption under the stepper (RULED 2026-09-03)', () {
+    test('caption names the §3a class while the value is the default', () {
+      final container = makeContainer();
+      final n = container.read(runningInputControllerProvider.notifier);
+      n.updateDateTime(farOut, nineAm);
+      n.updateDuration(const Duration(hours: 3)); // ≥2.5 h → long session
+      expect(n.fuelingWindowCaption(), '3 h — long session');
+
+      n.updateDuration(const Duration(hours: 2)); // 1.5–2.5 h → mid-distance
+      expect(n.fuelingWindowCaption(), '2.5 h — mid-distance');
+
+      // Race Pace preset ⇒ the race row.
+      n.updateIntensityDistribution(
+        WorkoutPresetData.presetDistributions[WorkoutPreset.racePace]!,
+      );
+      expect(n.fuelingWindowCaption(), '3 h — race day');
+    });
+
+    test('early start is labeled as such; manual override drops the caption',
+        () {
+      final container = makeContainer();
+      final n = container.read(runningInputControllerProvider.notifier);
+      n.updateDateTime(farOut, const TimeOfDay(hour: 5, minute: 30));
+      n.updateDuration(const Duration(hours: 3));
+      expect(n.fuelingWindowCaption(), '1 h — early start');
+
+      n.updatePreRunMinutes(45);
+      expect(n.fuelingWindowCaption(), isNull,
+          reason: "the athlete's number wears no class label");
+    });
+
+    testWidgets('the widget renders the caption text', (t) async {
+      await pumpBoxed(
+        t,
+        const FuelingWindowControl(
+          label: 'Pre-Run Fueling Window',
+          minutes: 180,
+          maxMinutes: 240,
+          caption: '3 h — long session',
+          onChanged: _noop,
+        ),
+      );
+      expect(find.text('3 h — long session'), findsOneWidget);
+    });
   });
 
   group('CF-2 — clamp-bound stepper opens AT the clamp, + is inert', () {
@@ -177,6 +261,20 @@ void main() {
       expect(v, lessThanOrEqualTo(45));
       expect(v, greaterThanOrEqualTo(15));
       expect(n.fuelingWindowMaxMinutes(), lessThanOrEqualTo(45));
+    });
+
+    test('the clamp-bound state carries the Capped caption (AMENDED)', () {
+      final container = makeContainer();
+      final n = container.read(runningInputControllerProvider.notifier);
+      final start = DateTime.now().add(const Duration(minutes: 63));
+      n.updateDateTime(
+        start,
+        TimeOfDay(hour: start.hour, minute: start.minute),
+      );
+      final caption = n.fuelingWindowCaption();
+      expect(caption, isNotNull);
+      expect(caption, startsWith('Capped: session in '),
+          reason: 'CF-2 legibility: the pinned stepper must explain itself');
     });
 
     testWidgets('stepping up at the bound is inert', (t) async {
@@ -518,6 +616,7 @@ void main() {
           label: 'Pre-Run Fueling Window',
           minutes: 150,
           maxMinutes: 240,
+          caption: '2.5 h — mid-distance',
           onChanged: (_) {},
         ),
         'cf_window_stepper_default',
@@ -532,6 +631,7 @@ void main() {
           label: 'Pre-Run Fueling Window',
           minutes: 45,
           maxMinutes: 45,
+          caption: 'Capped: session in 45 min',
           onChanged: (_) {},
         ),
         'cf_window_stepper_clamped',
