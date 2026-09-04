@@ -1,9 +1,18 @@
 # SSOT — Conversation (kinds, ownership, openers, persistence)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Owners in code:** `vana_conversations` / `vana_messages` / `vana_calls` (`20260827120000` jade→vana; `jade_*`
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code); no dedicated Xuan intent artifact addresses
+conversation ownership/persistence directly.
+**Code:** `vana_conversations` / `vana_messages` / `vana_calls` (`20260827120000` jade→vana; `jade_*`
 are compat views); prototype `server/vana/chat.ts`, edge `_shared/vana/chat.ts` (+ `stream.ts`); Dart
 `vana_chat_repository.dart`, `vana_conversations_controller.dart`.
+**Scope:** the two conversation kinds, who owns history and persistence, opener wiring, and what each kind
+gives the model.
+
+**What this file owns:** the two conversation kinds (`meal_planning` / `general`), who owns turn history and
+persistence, how an opener is wired in, and what a kind determines about what the model sees. It owns no
+calculation (the opener-selection *algorithm* is [`../planning/opener-selection.md`](../planning/opener-selection.md))
+and no tool inventory ([`../agent/tools.md`](../agent/tools.md)).
 
 ## Definitions
 

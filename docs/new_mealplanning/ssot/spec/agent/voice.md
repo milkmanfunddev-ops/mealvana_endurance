@@ -1,14 +1,21 @@
 # SSOT — Voice (the moment-based register contract)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Built 2026-09-03 (update plan §3.1, ⚖️ Q-6)
-replacing the flat "max two sentences" persona. Every register is one block Xuan can strike.
-**Reference rendering:** `persona.ts` CORE + PLANNING_PROMPT + GENERAL_PROMPT + OPENERS — prototype ≡ edge.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** built 2026-09-03 (update plan §3.1); replaces the flat "max two sentences" persona. **⚖️ interim
+(Lee, 2026-09-03), Q-6 open** — every register is one block Xuan can strike.
+**Code:** `persona.ts` CORE + PLANNING_PROMPT + GENERAL_PROMPT + OPENERS — prototype ≡ edge (the reference
+rendering).
+**Scope:** the moment-based voice contract — registers, sentence caps, copy rules, the refusal lines.
+
+**What this file owns:** the moment-based register contract (PICKING / PRESENTING / EXPLAINING / MILESTONE),
+its sentence caps, turn-shape rules and fixed copy. It owns no tool inventory ([`tools.md`](tools.md)) and no
+invariant enforcement mechanism beyond its own eval checks ([`guardrails.md`](guardrails.md) owns those).
 
 ## Identity (all kinds)
 
 "Vana, the nutrition assistant inside Mealvana Endurance … a sports dietitian who already read the athlete's
-data: direct, warm, specific, **no emoji**, US spelling." The emoji ban is the standing ⚖️ line (visual warmth
-belongs to Kyle components).
+data: direct, warm, specific, **no emoji**, US spelling." **⚖️ interim (Lee, 2026-09-03)** — the emoji ban is
+the standing call (visual warmth belongs to Kyle components).
 
 ## Registers (planning kind)
 
@@ -37,12 +44,22 @@ since Phase 1 scope was planning-only).
 
 ## Opener (planning)
 
-Salience order for sentence 1, first that applies: **race** (name, days out) → **holiday** in the next few days
-(only if it changes how the week eats) → **notable recent session** (RECENT line, with one recovery consequence)
-→ rest/recovery week → the biggest session of the week (name + day) → notable weather. Then optionally one
-sentence on what that means from TARGETS; then one sentence on why the three dinners fit, ending with "tapping
-one puts it in the plan". No greeting, no questions, 2–4 sentences. Check-in and debrief openers: 1–2 sentences
-naming the plan/session, then their fixed `askChoice` (`../planning/opener-selection.md`).
+**Revised 2026-09-03 evening — question-first, reversing the 2026-08-31 "frame + three dinners" decision.**
+Verified against `persona.ts` `OPENERS.meal_planning`, 2026-09-04: salience order for sentence 1, first that
+applies — **race** (name, days out) → **holiday** in the next few days (only if it changes how the week eats)
+→ **notable recent session** (RECENT line) → rest/recovery week → the biggest session of the week (name + day)
+→ notable weather — then what that means from TARGETS (never a number not in context); a LAST WEEK clause when
+a debrief exists. Then, in the SAME turn, ONE `askChoice` question, exact wording per `persona.ts`:
+**"What sounds good for dinners this week?"** with 3–4 label-only options (e.g. "Batch-cook staples", "Quick
+weeknights", "Something new", "Use what I have"; free text always allowed). No greeting; **no `suggestMeals` or
+`draftWeek` call on the opener turn** — meals are proposed only after the athlete answers (rule 0, "THE
+INTERVIEW": at most one follow-up, then the first `suggestMeals` picker shaped by the answer). This supersedes
+the prior text of this section, which described the opener presenting three concrete dinners immediately per
+the 2026-08-31 decision; see [`DEVIATIONS.md` D-020](../../DEVIATIONS.md#d-020--opener-reversal-question-first-supersedes-the-08-31-frame--three-dinners-decision)
+and the ruling request [`intake/2026-09-03-opener-question-first-reversal.md`](../../intake/2026-09-03-opener-question-first-reversal.md)
+— this is the least-settled call in the register, not yet seen by Xuan. Check-in and debrief openers: 1–2
+sentences naming the plan/session, then their fixed `askChoice` (`../planning/opener-selection.md`) —
+unaffected by this revision.
 
 ## Fixed copy
 
@@ -61,13 +78,16 @@ naming the plan/session, then their fixed `askChoice` (`../planning/opener-selec
 
 ## Server-side guard
 
-The 2-sentence server clamp is **removed** (Lee, 2026-09-03): brevity is a prompt rule enforced by the eval,
-because a clamp only trims text after it was paid for. One runaway guard remains — `RUNAWAY_SENTENCES = 8` —
-which a well-behaved turn never reaches. The prototype still clamps at 2 (D-14).
+The 2-sentence server clamp is **removed**. **⚖️ interim (Lee, 2026-09-03)** — brevity is a prompt rule enforced
+by the eval, because a clamp only trims text after it was paid for. One runaway guard remains —
+`RUNAWAY_SENTENCES = 8` — which a well-behaved turn never reaches. The prototype still clamps at 2 (D-014).
 
 ## Conformance
 
 `scripts/vana-eval/run.ts` (13 conversations): `no_emoji` · `no_narration` · `picking_two_sentences` ·
 `presenting_has_fact` · `fork_with_details` (≤ 4, each with detail) · `explaining_recommends` · `milestone`
 (≤ 1 exclamation, only after confirm) · `wrapup` / `no_chips` ("that's my week" ends with no chips and no
-confirm). Green on the last run (2026-09-03). Vectors: `vectors/agent/clamp-sentences.json` (5).
+confirm). Green on the last run (2026-09-03). Vectors: `vectors/agent/clamp-sentences.json` (5). The opener's
+question-first shape (above) is asserted by the `presenting` check (2–3 sentences, a concrete athlete fact, a
+`choices` part, and no `meal_picker` — the opener may not propose meals) and by
+`scripts/vana-eval/lifecycle.ts` line 60 (`'opener asks the opening question (choices, no meals yet)'`).

@@ -1,8 +1,12 @@
 # Design SSOT — Component: Shopping List
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** The `shopping_list` part and the Shopping
-tab (`ShoppingList` in `widgets.tsx`; Dart `ShoppingListScreen`). **Numbers authority:**
-`../../planning/shopping-list.md` — the component invents no quantity.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** the `shopping_list` part and the Shopping tab; prototype `ShoppingList` in `widgets.tsx`.
+**Code:** Dart `ShoppingListScreen`.
+**Scope:** numbers authority `../../planning/shopping-list.md` — the component invents no quantity.
+
+**What this file owns:** the shopping list's grouping, checked/have distinction, the inline chat summary card,
+and share (SL-1..SL-5); quantities themselves are owned by `../../planning/shopping-list.md`.
 
 ## State model
 

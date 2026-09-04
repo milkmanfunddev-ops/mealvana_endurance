@@ -1,11 +1,13 @@
 # SSOT — Meal Icon
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `mealIconFor({name, ingredients?, pattern?})` · `resolveMealIcon(stored, …)` — prototype
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `mealIconFor({name, ingredients?, pattern?})` · `resolveMealIcon(stored, …)` — prototype
 `lib/vana/meal-icon.ts` ≡ edge `_shared/vana/meal-icon.ts` (byte-identical) ≡ Dart `MealIconClassifier`
 (keyword lists ported byte-for-byte; **verified by the Dart arm**).
-**Persisted:** `meal_library.icon`, `saved_meals.icon`, `plan_meals.icon` (copied from the source at add/swap);
-`search_meals()` returns it. Every surface renders `stored ?? classify(name)`.
+**Scope:** the 23-key glyph classifier and the stored-key-wins rule. **Persisted:** `meal_library.icon`,
+`saved_meals.icon`, `plan_meals.icon` (copied from the source at add/swap); `search_meals()` returns it. Every
+surface renders `stored ?? classify(name)`.
 
 ## The 23 keys
 

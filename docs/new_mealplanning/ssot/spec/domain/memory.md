@@ -1,9 +1,17 @@
 # SSOT — Memory (what Vana knows, and settings as memories)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Owners in code:** `user_memories` (`20260827090000`; partial unique `user_memories_setting_key`), RPC
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code); §3.2 of `../intent/vana-mealplanning-chatbot.md`
+motivates the visible/editable memory drawer this file's MEM-2 records.
+**Code:** `user_memories` (`20260827090000`; partial unique `user_memories_setting_key`), RPC
 `recall_memories`; prototype `server/vana/memory.ts`, edge `_shared/vana/memory.ts` (ahead: `SETTING_DEFAULTS`,
-`coverage_scope`, `weekly_budget_usd`, `pantry_items`, `source` — D-12); Dart `user_memory_repository.dart`.
+`coverage_scope`, `weekly_budget_usd`, `pantry_items`, `source` — D-012); Dart `user_memory_repository.dart`.
+**Scope:** what Vana may remember and forget — memory kinds, settings-as-memories and their defaults,
+provenance, recall ordering, the drawer.
+
+**What this file owns:** what Vana may remember and forget: the memory kinds, settings-as-memories and their
+defaults, provenance, recall ordering, and the drawer contract. It owns no rule for *when* the model calls
+`rememberFact` ([`../agent/guardrails.md`](../agent/guardrails.md) S4) and no rendering.
 
 ## Definitions
 
@@ -27,7 +35,7 @@
 | Key | Type | Default when absent | Who asks |
 |---|---|---|---|
 | `batch_cooking` | bool | **true** — but "never chosen" is visible (`batchKnown`) so the persona asks once | rule 4(a); Settings toggle |
-| `show_macros` | bool | **true** (⚖️ Q-4, 2026-09-03; was false before) | Settings toggle |
+| `show_macros` | bool | **true** — ⚖️ interim (Lee, 2026-09-03; was false before), Q-4 open | Settings toggle |
 | `coverage_scope` | `dinners · dinners_lunches · all` | **null** — never chosen is what makes the persona ask once; an unknown stored value reads as never chosen | rule 4(b) |
 | `weekly_budget_usd` | number 0–2000 | null | the athlete saying "keep it under $N" |
 | `pantry_items` | string[] (≤ 40) | [] | `set_pantry` ("Use these") |
@@ -48,7 +56,7 @@
 
 ## Deviations
 
-- **D-12** — prototype `setSetting` accepts only `batch_cooking` / `show_macros` (boolean); no
+- **D-012** — prototype `setSetting` accepts only `batch_cooking` / `show_macros` (boolean); no
   `SETTING_DEFAULTS`, no provenance on the wire.
 
 ## Conformance

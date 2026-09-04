@@ -1,8 +1,17 @@
 # SSOT — Meal (catalog and reference rules)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Owners in code:** `meal_library` (schema `20260827090000` + `20260828090000` + `20260901*`), `saved_meals`,
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the catalog schema + code (see Code); the 400-meal and assembly libraries have
+their own research docs (`../../meal-library-400.md`, `../../assembly-library.md`) cited inline where relevant.
+**Code:** `meal_library` (schema `20260827090000` + `20260828090000` + `20260901*`), `saved_meals`,
 `meal_feedback`; `MealRef` / `MealDetail` in `contracts.ts` (frozen `contract-v1`).
+**Scope:** what a meal *is* — assembly vs recipe, the `MealRef` wire shape, catalog enums and conventions,
+directions provenance, images, attribution, votes, saved meals.
+
+**What this file owns:** what a meal *is*: assembly vs recipe, the `MealRef` wire shape, the catalog's enums and
+naming conventions, directions provenance, images/attribution, votes, and saved meals. It owns no ranking or
+filtering of *which* meals a search returns ([`../selection/meal-search.md`](../selection/meal-search.md)) and
+no suggestion policy ([`../selection/meal-suggestion.md`](../selection/meal-suggestion.md)).
 
 ## Definitions
 

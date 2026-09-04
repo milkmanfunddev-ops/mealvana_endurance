@@ -1,7 +1,14 @@
 # Design SSOT — Surface: Food → Shopping
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Prototype `routes/food.shopping.tsx`; Dart
-`ShoppingListScreen`. **Composition:** shopping-list v1.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `routes/food.shopping.tsx`.
+**Code:** Dart `ShoppingListScreen`.
+**Scope:** composes shopping-list v1.
+
+**What this file owns:** the Food → Shopping surface — which list shows, aisle groups, share (FS-1..FS-4); the
+shopping-list component contract itself lives in `../components/shopping-list.md`.
+
+## Contracts
 
 | # | Contract |
 |---|---|

@@ -5,6 +5,13 @@ each carrying the ⚖️ interim call that shipped on 2026-09-03 so building cou
 them cheaply), and the questions the 2026-09-03 record surfaced (Q-WC…, Q-SL…, …). **These are spec-vs-spec
 or spec-vs-observed problems; code-vs-SSOT findings belong in [`DEVIATIONS.md`](DEVIATIONS.md).**
 
+This stays a **single index**, deliberately unlike the QA repo's per-family `<family>.OPEN-QUESTIONS.md` split
+(README.md states this difference; it isn't silently converging with the QA repo's shape). Every ⚖️ interim call
+below that Xuan still needs to rule on also has a standalone, atomic ruling-request file under
+[`intake/`](intake/README.md) — a drop folder in the QA repo's `intake/` shape, adapted for this app-side SSOT
+(no separate ops repo to route product-lifecycle items to). Use the index below for the state of a call at a
+glance; use the matching `intake/2026-09-03-*.md` file when actually working the ruling.
+
 | ID | Family | Subject | Status |
 |---|---|---|---|
 | [Q-1](#q-1) | intent | scope of the AI Scenarios (race fueling stays deterministic?) | ⚖️ interim: mechanics only |
@@ -13,7 +20,8 @@ or spec-vs-observed problems; code-vs-SSOT findings belong in [`DEVIATIONS.md`](
 | [Q-4](#q-4) | intent | macros shown by default? | ⚖️ interim: ON (Xuan's 05-20 concession) |
 | [Q-5](#q-5) | intent | proactive cadence and channel | ⚖️ interim: opener-on-open; push dark |
 | [Q-6](#q-6) | intent | tone: warmth vs terseness | ⚖️ interim: moment-based registers; emoji ban kept |
-| [Q-7](#q-7) | intent | first-run intro | ⚖️ interim: dismissible intro card |
+| [Q-7](#q-7) | intent | first-run intro | ⚖️ interim: intro card built 2026-09-03, then REMOVED same evening — see [D-021](DEVIATIONS.md#d-021--q-7-intro-card-built-then-removed-the-same-evening) |
+| [Q-8](#q-8) | agent / planning | opener shape: question-first vs. frame + three dinners | ⚖️ interim (2026-09-03 evening): question-first — see [D-020](DEVIATIONS.md#d-020--opener-reversal-question-first-supersedes-the-08-31-frame--three-dinners-decision) |
 | Q-DT1 | planning | the 0.55 lunch+dinner share of the meal budget (25 / 20 breakfast / snacks) is uncited | open |
 | Q-AC1 | planning | extract the context arithmetic into a pure module so it can be vectored | open (conformance) |
 | Q-AC2 | planning | weather needs a location; the profile has none — race location only | open |
@@ -34,7 +42,7 @@ or spec-vs-observed problems; code-vs-SSOT findings belong in [`DEVIATIONS.md`](
 | Q-AG1 | agent | vana-eval has no body-talk check for H7 | open (conformance) |
 | Q-AG2 | agent | `updateBatch add` lets the model add a meal "the athlete named" — is the description guard enough for H5 | open |
 | Q-WP1 | agent | rate limits have no unit test | open (conformance) |
-| Q-TK1 | design | slot colours borrow three meaning-bound tokens for a categorical purpose | open — D-19 until ruled |
+| Q-TK1 | design | slot colours borrow three meaning-bound tokens for a categorical purpose | open — D-019 until ruled |
 | Q-DS1 | design | no `conformance/design/*.yaml` manifests for this family yet | open (conformance) |
 | Q-MP1 / Q-MP2 | design | macro pill short form; fat on compact tiles | in `docs/ssot/spec/design/components/macro-pill-row.md` |
 | Q-SCG1 / Q-SCG2 | design | check glyph on selected chips; clear-all | in `docs/ssot/spec/design/components/selectable-chip-grid.md` |
@@ -76,4 +84,19 @@ register is one block Xuan can strike.
 
 ## Q-7
 ### First-run intro
-**⚖️ Interim:** yes — a one-time dismissible intro card with three example chips; never a gate.
+**⚖️ Interim (revised 2026-09-03 evening):** originally "yes — a one-time dismissible intro card with three
+example chips; never a gate" (2026-09-03 daytime). Built the same day, then **removed** that evening once the
+question-first opener (Q-8) took over the "prove what Vana knows" job the card's first line duplicated. Ruling
+request: [`intake/2026-09-03-q7-intro-card-reversal.md`](intake/2026-09-03-q7-intro-card-reversal.md).
+DEVIATIONS: [D-021](DEVIATIONS.md#d-021--q-7-intro-card-built-then-removed-the-same-evening).
+
+## Q-8
+### Opener shape: question-first vs. frame + three dinners
+The opener now writes 2–3 context sentences then asks ONE question (`askChoice`: "What sounds good for dinners
+this week?") before proposing any meal — reversing the 2026-08-31 decision that the opener present a frame plus
+three concrete dinners immediately. **⚖️ Interim (Lee, 2026-09-03 evening):** question-first stands, citing
+Xuan's own SCEN-U source ("Let's plan the week — starting with dinner. What sounds good?"); `draftWeek`
+("Draft my whole week" chip, Phase 2) is the zero-question door that still satisfies spec §2.2's "confident
+proposal first," just not as the opener's own default. This is the newest and least-settled call in this
+register — see [`intake/2026-09-03-opener-question-first-reversal.md`](intake/2026-09-03-opener-question-first-reversal.md)
+and [D-020](DEVIATIONS.md#d-020--opener-reversal-question-first-supersedes-the-08-31-frame--three-dinners-decision).

@@ -1,8 +1,10 @@
 # Design SSOT — Component: Choice Chips
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Two chip families share one look and
-differ in who decides them. Extracted from `ChoiceChips` / `PickerChips` (prototype `primitives.tsx`,
-`vana.tsx`) and the Dart `choice_chips.dart`.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `primitives.tsx`, `vana.tsx` (`ChoiceChips` / `PickerChips`).
+**Code:** Dart `choice_chips.dart`.
+**What this file owns:** the two chip families below — model chips and picker chips — their shared look, who
+decides each, and the contracts (CC-1..CC-9) governing spent state, primary-chip computation, and suppression.
 
 ## Families
 
@@ -17,10 +19,10 @@ differ in who decides them. Extracted from `ChoiceChips` / `PickerChips` (protot
 |---|---|
 | CC-1 | **Tapping a chip sends its label as the next user message** — except the routing labels: "Confirm plan" → Review sheet; "Open shopping list" → the Shopping tab; "Start a meal plan" → a new planning conversation; "Something else…" → focuses the composer (sends nothing). |
 | CC-2 | **Spent state.** Once one chip in a group is tapped every other chip in that group disables (the tapped one stays selected); "Something else…" never disables. Only the LAST assistant turn's chips are active. |
-| CC-3 | **Primary picker chip is computed:** no tile ticked → "I like these"; some ticked and an uncovered type remains → "Next: <type>" in the walk dinner → lunch → breakfast → snacks (skipping the type just shown); none remains → "That's my week". |
+| CC-3 | **Primary picker chip is computed:** no tile ticked → "I like these"; some ticked and an uncovered type remains → "Next: <type>" in the fixed walk dinner → lunch → breakfast → snack, skipping any type the draft plan already covers (`vana_chat_screen.dart` `_nextType`, verified 2026-09-03); none remains → "That's my week". |
 | CC-4 | **"I like these" picks every unticked tile first** (`pick_meals` for all of them), then sends "I like these. Next: <type>" or "I like these — that's my week." |
 | CC-5 | **Filter chips** (No recipe only · Different protein · Under 20 min) appear only while the picker is active and the plan has something in it; each is a plain message the persona maps to search inputs (SG-3). |
-| CC-6 | **Detail rows.** When any option carries a `detail`, the group renders as full-width two-line rows (label + trade-off) instead of a wrap of pills (Dart `choice_chips.dart`; the prototype renders labels only — D-12). |
+| CC-6 | **Detail rows.** When any option carries a `detail`, the group renders as full-width two-line rows (label + trade-off) instead of a wrap of pills (Dart `choice_chips.dart`; the prototype renders labels only — D-012). |
 | CC-7 | **A `choices` question of more than one word renders as a bubble above the chips**; a one-word or empty question is suppressed. |
 | CC-8 | **Picker chips are suppressed when the model asked a real question after the picker in the same turn.** |
 | CC-9 | **A model chip never contains "Confirm plan".** The bar owns confirm (PB-5). |

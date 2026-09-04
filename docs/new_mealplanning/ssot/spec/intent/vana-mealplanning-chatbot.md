@@ -1,6 +1,14 @@
 # Vana meal-planning chatbot — normative spec (Xuan's design intent)
 
-**Status: PROPOSED — synthesized 2026-09-02 from Xuan's artifacts; awaiting Xuan's ratification.**
+**Status:** PROPOSED — synthesized 2026-09-02 from Xuan's artifacts; awaiting Xuan's ratification.
+**Source:** Xuan's own artifacts, cited per claim by the short keys below — this file is the stage-0
+distillation, not a new claim of its own.
+**Code:** N/A — this is a design-intent document; nothing here is an implementation contract (see
+`spec/planning/`, `spec/selection/`, `spec/domain/`, `spec/agent/` for what the build actually does).
+**Scope:** Xuan's design intent for the Vana meal-planning chatbot, sourced per claim; every disagreement
+between artifacts, or between an artifact and what shipped, is a numbered open question (Q-register) rather
+than a silent resolution.
+
 Every claim is sourced. Where Xuan's artifacts conflict with each other or with team
 decisions, the conflict is registered as an open question (Q-register at the bottom)
 rather than silently resolved.
@@ -50,6 +58,13 @@ specific awareness — never "How can I help you today?". Opener packs multiple 
 upcoming race/event with days-out, yesterday's notable workout, weather, season,
 training-week shape. [SCEN-S entry, SCEN-U greeting, DEMO Turn 1, BRIEF principle 3,
 UIUX "Proactive AI Guidance"]
+
+> **MET, updated 2026-09-03 evening.** The opener (`spec/agent/voice.md` §Opener) proves
+> exactly this awareness — race/holiday/session/rest-week/weather, salience-ordered —
+> before anything else. This is no longer filed as a gap against §2.1; it was never one.
+> The opener's *closing move* changed the same evening (a question rather than three
+> proposed dinners) — that is a §2.2 question, not a §2.1 one; see the note there and
+> `DEVIATIONS.md` D-020.
 
 2.2 **Confident proposal first, refinement second ("told what to eat").** The
 assistant's default is to decide for the athlete and present a complete, concrete

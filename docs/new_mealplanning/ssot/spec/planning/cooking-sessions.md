@@ -1,10 +1,12 @@
 # SSOT — Cooking Sessions
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `defaultSession(batchCooking, meal, existing)` — edge `plan-math.ts` ≡ prototype `plan.ts`;
-`setBatchCooking` (the re-derive) in both `plan.ts`; `sessionDates(weekStart)` — edge `opener.ts` only (D-12).
-**Consumers:** `PlanMeal.session`; the Review sheet grouping; the check-in opener's cook date; the client's
-reminder scheduling (`PlanReminderService`, 18:00 the evening before cook day).
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `defaultSession(batchCooking, meal, existing)` — edge `plan-math.ts` ≡ prototype `plan.ts`;
+`setBatchCooking` (the re-derive) in both `plan.ts`; `sessionDates(weekStart)` — edge `opener.ts` only (D-012).
+**Scope:** `defaultSession`, the batch-toggle re-derive, and session dates. **Consumers:** `PlanMeal.session`;
+the Review sheet grouping; the check-in opener's cook date; the client's reminder scheduling
+(`PlanReminderService`, 18:00 the evening before cook day).
 
 ## Definitions
 
@@ -59,7 +61,7 @@ library (DB) — pending extraction (Q-CS2).
 
 ## Deviations
 
-- **D-12** — `sessionDates` and the opener variants exist only on the edge twin.
+- **D-012** — `sessionDates` and the opener variants exist only on the edge twin.
 - The re-derive treats a **saved** meal as `batch = true` unconditionally (`?? true`) — Q-CS3.
 
 ## Conformance

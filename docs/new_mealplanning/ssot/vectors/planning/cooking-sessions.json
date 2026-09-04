@@ -1,6 +1,6 @@
 {
   "section": "cooking-sessions",
-  "engine": "defaultSession(batchCooking, meal, existing) + sessionDates(weekStart) — edge _shared/vana/plan-math.ts / opener.ts · prototype server/vana/plan.ts (defaultSession only; no sessionDates — D-12)",
+  "engine": "defaultSession(batchCooking, meal, existing) + sessionDates(weekStart) — edge _shared/vana/plan-math.ts / opener.ts · prototype server/vana/plan.ts (defaultSession only; no sessionDates — D-012)",
   "specVersion": "v1 RECORDED (2026-09-03)",
   "note": "`existing` lists only the sessions already assigned in the plan (order as stored). sessionDates vectors run on the edge twin only.",
   "vectors": [

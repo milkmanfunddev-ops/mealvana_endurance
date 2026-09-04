@@ -1,6 +1,6 @@
 {
   "section": "season",
-  "engine": "seasonalProduce(iso) — edge _shared/vana/season.ts (the prototype has no SEASON line — D-12)",
+  "engine": "seasonalProduce(iso) — edge _shared/vana/season.ts (the prototype has no SEASON line — D-012)",
   "specVersion": "v1 RECORDED (2026-09-03)",
   "note": "A static US-temperate month table; the month is read in UTC. Not regional (the profile has no location).",
   "vectors": [

@@ -1,11 +1,17 @@
 # SSOT — Meal Suggestion (what a picker, a draft and a staples card may contain)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `suggestMeals` · `draftWeek` (edge) · `diagnoseStaples` · `checkCombination` · `weekContexts` ·
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code); authority for the candidate set itself is
+[`meal-search.md`](meal-search.md).
+**Code:** `suggestMeals` · `draftWeek` (edge) · `diagnoseStaples` · `checkCombination` · `weekContexts` ·
 `planDayPart` — prototype `server/vana/tools.ts`, edge `_shared/vana/tools.ts`. The edge twin is ahead
-(`ingredientsOnHand`, `draftWeek` — D-12).
-**Authority for the candidate set:** [`meal-search.md`](meal-search.md). This file owns what happens **around**
-the search: which contexts, what is excluded, how many, in what order, and the anti-hallucination gate.
+(`ingredientsOnHand`, `draftWeek` — D-012).
+**Scope:** what happens **around** the search — which contexts, what is excluded, how many, in what order,
+and the anti-hallucination gate.
+
+**What this file owns:** what happens around the search — which contexts, what is excluded, how many, in what
+order, and the anti-hallucination gate (`checkCombination`). It owns no ranking of the candidate set itself
+([`meal-search.md`](meal-search.md)).
 
 ## Vocabulary
 
@@ -73,7 +79,7 @@ no carb-load tags; the two race signals are not joined. **Q-WC3.**
 
 ## Deviations
 
-- **D-12** — `ingredientsOnHand`, `askPantry`, `draftWeek`, `planWeek` exist on the edge twin only.
+- **D-012** — `ingredientsOnHand`, `askPantry`, `draftWeek`, `planWeek` exist on the edge twin only.
 
 ## Conformance
 

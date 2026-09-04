@@ -1,8 +1,17 @@
 # SSOT — Agent Guardrails (thin LLM, thick algorithm)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Consensus architecture since 2026-05-08
-(`../intent/vana-mealplanning-chatbot.md` §7.1): "If we swapped Claude for any other model tomorrow, this
-product wouldn't break."
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** consensus architecture since 2026-05-08 (`../intent/vana-mealplanning-chatbot.md` §7.1): "If we
+swapped Claude for any other model tomorrow, this product wouldn't break."
+**Code:** enforcement is spread by design — prompt (`persona.ts`), tool inventory (`tools.ts`), SQL filters
+(`search_meals`), math (`plan-math.ts` / `grocery.ts`) — see "Where these are enforced" below.
+**Scope:** the hard (MUST) and soft (SHOULD) invariants the model must never violate, and the mechanism +
+test that enforces each.
+
+**What this file owns:** the boundary between what the model may decide (phrasing, ambiguity) and what must be
+computed, filtered or gated in code — the thin-LLM/thick-algorithm contract itself. It owns no tool inventory
+([`tools.md`](tools.md)), no register/copy rules ([`voice.md`](voice.md)), and no wire shape
+([`wire-protocol.md`](wire-protocol.md)).
 
 ## Hard invariants — MUST always hold (a violation is a bug, never a style issue)
 
@@ -30,9 +39,12 @@ product wouldn't break."
 - **H8 — Never narrate tool use.** No "Let me…", "I'm pulling…"; text comes after tool results; the client shows
   a per-tool status line instead. General-kind pre-tool narration is dropped from the transcript (C-8).
 - **H9 — The twins are mirrors.** Every rule here binds the prototype, the edge functions and the Dart client
-  alike; a fix landing in one twin is a defect until ported (D-11 … D-17 are the open ports).
+  alike; a fix landing in one twin is a defect until ported (D-011 … D-017 are the open ports).
 - **H10 — Race-day fueling is out of scope.** Vana never generates before/during/after race fuel; it may
-  *present* the deterministic engine's numbers (day guidance "Race day" carries none) — `../intent/` §1.2, ⚖️ Q-1.
+  *present* the deterministic engine's numbers (day guidance "Race day" carries none) — `../intent/` §1.2.
+  **⚖️ interim (Lee, 2026-09-03)** — the exclusion itself traces to Xuan's own verbatim scope call (the
+  2026-06-17/25 decision quoted in `../intent/` §1.2); what remains open is only whether a race-week
+  *conversation* may still exist around it (Q-1).
 
 ## Soft invariants — SHOULD hold (quality; a miss is filed, not failed)
 

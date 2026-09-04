@@ -1,9 +1,15 @@
 # SSOT — Tools (what the model may call, per conversation kind)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `makeVanaTools(kind)` — prototype `server/vana/tools.ts` (24 tools), edge `_shared/vana/tools.ts`
-(28: + `draftWeek`, `askPantry`, `recordDebrief`, `planWeek` — D-12). AI SDK v6 `tool({inputSchema, execute})`;
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped tool inventory (see Code).
+**Code:** `makeVanaTools(kind)` — prototype `server/vana/tools.ts` (24 tools), edge `_shared/vana/tools.ts`
+(28: + `draftWeek`, `askPantry`, `recordDebrief`, `planWeek` — D-012). AI SDK v6 `tool({inputSchema, execute})`;
 a UI tool returns a `VanaPart` (rendered by the client), a data tool returns plain data (seen by the model only).
+**Scope:** the tool inventory by conversation kind — what each tool may do, its side effects, its contract note.
+
+**What this file owns:** the tool inventory itself — which tools exist per conversation kind, what each returns,
+its side effects and its contract notes. It owns no register/copy rule for *when* a tool's output is spoken
+([`voice.md`](voice.md)) and no wire envelope ([`wire-protocol.md`](wire-protocol.md)).
 
 ## Tool sets
 
@@ -17,7 +23,7 @@ recallConversations` — read-mostly; **no plan-building tool** (a general chat 
 
 | Tool | Kind | Returns | Side effects | Contract notes |
 |---|---|---|---|---|
-| `askChoice {question?, options[2..4] of string \| {label ≤60, detail ≤90}}` | both | `choices` | — | the only way to ask; details are the trade-offs (V-1); prototype caps at 3 strings (D-12) |
+| `askChoice {question?, options[2..4] of string \| {label ≤60, detail ≤90}}` | both | `choices` | — | the only way to ask; details are the trade-offs (V-1); prototype caps at 3 strings (D-012) |
 | `suggestMeals {title, query?, mealType=dinner, contexts?, batch?, kind?, maxPrepMinutes?, defaultServings=4, excludeAllergens?, requireDiet?, ingredientsOnHand?}` | planning | `meal_picker` | marks shown | SG-1…SG-4; one per turn; never followed by `askChoice` |
 | `searchMeals {query?, mealType?, contexts?, batch?, kind?, limit ≤6, excludeAllergens?, requireDiet?}` | both | compact meals | — | lookups only; never a picker |
 | `diagnoseStaples {}` | planning | `staples` | marks shown | suggest-only (SG-5) |
@@ -52,6 +58,10 @@ recallConversations` — read-mostly; **no plan-building tool** (a general chat 
   prompt bug, not a limit to raise (revisit only if the eval shows starved turns).
 - **T-5 · Zod is the contract at the tool boundary.** Inputs are validated by the AI SDK; outputs by
   `schemas.ts` in the edge contract test (strict objects — an accidental extra key fails).
+- **T-6 · Neither `suggestMeals` nor `draftWeek` may be called on the opener turn of a new plan conversation**
+  (`persona.ts` rule 0, "THE INTERVIEW"; revised 2026-09-03 evening, [D-020](../../DEVIATIONS.md#d-020--opener-reversal-question-first-supersedes-the-08-31-frame--three-dinners-decision)).
+  The opener is `askChoice` only (`../agent/voice.md` §Opener); meals are proposed only after the athlete
+  answers, and at most one follow-up `askChoice` may come between the opener and the first `suggestMeals`.
 
 ## Conformance
 

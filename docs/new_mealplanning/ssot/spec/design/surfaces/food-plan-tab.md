@@ -1,9 +1,16 @@
 # Design SSOT — Surface: Food → Plan
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Prototype `routes/food.plan.tsx` (plan-tab
-v2, 2026-08-31); Dart `food_screen.dart` Plan tab. **Composition:** plan-tile v1 · staples-card v1 (compact) ·
-`macro-pill-row` (PROPOSED). **Data:** the `get_home {date}` payload — plan (active), day guidance, today's
-target, staples when no plan, Vana's day note, memories. No model call on read.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `routes/food.plan.tsx` (plan-tab v2, 2026-08-31).
+**Code:** Dart `food_screen.dart` Plan tab.
+**Scope:** composes plan-tile v1 · staples-card v1 (compact) · `macro-pill-row` (PROPOSED). **Data:** the
+`get_home {date}` payload — plan (active), day guidance, today's target, staples when no plan, Vana's day note,
+memories. No model call on read.
+
+**What this file owns:** the Food → Plan surface — the Vana day-note message, the plan list, no-plan/staples
+state, and confirm (FP-1..FP-7); it composes plan-tile and staples-card rather than redefining them.
+
+## Contracts
 
 | # | Contract |
 |---|---|
@@ -15,8 +22,12 @@ target, staples when no plan, Vana's day note, memories. No model call on read.
 | FP-6 | **Today's target line reads as minimums** ("at least 344g carbs · 117g protein · 2,640 kcal") from `daily_macro_targets` — never recomputed (T-1). |
 | FP-7 | **Every displayed number traces to a wire field:** servings → `PlanMeal.servings/servingsLeft`; the meal count → `|meals|`; the target → `DayTarget`; the note → `dayNotes`. |
 
-Scope guards: no day grid (the `days` slots are kept server-side for a future "plan my day"), no "4 left · Cook
-Sun" pips, no theme/gear in the header.
+## Scope guards (this iteration)
+
+- **FP-S1 — ⚖️ interim (Lee, 2026-09-03).** No day grid (the `days` slots are kept server-side for a future
+  "plan my day").
+- **FP-S2 — ⚖️ interim (Lee, 2026-09-03).** No "4 left · Cook Sun" pips.
+- **FP-S3 — ⚖️ interim (Lee, 2026-09-03).** No theme/gear in the header.
 
 Conformance: goldens (with plan, no plan + staples, draft with Confirm); Patrol plan flow ("Ate it" is its last
 assertion); widget `vana_message_card_test` (stale refetch).

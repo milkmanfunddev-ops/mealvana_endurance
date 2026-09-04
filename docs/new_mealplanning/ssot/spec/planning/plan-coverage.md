@@ -1,11 +1,13 @@
 # SSOT — Plan Coverage
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `coverageOf(meals, scope)` — edge `_shared/vana/plan-math.ts` (authoritative, pure); prototype
-`server/vana/plan.ts` `coverageOf(meals)` (**no scope — D-11**); Dart `PlanCoverageService.compute(meals,
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `coverageOf(meals, scope)` — edge `_shared/vana/plan-math.ts` (authoritative, pure); prototype
+`server/vana/plan.ts` `coverageOf(meals)` (**no scope — D-011**); Dart `PlanCoverageService.compute(meals,
 lunchDinnerSlots)` (`domain/plan_coverage.dart`, the local-first recompute).
-**Consumers:** `MealPlan.coverage` on every `batch` part; the plan bar / staples card "N / 14"; the persona's
-"when every type in scope is covered".
+**Scope:** `coverage` — slots, covered, per-day macros, the `coverage_scope` denominator. **Consumers:**
+`MealPlan.coverage` on every `batch` part; the plan bar / staples card "N / 14"; the persona's "when every
+type in scope is covered".
 
 ## Inputs
 
@@ -51,11 +53,11 @@ covered 14; 9130 kcal ÷ 7 → 1304; 1215 g C ÷ 7 → 174; 571 g P ÷ 7 → 82.
 
 ## Deviations
 
-- **D-11 — the prototype's `coverageOf` has no `scope` argument**; its plan bar always shows /14. Two vectors
+- **D-011 — the prototype's `coverageOf` has no `scope` argument**; its plan bar always shows /14. Two vectors
   are EXPECTED-RED on `run_prototype.sh` until the prototype adopts `plan-math.ts`'s signature.
 
 ## Conformance
 
-Vectors: `vectors/planning/plan-coverage.json` (10). Edge 10/10; prototype 8/10 (D-11); Dart — the runner maps
+Vectors: `vectors/planning/plan-coverage.json` (10). Edge 10/10; prototype 8/10 (D-011); Dart — the runner maps
 `scope` to the denominator. Required coverage: both denominators, the cap, breakfast/snack exclusion, null
 macros, the .5 rounding, an unknown scope string.

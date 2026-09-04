@@ -1,9 +1,12 @@
 # SSOT — Plan (lifecycle, ownership and edits)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Owners in code:** `meal_plans` / `plan_meals` (`20260827090000`, `20260831150000` per-conversation,
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** `../intent/vana-mealplanning-chatbot.md` §4.1 (never a day grid; a collection of meals × servings).
+**Code:** `meal_plans` / `plan_meals` (`20260827090000`, `20260831150000` per-conversation,
 `20260902090000` RPCs, `20260903120000` lifecycle stamps); prototype `server/vana/plan.ts`, edge
 `_shared/vana/plan.ts` (+ `plan-math.ts`), Dart `meal_plan_repository.dart` (local-first mirror).
+**Scope:** what a plan *is*, which plan a read or write lands on, and what each edit does.
+
 **What this file owns:** what a plan *is*, which plan a read or write lands on, and what each edit does. It owns
 no arithmetic (`../planning/plan-coverage.md`, `cooking-sessions.md`, `shopping-list.md`) and no pixel.
 
@@ -53,7 +56,7 @@ no arithmetic (`../planning/plan-coverage.md`, `cooking-sessions.md`, `shopping-
   `proposeRule` (only when the context has a race — the race-eve plate) and accepted through `accept_rule` /
   an `askChoice`. A rule with the same day + text replaces itself.
 - **P-11 · New plan archives the active one.** `new_plan` (edge; declared but unimplemented in the prototype —
-  D-16) archives the week's active plan and starts a conversation-less draft.
+  D-016) archives the week's active plan and starts a conversation-less draft.
 - **P-12 · Rewind restores the draft to a snapshot** (edge, Phase 6). Every assistant turn stores
   `metadata.plan_snapshot = [{source, id, servings, session}]`; `rewind(messageId)` deletes that user message and
   everything after it and rebuilds the conversation draft from the previous assistant turn's snapshot (a rewind
@@ -85,9 +88,9 @@ the optimistic path.
 
 ## Deviations
 
-- **D-16** — `new_plan` is declared in the prototype's `UiAction` union but not implemented there; the edge
+- **D-016** — `new_plan` is declared in the prototype's `UiAction` union but not implemented there; the edge
   implements it.
-- **D-17** — the prototype hard-deletes `plan_meals` rows on remove; the sync plan calls for `is_deleted` soft
+- **D-017** — the prototype hard-deletes `plan_meals` rows on remove; the sync plan calls for `is_deleted` soft
   deletes so removals sync (plan-tab-v2 sync table). Not yet in either twin's schema.
 
 ## Conformance

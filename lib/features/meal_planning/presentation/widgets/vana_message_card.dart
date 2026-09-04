@@ -5,6 +5,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../domain/vana_message.dart';
 import 'part_entrance.dart';
+import 'streamed_text.dart';
 import 'vana_avatar.dart';
 import 'vana_bubble.dart';
 import 'vana_part_renderer.dart';
@@ -79,19 +80,32 @@ class VanaMessageCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isStreaming && !hasContent)
-                VanaBubble(child: _TypingDots(color: secondary))
-              else if (hasContent) ...[
-                VanaBubble(
-                  squareBottomLeft: hasParts,
-                  child: SelectableText(
-                    message.content,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor,
-                      height: 1.6,
-                    ),
-                  ),
+              // The typing dots dissolve INTO the bubble at the same spot
+              // when the first delta lands (a cross-fade, not a swap), and
+              // the bubble then grows smoothly as chunks arrive instead of
+              // hopping — the 2026-09-04 animation pass.
+              _BubbleHandoff(
+                typing: isStreaming && !hasContent,
+                bubble: hasContent
+                    ? VanaBubble(
+                        key: const ValueKey('meal_planning.prose_bubble'),
+                        squareBottomLeft: hasParts,
+                        child: StreamedText(
+                          text: message.content,
+                          animate: isStreaming,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: textColor,
+                            height: 1.6,
+                          ),
+                        ),
+                      )
+                    : null,
+                dots: VanaBubble(
+                  key: const ValueKey('meal_planning.typing_bubble'),
+                  child: _TypingDots(color: secondary),
                 ),
+              ),
+              if (hasContent) ...[
                 if (isStreaming && statusTool != null) ...[
                   const SizedBox(height: 4),
                   // The S20 pattern: a mini pulsing avatar beside the named
@@ -184,6 +198,60 @@ class _TypingDotsState extends State<_TypingDots>
           },
         );
       }),
+    );
+  }
+}
+
+/// Cross-fades the typing bubble into the prose bubble in place, and
+/// animates the prose bubble's height as streamed text grows. Both honour
+/// the platform reduce-motion setting by switching without animation.
+class _BubbleHandoff extends StatelessWidget {
+  const _BubbleHandoff({
+    required this.typing,
+    required this.bubble,
+    required this.dots,
+  });
+
+  final bool typing;
+  final Widget? bubble;
+  final Widget dots;
+
+  @override
+  Widget build(BuildContext context) {
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final duration = reduce ? Duration.zero : const Duration(milliseconds: 200);
+    final Widget child;
+    if (typing) {
+      child = dots;
+    } else if (bubble != null) {
+      child = AnimatedSize(
+        duration: reduce ? Duration.zero : const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        alignment: Alignment.topLeft,
+        child: bubble,
+      );
+    } else {
+      child = const SizedBox.shrink(key: ValueKey('meal_planning.no_bubble'));
+    }
+    return AnimatedSwitcher(
+      duration: duration,
+      switchInCurve: Curves.easeOutCubic,
+      switchOutCurve: Curves.easeInCubic,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SizeTransition(
+          sizeFactor: animation,
+          alignment: Alignment.topLeft,
+          child: child,
+        ),
+      ),
+      // Top-left stack so the incoming bubble lands exactly where the dots
+      // were, rather than centred under them.
+      layoutBuilder: (current, previous) => Stack(
+        alignment: Alignment.topLeft,
+        children: [...previous, if (current != null) current],
+      ),
+      child: child,
     );
   }
 }

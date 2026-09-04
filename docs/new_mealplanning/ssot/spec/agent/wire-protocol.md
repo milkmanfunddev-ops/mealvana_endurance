@@ -1,10 +1,16 @@
 # SSOT — Wire Protocol, Models and Limits
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Authority:** `../../../implement_mealplanning/02-contract.md` (the frozen `contract-v1`, decided 2026-09-01) —
-this file digests its §5–§7 into contract rows and adds the cost posture. **Engine:** prototype
-`POST /api/vana/chat-ndjson` (reference implementation) and `/api/vana/chat` (AI SDK UI stream, web only); edge
-`vana-chat` (+ the `jade-chat` alias for 1.23.x clients), `vana-action`, `vana-day-notes`; `stream.ts`.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** `../../../implement_mealplanning/02-contract.md` (the frozen `contract-v1`, decided 2026-09-01) —
+this file digests its §5–§7 into contract rows and adds the cost posture.
+**Code:** prototype `POST /api/vana/chat-ndjson` (reference implementation) and `/api/vana/chat` (AI SDK UI
+stream, web only); edge `vana-chat` (+ the `jade-chat` alias for 1.23.x clients), `vana-action`,
+`vana-day-notes`; `stream.ts`.
+**Scope:** the NDJSON envelope, models, limits, rate limits and persistence rules riding on `contract-v1`.
+
+**What this file owns:** the NDJSON wire envelope, which models serve which role, the cost posture and the
+rate-limit buckets. It owns no tool inventory ([`tools.md`](tools.md)) and no copy/register rules
+([`voice.md`](voice.md)); the frozen types themselves live in `02-contract.md`, not here.
 
 ## Envelope (NDJSON — what both clients speak)
 
@@ -29,12 +35,12 @@ Actions: `POST vana-action {type, payload}` → `{parts: VanaPart[], ...extras}`
 
 | Role | Env | Default (edge) | Default (prototype) |
 |---|---|---|---|
-| chat | `VANA_CHAT_MODEL` | `anthropic/claude-haiku-4-5` | `anthropic/claude-sonnet-4-6` (D-18 — the walkthrough says Haiku; Sonnet "only by env override") |
+| chat | `VANA_CHAT_MODEL` | `anthropic/claude-haiku-4-5` | `anthropic/claude-sonnet-4-6` (D-018 — the walkthrough says Haiku; Sonnet "only by env override") |
 | tool jobs (day notes, pantry vision) | `VANA_TOOL_MODEL` | `anthropic/claude-haiku-4-5` | same |
 | embeddings | `VANA_EMBED_MODEL` | `openai/text-embedding-3-small` | same |
 
 All through the Vercel AI Gateway (`AI_GATEWAY_API_KEY`). Context block ~250 tokens; compact tool outputs;
-`maxOutputTokens` 700 (edge, both kinds; prototype: 400 planning / 700 general — D-14); steps 6 / 8.
+`maxOutputTokens` 700 (edge, both kinds; prototype: 400 planning / 700 general — D-014); steps 6 / 8.
 
 ## Rate limits (`vana_calls` is the bucket store; prefix-matched; fail open on DB error)
 

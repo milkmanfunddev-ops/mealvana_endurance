@@ -1,8 +1,14 @@
 # Design SSOT — Surface: Vana General Chat
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Prototype `routes/vana.tsx`
-(`mode=general`); the app's `/jade` becomes "Vana · general". Reached from "Ask Vana anything →" on the Plan tab
-and the Meals tab.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `routes/vana.tsx` (`mode=general`).
+**Code:** the app's `/jade` becomes "Vana · general" — no other implementing file named in this pass.
+**Scope:** reached from "Ask Vana anything →" on the Plan tab and the Meals tab.
+
+**What this file owns:** the general-chat surface — its empty state, absence of a plan bar/picker chips,
+narration suppression, and the day-guidance card (VG-1..VG-5).
+
+## Contracts
 
 | # | Contract |
 |---|---|

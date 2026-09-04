@@ -13,9 +13,13 @@ Two things differ from the QA repo, deliberately stated up front:
 2. **Implementation is still not authorization.** Recording what the code does is the *record* step (PLAN.md
    Phase 1 step 2 in the QA repo's vocabulary), not the ratify step. Where the code does something that looks
    wrong it is filed as a `characterization` vector plus a Q-item, never blessed. Where Xuan's intent and the
-   build disagree it is in `DEVIATIONS.md` (D-1 … D-10) with the ⚖️ interim call that shipped.
+   build disagree it is in `DEVIATIONS.md` (D-001 … D-010 — old single/double-digit IDs, see the old→new map at
+   its top) with the ⚖️ interim call that shipped.
 
-Created 2026-09-02 (intent spec + deviations); restructured into families with vectors and runners 2026-09-03.
+Created 2026-09-02 (intent spec + deviations); restructured into families with vectors and runners 2026-09-03;
+normalized to the QA repo's header/rule/conformance shape and folded in the 2026-09-03 evening's code changes
+(question-first opener, intro-card removal, picker tap/tick split, Browse-meals-from-chat) 2026-09-04 —
+[`PLAN.md`](PLAN.md) Phase 2.
 
 ## Layout
 
@@ -23,7 +27,7 @@ Created 2026-09-02 (intent spec + deviations); restructured into families with v
 ssot/
   README.md                 this file — layout, families, governance, status
   OPEN-QUESTIONS.md         the Q register: Xuan's Q-1..7 (intent) + everything the record surfaced
-  DEVIATIONS.md             intent-vs-build (D-1..10) and twin/code deviations (D-11..19)
+  DEVIATIONS.md             intent-vs-build (D-001..010) and twin/code deviations (D-011..019), plus D-020+
   spec/
     intent/                 Xuan's design intent, sourced per claim — the stage-0 distillation
     planning/               Engine V: the deterministic calculations (week character, coverage, sessions,
@@ -36,12 +40,12 @@ ssot/
   conformance/              run_edge.sh (Deno) · run_prototype.sh (vitest) · run_dart.sh (flutter) · run_all.sh
 ```
 
-## Families and status (2026-09-03)
+## Families and status (2026-09-04)
 
 | Family | Sections | Vectors | Status |
 |---|---|---|---|
 | [`spec/intent/`](spec/intent/vana-mealplanning-chatbot.md) | 1 | — | PROPOSED (synthesised from Xuan's artifacts 2026-09-02); Q-1..7 carry ⚖️ interim calls |
-| [`spec/planning/`](spec/planning/README.md) | 10 (+ season table) | 130 | RECORDED v1 — edge 109/109 · prototype 108 + 2 expected-red (D-11) + 1 skipped · Dart 60/60 |
+| [`spec/planning/`](spec/planning/README.md) | 10 (+ season table) | 130 | RECORDED v1 — edge 109/109 · prototype 108 + 2 expected-red (D-011) + 1 skipped · Dart 60/60 |
 | [`spec/selection/`](spec/selection/meal-search.md) | 2 | 15 | RECORDED v1 — prototype 15/15 (edge modules import `npm:ai`; deno arm skips) |
 | [`spec/domain/`](spec/domain/README.md) | 4 | — | RECORDED v1 — DB-shaped truth; contract fixtures + seam tests, no pure vectors |
 | [`spec/agent/`](spec/agent/README.md) | 4 | 5 | RECORDED v1 — `scripts/vana-eval` is the executable form (13 conversations, green last run) |
@@ -54,13 +58,23 @@ ssot/
 - **Authority order for *build truth*:** the edge twin (`_shared/vana/`) is ahead of the prototype since
   2026-09-03 and is treated as authoritative where they differ; the prototype is the reference implementation of
   `contract-v1` and the design's reference rendering; the Dart client is derived. Drift between twins is a
-  deviation (D-11 … D-18), never a choice.
+  deviation (D-011 … D-018), never a choice.
 - **Amendments:** a ruling from Xuan is quoted, dated and folded in place (the `intraday-display.md` §4b
   pattern); a contract change to `contract-v1` types is versioned in three places at once
   (`../implement_mealplanning/02-contract.md`). Open questions live in `OPEN-QUESTIONS.md`; nobody resolves one
   by implementer judgment without marking it ⚖️.
 - **Specs and vectors never move to make code pass.** A red arm is a finding: fix the twin, or file a Q.
 - **The screenshot test governs `spec/design/`:** anything a screenshot can hold is left to the renderings.
+
+## A conformance-run caveat
+
+`scripts/vana-eval/` and `scripts/vana-eval/lifecycle.ts` run against dev using the same account
+`scripts/sim-dev-login.sh` signs into the simulator (the account stored in macOS Keychain service
+`mealvana-dev-login`) — the standing eval account. Running the eval and then poking around dev in the
+simulator (or vice versa) share plans, conversations and memories on that one account; an eval run leaves
+plans/debriefs behind that a manual walkthrough will see, and a manual session's picks can desync an eval
+expecting a clean slate. Treat that account as shared, noisy state, not a clean fixture — the eval scripts bill
+real AI spend too, so both run "by hand," never in CI.
 
 ## The loop
 

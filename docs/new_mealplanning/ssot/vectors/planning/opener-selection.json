@@ -1,6 +1,6 @@
 {
   "section": "opener-selection",
-  "engine": "pickOpener(input) + pendingDebrief(input) — edge _shared/vana/opener.ts (the prototype has no opener variants — D-12)",
+  "engine": "pickOpener(input) + pendingDebrief(input) — edge _shared/vana/opener.ts (the prototype has no opener variants — D-012)",
   "specVersion": "v1 RECORDED (2026-09-03)",
   "note": "Plans carry only what the rule reads: status, weekStart, the sessions of their meals, and the two lifecycle stamps. Executable on the edge twin (deno) only.",
   "vectors": [

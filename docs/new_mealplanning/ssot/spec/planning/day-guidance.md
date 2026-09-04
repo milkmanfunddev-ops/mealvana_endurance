@@ -1,9 +1,12 @@
 # SSOT — Day Guidance
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `dayGuidance(userId, ctx, date)` — prototype `server/vana/tools.ts`, edge `_shared/vana/tools.ts`
-(identical logic). **Consumers:** the `day_guidance` part (general Vana "what should I eat today", the home
-payload's `day`), `planDayPart` (which context tags fill a day's slots), the day-notes fallback text.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `dayGuidance(userId, ctx, date)` — prototype `server/vana/tools.ts`, edge `_shared/vana/tools.ts`
+(identical logic).
+**Scope:** the day-label decision table, the note copy, and the dinner + snack pick. **Consumers:** the
+`day_guidance` part (general Vana "what should I eat today", the home payload's `day`), `planDayPart` (which
+context tags fill a day's slots), the day-notes fallback text.
 
 ## Inputs
 

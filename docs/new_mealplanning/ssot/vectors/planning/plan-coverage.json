@@ -1,8 +1,8 @@
 {
   "section": "plan-coverage",
-  "engine": "coverageOf(meals, scope) — edge _shared/vana/plan-math.ts (authoritative) · prototype server/vana/plan.ts coverageOf(meals) (no scope arg — see D-11) · Dart PlanCoverageService.compute(meals, lunchDinnerSlots)",
+  "engine": "coverageOf(meals, scope) — edge _shared/vana/plan-math.ts (authoritative) · prototype server/vana/plan.ts coverageOf(meals) (no scope arg — see D-011) · Dart PlanCoverageService.compute(meals, lunchDinnerSlots)",
   "specVersion": "v1 RECORDED (2026-09-03)",
-  "note": "Meals carry only the fields the math reads. `scope` is the athlete's coverage_scope setting (null = never chosen). Dart takes the denominator instead of the scope (7 ⇔ 'dinners', else 14) — the runner maps it. perDay uses JS Math.round (halves toward +∞); Dart mirrors it with _jsRound. Vectors with scope 'dinners' are EXPECTED-RED on the prototype twin until it grows the scope argument (D-11).",
+  "note": "Meals carry only the fields the math reads. `scope` is the athlete's coverage_scope setting (null = never chosen). Dart takes the denominator instead of the scope (7 ⇔ 'dinners', else 14) — the runner maps it. perDay uses JS Math.round (halves toward +∞); Dart mirrors it with _jsRound. Vectors with scope 'dinners' are EXPECTED-RED on the prototype twin until it grows the scope argument (D-011).",
   "vectors": [
     {
       "id": "cap-at-14",

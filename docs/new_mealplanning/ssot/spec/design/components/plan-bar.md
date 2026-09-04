@@ -1,8 +1,14 @@
 # Design SSOT — Component: Plan Bar (the provisional plan in chat)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Extracted from `PlanBar` / `PlanTile` /
-`ReviewSheet` / `MealSheet` (prototype `planbar.tsx`) and the Dart plan bar. The research's "selected meals
-tray", done as the real server-acked draft (update plan §4.1 S22: "MET, better").
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `planbar.tsx` (`PlanBar` / `PlanTile` / `ReviewSheet` / `MealSheet`).
+**Code:** the Dart plan bar.
+**Scope:** the research's "selected meals tray", done as the real server-acked draft (update plan §4.1 S22:
+"MET, better").
+
+**What this file owns:** the provisional-plan-in-chat state machine (minimized ↔ expanded, Review, confirm) and
+its contracts (PB-1..PB-7) — pinning, tile actions, the Review sheet, and confirm, which lives here and nowhere
+else (PB-5).
 
 ## State model
 

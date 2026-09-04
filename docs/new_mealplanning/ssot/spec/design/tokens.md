@@ -1,10 +1,11 @@
 # Design SSOT — Tokens (meal-planning meaning contracts)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Authority for values:** `docs/ssot/spec/design/tokens.md` (RATIFIED v1, Xuan 2026-08-14; Q-D8/Q-D9 2026-08-26)
-— the one place raw values live. This file adds **meaning** rows the meal-planning surfaces rely on and that
-the ratified registry does not yet carry. Values below are quoted from the app's `slot_palette.dart` /
-`macro_palette.dart` only so the row is checkable; they are not a second registry.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** `docs/ssot/spec/design/tokens.md` (RATIFIED v1, Xuan 2026-08-14; Q-D8/Q-D9 2026-08-26) — the one
+place raw values live.
+**Code:** `slot_palette.dart`, `macro_palette.dart` (app constants, quoted below only so each row is checkable).
+**What this file owns:** the meal-planning **meaning** rows the ratified registry does not yet carry — not a
+second registry; raw values stay authoritative in the Source above.
 
 | Token / role | Value (app constant) | Meaning contract (proposed) |
 |---|---|---|
@@ -21,4 +22,4 @@ the ratified registry does not yet carry. Values below are quoted from the app's
 **Q-TK1 is the load-bearing question:** the four slot colours reuse three meaning-bound tokens for a
 categorical purpose. Either the registry gains a "category labels may borrow hues without meaning" rule, or the
 slot palette is re-ratified as its own four-token set. Until ruled, the slot chips are a recorded deviation
-(D-19) rather than a contract.
+(D-019) rather than a contract.

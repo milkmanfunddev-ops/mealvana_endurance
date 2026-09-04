@@ -1,6 +1,6 @@
 {
   "section": "clamp-sentences",
-  "engine": "clampSentences(text, n) — prototype server/vana/chat.ts (default n = 2, the 2026-08-31 clamp) · edge _shared/vana/chat.ts (default n = RUNAWAY_SENTENCES = 8, the 2026-09-03 runaway guard — D-14)",
+  "engine": "clampSentences(text, n) — prototype server/vana/chat.ts (default n = 2, the 2026-08-31 clamp) · edge _shared/vana/chat.ts (default n = RUNAWAY_SENTENCES = 8, the 2026-09-03 runaway guard — D-014)",
   "specVersion": "v1 RECORDED (2026-09-03)",
   "note": "n is passed explicitly so both twins agree; the DEFAULT differs between them and is a recorded deviation. Executable on the prototype (vitest); the edge chat module imports npm:ai so the deno runner skips it.",
   "vectors": [

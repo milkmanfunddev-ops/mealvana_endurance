@@ -1,6 +1,6 @@
 {
   "section": "cooking-timers",
-  "engine": "findDurations(text) / clock(seconds) — Dart CookingStepTimers (lib/features/meal_planning/domain/cooking_step_timers.dart) · prototype routes/food.cook_.$id.tsx (NOT exported — pending extraction, D-13)",
+  "engine": "findDurations(text) / clock(seconds) — Dart CookingStepTimers (lib/features/meal_planning/domain/cooking_step_timers.dart) · prototype routes/food.cook_.$id.tsx (NOT exported — pending extraction, D-013)",
   "specVersion": "v1 RECORDED (2026-09-03)",
   "note": "Executable on the Dart twin. `index` is the 0-based offset of the match in the step text.",
   "vectors": [

@@ -1,10 +1,13 @@
 # SSOT — Meal Search (the `search_meals` contract)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `public.search_meals(...)` (SQL, `supabase/migrations/20260828090000_meal_library_assemblies.sql` +
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `public.search_meals(...)` (SQL, `supabase/migrations/20260828090000_meal_library_assemblies.sql` +
 the vote columns from `20260901120000_recipe_directions_media_feedback.sql`) called through `searchMeals(opts)`
 (prototype `server/vana/meals.ts`, edge `_shared/vana/meals.ts`). ONE implementation — the database — so there
-is no twin to drift. **Consumers:** every picker, the Meals tab, day guidance, staples matching, `draftWeek`.
+is no twin to drift.
+**Scope:** the `search_meals` contract — what any correct search must guarantee, not how Postgres ranks.
+**Consumers:** every picker, the Meals tab, day guidance, staples matching, `draftWeek`.
 
 > Like `generate-plan.md` in the QA repo this is an **invariant contract**: it says what any correct search must
 > guarantee, not how Postgres ranks.

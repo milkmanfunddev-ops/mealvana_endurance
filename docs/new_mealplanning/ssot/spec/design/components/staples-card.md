@@ -1,7 +1,12 @@
 # Design SSOT — Component: Staples Card
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** The `staples` part (`diagnoseStaples`) and
-the Plan tab's no-plan state. Changed 2026-09-02 from auto-add to suggest-only.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** the `staples` part (`diagnoseStaples`).
+**Code:** not verified in this pass — no implementing widget file is named here.
+**Scope:** changed 2026-09-02 from auto-add to suggest-only; composed into the Plan tab's no-plan state.
+
+**What this file owns:** the staples card's row ordering, tick-to-draft behavior, log-only inertness, and the
+compact Plan-tab variant (SC-1..SC-5) — used by the Plan tab's no-plan state and planning chat.
 
 ## State model
 

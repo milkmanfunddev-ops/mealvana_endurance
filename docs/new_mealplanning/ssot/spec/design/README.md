@@ -1,7 +1,11 @@
 # spec/design/ — meal-planning design SSOT
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Same discipline as
-`docs/ssot/spec/design/` (the QA repo's design family): the **screenshot test** decides what lives here — only
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** the reference renderings below (`source-authority.md` §3 — nothing here is a ratified rendering yet).
+**Code:** not verified in this pass — this is the family index; individual components/surfaces cite their own implementing files.
+**Scope:** indexes the design family (components, surfaces, lifecycle, conformance status) under the screenshot-test discipline below; defines no contract of its own.
+
+Same discipline as `docs/ssot/spec/design/` (the QA repo's design family): the **screenshot test** decides what lives here — only
 what a side-by-side screenshot cannot hold (state machines, gestures and their data writes, suppressions, token
 *meaning*, cross-component propagation, persistence, copy registers, number traceability). Layout, radius,
 type and colour values are **screenshot-held** by the reference renderings and are deliberately absent.
@@ -21,7 +25,7 @@ colours, the selection accent) on top of it.
 
 | Component | Contract | Status |
 |---|---|---|
-| [`components/meal-picker.md`](components/meal-picker.md) | the 3-meal carousel: tap = pick, tick state, "Other options" | RECORDED |
+| [`components/meal-picker.md`](components/meal-picker.md) | the 3-meal carousel: tap opens detail, tick picks (revised 2026-09-04), "Other options" | RECORDED |
 | [`components/meal-card.md`](components/meal-card.md) | default / selected / excluded / in-plan / yours; the why + attribution line; macros behind `show_macros` | RECORDED |
 | [`components/plan-bar.md`](components/plan-bar.md) | minimized ↔ expanded, tiles with ×/stepper, Review gate, collapse-on-turn | RECORDED |
 | [`components/plan-tile.md`](components/plan-tile.md) | the Plan-tab tile: swipe right = swap, left = remove (undo), tap = sheet, edit mode | RECORDED |
@@ -34,10 +38,11 @@ colours, the selection accent) on top of it.
 
 | Surface | Composes | Status |
 |---|---|---|
-| [`surfaces/vana-planning-chat.md`](surfaces/vana-planning-chat.md) | transcript order, picker chips, plan bar, review sheet, confirmed card, status lines, intro card, edit/rewind | RECORDED |
+| [`surfaces/vana-planning-chat.md`](surfaces/vana-planning-chat.md) | transcript order, picker chips, plan bar, review sheet, confirmed card, status lines, edit/rewind, Browse-meals entry point (**no intro card** — removed 2026-09-03 evening, D-021) | RECORDED |
+| [`surfaces/vana-browse.md`](surfaces/vana-browse.md) | whole-catalog browse-and-add from chat, writing into the conversation's draft (new 2026-09-03 evening) | RECORDED |
 | [`surfaces/vana-general-chat.md`](surfaces/vana-general-chat.md) | empty state, no plan bar, narration suppression | RECORDED |
 | [`surfaces/food-plan-tab.md`](surfaces/food-plan-tab.md) | Vana message (day note), the plan list, no-plan state with staples, confirm | RECORDED |
-| [`surfaces/food-meals-catalog.md`](surfaces/food-meals-catalog.md) | Mine/Library, chips, semantic search, detail, thumb, save, add ×N | RECORDED |
+| [`surfaces/food-meals-catalog.md`](surfaces/food-meals-catalog.md) | Mine/Library, chips, semantic search, detail, thumb, save, add ×N — the `MealCatalogBrowser` shared with `vana-browse.md` | RECORDED |
 | [`surfaces/food-shopping.md`](surfaces/food-shopping.md) | the list tab | RECORDED |
 | [`surfaces/vana-settings.md`](surfaces/vana-settings.md) | batch cooking, show macros, reminders (dark), the memory drawer | RECORDED |
 

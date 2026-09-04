@@ -1,10 +1,12 @@
 # SSOT — Cooking Timers
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** Dart `CookingStepTimers.findDurations(text)` / `clock(seconds)`
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** Dart `CookingStepTimers.findDurations(text)` / `clock(seconds)`
 (`lib/features/meal_planning/domain/cooking_step_timers.dart`) — a port of `findDurations` / `clock` in the
-prototype's `routes/food.cook_.$id.tsx`, which are **not exported** (D-13: TS arm pending extraction).
-**Consumers:** cooking mode — the "Start N timer" chips under a step; the running-timer clock.
+prototype's `routes/food.cook_.$id.tsx`, which are **not exported** (D-013: TS arm pending extraction).
+**Scope:** timers parsed from step text and the clock display format. **Consumers:** cooking mode — the
+"Start N timer" chips under a step; the running-timer clock.
 
 ## Constants
 
@@ -44,4 +46,4 @@ blip + vibrate on web and a local notification + vibration on Flutter (open deci
 
 Vectors: `vectors/planning/cooking-timers.json` (21: 15 `findDurations`, 6 `clock`). Dart 21/21 (2026-09-03,
 after correcting a hand-counted index in the vector — the engine was right). TS arm: **pending extraction** of
-`findDurations` into `lib/vana/` so the prototype runner can cover it (D-13).
+`findDurations` into `lib/vana/` so the prototype runner can cover it (D-013).

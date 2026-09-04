@@ -1,9 +1,14 @@
 # Design SSOT — Component: Cooking Mode
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Prototype `routes/food.cook_.$id.tsx`;
-Dart `cooking_mode_screen.dart` + `cooking_session_controller.dart`. Reference for the feature set: the old
-Mealvana consumer app's cooking mode (`../../../recipe-directions-and-cooking-mode.md` §4).
-**Numbers authority:** `../../planning/cooking-timers.md`.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `routes/food.cook_.$id.tsx`; reference for the feature set: the old Mealvana consumer
+app's cooking mode (`../../../recipe-directions-and-cooking-mode.md` §4).
+**Code:** Dart `cooking_mode_screen.dart` + `cooking_session_controller.dart`.
+**Scope:** numbers authority `../../planning/cooking-timers.md` — this component invents no timer arithmetic.
+
+**What this file owns:** the cooking-mode state machine (overview → cooking → done) and its contracts
+(CM-1..CM-7) — navigation, timers, alarm, wake lock, and the done/thumb flow; timer durations themselves are
+owned by `../../planning/cooking-timers.md`.
 
 ## State model
 

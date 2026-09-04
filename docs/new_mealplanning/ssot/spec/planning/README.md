@@ -1,13 +1,14 @@
 # SSOT — Meal-Planning Calculations (Engine V)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan's ratification.** Recorded from what the
-prototype (`mealplanning-prototype` @ `contract-v1` + the 2026-09-03 persona mirror) and its edge-function
-twin (`mealvana_endurance` branch `mealplanning`, `supabase/functions/_shared/vana/`) actually compute. Nothing
-here has been ruled on by Xuan; per the governance rule every section states the **built** behaviour as the
-proposed contract and files what looks wrong as a question, never as a silent edit.
-
-**Engine:** V — the deterministic half of Vana. Three implementations exist and are contracted to be MIRRORS,
-not forks (the "twin" rule, [`../agent/guardrails.md`](../agent/guardrails.md) H9):
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan's ratification.
+**Source:** recorded from what the prototype (`mealplanning-prototype` @ `contract-v1` + the 2026-09-03 persona
+mirror) and its edge-function twin (`mealvana_endurance` branch `mealplanning`,
+`supabase/functions/_shared/vana/`) actually compute. Nothing here has been ruled on by Xuan; per the
+governance rule every section states the **built** behaviour as the proposed contract and files what looks
+wrong as a question, never as a silent edit.
+**Code:** Engine V — the deterministic half of Vana. Three implementations exist and are contracted to be
+MIRRORS, not forks (the "twin" rule, [`../agent/guardrails.md`](../agent/guardrails.md) H9):
+**Scope:** every deterministic calculation the model is not allowed to make (see "What this family owns" below).
 
 | Twin | Where | Runs |
 |---|---|---|
@@ -57,12 +58,12 @@ named twin does not yet (listed in [`../../DEVIATIONS.md`](../../DEVIATIONS.md))
   `coverage` is built; the Dart twin mirrors this explicitly (`_jsRound`). Intermediate sums are unrounded.
 - **R5 — Twins are byte-identical where they can be.** `derive-week-character.ts`, `meal-icon.ts` and
   `grocery.ts` are copied verbatim between prototype and edge (only quote style differs). Where the twins have
-  drifted it is a recorded deviation, not a choice (D-11 … D-14).
+  drifted it is a recorded deviation, not a choice (D-011 … D-014).
 
 ## Conformance
 
 Runners: [`../../conformance/`](../../conformance/) — `run_edge.sh` (Deno, the edge twin), `run_prototype.sh`
 (vitest, the prototype), `run_dart.sh` (flutter test, the client twin). Results on 2026-09-03: edge 109/109,
-prototype 108/108 + 2 expected-red (D-11) + 1 skipped (edge-only), Dart — see `conformance/README.md`.
+prototype 108/108 + 2 expected-red (D-011) + 1 skipped (edge-only), Dart — see `conformance/README.md`.
 Explanation layer: the same numbers rendered on the Plan tab / plan bar / picker chips (design family) — the
 engine-says-14-bar-says-13 drift is caught by the design conformance, not here.

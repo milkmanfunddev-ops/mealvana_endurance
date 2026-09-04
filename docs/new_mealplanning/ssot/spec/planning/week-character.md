@@ -1,9 +1,11 @@
 # SSOT — Week Character
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `deriveWeekCharacter(activities, macros)` — prototype `lib/derive-week-character.ts` ≡ edge
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `deriveWeekCharacter(activities, macros)` — prototype `lib/derive-week-character.ts` ≡ edge
 `_shared/vana/derive-week-character.ts` (byte-identical). No Dart twin (the client never derives it).
-**Consumers:** the CONTEXT `WEEK` line, `weekContexts()` (selection), the opener's salience order.
+**Scope:** load score · character band · anchor session · race-week detection. **Consumers:** the CONTEXT
+`WEEK` line, `weekContexts()` (selection), the opener's salience order.
 
 ## Inputs
 

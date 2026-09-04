@@ -1,7 +1,12 @@
 # Design SSOT — Component: Meal Card
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Extracted from `MealCard` (prototype
-`widgets.tsx`) and the Dart `MealCard`; used by the catalog, the rule part, the swap picker and day guidance.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** prototype `widgets.tsx` (`MealCard`).
+**Code:** Dart `MealCard`.
+**Scope:** used by the catalog, the rule part, the swap picker, and day guidance.
+
+**What this file owns:** the meal card's state model and contracts (MC-1..MC-5) — tag priority, excluded-but-
+visible behavior, the subtitle/attribution line, and macro disclosure — wherever the card is composed.
 
 ## State model
 

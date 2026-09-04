@@ -1,9 +1,11 @@
 # SSOT — Opener Selection
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.** Built 2026-09-03 (update plan Phase 3,
-the relationship loop, `../intent/` §5). **Edge only** — the prototype has one scripted opener (D-12).
-**Engine:** `pickOpener(input)` · `pendingDebrief(input)` — `_shared/vana/opener.ts` (pure); `chat.ts` loads the
-inputs and stamps `meal_plans.checkin_done_at`; `recordDebrief` stamps `debrief_done_at`.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** built 2026-09-03 (update plan Phase 3, the relationship loop, `../intent/` §5).
+**Code:** `pickOpener(input)` · `pendingDebrief(input)` — `_shared/vana/opener.ts` (pure); `chat.ts` loads the
+inputs and stamps `meal_plans.checkin_done_at`; `recordDebrief` stamps `debrief_done_at`. **Edge only** — the
+prototype has one scripted opener (D-012).
+**Scope:** which first turn a new planning conversation gets — plan · check-in · debrief.
 **Consumers:** the first turn of every new **meal_planning** conversation (general conversations have no opener,
 `../domain/conversation.md` C-3).
 
@@ -34,7 +36,9 @@ if current.status == confirmed and current.meals ≠ ∅ and !current.checkinDon
 
 Each variant maps to a synthetic first user message (`persona.ts` `OPENERS.meal_planning` · `checkinOpener` ·
 `debriefOpener`) that is **never stored**; because of that the context also carries a `DEBRIEF PENDING <planId>`
-line on later turns so `recordDebrief` can still land ([`athlete-context.md`](athlete-context.md)).
+line on later turns so `recordDebrief` can still land ([`athlete-context.md`](athlete-context.md)). The `plan`
+variant's exact wording (2–3 context sentences, then one `askChoice` question — no meals proposed) is
+`voice.md`'s to state, not restated here; this file only owns which variant is chosen (D-020).
 
 ## Side effects
 
@@ -54,12 +58,16 @@ line on later turns so `recordDebrief` can still land ([`athlete-context.md`](at
 
 ## Deviations
 
-- **D-12** — prototype has no opener variants, no `plan_debriefs`, no stamps.
+- **D-012** — prototype has no opener variants, no `plan_debriefs`, no stamps.
+- **D-020** — the `plan` variant's opener text changed 2026-09-03 evening: question-first (2–3 sentences + one
+  `askChoice`), reversing the 2026-08-31 "frame + three dinners" decision. See `voice.md` §Opener.
 - The client's local reminders (`PlanReminderService`: 18:00 the evening before cook day; 18:00 the closing Sunday)
-  are scheduled from the same `sessionDates` but ship dark (toggle OFF) per ⚖️ Q-5.
+  are scheduled from the same `sessionDates` but ship dark (toggle OFF). **⚖️ interim (Lee, 2026-09-03)** — Q-5 open.
 
 ## Conformance
 
 Vectors: `vectors/planning/opener-selection.json` (14: 12 `pickOpener`, 2 `pendingDebrief`). Edge 14/14
 (2026-09-03). The end-to-end loop (confirm → time-travel → debrief → next opener reacts) is
-`scripts/vana-eval/lifecycle.ts` (bills spend; run by hand).
+`scripts/vana-eval/lifecycle.ts` (bills spend; run by hand) — line 60 specifically asserts the `plan` variant's
+question-first shape (`'opener asks the opening question (choices, no meals yet)'`, D-020); `run.ts`'s
+`presenting` check does the same for every canned planning conversation's opener.

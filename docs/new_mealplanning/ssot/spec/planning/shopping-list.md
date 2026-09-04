@@ -1,10 +1,13 @@
 # SSOT — Shopping List
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `buildShoppingList(userId, plan)` → `buildItems(meals, have)` with `canonicalName`, `classifyAisle`,
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** `../../synthesis-and-recommendations.md` finding 2 (the shopping list is the research's "moment of
+value").
+**Code:** `buildShoppingList(userId, plan)` → `buildItems(meals, have)` with `canonicalName`, `classifyAisle`,
 `parseQty`, `aggregate` — prototype `server/vana/grocery.ts` ≡ edge `_shared/vana/grocery.ts`. The edge twin
-additionally folds the `pantry_items` setting into `have` (Phase 7, 2026-09-03 — D-12). No Dart twin: the client
+additionally folds the `pantry_items` setting into `have` (Phase 7, 2026-09-03 — D-012). No Dart twin: the client
 never builds the list (plan-tab-v2 sync table: "server-derived, don't compute on device").
+**Scope:** ingredient resolution → canonical names → aisles → aggregated quantities → pantry `have`.
 **Consumers:** `MealPlan.shopping`, the `shopping_list` part (`itemCount` = items not `have`; `skipped` = the
 `have` names), the Shopping tab, the ConfirmedCard copy ("13 items. I skipped rice, you have it.").
 
@@ -74,7 +77,7 @@ prototype's own unit test): chicken ×5 and salmon ×4 sharing jasmine rice → 
 
 ## Deviations
 
-- **D-12** — the edge twin's `have` also includes the `pantry_items` setting; the prototype does not.
+- **D-012** — the edge twin's `have` also includes the `pantry_items` setting; the prototype does not.
 
 ## Conformance
 

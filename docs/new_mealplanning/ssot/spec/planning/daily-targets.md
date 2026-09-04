@@ -1,9 +1,11 @@
 # SSOT — Daily Targets (consumption contract)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `ensureWeekTargets` — prototype `server/vana/macros.ts`, edge `_shared/vana/macros.ts`.
-**Authority for the numbers themselves:** the daily-macros SSOT, `docs/ssot/spec/daily-macros/` (Engine B).
-This file says only how Vana *reads* and *back-fills* those rows. It defines no formula.
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** the daily-macros SSOT, `docs/ssot/spec/daily-macros/` (Engine B), is authority for the numbers
+themselves; this file says only how Vana *reads* and *back-fills* those rows. It defines no formula.
+**Code:** `ensureWeekTargets` — prototype `server/vana/macros.ts`, edge `_shared/vana/macros.ts`.
+**Scope:** the consumption contract — never recompute, back-fill on gaps, fail open, minimums framing, and the
+two derived quantities (`planningKcal`, `lunchDinnerKcal`) Vana adds on top of Engine B's rows.
 
 ## The rule
 
@@ -12,7 +14,7 @@ This file says only how Vana *reads* and *back-fills* those rows. It defines no 
 - **T-2 · Back-fill the week from the deployed engine when the app has not.** Before the context is built for
   anchor day `t`, the Sunday-start week containing `t` is checked; for every date without a row the deployed
   `calculate-daily-macros` function (edge constant `MACROS_FN = calculate-daily-macros-v6`; the prototype calls the
-  unversioned name — D-15) is called ONCE for the missing days with the same payload shape the Flutter app builds
+  unversioned name — D-015) is called ONCE for the missing days with the same payload shape the Flutter app builds
   (`daily_macro_service.dart` parity: session duration fallbacks via pace/speed, sport mapping `other → strength`,
   default zone split 70/20/10, yesterday/tomorrow context, `weekly_hours_ratio` when the profile has
   `typical_weekly_hours`), and the result is upserted on `(user_id, target_date)`.
@@ -32,7 +34,7 @@ This file says only how Vana *reads* and *back-fills* those rows. It defines no 
 | `raceWeekCarbsG` | `max(carb_g)` over the three dates strictly before the race date, else null | TARGETS "race-week ≥NC" |
 
 **The 0.55 / 25 / 20 split is a Mealvana design choice with no citation** (code comment: "documented,
-adjustable") — Q-DT1.
+adjustable"). **⚖️ interim (Lee, 2026-09-03)** — Q-DT1 open.
 
 ## Conformance
 

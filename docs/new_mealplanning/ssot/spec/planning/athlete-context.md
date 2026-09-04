@@ -1,10 +1,12 @@
 # SSOT — Athlete Context (the CONTEXT block)
 
-**Status: RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.**
-**Engine:** `buildAthleteContext(userId, latestUserText?, anchorDate?)` + `contextBlock(ctx)` — prototype
+**Status:** RECORDED v1 (Lee, 2026-09-03) — PROPOSED, awaiting Xuan.
+**Source:** N/A — recorded from the shipped code (see Code).
+**Code:** `buildAthleteContext(userId, latestUserText?, anchorDate?)` + `contextBlock(ctx)` — prototype
 `server/vana/context.ts`, edge `_shared/vana/context.ts`. **The edge twin is ahead** (RECENT · SEASON ·
-BUDGET · LAST WEEK · coverage lines, 2026-09-03 Phases 2–3); the prototype lacks them — D-12.
-**Consumers:** the planning system prompt (the whole block), day notes, the home payload. General-kind
+BUDGET · LAST WEEK · coverage lines, 2026-09-03 Phases 2–3); the prototype lacks them — D-012.
+**Scope:** the CONTEXT block's inputs and per-line arithmetic — the athlete data the planning model sees up
+front. **Consumers:** the planning system prompt (the whole block), day notes, the home payload. General-kind
 conversations get NONE of it (only name + date) — `../domain/conversation.md` C-3.
 
 `AthleteContext` is server-internal: the Dart client never sees it (`02-contract.md`).
@@ -50,7 +52,7 @@ Race on Sat with Wed/Thu/Fri carb targets 380/420/460 → `race-week ≥460C`.
 
 ## Deviations
 
-- **D-12** — the prototype context lacks RECENT / SEASON / BUDGET / LAST WEEK / coverage; the persona it mirrors
+- **D-012** — the prototype context lacks RECENT / SEASON / BUDGET / LAST WEEK / coverage; the persona it mirrors
   references them. Edge is authoritative; prototype to catch up.
 
 ## Conformance
@@ -59,4 +61,6 @@ Pending extraction (**Q-AC1**): the budget arithmetic, `daysOut`, the RECENT sel
 formatting live inside the DB-bound builder. Extract `deriveTargets(rows)` / `pickRecentSession(rows)` /
 `contextBlock` into a pure module (the `plan-math.ts` precedent) so `vectors/planning/athlete-context.json` can
 exist. Until then the edge `context.test.ts` and the contract fixtures (`tests/fixtures/opener.json`) are the
-only guard.
+only guard for the block as a whole. **One line is already covered on its own:**
+[`../../vectors/planning/season.json`](../../vectors/planning/season.json) (4) asserts `seasonalProduce(iso)` —
+the SEASON line's pure month table — independently of this extraction.

@@ -4,7 +4,7 @@
  * Phase 1 voice contract (docs/new_mealplanning/vana-chatbot-update-plan.md §3.1 + §5 Phase 1 item 7):
  *   • no emoji anywhere · no narration ("Let me…") · no turn beyond the runaway guard
  *   • PICKING turns ≤2 sentences and naming a training fact · PRESENTING (opener) 2–4 sentences with a concrete athlete fact
- *   • every fork ≤4 options, each carrying a trade-off detail · EXPLAINING turns explain and recommend
+ *   • every fork ≤4 options, labels only (no trade-off details — 2026-09-04) · EXPLAINING turns explain and recommend
  *   • MILESTONE sentence after confirm (≤1 exclamation mark, only there)
  *
  * This BILLS real model spend (Haiku, ~10 conversations × 2–5 turns) and writes real rows for the eval user
@@ -107,7 +107,7 @@ const GLOBAL: Record<string, Check> = {
   no_narration: (t) => (NARRATION.test(t.text) ? `narrates tool use: "${t.text.slice(0, 60)}"` : null),
   runaway: (t) => (sentences(t.text).length > 8 ? `${sentences(t.text).length} sentences (> 8 runaway guard)` : null),
   exclamation_policy: (t, { prev }) => { const n = (t.text.match(/!/g) ?? []).length; const milestone = t.parts.some((p) => p.kind === 'shopping_list' || p.kind === 'debrief'); if (n > 1) return `${n} exclamation marks (max 1, milestone only)`; if (n === 1 && !milestone) return `exclamation mark outside a MILESTONE turn`; void prev; return null; },
-  forks_capped_with_details: (t) => { const c = choices(t); if (!c) return null; if (c.options.length > 4) return `${c.options.length} options (> 4)`; if (!c.details || c.details.length !== c.options.length || c.details.some((d) => !d)) return `fork without a trade-off detail per option: ${JSON.stringify(c)}`; return null; },
+  forks_capped_labels_only: (t) => { const c = choices(t); if (!c) return null; if (c.options.length > 4) return `${c.options.length} options (> 4)`; if (c.details?.some((d) => d)) return `fork carries rendered detail lines (labels-only contract, 2026-09-04): ${JSON.stringify(c)}`; return null; },
   picker_followed_by_text: (t) => (picker(t) && !t.text ? 'bare picker with no sentence' : null),
   no_askchoice_after_picker: (t) => (picker(t) && choices(t) ? 'askChoice after suggestMeals (chips are client-drawn)' : null),
 };
