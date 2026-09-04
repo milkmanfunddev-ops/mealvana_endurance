@@ -325,18 +325,16 @@ class OfflineMacroCalculator {
         t <= windowMax &&
         workoutDurationMin >= citedMinWorkoutMin;
 
-    final double carbsLowG;
-    final double carbsHighG;
-    final String targetBasis;
-    if (inWindow) {
-      carbsLowG = carbBandLowGPerKg * bw;
-      carbsHighG = carbBandHighGPerKg * bw;
-      targetBasis = 'evidenced_band';
-    } else {
-      carbsLowG = total * (1.0 - tierTol);
-      carbsHighG = total * (1.0 + tierTol);
-      targetBasis = 'design_choice';
-    }
+    // RULED (Lee, 2026-09-04) — IMPLEMENTED PENDING RATIFICATION
+    // (qa/intake/2026-09-04-pre-workout-carb-band-ruling.md): the plan band
+    // is target ± 12.5 % in ALL cases — publishing Thomas's full 1.0–4.0 g/kg
+    // evidence RANGE as the plan band gave a ~50 kg athlete a "50g–200g"
+    // slider around a 50 g target. `target_basis` still reports the evidence
+    // window (it describes the TARGET derivation); only the band collapses.
+    // Twin: generate-macros-v4/pre-workout.ts (same ruling, same commit).
+    final carbsLowG = total * (1.0 - tierTol);
+    final carbsHighG = total * (1.0 + tierTol);
+    final targetBasis = inWindow ? 'evidenced_band' : 'design_choice';
 
     return PreWorkoutCarbResult(
       carbsG: total,
