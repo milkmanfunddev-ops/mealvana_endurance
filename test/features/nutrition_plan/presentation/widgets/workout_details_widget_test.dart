@@ -1,3 +1,9 @@
+// WorkoutDetailsWidget — the CF-6 dual-field pace ⇄ duration block.
+// SSOT: docs/ssot/spec/design/surfaces/create-flow-fueling-controls.md (CF-6),
+// reference rendering prototypes/create-activity-plan/v1.html. There is no
+// By Duration / By Pace toggle: both fields are always visible, the side last
+// edited is HELD and the other DERIVED (EST. badge, italic, dashed border).
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/presentation/widgets/new_activity/shared/workout_details_widget.dart';
@@ -5,556 +11,329 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 void main() {
-  group('WorkoutDetailsWidget', () {
-    testWidgets('renders with all required elements', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 18.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 2, minutes: 38),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
+  final paceField = find.byKey(const ValueKey('activity_create.pace_field'));
+  final hrField =
+      find.byKey(const ValueKey('activity_create.duration_hr_field'));
+  final minField =
+      find.byKey(const ValueKey('activity_create.duration_mins_field'));
+
+  Widget build({
+    ActivityType sport = ActivityType.running,
+    double distance = 12.0,
+    String distanceUnit = 'mi',
+    DurationPaceMode mode = DurationPaceMode.byPace,
+    Duration? estimatedDuration = const Duration(hours: 1, minutes: 48),
+    double? pace = 9.0,
+    String paceUnit = 'min/mi',
+    double? usualPace,
+    bool enabled = true,
+    ValueChanged<double>? onDistanceChanged,
+    ValueChanged<DurationPaceMode>? onModeChanged,
+    ValueChanged<double>? onPaceChanged,
+    ValueChanged<Duration>? onDurationChanged,
+  }) {
+    return MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: WorkoutDetailsWidget(
+            sport: sport,
+            distance: distance,
+            distanceUnit: distanceUnit,
+            mode: mode,
+            estimatedDuration: estimatedDuration,
+            pace: pace,
+            paceUnit: paceUnit,
+            usualPace: usualPace,
+            enabled: enabled,
+            onDistanceChanged: onDistanceChanged ?? (_) {},
+            onModeChanged: onModeChanged ?? (_) {},
+            onPaceChanged: onPaceChanged ?? (_) {},
+            onDurationChanged: onDurationChanged ?? (_) {},
           ),
         ),
-      );
+      ),
+    );
+  }
 
-      // Section title
-      expect(find.text('WORKOUT DETAILS'), findsOneWidget);
-
-      // Distance label (rendered via RichText: "Distance " + "*") and value.
-      expect(_findRichText('Distance *'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '18.0'), findsOneWidget);
-      expect(find.text('mi'), findsOneWidget);
-
-      // Toggle buttons
-      expect(find.text('By Duration'), findsOneWidget);
-      expect(find.text('By Pace'), findsOneWidget);
-
-      // Estimated Duration uses split hr/mins fields (2h 38m).
-      expect(find.text('Estimated Duration'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '2'), findsOneWidget); // hours
-      expect(find.widgetWithText(TextField, '38'), findsOneWidget); // minutes
-    });
-
-    testWidgets('shows Average Speed for cycling in By Pace mode', (
+  group('WorkoutDetailsWidget', () {
+    testWidgets('renders heading, distance and both linked fields', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.cycling,
-              distance: 40.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 18.5,
-              paceUnit: 'mph',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
+      await tester.pumpWidget(build());
 
-      // Should show "Average Speed" for cycling
-      expect(find.text('Average Speed'), findsOneWidget);
-      expect(find.text('18.5'), findsOneWidget);
+      expect(find.text('WORKOUT DETAILS'), findsOneWidget);
+      expect(_findRichText('Distance *'), findsOneWidget);
+      expect(find.widgetWithText(TextField, '12.0'), findsOneWidget);
+      expect(find.text('mi'), findsOneWidget);
+
+      // Both halves are always mounted — no By Duration / By Pace toggle.
+      expect(find.text('By Duration'), findsNothing);
+      expect(find.text('By Pace'), findsNothing);
+      expect(find.text('Avg Pace'), findsOneWidget);
+      expect(find.text('Duration'), findsOneWidget);
+      expect(paceField, findsOneWidget);
+      expect(hrField, findsOneWidget);
+      expect(minField, findsOneWidget);
+
+      // Run pace renders M:SS; duration splits into hr/min.
+      expect(tester.widget<TextField>(paceField).controller?.text, '9:00');
+      expect(tester.widget<TextField>(hrField).controller?.text, '1');
+      expect(tester.widget<TextField>(minField).controller?.text, '48');
+    });
+
+    testWidgets('cycling shows Avg Speed with a decimal value and mph', (
+      tester,
+    ) async {
+      await tester.pumpWidget(build(
+        sport: ActivityType.cycling,
+        distance: 40,
+        mode: DurationPaceMode.byPace,
+        pace: 18.5,
+        paceUnit: 'mph',
+      ));
+
+      expect(find.text('Avg Speed'), findsOneWidget);
+      expect(tester.widget<TextField>(paceField).controller?.text, '18.5');
       expect(find.text('mph'), findsOneWidget);
     });
 
-    testWidgets('shows Average Pace for running in By Pace mode', (
+    testWidgets('swimming shows M:SS pace with the /100m unit', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 13.1,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 8.5,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
+      await tester.pumpWidget(build(
+        sport: ActivityType.swimming,
+        distance: 3000,
+        distanceUnit: 'meters',
+        pace: 1.75,
+        paceUnit: 'min/100m',
+      ));
 
-      // Should show "Average Pace" for running, split into min/sec fields
-      // (8.5 min = 8 min 30 sec) with the unit shown as "(min/mi)".
-      expect(find.text('Average Pace'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '8'), findsOneWidget); // minutes
-      expect(find.widgetWithText(TextField, '30'), findsOneWidget); // seconds
-      expect(find.text('(min/mi)'), findsOneWidget);
+      expect(find.text('Avg Pace'), findsOneWidget);
+      expect(tester.widget<TextField>(paceField).controller?.text, '1:45');
+      expect(find.text('/100m'), findsOneWidget);
     });
 
-    testWidgets('shows Average Pace for swimming in By Pace mode', (
+    testWidgets('the derived side wears EST. + italic; the held side the pin', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.swimming,
-              distance: 3000,
-              distanceUnit: 'm',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 1.75,
-              paceUnit: 'min/100m',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
+      // Pace held ⇒ duration derived.
+      await tester.pumpWidget(build(mode: DurationPaceMode.byPace));
+      expect(find.byKey(const ValueKey('activity_create.est_badge')),
+          findsOneWidget);
+      expect(find.byIcon(Icons.push_pin), findsOneWidget);
+      expect(
+        tester.widget<TextField>(hrField).style?.fontStyle,
+        FontStyle.italic,
+      );
+      expect(
+        tester.widget<TextField>(paceField).style?.fontStyle,
+        isNot(FontStyle.italic),
       );
 
-      // Should show "Average Pace" for swimming, split into min/sec fields
-      // (1.75 min = 1 min 45 sec) with the unit shown as "(min/100m)".
-      expect(find.text('Average Pace'), findsOneWidget);
-      expect(find.widgetWithText(TextField, '1'), findsOneWidget); // minutes
-      expect(find.widgetWithText(TextField, '45'), findsOneWidget); // seconds
-      expect(find.text('(min/100m)'), findsOneWidget);
-    });
-
-    testWidgets('formats duration correctly with hours', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 26.2,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 3, minutes: 45),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
+      // Duration held ⇒ pace derived.
+      await tester.pumpWidget(build(mode: DurationPaceMode.byDuration));
+      expect(find.byKey(const ValueKey('activity_create.est_badge')),
+          findsOneWidget);
+      expect(
+        tester.widget<TextField>(paceField).style?.fontStyle,
+        FontStyle.italic,
       );
-
-      // 3h 45m renders as separate hour and minute fields.
-      expect(find.widgetWithText(TextField, '3'), findsOneWidget); // hours
-      expect(find.widgetWithText(TextField, '45'), findsOneWidget); // minutes
     });
 
-    testWidgets('formats duration correctly without hours', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 5.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(minutes: 42),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
+    testWidgets('editing pace reports parsed M:SS minutes', (tester) async {
+      double? changedPace;
+      await tester.pumpWidget(build(
+        onPaceChanged: (v) => changedPace = v,
+      ));
 
-      // 42 minutes renders as hour "0" and minute "42" segment fields.
-      expect(_segmentFieldTexts(tester), <String>['0', '42']);
+      await tester.enterText(paceField, '8:30');
+      await tester.pump();
+      expect(changedPace, closeTo(8.5, 0.01));
     });
 
-    testWidgets(
-      'shows empty duration fields with hints when duration is null',
-      (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: WorkoutDetailsWidget(
-                sport: ActivityType.running,
-                distance: 10.0,
-                distanceUnit: 'mi',
-                mode: DurationPaceMode.byDuration,
-                estimatedDuration: null,
-                pace: null,
-                paceUnit: 'min/mi',
-                onDistanceChanged: (_) {},
-                onModeChanged: (_) {},
-                onPaceChanged: (_) {},
-              ),
-            ),
-          ),
-        );
+    testWidgets('cycling speed field accepts decimal input', (tester) async {
+      double? changedPace;
+      await tester.pumpWidget(build(
+        sport: ActivityType.cycling,
+        pace: 18.5,
+        paceUnit: 'mph',
+        onPaceChanged: (v) => changedPace = v,
+      ));
 
-        // Null duration leaves both hr/mins fields empty, showing their hints.
-        expect(find.text('Estimated Duration'), findsOneWidget);
-        expect(_segmentHints(tester), containsAll(<String>['0', '00']));
-        expect(_segmentFieldTexts(tester), everyElement(isEmpty));
-      },
-    );
+      await tester.enterText(paceField, '20.0');
+      await tester.pump();
+      expect(changedPace, 20.0);
+    });
 
-    testWidgets('shows empty pace fields with hints when pace is null', (
+    testWidgets('editing hr/min reports the duration', (tester) async {
+      Duration? changed;
+      await tester.pumpWidget(build(
+        mode: DurationPaceMode.byDuration,
+        onDurationChanged: (d) => changed = d,
+      ));
+
+      await tester.enterText(hrField, '2');
+      await tester.pump();
+      expect(changed, const Duration(hours: 2, minutes: 48));
+    });
+
+    testWidgets('editing a derived field flips the hold to that side', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 10.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
+      final modeChanges = <DurationPaceMode>[];
+
+      // Pace held: touching the duration side must report byDuration.
+      await tester.pumpWidget(build(
+        mode: DurationPaceMode.byPace,
+        onModeChanged: modeChanges.add,
+      ));
+      await tester.enterText(hrField, '2');
+      await tester.pump();
+      expect(modeChanges, contains(DurationPaceMode.byDuration));
+
+      // Duration held: touching the pace side must report byPace.
+      modeChanges.clear();
+      await tester.pumpWidget(build(
+        mode: DurationPaceMode.byDuration,
+        onModeChanged: modeChanges.add,
+      ));
+      await tester.enterText(paceField, '8:00');
+      await tester.pump();
+      expect(modeChanges, contains(DurationPaceMode.byPace));
+    });
+
+    testWidgets('invalid pace text (seconds ≥ 60) reports nothing', (
+      tester,
+    ) async {
+      double? changedPace;
+      await tester.pumpWidget(build(
+        onPaceChanged: (v) => changedPace = v,
+      ));
+
+      await tester.enterText(paceField, '8:75');
+      await tester.pump();
+      expect(changedPace, isNull);
+    });
+
+    testWidgets('null pace and duration show hints', (tester) async {
+      await tester.pumpWidget(build(pace: null, estimatedDuration: null));
+
+      expect(tester.widget<TextField>(paceField).controller?.text, isEmpty);
+      expect(
+        tester.widget<TextField>(paceField).decoration?.hintText,
+        '0:00',
+      );
+      expect(tester.widget<TextField>(hrField).controller?.text, isEmpty);
+      expect(tester.widget<TextField>(hrField).decoration?.hintText, '0');
+      expect(tester.widget<TextField>(minField).decoration?.hintText, '00');
+    });
+
+    testWidgets('usual-pace chip renders the sport fallback and applies it', (
+      tester,
+    ) async {
+      final paceChanges = <double>[];
+      await tester.pumpWidget(build(
+        mode: DurationPaceMode.byDuration,
+        onPaceChanged: paceChanges.add,
+      ));
+
+      expect(find.text('your usual · 9:00 /mi'), findsOneWidget);
+      await tester.tap(
+        find.byKey(const ValueKey('activity_create.usual_pace_chip')),
+      );
+      await tester.pump();
+      expect(paceChanges, [9.0]);
+    });
+
+    testWidgets('a saved usualPace overrides the sport base', (tester) async {
+      await tester.pumpWidget(build(usualPace: 8.25));
+      expect(find.text('your usual · 8:15 /mi'), findsOneWidget);
+    });
+
+    testWidgets('no guard within the sport band', (tester) async {
+      await tester.pumpWidget(build(pace: 9.0));
+      expect(
+        find.byKey(const ValueKey('activity_create.pace_guard')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('guard fires outside the band and the fix applies the usual', (
+      tester,
+    ) async {
+      final paceChanges = <double>[];
+      await tester.pumpWidget(build(
+        pace: 4.5, // 4:30 /mi — the ruled F-27 class
+        onPaceChanged: paceChanges.add,
+      ));
+
+      expect(
+        find.byKey(const ValueKey('activity_create.pace_guard')),
+        findsOneWidget,
+      );
+      expect(
+        find.text("That's 4:30 /mi — outside your run range."),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Use your usual 9:00 /mi → 1 hr 48 min'),
+        findsOneWidget,
       );
 
-      // Null pace leaves both min/sec fields empty, showing their hints.
-      expect(find.text('Average Pace'), findsOneWidget);
-      expect(_segmentHints(tester), containsAll(<String>['0', '00']));
-      expect(_segmentFieldTexts(tester), everyElement(isEmpty));
+      await tester.tap(
+        find.byKey(const ValueKey('activity_create.pace_guard_fix')),
+      );
+      await tester.pump();
+      expect(paceChanges, [9.0]);
+    });
+
+    testWidgets('cycling guard uses the speed band', (tester) async {
+      await tester.pumpWidget(build(
+        sport: ActivityType.cycling,
+        distance: 40,
+        pace: 35.0, // ≥ 30 mph — outside the ride band
+        paceUnit: 'mph',
+      ));
+      expect(
+        find.byKey(const ValueKey('activity_create.pace_guard')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('outside your ride range'), findsOneWidget);
+    });
+
+    testWidgets('respects enabled parameter', (tester) async {
+      await tester.pumpWidget(build(enabled: false));
+
+      expect(tester.widget<TextField>(paceField).enabled, false);
+      expect(tester.widget<TextField>(hrField).enabled, false);
+      final distanceField = find.widgetWithText(TextField, '12.0');
+      expect(tester.widget<TextField>(distanceField).enabled, false);
     });
 
     testWidgets('calls onDistanceChanged when distance is edited', (
       tester,
     ) async {
       double? changedValue;
+      await tester.pumpWidget(build(
+        distance: 18.0,
+        onDistanceChanged: (v) => changedValue = v,
+      ));
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 18.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 2, minutes: 38),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (value) => changedValue = value,
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
-
-      // Find distance text field and enter new value
       final distanceField = find.widgetWithText(TextField, '18.0');
-      expect(distanceField, findsOneWidget);
-
       await tester.enterText(distanceField, '20.5');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pump();
-
       expect(changedValue, 20.5);
     });
 
-    testWidgets('calls onModeChanged when toggle is pressed', (tester) async {
-      DurationPaceMode? changedMode;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 18.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 2, minutes: 38),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (mode) => changedMode = mode,
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
-
-      // Tap "By Pace" button
-      await tester.tap(find.text('By Pace'));
-      await tester.pump();
-
-      expect(changedMode, DurationPaceMode.byPace);
-    });
-
-    testWidgets('calls onPaceChanged when pace is edited in By Pace mode', (
-      tester,
-    ) async {
-      double? changedPace;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 13.1,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 8.5,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (pace) => changedPace = pace,
-            ),
-          ),
-        ),
-      );
-
-      // Pace is split into separate minute/second fields (8 min 30 sec).
-      final minuteField = find.widgetWithText(TextField, '8');
-      final secondField = find.widgetWithText(TextField, '30');
-      expect(minuteField, findsOneWidget);
-      expect(secondField, findsOneWidget);
-
-      // Editing to 9 min 15 sec should report 9.25 minutes.
-      await tester.enterText(minuteField, '9');
-      await tester.enterText(secondField, '15');
-      await tester.pump();
-
-      expect(changedPace, closeTo(9.25, 0.01)); // 9:15 = 9.25 minutes
-    });
-
-    testWidgets('pace field accepts decimal format', (tester) async {
-      double? changedPace;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.cycling,
-              distance: 40.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 18.5,
-              paceUnit: 'mph',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (pace) => changedPace = pace,
-            ),
-          ),
-        ),
-      );
-
-      // Find speed field and enter new value
-      final speedField = find.widgetWithText(TextField, '18.5');
-      expect(speedField, findsOneWidget);
-
-      await tester.enterText(speedField, '20.0');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pump();
-
-      expect(changedPace, 20.0);
-    });
-
-    testWidgets('reverts invalid distance input', (tester) async {
-      double? changedValue;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 18.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 2, minutes: 38),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (value) => changedValue = value,
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
-
-      // Find distance text field and enter invalid value. The numeric input
-      // formatter strips non-numeric characters, so no garbage value is ever
-      // propagated and the field reverts to its original value on submit.
-      final distanceField = find.widgetWithText(TextField, '18.0');
-      await tester.enterText(distanceField, 'abc');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pump();
-
-      // Only the original valid value is ever reported (never a parsed garbage
-      // value), and the field shows the original value.
-      expect(changedValue, anyOf(isNull, 18.0));
-      expect(find.widgetWithText(TextField, '18.0'), findsOneWidget);
-    });
-
-    testWidgets('reverts invalid pace input', (tester) async {
-      double? changedPace;
-
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 13.1,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 8.5,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (pace) => changedPace = pace,
-            ),
-          ),
-        ),
-      );
-
-      // Enter an out-of-range seconds value (>= 60) into the seconds field.
-      final secondField = find.widgetWithText(TextField, '30');
-      expect(secondField, findsOneWidget);
-      await tester.enterText(secondField, '99');
-      await tester.testTextInput.receiveAction(TextInputAction.done);
-      await tester.pump();
-
-      // The out-of-range "99 seconds" entry is rejected: it never produces a
-      // pace that reflects 99 seconds (~9.65 min), and on submit the fields
-      // revert to the original 8 min 30 sec.
-      expect(changedPace ?? 8.5, lessThan(9.0));
-      expect(_segmentFieldTexts(tester), <String>['8', '30']);
-    });
-
-    testWidgets('respects enabled parameter', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 18.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 2, minutes: 38),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-              enabled: false,
-            ),
-          ),
-        ),
-      );
-
-      // Find text fields
-      final distanceField = find.widgetWithText(TextField, '18.0').first;
-      final textField = tester.widget<TextField>(distanceField);
-
-      expect(textField.enabled, false);
-    });
-
-    testWidgets('secondary field is read-only in By Duration mode', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 18.0,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(hours: 2, minutes: 38),
-              pace: null,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
-
-      // In By Duration mode without an onDurationChanged callback, the
-      // hr/mins segment fields are read-only.
-      final hourField = find.widgetWithText(TextField, '2');
-      final minuteField = find.widgetWithText(TextField, '38');
-      expect(hourField, findsOneWidget);
-      expect(minuteField, findsOneWidget);
-      expect(tester.widget<TextField>(hourField).enabled, false);
-      expect(tester.widget<TextField>(minuteField).enabled, false);
-    });
-
-    testWidgets('secondary field is editable in By Pace mode', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 13.1,
-              distanceUnit: 'mi',
-              mode: DurationPaceMode.byPace,
-              estimatedDuration: null,
-              pace: 8.5,
-              paceUnit: 'min/mi',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
-
-      // In By Pace mode the min/sec segment fields are editable.
-      final minuteField = find.widgetWithText(TextField, '8');
-      final secondField = find.widgetWithText(TextField, '30');
-      expect(minuteField, findsOneWidget);
-      expect(secondField, findsOneWidget);
-      expect(tester.widget<TextField>(minuteField).enabled, true);
-      expect(tester.widget<TextField>(secondField).enabled, true);
-    });
-
-    testWidgets('uses correct distance unit', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: WorkoutDetailsWidget(
-              sport: ActivityType.running,
-              distance: 10.0,
-              distanceUnit: 'km',
-              mode: DurationPaceMode.byDuration,
-              estimatedDuration: const Duration(minutes: 50),
-              pace: null,
-              paceUnit: 'min/km',
-              onDistanceChanged: (_) {},
-              onModeChanged: (_) {},
-              onPaceChanged: (_) {},
-            ),
-          ),
-        ),
-      );
-
+    testWidgets('uses the provided distance unit', (tester) async {
+      await tester.pumpWidget(build(
+        distance: 10.0,
+        distanceUnit: 'km',
+        paceUnit: 'min/km',
+      ));
       expect(find.text('km'), findsOneWidget);
+      expect(find.text('/km'), findsOneWidget);
     });
   });
 }
@@ -569,23 +348,4 @@ Finder _findRichText(String text) {
     }
     return false;
   });
-}
-
-/// The segment (hr/mins or min/sec) fields are the ones with a hint set; the
-/// distance/speed fields have no hint. Returns their hint strings.
-List<String> _segmentHints(WidgetTester tester) {
-  return tester
-      .widgetList<TextField>(find.byType(TextField))
-      .map((tf) => tf.decoration?.hintText)
-      .whereType<String>()
-      .toList();
-}
-
-/// Returns the current text of the segment (hinted) fields.
-List<String> _segmentFieldTexts(WidgetTester tester) {
-  return tester
-      .widgetList<TextField>(find.byType(TextField))
-      .where((tf) => tf.decoration?.hintText != null)
-      .map((tf) => tf.controller?.text ?? '')
-      .toList();
 }

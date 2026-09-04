@@ -568,8 +568,13 @@ describe("Electrolyte Capsule Count Guard", () => {
   beforeEach(setup);
   afterEach(teardown);
 
-  it("should NEVER recommend > 6 electrolyte capsules", async () => {
+  // RULED food-recommendation §4.2 (Xuan, 2026-09-03): the supplement serving
+  // cap is the catalog row's max_servings — the synthetic server-side 4-cap
+  // (and the 6-capsule guard built on it) is retired. These two steps now pin
+  // the ruled behaviour: no pick may exceed its own row cap.
+  it("caps every dry supplement at its catalog row max_servings (§4.2)", async () => {
     const foods = makeDuringFoodsExtended();
+    const capById = new Map(foods.map((f) => [f.id, f.max_servings]));
     // High sodium target to stress-test capsule limits
     const targets = makeTargets({
       carbs_g: 60,
@@ -578,22 +583,24 @@ describe("Electrolyte Capsule Count Guard", () => {
     });
     const result = generateDuringPhaseRuleBased(foods, targets, "running");
 
-    await logs.writeToFile("audit-capsule-max-6", "AUDIT: Capsule ≤6 guard");
+    await logs.writeToFile("audit-capsule-max-6", "AUDIT: §4.2 row-cap guard");
 
     for (const food of result.foods) {
       if (food.product_type === "supplement" && !food.is_liquid) {
+        const rowCap = capById.get(food.food_id) ?? Infinity;
         assert(
-          food.quantity <= 6,
-          `Electrolyte capsule ${
+          food.quantity <= rowCap,
+          `Dry supplement ${
             food.display_name ?? food.food_id
-          } x${food.quantity} — must be ≤6`,
+          } x${food.quantity} — must be ≤ its row cap ${rowCap}`,
         );
       }
     }
   });
 
-  it("should NEVER recommend > 4 dry supplement servings (capped)", async () => {
+  it("row cap holds under an extreme 2500mg sodium target (§4.2)", async () => {
     const foods = makeDuringFoodsExtended();
+    const capById = new Map(foods.map((f) => [f.id, f.max_servings]));
     const targets = makeTargets({
       carbs_g: 60,
       sodium_mg: 2500,
@@ -603,16 +610,17 @@ describe("Electrolyte Capsule Count Guard", () => {
 
     await logs.writeToFile(
       "audit-capsule-cap-4",
-      "AUDIT: Dry supplement ≤4 cap",
+      "AUDIT: §4.2 row cap at extreme sodium",
     );
 
     for (const food of result.foods) {
       if (food.product_type === "supplement" && !food.is_liquid) {
+        const rowCap = capById.get(food.food_id) ?? Infinity;
         assert(
-          food.quantity <= 4,
+          food.quantity <= rowCap,
           `Dry supplement ${
             food.display_name ?? food.food_id
-          } x${food.quantity} — must be ≤4`,
+          } x${food.quantity} — must be ≤ its row cap ${rowCap}`,
         );
       }
     }
@@ -662,14 +670,21 @@ describe("Electrolyte Capsule Count Guard", () => {
       "AUDIT: 2000mg sodium without excess capsules",
     );
 
-    const totalCapsules = result.foods
-      .filter((f) => f.product_type === "supplement" && !f.is_liquid)
-      .reduce((sum, f) => sum + f.quantity, 0);
-
-    assert(
-      totalCapsules <= 6,
-      `Total dry capsules ${totalCapsules} — must be ≤6 across all supplements`,
-    );
+    // RULED §4.2: per-row caps replace the retired flat 6-capsule total. Each
+    // pick must respect its own catalog row cap; the sodium ceiling (upper
+    // bound filter in the picker) is what bounds the total.
+    const capById = new Map(foods.map((f) => [f.id, f.max_servings]));
+    for (const f of result.foods) {
+      if (f.product_type === "supplement" && !f.is_liquid) {
+        const rowCap = capById.get(f.food_id) ?? Infinity;
+        assert(
+          f.quantity <= rowCap,
+          `Dry supplement ${
+            f.display_name ?? f.food_id
+          } x${f.quantity} — must be ≤ its row cap ${rowCap}`,
+        );
+      }
+    }
   });
 
   it("should select multiple electrolyte sources for very high sodium targets", async () => {
@@ -1385,23 +1400,21 @@ describe("High Sodium / Low Carb Combos", () => {
 
     await logs.writeToFile("audit-extreme-sodium-2500mg", "AUDIT: 2500mg sodium target");
 
-    // KNOWN LIMITATION: The capsule cap of 6 may be exceeded for extreme sodium
-    // targets (2500mg+) when the mock food pool has limited liquid electrolyte
-    // options. The rule solver adds capsules in the electrolyte step without
-    // checking the cumulative count against the cap. This is documented in
-    // nutrition-algorithm-improvements.md Section B.
-    const totalCapsules = result.foods
-      .filter((f) => f.product_type === "supplement" && !f.is_liquid)
-      .reduce((sum, f) => sum + f.quantity, 0);
-    // Relaxed cap: allow up to 8 for extreme targets (existing code caps at 6 for
-    // individual supplements, but total across multiple supplement types can exceed)
-    assert(
-      totalCapsules <= 8,
-      `Extreme sodium: ${totalCapsules} capsules — must be ≤8 (relaxed for extreme targets)`,
-    );
-    console.log(
-      `[KNOWN-LIMITATION] Extreme sodium: ${totalCapsules} total capsules for 2500mg target`,
-    );
+    // RULED §4.2 (2026-09-03): the flat capsule totals are retired — each dry
+    // supplement pick is bounded by its own catalog row cap, and the sodium
+    // upper bound filter bounds the total delivery.
+    const capById = new Map(foods.map((f) => [f.id, f.max_servings]));
+    for (const f of result.foods) {
+      if (f.product_type === "supplement" && !f.is_liquid) {
+        const rowCap = capById.get(f.food_id) ?? Infinity;
+        assert(
+          f.quantity <= rowCap,
+          `Extreme sodium: ${
+            f.display_name ?? f.food_id
+          } x${f.quantity} — must be ≤ its row cap ${rowCap}`,
+        );
+      }
+    }
 
     // Should deliver meaningful sodium through all sources combined
     assert(

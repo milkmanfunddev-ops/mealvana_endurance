@@ -74,13 +74,17 @@ tests:
       - a DARK answer adds a tagged "added by hydration check" water row to this card
 
   # --- fuel-stat component (components/fuel-stat.md F-*, M-*) ---
-  - id: fs_three_no_number_states     # register F-03
-    contract: fuel-stat F-1
+  # fs_three_no_number_states narrowed to a PAIR by fuel-stat AMENDMENT A1
+  # (Xuan, 2026-09-03; fasted retired — CARBS · NONE had no other producer).
+  # F-1 now distinguishes "we recommend none" (real 0g, dagger-rule) from
+  # "we're not stating a target" (the fluid gate); the distinctness rule is
+  # unchanged for the remaining pair.
+  - id: fs_three_no_number_states     # register F-03 (A1: the remaining pair)
+    contract: fuel-stat F-1 (as amended by A1)
     assert:
       - GATED  -> FLUIDS "No fluid target for this session", no band/marker; carbs band + feedings intact
-      - FASTED -> CARBS "No carbs this session", no carb band/pair; fluid plan intact
       - START LINE (zero) -> real "0g", NO carb band drawn (carbs dagger-rule)
-      - the three states are pairwise visually distinct
+      - the two states are pairwise visually distinct (a consumer rendering the gate as "0 oz" still fails)
   - id: fs_fluid_one_way_carbs_two_way
     contract: fuel-stat M-2 + hydration §4
     assert:

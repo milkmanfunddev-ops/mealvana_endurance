@@ -336,7 +336,6 @@ class ActivityDetailController extends _$ActivityDetailController {
             deviceId: deviceId,
             segments: segments,
             segmentOrder: segmentOrder,
-            isFasted: activity.isFasted,
             preActivityMinutes: activity.timeBeforeMinutes ?? 60,
           );
         }
@@ -360,7 +359,6 @@ class ActivityDetailController extends _$ActivityDetailController {
           temperatureC: tempC,
           humidityPct: humidityPct,
           indoorOutdoor: isIndoor ? 'indoor' : 'outdoor',
-          isFasted: activity.isFasted,
         );
       } else if (activity.activityType == ActivityType.cycling) {
         final macroService = MacroGenerationService(
@@ -385,7 +383,6 @@ class ActivityDetailController extends _$ActivityDetailController {
           elevationGainFt: activity.cyclingElevationGainFt,
           temperatureC: tempC,
           humidityPct: humidityPct,
-          isFasted: activity.isFasted,
         );
       }
 

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../providers/brick_input_controller.dart';
-import '../../../../domain/fueling_window_limits.dart';
 import 'brick_sport_toggle_selector.dart';
-import '../../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 import '../../../../../../shared/widgets/kyle_design/buttons/segmented_control.dart';
@@ -17,9 +15,10 @@ import '../shared/workout_details_widget.dart';
 import '../shared/activity_name_field.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/indoor_outdoor_toggle.dart';
 import '../shared/environment_section.dart';
-import '../shared/fasted_toggle.dart';
 import '../../../../../../shared/providers/unit_system_provider.dart';
 import '../../../../../../shared/utils/unit_formatter.dart';
+import '../../../../../../shared/widgets/kyle_design/fueling/fueling_window_control.dart';
+import '../../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../../features/nutrition_plan/domain/run_parameters.dart'
     show UnitSystem;
 
@@ -47,7 +46,6 @@ class BrickTabContent extends ConsumerWidget {
         UnitSystem.metric;
 
     final totalDuration = controller.getTotalDuration();
-    final showFastedWarning = _shouldWarnFasted(formState, controller);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -71,28 +69,19 @@ class BrickTabContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xl),
 
         // Brick-level Pre-Activity Fueling Window (applies to whole brick)
-        KylePlusMinusControl(
+        // CF-1/CF-2/CF-5: the shared design-SSOT stepper (hours/min label,
+        // PRE-ACTIVITY header for brick, max = the ruled clamp).
+        FuelingWindowControl(
           key: const ValueKey('brick.fueling_window_control'),
           label: 'Pre-Activity Fueling Window',
-          value: formState.preActivityMinutes,
+          minutes: formState.preActivityMinutes,
+          maxMinutes: controller.fuelingWindowMaxMinutes(),
+          caption: controller.fuelingWindowCaption(),
           onChanged: controller.updatePreActivityMinutes,
-          min: FuelingWindowLimits.minMinutes,
-          max: FuelingWindowLimits.maxMinutes,
-          step: FuelingWindowLimits.stepMinutes,
-          unit: 'minutes',
+          keyPrefix: 'brick.fueling_window',
         ),
 
         const SizedBox(height: AppSpacing.xl),
-
-        // Brick-level Fasted Toggle (applies to pre-activity fueling only)
-        FastedToggle(
-          key: const ValueKey('brick.fasted_toggle'),
-          isFasted: formState.isFasted,
-          onChanged: controller.updateFasted,
-          showWarning: showFastedWarning,
-          warningText:
-              'Fasted training is not recommended for longer or harder bricks. Consider fueling before.',
-        ),
 
         const SizedBox(height: AppSpacing.xl),
 
@@ -125,26 +114,6 @@ class BrickTabContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
       ],
     );
-  }
-
-  bool _shouldWarnFasted(
-    BrickFormState formState,
-    BrickInputController controller,
-  ) {
-    // Warn if any leg is swimming, any leg is hard (conversational < 70),
-    // or the total brick duration is long.
-    for (final leg in formState.legs) {
-      if (leg.sport == 'swimming') return true;
-      final intensity =
-          leg.intensityDistribution ??
-          IntensityDistribution.defaultDistribution();
-      if (intensity.conversationalPct < 70) return true;
-    }
-
-    final totalDuration = controller.getTotalDuration();
-    if (totalDuration > 75) return true;
-
-    return false;
   }
 
   Widget _buildSegmentList(
@@ -777,24 +746,28 @@ class _BrickCyclingInputs extends StatelessWidget {
 
         const SizedBox(height: AppSpacing.xl),
 
-        // 4. ENVIRONMENT SECTION (collapsible, no weather params)
-        EnvironmentSection(
-          isExpanded: input.showEnvironment,
-          onToggle: () =>
-              onUpdate(input.copyWith(showEnvironment: !input.showEnvironment)),
-          temperatureC: input.temperatureC,
-          onTemperatureChanged: (v) =>
-              onUpdate(input.copyWith(temperatureC: v)),
-          humidityPct: input.humidityPct,
-          onHumidityChanged: (v) => onUpdate(input.copyWith(humidityPct: v)),
-          windCondition: input.windCondition,
-          onWindChanged: (v) => onUpdate(input.copyWith(windCondition: v)),
-          sunExposure: input.sunExposure,
-          onSunChanged: (v) => onUpdate(input.copyWith(sunExposure: v)),
-          isIndoor: isIndoor,
-          showWindAndSun: false,
-          useImperial: useImperial,
-        ),
+        // 4. ENVIRONMENT SECTION (collapsible, no weather params) — CF-8:
+        // INDOOR hides the TEMPERATURE/HUMIDITY block entirely; prior values
+        // are kept in state and restore on switch-back.
+        if (!isIndoor)
+          EnvironmentSection(
+            isExpanded: input.showEnvironment,
+            onToggle: () => onUpdate(
+              input.copyWith(showEnvironment: !input.showEnvironment),
+            ),
+            temperatureC: input.temperatureC,
+            onTemperatureChanged: (v) =>
+                onUpdate(input.copyWith(temperatureC: v)),
+            humidityPct: input.humidityPct,
+            onHumidityChanged: (v) => onUpdate(input.copyWith(humidityPct: v)),
+            windCondition: input.windCondition,
+            onWindChanged: (v) => onUpdate(input.copyWith(windCondition: v)),
+            sunExposure: input.sunExposure,
+            onSunChanged: (v) => onUpdate(input.copyWith(sunExposure: v)),
+            isIndoor: isIndoor,
+            showWindAndSun: false,
+            useImperial: useImperial,
+          ),
       ],
     );
   }

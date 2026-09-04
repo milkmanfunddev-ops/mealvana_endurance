@@ -446,7 +446,6 @@ void main() {
         'activity_type': 'running',
         // v4 rejects requests without the pre-workout window fields.
         'hours_before': 2.0,
-        'is_fasted': false,
       };
 
       logTestSetup(requestData);
@@ -510,7 +509,6 @@ void main() {
         'activity_type': 'running',
         // v4 rejects requests without the pre-workout window fields.
         'hours_before': 2.0,
-        'is_fasted': false,
       };
 
       logTestSetup({
@@ -965,8 +963,7 @@ void main() {
           'gut_training': 'low',
           'activity_type': 'running',
           'hours_before': 2.0,
-          'is_fasted': false,
-        };
+          };
 
         logTestSetup(profileData);
 
@@ -1017,8 +1014,10 @@ void main() {
 
         // 4. Validate before phase
         logSection('Step 3: Validate Macros');
-        if (!profileData.containsKey('is_fasted') ||
-            profileData['is_fasted'] != true) {
+        // The fasted product state is retired (food-recommendation §7 /
+        // D-001): requests carry no fasted flag, so the before phase is
+        // always validated.
+        {
           final beforeFoods = getBeforeFoods(plan);
           if (beforeFoods.isNotEmpty) {
             final sums = sumFoodMacros(beforeFoods);
@@ -1161,8 +1160,7 @@ void main() {
           'gut_training': 'moderate',
           'activity_type': 'running',
           'hours_before': 2.0,
-          'is_fasted': false,
-        };
+          };
 
         logTestSetup(profileData);
 
@@ -1267,8 +1265,7 @@ void main() {
           'gut_training': 'high',
           'activity_type': 'running',
           'hours_before': 2.0,
-          'is_fasted': false,
-        };
+          };
 
         logTestSetup(profileData);
 
@@ -1360,8 +1357,7 @@ void main() {
           'gut_training': 'high',
           'activity_type': 'running',
           'hours_before': 2.0,
-          'is_fasted': false,
-        };
+          };
 
         logTestSetup(profileData);
 
@@ -1454,8 +1450,7 @@ void main() {
           'gut_training': 'moderate',
           'activity_type': 'cycling',
           'hours_before': 2.0,
-          'is_fasted': false,
-        };
+          };
 
         logTestSetup(profileData);
 

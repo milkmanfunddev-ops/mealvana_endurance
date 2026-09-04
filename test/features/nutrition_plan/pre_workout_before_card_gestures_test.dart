@@ -173,7 +173,6 @@ Future<_HostState> _pump(
   WidgetTester tester, {
   double t = 180,
   bool gated = false,
-  bool fasted = false,
   double mealWaterCups = 2,
   Set<String> expanded = const {'meal', 'snack', 'top_off'},
   bool checkExpanded = true,
@@ -183,7 +182,7 @@ Future<_HostState> _pump(
   tester.view.physicalSize = const Size(428, 2400);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
-  final preRun = mockPreRun(t: t, gated: gated, fasted: fasted);
+  final preRun = mockPreRun(t: t, gated: gated);
   await tester.pumpWidget(
     MaterialApp(
       navigatorObservers: [if (observer != null) observer],
@@ -586,8 +585,12 @@ void main() {
   // fuel-stat component (F-*, M-*)
   // ------------------------------------------------------------------------
   group('fuel-stat', () {
+    // F-1 as amended by AMENDMENT A1 (Xuan, 2026-09-03): the fasted state is
+    // retired, so the trio narrows to the remaining PAIR — the gate ("we're
+    // not stating a target") vs the start-line real 0g ("we recommend
+    // none"). The distinctness rule is unchanged for the remaining pair.
     testWidgets(
-      'fs_three_no_number_states: gated / fasted / start line are three distinct trees',
+      'fs_two_no_number_states: gated and start line are two distinct trees',
       (tester) async {
         await _pump(tester, gated: true);
         expect(find.text('No fluid target for this session'), findsOneWidget);
@@ -602,23 +605,6 @@ void main() {
           findsOneWidget,
         );
         expect(find.byType(FeedingCard), findsNWidgets(3));
-
-        await _pump(tester, fasted: true);
-        expect(find.text('No carbs this session'), findsOneWidget);
-        expect(
-          find.byKey(FuelStat.figureKey(FuelQuantity.carbs)),
-          findsNothing,
-        );
-        expect(find.byKey(FuelStat.bandKey(FuelQuantity.carbs)), findsNothing);
-        expect(
-          find.byKey(FuelStat.bandKey(FuelQuantity.fluids)),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(FuelStat.figureKey(FuelQuantity.fluids)),
-          findsOneWidget,
-        );
-        expect(find.byKey(FeedingCard.carbsKey('meal')), findsNothing);
 
         await _pump(tester, t: 0);
         expect(_text(tester, FuelStat.figureKey(FuelQuantity.carbs)), '0g');
@@ -731,14 +717,13 @@ void main() {
     testWidgets(
       'fs_sodium_never_banded: no band, marker or range node under SODIUM in any state',
       (tester) async {
-        for (final (t, gated, fasted) in [
-          (180.0, false, false),
-          (180.0, true, false),
-          (180.0, false, true),
-          (90.0, false, false),
-          (0.0, false, false),
+        for (final (t, gated) in [
+          (180.0, false),
+          (180.0, true),
+          (90.0, false),
+          (0.0, false),
         ]) {
-          final host = await _pump(tester, t: t, gated: gated, fasted: fasted);
+          final host = await _pump(tester, t: t, gated: gated);
           expect(
             find.byKey(FuelStat.bandKey(FuelQuantity.sodium)),
             findsNothing,

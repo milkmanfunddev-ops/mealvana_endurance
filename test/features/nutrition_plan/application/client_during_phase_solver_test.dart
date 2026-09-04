@@ -226,7 +226,16 @@ void main() {
 
         final result = _solver.solve(
           foods: foods,
-          targets: const SolverTargets(carbsG: 80, sodiumMg: 500, fluidMl: 700),
+          // 100g so the bar's whole serving fits under the carb ceiling —
+          // the old 80g fixture relied on Dart rounding UP past the upper
+          // bound (gel x3 = 66g + bar = 96g vs upper 88g), a divergence from
+          // the TS capServingsByUpperBounds rescue closed by the §6(e)
+          // pick-time port (2026-09-03).
+          targets: const SolverTargets(
+            carbsG: 100,
+            sodiumMg: 500,
+            fluidMl: 700,
+          ),
           activityType: ActivityType.cycling,
         );
 

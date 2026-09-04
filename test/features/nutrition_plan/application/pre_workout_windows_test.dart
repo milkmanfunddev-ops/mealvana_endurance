@@ -2,16 +2,18 @@
 // copy / formula / calculation for each observable state.
 //
 // The states are now named by the hydration v6 regime rather than an integer
-// tier (PW-013), and carbohydrate adds one more:
+// tier (PW-013):
 //
 //   1. Gate fired   — `gated`: short, mild session; NO target is set at all
 //   2. Too late     — legacy plans with no regime and 0 ml; nothing absorbs now
 //   3. Short window — `extrapolated` / `clearance_bound`: sub-2 h partial dose
 //   4. Full protocol— `cited`: >= 2 h, body-weight-scaled
-//   5. Fasted       — no carbohydrate recommendation is being made at all
 //
-// States 1, 2 and 5 all show "nothing" and MUST NOT read alike — see the
-// `three ways of showing nothing` group, which is the only thing keeping that
+// (The former state 5, fasted, is retired with the fasted product state —
+// food-recommendation §7 / D-001, Xuan 2026-09-03.)
+//
+// States 1 and 2 both show "nothing" and MUST NOT read alike — see the
+// `two ways of showing nothing` group, which is the only thing keeping that
 // true.
 //
 // Sodium is **v3**: Mealvana sets no pre-workout sodium target. There is no
@@ -357,41 +359,12 @@ void main() {
     });
   });
 
-  // ── 5. Fasted ─────────────────────────────────────────────────────────────
-  group('Pre-workout — fasted (no recommendation at all)', () {
-    final targets = _preTargets(
-      fluidsMl: 487.5,
-      fluidsLowMl: 325,
-      fluidsHighMl: 780,
-      carbsG: 0,
-      durationMin: 120,
-      tempC: 22,
-      hydrationRegime: PreRunHydrationRegime.cited,
-      carbTargetBasis: PreRunTargetBasis.none,
-      carbTiers: const [],
-    );
-
-    test('sodium says nothing is being recommended, and sets no target', () {
-      final data = _sodium(service, targets, bodyWeightKg);
-
-      expect(data.tldrBody, contains('train fasted'));
-      expect(data.tldrBody, contains('not recommending anything'));
-      _expectNoSodiumTargetOrBand(data);
-    });
-
-    test('fasted is not the gate: fluid still gets its full-protocol plan', () {
-      // Training fasted suppresses food, not fluid. Collapsing the two would
-      // silently drop a euhydration dose the athlete still needs.
-      final data = _fluid(service, targets, bodyWeightKg);
-      expect(data.tldrBody, contains('euhydrated'));
-      expect(data.tldrBody, contains('500 mL'));
-    });
-  });
-
-  // ── The three ways of showing nothing ─────────────────────────────────────
-  group('three ways of showing nothing must never read alike', () {
+  // ── The two ways of showing nothing ───────────────────────────────────────
+  // (Narrowed from three: the fasted "no recommendation at all" state is
+  // retired — food-recommendation §7 / D-001.)
+  group('two ways of showing nothing must never read alike', () {
     // Digest §5 and sodium v3 both make this a hard requirement: a number that
-    // is zero · no target set (gated) · no recommendation at all (fasted).
+    // is zero · no target set (gated).
     final realZero = _preTargets(
       fluidsMl: 487.5,
       fluidsLowMl: 325,
@@ -410,27 +383,10 @@ void main() {
       hydrationRegime: PreRunHydrationRegime.gated,
       fluidTargetBasis: PreRunTargetBasis.none,
     );
-    final noRecommendation = _preTargets(
-      fluidsMl: 487.5,
-      fluidsLowMl: 325,
-      fluidsHighMl: 780,
-      carbsG: 0,
-      durationMin: 120,
-      tempC: 22,
-      hydrationRegime: PreRunHydrationRegime.cited,
-      carbTargetBasis: PreRunTargetBasis.none,
-      carbTiers: const [],
-    );
-
-    test('the sodium card renders three distinct blurbs', () {
+    test('the sodium card renders two distinct blurbs', () {
       final bodies = <String, String?>{
         'real zero': _sodium(service, realZero, bodyWeightKg).tldrBody,
         'no target set': _sodium(service, noTargetSet, bodyWeightKg).tldrBody,
-        'no recommendation': _sodium(
-          service,
-          noRecommendation,
-          bodyWeightKg,
-        ).tldrBody,
       };
 
       for (final body in bodies.values) {
@@ -439,9 +395,9 @@ void main() {
       }
       expect(
         bodies.values.toSet(),
-        hasLength(3),
+        hasLength(2),
         reason:
-            'a consumer that collapses these three misreports all of them: '
+            'a consumer that collapses these two misreports both of them: '
             '${bodies.entries.map((e) => '${e.key}=${e.value}').join(' | ')}',
       );
     });
@@ -453,10 +409,6 @@ void main() {
       );
       expect(
         _sodium(service, realZero, bodyWeightKg).tldrBody,
-        isNot(contains('no sodium plan either')),
-      );
-      expect(
-        _sodium(service, noRecommendation, bodyWeightKg).tldrBody,
         isNot(contains('no sodium plan either')),
       );
     });
@@ -476,8 +428,8 @@ void main() {
       expect(tooLateBody, contains('Too late'));
     });
 
-    test('none of the three sets a sodium target or band', () {
-      for (final targets in [realZero, noTargetSet, noRecommendation]) {
+    test('neither of the two sets a sodium target or band', () {
+      for (final targets in [realZero, noTargetSet]) {
         _expectNoSodiumTargetOrBand(_sodium(service, targets, bodyWeightKg));
       }
     });
@@ -520,17 +472,6 @@ void main() {
         durationMin: 120,
         tempC: 25,
         hydrationRegime: PreRunHydrationRegime.cited,
-      ),
-      'fasted': _preTargets(
-        fluidsMl: 487.5,
-        fluidsLowMl: 325,
-        fluidsHighMl: 780,
-        carbsG: 0,
-        durationMin: 120,
-        tempC: 25,
-        hydrationRegime: PreRunHydrationRegime.cited,
-        carbTargetBasis: PreRunTargetBasis.none,
-        carbTiers: const [],
       ),
     };
 

@@ -18,17 +18,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../helpers/fixtures/user_fixtures.dart';
 
-// Regression test for the is_fasted persistence fix: `regeneratePlan()` (run
-// after an inline sweat-profile edit) used to hardcode `isFasted: false` /
-// rely on the generation services' `isFasted = false` defaults, so a
-// genuinely fasted activity silently regenerated as non-fasted.
+// Tolerate-and-ignore guard for the fasted retirement (food-recommendation
+// §7 / D-001, Xuan 2026-09-03): the fasted product state is retired on the
+// client, and the server tolerates-and-ignores `is_fasted` on the wire.
+// `regeneratePlan()` must therefore send NO `is_fasted` key at all — not
+// `false`, and never the dormant `activities.is_fasted` column's value, even
+// for a legacy activity whose row still carries `true` (W-3: the column
+// stays, but nothing sets or consumes it).
 //
-// The fix persists the flag on the Activity (activities.is_fasted) and
-// `regeneratePlan()` now forwards `activity.isFasted` into macro generation.
-//
-// Mutation check: revert the `isFasted: activity.isFasted` arguments in
-// `activity_detail_controller.dart`'s `regeneratePlan()` and these tests fail
-// (the captured edge-function body carries `is_fasted: false`).
+// Mutation check: re-thread `activity.isFasted` (or any `is_fasted` payload
+// field) through `activity_detail_controller.dart`'s `regeneratePlan()` /
+// the generation services and these tests fail.
 
 class MockAuthService extends Mock implements AuthService {}
 
@@ -61,22 +61,24 @@ class _SeededActivityDetailController extends ActivityDetailController {
   }
 }
 
-const _activityId = 'activity-fasted-regen-1';
-const _userId = 'user-fasted-regen-1';
+const _activityId = 'activity-no-fasted-regen-1';
+const _userId = 'user-no-fasted-regen-1';
 
-Activity _fastedActivity({required ActivityType activityType}) {
+/// A legacy activity whose dormant `is_fasted` column still carries `true` —
+/// the strongest case: even this row must not put the key on the wire.
+Activity _legacyFastedActivity({required ActivityType activityType}) {
   return Activity(
     id: _activityId,
     userId: _userId,
     activityType: activityType,
-    title: 'Fasted Workout',
+    title: 'Legacy Fasted Workout',
     scheduledDateTime: DateTime(2026, 7, 21, 6),
     distanceMiles: 6,
     paceTargetMinutesPerMile: 9,
     cyclingSpeedMph: 16,
     cyclingTerrain: 'flat',
     timeBeforeMinutes: 45,
-    // The persisted flag under test.
+    // The dormant persisted flag (W-3) — must NOT reach the request payload.
     isFasted: true,
     createdAt: DateTime(2026, 7, 20),
     updatedAt: DateTime(2026, 7, 20),
@@ -143,7 +145,7 @@ void main() {
   Future<Map<String, dynamic>> capturedGenerateBody(
     ActivityType activityType,
   ) async {
-    final activity = _fastedActivity(activityType: activityType);
+    final activity = _legacyFastedActivity(activityType: activityType);
     final container = buildContainer(
       ActivityDetailState(
         activity: activity,
@@ -174,30 +176,30 @@ void main() {
     return (captured.single as Map).cast<String, dynamic>();
   }
 
-  group('regeneratePlan forwards the persisted isFasted flag', () {
-    test('running: edge-function body carries is_fasted true', () async {
+  group('regeneratePlan sends no is_fasted field (fasted retired)', () {
+    test('running: edge-function body carries NO is_fasted key', () async {
       final body = await capturedGenerateBody(ActivityType.running);
 
-      // Pre-fix, regeneratePlan omitted isFasted and the service default
-      // (false) was sent — this assertion is the mutation check.
       expect(
-        body['is_fasted'],
-        isTrue,
+        body.containsKey('is_fasted'),
+        isFalse,
         reason:
-            'regeneratePlan must forward activity.isFasted to running macro '
-            'generation instead of the non-fasted default.',
+            'The fasted state is retired (food-recommendation §7 / D-001): '
+            'regeneration must not put is_fasted on the wire, even for a '
+            'legacy activity whose dormant column still carries true.',
       );
     });
 
-    test('cycling: edge-function body carries is_fasted true', () async {
+    test('cycling: edge-function body carries NO is_fasted key', () async {
       final body = await capturedGenerateBody(ActivityType.cycling);
 
       expect(
-        body['is_fasted'],
-        isTrue,
+        body.containsKey('is_fasted'),
+        isFalse,
         reason:
-            'regeneratePlan must forward activity.isFasted to cycling macro '
-            'generation instead of the non-fasted default.',
+            'The fasted state is retired (food-recommendation §7 / D-001): '
+            'regeneration must not put is_fasted on the wire, even for a '
+            'legacy activity whose dormant column still carries true.',
       );
     });
   });

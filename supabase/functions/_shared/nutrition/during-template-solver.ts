@@ -784,6 +784,7 @@ function generateDuringPhaseTemplateBySearch(
             fluidUpper,
             carbTarget,
             carbUpper,
+            gutLevel: gutTrainingLevel,
           },
           null,
         );
@@ -1293,6 +1294,7 @@ export function generateDuringPhaseTemplate(
       fluidUpper,
       carbTarget,
       carbUpper,
+      gutLevel: gutTrainingLevel,
     };
     const elecResult = fillElectrolytes(
       electrolytePool,

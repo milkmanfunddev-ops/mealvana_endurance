@@ -74,6 +74,8 @@ class FoodItemData {
     this.scaleMultiplier,
     this.timingCategory,
     this.origin,
+    this.numericQuantity,
+    this.solventMinMlPerServing,
   });
 
   final String id;
@@ -111,6 +113,16 @@ class FoodItemData {
   /// (feeding-card FC-6) so the card can label it and Change answer can find
   /// it. Null for every ordinary row.
   final String? origin;
+
+  /// Numeric serving count, when the row came from the client solver (the
+  /// display [quantity] string is not reliably parseable). Used by the
+  /// solvent-water pass. Null on wire-parsed rows.
+  final double? numericQuantity;
+
+  /// Catalog-conventions v1.1 (food-recommendation §6(e)): per-serving
+  /// solvent-water minimum carried from the catalog row. Null = undeclared →
+  /// 250 ml pairing fallback, never 0.
+  final double? solventMinMlPerServing;
 
   /// Build a complete display string for this food at the given [qtyStr].
   ///

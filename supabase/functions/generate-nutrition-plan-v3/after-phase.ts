@@ -247,6 +247,7 @@ export async function generateAfterPhase(
         return {
           foods,
           by_hour_data: null,
+          generation_path: "personal_formula",
           pin_decision: {
             used_pin: true,
             decision_source: "personal_formula",
@@ -479,6 +480,7 @@ export async function generateAfterPhase(
           return {
             foods: rendered.foods,
             by_hour_data: null,
+            generation_path: "template",
             template_metadata: {
               template_id: rendered.template_id,
               template_number: rendered.template_number,
@@ -574,6 +576,7 @@ export async function generateAfterPhase(
   });
   return {
     ...lpResult,
+    generation_path: "lp",
     ...(afterPinDecision &&
       { pin_decision: withDecisionSource(afterPinDecision, "solver") }),
   };

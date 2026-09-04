@@ -21,8 +21,10 @@
 ///   naming); this card never invents one.
 /// * **FC-2** — the header shows DELIVERED only ("52g" · "carbs"); no aim, no
 ///   DONE/AIM pair, no ±12.5 % window (FC-3). A fluid tier shows its oz.
-/// * **FC-4** — a zero-carb card still renders when it carries fluid; on the
-///   fasted path there is no carb figure.
+/// * **FC-4** — a zero-carb card still renders when it carries fluid.
+///   (AMENDMENT A1, Xuan 2026-09-03: the fasted product state is retired —
+///   the carb figure is always present; the former "no carb figure on the
+///   fasted path" sentence is gone.)
 /// * **FC-5** — rows show name, macros as an observation and a ± stepper
 ///   whose step and cap are the row's.
 /// * **FC-6** — the hydration check (injected by the surface) is the first
@@ -172,14 +174,12 @@ class _FeedingCardState extends State<FeedingCard> {
               ),
             ),
             const SizedBox(width: 10),
-            if (d.carbsDelivered != null)
-              _figure(
-                key: FeedingCard.carbsKey(_tier),
-                value: '${d.carbsDelivered}g',
-                label: 'CARBS',
-              ),
-            if (d.carbsDelivered != null && d.fluidOz != null)
-              const SizedBox(width: 14),
+            _figure(
+              key: FeedingCard.carbsKey(_tier),
+              value: '${d.carbsDelivered}g',
+              label: 'CARBS',
+            ),
+            if (d.fluidOz != null) const SizedBox(width: 14),
             if (d.fluidOz != null)
               _figure(
                 key: FeedingCard.fluidKey(_tier),

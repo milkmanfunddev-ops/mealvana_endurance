@@ -70,7 +70,6 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
     // Optional treadmill/indoor-run flag. Default 'outdoor' preserves existing
@@ -85,7 +84,6 @@ class MacroGenerationService {
       sweatRateCat: sweatRateCat,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
-      isFasted: isFasted,
       intensity: intensity,
       indoorOutdoor: indoorOutdoor,
     );
@@ -128,7 +126,6 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
@@ -148,7 +145,6 @@ class MacroGenerationService {
       sessionGoal: sessionGoal,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
-      isFasted: isFasted,
       intensity: intensity,
     );
     // device_id is read by the edge function to look up active formula pins
@@ -262,7 +258,6 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     String indoorOutdoor = 'outdoor',
   }) async {
@@ -304,7 +299,6 @@ class MacroGenerationService {
       'run_distance_unit': 'mi',
       // V3 params
       'hours_before': timeBeforeRunMinutes / 60.0,
-      'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': zoneLow,
         'zone_mid': zoneMid,
@@ -340,7 +334,6 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
   }) async {
     final userProfile = await authService.getCurrentUser();
@@ -377,7 +370,6 @@ class MacroGenerationService {
       'indoor_outdoor': indoorOutdoor,
       // V3 params
       'hours_before': timeBeforeMinutes / 60.0,
-      'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': zoneLow,
         'zone_mid': zoneMid,
@@ -448,7 +440,6 @@ class MacroGenerationService {
       'pool_or_open_water': poolOrOpenWater,
       // V3 params
       'hours_before': timeBeforeMinutes / 60.0,
-      'is_fasted': false, // Swimming doesn't support fasted
       'intensity_distribution': {
         'zone_low': zoneLow,
         'zone_mid': zoneMid,
@@ -682,7 +673,6 @@ class MacroGenerationService {
       legacy,
       weightKg: requireBodyWeightKg(requestData['weight']),
       hoursBefore: (requestData['hours_before'] as num?)?.toDouble() ?? 2.0,
-      isFasted: requestData['is_fasted'] as bool? ?? false,
       tempC: (requestData['temp_c'] as num?)?.toDouble(),
     );
   }
@@ -699,7 +689,6 @@ class MacroGenerationService {
     Map<String, dynamic> macros, {
     required double weightKg,
     required double hoursBefore,
-    required bool isFasted,
     double? tempC,
     HydrationCheck hydrationCheck = HydrationCheck.unknown,
   }) {
@@ -734,8 +723,7 @@ class MacroGenerationService {
         bodyWeightKg: weightKg,
         timeBeforeWorkoutMin: timeBeforeMin,
         workoutDurationMin: durationMin,
-        isFasted: isFasted,
-      );
+        );
       overlaid['pre_run_carb_tiers'] ??= carbs.tiers
           .map(
             (t) => {
@@ -765,7 +753,6 @@ class MacroGenerationService {
     final weightKg = requireBodyWeightKg(requestData['weight']);
     final hoursBefore =
         (requestData['hours_before'] as num?)?.toDouble() ?? 2.0;
-    final isFasted = requestData['is_fasted'] as bool? ?? false;
     final gutTraining = requestData['gut_training'] as String? ?? 'moderate';
     final sweatRateCategory =
         requestData['sweat_rate_category'] as String? ?? 'medium';
@@ -789,8 +776,7 @@ class MacroGenerationService {
           distanceMiles: distanceMiles,
           paceMinPerMile: paceMinPerMile,
           hoursBefore: hoursBefore,
-          isFasted: isFasted,
-          gutTraining: gutTraining,
+              gutTraining: gutTraining,
           sweatRateCategory: sweatRateCategory,
           sweatSodiumCat: sweatSodiumCat,
           tempC: tempC,
@@ -811,8 +797,7 @@ class MacroGenerationService {
           speedMph: speedMph,
           terrain: terrain,
           hoursBefore: hoursBefore,
-          isFasted: isFasted,
-          gutTraining: gutTraining,
+              gutTraining: gutTraining,
           sweatRateCategory: sweatRateCategory,
           sweatSodiumCat: sweatSodiumCat,
           tempC: tempC,
@@ -851,8 +836,7 @@ class MacroGenerationService {
           distanceMiles: 0,
           paceMinPerMile: 10,
           hoursBefore: hoursBefore,
-          isFasted: isFasted,
-          gutTraining: gutTraining,
+              gutTraining: gutTraining,
         );
     }
   }

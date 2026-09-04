@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../domain/fueling_window_limits.dart';
-import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../shared/widgets/kyle_design/buttons/segmented_control.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
 import '../../providers/swimming_input_controller.dart';
@@ -11,6 +9,7 @@ import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
 import 'shared/activity_name_field.dart';
+import '../../../../../shared/widgets/kyle_design/fueling/fueling_window_control.dart';
 
 /// Swimming Tab Content
 ///
@@ -117,15 +116,15 @@ class SwimmingTabContent extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xl),
 
         // Time before Swim
-        KylePlusMinusControl(
+        // CF-1/CF-2/CF-5: the shared design-SSOT stepper (hours/min label,
+        // sport-dynamic header, max = the ruled clamp).
+        FuelingWindowControl(
           key: const ValueKey('activity_create.fueling_window_control'),
           label: 'Pre-Swim Fueling Window',
-          value: formState.preSwimMinutes,
+          minutes: formState.preSwimMinutes,
+          maxMinutes: controller.fuelingWindowMaxMinutes(),
+          caption: controller.fuelingWindowCaption(),
           onChanged: controller.updatePreSwimMinutes,
-          min: FuelingWindowLimits.minMinutes,
-          max: FuelingWindowLimits.maxMinutes,
-          step: FuelingWindowLimits.stepMinutes,
-          unit: 'minutes',
         ),
 
         const SizedBox(height: AppSpacing.xl),

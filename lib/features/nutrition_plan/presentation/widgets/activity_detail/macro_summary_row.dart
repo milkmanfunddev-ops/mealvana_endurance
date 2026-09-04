@@ -75,9 +75,9 @@ class MacroSummaryRow extends StatelessWidget {
   /// The pre-workout targets, when this row is rendering a BEFORE section.
   ///
   /// Supplies the *absence* information the section alone can't carry: the
-  /// hydration gate (no fluid target set) and the fasted flag (no carbohydrate
-  /// recommendation at all). Without it the BEFORE row still suppresses the
-  /// sodium band — that follows from the phase, not from the data.
+  /// hydration gate (no fluid target set). Without it the BEFORE row still
+  /// suppresses the sodium band — that follows from the phase, not from the
+  /// data.
   final PreRunMacros? preRun;
 
   @override
@@ -139,10 +139,6 @@ class MacroSummaryRow extends StatelessWidget {
     final fluidsHasNoTarget =
         isTransitionSection ||
         (isBeforeSection && (preRun?.isHydrationGated ?? false));
-    // Carbohydrate: the athlete is fasted — no recommendation is being made.
-    // Distinct from `carbsG == 0` at t−0, which *is* a recommendation.
-    final carbsHasNoTarget =
-        isBeforeSection && (preRun?.isCarbRecommendationAbsent ?? false);
 
     // Display rounding belongs here, not in the engine: fluid to the nearest
     // 25 (target) with the band widened to [floor25, ceil25], carbs to 5 g.
@@ -175,10 +171,6 @@ class MacroSummaryRow extends StatelessWidget {
                 : carbsHigh,
             isOverridden: carbsOverridden,
             overrideLabel: carbsOverrideLabel,
-            hasNoTarget: carbsHasNoTarget,
-            noTargetNote: carbsHasNoTarget
-                ? 'training fasted — no recommendation'
-                : null,
             prominent: isBeforeSection,
             // TC-2: the transition carb stat reads delivered/target above its
             // [0,30] band rail.
@@ -309,11 +301,10 @@ class MacroSummaryItem extends StatelessWidget {
   final String? overrideLabel;
 
   /// No target exists for this quantity — render what the food delivers and
-  /// nothing else. Three states must never look alike (see
-  /// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §5): a real zero, *no target
-  /// set* (the hydration gate), and *no recommendation at all* (fasted). The
-  /// first keeps its ratio; the other two set this flag and differ by
-  /// [noTargetNote].
+  /// nothing else. Two states must never look alike (see
+  /// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §5 as narrowed by the fasted
+  /// retirement, food-recommendation §7): a real zero, which keeps its
+  /// ratio, and *no target set* (the hydration gate), which sets this flag.
   final bool hasNoTarget;
 
   /// One-line reason shown beneath the label when [hasNoTarget] is set.

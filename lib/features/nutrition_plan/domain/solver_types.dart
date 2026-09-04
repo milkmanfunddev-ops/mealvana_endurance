@@ -34,6 +34,7 @@ class SolverSelection {
     this.isLiquid = false,
     this.isElectrolyte = false,
     this.productType,
+    this.solventMinMl,
   });
 
   final String foodId;
@@ -60,6 +61,12 @@ class SolverSelection {
   final bool isLiquid;
   final bool isElectrolyte;
   final String? productType;
+
+  /// Catalog-conventions v1.1 (food-recommendation §6(e)): per-serving
+  /// solvent-water minimum carried from the catalog row, so the solver's
+  /// pick-time solvent accounting can read it off the pick. Null =
+  /// undeclared.
+  final double? solventMinMl;
 }
 
 /// Macro targets for a single phase, used by the greedy solver.

@@ -6,7 +6,7 @@ import '../../domain/fueling_window_limits.dart';
 import '../../domain/intensity_distribution.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 import '../../../../shared/domain/activity_type.dart';
-import '../../domain/meal_type.dart';
+import '../../domain/fueling_window_authority.dart';
 
 part 'brick_input_controller.g.dart';
 
@@ -273,9 +273,6 @@ class BrickFormState {
   /// Tracks whether the user manually changed the pre-activity timing
   final bool preActivityMinutesManuallySet;
 
-  /// Brick-level fasted toggle (applies to pre-activity fueling only)
-  final bool isFasted;
-
   /// Date and time for the brick activity
   final DateTime selectedDate;
   final TimeOfDay selectedTime;
@@ -286,7 +283,6 @@ class BrickFormState {
     required this.legs,
     required this.preActivityMinutes,
     required this.preActivityMinutesManuallySet,
-    required this.isFasted,
     required this.selectedDate,
     required this.selectedTime,
   });
@@ -314,7 +310,6 @@ class BrickFormState {
     List<BrickSegmentInput>? legs,
     int? preActivityMinutes,
     bool? preActivityMinutesManuallySet,
-    bool? isFasted,
     DateTime? selectedDate,
     TimeOfDay? selectedTime,
   }) {
@@ -326,7 +321,6 @@ class BrickFormState {
       preActivityMinutes: preActivityMinutes ?? this.preActivityMinutes,
       preActivityMinutesManuallySet:
           preActivityMinutesManuallySet ?? this.preActivityMinutesManuallySet,
-      isFasted: isFasted ?? this.isFasted,
       selectedDate: selectedDate ?? this.selectedDate,
       selectedTime: selectedTime ?? this.selectedTime,
     );
@@ -358,9 +352,13 @@ class BrickInputController extends _$BrickInputController {
       activityTitle: _buildBrickTitle(defaultLegs),
       activityTitleManuallySet: false,
       legs: defaultLegs,
-      preActivityMinutes: _recommendedPreActivityMinutes(legs: defaultLegs),
+      preActivityMinutes: _recommendedPreActivityMinutes(
+        legs: defaultLegs,
+        // build() runs before state exists — pass the initial schedule.
+        date: now,
+        time: const TimeOfDay(hour: 7, minute: 0),
+      ),
       preActivityMinutesManuallySet: false,
-      isFasted: false,
       selectedDate: now,
       selectedTime: const TimeOfDay(hour: 7, minute: 0),
     );
@@ -369,6 +367,13 @@ class BrickInputController extends _$BrickInputController {
   /// Update date and time
   void updateDateTime(DateTime date, TimeOfDay time) {
     state = state.copyWith(selectedDate: date, selectedTime: time);
+    // §3a: the default window depends on start time (early-start overlay +
+    // clamp), so a schedule change re-derives it unless manually set.
+    if (!state.preActivityMinutesManuallySet) {
+      state = state.copyWith(
+        preActivityMinutes: _recommendedPreActivityMinutes(),
+      );
+    }
     DebugLogger.info(
       '🧱 BRICK CONTROLLER: Updated date/time - $date ${time.hour}:${time.minute}',
     );
@@ -454,30 +459,85 @@ class BrickInputController extends _$BrickInputController {
     DebugLogger.info('🧱 BRICK CONTROLLER: Updated leg $index input');
   }
 
+  /// Reset the fueling window to its ratified default for a NEW activity.
+  ///
+  /// The sport input controllers are `keepAlive` singletons, so without this a
+  /// window the athlete stepped on one activity — and the `preActivityMinutesManuallySet`
+  /// flag that step latched — rode into every later activity and permanently
+  /// suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h, could never
+  /// fire again). CF-1's "a manual change persists" means *within the activity
+  /// being edited*. Xuan, on-device 2026-09-03;
+  /// ops/data/bug-reports/2026-09-03-fueling-window-sticks-across-activities.md
+  ///
+  /// Deliberately narrow: only the fueling window is reset here. The lifetime of
+  /// the other form state (title / temperature / humidity flags) is the deferred
+  /// ruling qa/intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
+  void resetFuelingWindowForNewActivity() {
+    state = state.copyWith(
+      preActivityMinutesManuallySet: false,
+      preActivityMinutes: clampFuelingWindowMinutes(
+        _recommendedPreActivityMinutes(),
+      ),
+    );
+  }
+
   void updatePreActivityMinutes(int minutes) {
     // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
     // carry persisted lead times up to 480 (see FuelingWindowLimits).
+    final cap = fuelingWindowMaxMinutes();
+    final capped = minutes < cap ? minutes : cap;
     state = state.copyWith(
-      preActivityMinutes: clampFuelingWindowMinutes(minutes),
+      preActivityMinutes: clampFuelingWindowMinutes(capped),
       preActivityMinutesManuallySet: true,
     );
   }
 
-  void updateFasted(bool isFasted) {
-    state = state.copyWith(isFasted: isFasted);
+  /// CF-1: the stepper's MAXIMUM is the ruled clamp —
+  /// min(table cap 240, time-until-start), floor 15 (food-recommendation §3).
+  int fuelingWindowMaxMinutes() {
+    final untilStart = _minutesUntil(
+      DateTime.now(),
+      state.selectedDate,
+      state.selectedTime,
+    );
+    final floored = untilStart > kFuelingWindowFloorMin
+        ? untilStart
+        : kFuelingWindowFloorMin;
+    return floored < FuelingWindowLimits.maxMinutes
+        ? floored
+        : FuelingWindowLimits.maxMinutes;
   }
 
-  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
-  ///
-  /// The init-from-metadata/event paths already rebuild state with
-  /// `isFasted: false`, but the plain "start fresh" brick path keeps the
-  /// keepAlive leftovers — without this reset, a fasted toggle left ON by a
-  /// previous brick silently zeroes the next one's pre-workout targets.
-  /// See RunningInputController.resetFasted for the full rationale.
-  void resetFasted() {
-    if (state.isFasted) {
-      state = state.copyWith(isFasted: false);
+  /// Q-CF1 class caption / CF-2 clamp explanation for the brick stepper
+  /// (RULED Xuan, 2026-09-03), from the same W-10 mapping the default uses
+  /// (total duration + hardest leg).
+  String? fuelingWindowCaption() {
+    final defaultIntensity = IntensityDistribution.defaultDistribution();
+    var totalMinutes = 0;
+    IntensityDistribution hardest = defaultIntensity;
+    var hardestConversational = 1 << 30;
+    for (final input in state.legs) {
+      totalMinutes += input.durationMinutes;
+      final intensity = input.intensityDistribution ?? defaultIntensity;
+      if (intensity.conversationalPct < hardestConversational) {
+        hardestConversational = intensity.conversationalPct;
+        hardest = intensity;
+      }
     }
+    final sessionClass = classifySession(
+      durationMinutes: totalMinutes,
+      intensity: hardest,
+    );
+    return fuelingWindowCaptionText(
+      sessionClass: sessionClass,
+      earlyStartApplied: earlyStartOverlayApplies(
+        sessionClass: sessionClass,
+        startHour: state.selectedTime.hour,
+      ),
+      currentMinutes: state.preActivityMinutes,
+      maxMinutes: fuelingWindowMaxMinutes(),
+      manuallySet: state.preActivityMinutesManuallySet,
+    );
   }
 
   /// Update intensity distribution for the leg at [index]
@@ -623,7 +683,6 @@ class BrickInputController extends _$BrickInputController {
       legs: legs,
       preActivityMinutes: _recommendedPreActivityMinutes(legs: legs),
       preActivityMinutesManuallySet: false,
-      isFasted: false,
       selectedDate: state.selectedDate,
       selectedTime: state.selectedTime,
     );
@@ -700,7 +759,6 @@ class BrickInputController extends _$BrickInputController {
       legs: legs,
       preActivityMinutes: _recommendedPreActivityMinutes(legs: legs),
       preActivityMinutesManuallySet: false,
-      isFasted: false,
       selectedDate: activityDate,
       selectedTime: TimeOfDay(
         hour: activityDate.hour,
@@ -751,18 +809,37 @@ class BrickInputController extends _$BrickInputController {
     for (var i = 0; i < legs.length; i++) legs[i].copyWith(order: i + 1),
   ];
 
+  /// Per-leg seed for `BrickSegmentInput.preActivityMinutes` — the pure §3a
+  /// table applied to the leg's own duration/intensity, no early-start or
+  /// clamp overlay (those are session-level and applied by
+  /// [_recommendedPreActivityMinutes], which needs built state; this seed is
+  /// also called during build()). The table is sport-neutral
+  /// (food-recommendation §3a retires the per-sport windows), so [sport] is
+  /// accepted for call-site continuity and ignored.
   static int _preMinutesFor(
     ActivityType sport,
     IntensityDistribution intensity,
     int durationMinutes,
-  ) =>
-      (recommendedHoursBefore(
-                sport,
-                intensity,
-                durationMinutes: durationMinutes,
-              ) *
-              60)
-          .round();
+  ) {
+    final sessionClass = classifySession(
+      durationMinutes: durationMinutes,
+      intensity: intensity,
+    );
+    return tableDefaultWindowMin(sessionClass);
+  }
+
+  /// Whole minutes between [now] and the scheduled start; never negative.
+  static int _minutesUntil(DateTime now, DateTime date, TimeOfDay time) {
+    final scheduled = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    final diff = scheduled.difference(now).inMinutes;
+    return diff > 0 ? diff : 0;
+  }
 
   /// Create a default segment input for a sport
   BrickSegmentInput _createDefaultSegmentInput(String sport, int order) {
@@ -840,30 +917,48 @@ class BrickInputController extends _$BrickInputController {
     }
   }
 
-  int _recommendedPreActivityMinutes({List<BrickSegmentInput>? legs}) {
-    // Use the most conservative recommendation across the legs.
+  /// §3a (food-recommendation, RATIFIED 2026-09-03): the ratified table
+  /// replaces the retired recommendedHoursBefore formula. A brick is ONE
+  /// session, so the class comes from the TOTAL leg duration; the intensity
+  /// input is the hardest leg's distribution (lowest conversational share),
+  /// which is what the preset mapping (Race Pace ⇒ race row · Long ⇒ +1 row)
+  /// reads. With no legs (or all-zero durations) the total known duration is
+  /// 0, which is the table's own <60 row (45 min) — a provisional default
+  /// that re-derives as soon as legs carry durations. (W-10: the ratified
+  /// table names no per-sport or per-leg windows; this session-level mapping
+  /// is the implementation's reading, raised in the bundle findings.)
+  int _recommendedPreActivityMinutes({
+    List<BrickSegmentInput>? legs,
+    DateTime? date,
+    TimeOfDay? time,
+  }) {
     final inputs = legs ?? state.legs;
+    final scheduleDate = date ?? state.selectedDate;
+    final scheduleTime = time ?? state.selectedTime;
     final defaultIntensity = IntensityDistribution.defaultDistribution();
 
-    int maxMinutes = 0;
+    var totalMinutes = 0;
+    IntensityDistribution hardest = defaultIntensity;
+    var hardestConversational = 1 << 30;
     for (final input in inputs) {
+      totalMinutes += input.durationMinutes;
       final intensity = input.intensityDistribution ?? defaultIntensity;
-      final minutes = _preMinutesFor(
-        ActivityType.brick,
-        intensity,
-        input.durationMinutes,
-      );
-      if (minutes > maxMinutes) {
-        maxMinutes = minutes;
+      if (intensity.conversationalPct < hardestConversational) {
+        hardestConversational = intensity.conversationalPct;
+        hardest = intensity;
       }
     }
 
-    if (maxMinutes == 0) {
-      return (recommendedHoursBefore(ActivityType.brick, defaultIntensity) * 60)
-          .round();
-    }
-
-    return maxMinutes;
+    return defaultFuelingWindowMinutes(
+      durationMinutes: totalMinutes,
+      intensity: hardest,
+      startHour: scheduleTime.hour,
+      minutesUntilStart: _minutesUntil(
+        DateTime.now(),
+        scheduleDate,
+        scheduleTime,
+      ),
+    );
   }
 
   /// "RUN/BIKE/RUN BRICK" — one short name per leg, in brick order.

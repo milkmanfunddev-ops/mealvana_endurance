@@ -681,6 +681,13 @@ class FormulaLibraryController extends _$FormulaLibraryController {
         FormulaMacros.kSodiumMg: tf?.sodiumMg ?? 0.0,
         FormulaMacros.kFluidMlPerServing: tf?.fluidMl ?? 0.0,
         FormulaMacros.kCaloriesPerServing: calories,
+        // FP-8: forked components must carry the conflict metadata, or the
+        // ruled save-time disclosure can never fire on a "Make this mine"
+        // draft (Xuan on-device 2026-09-03: dairy fork showed no warning).
+        FormulaMacros.kAllergens: _decodeStringArray(tf?.allergens ?? '[]'),
+        FormulaMacros.kExcludedDiets: _decodeStringArray(
+          tf?.excludedDiets ?? '[]',
+        ),
       });
     }
     return components;

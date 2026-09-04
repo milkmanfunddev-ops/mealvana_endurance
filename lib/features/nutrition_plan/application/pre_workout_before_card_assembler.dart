@@ -69,7 +69,6 @@ abstract final class PreWorkoutBeforeCardAssembler {
         .where(tiers.contains)
         .toList(growable: false);
 
-    final isFasted = preRun?.isCarbRecommendationAbsent ?? false;
     final isGated = preRun?.isHydrationGated ?? true;
 
     // --- B-1: delivered = Σ over every feeding card's rows.
@@ -115,7 +114,7 @@ abstract final class PreWorkoutBeforeCardAssembler {
             isFirstFeeding: i == 0,
           ),
           rows: rows,
-          carbsDelivered: isFasted ? null : wholeUnits(cardCarbs),
+          carbsDelivered: wholeUnits(cardCarbs),
           fluidOz: (!isGated && tierFluid != null && tierFluid > 0)
               ? flOzTarget(tierFluid)
               : null,
@@ -130,9 +129,12 @@ abstract final class PreWorkoutBeforeCardAssembler {
     }
 
     // --- fuel-stats (traceability: B-5 / fuel-stat table).
+    // Fuel-stat AMENDMENT A1 (Xuan, 2026-09-03): the fasted `CARBS · NONE`
+    // row is retired — carbs are always TARGETED (a real 0g is "we recommend
+    // none"); only the fluid gate remains a no-number state.
     final carbs = FuelStatData(
       quantity: FuelQuantity.carbs,
-      mode: isFasted ? FuelStatMode.none : FuelStatMode.targeted,
+      mode: FuelStatMode.targeted,
       delivered: wholeUnits(carbsG),
       target: preRun == null ? null : wholeUnits(preRun.carbsG),
       bandLow: preRun?.carbsLowG == null

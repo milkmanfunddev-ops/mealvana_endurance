@@ -4,8 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/fueling_window_limits.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
-import '../../domain/meal_type.dart';
-import '../../../../shared/domain/activity_type.dart';
+import '../../domain/fueling_window_authority.dart';
 import '../../../activities/domain/activity_title_formatter.dart';
 import '../../../auth/data/user_repository.dart';
 import 'macro_targets_controller.dart';
@@ -43,14 +42,16 @@ class CyclingFormState {
   final DurationPaceMode durationPaceMode;
   final Duration? estimatedDuration;
 
-  // V3: Fasted workout toggle
-  final bool isFasted;
-
   // V3: Track if user manually changed the pre-ride timing
   final bool preRideMinutesManuallySet;
 
   // Unit system preference (imperial = °F, metric = °C)
   final UnitSystem unitSystem;
+
+  // CF-7 (RULED 2026-09-03): a manual step on a forecast-filled value makes
+  // it the athlete's — the AUTO badge drops until the next forecast refresh.
+  final bool temperatureManuallySet;
+  final bool humidityManuallySet;
 
   // Weather integration fields
   final weather_domain.Location? location;
@@ -81,11 +82,14 @@ class CyclingFormState {
     required this.selectedTime,
     this.distanceUnit = DistanceUnit.miles,
     IntensityDistribution? intensity,
-    this.durationPaceMode = DurationPaceMode.byDuration,
+    // CF-6 reference rendering: the create flow opens PACE-held
+    // (duration wears EST.) — the prototype's default `held: 'pace'`.
+    this.durationPaceMode = DurationPaceMode.byPace,
     this.estimatedDuration,
-    this.isFasted = false,
     this.preRideMinutesManuallySet = false,
     this.unitSystem = UnitSystem.imperial,
+    this.temperatureManuallySet = false,
+    this.humidityManuallySet = false,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -121,9 +125,10 @@ class CyclingFormState {
     IntensityDistribution? intensity,
     DurationPaceMode? durationPaceMode,
     Duration? estimatedDuration,
-    bool? isFasted,
     bool? preRideMinutesManuallySet,
     UnitSystem? unitSystem,
+    bool? temperatureManuallySet,
+    bool? humidityManuallySet,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -153,10 +158,12 @@ class CyclingFormState {
       intensity: intensity ?? this.intensity,
       durationPaceMode: durationPaceMode ?? this.durationPaceMode,
       estimatedDuration: estimatedDuration ?? this.estimatedDuration,
-      isFasted: isFasted ?? this.isFasted,
       preRideMinutesManuallySet:
           preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
       unitSystem: unitSystem ?? this.unitSystem,
+      temperatureManuallySet:
+          temperatureManuallySet ?? this.temperatureManuallySet,
+      humidityManuallySet: humidityManuallySet ?? this.humidityManuallySet,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -195,14 +202,15 @@ class CyclingInputController extends _$CyclingInputController {
       tempoPct: 20,
       allOutPct: 10,
     );
-    final recommendedMinutes =
-        (recommendedHoursBefore(
-                  ActivityType.cycling,
-                  defaultIntensity,
-                  durationMinutes: initialDurationMinutes,
-                ) *
-                60)
-            .round();
+    // §3a (food-recommendation, RATIFIED 2026-09-03): default from the
+    // ratified sport-neutral table; the per-sport formula is retired.
+    const defaultStart = TimeOfDay(hour: 7, minute: 0);
+    final recommendedMinutes = defaultFuelingWindowMinutes(
+      durationMinutes: initialDurationMinutes,
+      intensity: defaultIntensity,
+      startHour: defaultStart.hour,
+      minutesUntilStart: _minutesUntil(now, now, defaultStart),
+    );
 
     final initialState = CyclingFormState(
       activityTitle: ActivityTitleFormatter.formatCyclingTitle(25.0),
@@ -349,43 +357,102 @@ class CyclingInputController extends _$CyclingInputController {
     _autoUpdateFuelingWindow();
   }
 
+    /// Reset the fueling window to its ratified default for a NEW activity.
+  ///
+  /// The sport input controllers are `keepAlive` singletons, so without this a
+  /// window the athlete stepped on one activity — and the `preRideMinutesManuallySet`
+  /// flag that step latched — rode into every later activity and permanently
+  /// suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h, could never
+  /// fire again). CF-1's "a manual change persists" means *within the activity
+  /// being edited*. Xuan, on-device 2026-09-03;
+  /// ops/data/bug-reports/2026-09-03-fueling-window-sticks-across-activities.md
+  ///
+  /// Deliberately narrow: only the fueling window is reset here. The lifetime of
+  /// the other form state (title / temperature / humidity flags) is the deferred
+  /// ruling qa/intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
+  void resetFuelingWindowForNewActivity() {
+    state = state.copyWith(preRideMinutesManuallySet: false);
+    _autoUpdateFuelingWindow();
+  }
+
   void updatePreRideMinutes(int minutes) {
     // D-016: clamp into the ratified 0–240 domain — pre-cap activities can
     // carry persisted lead times up to 480 (see FuelingWindowLimits).
+    final cap = fuelingWindowMaxMinutes();
+    final capped = minutes < cap ? minutes : cap;
     state = state.copyWith(
-      preRideMinutes: clampFuelingWindowMinutes(minutes),
+      preRideMinutes: clampFuelingWindowMinutes(capped),
       preRideMinutesManuallySet: true,
     );
   }
 
-  /// Auto-update fueling window when duration or intensity changes,
-  /// unless user has manually overridden it.
+  /// Auto-update fueling window when duration, intensity or schedule
+  /// changes, unless user has manually overridden it (food-recommendation
+  /// §3/§3a: table default + clamp; CF-1/CF-2).
   void _autoUpdateFuelingWindow() {
     if (!state.preRideMinutesManuallySet) {
-      final recommended = recommendedHoursBefore(
-        ActivityType.cycling,
-        state.intensity,
+      final recommended = defaultFuelingWindowMinutes(
         durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+        intensity: state.intensity,
+        startHour: state.selectedTime.hour,
+        minutesUntilStart: _minutesUntil(
+          DateTime.now(),
+          state.selectedDate,
+          state.selectedTime,
+        ),
       );
-      state = state.copyWith(preRideMinutes: (recommended * 60).round());
+      state = state.copyWith(
+        preRideMinutes: clampFuelingWindowMinutes(recommended),
+      );
     }
   }
 
-  /// V3: Update fasted workout toggle
-  void updateFasted(bool isFasted) {
-    state = state.copyWith(isFasted: isFasted);
+  /// Whole minutes between [now] and the scheduled start; never negative.
+  static int _minutesUntil(DateTime now, DateTime date, TimeOfDay time) {
+    final scheduled = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    final diff = scheduled.difference(now).inMinutes;
+    return diff > 0 ? diff : 0;
   }
 
-  /// Reset the per-activity fasted toggle for a fresh New Activity entry.
-  ///
-  /// This controller is keepAlive, so a fasted toggle left ON by a previous
-  /// ride would otherwise silently send `is_fasted: true` for the next
-  /// activity and zero its pre-workout targets on the Adjust Macros screen.
-  /// See RunningInputController.resetFasted for the full rationale.
-  void resetFasted() {
-    if (state.isFasted) {
-      state = state.copyWith(isFasted: false);
-    }
+  /// CF-1: the stepper's MAXIMUM is the ruled clamp —
+  /// min(table cap 240, time-until-start), floor 15 (food-recommendation §3).
+  int fuelingWindowMaxMinutes() {
+    final untilStart = _minutesUntil(
+      DateTime.now(),
+      state.selectedDate,
+      state.selectedTime,
+    );
+    final floored = untilStart > kFuelingWindowFloorMin
+        ? untilStart
+        : kFuelingWindowFloorMin;
+    return floored < FuelingWindowLimits.maxMinutes
+        ? floored
+        : FuelingWindowLimits.maxMinutes;
+  }
+
+  /// Q-CF1 class caption / CF-2 clamp explanation for the stepper (RULED
+  /// Xuan, 2026-09-03) — null when the athlete's manual value needs no label.
+  String? fuelingWindowCaption() {
+    final sessionClass = classifySession(
+      durationMinutes: state.estimatedDuration?.inMinutes ?? 90,
+      intensity: state.intensity,
+    );
+    return fuelingWindowCaptionText(
+      sessionClass: sessionClass,
+      earlyStartApplied: earlyStartOverlayApplies(
+        sessionClass: sessionClass,
+        startHour: state.selectedTime.hour,
+      ),
+      currentMinutes: state.preRideMinutes,
+      maxMinutes: fuelingWindowMaxMinutes(),
+      manuallySet: state.preRideMinutesManuallySet,
+    );
   }
 
   void updateIntensityTarget(String intensityTarget) {
@@ -435,11 +502,15 @@ class CyclingInputController extends _$CyclingInputController {
   }
 
   void updateTemperature(double temperatureC) {
-    state = state.copyWith(temperatureC: temperatureC);
+    // CF-7: a manual step makes the value the athlete's — AUTO badge drops.
+    state = state.copyWith(
+      temperatureC: temperatureC,
+      temperatureManuallySet: true,
+    );
   }
 
   void updateHumidity(double humidityPct) {
-    state = state.copyWith(humidityPct: humidityPct);
+    state = state.copyWith(humidityPct: humidityPct, humidityManuallySet: true);
   }
 
   void updateWindCondition(String windCondition) {
@@ -494,6 +565,10 @@ class CyclingInputController extends _$CyclingInputController {
       temperatureC: 20.0,
       humidityPct: isIndoor ? 45.0 : 60.0,
     );
+
+    // §3a: the default window depends on start time (early-start overlay +
+    // clamp), so a schedule change re-derives it unless manually set.
+    _autoUpdateFuelingWindow();
 
     // Auto-fetch weather when date/time changes for outdoor rides if location is set
     // or if weather was previously fetched successfully (via GPS fallback).
@@ -617,6 +692,9 @@ class CyclingInputController extends _$CyclingInputController {
           weatherForecast: forecast,
           temperatureC: forecast.temperatureC,
           humidityPct: forecast.humidityPct.toDouble(),
+          // CF-7: a refresh restores the AUTO badge on both values.
+          temperatureManuallySet: false,
+          humidityManuallySet: false,
           isLoadingWeather: false,
           locationFailureReason: null,
         );
@@ -726,7 +804,6 @@ class CyclingInputController extends _$CyclingInputController {
           scheduledTime: currentState.selectedTime,
           temperatureC: currentState.temperatureC,
           humidityPct: currentState.humidityPct,
-          isFasted: currentState.isFasted,
           intensity: currentState.intensity,
           activityTitle: currentState.activityTitleManuallySet
               ? currentState.activityTitle

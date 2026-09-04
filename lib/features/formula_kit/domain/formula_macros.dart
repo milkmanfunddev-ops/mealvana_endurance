@@ -44,6 +44,13 @@ class FormulaMacros {
   static const kFluidMlPerServing = 'fluid_ml_per_serving';
   static const kCaloriesPerServing = 'calories_per_serving';
 
+  /// Allergen / excluded-diet db values snapshotted from the food at add
+  /// time. Additive keys (2026-09-03, formula-pin-surface FP-8): they let the
+  /// editor's save-time conflict disclosure work offline without re-fetching
+  /// foods. Absent on legacy components — readers treat missing as "none".
+  static const kAllergens = 'allergens';
+  static const kExcludedDiets = 'excluded_diets';
+
   static const sourceTemplate = 'template';
   static const sourceUser = 'user';
 
@@ -71,6 +78,12 @@ class FormulaMacros {
       kSodiumMg: food.sodiumMg,
       kFluidMlPerServing: food.fluidMlPerServing,
       kCaloriesPerServing: food.caloriesPerServing,
+      // Snapshot the conflict metadata alongside the macros (FP-8) — same
+      // rationale: render without a food lookup. Db values, not enum names.
+      kAllergens: food.allergens.map((a) => a.dbValue).toList(growable: false),
+      kExcludedDiets: food.excludedDiets
+          .map((d) => d.dbValue)
+          .toList(growable: false),
     };
   }
 
