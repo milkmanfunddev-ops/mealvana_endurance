@@ -200,3 +200,58 @@ describe('reconcileBeforePhaseAfterPins', () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Floor-fill deadlock (Lee's Sept 5 brick, 2026-09-04): target ON the floor
+// and a residual gap smaller than the smallest add-on. 36 g pinned snack +
+// 11 g top-off = 47 g against [50-200, target 50]; the strict-improvement
+// guard rejected the 27 g banana (distance 24 > 3) and shipped the phase
+// out of range. Below the floor, clearing the range must beat staying under.
+// ---------------------------------------------------------------------------
+
+describe('carb floor-fill when the gap is smaller than every add-on', () => {
+  const FLOOR_TARGETS: PreWorkoutTargets = {
+    ...TARGETS,
+    carbs_g: 50,
+    carbs_low_g: 50,
+    carbs_high_g: 200,
+  };
+
+  it('adds the banana to clear the floor instead of deadlocking', () => {
+    const result: BeforePhaseResult = {
+      snack: subPhase('snack', [food({ carbs_grams: 36 })]),
+      top_up: subPhase('top_up', [food({ carbs_grams: 11 })]),
+    };
+    reconcileBeforePhaseAfterPins(result, FLOOR_TARGETS, new Set(['snack']));
+    const after = totals(result);
+    assert(
+      after.carbs >= FLOOR_TARGETS.carbs_low_g,
+      `phase must clear the 50 g floor, got ${after.carbs}`,
+    );
+    assert(
+      after.carbs <= FLOOR_TARGETS.carbs_high_g,
+      `phase must stay under the ceiling, got ${after.carbs}`,
+    );
+  });
+
+  it('a small shortfall INSIDE the range is still left alone', () => {
+    // 60 g against [50-200, target 62]: 2 g under target but in range — the
+    // strict-improvement rule must keep refusing a 27 g overshoot.
+    const inRange: PreWorkoutTargets = {
+      ...TARGETS,
+      carbs_g: 62,
+      carbs_low_g: 50,
+      carbs_high_g: 200,
+    };
+    const result: BeforePhaseResult = {
+      snack: subPhase('snack', [food({ carbs_grams: 49 })]),
+      top_up: subPhase('top_up', [food({ carbs_grams: 11 })]),
+    };
+    reconcileBeforePhaseAfterPins(result, inRange, new Set(['snack']));
+    const after = totals(result);
+    assert(
+      Math.abs(after.carbs - 60) < 1e-9,
+      `in-range shortfall must not be over-filled, got ${after.carbs}`,
+    );
+  });
+});

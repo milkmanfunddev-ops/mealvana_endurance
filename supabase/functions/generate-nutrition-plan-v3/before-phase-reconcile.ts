@@ -262,7 +262,21 @@ export function reconcileBeforePhaseAfterPins(
       while (totals.carbs < targets.carbs_g && guard < 10) {
         guard++;
         let bestPick: { name: string; addOn: AddOn } | null = null;
-        let bestDistance = Math.abs(targets.carbs_g - totals.carbs);
+        // While the phase is BELOW THE RANGE FLOOR, clearing the floor beats
+        // staying under it: the improvement guard alone deadlocks whenever
+        // the remaining gap is smaller than the smallest add-on (Lee's Sept 5
+        // brick: target 50 ON the floor, phase at 47 — every ≥11 g add-on
+        // "worsened" the 3 g distance, so nothing was added and the plan
+        // shipped out of range; bug 2026-09-04-before-floor-fill-deadlocks-
+        // when-gap-smaller-than-add-on). So under the floor, any in-ceiling
+        // candidate is eligible and the least target-overshoot wins; at or
+        // above the floor the strict-improvement rule still applies, so a
+        // 2 g shortfall INSIDE the range is never "fixed" with an 11 g
+        // overshoot.
+        const belowFloor = totals.carbs < targets.carbs_low_g - 1e-9;
+        let bestDistance = belowFloor
+          ? Number.POSITIVE_INFINITY
+          : Math.abs(targets.carbs_g - totals.carbs);
         for (const candidate of pool) {
           const newCarbs = totals.carbs + candidate.addOn.carbs_g;
           const newSodium = totals.sodium + candidate.addOn.sodium_mg;
