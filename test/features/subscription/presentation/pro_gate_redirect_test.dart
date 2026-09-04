@@ -12,13 +12,27 @@ import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_r
 void main() {
   group('isProGatedPath', () {
     test('food and vana subtrees are gated', () {
-      for (final p in ['/food', '/food/plan', '/food/cook/abc', '/vana', '/vana/chat']) {
+      for (final p in [
+        '/food',
+        '/food/plan',
+        '/food/cook/abc',
+        '/vana',
+        '/vana/chat',
+      ]) {
         expect(isProGatedPath(p), isTrue, reason: p);
       }
     });
 
     test('everything else is not — including look-alike prefixes', () {
-      for (final p in ['/', '/main', '/pro', '/settings', '/foods', '/vanadium', '/buy-credits']) {
+      for (final p in [
+        '/',
+        '/main',
+        '/pro',
+        '/settings',
+        '/foods',
+        '/vanadium',
+        '/buy-credits',
+      ]) {
         expect(isProGatedPath(p), isFalse, reason: p);
       }
     });

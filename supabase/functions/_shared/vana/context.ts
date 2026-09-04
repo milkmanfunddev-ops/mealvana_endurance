@@ -4,7 +4,8 @@ import { deriveWeekCharacter } from './derive-week-character.ts';
 import { today, addDays, weekStartFor } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { weatherLine } from './weather.ts';
-import { listMemories, recallMemories, getSetting } from './memory.ts';
+import { listMemories, recallMemories, getSetting, getCoverageScope } from './memory.ts';
+import { seasonalProduce } from './season.ts';
 import { getPlan } from './plan.ts';
 import { ensureWeekTargets } from './macros.ts';
 import { holidaysInRange } from './holidays.ts';
@@ -15,7 +16,7 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
   const t = anchorDate ?? today();
   await ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
-  const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting] = await Promise.all([
+  const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }] = await Promise.all([
     d.from('users').select('first_name, dietary_preference, allergies, gut_training_level').eq('id', v.userId).maybeSingle(),
     d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, distance_miles, distance_meters, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', t).lt('scheduled_date_time', addDays(end, 1)).order('scheduled_date_time'),
     d.from('daily_macro_targets').select('target_date, carb_g, prot_g, fat_g, tdee, session_kcal, mode').eq('user_id', v.userId).gte('target_date', t).lte('target_date', addDays(t, 21)).order('target_date'),
@@ -23,7 +24,19 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
     d.from('meal_logs').select('carbs_g, calories').eq('user_id', v.userId).eq('log_date', t).eq('is_deleted', false),
     getPlan(v, weekStartFor(t)),
     getSetting<boolean>(v, 'batch_cooking'),
+    getCoverageScope(v),
+    // Phase 2.2 — the notable session of the last two days (done, not cancelled): the "you crushed a century yesterday" beat.
+    d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', addDays(t, -2)).lt('scheduled_date_time', t).order('duration_minutes', { ascending: false, nullsFirst: false }).limit(5),
+    getSetting<number>(v, 'weekly_budget_usd'),
+    // Phase 3.4 — the latest debrief, so the first proposal can react to last week.
+    d.from('plan_debriefs').select('completed, planned, skip_reason, created_at, meal_plans:plan_id(week_start)').eq('user_id', v.userId).order('created_at', { ascending: false }).limit(1),
   ]);
+  // deno-lint-ignore no-explicit-any
+  const notable = (recentActs ?? []).filter((a: any) => !/cancel|skip|missed/i.test(String(a.status ?? ''))).find((a: any) => (a.duration_minutes ?? 0) >= 75 || /high|race|hard|threshold/i.test(String(a.intensity_level ?? '')));
+  const recentSession = notable ? { date: String(notable.scheduled_date_time).slice(0, 10), title: String(notable.title ?? 'Session'), type: String(notable.activity_type ?? ''), minutes: notable.duration_minutes ?? null, intensity: notable.intensity_level ? String(notable.intensity_level) : null, status: notable.status ? String(notable.status) : null } : null;
+  // deno-lint-ignore no-explicit-any
+  const lastDebrief = (debriefs ?? [])[0] as any;
+  const lastWeek = lastDebrief ? { completed: Number(lastDebrief.completed), planned: Number(lastDebrief.planned), skipReason: lastDebrief.skip_reason ?? null, weekStart: String(lastDebrief.meal_plans?.week_start ?? '') } : null;
   const wk = deriveWeekCharacter(acts ?? [], (macros ?? []).slice(0, 7));
   const ev = events?.[0] && events[0].event_date ? events[0] : null;
   const race = ev ? { name: ev.event_name ?? 'Race', date: String(ev.event_date), daysOut: Math.round((new Date(String(ev.event_date) + 'T00:00:00Z').getTime() - new Date(t + 'T00:00:00Z').getTime()) / 86400_000), location: ev.location ?? null } : null;
@@ -53,8 +66,9 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
     holidays,
     // deno-lint-ignore no-explicit-any
     loggedToday: { count: logs?.length ?? 0, carbsG: Math.round((logs ?? []).reduce((s: number, l: any) => s + Number(l.carbs_g ?? 0), 0)) },
-    plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true },
+    plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true, batchKnown: batchSetting != null, coverageScope },  // only the setting memory records an explicit choice — a plan row defaults batch_cooking:true at insert, so it cannot distinguish chosen from default
     memories,
+    recentSession, season: seasonalProduce(t), grocery: { weeklyUsd: budgetSetting != null ? Number(budgetSetting) : null }, lastWeek,
   };
 }
 
@@ -70,7 +84,10 @@ export function contextBlock(c: AthleteContext): string {
     `HOLIDAYS ${c.holidays.length ? c.holidays.map((h) => `${h.name} ${h.date} (${h.daysOut === 0 ? 'today' : h.daysOut === 1 ? 'tomorrow' : `${h.daysOut}d`})`).join('; ') : 'none in the next 2 weeks'}`,
     `TARGETS (daily-macros service) today ${b ? `${b.kcal}kcal ≥${b.carbsG}C ≥${b.proteinG}P ${b.fatG}F · formulas ${b.sessionKcal}kcal · meal budget ${b.planningKcal}kcal (lunch+dinner ≈${b.lunchDinnerKcal})` : 'no target for today'} · week ${wk || 'none'}${c.budget.raceWeekCarbsG ? ` · race-week ≥${c.budget.raceWeekCarbsG}C` : ''}`,
     `WEATHER ${c.weather.today ?? 'n/a'}${c.weather.raceDay ? ` · race day ${c.weather.raceDay}` : ''}`,
-    `LOGGED TODAY ${c.loggedToday.count} meals ${c.loggedToday.carbsG}C · PLAN ${c.plan.exists ? `${c.plan.status}, ${c.plan.mealsLeft} servings left` : 'none'} · batch ${c.plan.batchCooking ? 'on' : 'off'}`,
-    `MEMORIES ${c.memories.slice(0, 8).map((m) => m.fact).join(' | ') || 'none'}`,
+    `LOGGED TODAY ${c.loggedToday.count} meals ${c.loggedToday.carbsG}C · PLAN ${c.plan.exists ? `${c.plan.status}, ${c.plan.mealsLeft} servings left` : 'none'} · batch ${c.plan.batchKnown === false ? 'never chosen' : c.plan.batchCooking ? 'on' : 'off'} · coverage ${c.plan.coverageScope === 'dinners' ? 'dinners only' : c.plan.coverageScope === 'dinners_lunches' ? 'dinners and lunches' : c.plan.coverageScope === 'all' ? 'every meal' : 'never chosen'}`,
+    `RECENT ${c.recentSession ? `${c.recentSession.date.slice(5)} ${c.recentSession.title}${c.recentSession.minutes ? ` ${c.recentSession.minutes}m` : ''}${c.recentSession.intensity ? ` ${c.recentSession.intensity}` : ''} — done` : 'no notable session in the last 2 days'}`,
+    `SEASON in season now: ${(c.season ?? []).join(', ') || 'n/a'}${c.grocery?.weeklyUsd ? ` · BUDGET about $${Math.round(c.grocery.weeklyUsd)}/week` : ''}`,
+    `LAST WEEK ${c.lastWeek ? `${c.lastWeek.completed} of ${c.lastWeek.planned} planned meals happened${c.lastWeek.skipReason ? ` (skipped: ${c.lastWeek.skipReason})` : ''}` : 'no debrief yet'}`,
+    `MEMORIES ${c.memories.slice(0, 8).map((m) => `${m.fact}${m.source ? ` (${m.source} · ${String(m.lastConfirmedAt).slice(0, 10)})` : ''}`).join(' | ') || 'none'}`,
   ].join('\n');
 }

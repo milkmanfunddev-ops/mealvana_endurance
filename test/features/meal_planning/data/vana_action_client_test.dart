@@ -172,6 +172,79 @@ void main() {
     );
   });
 
+  group('rewind / pantry (plan Phases 6.1, 7.3)', () {
+    test('rewind folds the restored batch and exposes `removed`', () async {
+      final batch = (loadFixture('batch')['parts'] as List).first;
+      final h = TransportHarness(
+        status: 200,
+        body: jsonEncode({
+          'parts': [batch],
+          'removed': 3,
+        }),
+      );
+      final result = await _client(
+        h,
+      ).run(const RewindAction(conversationId: 'conv-1', messageId: 'm-4'));
+      expect(h.requests.single.body, {
+        'type': 'rewind',
+        'payload': {'conversationId': 'conv-1', 'messageId': 'm-4'},
+      });
+      expect(result.plan, isNotNull);
+      expect(result.removed, 3);
+    });
+
+    test('rewind with no plan snapshot returns empty parts', () async {
+      final h = TransportHarness(
+        status: 200,
+        body: jsonEncode({'parts': [], 'removed': 1}),
+      );
+      final result = await _client(
+        h,
+      ).run(const RewindAction(conversationId: 'conv-1', messageId: 'm-1'));
+      expect(result.parts, isEmpty);
+      expect(result.plan, isNull);
+      expect(result.removed, 1);
+    });
+
+    test('pantry_photo returns the persisted messageId', () async {
+      final h = TransportHarness(
+        status: 200,
+        body: jsonEncode({
+          'parts': [loadFixture('pantry')],
+          'messageId': 'msg-9',
+        }),
+      );
+      final result = await _client(h).run(
+        const PantryPhotoAction(
+          conversationId: 'conv-1',
+          photoPath: 'user-1/abc.jpg',
+        ),
+      );
+      expect(h.requests.single.body['payload'], {
+        'conversationId': 'conv-1',
+        'photoPath': 'user-1/abc.jpg',
+      });
+      expect(result.messageId, 'msg-9');
+      // The `pantry` part kind is parsed by VanaPart once the renderer
+      // work lands; until then the client drops it as unknown — either
+      // way the envelope is honoured.
+      expect(result.parts.length, lessThanOrEqualTo(1));
+    });
+
+    test('set_pantry posts the ticked names and returns no parts', () async {
+      final h = TransportHarness(status: 200, body: '{"parts":[]}');
+      final result = await _client(
+        h,
+      ).run(const SetPantryAction(conversationId: 'conv-1', items: ['eggs']));
+      expect(h.requests.single.body['payload'], {
+        'conversationId': 'conv-1',
+        'items': ['eggs'],
+      });
+      expect(result.parts, isEmpty);
+      expect(result.messageId, isNull);
+    });
+  });
+
   test('a non-object 200 body is a VanaServerException', () async {
     expect(
       () => _client(

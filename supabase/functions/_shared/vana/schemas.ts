@@ -40,7 +40,7 @@ export const MealPlanZ = z.object({
   dayNotes: z.record(z.string()), dayNotesStale: z.boolean().optional(),
   coverage: z.object({ lunchDinnerSlots: z.number(), covered: z.number(), perDay: z.object({ kcal: z.number(), carbsG: z.number(), proteinG: z.number() }).strict() }).strict(),
 }).strict();
-export const MemoryZ = z.object({ id: z.string(), kind: z.enum(['preference', 'constraint', 'pattern', 'episode', 'setting']), key: z.string().nullable(), fact: z.string(), value: z.unknown(), confidence: z.number(), lastConfirmedAt: z.string() }).strict();
+export const MemoryZ = z.object({ id: z.string(), kind: z.enum(['preference', 'constraint', 'pattern', 'episode', 'setting']), key: z.string().nullable(), fact: z.string(), value: z.unknown(), confidence: z.number(), lastConfirmedAt: z.string(), source: z.string().nullable().optional() }).strict();
 export const MealDetailZ = z.object({
   meal: MealRefZ,
   ingredients: z.array(z.object({ name: z.string(), qty: z.string(), role: z.string().nullable().optional() }).passthrough()),
@@ -51,7 +51,8 @@ export const MealDetailZ = z.object({
 }).strict();
 
 // ---- VanaPart (kind discriminant)
-export const ChoicesPartZ = z.object({ kind: z.literal('choices'), question: z.string().optional(), options: z.array(z.string()).min(2).max(3) }).strict();
+// `details` (optional) must be the same length as `options` — a refine() can't live in the discriminated union, so the contract test asserts it.
+export const ChoicesPartZ = z.object({ kind: z.literal('choices'), question: z.string().optional(), options: z.array(z.string()).min(2).max(4), details: z.array(z.string().nullable()).optional() }).strict();
 export const BriefPartZ = z.object({ kind: z.literal('brief'), text: z.string(), chips: z.array(z.string()), cites: z.array(z.string()) }).strict();
 export const DayGuidancePartZ = z.object({ kind: z.literal('day_guidance'), date: z.string(), label: z.string(), workout: z.string().nullable(), minCarbsG: z.number(), note: z.string(), suggestions: z.array(MealRefZ) }).strict();
 export const StaplesPartZ = z.object({ kind: z.literal('staples'), meals: z.array(MealRefZ.extend({ timesLogged: z.number(), ticked: z.boolean() }).strict()), planCarbsPerDay: z.number().optional(), targetCarbsPerDay: z.number().nullable().optional(), covered: z.number().optional(), of: z.number().optional() }).strict();
@@ -62,7 +63,10 @@ export const ShoppingListPartZ = z.object({ kind: z.literal('shopping_list'), it
 export const MemorySavedPartZ = z.object({ kind: z.literal('memory_saved'), memory: MemoryZ }).strict();
 export const LoggedPartZ = z.object({ kind: z.literal('logged'), planMealId: z.string(), name: z.string(), servingsLeft: z.number() }).strict();
 export const DayPartZ = z.object({ kind: z.literal('day'), date: z.string(), label: z.string(), slots: DayPlanZ, filled: z.array(MealTypeZ) }).strict();
-export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ]);
+export const PantryPartZ = z.object({ kind: z.literal('pantry'), title: z.string(), items: z.array(z.object({ name: z.string(), selected: z.boolean() }).strict()), allowCustom: z.boolean(), origin: z.enum(['suggested', 'photo']) }).strict();
+export const WeekPartZ = z.object({ kind: z.literal('week'), days: z.array(DayPartZ) }).strict();
+export const DebriefPartZ = z.object({ kind: z.literal('debrief'), planId: z.string(), completed: z.number(), planned: z.number(), skipReason: z.string().nullable(), memories: z.array(MemoryZ) }).strict();
+export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ, PantryPartZ, WeekPartZ, DebriefPartZ]);
 
 // ---- wire
 export const NdjsonLineZ = z.discriminatedUnion('type', [

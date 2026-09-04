@@ -1,0 +1,12 @@
+{
+  "section": "season",
+  "engine": "seasonalProduce(iso) — edge _shared/vana/season.ts (the prototype has no SEASON line — D-12)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "A static US-temperate month table; the month is read in UTC. Not regional (the profile has no location).",
+  "vectors": [
+    { "id": "july", "status": "proposed", "inputs": { "iso": "2026-07-15" }, "expected": ["blueberries", "peaches", "corn", "tomatoes", "zucchini", "melon"], "why": "Row 7 of the table, verbatim and in order." },
+    { "id": "january", "status": "proposed", "inputs": { "iso": "2026-01-05" }, "expected": ["citrus", "kale", "sweet potatoes", "winter squash", "brussels sprouts", "cabbage"], "why": "Row 1." },
+    { "id": "december-31-utc", "status": "proposed", "inputs": { "iso": "2026-12-31" }, "expected": ["citrus", "winter squash", "sweet potatoes", "pomegranate", "kale", "cabbage"], "why": "The date is parsed as UTC midnight, so the last day of a month stays in that month." },
+    { "id": "september", "status": "proposed", "inputs": { "iso": "2026-09-03" }, "expected": ["apples", "tomatoes", "peppers", "grapes", "sweet potatoes", "figs"], "why": "Row 9 — what the SEASON line reads on the day this SSOT was recorded." }
+  ]
+}

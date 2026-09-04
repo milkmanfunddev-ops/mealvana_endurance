@@ -3,6 +3,15 @@
 Everything the team has produced or learned about meal planning, pulled into one place so the
 next design/prototype iteration starts from evidence rather than memory.
 
+> **2026-09-03:** [`ssot/`](ssot/README.md) is now the full meal-planning SSOT in the QA repo's shape — six
+> families (`intent` · `planning` · `selection` · `domain` · `agent` · `design`), 150 executable vectors, three
+> conformance runners (edge · prototype · Dart), `DEVIATIONS.md` (D-1..19) and `OPEN-QUESTIONS.md`; every spec
+> is RECORDED v1 → PROPOSED, awaiting Xuan.
+> **2026-09-02:** `ssot/` added — the meal-planning SSOT (Xuan's design intent for the Vana
+> chatbot as a normative spec + deviations register, QA-repo style; status PROPOSED, awaiting
+> Xuan). **Implementation plan: [`vana-chatbot-update-plan.md`](vana-chatbot-update-plan.md)** — best-judgment resolution of the Q-register + 5 phases from current code to Xuan's vision. New Notion captures: `notion/ai-scenarios-structured.md` + `notion/ai-scenarios-unstructured.md`
+> (Xuan's "AI Scenarios (Lee)" page — the deliverable for the meal-planning design Lee asked for).
+
 **Start here:** [`synthesis-and-recommendations.md`](synthesis-and-recommendations.md) — the
 cross-source synthesis and the concrete recommendations for the prototype. Then
 [`walkthrough.md`](walkthrough.md) — the turn-by-turn script of what Vana says and what the user can tap.

@@ -6,6 +6,16 @@ Legend: ✅ fetched in full and archived · 📇 linked/listed only (not individ
 
 ---
 
+## AI Scenarios (Lee) — Xuan's chatbot scenario deliverable (added 2026-09-02)
+
+| Title | URL | What it is | Saved to |
+|---|---|---|---|
+| AI Scenarios (Lee) | app.notion.com/p/AI-Scenarios-Lee-2cce3fdb754c80c89242e7e16862826e | Parent page by **Xuan Huang** under Milkman Inc. HQ → Mealvana Endurance — container for two scenario docs written for Lee (the deliverable behind the "Work on the meal-planning design Lee asked for" sprint task) | (container only — two children below) |
+| Structured | app.notion.com/p/Structured-2cce3fdb754c80519170ca5e177028ec | "Race Day Nutrition Wizard" — 6-step wizard flow with AI conversation panels at each step | `ai-scenarios-structured.md` |
+| Unstructured | app.notion.com/p/Unstructured-2cce3fdb754c80cc84bef56750102c7c | "Ironman Race Day Nutrition Planning" — fully open-ended conversation incl. pre-race check-in + post-race debrief, plus a Structured-vs-Unstructured comparison | `ai-scenarios-unstructured.md` |
+
+Note: this page lives outside the pages shared with the Notion API integrations (fetched via browser). Also noted 2026-09-02, not archived: a GTM-consultation meeting note (app.notion.com/p/3cee3fdb754c804f8c88fa5154ecf90c) records Xuan's framing "Missing feature: daily meal planning — the biggest nutrition use case — still hasn't shipped" and that retention leaks because athletes find their fueling routine and stop needing the app.
+
 ## Seed pages (given directly)
 
 | Title | URL | What it is | Saved to |

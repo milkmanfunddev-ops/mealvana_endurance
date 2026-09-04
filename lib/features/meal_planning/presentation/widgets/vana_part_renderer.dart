@@ -12,10 +12,13 @@ import '../../domain/vana_part.dart';
 import 'choice_chips.dart';
 import 'confirmed_card.dart';
 import 'day_card.dart';
+import 'debrief_card.dart';
 import 'meal_picker_carousel.dart';
+import 'pantry_card.dart';
 import 'picker_chips.dart';
 import 'rule_chip.dart';
 import 'staples_card.dart';
+import 'week_card.dart';
 
 /// Everything the [VanaPartRenderer] needs from the screen, so the renderer
 /// itself stays a pure function of part → widget (02 §3).
@@ -33,6 +36,12 @@ class VanaPartCallbacks {
     required this.onSomethingElse,
     required this.onAcceptRule,
     required this.onViewShopping,
+    this.onPantryUse,
+    this.onPantryPhoto,
+    this.onPlanWeekOpen,
+    this.onSwapPicked,
+    this.onEditMessage,
+    this.onBrowseMeals,
   });
 
   /// Navigate to `/food/meals/:id`.
@@ -58,6 +67,30 @@ class VanaPartCallbacks {
 
   /// Open the Shopping tab.
   final VoidCallback onViewShopping;
+
+  // ---- additive 2026-09-03 (plan Phases 6–8); optional so old hosts compile.
+
+  /// `pantry` part → the athlete tapped "Use these" with the ticked names.
+  final ValueChanged<List<String>>? onPantryUse;
+
+  /// `pantry` part → the athlete wants to scan a fridge photo instead of
+  /// ticking the suggested chips (runs the `pantry_photo` flow).
+  final VoidCallback? onPantryPhoto;
+
+  /// `week` part → open the Plan tab.
+  final VoidCallback? onPlanWeekOpen;
+
+  /// Swap on a transcript meal card that is in the draft plan (opens the
+  /// swap picker).
+  final ValueChanged<MealRef>? onSwapPicked;
+
+  /// Edit affordance under an athlete turn → text returns to the composer
+  /// and, on send, the conversation rewinds to that message (Phase 6.1).
+  final void Function(String messageId, String text)? onEditMessage;
+
+  /// "Browse meals" under every picker — opens `/vana/browse` for this
+  /// conversation; null while the conversation has no id (chip disabled).
+  final VoidCallback? onBrowseMeals;
 }
 
 /// Switches a [VanaPart] to its widget (02 §3). `batch` parts are folded
@@ -91,6 +124,10 @@ class VanaPartRenderer extends ConsumerWidget {
               multi: p.multi,
               pickedIds: callbacks.pickedIds,
               onPick: (meal) => callbacks.onPickMeal(meal, p.defaultServings),
+              onOpen: callbacks.onTapMeal,
+              // Swap only on tiles already in the draft plan — the
+              // carousel gates on `pickedIds`.
+              onSwap: callbacks.onSwapPicked,
             ),
             const SizedBox(height: AppSpacing.xs),
             PickerChips(
@@ -101,6 +138,7 @@ class VanaPartRenderer extends ConsumerWidget {
               enabled: callbacks.chipsEnabled,
               onPick: callbacks.onChipPick,
               onSomethingElse: callbacks.onSomethingElse,
+              onBrowse: callbacks.onBrowseMeals,
             ),
           ],
         );
@@ -109,7 +147,21 @@ class VanaPartRenderer extends ConsumerWidget {
       case VanaRulePart p:
         return RuleChip(part: p, onAccept: () => callbacks.onAcceptRule(p));
       case VanaShoppingListPart p:
-        return ConfirmedCard(part: p, onView: callbacks.onViewShopping);
+        return ConfirmedCard(
+          part: p,
+          onView: callbacks.onViewShopping,
+          onViewPlan: callbacks.onPlanWeekOpen,
+        );
+      case VanaPantryPart p:
+        return PantryCard(
+          part: p,
+          onUse: callbacks.onPantryUse,
+          onScanFridge: callbacks.onPantryPhoto,
+        );
+      case VanaWeekPart p:
+        return WeekCard(part: p, onOpenPlan: callbacks.onPlanWeekOpen);
+      case VanaDebriefPart p:
+        return DebriefCard(part: p);
       case VanaDayGuidancePart p:
         return DayCard(part: p, onTapMeal: callbacks.onTapMeal);
       case VanaMemorySavedPart p:
@@ -201,9 +253,7 @@ class _DayWidget extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          [
-            for (final slot in part.slots.filled) slot.wire,
-          ].join(' · '),
+          [for (final slot in part.slots.filled) slot.wire].join(' · '),
           style: AppTextStyles.bodySmall.copyWith(color: secondary),
         ),
       ],

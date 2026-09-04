@@ -14,6 +14,7 @@ class UserMemory extends WireRecord {
     this.value,
     required this.confidence,
     required this.lastConfirmedAt,
+    this.source,
   });
 
   final String id;
@@ -28,6 +29,11 @@ class UserMemory extends WireRecord {
   /// ISO timestamp as sent.
   final String lastConfirmedAt;
 
+  /// Where the memory came from — `conversation` · `onboarding` ·
+  /// `settings` · `debrief` (plan Phase 2.4 provenance). `null` on rows
+  /// written before the column existed; rendered as the date alone.
+  final String? source;
+
   DateTime? get lastConfirmedAtDateTime => DateTime.tryParse(lastConfirmedAt);
 
   factory UserMemory.fromJson(Map<String, dynamic> json) => UserMemory(
@@ -38,6 +44,7 @@ class UserMemory extends WireRecord {
     value: json['value'],
     confidence: readDouble(json, 'confidence') ?? 0,
     lastConfirmedAt: readString(json, 'lastConfirmedAt') ?? '',
+    source: readString(json, 'source'),
   );
 
   @override
@@ -49,6 +56,7 @@ class UserMemory extends WireRecord {
     'value': value,
     'confidence': confidence,
     'lastConfirmedAt': lastConfirmedAt,
+    'source': source,
   };
 
   UserMemory copyWith({
@@ -59,6 +67,7 @@ class UserMemory extends WireRecord {
     Object? value,
     double? confidence,
     String? lastConfirmedAt,
+    String? source,
   }) => UserMemory(
     id: id ?? this.id,
     kind: kind ?? this.kind,
@@ -67,5 +76,6 @@ class UserMemory extends WireRecord {
     value: value ?? this.value,
     confidence: confidence ?? this.confidence,
     lastConfirmedAt: lastConfirmedAt ?? this.lastConfirmedAt,
+    source: source ?? this.source,
   );
 }

@@ -4,7 +4,8 @@ import type { UiAction, VanaPart, DaySlot, DayPlan, ShoppingItem } from './contr
 import type { VanaCtx } from './env.ts';
 import { today } from './env.ts';
 import * as plan from './plan.ts';
-import { setSetting, forgetMemory, listMemories } from './memory.ts';
+import { setSetting, forgetMemory, listMemories, isCoverageScope, type CoverageScope } from './memory.ts';
+import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
 import { diagnoseStaples, dayGuidance, planDayPart } from './tools.ts';
 import { buildAthleteContext } from './context.ts';
 import { getMeal, saveLibraryMeal, getMealDetail, recentMeals, setSavedMealNotes, setMealFeedback } from './meals.ts';
@@ -37,7 +38,7 @@ export async function runAction(v: VanaCtx, a: UiAction): Promise<ActionResult> 
     case 'confirm_plan': { const pl = await plan.confirmPlan(v, scope); refreshDayNotesSoon(v, String(p.date ?? today()), pl.id); return { parts: [{ kind: 'batch', plan: pl }, shop(pl.shopping)] }; }
     case 'toggle_shopping': { const items = await plan.toggleShopping(v, String(p.name), p.field === 'have' ? 'have' : 'checked', !!p.value); return { parts: [shop(items)] }; }
     case 'log_from_plan': { const id = planMealId(); const r = await plan.logFromPlan(v, id, pick(p, 'mealType', 'meal_type'), p.date ? String(p.date) : undefined); return { parts: [{ kind: 'logged', planMealId: id, name: r.name, servingsLeft: r.servingsLeft }, { kind: 'batch', plan: (await plan.getPlan(v))! }], logId: r.logId }; }
-    case 'set_setting': { const m = await setSetting(v, p.key, !!p.value, 'settings'); if (p.key === 'batch_cooking') { const pl = await plan.setBatchCooking(v, !!p.value, scope); return { parts: [{ kind: 'memory_saved', memory: m }, { kind: 'batch', plan: pl }] }; } return { parts: [{ kind: 'memory_saved', memory: m }] }; }
+    case 'set_setting': { if (p.key !== 'batch_cooking' && p.key !== 'show_macros' && p.key !== 'coverage_scope') throw new Error(`unknown setting ${String(p.key)}`); if (p.key === 'coverage_scope' && !isCoverageScope(p.value)) throw new Error('coverage_scope must be dinners | dinners_lunches | all'); const m = await setSetting(v, p.key, p.key === 'coverage_scope' ? (p.value as CoverageScope) : !!p.value, 'settings'); if (p.key === 'batch_cooking') { const pl = await plan.setBatchCooking(v, !!p.value, scope); return { parts: [{ kind: 'memory_saved', memory: m }, { kind: 'batch', plan: pl }] }; } return { parts: [{ kind: 'memory_saved', memory: m }] }; }
     case 'delete_memory': { await forgetMemory(v, String(p.id)); return { parts: [], memories: await listMemories(v) }; }
     // ---- day planner
     case 'set_day_slot': { // { date?, slot, source: 'plan'|'saved'|'library', id }
@@ -76,6 +77,21 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'accept_rule': { const pl = await plan.setRule(v, { day: p.day, rule: String(p.rule), mealId: pick(p, 'mealId', 'meal_id'), accepted: !!p.accepted }); return { parts: [{ kind: 'batch', plan: pl }] }; }
     case 'list_memories': return { parts: [], memories: await listMemories(v) };
     case 'save_meal': return { parts: [], meal: await saveLibraryMeal(v, String(pick(p, 'libraryMealId', 'library_meal_id'))) };   // heart on the detail page
+    // ---- additive 2026-09-03 (plan Phases 6, 7)
+    case 'swap_ingredient': return { parts: [{ kind: 'batch', plan: await plan.swapIngredient(v, planMealId(), String(p.from), String(p.to)) }] };
+    case 'set_pantry': { const conversationId = pick(p, 'conversationId', 'conversation_id'); const items = (Array.isArray(p.items) ? p.items : []).map((x: unknown) => String(x).trim()).filter(Boolean).slice(0, 40); const m = await setSetting(v, 'pantry_items', items, 'conversation'); const scope: plan.PlanScope | null = conversationId ? { conversationId: String(conversationId) } : null; const cur = await plan.resolvePlan(v, scope, false); if (cur && cur.meals.length) await plan.refreshShopping(v, cur.id); return { parts: [{ kind: 'memory_saved', memory: m }] }; }
+    case 'pantry_photo': { const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); if (!conversationId) throw new Error('conversationId required'); const part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path'))); const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
+    case 'rewind': {
+      // Drop the edited user turn and everything after it, then put the draft back to the snapshot the previous assistant turn stored.
+      const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); const messageId = String(pick(p, 'messageId', 'message_id') ?? '');
+      const { data: target } = await v.db.from('vana_messages').select('id, created_at, role').eq('id', messageId).eq('conversation_id', conversationId).eq('user_id', v.userId).maybeSingle();
+      if (!target) throw new Error('message not found');
+      const { data: prior } = await v.db.from('vana_messages').select('metadata').eq('conversation_id', conversationId).eq('user_id', v.userId).eq('role', 'assistant').lt('created_at', target.created_at).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      const snap = (prior?.metadata?.plan_snapshot ?? []) as plan.MealSnapshot;
+      const { data: gone } = await v.db.from('vana_messages').delete().eq('conversation_id', conversationId).eq('user_id', v.userId).gte('created_at', target.created_at).select('id');
+      const restored = await plan.restorePlan(v, { conversationId }, snap);
+      return { parts: [{ kind: 'batch', plan: restored }], removed: (gone ?? []).length };
+    }
     default: return null;
   }
 }

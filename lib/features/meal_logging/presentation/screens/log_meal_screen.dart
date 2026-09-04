@@ -934,6 +934,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 // Tab bar
 // ---------------------------------------------------------------------------
 
+/// The Plan · Meals · … pill tab bar. The control itself is
+/// [KyleTabPill] in the Kyle library (`navigation/kyle_tab_pill.dart`); this
+/// only maps [_LogTab] onto its index-based API.
 class _TabBar extends StatelessWidget {
   const _TabBar({
     required this.activeTab,
@@ -945,63 +948,17 @@ class _TabBar extends StatelessWidget {
   final _LogTab activeTab;
   final List<_LogTab> tabs;
   final ValueChanged<_LogTab> onTabSelected;
+
+  /// Unused — [KyleTabPill] reads the brightness off the theme. Kept so the
+  /// call sites in this screen stay unchanged.
   final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: tabs.map((tab) {
-          final isSelected = tab == activeTab;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTabSelected(tab),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                margin: const EdgeInsets.all(3),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (isDark ? AppColors.cream : AppColors.blackberry)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(
-                        tab.label,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: isSelected
-                              ? (isDark
-                                    ? AppColors.blackberry
-                                    : AppColors.cream)
-                              : (isDark
-                                    ? AppColors.cream.withValues(alpha: 0.7)
-                                    : AppColors.blackberry.withValues(
-                                        alpha: 0.6,
-                                      )),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
+    return KyleTabPill(
+      labels: tabs.map((t) => t.label).toList(growable: false),
+      selectedIndex: tabs.indexOf(activeTab),
+      onChanged: (i) => onTabSelected(tabs[i]),
     );
   }
 }

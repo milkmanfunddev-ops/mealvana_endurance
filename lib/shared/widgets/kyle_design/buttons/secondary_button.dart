@@ -15,6 +15,7 @@ class KyleSecondaryButton extends ConsumerWidget {
     this.isFullWidth = true,
     this.icon,
     this.height,
+    this.fontSize,
     this.variant = SecondaryButtonVariant.orange,
   });
 
@@ -24,6 +25,11 @@ class KyleSecondaryButton extends ConsumerWidget {
   final bool isFullWidth;
   final IconData? icon;
   final double? height;
+
+  /// Override the label size — for the compact, inline uses of the button
+  /// (the plan bar's Review action), matching the prototype's
+  /// `k-btn-primary--small`.
+  final double? fontSize;
   final SecondaryButtonVariant variant;
 
   @override
@@ -42,7 +48,7 @@ class KyleSecondaryButton extends ConsumerWidget {
           side: BorderSide(color: colors.border, width: 2),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
-          textStyle: AppTextStyles.buttonPrimary,
+          textStyle: AppTextStyles.buttonPrimary.copyWith(fontSize: fontSize),
         ),
         child: isLoading
             ? SizedBox(
@@ -70,6 +76,7 @@ class KyleSecondaryButton extends ConsumerWidget {
                       text,
                       style: AppTextStyles.buttonPrimary.copyWith(
                         color: colors.foreground,
+                        fontSize: fontSize,
                       ),
                       textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
@@ -99,6 +106,11 @@ class KyleSecondaryButton extends ConsumerWidget {
       case SecondaryButtonVariant.light:
         final onSurface = Theme.of(context).colorScheme.onSurface;
         return _ButtonColors(foreground: onSurface, border: onSurface);
+      case SecondaryButtonVariant.dragonfruit:
+        return _ButtonColors(
+          foreground: AppColors.dragonfruitLight,
+          border: AppColors.dragonfruit,
+        );
     }
   }
 }
@@ -193,6 +205,9 @@ enum SecondaryButtonVariant {
 
   /// Theme-aware outline that adapts to current brightness
   light,
+
+  /// Dragonfruit outline for destructive actions (Remove, Delete).
+  dragonfruit,
 }
 
 /// Helper class for button colors

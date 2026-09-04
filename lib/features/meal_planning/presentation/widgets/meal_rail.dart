@@ -7,8 +7,10 @@ import '../../domain/meal_ref.dart';
 import 'meal_rail_card.dart';
 
 /// A titled horizontal rail of [MealRailCard]s with an optional trailing
-/// "See all" action (Recents → `/food/meals/recents`). All labels are
-/// resolved from content keys by the caller.
+/// "See all" action (Recents → `/food/meals/recents`). The title is drawn as
+/// an uppercase, letter-spaced eyebrow and "See all" in electrolyte —
+/// the prototype's `.v-rail`. All labels are resolved from content keys by
+/// the caller.
 class MealRail extends StatelessWidget {
   const MealRail({
     super.key,
@@ -18,6 +20,7 @@ class MealRail extends StatelessWidget {
     this.seeAllLabel,
     this.onSeeAll,
     this.emptyText,
+    this.actionBuilder,
   });
 
   final String title;
@@ -31,6 +34,10 @@ class MealRail extends StatelessWidget {
   /// Shown instead of the strip when the rail is empty; the whole rail
   /// collapses when both are unset.
   final String? emptyText;
+
+  /// Per-card action beside the name (the browse screen's Add button);
+  /// cards are plain when null.
+  final Widget? Function(MealRef meal)? actionBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -47,8 +54,13 @@ class MealRail extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                title,
-                style: AppTextStyles.sectionTitle.copyWith(color: textColor),
+                title.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.96,
+                  color: textColor.withValues(alpha: 0.7),
+                ),
               ),
             ),
             if (seeAllLabel != null && onSeeAll != null)
@@ -56,12 +68,18 @@ class MealRail extends StatelessWidget {
                 onTap: onSeeAll,
                 child: Text(
                   seeAllLabel!,
-                  style: AppTextStyles.bodySmall.copyWith(color: secondary),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? AppColors.electrolyte
+                        : AppColors.electrolyteDark,
+                  ),
                 ),
               ),
           ],
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.sm),
         if (meals.isEmpty)
           Text(
             emptyText ?? '',
@@ -69,15 +87,16 @@ class MealRail extends StatelessWidget {
           )
         else
           SizedBox(
-            height: 122,
+            height: 132,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: meals.length,
-              separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) => MealRailCard(
                 key: ValueKey('meal_planning.rail_${title}_$i'),
                 meal: meals[i],
                 onTap: () => onTapMeal(meals[i]),
+                action: actionBuilder?.call(meals[i]),
               ),
             ),
           ),

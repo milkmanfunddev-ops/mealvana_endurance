@@ -568,3 +568,82 @@ class SetMealFeedbackAction extends UiAction {
     if (reason != null) 'reason': reason,
   };
 }
+
+// ── Transcript + pantry actions (plan §5 Phases 6.1, 7.3) ───────────────────
+
+/// `{conversationId, messageId}` — delete every message after (and
+/// including) the edited user turn and restore the conversation's draft
+/// plan to the snapshot taken after the previous assistant turn. Returns
+/// `{parts: [batch?], removed}`; the client then sends the edited text as a
+/// normal chat message on the same conversation.
+/// `{planMealId, from, to}` — ingredient-level swap (plan Phase 6.3): the
+/// server creates a saved variant with `from` replaced by `to`, swaps it into
+/// the plan in place and recomputes the shopping list. Returns `{parts:[batch]}`.
+class SwapIngredientAction extends UiAction {
+  const SwapIngredientAction({
+    required this.planMealId,
+    required this.from,
+    required this.to,
+  });
+
+  final String planMealId;
+  final String from;
+  final String to;
+
+  @override
+  String get type => 'swap_ingredient';
+
+  @override
+  Map<String, Object?> payloadFields() => {
+    'planMealId': planMealId,
+    'from': from,
+    'to': to,
+  };
+}
+
+class RewindAction extends UiAction {
+  const RewindAction({required String conversationId, required this.messageId})
+    : super(conversationId: conversationId);
+
+  final String messageId;
+
+  @override
+  String get type => 'rewind';
+
+  @override
+  Map<String, Object?> payloadFields() => {'messageId': messageId};
+}
+
+/// `{conversationId, photoPath}` — [photoPath] is a `meal-photos` bucket
+/// path (`{userId}/{uuid}.jpg`, the meal-logging upload). Returns
+/// `{parts: [pantry], messageId}`; the server also persists the part as an
+/// assistant message.
+class PantryPhotoAction extends UiAction {
+  const PantryPhotoAction({
+    required String conversationId,
+    required this.photoPath,
+  }) : super(conversationId: conversationId);
+
+  final String photoPath;
+
+  @override
+  String get type => 'pantry_photo';
+
+  @override
+  Map<String, Object?> payloadFields() => {'photoPath': photoPath};
+}
+
+/// `{conversationId, items}` — the names the athlete ticked on a `pantry`
+/// card ("Use these"). Returns `{parts: []}`.
+class SetPantryAction extends UiAction {
+  const SetPantryAction({required String conversationId, required this.items})
+    : super(conversationId: conversationId);
+
+  final List<String> items;
+
+  @override
+  String get type => 'set_pantry';
+
+  @override
+  Map<String, Object?> payloadFields() => {'items': items};
+}

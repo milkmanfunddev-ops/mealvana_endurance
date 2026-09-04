@@ -5,6 +5,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_coverage.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/wire_record.dart';
@@ -15,10 +16,14 @@ void main() {
   group('VanaPart fixtures round-trip', () {
     for (final entry in {
       'choices': VanaChoicesPart,
+      'choices_details': VanaChoicesPart,
       'meal_picker': VanaMealPickerPart,
       'staples': VanaStaplesPart,
       'day_guidance': VanaDayGuidancePart,
       'shopping_list': VanaShoppingListPart,
+      'pantry': VanaPantryPart,
+      'week': VanaWeekPart,
+      'debrief': VanaDebriefPart,
     }.entries) {
       test(entry.key, () {
         final json = loadFixture(entry.key);
@@ -41,6 +46,94 @@ void main() {
       expect(m.source, isIn(MealSource.values));
       expect(m.icon, isNotNull, reason: 'fixture rows carry a stored icon');
       expect(m.myVote, isNotNull);
+    });
+
+    test('choices without details reads as detail-less', () {
+      final part = VanaPart.fromJson(loadFixture('choices')) as VanaChoicesPart;
+      expect(part.details, isEmpty);
+      expect(part.hasDetails, isFalse);
+      expect(part.toJson().containsKey('details'), isFalse);
+    });
+
+    test('choices_details carries one trade-off per option', () {
+      final part =
+          VanaPart.fromJson(loadFixture('choices_details')) as VanaChoicesPart;
+      expect(part.options, hasLength(2));
+      expect(part.details, hasLength(part.options.length));
+      expect(part.hasDetails, isTrue);
+      expect(part.detailAt(0), 'One Sunday session, less weeknight time');
+    });
+
+    test('choices details are read leniently', () {
+      VanaChoicesPart parse(Object? details) =>
+          VanaPart.fromJson({
+                'kind': 'choices',
+                'options': ['A', 'B', 'C'],
+                'details': details,
+              })
+              as VanaChoicesPart;
+      // Short list pads with nulls; wrong types read as null.
+      expect(parse(['a']).details, ['a', null, null]);
+      expect(parse(['a', 3, null]).details, ['a', null, null]);
+      expect(parse('nope').details, isEmpty);
+      // All-null details do not round-trip a `details` key.
+      expect(parse([null, null, null]).hasDetails, isFalse);
+      expect(
+        parse([null, null, null]).toJson().containsKey('details'),
+        isFalse,
+      );
+      // Extra entries beyond the options are dropped.
+      expect(parse(['a', 'b', 'c', 'd']).details, ['a', 'b', 'c']);
+      expect(parse(['a', 'b', 'c', 'd']).detailAt(3), isNull);
+    });
+
+    test('pantry carries ticked items, allowCustom and origin', () {
+      final part = VanaPart.fromJson(loadFixture('pantry')) as VanaPantryPart;
+      expect(part.items, hasLength(4));
+      expect(part.selectedNames, ['eggs', 'rice', 'chicken thighs']);
+      expect(part.allowCustom, isTrue);
+      expect(part.origin, PantryOrigin.suggested);
+      // An unknown origin reads as suggested; a photo origin round-trips.
+      final photo = VanaPart.fromJson({
+        ...loadFixture('pantry'),
+        'origin': 'photo',
+      });
+      expect((photo as VanaPantryPart).origin, PantryOrigin.photo);
+      expect(photo.toJson()['origin'], 'photo');
+    });
+
+    test('week is a list of day parts with their slots', () {
+      final part = VanaPart.fromJson(loadFixture('week')) as VanaWeekPart;
+      expect(part.days, hasLength(2));
+      expect(part.days.first.date, '2026-09-07');
+      expect(part.days.first.slots.filled, isNotEmpty);
+      expect(part.days.first.slots.filled.first.wire, 'dinner');
+    });
+
+    test('debrief carries counts, skip reason and sourced memories', () {
+      final part = VanaPart.fromJson(loadFixture('debrief')) as VanaDebriefPart;
+      expect(part.completed, 4);
+      expect(part.planned, 5);
+      expect(part.skipReason, 'late shift Thursday');
+      expect(part.memories, hasLength(1));
+      expect(part.memories.first.source, 'debrief');
+      // A null skipReason round-trips as absent/null.
+      final quiet = VanaPart.fromJson({
+        ...loadFixture('debrief'),
+        'skipReason': null,
+      });
+      expect((quiet as VanaDebriefPart).skipReason, isNull);
+    });
+
+    test('Memory.source is optional and round-trips', () {
+      final json = (loadFixture('debrief')['memories'] as List).first
+          as Map<String, dynamic>;
+      final memory = UserMemory.fromJson(json);
+      expect(memory.source, 'debrief');
+      expect(memory.copyWith(source: 'onboarding').source, 'onboarding');
+      final legacy = UserMemory.fromJson({...json}..remove('source'));
+      expect(legacy.source, isNull);
+      expect(legacy.toJson()['source'], isNull);
     });
 
     test('staples rows carry timesLogged + ticked', () {

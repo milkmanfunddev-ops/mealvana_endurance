@@ -29,6 +29,9 @@ Current edge-fn suite: `supabase/functions/run-algorithm-tests.sh` (§1 = 15 det
   - `test/db_flows/` — in-memory provider/DB flow tests (formerly `test/integration/flows/`; untagged, runs in CI)
   - `test/smoke_tests/`, `test/seeded_tests/` — screen render sweep + seeded-value assertions
   - `test/migrations/`, `test/privacy/`, `test/app_startup` (folded into `test/features/app_startup/`)
+  - `test/features/meal_planning/` — the Vana feature, split by FOA layer (`domain/`, `data/`,
+    `application/`, `presentation/`) with `fixtures/` holding the frozen `contract-v1` wire payloads
+    and `presentation/goldens/` the golden PNGs. Runner: `scripts/run-meal-planning-tests.sh`.
   - `test/e2e/` — live dev-cloud tests, excluded by the `e2e` tag, run manually (its failures are documented real engine bugs)
   - `test/manual_live/` — live TrainingPeaks/Final Surge API contract checks, excluded by the `integration` tag, need hand-refreshed OAuth tokens (see its README)
   - `test/helpers/`, `test/fixtures/` — shared harnesses and payloads (imported by several suites; do not move)
@@ -58,6 +61,18 @@ flutter test test/db_flows
 ```bash
 flutter test test/migrations/v1_to_v2_migration_test.dart
 ```
+- Run the meal-planning (Vana) suites — all of them, or one layer:
+```bash
+./scripts/run-meal-planning-tests.sh              # domain, data, app, widget, content, migration, edge
+./scripts/run-meal-planning-tests.sh widget       # one layer (see --list for the rest)
+./scripts/run-meal-planning-tests.sh --update-goldens
+./scripts/run-meal-planning-tests.sh patrol       # pro_gate flow, booted simulator, dev flavor
+```
+Each layer is a plain `flutter test <path>` / `deno test` call, so the script adds selection, not a
+harness: the Flutter layers all live under `test/`, which is what CI's bare `flutter test` runs.
+`meal_plan_build_flow_test.dart` is excluded from the script and from every CI target list — each of
+its turns calls `vana-chat` / `vana-action` and bills real model spend, the same reason
+`ai_coach_chat_flow_test` is kept out. Run it by hand.
 - Run algorithm unit tests (Deno):
 ```bash
 ./supabase/functions/run-algorithm-tests.sh

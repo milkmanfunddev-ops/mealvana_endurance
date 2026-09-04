@@ -365,7 +365,9 @@ class ProVersionScreen extends ConsumerWidget {
                                   defaultValue: 'Subscribe',
                                 ),
                                 enabled:
-                                    purchaseEnabled && !isBusy && !status.active,
+                                    purchaseEnabled &&
+                                    !isBusy &&
+                                    !status.active,
                                 isLoading: isBusy,
                                 onPressed: () => _buy(context, ref, monthly),
                                 textColor: textColor,
@@ -399,7 +401,9 @@ class ProVersionScreen extends ConsumerWidget {
                                   defaultValue: 'Subscribe',
                                 ),
                                 enabled:
-                                    purchaseEnabled && !isBusy && !status.active,
+                                    purchaseEnabled &&
+                                    !isBusy &&
+                                    !status.active,
                                 isLoading: isBusy,
                                 onPressed: () => _buy(context, ref, annual),
                                 textColor: textColor,
@@ -542,17 +546,12 @@ class _PlanRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: AppTextStyles.h5.copyWith(color: textColor),
-              ),
+              Text(label, style: AppTextStyles.h5.copyWith(color: textColor)),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 key: priceKey,
                 price,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: secondaryColor,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(color: secondaryColor),
               ),
             ],
           ),

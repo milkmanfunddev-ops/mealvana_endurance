@@ -8,8 +8,9 @@ import 'meal_detail_controller.dart';
 
 part 'cooking_session_controller.g.dart';
 
-/// Cooking-mode phases (05 §4): overview → cooking → done.
-enum CookingPhase { overview, cooking, done }
+/// Cooking-mode phases (05 §4): cooking → done. The screen enters straight
+/// at step 1 — the overview interstitial was removed (2026-09-03).
+enum CookingPhase { cooking, done }
 
 /// One timer chip parsed from a step.
 class StepTimerState {
@@ -44,7 +45,7 @@ class StepTimerState {
 class CookingSessionState {
   const CookingSessionState({
     required this.detail,
-    this.phase = CookingPhase.overview,
+    this.phase = CookingPhase.cooking,
     this.stepIndex = 0,
     this.timers = const {},
     this.checkedIngredients = const {},
@@ -131,13 +132,6 @@ class CookingSessionController extends _$CookingSessionController {
 
   // ── Phases ─────────────────────────────────────────────────────────────────
 
-  /// Overview → cooking at step 1. No-op without steps.
-  void start() {
-    final s = state.value;
-    if (s == null || !s.hasSteps) return;
-    state = AsyncData(s.copyWith(phase: CookingPhase.cooking, stepIndex: 0));
-  }
-
   /// Next step, or → done on the last one.
   void next() {
     final s = state.value;
@@ -173,7 +167,7 @@ class CookingSessionController extends _$CookingSessionController {
     );
   }
 
-  /// Back to the overview with everything reset.
+  /// Back to step 1 with everything reset.
   void startOver() {
     final s = state.value;
     if (s == null) return;

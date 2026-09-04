@@ -46,6 +46,12 @@ sealed class VanaPart extends WireRecord {
           return VanaDayPart.fromJson(json);
         case 'brief':
           return VanaBriefPart.fromJson(json);
+        case 'pantry':
+          return VanaPantryPart.fromJson(json);
+        case 'week':
+          return VanaWeekPart.fromJson(json);
+        case 'debrief':
+          return VanaDebriefPart.fromJson(json);
         default:
           return null;
       }
@@ -67,34 +73,70 @@ sealed class VanaPart extends WireRecord {
   }
 }
 
-/// `askChoice` — 2..3 chips.
+/// `askChoice` — 2..4 chips, each optionally carrying a one-line trade-off
+/// ([details], spec §2.3). `details` is absent on rows written before the
+/// trade-off contract; when present it is parallel to [options].
 class VanaChoicesPart extends VanaPart {
-  const VanaChoicesPart({this.question, required this.options});
+  const VanaChoicesPart({
+    this.question,
+    required this.options,
+    this.details = const [],
+  });
 
   final String? question;
   final List<String> options;
 
+  /// Parallel to [options] once non-empty: one trade-off line per option, or
+  /// `null` where the server sent none. Empty means no details at all.
+  final List<String?> details;
+
+  /// Any option carries a trade-off line — the renderer switches from a
+  /// [Wrap] of chips to full-width two-line rows.
+  bool get hasDetails => details.any((d) => d != null && d.isNotEmpty);
+
+  /// The detail for [options] at [index], `null` when absent.
+  String? detailAt(int index) => index < details.length ? details[index] : null;
+
   @override
   String get kind => 'choices';
 
-  factory VanaChoicesPart.fromJson(Map<String, dynamic> json) =>
-      VanaChoicesPart(
-        question: readString(json, 'question'),
-        options: readStringList(json, 'options'),
-      );
+  factory VanaChoicesPart.fromJson(Map<String, dynamic> json) {
+    final options = readStringList(json, 'options');
+    return VanaChoicesPart(
+      question: readString(json, 'question'),
+      options: options,
+      details: _readDetails(json['details'], options.length),
+    );
+  }
+
+  /// Lenient: a missing or short list pads with `null`s to [length];
+  /// non-string entries read as `null`; anything that is not a list means
+  /// no details.
+  static List<String?> _readDetails(Object? raw, int length) {
+    if (raw is! List) return const [];
+    return List<String?>.unmodifiable([
+      for (var i = 0; i < length; i++)
+        if (i < raw.length && raw[i] is String) raw[i] as String else null,
+    ]);
+  }
 
   @override
   Map<String, dynamic> toJson() => {
     'kind': kind,
     if (question != null) 'question': question,
     'options': options,
+    if (hasDetails) 'details': details,
   };
 
-  VanaChoicesPart copyWith({String? question, List<String>? options}) =>
-      VanaChoicesPart(
-        question: question ?? this.question,
-        options: options ?? this.options,
-      );
+  VanaChoicesPart copyWith({
+    String? question,
+    List<String>? options,
+    List<String?>? details,
+  }) => VanaChoicesPart(
+    question: question ?? this.question,
+    options: options ?? this.options,
+    details: details ?? this.details,
+  );
 }
 
 /// `suggestMeals` — a carousel of [MealRef]s to pick from.
@@ -521,5 +563,181 @@ class VanaBriefPart extends VanaPart {
     text: text ?? this.text,
     chips: chips ?? this.chips,
     cites: cites ?? this.cites,
+  );
+}
+
+/// Where a `pantry` part's items came from — a suggestion seeded from the
+/// athlete's history, or a fridge photo's ingredient detection (plan
+/// Phase 7).
+enum PantryOrigin {
+  suggested('suggested'),
+  photo('photo');
+
+  const PantryOrigin(this.wire);
+
+  final String wire;
+
+  static PantryOrigin? fromWire(String? value) {
+    if (value == null) return null;
+    for (final v in PantryOrigin.values) {
+      if (v.wire == value) return v;
+    }
+    return null;
+  }
+}
+
+/// One tickable row of a `pantry` part — `{name, selected}`.
+class PantryItem extends WireRecord {
+  const PantryItem({required this.name, this.selected = false});
+
+  final String name;
+  final bool selected;
+
+  factory PantryItem.fromJson(Map<String, dynamic> json) => PantryItem(
+    name: requireString(json, 'name'),
+    selected: readBool(json, 'selected') ?? false,
+  );
+
+  @override
+  Map<String, dynamic> toJson() => {'name': name, 'selected': selected};
+
+  PantryItem copyWith({String? name, bool? selected}) =>
+      PantryItem(name: name ?? this.name, selected: selected ?? this.selected);
+}
+
+/// `askPantry` / fridge-photo detection — a multi-select grid of what is in
+/// the house (plan Phase 7): `{ title, items[{name, selected}], allowCustom,
+/// origin }`. The athlete ticks, adds, then "Use these".
+class VanaPantryPart extends VanaPart {
+  const VanaPantryPart({
+    this.title,
+    required this.items,
+    this.allowCustom = true,
+    this.origin = PantryOrigin.suggested,
+  });
+
+  final String? title;
+  final List<PantryItem> items;
+
+  /// Whether the trailing `+` chip (custom entry) shows.
+  final bool allowCustom;
+  final PantryOrigin origin;
+
+  /// The pre-ticked names, in wire order.
+  List<String> get selectedNames => [
+    for (final item in items)
+      if (item.selected) item.name,
+  ];
+
+  @override
+  String get kind => 'pantry';
+
+  factory VanaPantryPart.fromJson(Map<String, dynamic> json) => VanaPantryPart(
+    title: readString(json, 'title'),
+    items: readRecordList(json, 'items', PantryItem.fromJson),
+    allowCustom: readBool(json, 'allowCustom') ?? true,
+    origin:
+        PantryOrigin.fromWire(readString(json, 'origin')) ??
+        PantryOrigin.suggested,
+  );
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    if (title != null) 'title': title,
+    'items': items.map((i) => i.toJson()).toList(),
+    'allowCustom': allowCustom,
+    'origin': origin.wire,
+  };
+
+  VanaPantryPart copyWith({
+    String? title,
+    List<PantryItem>? items,
+    bool? allowCustom,
+    PantryOrigin? origin,
+  }) => VanaPantryPart(
+    title: title ?? this.title,
+    items: items ?? this.items,
+    allowCustom: allowCustom ?? this.allowCustom,
+    origin: origin ?? this.origin,
+  );
+}
+
+/// The Phase 8 "lay these across the week" result — a column of `day`
+/// parts (`{ days: VanaDayPart[] }`), rendered read-only with a way into
+/// the Plan tab.
+class VanaWeekPart extends VanaPart {
+  const VanaWeekPart({required this.days});
+
+  final List<VanaDayPart> days;
+
+  @override
+  String get kind => 'week';
+
+  factory VanaWeekPart.fromJson(Map<String, dynamic> json) =>
+      VanaWeekPart(days: readRecordList(json, 'days', VanaDayPart.fromJson));
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'days': days.map((d) => d.toJson()).toList(),
+  };
+
+  VanaWeekPart copyWith({List<VanaDayPart>? days}) =>
+      VanaWeekPart(days: days ?? this.days);
+}
+
+/// `recordDebrief` — how last week went (plan Phase 3.3): `{ planId,
+/// completed, planned, skipReason, memories }`. [memories] are the distilled
+/// `rememberFact` rows (each with `source: 'debrief'`).
+class VanaDebriefPart extends VanaPart {
+  const VanaDebriefPart({
+    required this.planId,
+    required this.completed,
+    required this.planned,
+    this.skipReason,
+    this.memories = const [],
+  });
+
+  final String planId;
+  final int completed;
+  final int planned;
+  final String? skipReason;
+  final List<UserMemory> memories;
+
+  @override
+  String get kind => 'debrief';
+
+  factory VanaDebriefPart.fromJson(Map<String, dynamic> json) =>
+      VanaDebriefPart(
+        planId: requireString(json, 'planId'),
+        completed: readInt(json, 'completed') ?? 0,
+        planned: readInt(json, 'planned') ?? 0,
+        skipReason: readString(json, 'skipReason'),
+        memories: readRecordList(json, 'memories', UserMemory.fromJson),
+      );
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'planId': planId,
+    'completed': completed,
+    'planned': planned,
+    'skipReason': skipReason,
+    'memories': memories.map((m) => m.toJson()).toList(),
+  };
+
+  VanaDebriefPart copyWith({
+    String? planId,
+    int? completed,
+    int? planned,
+    String? skipReason,
+    List<UserMemory>? memories,
+  }) => VanaDebriefPart(
+    planId: planId ?? this.planId,
+    completed: completed ?? this.completed,
+    planned: planned ?? this.planned,
+    skipReason: skipReason ?? this.skipReason,
+    memories: memories ?? this.memories,
   );
 }

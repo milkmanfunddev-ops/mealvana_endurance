@@ -3,7 +3,7 @@
  *  Dart `fromJson` tests make; if a fixture stops parsing here, the contract moved and three places need the change
  *  (prototype TS, _shared/vana/, lib/features/meal_planning/domain/). Regenerate fixtures in the prototype (`pnpm test`). */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { ActionResultZ, BatchPartZ, ChoicesPartZ, DayGuidancePartZ, HomePayloadZ, MealDetailZ, MealPickerPartZ, NdjsonExchangeZ, RecentMealZ, ShoppingListPartZ, StaplesPartZ, VanaPartZ } from '../../_shared/vana/schemas.ts';
+import { ActionResultZ, BatchPartZ, ChoicesPartZ, DayGuidancePartZ, PantryPartZ, WeekPartZ, DebriefPartZ, HomePayloadZ, MealDetailZ, MealPickerPartZ, NdjsonExchangeZ, RecentMealZ, ShoppingListPartZ, StaplesPartZ, VanaPartZ } from '../../_shared/vana/schemas.ts';
 import { z } from 'npm:zod@3';
 
 const dir = new URL('./fixtures/', import.meta.url);
@@ -33,12 +33,20 @@ Deno.test('contract: single VanaPart fixtures', () => {
   const picker = parse(MealPickerPartZ, fixture('meal_picker'), 'meal_picker.json');
   assertEquals(picker.meals.length, 3);
   parse(ChoicesPartZ, fixture('choices'), 'choices.json');
+  // choices_details.json — the additive `details` array (one trade-off line per option, 2026-09-03); old rows without it still parse above
+  const cd = parse(ChoicesPartZ, fixture('choices_details'), 'choices_details.json');
+  assertEquals(cd.details?.length, cd.options.length);
+  assert(!ChoicesPartZ.safeParse({ kind: 'choices', options: ['a', 'b', 'c', 'd', 'e'] }).success, 'options cap is 4');
   const dg = parse(DayGuidancePartZ, fixture('day_guidance'), 'day_guidance.json');
   assertEquals(dg.suggestions.length, 2);
   parse(StaplesPartZ, fixture('staples'), 'staples.json');
   parse(ShoppingListPartZ, fixture('shopping_list'), 'shopping_list.json');
   // every one of them is also a member of the union the Dart parser switches on
-  for (const f of ['meal_picker', 'choices', 'day_guidance', 'staples', 'shopping_list']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
+  // additive 2026-09-03 parts (plan Phases 3/7/8)
+  assertEquals(parse(PantryPartZ, fixture('pantry'), 'pantry.json').items.length, 4);
+  assertEquals(parse(WeekPartZ, fixture('week'), 'week.json').days.length, 2);
+  assertEquals(parse(DebriefPartZ, fixture('debrief'), 'debrief.json').memories[0].source, 'debrief');
+  for (const f of ['meal_picker', 'choices', 'choices_details', 'day_guidance', 'staples', 'shopping_list', 'pantry', 'week', 'debrief']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
 });
 
 Deno.test('contract: action results — batch, confirm_plan, home, meal_detail, recent_meals', () => {

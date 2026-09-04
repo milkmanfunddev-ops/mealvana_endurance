@@ -15,29 +15,38 @@ import '../domain/user_memory.dart';
 import '../domain/vana_part.dart';
 import '../domain/vana_setting.dart';
 import 'meal_plan_controller.dart';
+import 'plan_reminder_service.dart';
 
 part 'vana_settings_controller.g.dart';
 
-/// `/settings/vana`: the two switches and "What Vana knows".
+/// `/settings/vana`: the switches and "What Vana knows".
 class VanaSettingsState {
   const VanaSettingsState({
     this.batchCooking = true,
-    this.showMacros = false,
+    this.showMacros = true,
+    this.remindersEnabled = false,
     this.memories = const [],
   });
 
-  /// Server defaults: batch cooking on, macros behind a tap.
+  /// Server defaults: batch cooking on, macros shown (flipped on with the
+  /// Vana chatbot update, plan §4.2 — the athlete can still hide them).
   final bool batchCooking;
   final bool showMacros;
+
+  /// Device-local (shared_preferences via [PlanReminderService]), default
+  /// OFF: the check-in + debrief local notifications (plan Phase 3.5).
+  final bool remindersEnabled;
   final List<UserMemory> memories;
 
   VanaSettingsState copyWith({
     bool? batchCooking,
     bool? showMacros,
+    bool? remindersEnabled,
     List<UserMemory>? memories,
   }) => VanaSettingsState(
     batchCooking: batchCooking ?? this.batchCooking,
     showMacros: showMacros ?? this.showMacros,
+    remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     memories: memories ?? this.memories,
   );
 }
@@ -70,7 +79,13 @@ class VanaSettingsController extends _$VanaSettingsController {
 
     final settings = await _repo.watchSettings(userId).first;
     final memories = await _repo.watchMemories(userId).first;
-    final initial = _fold(const VanaSettingsState(), settings, memories);
+    final initial = _fold(
+      VanaSettingsState(
+        remindersEnabled: ref.read(planReminderServiceProvider).remindersEnabled,
+      ),
+      settings,
+      memories,
+    );
 
     _settingsSub = _repo.watchSettings(userId).listen((s) {
       final current = state.value;
@@ -91,7 +106,7 @@ class VanaSettingsController extends _$VanaSettingsController {
     List<UserMemory> memories,
   ) => base.copyWith(
     batchCooking: settings[VanaSetting.batchCooking] ?? true,
-    showMacros: settings[VanaSetting.showMacros] ?? false,
+    showMacros: settings[VanaSetting.showMacros] ?? true,
     memories: memories,
   );
 
@@ -114,6 +129,24 @@ class VanaSettingsController extends _$VanaSettingsController {
 
   Future<void> setShowMacros(bool value) =>
       _setSetting(VanaSetting.showMacros, value);
+
+  /// The reminders toggle — a device preference, never a `set_setting`.
+  /// Turning it on with a confirmed plan in hand schedules that plan's two
+  /// notifications; turning it off cancels them.
+  Future<void> setRemindersEnabled(bool value) async {
+    final current = state.value;
+    if (current == null) return;
+    state = AsyncData(current.copyWith(remindersEnabled: value));
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(planReminderServiceProvider)
+          .setRemindersEnabled(
+            value,
+            plan: ref.read(mealPlanControllerProvider).value,
+          );
+      return state.value ?? current;
+    });
+  }
 
   Future<void> _setSetting(VanaSetting setting, bool value) async {
     final userId = _userId;

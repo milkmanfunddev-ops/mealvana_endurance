@@ -35,6 +35,8 @@ import 'package:yaml/yaml.dart';
 const _mustNeverAutoRun = <String, String>{
   'ai_coach_chat_flow_test':
       'calls the AI coach chat edge function — bills real AI spend per run',
+  'meal_plan_build_flow_test':
+      'every turn calls vana-chat / vana-action — bills real AI spend per run',
   'google_login_flow_test':
       'drives the native Google OAuth sheet, needs interactive consent',
   'onboarding_signup_flow_test': 'requires a clean install with no session',

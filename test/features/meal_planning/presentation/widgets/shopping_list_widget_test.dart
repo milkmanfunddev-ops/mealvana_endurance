@@ -22,7 +22,10 @@ void main() {
       items: items,
       byAisle: byAisle,
       itemCount: items.where((i) => !i.have).length,
-      skipped: [for (final i in items) if (i.have) i.name],
+      skipped: [
+        for (final i in items)
+          if (i.have) i.name,
+      ],
       totalServings: 8,
       mealCount: 3,
     );
@@ -32,7 +35,6 @@ void main() {
     WidgetTester tester,
     ShoppingListState state, {
     void Function(String name, bool value)? onChecked,
-    void Function(String name, bool value)? onHave,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -44,7 +46,6 @@ void main() {
                 state: state,
                 onToggleChecked: (item, value) =>
                     onChecked?.call(item.name, value),
-                onToggleHave: (item, value) => onHave?.call(item.name, value),
                 onAddBack: (_) {},
               ),
             ),
@@ -71,14 +72,18 @@ void main() {
     );
     expect(find.text('2 items'), findsOneWidget);
     expect(find.textContaining('8 servings'), findsOneWidget);
-    expect(find.text('Protein'), findsOneWidget);
-    expect(find.text('Pantry'), findsOneWidget);
+    // Aisle names render as uppercase eyebrows.
+    expect(find.text('PROTEIN'), findsOneWidget);
+    expect(find.text('PANTRY'), findsOneWidget);
     expect(find.text('Chicken breast'), findsOneWidget);
   });
 
   testWidgets('skipped items show the add-back row', (tester) async {
-    await pumpList(tester, stateWith([item('Olive oil', 'Pantry', have: true)]));
-    expect(find.textContaining('Left off: Olive oil'), findsOneWidget);
+    await pumpList(
+      tester,
+      stateWith([item('Olive oil', 'Pantry', have: true)]),
+    );
+    expect(find.textContaining('I left olive oil off'), findsOneWidget);
     // Item count excludes what the athlete already has.
     expect(find.text('0 items'), findsOneWidget);
   });
@@ -96,17 +101,14 @@ void main() {
     expect(toggles, ['Chicken breast:true']);
   });
 
-  testWidgets('"have it" chip reports the flip', (tester) async {
-    final toggles = <String>[];
-    await pumpList(
-      tester,
-      stateWith([item('Oats', 'Pantry')]),
-      onHave: (name, value) => toggles.add('$name:$value'),
+  testWidgets('items the athlete has are left off the list', (tester) async {
+    await pumpList(tester, stateWith([item('Oats', 'Pantry', have: true)]));
+    // Only Vana's "I left … off" note mentions it; there is no row for it.
+    expect(
+      find.byKey(const ValueKey('meal_planning.shopping_check_Oats')),
+      findsNothing,
     );
-    await tester.tap(
-      find.byKey(const ValueKey('meal_planning.shopping_have_Oats')),
-    );
-    expect(toggles, ['Oats:true']);
+    expect(find.text('PANTRY'), findsNothing);
   });
 
   testWidgets('empty state shows the confirm hint', (tester) async {

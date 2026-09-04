@@ -469,12 +469,17 @@ class NotificationService {
     return false;
   }
 
+  /// Schedules a local notification. [id] names the slot: callers that
+  /// keep several reminders alive at once (the meal-plan check-in and
+  /// debrief) pass their own ids so one does not overwrite the other; the
+  /// default keeps the legacy slots (1 recurring, 2 one-off).
   static Future<void> scheduleReminder({
     required DateTime scheduledDate,
     required bool recurring,
     required String title,
     required String body,
     String? activityId,
+    int? id,
   }) async {
     if (!_isInitialized) {
       await initialize();
@@ -529,7 +534,7 @@ class NotificationService {
 
     if (recurring) {
       await _plugin.zonedSchedule(
-        1,
+        id ?? 1,
         title,
         body,
         scheduledTZ,
@@ -540,7 +545,7 @@ class NotificationService {
       );
     } else {
       await _plugin.zonedSchedule(
-        2,
+        id ?? 2,
         title,
         body,
         scheduledTZ,
@@ -655,6 +660,16 @@ class NotificationService {
         'timestamp': DateTime.now().toIso8601String(),
       },
     );
+  }
+
+  /// Cancels one scheduled slot by [id] (no-op on web, where nothing was
+  /// scheduled).
+  static Future<void> cancelReminder(int id) async {
+    if (kIsWeb) return;
+    if (!_isInitialized) {
+      await initialize();
+    }
+    await _plugin.cancel(id);
   }
 
   static Future<void> cancelAllReminders() async {

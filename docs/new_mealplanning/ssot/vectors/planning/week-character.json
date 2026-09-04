@@ -1,0 +1,324 @@
+{
+  "section": "week-character",
+  "engine": "deriveWeekCharacter (prototype lib/derive-week-character.ts · edge _shared/vana/derive-week-character.ts — byte-identical twins)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "Inputs use dayOffset (days from 'today' at 07:00 local) because the engine windows on Date.now()+7d; the runner materialises scheduled_date_time. anchorDayName is NOT asserted (it depends on the run date). Every vector is executable on the prototype (vitest) and the edge twin (deno).",
+  "vectors": [
+    {
+      "id": "race-week-title",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 1,
+            "title": "Easy run",
+            "activity_type": "run",
+            "duration_minutes": 40,
+            "intensity_level": "low"
+          },
+          {
+            "dayOffset": 5,
+            "title": "Ironman Florida",
+            "activity_type": "triathlon",
+            "duration_minutes": 600,
+            "intensity_level": "race"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "race week",
+        "totalLoad": 3040,
+        "workoutDays": 2,
+        "restDays": 5,
+        "isRaceWeek": true,
+        "anchorTitle": "Ironman Florida",
+        "avgCarbG": 0
+      },
+      "why": "RACE_PATTERN matches 'ironman' in the title; race week wins regardless of load. Load = 40·1 + 600·5. Anchor = longest session."
+    },
+    {
+      "id": "single-hard-session-easy-week",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 1,
+            "title": "Intervals",
+            "activity_type": "run",
+            "duration_minutes": 60,
+            "intensity_level": "high"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "easy / recovery",
+        "totalLoad": 180,
+        "workoutDays": 1,
+        "restDays": 6,
+        "isRaceWeek": false,
+        "anchorTitle": "Intervals",
+        "avgCarbG": 0
+      },
+      "why": "60·3 = 180 ≤ 600 → easy / recovery even though the one session is hard. The classifier is volume-weighted, not intensity-led (Q-WC1)."
+    },
+    {
+      "id": "moderate-band",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 1,
+            "title": "Tempo",
+            "activity_type": "run",
+            "duration_minutes": 60,
+            "intensity_level": "moderate"
+          },
+          {
+            "dayOffset": 2,
+            "title": "Swim",
+            "activity_type": "swim",
+            "duration_minutes": 60,
+            "intensity_level": "moderate"
+          },
+          {
+            "dayOffset": 3,
+            "title": "Long ride",
+            "activity_type": "ride",
+            "duration_minutes": 180
+          },
+          {
+            "dayOffset": 5,
+            "title": "Easy",
+            "activity_type": "run",
+            "duration_minutes": 45,
+            "intensity_level": "low"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "moderate training",
+        "totalLoad": 645,
+        "workoutDays": 4,
+        "restDays": 3,
+        "isRaceWeek": false,
+        "anchorTitle": "Long ride",
+        "avgCarbG": 0
+      },
+      "why": "120 + 120 + 180·2 (missing intensity defaults to moderate = 2) + 45 = 645 → (600, 1200] → moderate."
+    },
+    {
+      "id": "high-load-band",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 1,
+            "title": "Swim",
+            "activity_type": "swim",
+            "duration_minutes": 60,
+            "intensity_level": "easy"
+          },
+          {
+            "dayOffset": 2,
+            "title": "Ride",
+            "activity_type": "ride",
+            "duration_minutes": 240,
+            "intensity_level": "moderate"
+          },
+          {
+            "dayOffset": 4,
+            "title": "Run",
+            "activity_type": "run",
+            "duration_minutes": 60,
+            "intensity_level": "high"
+          },
+          {
+            "dayOffset": 6,
+            "title": "Long run",
+            "activity_type": "run",
+            "duration_minutes": 150,
+            "intensity_level": "threshold"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "high-load training",
+        "totalLoad": 1245,
+        "workoutDays": 4,
+        "restDays": 3,
+        "isRaceWeek": false,
+        "anchorTitle": "Ride",
+        "avgCarbG": 0
+      },
+      "why": "60 + 480 + 180 + 525 = 1245 > 1200 → high-load. Anchor is the 240-min ride (longest), not the hardest."
+    },
+    {
+      "id": "full-rest",
+      "status": "proposed",
+      "inputs": {
+        "activities": [],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "full rest",
+        "totalLoad": 0,
+        "workoutDays": 0,
+        "restDays": 7,
+        "isRaceWeek": false,
+        "anchorTitle": null,
+        "avgCarbG": 0
+      },
+      "why": "No workouts → full rest, no anchor."
+    },
+    {
+      "id": "race-pattern-in-activity-type",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 3,
+            "title": "Tune-up",
+            "activity_type": "10k",
+            "duration_minutes": 40,
+            "intensity_level": "high"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "race week",
+        "totalLoad": 120,
+        "workoutDays": 1,
+        "restDays": 6,
+        "isRaceWeek": true,
+        "anchorTitle": "Tune-up",
+        "avgCarbG": 0
+      },
+      "why": "The pattern is tested on `title + activity_type`, so '10k' in the type is enough."
+    },
+    {
+      "id": "triathlon-word-is-not-a-race",
+      "status": "characterization",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 4,
+            "title": "Olympic triathlon",
+            "activity_type": "triathlon",
+            "duration_minutes": 150,
+            "intensity_level": "race"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "moderate training",
+        "totalLoad": 750,
+        "workoutDays": 1,
+        "restDays": 6,
+        "isRaceWeek": false,
+        "anchorTitle": "Olympic triathlon",
+        "avgCarbG": 0
+      },
+      "why": "TRIPWIRE. RACE_PATTERN has `tri\\b`, which 'triathlon' does not satisfy, and intensity_level 'race' is never consulted — so a race-intensity triathlon is classified by load alone: 150·5 = 750 → 'moderate training', not 'race week'. Pinned as observed, not endorsed; Q-WC2."
+    },
+    {
+      "id": "two-sessions-one-day",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 2,
+            "title": "Morning swim",
+            "activity_type": "swim",
+            "duration_minutes": 60,
+            "intensity_level": "moderate"
+          },
+          {
+            "dayOffset": 2,
+            "title": "Evening run",
+            "activity_type": "run",
+            "duration_minutes": 30,
+            "intensity_level": "easy"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "easy / recovery",
+        "totalLoad": 150,
+        "workoutDays": 1,
+        "restDays": 6,
+        "isRaceWeek": false,
+        "anchorTitle": "Morning swim",
+        "avgCarbG": 0
+      },
+      "why": "workoutDays counts DISTINCT dates (a double day is one workout day); load sums both."
+    },
+    {
+      "id": "avg-carbs-from-macros",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 1,
+            "title": "Easy run",
+            "activity_type": "run",
+            "duration_minutes": 40,
+            "intensity_level": "low"
+          }
+        ],
+        "macros": [
+          {
+            "target_date": "2026-09-06",
+            "carb_g": 300
+          },
+          {
+            "target_date": "2026-09-07",
+            "carb_g": 401
+          }
+        ]
+      },
+      "expected": {
+        "weekCharacter": "easy / recovery",
+        "totalLoad": 40,
+        "workoutDays": 1,
+        "restDays": 6,
+        "isRaceWeek": false,
+        "anchorTitle": "Easy run",
+        "avgCarbG": 351
+      },
+      "why": "avgCarbG = round(mean carb_g) over the rows passed in (the context passes the first 7). (300+401)/2 = 350.5 → 351 (JS Math.round)."
+    },
+    {
+      "id": "unknown-intensity-weight-defaults-to-2",
+      "status": "proposed",
+      "inputs": {
+        "activities": [
+          {
+            "dayOffset": 1,
+            "title": "Ride",
+            "activity_type": "ride",
+            "duration_minutes": 100,
+            "intensity_level": "zone2"
+          }
+        ],
+        "macros": []
+      },
+      "expected": {
+        "weekCharacter": "easy / recovery",
+        "totalLoad": 200,
+        "workoutDays": 1,
+        "restDays": 6,
+        "isRaceWeek": false,
+        "anchorTitle": "Ride",
+        "avgCarbG": 0
+      },
+      "why": "An intensity label outside the weight table falls to the `?? 2` default, same as a missing one."
+    }
+  ]
+}

@@ -51,6 +51,17 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   /// another network read.
   SubscriptionStatus? _lastServer;
 
+  /// Last tester-flag value successfully mirrored onto `users.is_internal`
+  /// (null = never mirrored this session). The mirror keeps the SERVER's Pro
+  /// gate in step with the 7-tap switch — see
+  /// [UserEntitlementsRepository.mirrorInternalFlag]. A failed write leaves
+  /// this unset so the next resolve retries. Scoped to [_mirroredForUser]:
+  /// a signed-in identity change must not inherit the previous account's
+  /// mirror state, or the next tester to sign in on this device would never
+  /// be mirrored.
+  bool? _lastMirroredInternal;
+  String? _mirroredForUser;
+
   @override
   FutureOr<SubscriptionStatus> build() async {
     // Rebuild on identity change (value unused — the repository reads the
@@ -87,6 +98,8 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   /// the Drift row must be removed explicitly.
   Future<void> clear() async {
     _lastServer = null;
+    _lastMirroredInternal = null;
+    _mirroredForUser = null;
     await _repo.clearCache();
     final internal = ref.read(internalDeviceFlagProvider);
     state = AsyncData(internal ? kInternalProStatus : SubscriptionStatus.none);
@@ -111,6 +124,27 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     SubscriptionStatus? rc;
     SubscriptionStatus? server;
     if (userId != null && userId.isNotEmpty) {
+      if (_mirroredForUser != userId) {
+        _mirroredForUser = userId;
+        _lastMirroredInternal = null;
+      }
+      // Keep the server-side gate in step with the tester switch before the
+      // reads, so the very resolve that unlocks the tab also unlocks the
+      // vana-* edge functions for this account.
+      //
+      // `false` is only written on an ON→OFF flip observed THIS session:
+      // an unconditional false-mirror would fire for every ordinary user on
+      // every cold start, and would clobber an `is_internal` an admin set
+      // server-side for an account whose device never had the switch on.
+      // (Corollary: flipping the switch off and never reopening the app
+      // leaves the server flag standing — clear it in-session or by admin.)
+      final shouldMirror = internal
+          ? _lastMirroredInternal != true
+          : _lastMirroredInternal == true;
+      if (shouldMirror) {
+        final mirrored = await _repo.mirrorInternalFlag(userId, internal);
+        if (mirrored) _lastMirroredInternal = internal;
+      }
       rc = await _service.fetchStatus();
       server =
           await _repo.fetchRemote(userId, Entitlement.pro) ??

@@ -82,16 +82,19 @@ void main() {
       );
     });
 
-    test('active normal entitlement → active, revenuecat, expiry parsed to UTC', () {
-      final s = SubscriptionService.statusFromEntitlement(
-        _FakeEntitlement(expirationDate: '2026-10-01T12:00:00Z'),
-      );
-      expect(s.active, isTrue);
-      expect(s.source, SubscriptionSource.revenuecat);
-      expect(s.expiresAt, DateTime.utc(2026, 10, 1, 12));
-      expect(s.isTrial, isFalse);
-      expect(s.productId, 'mealvana_pro_monthly');
-    });
+    test(
+      'active normal entitlement → active, revenuecat, expiry parsed to UTC',
+      () {
+        final s = SubscriptionService.statusFromEntitlement(
+          _FakeEntitlement(expirationDate: '2026-10-01T12:00:00Z'),
+        );
+        expect(s.active, isTrue);
+        expect(s.source, SubscriptionSource.revenuecat);
+        expect(s.expiresAt, DateTime.utc(2026, 10, 1, 12));
+        expect(s.isTrial, isFalse);
+        expect(s.productId, 'mealvana_pro_monthly');
+      },
+    );
 
     test('trial and intro periods flag isTrial', () {
       expect(

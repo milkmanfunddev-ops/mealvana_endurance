@@ -1,0 +1,262 @@
+{
+  "section": "cooking-timers",
+  "engine": "findDurations(text) / clock(seconds) — Dart CookingStepTimers (lib/features/meal_planning/domain/cooking_step_timers.dart) · prototype routes/food.cook_.$id.tsx (NOT exported — pending extraction, D-13)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "Executable on the Dart twin. `index` is the 0-based offset of the match in the step text.",
+  "vectors": [
+    {
+      "id": "simple-minutes",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Simmer for 25 mins",
+      "expected": [
+        {
+          "label": "25 mins",
+          "seconds": 1500,
+          "index": 11
+        }
+      ],
+      "why": "mins → min → 60 s/unit."
+    },
+    {
+      "id": "range-takes-upper-bound-and-second-timer",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Bake 10-12 minutes, then rest 5 minutes",
+      "expected": [
+        {
+          "label": "10-12 minutes",
+          "seconds": 720,
+          "index": 5
+        },
+        {
+          "label": "5 minutes",
+          "seconds": 300,
+          "index": 30
+        }
+      ],
+      "why": "A range takes the upper bound (better to check early). Two distinct durations → two timers, in text order."
+    },
+    {
+      "id": "about-one-hour",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "about 1 hour",
+      "expected": [
+        {
+          "label": "1 hour",
+          "seconds": 3600,
+          "index": 6
+        }
+      ],
+      "why": "'about' is not part of the match."
+    },
+    {
+      "id": "ninety-seconds",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "90 seconds",
+      "expected": [
+        {
+          "label": "90 seconds",
+          "seconds": 90,
+          "index": 0
+        }
+      ],
+      "why": "seconds → sec → 1 s/unit."
+    },
+    {
+      "id": "below-five-seconds-ignored",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Rest 2 seconds",
+      "expected": [],
+      "why": "Floor is 5 s — nothing shorter is a cookable timer."
+    },
+    {
+      "id": "above-twelve-hours-ignored",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Marinate 24 hours",
+      "expected": [],
+      "why": "Ceiling is 12 h."
+    },
+    {
+      "id": "decimal-hours",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "cook 1.5 hours",
+      "expected": [
+        {
+          "label": "1.5 hours",
+          "seconds": 5400,
+          "index": 5
+        }
+      ],
+      "why": "Decimals parse; 1.5 × 3600."
+    },
+    {
+      "id": "duplicates-collapse-to-first",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "5 min then another 5 minutes and 5 mins",
+      "expected": [
+        {
+          "label": "5 min",
+          "seconds": 300,
+          "index": 0
+        }
+      ],
+      "why": "Same seconds → one timer, the first occurrence's label."
+    },
+    {
+      "id": "max-three-per-step",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "1 min, 2 min, 3 min, 4 min",
+      "expected": [
+        {
+          "label": "1 min",
+          "seconds": 60,
+          "index": 0
+        },
+        {
+          "label": "2 min",
+          "seconds": 120,
+          "index": 7
+        },
+        {
+          "label": "3 min",
+          "seconds": 180,
+          "index": 14
+        }
+      ],
+      "why": "At most three timers per step."
+    },
+    {
+      "id": "range-with-to",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "10 to 12 mins",
+      "expected": [
+        {
+          "label": "10 to 12 mins",
+          "seconds": 720,
+          "index": 0
+        }
+      ],
+      "why": "'to', '-', '–', '—' all denote a range."
+    },
+    {
+      "id": "range-with-en-dash",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "10–12 mins",
+      "expected": [
+        {
+          "label": "10–12 mins",
+          "seconds": 720,
+          "index": 0
+        }
+      ],
+      "why": "En dash."
+    },
+    {
+      "id": "secs-and-hrs",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "45 secs then 2 hrs",
+      "expected": [
+        {
+          "label": "45 secs",
+          "seconds": 45,
+          "index": 0
+        },
+        {
+          "label": "2 hrs",
+          "seconds": 7200,
+          "index": 13
+        }
+      ],
+      "why": "secs→sec, hrs→hr."
+    },
+    {
+      "id": "six-hundred-one-hours-parse-error",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Timer: 601 hours",
+      "expected": [],
+      "why": "> 600 of any unit is treated as a parse error before the seconds ceiling is even applied."
+    },
+    {
+      "id": "no-unit-no-timer",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Add 2 eggs and 400 degrees",
+      "expected": [],
+      "why": "A number without a time unit is not a duration."
+    },
+    {
+      "id": "number-before-degrees-then-minutes",
+      "status": "proposed",
+      "fn": "findDurations",
+      "inputs": "Preheat to 400 degrees for 15 min",
+      "expected": [
+        {
+          "label": "15 min",
+          "seconds": 900,
+          "index": 27
+        }
+      ],
+      "why": "Only the unit-bearing number is a timer."
+    },
+    {
+      "id": "clock-minutes",
+      "status": "proposed",
+      "fn": "clock",
+      "inputs": 1500,
+      "expected": "25:00",
+      "why": "m:ss below an hour."
+    },
+    {
+      "id": "clock-hours",
+      "status": "proposed",
+      "fn": "clock",
+      "inputs": 5400,
+      "expected": "1:30:00",
+      "why": "h:mm:ss once there is an hour."
+    },
+    {
+      "id": "clock-ninety",
+      "status": "proposed",
+      "fn": "clock",
+      "inputs": 90,
+      "expected": "1:30",
+      "why": ""
+    },
+    {
+      "id": "clock-zero",
+      "status": "proposed",
+      "fn": "clock",
+      "inputs": 0,
+      "expected": "0:00",
+      "why": ""
+    },
+    {
+      "id": "clock-negative-clamps",
+      "status": "proposed",
+      "fn": "clock",
+      "inputs": -7,
+      "expected": "0:00",
+      "why": "Never shows a negative remainder."
+    },
+    {
+      "id": "clock-3599",
+      "status": "proposed",
+      "fn": "clock",
+      "inputs": 3599,
+      "expected": "59:59",
+      "why": "Last second before the hour form."
+    }
+  ]
+}

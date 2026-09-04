@@ -13,7 +13,7 @@ import type { MealPlan, PlanMeal, PlanRule, ShoppingItem, MealRef, Session, DayP
 import type { VanaCtx } from './env.ts';
 import { weekStartFor, today } from './env.ts';
 import { getMeal } from './meals.ts';
-import { getSetting } from './memory.ts';
+import { getSetting, getCoverageScope, getPantryItems } from './memory.ts';
 import { buildShoppingList } from './grocery.ts';
 import { resolveMealIcon } from './meal-icon.ts';
 import { coverageOf, defaultSession } from './plan-math.ts';
@@ -62,9 +62,9 @@ async function planIdOfMeal(v: VanaCtx, planMealId: string): Promise<string> {
 }
 // deno-lint-ignore no-explicit-any
 async function hydrate(v: VanaCtx, plan: any): Promise<MealPlan> {
-  const { data: rows } = await v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at');
+  const [{ data: rows }, coverageScope] = await Promise.all([v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at'), getCoverageScope(v)]);
   const meals = (rows ?? []).map(toPlanMeal);
-  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
+  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
 }
 
 // ---------------------------------------------------------------- edits
@@ -142,7 +142,7 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
 export async function refreshShopping(v: VanaCtx, planId?: string | null): Promise<MealPlan> {
   const plan = (planId ? await getPlanById(v, planId) : await getPlan(v))!;
   const prev = new Map(plan.shopping.map((i) => [i.name.toLowerCase(), i]));
-  const items = await buildShoppingList(v, plan);
+  const items = await buildShoppingList(v, plan, await getPantryItems(v));
   const merged = items.map((i) => { const p = prev.get(i.name.toLowerCase()); return p ? { ...i, checked: p.checked, have: i.have || p.have } : i; });
   await v.db.from('meal_plans').update({ shopping: merged, day_notes_stale: true, updated_at: new Date().toISOString() }).eq('id', plan.id);
   return { ...plan, shopping: merged, dayNotesStale: true };
@@ -226,4 +226,46 @@ export async function planDay(v: VanaCtx, date: string, pickLibrary: (mealType: 
   const days = { ...(p.days ?? {}), [date]: day };
   await v.db.from('meal_plans').update({ days, updated_at: new Date().toISOString() }).eq('id', p.id);
   return { slots: day, filled };
+}
+
+// ---------------------------------------------------------------- additive 2026-09-03 (plan Phases 6, 8)
+/** The draft's meals as a replayable list — stored on every assistant turn (vana_messages.metadata.plan_snapshot) so
+ *  an edit-rewind can put the draft back to its state at that message (plan Phase 6.1). */
+export type MealSnapshot = { source: 'library' | 'saved'; id: string; servings: number; session: Session }[];
+export async function snapshotPlan(v: VanaCtx, scope?: PlanScope | null): Promise<MealSnapshot> {
+  const p = await resolvePlan(v, scope, false);
+  return (p?.meals ?? []).map((m) => ({ source: m.source, id: (m.source === 'library' ? m.libraryMealId : m.savedMealId) ?? '', servings: m.servings, session: m.session })).filter((m) => m.id);
+}
+/** Replace the draft's meals with a snapshot (empty snapshot = empty draft). Sessions are kept as snapshotted. */
+export async function restorePlan(v: VanaCtx, scope: PlanScope | null | undefined, snap: MealSnapshot): Promise<MealPlan> {
+  const p = (await resolvePlan(v, scope, true))!;
+  await v.db.from('plan_meals').delete().eq('plan_id', p.id).eq('user_id', v.userId);
+  for (const m of snap) { try { await addMealById(v, m.source, m.id, m.servings, m.session, { planId: p.id }); } catch (e) { console.warn('[plan] restore skipped', m.id, (e as Error).message); } }
+  return refreshShopping(v, p.id);
+}
+/** Ingredient-level swap (plan Phase 6.3): a saved variant of the meal with `from` replaced by `to`, swapped into the plan
+ *  in place and recorded on the plan meal, so the shopping list recomputes from the new components. The original library
+ *  row / saved meal is never mutated. */
+export async function swapIngredient(v: VanaCtx, planMealId: string, from: string, to: string): Promise<MealPlan> {
+  const { data: cur } = await v.db.from('plan_meals').select('*').eq('id', planMealId).eq('user_id', v.userId).maybeSingle();
+  if (!cur) throw new Error('plan meal not found');
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  let items: { name: string; portion: string; role: string | null }[] = []; let base: Record<string, unknown> = {}; let libraryMealId: string | null = null;
+  if (cur.source === 'library' && cur.library_meal_id) {
+    const { data: lib } = await v.db.from('meal_library').select('*').eq('id', cur.library_meal_id).maybeSingle(); if (!lib) throw new Error('library meal not found');
+    items = ((lib.ingredients_json ?? []) as { name: string; qty?: string; role?: string }[]).map((i) => ({ name: i.name, portion: i.qty ?? '', role: i.role ?? null }));
+    base = { calories: lib.kcal, carbs_g: lib.carbs_g, protein_g: lib.protein_g, fat_g: lib.fat_g, meal_types: [lib.meal_type], batch: lib.batch, icon: lib.icon ?? null }; libraryMealId = lib.id;
+  } else if (cur.saved_meal_id) {
+    const { data: s } = await v.db.from('saved_meals').select('*').eq('id', cur.saved_meal_id).maybeSingle(); if (!s) throw new Error('saved meal not found');
+    items = ((s.items ?? []) as { name?: string; food_name?: string; portion?: string; role?: string | null }[]).map((i) => ({ name: i.name ?? i.food_name ?? '', portion: i.portion ?? '', role: i.role ?? null }));
+    base = { calories: s.calories, carbs_g: s.carbs_g, protein_g: s.protein_g, fat_g: s.fat_g, meal_types: s.meal_types ?? [cur.meal_type], batch: s.batch ?? false, icon: s.icon ?? null }; libraryMealId = s.library_meal_id ?? null;
+  } else throw new Error('plan meal has no source');
+  const hit = items.some((i) => norm(i.name).includes(norm(from)));
+  if (!hit) throw new Error(`ingredient not in this meal: ${from}`);
+  const swapped = items.map((i) => (norm(i.name).includes(norm(from)) ? { ...i, name: to } : i));
+  const name = `${String(cur.name).replace(/\s*\([^)]*\)\s*$/, '')} (${to})`;
+  const { data: variant, error } = await v.db.from('saved_meals').insert({ user_id: v.userId, name, items: swapped, ...base, library_meal_id: libraryMealId, notes: `Swapped ${from} for ${to}`, last_used_at: new Date().toISOString() }).select('id').single();
+  if (error) throw new Error(error.message);
+  await swapMeal(v, planMealId, 'saved', variant.id as string);
+  return applySwap(v, planMealId, { from, to });
 }

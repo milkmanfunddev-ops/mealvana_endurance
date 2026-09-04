@@ -288,7 +288,7 @@ class UserMemoryRepository with SyncableRepository {
   }
 
   /// The boolean value of [setting], or null when never set (the server
-  /// defaults `batch_cooking` to true, `show_macros` to false).
+  /// defaults `batch_cooking` to true, `show_macros` to true).
   Future<bool?> getSetting(String userId, VanaSetting setting) async {
     final row = await _liveSetting(userId, setting.wire);
     if (row == null) return null;
@@ -411,7 +411,9 @@ class UserMemoryRepository with SyncableRepository {
                 memory.value == null ? null : jsonEncode(memory.value),
               ),
               confidence: Value(memory.confidence),
-              source: Value(existing?.source ?? 'conversation'),
+              source: Value(
+                memory.source ?? existing?.source ?? 'conversation',
+              ),
               createdAt: existing?.createdAt ?? now,
               lastConfirmedAt: DateTime.tryParse(memory.lastConfirmedAt) ?? now,
               isDeleted: const Value(false),
@@ -462,6 +464,7 @@ class UserMemoryRepository with SyncableRepository {
     value: _decodeValue(e.value),
     confidence: e.confidence,
     lastConfirmedAt: e.lastConfirmedAt.toUtc().toIso8601String(),
+    source: e.source,
   );
 
   static Map<String, dynamic> _toSupabaseJson(

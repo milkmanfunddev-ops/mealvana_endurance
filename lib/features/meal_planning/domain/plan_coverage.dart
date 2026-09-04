@@ -2,8 +2,9 @@ import 'meal_type.dart';
 import 'plan_meal.dart';
 import 'wire_record.dart';
 
-/// `MealPlan.coverage` — how much of the week's lunch + dinner slots the plan
-/// fills, and the per-day macro contribution.
+/// `MealPlan.coverage` — how much of the week's main-meal slots the plan
+/// fills, and the per-day macro contribution. The slot count follows the
+/// athlete's coverage scope (plan §5 Phase 1.6).
 class PlanCoverage extends WireRecord {
   const PlanCoverage({
     required this.lunchDinnerSlots,
@@ -11,10 +12,11 @@ class PlanCoverage extends WireRecord {
     required this.perDay,
   });
 
-  /// Always 14 (7 lunches + 7 dinners).
+  /// 14 (7 lunches + 7 dinners) by default; 7 when the athlete chose
+  /// "dinners only" — see [PlanCoverageService.dinnerOnlySlots].
   final int lunchDinnerSlots;
 
-  /// Σ servings of lunch/dinner meals, capped at [lunchDinnerSlots].
+  /// Σ servings of the counted meal types, capped at [lunchDinnerSlots].
   final int covered;
   final PlanCoveragePerDay perDay;
 
@@ -86,29 +88,41 @@ class PlanCoveragePerDay extends WireRecord {
 ///
 /// The server sends `coverage` on every plan; this exists for the local-first
 /// path (servings/remove edits applied to Drift before the round trip) so the
-/// Plan bar never shows a stale number.
+/// Plan bar never shows a stale number. Callers pass the server's
+/// `lunchDinnerSlots` back in so a local recompute keeps the denominator the
+/// athlete's coverage scope chose.
 class PlanCoverageService {
   const PlanCoverageService._();
 
+  /// The default denominator: 7 lunches + 7 dinners.
   static const int lunchDinnerSlots = 14;
 
-  static PlanCoverage compute(List<PlanMeal> meals) {
-    var lunchDinnerServings = 0;
+  /// The "dinners only" denominator — the server's signal that only dinner
+  /// servings count.
+  static const int dinnerOnlySlots = 7;
+
+  static PlanCoverage compute(
+    List<PlanMeal> meals, {
+    int lunchDinnerSlots = lunchDinnerSlots,
+  }) {
+    final dinnersOnly = lunchDinnerSlots == dinnerOnlySlots;
+    var slotServings = 0;
     var kcal = 0.0;
     var carbs = 0.0;
     var protein = 0.0;
     for (final m in meals) {
-      if (m.mealType == MealType.lunch || m.mealType == MealType.dinner) {
-        lunchDinnerServings += m.servings;
-      }
+      final counts =
+          m.mealType == MealType.dinner ||
+          (!dinnersOnly && m.mealType == MealType.lunch);
+      if (counts) slotServings += m.servings;
       kcal += (m.kcal ?? 0) * m.servings;
       carbs += (m.carbsG ?? 0) * m.servings;
       protein += (m.proteinG ?? 0) * m.servings;
     }
     return PlanCoverage(
       lunchDinnerSlots: lunchDinnerSlots,
-      covered: lunchDinnerServings < lunchDinnerSlots
-          ? lunchDinnerServings
+      covered: slotServings < lunchDinnerSlots
+          ? slotServings
           : lunchDinnerSlots,
       perDay: PlanCoveragePerDay(
         kcal: _jsRound(kcal / 7),

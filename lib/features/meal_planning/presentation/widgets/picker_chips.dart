@@ -3,11 +3,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
-import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
-import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../domain/meal_type.dart';
+import 'choice_chip_button.dart';
 import 'slot_chip.dart';
+
+/// Where a picker sits in the conversation — the screen wraps each
+/// transcript turn in one so the strip can tell the first picker from the
+/// rest without the part renderer carrying the flag (plan §5 Phase 2.3).
+/// Absent (bare widget tests) reads as "first".
+class VanaPickerScope extends InheritedWidget {
+  const VanaPickerScope({
+    super.key,
+    required this.isFirstPicker,
+    required super.child,
+  });
+
+  final bool isFirstPicker;
+
+  static bool isFirstPickerOf(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<VanaPickerScope>()
+          ?.isFirstPicker ??
+      true;
+
+  @override
+  bool updateShouldNotify(VanaPickerScope oldWidget) =>
+      oldWidget.isFirstPicker != isFirstPicker;
+}
 
 /// The client-drawn chip strip under every `meal_picker` in a planning
 /// conversation (02 §6 — never model-generated). Tapping a chip sends its
@@ -16,7 +39,9 @@ import 'slot_chip.dart';
 /// The primary chip follows coverage: "That's my week" when the 14
 /// lunch+dinner slots are covered, else "`Next: <type>`" for the next slot
 /// Vana will fill, else "I like these". Filter chips appear once the plan
-/// has at least one meal.
+/// has at least one meal. On the conversation's first picker, while the
+/// draft is still empty, a leading "Draft my whole week" chip offers the
+/// propose-first door (the server's `draftWeek` tool answers it).
 class PickerChips extends ConsumerWidget {
   const PickerChips({
     super.key,
@@ -26,6 +51,7 @@ class PickerChips extends ConsumerWidget {
     required this.hasMeals,
     required this.onPick,
     required this.onSomethingElse,
+    this.onBrowse,
     this.enabled = true,
   });
 
@@ -41,8 +67,14 @@ class PickerChips extends ConsumerWidget {
   final ValueChanged<String> onPick;
   final VoidCallback onSomethingElse;
 
+  /// "Browse meals" — open the catalog to pick straight into the draft.
+  /// Null (no conversation id yet: the opener still streaming) renders the
+  /// chip disabled. Like `Something else…`, it never spends the strip.
+  final VoidCallback? onBrowse;
+
   /// One chip of the strip has been acted on — all but
-  /// `Something else…` disable until the next picker arrives.
+  /// `Something else…` / `Browse meals` disable until the next picker
+  /// arrives.
   final bool enabled;
 
   String _primaryLabel(ContentService content) {
@@ -60,18 +92,16 @@ class PickerChips extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
-    final neutral = isDark ? AppColors.cream : AppColors.blackberry;
-
     final primary = _primaryLabel(content);
     final other = content.getValue(ContentKeys.mpChipOther);
     final somethingElse = content.getValue(ContentKeys.mpChipSomethingElse);
+    final draftWeek = content.getValue(ContentKeys.mpChipDraftWeek);
+    final browse = content.getValue(ContentKeys.mpChipBrowseMeals);
+    final showDraftWeek = !hasMeals && VanaPickerScope.isFirstPickerOf(context);
 
-    Widget filter(String key) => _PickerChip(
+    Widget filter(String key) => ChoiceChipButton(
       label: content.getValue(key),
-      accent: neutral,
-      emphasized: false,
+      dense: true,
       enabled: enabled,
       onTap: () => onPick(content.getValue(key)),
     );
@@ -80,26 +110,31 @@ class PickerChips extends ConsumerWidget {
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.xs,
       children: [
-        _PickerChip(
+        if (showDraftWeek)
+          ChoiceChipButton(
+            key: const ValueKey('meal_planning.chip_draft_week'),
+            label: draftWeek,
+            emphasized: true,
+            enabled: enabled,
+            onTap: () => onPick(draftWeek),
+          ),
+        ChoiceChipButton(
           label: primary,
-          accent: accent,
           emphasized: true,
           enabled: enabled,
           onTap: () => onPick(primary),
         ),
-        _PickerChip(
+        ChoiceChipButton(
           label: other,
-          accent: accent,
-          emphasized: false,
           enabled: enabled,
           onTap: () => onPick(other),
         ),
-        _PickerChip(
-          label: somethingElse,
-          accent: neutral,
-          emphasized: false,
-          enabled: true,
-          onTap: onSomethingElse,
+        ChoiceChipButton(label: somethingElse, onTap: onSomethingElse),
+        ChoiceChipButton(
+          key: const ValueKey('meal_planning.chip_browse_meals'),
+          label: browse,
+          enabled: onBrowse != null,
+          onTap: onBrowse ?? () {},
         ),
         if (hasMeals) ...[
           filter(ContentKeys.mpFilterNoRecipe),
@@ -108,52 +143,5 @@ class PickerChips extends ConsumerWidget {
         ],
       ],
     );
-  }
-}
-
-class _PickerChip extends StatelessWidget {
-  const _PickerChip({
-    required this.label,
-    required this.accent,
-    required this.emphasized,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  final String label;
-  final Color accent;
-  final bool emphasized;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final chip = Container(
-      key: ValueKey('meal_planning.picker_chip_$label'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: emphasized ? 0.16 : 0.06),
-        border: Border.all(
-          color: accent.withValues(alpha: emphasized ? 0.9 : 0.45),
-          width: emphasized ? 1.4 : 1,
-        ),
-        borderRadius: BorderRadius.circular(100),
-      ),
-      child: Text(
-        label,
-        style: AppTextStyles.bodySmall.copyWith(
-          color: accent,
-          fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
-        ),
-      ),
-    );
-
-    if (!enabled) {
-      return Opacity(opacity: 0.45, child: chip);
-    }
-    return GestureDetector(onTap: onTap, child: chip);
   }
 }

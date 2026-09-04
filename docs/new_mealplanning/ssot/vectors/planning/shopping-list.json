@@ -1,0 +1,76 @@
+{
+  "section": "shopping-list",
+  "engine": "buildItems / parseQty / aggregate / classifyAisle / canonicalName — prototype server/vana/grocery.ts · edge _shared/vana/grocery.ts (twins; quote style is the only diff)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "buildItems is the pure aggregation over already-resolved ingredient lists; the DB half (library ingredients_json, saved items, swaps, pantry-from-logs) is spec'd in shopping-list.md and not vectored. `checked` is always false on a fresh build. Items are asserted in order (aisle order, then name).",
+  "vectors": [
+    {
+      "id": "two-meals-dedupe-aisles-pantry",
+      "status": "proposed",
+      "fn": "buildItems",
+      "inputs": { "have": ["rice"], "meals": [
+        { "id": "a", "servings": 5, "baseServings": 1, "ingredients": [ { "name": "chicken breast", "qty": "200g" }, { "name": "jasmine rice", "qty": "100g dry" }, { "name": "broccoli", "qty": "200g" }, { "name": "salt", "qty": "pinch" } ] },
+        { "id": "b", "servings": 4, "baseServings": 1, "ingredients": [ { "name": "salmon", "qty": "180g" }, { "name": "jasmine rice", "qty": "100g dry" }, { "name": "olive oil", "qty": "1 tsp" } ] } ] },
+      "expected": [
+        { "aisle": "Produce", "name": "Broccoli", "qty": "1 kg", "have": false, "fromMealIds": ["a"] },
+        { "aisle": "Protein", "name": "Chicken breast", "qty": "1 kg", "have": false, "fromMealIds": ["a"] },
+        { "aisle": "Protein", "name": "Salmon", "qty": "720 g", "have": false, "fromMealIds": ["b"] },
+        { "aisle": "Bakery & Grains", "name": "Jasmine rice", "qty": "900 g", "have": true, "fromMealIds": ["a", "b"] }
+      ],
+      "why": "Salt and olive oil are ALWAYS_HAVE and dropped. Rice is bought once for both meals (100·5 + 100·4 = 900 g) and marked have because the pantry set contains 'rice'. 1000 g promotes to '1 kg'. Aisle order Produce → Protein → Bakery & Grains; names within an aisle alphabetical."
+    },
+    {
+      "id": "base-servings-scale",
+      "status": "proposed",
+      "fn": "buildItems",
+      "inputs": { "have": [], "meals": [ { "id": "r", "servings": 4, "baseServings": 2, "ingredients": [ { "name": "lentils", "qty": "100 g" } ] } ] },
+      "expected": [ { "aisle": "Pantry", "name": "Lentils", "qty": "200 g", "have": false, "fromMealIds": ["r"] } ],
+      "why": "mult = servings ÷ max(1, baseServings) = 2 (a recipe written for 2 cooked for 4). Library meals pass baseServings 1 today — portions are per athlete serving."
+    },
+    {
+      "id": "sea-salt-is-not-salt",
+      "status": "characterization",
+      "fn": "buildItems",
+      "inputs": { "have": [], "meals": [ { "id": "m", "servings": 1, "baseServings": 1, "ingredients": [ { "name": "sea salt", "qty": "1 tsp" } ] } ] },
+      "expected": [ { "aisle": "Pantry", "name": "Sea salt", "qty": "1 tsp", "have": false, "fromMealIds": ["m"] } ],
+      "why": "TRIPWIRE. ALWAYS_HAVE matches by exact canonical name, so 'sea salt' survives onto the list while 'salt' is dropped. Observed, not endorsed (Q-SL1)."
+    },
+    {
+      "id": "have-matches-by-substring",
+      "status": "characterization",
+      "fn": "buildItems",
+      "inputs": { "have": ["rice"], "meals": [ { "id": "m", "servings": 1, "baseServings": 1, "ingredients": [ { "name": "rice cakes", "qty": "4" } ] } ] },
+      "expected": [ { "aisle": "Bakery & Grains", "name": "Rice cakes", "qty": "4", "have": true, "fromMealIds": ["m"] } ],
+      "why": "TRIPWIRE. `have` is a substring test (key.includes(h)), so a pantry 'rice' silently marks rice cakes as owned. Observed, not endorsed (Q-SL1)."
+    },
+    { "id": "qty-grams", "status": "proposed", "fn": "parseQty", "inputs": "200g", "expected": { "n": 200, "unit": "g" }, "why": "Number then unit, no space needed." },
+    { "id": "qty-unicode-half", "status": "proposed", "fn": "parseQty", "inputs": "½", "expected": { "n": 0.5, "unit": "" }, "why": "Vulgar fractions map: ½ ¼ ¾ ⅓ ⅔." },
+    { "id": "qty-slash-fraction-cup", "status": "proposed", "fn": "parseQty", "inputs": "1/2 cup", "expected": { "n": 0.5, "unit": "cup" }, "why": "a/b fractions divide." },
+    { "id": "qty-tbsp", "status": "proposed", "fn": "parseQty", "inputs": "2 tbsp", "expected": { "n": 2, "unit": "tbsp" }, "why": "Plain unit." },
+    { "id": "qty-unit-normalisation", "status": "proposed", "fn": "parseQty", "inputs": "3 cups", "expected": { "n": 3, "unit": "cup" }, "why": "cups→cup, grams→g, tbsps/tbs→tbsp, ml*→ml." },
+    { "id": "qty-non-numeric", "status": "proposed", "fn": "parseQty", "inputs": "splash", "expected": { "n": null, "unit": "splash" }, "why": "No leading number → n null; the raw text is kept as the unit so aggregate() can carry it through." },
+    { "id": "qty-comma-decimal", "status": "proposed", "fn": "parseQty", "inputs": "1,5 kg", "expected": { "n": 1.5, "unit": "kg" }, "why": "European decimal comma accepted." },
+    { "id": "agg-grams-promote-to-kg", "status": "proposed", "fn": "aggregate", "inputs": [ { "qty": "200g", "mult": 5 }, { "qty": "100g", "mult": 4 } ], "expected": "1.4 kg", "why": "1400 g ≥ 1000 → kg to one decimal." },
+    { "id": "agg-unitless-counts", "status": "proposed", "fn": "aggregate", "inputs": [ { "qty": "1", "mult": 4 }, { "qty": "½", "mult": 2 } ], "expected": "5", "why": "4 + 1 = 5, no unit." },
+    { "id": "agg-quarter-fractions", "status": "proposed", "fn": "aggregate", "inputs": [ { "qty": "1 cup", "mult": 2 }, { "qty": "½ cup", "mult": 1 } ], "expected": "2 ½ cup", "why": "Totals round to the nearest quarter and render with vulgar fractions." },
+    { "id": "agg-mixed-units-join", "status": "proposed", "fn": "aggregate", "inputs": [ { "qty": "200 g", "mult": 1 }, { "qty": "1 tbsp", "mult": 2 } ], "expected": "200 g + 2 tbsp", "why": "Different units are never converted; they are listed in first-seen order joined by ' + '." },
+    { "id": "agg-ml-promote-to-l", "status": "proposed", "fn": "aggregate", "inputs": [ { "qty": "600ml", "mult": 2 } ], "expected": "1.2 l", "why": "1200 ml ≥ 1000 → litres to one decimal." },
+    { "id": "agg-only-non-numeric", "status": "proposed", "fn": "aggregate", "inputs": [ { "qty": "splash", "mult": 1 }, { "qty": "to taste", "mult": 1 } ], "expected": "splash", "why": "Non-numeric quantities: only the FIRST is kept, appended after any numeric parts." },
+    { "id": "aisle-protein", "status": "proposed", "fn": "classifyAisle", "inputs": "chicken breast", "expected": "Protein", "why": "Keyword match with a not-preceded-by-a-letter guard." },
+    { "id": "aisle-grains", "status": "proposed", "fn": "classifyAisle", "inputs": "jasmine rice", "expected": "Bakery & Grains", "why": "'rice' matches even mid-phrase." },
+    { "id": "aisle-priority-pantry-over-produce", "status": "proposed", "fn": "classifyAisle", "inputs": "crushed tomatoes", "expected": "Pantry", "why": "PRIORITY phrases (tinned/crushed tomatoes, nut butters, stock, dried…) beat the broader Produce match." },
+    { "id": "aisle-priority-frozen", "status": "proposed", "fn": "classifyAisle", "inputs": "frozen peas", "expected": "Frozen", "why": "'frozen' anywhere wins." },
+    { "id": "aisle-priority-dairy", "status": "proposed", "fn": "classifyAisle", "inputs": "greek yogurt", "expected": "Dairy", "why": "PRIORITY Dairy phrase." },
+    { "id": "aisle-produce", "status": "proposed", "fn": "classifyAisle", "inputs": "broccoli", "expected": "Produce", "why": "Plain produce keyword." },
+    { "id": "aisle-spices", "status": "proposed", "fn": "classifyAisle", "inputs": "ground cumin", "expected": "Spices", "why": "'cumin' keyword." },
+    { "id": "aisle-other", "status": "proposed", "fn": "classifyAisle", "inputs": "mystery ingredient", "expected": "Other", "why": "No keyword → Other, sorted last." },
+    { "id": "aisle-kombucha-is-pantry", "status": "characterization", "fn": "classifyAisle", "inputs": "kombucha", "expected": "Pantry", "why": "TRIPWIRE. Pantry's 'kombu' matches the start of 'kombucha' before the Beverages row is reached (the guard only looks BEFORE the keyword). Observed, not endorsed (Q-SL2)." },
+    { "id": "aisle-ice-cream-is-dairy", "status": "characterization", "fn": "classifyAisle", "inputs": "ice cream", "expected": "Dairy", "why": "TRIPWIRE. Dairy's 'cream' fires before Frozen's 'ice cream'. Observed, not endorsed (Q-SL2)." },
+    { "id": "canon-strip-prep-and-parens", "status": "proposed", "fn": "canonicalName", "inputs": "Roasted broccoli (florets)", "expected": "broccoli", "why": "Cooking adjectives and parenthetical notes are removed." },
+    { "id": "canon-onion-colours", "status": "proposed", "fn": "canonicalName", "inputs": "yellow onion", "expected": "onion", "why": "yellow/red/white/spanish/vidalia onion collapse to onion." },
+    { "id": "canon-garlic-cloves", "status": "proposed", "fn": "canonicalName", "inputs": "2 cloves of garlic", "expected": "2 garlic", "why": "'cloves of garlic' → 'garlic'; a leading count in the NAME field is kept (quantities belong in qty)." },
+    { "id": "canon-comma-tail", "status": "proposed", "fn": "canonicalName", "inputs": "chicken thighs, boneless", "expected": "chicken thighs", "why": "Everything after a comma is dropped." },
+    { "id": "canon-cooked-suffix", "status": "proposed", "fn": "canonicalName", "inputs": "Quinoa cooked", "expected": "quinoa", "why": "A trailing dry/uncooked/cooked is removed." },
+    { "id": "canon-baby-spinach", "status": "proposed", "fn": "canonicalName", "inputs": "Baby spinach", "expected": "spinach", "why": "Explicit collapse rule." }
+  ]
+}

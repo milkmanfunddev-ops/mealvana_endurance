@@ -85,6 +85,7 @@ import '../../features/meal_planning/presentation/screens/food_screen.dart';
 import '../../features/meal_planning/presentation/screens/meal_detail_screen.dart';
 import '../../features/meal_planning/presentation/screens/recents_screen.dart';
 import '../../features/meal_planning/presentation/screens/swap_meal_screen.dart';
+import '../../features/meal_planning/presentation/screens/vana_browse_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_chat_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_conversations_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_settings_screen.dart';
@@ -1077,6 +1078,9 @@ class AppRouter {
               builder: (context, state) => MealDetailScreen(
                 id: state.pathParameters['id']!,
                 swapPlanMealId: state.uri.queryParameters['swap'],
+                // `pick=<conversationId>` (from the Vana browse screen)
+                // adds "Add to plan" scoped to that conversation's draft.
+                pickConversationId: state.uri.queryParameters['pick'],
               ),
             ),
             GoRoute(
@@ -1113,6 +1117,17 @@ class AppRouter {
             );
           },
           routes: [
+            // `/vana/browse?c=<conversationId>` — pick from the whole
+            // catalog into that conversation's draft; no id → back to chat.
+            GoRoute(
+              path: 'browse',
+              name: 'vana-browse',
+              redirect: (context, state) =>
+                  state.uri.queryParameters['c'] == null ? '/vana' : null,
+              builder: (context, state) => VanaBrowseScreen(
+                conversationId: state.uri.queryParameters['c']!,
+              ),
+            ),
             GoRoute(
               path: 'conversations',
               name: 'vana-conversations',

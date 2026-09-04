@@ -6,9 +6,9 @@ import '../../../../features/content/domain/content_keys.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../shared/widgets/kyle_design/navigation/kyle_tab_pill.dart';
 import '../../application/meal_plan_controller.dart';
-import '../../application/meal_icon_classifier.dart';
-import '../widgets/meal_icon_glyphs.dart';
+import '../widgets/shopping_share_button.dart';
 import 'meals_tab.dart';
 import 'plan_tab.dart';
 import 'shopping_tab.dart';
@@ -55,31 +55,44 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Centred page title. The settings gear is drawn by TabsScreen
+            // over every tab (right edge, 4pt inset); on the Shopping tab the
+            // share button slots in beside it at the same height.
+            SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                      ),
+                      child: Text(
+                        content.getValue(ContentKeys.mpFoodTitle),
+                        key: const ValueKey('meal_planning.food_title'),
+                        style: AppTextStyles.pageTitle.copyWith(
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_tab == FoodTab.shopping)
+                    const Positioned(
+                      top: 0,
+                      right: 52,
+                      child: ShoppingShareButton(),
+                    ),
+                ],
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.sm,
                 AppSpacing.md,
-                0,
+                AppSpacing.sm,
               ),
-              child: Row(
-                children: [
-                  MealIconTile(
-                    icon: MealIcon.bowl,
-                    size: 34,
-                    color: AppColors.orange,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    content.getValue(ContentKeys.mpFoodTitle),
-                    key: const ValueKey('meal_planning.food_title'),
-                    style: AppTextStyles.pageTitle.copyWith(color: textColor),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               child: _TabSelector(
                 selected: _tab,
                 onChanged: (tab) => setState(() => _tab = tab),
@@ -111,45 +124,20 @@ class _TabSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final content = ref.read(contentServiceProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final active = isDark ? AppColors.cream : AppColors.blackberry;
-    final inactive = active.withValues(alpha: 0.45);
 
-    Widget segment(FoodTab tab, String label) => Expanded(
-      child: GestureDetector(
-        key: ValueKey('meal_planning.tab_${tab.name}'),
-        onTap: () => onChanged(tab),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: selected == tab ? AppColors.orange : Colors.transparent,
-                width: 2.5,
-              ),
-            ),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.tabSelector.copyWith(
-              color: selected == tab ? active : inactive,
-              fontWeight: selected == tab ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    return Row(
-      children: [
-        segment(FoodTab.plan, content.getValue(ContentKeys.mpTabPlan)),
-        segment(FoodTab.meals, content.getValue(ContentKeys.mpTabMeals)),
-        segment(
-          FoodTab.shopping,
-          content.getValue(ContentKeys.mpTabShopping),
-        ),
+    return KyleTabPill(
+      labels: [
+        content.getValue(ContentKeys.mpTabPlan),
+        content.getValue(ContentKeys.mpTabMeals),
+        content.getValue(ContentKeys.mpTabShopping),
       ],
+      itemKeys: const [
+        ValueKey('meal_planning.tab_plan'),
+        ValueKey('meal_planning.tab_meals'),
+        ValueKey('meal_planning.tab_shopping'),
+      ],
+      selectedIndex: FoodTab.values.indexOf(selected),
+      onChanged: (i) => onChanged(FoodTab.values[i]),
     );
   }
 }

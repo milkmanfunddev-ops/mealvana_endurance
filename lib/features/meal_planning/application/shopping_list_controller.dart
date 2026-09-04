@@ -102,17 +102,33 @@ class ShoppingListController extends _$ShoppingListController {
     });
   }
 
-  /// Plain-text export for the share sheet (one line per item, grouped by
-  /// aisle). The title is the presentation layer's (content key).
-  String shareText() {
+  /// Plain-text export for the native share sheet, grouped by aisle.
+  String shareText({required String title, required String summary}) {
     final current = state.value;
     if (current == null || current.isEmpty) return '';
+    return formatShareText(current, title: title, summary: summary);
+  }
+
+  /// Formats a shopping list for Messages, Mail, Notes, Reminders, and other
+  /// text destinations exposed by the platform share sheet.
+  static String formatShareText(
+    ShoppingListState current, {
+    required String title,
+    required String summary,
+  }) {
     final buffer = StringBuffer();
+    buffer
+      ..writeln(title)
+      ..writeln(summary)
+      ..writeln();
+
     for (final entry in current.byAisle.entries) {
-      buffer.writeln(entry.key);
-      for (final item in entry.value) {
-        if (item.have) continue;
-        final mark = item.checked ? '[x]' : '[ ]';
+      final needed = entry.value.where((item) => !item.have).toList();
+      if (needed.isEmpty) continue;
+
+      buffer.writeln(entry.key.toUpperCase());
+      for (final item in needed) {
+        final mark = item.checked ? '☑' : '☐';
         final qty = item.qty.isEmpty ? '' : ' — ${item.qty}';
         buffer.writeln('$mark ${item.name}$qty');
       }

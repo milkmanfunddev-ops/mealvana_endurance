@@ -93,6 +93,53 @@ void main() {
     });
   });
 
+  group('PlanCoverageService.compute — dinners-only scope (7 slots)', () {
+    test('counts dinner servings only, lunches count for macros alone', () {
+      final c = PlanCoverageService.compute([
+        meal('l', MealType.lunch, 4, kcal: 700),
+        meal('d', MealType.dinner, 3, kcal: 700),
+      ], lunchDinnerSlots: 7);
+      expect(c.lunchDinnerSlots, 7);
+      expect(c.covered, 3);
+      expect(c.isComplete, isFalse);
+      // Macros still weight every meal: (2800 + 2100) / 7 = 700.
+      expect(c.perDay.kcal, 700);
+    });
+
+    test('covered is capped at 7 and completes there', () {
+      final c = PlanCoverageService.compute([
+        meal('d1', MealType.dinner, 4),
+        meal('d2', MealType.dinner, 4),
+      ], lunchDinnerSlots: 7);
+      expect(c.covered, 7);
+      expect(c.isComplete, isTrue);
+    });
+
+    test('the same meals read 14-slot by default', () {
+      final meals = [
+        meal('l', MealType.lunch, 4),
+        meal('d', MealType.dinner, 3),
+      ];
+      expect(PlanCoverageService.compute(meals).covered, 7);
+      expect(PlanCoverageService.compute(meals).lunchDinnerSlots, 14);
+      expect(
+        PlanCoverageService.compute(meals, lunchDinnerSlots: 7).covered,
+        3,
+      );
+    });
+
+    test('an explicit 14 behaves exactly like the default', () {
+      final meals = [
+        meal('l', MealType.lunch, 10),
+        meal('d', MealType.dinner, 10),
+      ];
+      expect(
+        PlanCoverageService.compute(meals, lunchDinnerSlots: 14),
+        PlanCoverageService.compute(meals),
+      );
+    });
+  });
+
   group('PlanCoverage JSON', () {
     test('round-trips', () {
       const c = PlanCoverage(

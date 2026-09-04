@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
 
-/// Cooking-mode progress dots: one per step, current step accented.
+/// Cooking-mode progress: one thin bar per step spanning the full width,
+/// filled up to and including the current step (prototype's step strip).
 class StepProgressDots extends StatelessWidget {
   const StepProgressDots({
     super.key,
@@ -16,27 +17,25 @@ class StepProgressDots extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final rest = isDark
+        ? AppColors.cream.withValues(alpha: 0.15)
+        : AppColors.blackberry.withValues(alpha: 0.15);
+
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(count, (i) {
-        final active = i == current;
-        final done = i < current;
-        return Container(
-          width: active ? 24 : 8,
-          height: 8,
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          decoration: BoxDecoration(
-            color: active
-                ? AppColors.orange
-                : done
-                ? AppColors.orange.withValues(alpha: 0.5)
-                : (isDark
-                      ? AppColors.cream.withValues(alpha: 0.25)
-                      : AppColors.blackberry.withValues(alpha: 0.15)),
-            borderRadius: BorderRadius.circular(4),
+      children: [
+        for (var i = 0; i < count; i++) ...[
+          if (i > 0) const SizedBox(width: 3),
+          Expanded(
+            child: Container(
+              height: 3,
+              decoration: BoxDecoration(
+                color: i <= current ? AppColors.electrolyteDark : rest,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
           ),
-        );
-      }),
+        ],
+      ],
     );
   }
 }

@@ -107,8 +107,14 @@ presentation/screens/pro_version_screen.dart (moved from pro_version/) — reads
 - Edge functions read the server row (03 §3); the client flag is UX, the server row is the paywall.
 
 ## Testers / QA
-- `internalDeviceFlagProvider` (7-tap) unlocks the client gate; server side, `internal_users` table
-  (exists? — verify; else add `users.is_internal`) unlocks the fn gate.
+- `internalDeviceFlagProvider` (7-tap) unlocks the client gate; server side `users.is_internal`
+  unlocks the fn gate (`has_entitlement` / `requirePro` — there is no `internal_users` table).
+- **Wired end-to-end 2026-09-02:** `SubscriptionStatusController` mirrors the 7-tap switch onto
+  `users.is_internal` on resolve (`UserEntitlementsRepository.mirrorInternalFlag`; writes only on ON
+  or an in-session ON→OFF flip, memo scoped per signed-in user — never a blanket `false` that would
+  clobber an admin-set flag). So flipping the switch unlocks the tab AND the `vana-*` functions in
+  the same resolve. Accepted tradeoff: `users_update_own` RLS makes `is_internal` self-service —
+  it is a team convenience gate; the paywall remains the webhook-written `user_entitlements` row.
 - RC promotional grant (`grant-customer-entitlement`, MCP available) for named testers on prod.
 
 ## Acceptance

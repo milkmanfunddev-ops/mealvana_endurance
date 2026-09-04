@@ -4,6 +4,8 @@
 /// webhook tests; here the client is a mock that is never reached.
 library;
 
+import 'dart:async';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -18,11 +20,7 @@ class _MockSupabaseClient extends Mock implements SupabaseClient {}
 
 class _FakeLogger extends Fake implements AppLogger {
   @override
-  void info(
-    String message, {
-    String? context,
-    Map<String, dynamic>? data,
-  }) {}
+  void info(String message, {String? context, Map<String, dynamic>? data}) {}
 
   @override
   void warning(
@@ -157,7 +155,10 @@ void main() {
     });
 
     test('readCached: cached row past its expiry → none', () async {
-      await seed(active: true, expiresAt: _now.subtract(const Duration(days: 1)));
+      await seed(
+        active: true,
+        expiresAt: _now.subtract(const Duration(days: 1)),
+      );
       expect(
         await repo.readCached('user-1', Entitlement.pro, now: _now),
         SubscriptionStatus.none,
@@ -174,6 +175,44 @@ void main() {
       await repo.clearCache();
       expect(await db.select(db.userEntitlementsTable).get(), isEmpty);
     });
+
+    test(
+      'mirrorInternalFlag updates users.is_internal for that user',
+      () async {
+        final client = _MockSupabaseClient();
+        final qb = _MockQueryBuilder();
+        final fb = _MockFilterBuilder();
+        when(() => client.from('users')).thenAnswer((_) => qb);
+        when(() => qb.update(any())).thenAnswer((_) => fb);
+        when(() => fb.eq('id', 'user-1')).thenAnswer((_) => fb);
+        final r = UserEntitlementsRepository(
+          supabase: client,
+          database: db,
+          logger: _FakeLogger(),
+        );
+
+        expect(await r.mirrorInternalFlag('user-1', true), isTrue);
+        verify(() => qb.update({'is_internal': true})).called(1);
+        verify(() => fb.eq('id', 'user-1')).called(1);
+
+        expect(await r.mirrorInternalFlag('user-1', false), isTrue);
+        verify(() => qb.update({'is_internal': false})).called(1);
+      },
+    );
+
+    test(
+      'mirrorInternalFlag returns false (never throws) on failure',
+      () async {
+        final client = _MockSupabaseClient();
+        when(() => client.from('users')).thenThrow(Exception('offline'));
+        final r = UserEntitlementsRepository(
+          supabase: client,
+          database: db,
+          logger: _FakeLogger(),
+        );
+        expect(await r.mirrorInternalFlag('user-1', true), isFalse);
+      },
+    );
 
     test('currentUserId / isAnonymousUser read the live session', () {
       final client = _MockSupabaseClient();
@@ -192,3 +231,16 @@ void main() {
 }
 
 class _MockGoTrue extends Mock implements GoTrueClient {}
+
+class _MockQueryBuilder extends Mock implements SupabaseQueryBuilder {}
+
+/// An awaitable stand-in for the `update().eq()` chain: PostgrestFilterBuilder
+/// IS a Future, so completing `then` is what makes `await` return.
+class _MockFilterBuilder extends Mock
+    implements PostgrestFilterBuilder<dynamic> {
+  @override
+  Future<R> then<R>(
+    FutureOr<R> Function(dynamic value) onValue, {
+    Function? onError,
+  }) async => onValue(null);
+}

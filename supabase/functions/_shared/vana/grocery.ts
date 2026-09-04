@@ -73,7 +73,8 @@ async function pantryFromLogs(v: VanaCtx): Promise<Set<string>> {
   return new Set([...counts.entries()].filter(([k, c]) => c >= 2 && ['rice','oats','pasta','peanut butter','honey','olive oil','soy sauce'].some((s) => k.includes(s))).map(([k]) => k));
 }
 
-export async function buildShoppingList(v: VanaCtx, plan: MealPlan): Promise<ShoppingItem[]> {
+/** `onHand` = what the athlete said is in the house (memory.getPantryItems — passed in so this module stays free of the embeddings client). */
+export async function buildShoppingList(v: VanaCtx, plan: MealPlan, onHand: string[] = []): Promise<ShoppingItem[]> {
   const resolved: { id: string; servings: number; baseServings: number; ingredients: { name: string; qty: string }[] }[] = [];
   for (const m of plan.meals) {
     if (m.source === 'library' && m.libraryMealId) {
@@ -87,5 +88,7 @@ export async function buildShoppingList(v: VanaCtx, plan: MealPlan): Promise<Sho
       resolved.push({ id: m.id, servings: m.servings, baseServings: 1, ingredients: ings });
     }
   }
-  return buildItems(resolved, await pantryFromLogs(v));
+  // Phase 7.4 — what the athlete said is in the house ("Use these" / fridge photo) counts as have, alongside the logged staples.
+  const have = await pantryFromLogs(v); for (const p of onHand) { const k = canonicalName(p); if (k) have.add(k); }
+  return buildItems(resolved, have);
 }

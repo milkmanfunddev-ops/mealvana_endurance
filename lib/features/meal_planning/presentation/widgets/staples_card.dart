@@ -4,16 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
-import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../application/meal_icon_classifier.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/vana_part.dart';
-import 'meal_icon_glyphs.dart';
+import 'dashed_box.dart';
 
-/// `staples` part — the compact "Your staples" card. Suggest only: nothing
-/// is added until a row is tapped (the prototype's behaviour, kept). The
-/// carb line shows how much of the target the current staples cover.
+/// `staples` part — the compact "Your staples" card: an electrolyte-outlined
+/// list of what the athlete already eats, each row ticked when it is in the
+/// plan. Suggest only: nothing is added until a row is tapped. The carb line
+/// shows how much of the target the current staples cover.
 class StaplesCard extends ConsumerWidget {
   const StaplesCard({super.key, required this.part, required this.onTapMeal});
 
@@ -30,22 +29,46 @@ class StaplesCard extends ConsumerWidget {
         ? AppColors.blackberryLight
         : AppColors.surfaceLight;
 
+    if (part.meals.isEmpty) {
+      return DashedBox(
+        child: Text(
+          content.getValue(ContentKeys.mpStaplesEmpty),
+          textAlign: TextAlign.center,
+          style: AppTextStyles.bodyMedium.copyWith(color: secondary),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.circular(AppSpacing.sm),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.25),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            content.getValue(ContentKeys.mpStaplesTitle),
-            style: AppTextStyles.sectionTitle.copyWith(
-              color: textColor,
-              fontSize: 16,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                content.getValue(ContentKeys.mpStaplesTitle).toUpperCase(),
+                style: AppTextStyles.overline.copyWith(
+                  color: secondary,
+                  fontSize: 10,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              Text(
+                content.getValue(ContentKeys.mpStaplesTapToAdd),
+                style: AppTextStyles.bodySmall.copyWith(color: secondary),
+              ),
+            ],
           ),
           if (part.planCarbsPerDay != null && part.targetCarbsPerDay != null)
             Text(
@@ -58,78 +81,81 @@ class StaplesCard extends ConsumerWidget {
               ),
               style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              for (final staple in part.meals)
-                _StapleChip(
-                  staple: staple,
-                  onTap: () => onTapMeal(staple.meal),
-                ),
-            ],
-          ),
+          const SizedBox(height: 6),
+          for (final staple in part.meals)
+            _StapleRow(
+              staple: staple,
+              onTap: () => onTapMeal(staple.meal),
+            ),
         ],
       ),
     );
   }
 }
 
-class _StapleChip extends StatelessWidget {
-  const _StapleChip({required this.staple, required this.onTap});
+/// One staple: the tick showing whether it is already in the plan, the name,
+/// and how often it has been logged ("12×") or that it is simply saved.
+class _StapleRow extends ConsumerWidget {
+  const _StapleRow({required this.staple, required this.onTap});
 
   final StapleMeal staple;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final fg = isDark ? AppColors.cream : AppColors.blackberry;
-    final meal = staple.meal;
+    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.yolk.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(100),
-        ),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        height: 36,
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            MealIconTile(
-              icon:
-                  meal.icon ??
-                  MealIconClassifier.classify(
-                    name: meal.name,
-                    ingredients: meal.ingredients,
-                    pattern: meal.pattern,
-                  ),
-              size: 20,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              meal.name,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: fg,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (staple.timesLogged > 0)
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  '×${staple.timesLogged}',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: fg.withValues(alpha: 0.5),
-                  ),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                color: staple.ticked ? accent : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: staple.ticked ? accent : fg.withValues(alpha: 0.4),
+                  width: 1.5,
                 ),
               ),
+              child: staple.ticked
+                  ? const Icon(
+                      Icons.check,
+                      size: 14,
+                      color: AppColors.blackberry,
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                staple.meal.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.foodTitle.copyWith(
+                  color: fg,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              staple.timesLogged > 0
+                  ? '${staple.timesLogged}×'
+                  : content.getValue(ContentKeys.mpStaplesSaved),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: fg.withValues(alpha: 0.6),
+              ),
+            ),
           ],
         ),
       ),

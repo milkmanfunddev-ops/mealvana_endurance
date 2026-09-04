@@ -3,13 +3,23 @@ import 'package:flutter/material.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 
-/// Vana's avatar — an electrolyte disc with a "V", pulsing while the model
-/// streams (the Vana analogue of `AiCoachAvatar`).
+/// Vana's avatar — a dragonfruit disc with a cream "V" in Sansita, pulsing
+/// while the model streams (the Vana analogue of `AiCoachAvatar`). Mirrors
+/// `.v-avatar` in the prototype.
 class VanaAvatar extends StatefulWidget {
-  const VanaAvatar({super.key, this.size = 32, this.isPulsing = false});
+  const VanaAvatar({
+    super.key,
+    this.size = 32,
+    this.isPulsing = false,
+    this.initial = 'V',
+  });
 
   final double size;
   final bool isPulsing;
+
+  /// The letter(s) in the disc — "V" for Vana, a publisher's initials on the
+  /// meal-detail attribution card.
+  final String initial;
 
   @override
   State<VanaAvatar> createState() => _VanaAvatarState();
@@ -56,16 +66,23 @@ class _VanaAvatarState extends State<VanaAvatar>
       child: Container(
         width: widget.size,
         height: widget.size,
-        decoration: const BoxDecoration(
-          color: AppColors.electrolyte,
+        decoration: BoxDecoration(
+          color: AppColors.dragonfruit,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.dragonfruit.withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         alignment: Alignment.center,
         child: Text(
-          'V',
+          widget.initial,
           style: AppTextStyles.sectionTitle.copyWith(
-            color: AppColors.blackberry,
-            fontSize: widget.size * 0.45,
+            color: AppColors.cream,
+            fontSize: widget.size * 0.5,
             fontWeight: FontWeight.w700,
           ),
         ),

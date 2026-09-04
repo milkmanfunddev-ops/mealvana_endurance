@@ -9,7 +9,7 @@ import 'plan_tile.dart';
 
 /// The plan's meal rows. Swipe **right** → Remove (the caller shows the
 /// Undo snackbar that re-picks the meal); swipe **left** → Swap (routes to
-/// `/food/swap/:id`); tap → the tile sheet (05 §4).
+/// `/food/swap/:id`); tap → the meal's detail page.
 ///
 /// Rows always snap back: the plan data is owned by the Drift watch, so the
 /// action fires in [Dismissible.confirmDismiss] and the dismiss itself is
@@ -85,6 +85,8 @@ class PlanList extends StatelessWidget {
             child: PlanTile(
               meal: meal,
               onTap: () => onTapMeal(meal),
+              onSwap: () => onSwap(meal),
+              onRemove: () => onRemove(meal),
               showMacros: showMacros,
             ),
           ),

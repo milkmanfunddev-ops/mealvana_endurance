@@ -2,18 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/navigation/kyle_tab_pill.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/vana_conversations_controller.dart';
 import '../../domain/vana_conversation.dart';
 import '../../domain/vana_conversation_kind.dart';
+import '../widgets/dashed_box.dart';
+import '../widgets/vana_avatar.dart';
+import '../widgets/vana_round_button.dart';
 
-/// `/vana/conversations` (05 §4): segmented "Ask Vana" / "Meal plans",
-/// rows of title · date · summary, a "New…" button and the gear → settings.
+/// `/vana/conversations` (05 §4): the two histories — "Ask Vana" and "Meal
+/// plans" — behind a pill segment, the new-conversation action, and the
+/// recent list. The gear opens Vana's settings.
 class VanaConversationsScreen extends ConsumerStatefulWidget {
   const VanaConversationsScreen({super.key, this.initialKind});
 
@@ -28,66 +35,120 @@ class _VanaConversationsScreenState
     extends ConsumerState<VanaConversationsScreen> {
   late VanaConversationKind _kind =
       widget.initialKind ?? VanaConversationKind.general;
+  bool _creating = false;
+
+  static const _kinds = [
+    VanaConversationKind.general,
+    VanaConversationKind.mealPlanning,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final secondary = textColor.withValues(alpha: 0.65);
+    final secondary = textColor.withValues(alpha: 0.6);
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
-    final conversationsAsync = ref.watch(vanaConversationsControllerProvider(_kind));
+    final conversationsAsync = ref.watch(
+      vanaConversationsControllerProvider(_kind),
+    );
+    final isGeneral = _kind == VanaConversationKind.general;
 
     return Scaffold(
       key: const ValueKey('meal_planning.conversations_screen'),
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: BackButton(color: textColor),
-        title: Text(
-          content.getValue(ContentKeys.mpConvTitle),
-          style: AppTextStyles.sectionTitle.copyWith(color: textColor),
-        ),
-        actions: [
-          IconButton(
-            icon: FaIcon(
-              FontAwesomeIcons.gear,
-              color: secondary,
-              size: 18,
-            ),
-            onPressed: () => context.push('/settings/vana'),
-          ),
-        ],
-      ),
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header: back · Vana · title · settings.
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
               child: Row(
                 children: [
+                  VanaRoundButton.back(
+                    context: context,
+                    onTap: () => context.pop(),
+                  ),
+                  const SizedBox(width: 12),
+                  const VanaAvatar(size: 32),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: _Segment(
-                      label: content.getValue(ContentKeys.mpConvAsk),
-                      selected: _kind == VanaConversationKind.general,
-                      onTap: () => setState(
-                        () => _kind = VanaConversationKind.general,
+                    child: Text(
+                      content.getValue(ContentKeys.mpConvTitle),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.sectionTitle.copyWith(
+                        color: textColor,
+                        fontSize: 20,
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: _Segment(
-                      label: content.getValue(ContentKeys.mpConvPlans),
-                      selected: _kind == VanaConversationKind.mealPlanning,
-                      onTap: () => setState(
-                        () => _kind = VanaConversationKind.mealPlanning,
-                      ),
+                  VanaRoundButton(
+                    icon: FontAwesomeIcons.gear,
+                    tooltip: content.getValue(
+                      ContentKeys.mpSettingsVanaTitle,
                     ),
+                    onTap: () => context.push('/settings/vana'),
                   ),
                 ],
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: KyleTabPill(
+                labels: [
+                  content.getValue(ContentKeys.mpConvAsk),
+                  content.getValue(ContentKeys.mpConvPlans),
+                ],
+                selectedIndex: _kinds.indexOf(_kind),
+                onChanged: (i) => setState(() => _kind = _kinds[i]),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: KylePrimaryButton(
+                key: const ValueKey('meal_planning.conversations_new'),
+                text: content.getValue(
+                  isGeneral
+                      ? ContentKeys.mpConvNewGeneral
+                      : ContentKeys.mpConvNewPlan,
+                ),
+                icon: Icons.add,
+                height: 44,
+                isLoading: _creating,
+                onPressed: _createConversation,
+              ),
+            ),
+            if (_creating) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Text(
+                  content.getValue(
+                    isGeneral
+                        ? ContentKeys.mpConvCreatingGeneral
+                        : ContentKeys.mpConvCreatingPlan,
+                  ),
+                  style: AppTextStyles.bodySmall.copyWith(color: secondary),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: Text(
+                content.getValue(ContentKeys.mpConvRecent).toUpperCase(),
+                style: AppTextStyles.overline.copyWith(color: secondary),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
             Expanded(
               child: conversationsAsync.when(
                 loading: () => const Center(
@@ -104,134 +165,143 @@ class _VanaConversationsScreenState
                   ),
                 ),
                 data: (conversations) => conversations.isEmpty
-                    ? Center(
-                        child: Text(
-                          content.getValue(ContentKeys.mpConvEmpty),
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: secondary,
-                          ),
+                    // In a ListView so the dashed box keeps its own height
+                    // rather than stretching down the empty screen.
+                    ? ListView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
                         ),
+                        children: [
+                          DashedBox(
+                            child: Text(
+                              content.getValue(ContentKeys.mpConvEmpty),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: secondary,
+                              ),
+                            ),
+                          ),
+                        ],
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.all(AppSpacing.md),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          0,
+                          AppSpacing.md,
+                          AppSpacing.xxl,
+                        ),
                         itemCount: conversations.length,
-                        itemBuilder: (context, i) {
-                          final conversation = conversations[i];
-                          return _ConversationRow(
-                            conversation: conversation,
+                        itemBuilder: (context, i) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _ConversationRow(
+                            conversation: conversations[i],
                             onTap: () => context.push(
-                              '/vana?c=${conversation.id}&mode=${_kind.wire}',
+                              '/vana?c=${conversations[i].id}'
+                              '&mode=${_kind.wire}',
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        key: const ValueKey('meal_planning.conversations_new'),
-        backgroundColor: AppColors.electrolyte,
-        foregroundColor: AppColors.blackberry,
-        onPressed: () async {
-          final id = await ref
-              .read(vanaConversationsControllerProvider(_kind).notifier)
-              .create();
-          if (context.mounted) {
-            context.push('/vana?c=$id&mode=${_kind.wire}');
-          }
-        },
-        icon: const FaIcon(FontAwesomeIcons.plus, size: 16),
-        label: Text(content.getValue(ContentKeys.mpConvNew)),
-      ),
     );
+  }
+
+  Future<void> _createConversation() async {
+    // A general chat opens straight into an empty view; a planning chat has
+    // the server mint the conversation first so the opener can stream.
+    if (_kind == VanaConversationKind.general) {
+      context.push('/vana?c=new&mode=${_kind.wire}');
+      return;
+    }
+    setState(() => _creating = true);
+    try {
+      final id = await ref
+          .read(vanaConversationsControllerProvider(_kind).notifier)
+          .create();
+      if (mounted) context.push('/vana?c=$id&mode=${_kind.wire}');
+    } finally {
+      if (mounted) setState(() => _creating = false);
+    }
   }
 }
 
-class _Segment extends StatelessWidget {
-  const _Segment({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final active = isDark ? AppColors.cream : AppColors.blackberry;
-    final inactive = active.withValues(alpha: 0.45);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: selected ? AppColors.orange : Colors.transparent,
-              width: 2.5,
-            ),
-          ),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: AppTextStyles.tabSelector.copyWith(
-            color: selected ? active : inactive,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ConversationRow extends StatelessWidget {
+/// One conversation: title over "Sep 2, 3:04 PM · summary", with a chevron.
+class _ConversationRow extends ConsumerWidget {
   const _ConversationRow({required this.conversation, required this.onTap});
 
   final VanaConversationSummary conversation;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final secondary = textColor.withValues(alpha: 0.65);
+    final secondary = textColor.withValues(alpha: 0.6);
 
     final lastAt = DateTime.tryParse(
       conversation.lastMessageAt ?? conversation.createdAt,
     );
-    final dateLabel = lastAt == null
+    final when = lastAt == null
         ? ''
-        : '${lastAt.month}/${lastAt.day}';
+        : DateFormat('MMM d, h:mm a').format(lastAt.toLocal());
+    final summary = conversation.summary;
 
-    return ListTile(
-      key: ValueKey('meal_planning.conversation_${conversation.id}'),
-      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-      title: Text(
-        conversation.title ?? conversation.summary ?? '',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+    return Material(
+      color: isDark ? AppColors.blackberryLight : AppColors.surfaceLight,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: textColor.withValues(alpha: 0.14)),
       ),
-      subtitle: conversation.summary != null && conversation.title != null
-          ? Text(
-              conversation.summary!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodySmall.copyWith(color: secondary),
-            )
-          : null,
-      trailing: Text(
-        dateLabel,
-        style: AppTextStyles.bodySmall.copyWith(color: secondary),
+      child: InkWell(
+        key: ValueKey('meal_planning.conversation_${conversation.id}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      conversation.title ??
+                          content.getValue(ContentKeys.mpConvUntitled),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.foodTitle.copyWith(
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      summary != null && summary.isNotEmpty
+                          ? '$when · $summary'
+                          : when,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: textColor.withValues(alpha: 0.6),
+              ),
+            ],
+          ),
+        ),
       ),
-      onTap: onTap,
     );
   }
 }

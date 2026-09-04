@@ -71,11 +71,11 @@ export interface MealDetail {
   notes: string | null;                      // saved meals only — the athlete's own directions
   vote: -1 | 0 | 1;
 }
-export interface Memory { id: string; kind: 'preference'|'constraint'|'pattern'|'episode'|'setting'; key: string | null; fact: string; value: unknown; confidence: number; lastConfirmedAt: string }
+export interface Memory { id: string; kind: 'preference'|'constraint'|'pattern'|'episode'|'setting'; key: string | null; fact: string; value: unknown; confidence: number; lastConfirmedAt: string; source?: string | null }   // source (additive, 2026-09-03): 'conversation' | 'onboarding' | 'settings' | 'debrief' — provenance for the memory drawer
 
 // ---- Generative-UI parts (tool → widget). Names match the canvas notes.
 export type VanaPart =
-  | { kind: 'choices'; question?: string; options: string[] }                                   // askChoice
+  | { kind: 'choices'; question?: string; options: string[]; details?: (string | null)[] }     // askChoice — 2..4 options; `details` (additive, 2026-09-03) = one trade-off line per option, same length as `options`, null where none
   | { kind: 'brief'; text: string; chips: string[]; cites: string[] }                            // weeklyBrief
   | { kind: 'day_guidance'; date: string; label: string; workout: string | null; minCarbsG: number; note: string; suggestions: MealRef[] } // dayGuidance
   | { kind: 'staples'; meals: (MealRef & { timesLogged: number; ticked: boolean })[]; planCarbsPerDay?: number; targetCarbsPerDay?: number | null; covered?: number; of?: number }           // diagnoseStaples (suggest only — nothing is added until tapped)
@@ -85,14 +85,22 @@ export type VanaPart =
   | { kind: 'shopping_list'; items: ShoppingItem[]; itemCount: number; skipped: string[] }       // shoppingList
   | { kind: 'memory_saved'; memory: Memory }                                                      // rememberFact
   | { kind: 'logged'; planMealId: string; name: string; servingsLeft: number }                    // logFromPlan
-  | { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] };               // planDay / setDaySlot
+  | { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }                // planDay / setDaySlot
+  // ---- additive 2026-09-03 (plan Phases 3, 7, 8)
+  | { kind: 'pantry'; title: string; items: { name: string; selected: boolean }[]; allowCustom: boolean; origin: 'suggested' | 'photo' }   // askPantry / pantry_photo — what's in the house; nothing is used until the athlete taps "Use these"
+  | { kind: 'week'; days: { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }[] }                              // planWeek — the confirmed collection laid across the week (Phase 8)
+  | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] };                // recordDebrief — end-of-week debrief captured (Phase 3)
 
 // ---- What the UI sends back (chip taps are plain user messages; structured edits go through these)
 export interface UiAction {
   type: 'pick_meals' | 'unpick_meal' | 'swap_meal' | 'remove_meal' | 'set_servings' | 'confirm_plan' | 'toggle_shopping' | 'log_from_plan' | 'set_setting' | 'delete_memory' | 'set_day_slot' | 'clear_day_slot' | 'plan_day' | 'new_plan' | 'get_plan' | 'list_plans'
     | 'set_session' | 'apply_swap' | 'add_comment' | 'accept_rule' | 'list_memories' | 'save_meal'
     // app-only (the Flutter client has no server fns): get_home{date?} · get_meal{id} · recent_meals{limit?} · set_saved_meal_notes{savedMealId,notes} · set_meal_feedback{libraryMealId?|savedMealId?,vote,reason?}
-    | 'get_home' | 'get_meal' | 'recent_meals' | 'set_saved_meal_notes' | 'set_meal_feedback';
+    | 'get_home' | 'get_meal' | 'recent_meals' | 'set_saved_meal_notes' | 'set_meal_feedback'
+    // additive 2026-09-03: rewind{conversationId, messageId} (drop every message after messageId and restore that turn's draft-plan snapshot) ·
+    // pantry_photo{conversationId, photoPath} (ingredient detection on a `meal-photos` upload → a persisted `pantry` part) ·
+    // set_pantry{conversationId, items: string[]} (what's on hand → shopping `have`) · swap_ingredient{planMealId, from, to} (saved variant + swap in place)
+    | 'rewind' | 'pantry_photo' | 'set_pantry' | 'swap_ingredient';
   payload: Record<string, unknown>;
 }
 
@@ -105,8 +113,16 @@ export interface AthleteContext {
   weather: { today: string | null; raceDay: string | null };
   holidays: { date: string; name: string; daysOut: number }[];   // US holidays in the next 2 weeks
   loggedToday: { count: number; carbsG: number };
-  plan: { exists: boolean; status: string | null; mealsLeft: number | null; batchCooking: boolean };
+  // batchKnown (additive, 2026-09-02): whether batch_cooking was ever chosen (plan row or setting memory).
+  // Without it the context coalesced to `true` and the persona's "ask once when unknown" fork could never fire.
+  // coverageScope (additive, 2026-09-03): the athlete's chosen coverage ('dinners' | 'dinners_lunches' | 'all'), null = never chosen → the persona asks once.
+  plan: { exists: boolean; status: string | null; mealsLeft: number | null; batchCooking: boolean; batchKnown?: boolean; coverageScope?: string | null };
   memories: Memory[];       // top ~10 by recency/relevance
+  // ---- additive 2026-09-03 (plan Phase 2 + 3; server-internal, Dart never sees AthleteContext)
+  recentSession?: { date: string; title: string; type: string; minutes: number | null; intensity: string | null; status: string | null } | null;   // the notable session of the last 2 days ("you crushed a century yesterday")
+  season?: string[];                                                                   // in-season produce this month (season.ts)
+  grocery?: { weeklyUsd: number | null };                                              // weekly_budget_usd setting, if the athlete ever set one
+  lastWeek?: { completed: number; planned: number; skipReason: string | null; weekStart: string } | null;   // the most recent debrief (plan_debriefs) — learnings feed forward
 }
 
 // ---- Conversations (vana_conversations / vana_messages)

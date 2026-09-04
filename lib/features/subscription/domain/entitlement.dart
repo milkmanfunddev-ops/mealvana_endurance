@@ -99,7 +99,8 @@ class SubscriptionStatus {
       other.productId == productId;
 
   @override
-  int get hashCode => Object.hash(active, expiresAt, source, isTrial, productId);
+  int get hashCode =>
+      Object.hash(active, expiresAt, source, isTrial, productId);
 
   @override
   String toString() =>

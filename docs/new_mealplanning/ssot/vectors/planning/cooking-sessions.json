@@ -1,0 +1,17 @@
+{
+  "section": "cooking-sessions",
+  "engine": "defaultSession(batchCooking, meal, existing) + sessionDates(weekStart) — edge _shared/vana/plan-math.ts / opener.ts · prototype server/vana/plan.ts (defaultSession only; no sessionDates — D-12)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "`existing` lists only the sessions already assigned in the plan (order as stored). sessionDates vectors run on the edge twin only.",
+  "vectors": [
+    { "id": "batch-off-no-session", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": false, "mealBatch": true, "existing": [] }, "expected": null, "why": "Batch cooking off → every meal is made the night of (session null)." },
+    { "id": "first-batch-meal-cooks-sunday", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": true, "existing": [] }, "expected": "cook-sun", "why": "Library meals tagged batch=true cook on the Sunday session." },
+    { "id": "second-batch-meal-still-sunday", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": true, "existing": ["cook-sun"] }, "expected": "cook-sun", "why": "Sunday holds two batch meals." },
+    { "id": "third-batch-meal-tops-up-wednesday", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": true, "existing": ["cook-sun", "cook-sun"] }, "expected": "topup-wed", "why": "Once Sunday holds ≥ 2 batch meals the next one becomes the Wednesday top-up." },
+    { "id": "sunday-count-ignores-other-sessions", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": true, "existing": ["fresh-fri", "topup-wed"] }, "expected": "cook-sun", "why": "Only cook-sun rows count toward the Sunday cap." },
+    { "id": "many-sundays-still-wednesday", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": true, "existing": ["cook-sun", "cook-sun", "topup-wed", "cook-sun"] }, "expected": "topup-wed", "why": "There is no Wednesday cap — every batch meal after the second lands on topup-wed." },
+    { "id": "non-batch-meal-fresh-friday", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": false, "existing": [] }, "expected": "fresh-fri", "why": "A meal the catalog says does not batch is made fresh Friday, whatever Sunday holds." },
+    { "id": "non-batch-with-full-sunday", "status": "proposed", "fn": "defaultSession", "inputs": { "batchCooking": true, "mealBatch": false, "existing": ["cook-sun", "cook-sun"] }, "expected": "fresh-fri", "why": "Same rule; the Sunday count is irrelevant to a non-batch meal." },
+    { "id": "session-dates-for-a-week", "status": "proposed", "fn": "sessionDates", "inputs": { "weekStart": "2026-09-06" }, "expected": { "cook-sun": "2026-09-06", "topup-wed": "2026-09-09", "fresh-fri": "2026-09-11" }, "why": "Weeks start on Sunday (env.weekStartFor); cook-sun = weekStart, topup-wed = +3, fresh-fri = +5." }
+  ]
+}

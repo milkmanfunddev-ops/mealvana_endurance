@@ -78,6 +78,13 @@ class VanaActionResult {
   /// `log_from_plan` → `logId`.
   String? get logId => readString(extras, 'logId');
 
+  /// `rewind` → `removed` (how many `vana_messages` rows were deleted).
+  int? get removed => readInt(extras, 'removed');
+
+  /// `pantry_photo` → `messageId` (the persisted assistant message that
+  /// carries the returned `pantry` part).
+  String? get messageId => readString(extras, 'messageId');
+
   factory VanaActionResult.fromJson(Map<String, dynamic> json) =>
       VanaActionResult(
         parts: VanaPart.listFromJson(json['parts']),

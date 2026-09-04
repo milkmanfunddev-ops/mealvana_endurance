@@ -14,10 +14,13 @@ import '../helpers/test_content.dart';
 /// 02 §3 — every part kind renders its widget; `batch` and `brief` render
 /// nothing. Drives the renderer with the frozen contract fixtures.
 void main() {
-  Map<String, dynamic> fixture(String name) => jsonDecode(
-    File('test/features/meal_planning/fixtures/$name.json')
-        .readAsStringSync(),
-  ) as Map<String, dynamic>;
+  Map<String, dynamic> fixture(String name) =>
+      jsonDecode(
+            File(
+              'test/features/meal_planning/fixtures/$name.json',
+            ).readAsStringSync(),
+          )
+          as Map<String, dynamic>;
 
   Future<void> pumpPart(
     WidgetTester tester,
@@ -63,7 +66,8 @@ void main() {
   testWidgets('choices renders the question and options', (tester) async {
     final part = VanaChoicesPart.fromJson(fixture('choices'));
     await pumpPart(tester, part);
-    if (part.question != null) expect(find.text(part.question!), findsOneWidget);
+    if (part.question != null)
+      expect(find.text(part.question!), findsOneWidget);
     for (final option in part.options) {
       expect(find.text(option), findsOneWidget);
     }
@@ -72,8 +76,8 @@ void main() {
   testWidgets('staples renders the carb line and chips', (tester) async {
     final part = VanaStaplesPart.fromJson(fixture('staples'));
     await pumpPart(tester, part);
-    // Title from content keys.
-    expect(find.text('Your staples'), findsOneWidget);
+    // Title from content keys, drawn as an uppercase eyebrow.
+    expect(find.text('YOUR STAPLES'), findsOneWidget);
   });
 
   testWidgets('shopping_list renders the confirmed card', (tester) async {
@@ -83,7 +87,7 @@ void main() {
       find.byKey(const ValueKey('meal_planning.confirmed_card')),
       findsOneWidget,
     );
-    expect(find.text('View shopping list'), findsOneWidget);
+    expect(find.text('Open shopping list'), findsOneWidget);
   });
 
   testWidgets('day_guidance renders the label and note', (tester) async {
@@ -94,8 +98,9 @@ void main() {
   });
 
   testWidgets('batch and brief render nothing', (tester) async {
-    final batch = VanaPart.fromJson(fixture('batch')['parts'][0]
-        as Map<String, dynamic>)!;
+    final batch = VanaPart.fromJson(
+      fixture('batch')['parts'][0] as Map<String, dynamic>,
+    )!;
     expect(batch, isA<VanaBatchPart>());
     await pumpPart(tester, batch);
     // The batch part itself renders no inline widget — the plan bar owns it.
@@ -118,7 +123,10 @@ void main() {
       servingsLeft: 3,
     );
     await pumpPart(tester, part);
-    expect(find.byKey(const ValueKey('meal_planning.logged_row')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.logged_row')),
+      findsOneWidget,
+    );
     expect(find.textContaining('Chicken & rice'), findsOneWidget);
   });
 }

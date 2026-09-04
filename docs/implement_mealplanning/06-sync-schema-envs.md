@@ -1,5 +1,33 @@
 # 06 — Sync, schema versions, environments (Phase 5)
 
+## Status — **dev side done 2026-09-02; the prod apply is prepared but NOT run**
+| Item | State |
+|---|---|
+| Sync registration (§1.1–1.4) | **done** in Phase 4b (`c494a817`) — graph, `_repositoryFor`, the `_syncableRepositoryKeys` roster, and the pre-logout `Future.wait` with every `UploadResult` checked. |
+| `user_entitlements` in the sync graph (§1.1/1.2) | **deliberately not done.** `UserEntitlementsRepository` is not a `SyncableRepository`: the row is written only by the RevenueCat webhook under `service_role`, RLS is owner-select, and the Drift table is a read-only cache. It has no `needs_upload` column and no upload path, so registering it would put a key in the dirty-upload roster that can never resolve. The repository's own doc comment says this. |
+| On-demand `ensureSynced` (§1.3) | **done** — `MealPlanController` and `VanaSettingsController` each kick `ensureSynced` on build (`meal_plans` / `user_memories`); the Plan tab's `RefreshIndicator` calls `refresh()`. Nothing syncs from startup. |
+| Cascade check (§1.5) | **verified on dev 2026-09-02**: 6 cascading FKs across `meal_plans`, `user_memories`, `user_entitlements`, `meal_feedback`. |
+| Drift version | shipped as **v20**, not 19 (05 §2). Dev `app_config.current_schema_version` / `latest_schema_version` **bumped 18 → 20 on 2026-09-02**; the floor stays 4, so 1.23.x dev builds on Drift 18 sit inside the compatibility window and do **not** resync. |
+| Prod DDL + seed | **prepared, not run** — `supabase/migrations/cutover/meal_planning/` (README + `01_pre_check.sql` + `90_verify.sql` + `95_app_config_schema_20.sql`), derived from a live read of both projects on 2026-09-02. Prod `app_config` is Xuan's call. |
+| CI env flags (§"Environments / CI") | **already in `codemagic.yaml`** from Phase 3: dev builds force `PRO_GATE_ENABLED=false`; prod builds hard-fail unless the prod secret states it as exactly `true`/`false`. `.env.example` carries `PRO_GATE_ENABLED` and `PRO_PURCHASE_ENABLED`. |
+
+### What the live read changed about the plan below
+- **prod has no `pgvector`.** §1's pre-check assumed it did. The first migration
+  (`20260827090000`) runs `create extension if not exists vector`, so the apply must go through
+  `supabase db push` (owner role), not the SQL editor. `pg_trgm` **is** installed.
+- **The enums match** (`dietary_preference_enum` 8 labels, `allergy_enum` 9) — §1's other pre-check passes.
+- **Prod's ledger head is `20260811160003`**, so the push also carries the two 2026-08-14 macro-dashboard
+  migrations. `plan_recalc_log` already exists on prod but is absent from the ledger (applied by hand), and
+  `activities` has `deleted_at` but not `planned_time`/`actual_time`. Both files are idempotent; both are
+  needed by 1.24 regardless of meal planning. This was not in the plan — say so on the cut card.
+- **`plan_days` is not a table.** `20260827130000` adds `meal_plans.days jsonb` plus a partial
+  unique index that `20260831150000` later replaces with `meal_plans_confirmed_week` (one
+  confirmed plan per athlete-week; drafts are per-conversation). The verification SQL checks the
+  column and the surviving index, not a table.
+- **The seed re-embeds.** `meal-library.snapshot.json` carries every column except `embedding` and
+  `search_text`, so prod pays ≈1,922 embedding calls (~$0.05); `90_verify.sql` asserts
+  `library_embedded = library_rows` because a half-embedded library still answers `search_meals`, badly.
+
 ## Sync registration (both, or it silently no-ops)
 1. `lib/shared/services/sync/sync_dependency_graph.dart`: add `'meal_plans': ['users', 'saved_meals',
    'meal_logs']`, `'user_memories': ['users']`, `'user_entitlements': ['users']`.

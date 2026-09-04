@@ -1,0 +1,78 @@
+{
+  "section": "plan-coverage",
+  "engine": "coverageOf(meals, scope) — edge _shared/vana/plan-math.ts (authoritative) · prototype server/vana/plan.ts coverageOf(meals) (no scope arg — see D-11) · Dart PlanCoverageService.compute(meals, lunchDinnerSlots)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "Meals carry only the fields the math reads. `scope` is the athlete's coverage_scope setting (null = never chosen). Dart takes the denominator instead of the scope (7 ⇔ 'dinners', else 14) — the runner maps it. perDay uses JS Math.round (halves toward +∞); Dart mirrors it with _jsRound. Vectors with scope 'dinners' are EXPECTED-RED on the prototype twin until it grows the scope argument (D-11).",
+  "vectors": [
+    {
+      "id": "cap-at-14",
+      "status": "proposed",
+      "inputs": { "scope": null, "meals": [ { "mealType": "dinner", "servings": 5, "kcal": 650, "carbsG": 90, "proteinG": 45 }, { "mealType": "dinner", "servings": 4, "kcal": 620, "carbsG": 75, "proteinG": 40 }, { "mealType": "dinner", "servings": 4, "kcal": 700, "carbsG": 95, "proteinG": 36 }, { "mealType": "dinner", "servings": 1, "kcal": 600, "carbsG": 85, "proteinG": 42 } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 14, "perDay": { "kcal": 1304, "carbsG": 174, "proteinG": 82 } },
+      "why": "14 dinner servings fill all 14 lunch+dinner slots. Totals 9130 kcal / 1215 g C / 571 g P ÷ 7 → 1304.3 / 173.6 / 81.6, rounded."
+    },
+    {
+      "id": "dinners-only-scope",
+      "status": "proposed",
+      "inputs": { "scope": "dinners", "meals": [ { "mealType": "dinner", "servings": 4, "kcal": 500, "carbsG": 60, "proteinG": 30 }, { "mealType": "lunch", "servings": 5, "kcal": 500, "carbsG": 60, "proteinG": 30 } ] },
+      "expected": { "lunchDinnerSlots": 7, "covered": 4, "perDay": { "kcal": 643, "carbsG": 77, "proteinG": 39 } },
+      "why": "Scope 'dinners' → 7 slots and lunches do not count toward `covered`; they still count toward perDay macros (4500 kcal ÷ 7 = 642.9)."
+    },
+    {
+      "id": "never-chosen-scope-counts-lunch-and-dinner",
+      "status": "proposed",
+      "inputs": { "scope": null, "meals": [ { "mealType": "dinner", "servings": 4, "kcal": 500, "carbsG": 60, "proteinG": 30 }, { "mealType": "lunch", "servings": 5, "kcal": 500, "carbsG": 60, "proteinG": 30 } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 9, "perDay": { "kcal": 643, "carbsG": 77, "proteinG": 39 } },
+      "why": "null / 'dinners_lunches' / 'all' / any unknown value all mean 14 slots."
+    },
+    {
+      "id": "all-scope-is-still-14",
+      "status": "proposed",
+      "inputs": { "scope": "all", "meals": [ { "mealType": "dinner", "servings": 4, "kcal": 500, "carbsG": 60, "proteinG": 30 }, { "mealType": "lunch", "servings": 5, "kcal": 500, "carbsG": 60, "proteinG": 30 } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 9, "perDay": { "kcal": 643, "carbsG": 77, "proteinG": 39 } },
+      "why": "'all' widens what the persona offers (breakfast, snacks), never the denominator."
+    },
+    {
+      "id": "dinners-scope-cap-at-7",
+      "status": "proposed",
+      "inputs": { "scope": "dinners", "meals": [ { "mealType": "dinner", "servings": 9, "kcal": null, "carbsG": null, "proteinG": null } ] },
+      "expected": { "lunchDinnerSlots": 7, "covered": 7, "perDay": { "kcal": 0, "carbsG": 0, "proteinG": 0 } },
+      "why": "covered = min(slots, servings)."
+    },
+    {
+      "id": "breakfast-and-snacks-never-cover",
+      "status": "proposed",
+      "inputs": { "scope": null, "meals": [ { "mealType": "breakfast", "servings": 7, "kcal": 400, "carbsG": 50, "proteinG": 20 }, { "mealType": "snack", "servings": 7, "kcal": 200, "carbsG": 30, "proteinG": 5 } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 0, "perDay": { "kcal": 600, "carbsG": 80, "proteinG": 25 } },
+      "why": "Coverage is a lunch+dinner concept; breakfast and snack servings only feed the per-day macro average."
+    },
+    {
+      "id": "empty-plan",
+      "status": "proposed",
+      "inputs": { "scope": null, "meals": [] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 0, "perDay": { "kcal": 0, "carbsG": 0, "proteinG": 0 } },
+      "why": "The draft starts empty; the plan bar shows 0 / 14."
+    },
+    {
+      "id": "null-macros-count-as-zero",
+      "status": "proposed",
+      "inputs": { "scope": null, "meals": [ { "mealType": "dinner", "servings": 3, "kcal": null, "carbsG": null, "proteinG": null } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 3, "perDay": { "kcal": 0, "carbsG": 0, "proteinG": 0 } },
+      "why": "A saved meal with no macros still covers slots; its contribution to perDay is 0, not an error."
+    },
+    {
+      "id": "half-rounds-up",
+      "status": "proposed",
+      "inputs": { "scope": null, "meals": [ { "mealType": "dinner", "servings": 1, "kcal": null, "carbsG": 3.5, "proteinG": null } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 1, "perDay": { "kcal": 0, "carbsG": 1, "proteinG": 0 } },
+      "why": "3.5 ÷ 7 = 0.5 → 1 under JS Math.round; the Dart twin's _jsRound must agree (Dart's own round() would also give 1 here, but halves toward +∞ is the pinned rule)."
+    },
+    {
+      "id": "unknown-scope-string",
+      "status": "proposed",
+      "inputs": { "scope": "garbage", "meals": [ { "mealType": "lunch", "servings": 2, "kcal": 100, "carbsG": 10, "proteinG": 10 } ] },
+      "expected": { "lunchDinnerSlots": 14, "covered": 2, "perDay": { "kcal": 29, "carbsG": 3, "proteinG": 3 } },
+      "why": "Only the literal 'dinners' narrows the denominator; anything else reads as never chosen. 200 ÷ 7 = 28.6 → 29."
+    }
+  ]
+}

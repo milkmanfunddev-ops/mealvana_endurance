@@ -176,13 +176,17 @@ class MealAiService {
   // Private helpers
   // -------------------------------------------------------------------------
 
-  Future<MealPhotoAnalysis> _analyzeBytes({
-    required String userId,
-    required Uint8List bytes,
-    required String extension,
-    String? description,
+  /// Upload [bytes] to the private `meal-photos` bucket and return the
+  /// storage path (`{userId}/{uuid}.{extension}`) — the one place the
+  /// bucket layout lives. Shared with the Vana "snap my fridge" flow, whose
+  /// `pantry_photo` action takes the same path.
+  ///
+  /// Throws [MealAiException] (offline / serverError).
+  Future<String> uploadPhotoBytes(
+    Uint8List bytes, {
+    String extension = 'jpg',
   }) async {
-    // 1. Upload to storage
+    final userId = _requireUserId();
     final photoPath = '$userId/${_uuid.v4()}.$extension';
 
     try {
@@ -211,6 +215,17 @@ class MealAiService {
         debugMessage: 'StorageException: ${e.message}',
       );
     }
+    return photoPath;
+  }
+
+  Future<MealPhotoAnalysis> _analyzeBytes({
+    required String userId,
+    required Uint8List bytes,
+    required String extension,
+    String? description,
+  }) async {
+    // 1. Upload to storage
+    final photoPath = await uploadPhotoBytes(bytes, extension: extension);
 
     // 2. Analyze via edge function
     try {

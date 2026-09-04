@@ -15,6 +15,7 @@ class KylePrimaryButton extends ConsumerWidget {
     this.isFullWidth = true,
     this.icon,
     this.height,
+    this.fontSize,
     this.trailing,
   });
 
@@ -24,6 +25,11 @@ class KylePrimaryButton extends ConsumerWidget {
   final bool isFullWidth;
   final IconData? icon;
   final double? height;
+
+  /// Override the label size — for the compact, inline uses of the button
+  /// (the plan bar's Review action), matching the prototype's
+  /// `k-btn-primary--small`.
+  final double? fontSize;
 
   /// Widget laid out after the label, inside the button — e.g. a price chip.
   /// It shares the label's centred row, so it never overlaps the text the way
@@ -45,7 +51,7 @@ class KylePrimaryButton extends ConsumerWidget {
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
           padding: AppSpacing.buttonPadding,
-          textStyle: AppTextStyles.buttonPrimary,
+          textStyle: AppTextStyles.buttonPrimary.copyWith(fontSize: fontSize),
         ),
         child: isLoading
             ? const SizedBox(
@@ -75,6 +81,7 @@ class KylePrimaryButton extends ConsumerWidget {
                       text,
                       style: AppTextStyles.buttonPrimary.copyWith(
                         color: AppColors.textLight,
+                        fontSize: fontSize,
                       ),
                       textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,

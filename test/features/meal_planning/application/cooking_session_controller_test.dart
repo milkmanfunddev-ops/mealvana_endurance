@@ -1,5 +1,5 @@
-/// CookingSessionController: the overview → cooking → done machine, step
-/// navigation, parsed timers counting down under fakeAsync, and the
+/// CookingSessionController: enters at step 1 in the cooking phase, step
+/// navigation → done, parsed timers counting down under fakeAsync, and the
 /// wake-lock intent.
 library;
 
@@ -60,13 +60,14 @@ void main() {
   }
 
   test(
-    'parses timers per step and starts in overview without the wake lock',
+    'parses timers per step and enters straight at step 1 with the wake lock',
     () async {
       final c = make(_detail);
       final s = await c.future;
-      expect(s.phase, CookingPhase.overview);
-      expect(s.wakeLockWanted, isFalse);
+      expect(s.phase, CookingPhase.cooking);
+      expect(s.wakeLockWanted, isTrue);
       expect(s.stepCount, 3);
+      expect(s.currentStep, startsWith('Boil'));
       expect(
         s.timers[0]!.single.timer.seconds,
         12 * 60,
@@ -78,16 +79,12 @@ void main() {
   );
 
   test(
-    'start → next → next → done; back at the first step is a no-op',
+    'next → next → done; back at the first step is a no-op; startOver resets',
     () async {
       final c = make(_detail);
       await c.future;
 
-      c.start();
       expect(c.state.value!.phase, CookingPhase.cooking);
-      expect(c.state.value!.wakeLockWanted, isTrue);
-      expect(c.state.value!.currentStep, startsWith('Boil'));
-
       c.back();
       expect(c.state.value!.stepIndex, 0);
       c.next();
@@ -99,17 +96,17 @@ void main() {
       expect(c.state.value!.wakeLockWanted, isFalse);
 
       c.startOver();
-      expect(c.state.value!.phase, CookingPhase.overview);
+      expect(c.state.value!.phase, CookingPhase.cooking);
       expect(c.state.value!.stepIndex, 0);
+      expect(c.state.value!.wakeLockWanted, isTrue);
     },
   );
 
-  test('no steps → start is a no-op', () async {
+  test('no steps → the state carries no steps to walk', () async {
     final c = make(_detail.copyWith(methodSteps: const []));
     final s = await c.future;
     expect(s.hasSteps, isFalse);
-    c.start();
-    expect(c.state.value!.phase, CookingPhase.overview);
+    expect(s.currentStep, '');
   });
 
   test('ingredients drawer toggles strike-through', () async {
@@ -128,7 +125,6 @@ void main() {
         final c = make(_detail);
         async.flushMicrotasks();
         expect(c.state.hasValue, isTrue);
-        c.start();
         c.next(); // step 1: 5 min + 90 s
 
         c.startTimer(1, 1); // the 90 s one

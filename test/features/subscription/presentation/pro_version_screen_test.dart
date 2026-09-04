@@ -110,13 +110,21 @@ List<Override> _overrides({
 
 void main() {
   testWidgets('renders without overflow (smoke)', (tester) async {
-    await smokeScreen(tester, const ProVersionScreen(), overrides: _overrides());
+    await smokeScreen(
+      tester,
+      const ProVersionScreen(),
+      overrides: _overrides(),
+    );
   });
 
   testWidgets('shows the real localised monthly and annual prices', (
     tester,
   ) async {
-    await smokeScreen(tester, const ProVersionScreen(), overrides: _overrides());
+    await smokeScreen(
+      tester,
+      const ProVersionScreen(),
+      overrides: _overrides(),
+    );
 
     expect(
       find.byKey(const ValueKey('pro_version.monthly_price')),
@@ -167,7 +175,9 @@ void main() {
     await tester.ensureVisible(
       find.byKey(const ValueKey('pro_version.subscribe_annual')),
     );
-    await tester.tap(find.byKey(const ValueKey('pro_version.subscribe_annual')));
+    await tester.tap(
+      find.byKey(const ValueKey('pro_version.subscribe_annual')),
+    );
     await tester.pumpAndSettle();
 
     expect(paywall.bought, ['mealvana_pro_annual']);
@@ -240,7 +250,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(paywall.restoreCalls, 1);
-    expect(find.text('Your Pro subscription has been restored.'), findsOneWidget);
+    expect(
+      find.text('Your Pro subscription has been restored.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Restore with nothing to restore says so', (tester) async {

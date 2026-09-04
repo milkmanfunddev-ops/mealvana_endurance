@@ -10,6 +10,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_catalog_controller.dart';
 import '../../domain/meal_ref.dart';
 import '../widgets/meal_card.dart';
+import '../widgets/vana_round_button.dart';
 
 /// `/food/meals/recents` — the full Recents list (the rail's "See all").
 /// Local logs ∪ plan meals by recency; server-resolved when online.
@@ -26,16 +27,38 @@ class RecentsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          content.getValue(ContentKeys.mpRailRecents),
-          style: AppTextStyles.sectionTitle.copyWith(color: textColor),
-        ),
-        leading: BackButton(color: textColor),
-      ),
-      body: recents.isEmpty
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // The header lives in the body, as in the prototype: a round back
+            // button beside the screen name.
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  VanaRoundButton.back(
+                    context: context,
+                    onTap: () => context.pop(),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    content.getValue(ContentKeys.mpRailRecents),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: textColor,
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: recents.isEmpty
           ? Center(
               child: Text(
                 content.getValue(ContentKeys.mpRecentsEmpty),
@@ -45,12 +68,17 @@ class RecentsScreen extends ConsumerWidget {
               ),
             )
           : ListView.builder(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.xxl,
+              ),
               itemCount: recents.length,
               itemBuilder: (context, i) {
                 final meal = recents[i].meal;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: MealCard(
                     key: ValueKey('meal_planning.recents_${meal.id}'),
                     meal: meal,
@@ -59,6 +87,10 @@ class RecentsScreen extends ConsumerWidget {
                 );
               },
             ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

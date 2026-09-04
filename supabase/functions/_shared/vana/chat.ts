@@ -1,21 +1,28 @@
 /** Chat orchestration shared by `vana-chat` and the `jade-chat` alias:
  *  rate limit → context → conversation → tools → user-row persist → streamText → NDJSON, with the assistant row,
  *  `vana_calls` and `ai_usage` written from onFinish under EdgeRuntime.waitUntil.
- *  Cost posture: Haiku by default, ≤6 steps, ≤400 output tokens, ~250-token context block, compact tool outputs. */
+ *  Cost posture: Haiku by default, ≤6 steps, ≤700 output tokens, ~250-token context block, compact tool outputs.
+ *  Brevity is a prompt rule (persona.ts VOICE registers), not a server trim: a clamp only cuts text after it was paid for.
+ *  The only server cut is a generous runaway guard so a looping turn never floods the transcript (Lee, 2026-09-03). */
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { makeVanaTools } from './tools.ts';
-import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS } from './persona.ts';
+import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
-import { getConversationPlan } from './plan.ts';
+import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
+import { addDays, weekStartFor } from './env.ts';
+import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
+import type { MealPlan } from './contracts.ts';
 import { ndjsonFromFullStream, ndjsonHeaders } from './stream.ts';
 
-const MAX_OUTPUT_TOKENS = 400;
+const MAX_OUTPUT_TOKENS = 900;
+/** Runaway guard, not a style rule: a well-behaved planning turn never comes near it (PRESENTING is ≤4 sentences). */
+export const RUNAWAY_SENTENCES = 8;
 const textOf = (m: UIMessage) => m.parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text').map((p) => p.text).join('\n');
 /** Meal ids already shown in this conversation's pickers / staples widgets — "other options" must not repeat them. */
 export function shownMealIds(messages: UIMessage[]): string[] {
@@ -29,8 +36,16 @@ export function shownMealIds(messages: UIMessage[]): string[] {
 }
 const promptFor = (kind: ConversationKind) => (kind === 'general' ? GENERAL_PROMPT : PLANNING_PROMPT);
 
-/** ≤2 sentences per text block — enforced here so Haiku overruns never reach the transcript. */
-export function clampSentences(t: string, n = 2): string {
+// Opener variants (plan Phase 3) live in opener.ts — pure, so tests import them without the AI SDK.
+async function loadOpenerInput(v: VanaCtx, t: string) {
+  const ws = weekStartFor(t);
+  const [current, previous] = await Promise.all([getPlan(v, ws), getPlan(v, addDays(ws, -7))]);
+  const stamp = async (p: MealPlan | null) => { if (!p) return null; const { data } = await v.db.from('meal_plans').select('checkin_done_at, debrief_done_at').eq('id', p.id).maybeSingle(); return { ...p, checkinDoneAt: data?.checkin_done_at ?? null, debriefDoneAt: data?.debrief_done_at ?? null }; };
+  return { today: t, current: await stamp(current), previous: await stamp(previous) };
+}
+
+/** Keeps the first `n` sentences of a text block. Planning turns use it only as the RUNAWAY_SENTENCES guard. */
+export function clampSentences(t: string, n = RUNAWAY_SENTENCES): string {
   const parts = t.replace(/\s+/g, ' ').trim().match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? [t];
   return parts.slice(0, n).join('').trim();
 }
@@ -77,9 +92,9 @@ async function touch(v: VanaCtx, convId: string, firstUserText?: string) {
   await v.db.from('vana_conversations').update(patch).eq('id', convId);
 }
 // deno-lint-ignore no-explicit-any
-function partsFromSteps(text: string, steps: any[], maxSentences: number | null = 2): { parts: unknown[]; ui: VanaPart[] } {
+function partsFromSteps(text: string, steps: any[], maxSentences: number | null = RUNAWAY_SENTENCES): { parts: unknown[]; ui: VanaPart[] } {
   const parts: unknown[] = []; const ui: VanaPart[] = [];
-  // interleave: each step's text (clamped) then its UI tool outputs, so the transcript reads in order
+  // interleave: each step's text (runaway-guarded) then its UI tool outputs, so the transcript reads in order
   let anyText = false;
   const clamp = (t: string) => (maxSentences == null ? t.replace(/\s+/g, ' ').trim() : clampSentences(t, maxSentences));
   for (const s of steps) {
@@ -95,9 +110,9 @@ function partsFromSteps(text: string, steps: any[], maxSentences: number | null 
   return { parts, ui };
 }
 /** Planning gets the full athlete context block; general gets only name + date and fetches everything else through tools. */
-const system = (kind: ConversationKind, ctx: AthleteContext, todayIso: string) => kind === 'general'
+const system = (kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '') => kind === 'general'
   ? `${promptFor(kind)}\n--- today ${todayIso} · athlete: ${ctx.profile.firstName ?? 'the athlete'} ---`
-  : `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}) ---\n${contextBlock(ctx)}`;
+  : `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}) ---\n${contextBlock(ctx)}${extra}`;
 
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
@@ -143,17 +158,26 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const tools = makeVanaTools(v, ctx, convKind, { scope, shownIds: shownMealIds(messages) });
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
-  const modelMessages = opener ? [{ role: 'user' as const, content: OPENERS[convKind] }] : await convertToModelMessages(messages);
+  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] = 'plan'; let extraContext = '';
+  if (convKind === 'meal_planning') {
+    const openerInput = await loadOpenerInput(v, anchorDate);
+    // The opener's synthetic user message is never stored, so later turns need the pending debrief restated in the context.
+    const pending = pendingDebrief(openerInput); if (pending) extraContext = `\nDEBRIEF PENDING last week's plan id ${pending.id} (${pending.meals.length} meals: ${pending.meals.map((m) => m.name).join(', ')}) — recordDebrief has not been called yet`;
+    const variant = opener ? pickOpener(openerInput) : ({ kind: 'plan' } as OpenerVariant); openerVariant = variant.kind;
+    if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
+    else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
+  }
+  const modelMessages = opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(messages);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
-  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener} model=${CHAT_MODEL}`);
+  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}` : ''} model=${CHAT_MODEL}`);
 
   const result = streamText({
     model: CHAT_MODEL,
-    system: system(convKind, ctx, anchorDate),
+    system: system(convKind, ctx, anchorDate, extraContext),
     messages: modelMessages,
     tools,
-    maxOutputTokens: general ? 700 : MAX_OUTPUT_TOKENS,
+    maxOutputTokens: MAX_OUTPUT_TOKENS,
     stopWhen: stepCountIs(general ? 8 : 6),
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
@@ -161,8 +185,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       const task = (async () => {
         try {
           if (persist) {
-            const { parts, ui } = partsFromSteps(text, steps as unknown[], general ? null : 2);
-            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text ?? clampSentences(text), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, kind: convKind } });
+            const { parts, ui } = partsFromSteps(text, steps as unknown[], general ? null : RUNAWAY_SENTENCES);
+            // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
+            const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
+            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text ?? clampSentences(text), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }

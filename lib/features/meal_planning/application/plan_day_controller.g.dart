@@ -68,7 +68,7 @@ final class PlanDayControllerProvider
   }
 }
 
-String _$planDayControllerHash() => r'2944d30bb09a2a8fda199895f80a325d84494599';
+String _$planDayControllerHash() => r'70cd965c8cf68a74965a708f11a31a0b5db763df';
 
 /// The day-planner grid for one [date] (`YYYY-MM-DD`): the four slots of
 /// `meal_plans.days[date]` on the active plan.

@@ -11,6 +11,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_reposit
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/plan_rule.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart';
@@ -272,6 +273,31 @@ void main() {
 
         expect(remote.calls.first, 'plan_set_servings:pm-1:3');
         expect(actions.calls.whereType<NewPlanAction>(), hasLength(1));
+      },
+    );
+
+    test(
+      'acceptRule sends the rule back accepted and folds the plan',
+      () async {
+        final c = controller();
+        await c.future;
+        const rule = PlanRule(
+          day: PlanRuleDay.fri,
+          rule: "Mirinda Carfrae's race-eve plate",
+          accepted: false,
+        );
+        await c.acceptRule(rule, conversationId: 'conv-1');
+
+        final sent = actions.calls.whereType<AcceptRuleAction>().single;
+        expect(
+          sent.rule.accepted,
+          isTrue,
+          reason:
+              'accept_rule must flip accepted:true — the server stores '
+              'the payload as given.',
+        );
+        expect(sent.rule.rule, rule.rule);
+        expect(sent.conversationId, 'conv-1');
       },
     );
 

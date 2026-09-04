@@ -62,6 +62,38 @@ class UserEntitlementsRepository {
       .map((s) => s.session?.user.id)
       .distinct();
 
+  /// Mirror the 7-tap tester switch onto `users.is_internal` — the flag the
+  /// server-side Pro gate (`has_entitlement`, the vana functions' `requirePro`)
+  /// checks. Without this, a team member who flips the switch sees the Food
+  /// tab (the client gate merges the tester grant) but every `vana-*` call
+  /// 403s on prod, because the server has no idea the device is internal.
+  ///
+  /// RLS `users_update_own` permits the write (own row only). Note the
+  /// consequence, deliberately accepted (Lee, 2026-09-02): `is_internal` is
+  /// self-service, so it is a convenience gate for the team, not a paywall —
+  /// the paywall remains the `user_entitlements` row only the webhook writes.
+  ///
+  /// Returns whether the write landed; failures are logged and non-fatal
+  /// (the caller retries on the next status resolve).
+  Future<bool> mirrorInternalFlag(String userId, bool value) async {
+    try {
+      await _supabase
+          .from('users')
+          .update({'is_internal': value})
+          .eq('id', userId);
+      return true;
+    } catch (e, stackTrace) {
+      _logger.warning(
+        'Failed to mirror the internal tester flag to users.is_internal',
+        context: _context,
+        error: e,
+        stackTrace: stackTrace,
+        data: {'userId': userId, 'value': value},
+      );
+      return false;
+    }
+  }
+
   /// Fetch the row for [userId] / [entitlement] from Supabase and refresh the
   /// local cache. Returns the resolved status (a missing row resolves to
   /// [SubscriptionStatus.none] and clears the cache), or null when the read

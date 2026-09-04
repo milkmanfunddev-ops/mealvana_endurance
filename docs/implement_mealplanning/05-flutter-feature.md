@@ -16,6 +16,35 @@ CI-config contract — reproduced on the branch base). `flutter analyze` 0 error
 | Tabs | Food tab (bowl icon) in the pill + rail behind `proUnlockedProvider`; `/main?tab=` resolves by **name** in TabsScreen (index math shifts with the Pro status) |
 | New deps | `wakelock_plus`, `vibration`, `share_plus` (cooking-mode wake lock/alarm, Shopping share) |
 
+### Follow-ups closed in Phase 6 (2026-09-02)
+- **`accept_rule` is the real UiAction now.** `MealPlanController.acceptRule` (remote-ack, sends the
+  rule back `accepted: true`, folds the plan) and the chat screen calls it — the "Accept the rule: …"
+  chat-message stopgap is gone.
+- **`?swap=` servings no longer name-match.** The server's `swap_meal` updates the `plan_meals` row
+  IN PLACE (same id), so `setServings(swapPlanMealId)` is exact; the name-match was built on a wrong
+  assumption and was ambiguous with two same-named meals.
+- **Internal testers pass the server gate.** `SubscriptionStatusController` mirrors the 7-tap switch
+  onto `users.is_internal` (`UserEntitlementsRepository.mirrorInternalFlag`; write-on-ON, in-session
+  ON→OFF clears, memo scoped per user). `has_entitlement` / `requirePro` already honored the column —
+  the client just never set it, so a tester on prod would have seen the tab and 403'd on every call.
+  Deliberate consequence: `is_internal` is self-service under `users_update_own` RLS — a team
+  convenience, not the paywall; the paywall stays the webhook-written `user_entitlements` row.
+- **Persona fixes deployed to dev** (backported to the prototype verbatim): every picker gets a
+  sentence (bare "Other options" widgets), general turns must call `dayGuidance` for day questions and
+  never stream pre-tool narration, the batch-cooking fork fires before the first lunch picker (the
+  context now says `batch never chosen` — new optional `AthleteContext.plan.batchKnown`, additive;
+  previously the ?? true coalesce made the "ask once when unknown" rule unfireable), and turning
+  batch cooking off mid-plan asks "For good, or just this week?" first. Race-eve `proposeRule` is
+  explicitly RACE-gated (that walkthrough step needs a race on the account to demo).
+- **"Ate it" now exists.** 4c shipped no UI entry point for
+  `MealPlanController.logFromPlan` — the plan → `meal_logs` bridge — and the `meal_planning.ate_it`
+  / `meal_planning.logged_done_toast` content keys were dead. The plan tile sheet now offers it
+  (`meal_planning.tile_sheet.ate_it`), remote-ack with a `NeedsConnectionException` branch, hidden
+  when `servingsLeft == 0`. It is the last assertion of `meal_plan_build_flow_test.dart`.
+- **Goldens landed** — `presentation/widget_goldens_test.dart`, 18 PNGs, light + dark at
+  iPhone-SE width, driven by the frozen wire fixtures. See 07's Status for what is and is not
+  covered (screen-level goldens for meal detail / cooking mode are still open, with the reason).
+
 ### Deviations from the spec above (and why)
 - **`ServingsStepper` is a compact feature widget, not `KylePlusMinusControl`.** The Kyle control
   is a full-width form control (internal `Expanded`) and cannot sit as a plain `Row` child — every
@@ -26,12 +55,9 @@ CI-config contract — reproduced on the branch base). `flutter analyze` 0 error
 - **Plan list swipes**: swipe **right** → Remove (Undo snackbar re-picks via `pick_meals`),
   swipe **left** → Swap (`/food/swap/:id`), tap → tile sheet (stepper · Swap · Remove). Rows snap
   back — the Drift watch re-renders the list; actions fire in `confirmDismiss`.
-- **`?swap=` servings adjustment is name-matched.** `swap_meal` does not return the new
-  `plan_meal` id; after the ack the screen finds the refreshed plan's newest row for the meal name
-  and `setServings` it. Fragile — revisit when `VanaActionResult` exposes the swapped row id.
-- **Chat `accept_rule` sends a chat message** ("Accept the rule: …") rather than the
-  `accept_rule` UiAction — `MealPlanController` has no acceptRule method yet. Replace with the
-  remote-ack action in a follow-up.
+- **`?swap=` servings adjustment is name-matched** — *closed 2026-09-02, see above (the premise was
+  wrong: the row id is stable).*
+- **Chat `accept_rule` sends a chat message** — *closed 2026-09-02, see above.*
 - **Picker chips "Next: <type>"** uses the last picker's own `mealType` as the next slot — the
   wire never says which slot comes next.
 - **Cooking timer notification** calls `FlutterLocalNotificationsPlugin().show` directly (caught
@@ -39,7 +65,9 @@ CI-config contract — reproduced on the branch base). `flutter analyze` 0 error
   oriented with no immediate-show API.
 - **`catalog_row.dart` was not created** — flat search results reuse `MealCard` directly.
 - **Goldens**: only the pre-existing glyph grid; screen goldens and Patrol flows are Phase 6
-  (they need the controller-test provider scaffolding).
+  (they need the controller-test provider scaffolding). — *Closed 2026-09-02 at the widget level;
+  `MealDetailScreen` / `CookingModeScreen` screen goldens remain open because their badge and step
+  chrome are private to the screens. See 07's deviations.*
 
 ## Status — Phase 4b (data + application) **built 2026-09-01** (branch `mealplanning`, dev only)
 Phase 4a (`domain/`) and 4b (`data/`, `application/`, Drift v20, sync registration) are in code and unit
@@ -58,6 +86,35 @@ Phase 4c (`presentation/`, router, tabs, content keys) is next. Nothing under `s
 | `data/user_memory_repository.dart` | `SyncableRepository('user_memories')`; `getSetting/setSetting/watchSettings/watchMemories/deleteMemory/applyServerMemory`; upload upsert `onConflict:'id'` with setting-row id reuse | done |
 | Sync registration | `sync_dependency_graph.dart` (`meal_plans: [users, saved_meals, meal_logs]`, `user_memories: [users]`), `sync_coordinator._repositoryFor` + roster, `settings_controller._uploadDirtyBeforeLogout` (every `UploadResult` checked) | done |
 | `application/` | `meal_plan_controller` (keepAlive), `plan_day_controller`, `meal_catalog_controller`, `meal_detail_controller` (keepAlive family), `shopping_list_controller`, `vana_chat_controller` (family `kind` + `conversationId`), `vana_conversations_controller`, `vana_settings_controller`, `cooking_session_controller`, `home_service.dart` (`HomeService` + `HomeController`), `meal_ref_mapping.dart`, re-exports `plan_coverage_service.dart` / `meal_icon_classifier.dart` | done; `lib/shared/services/connectivity_checker.dart` is the offline seam |
+
+### Follow-ups closed in Phase 6 (2026-09-02)
+- **`accept_rule` is the real UiAction now.** `MealPlanController.acceptRule` (remote-ack, sends the
+  rule back `accepted: true`, folds the plan) and the chat screen calls it — the "Accept the rule: …"
+  chat-message stopgap is gone.
+- **`?swap=` servings no longer name-match.** The server's `swap_meal` updates the `plan_meals` row
+  IN PLACE (same id), so `setServings(swapPlanMealId)` is exact; the name-match was built on a wrong
+  assumption and was ambiguous with two same-named meals.
+- **Internal testers pass the server gate.** `SubscriptionStatusController` mirrors the 7-tap switch
+  onto `users.is_internal` (`UserEntitlementsRepository.mirrorInternalFlag`; write-on-ON, in-session
+  ON→OFF clears, memo scoped per user). `has_entitlement` / `requirePro` already honored the column —
+  the client just never set it, so a tester on prod would have seen the tab and 403'd on every call.
+  Deliberate consequence: `is_internal` is self-service under `users_update_own` RLS — a team
+  convenience, not the paywall; the paywall stays the webhook-written `user_entitlements` row.
+- **Persona fixes deployed to dev** (backported to the prototype verbatim): every picker gets a
+  sentence (bare "Other options" widgets), general turns must call `dayGuidance` for day questions and
+  never stream pre-tool narration, the batch-cooking fork fires before the first lunch picker (the
+  context now says `batch never chosen` — new optional `AthleteContext.plan.batchKnown`, additive;
+  previously the ?? true coalesce made the "ask once when unknown" rule unfireable), and turning
+  batch cooking off mid-plan asks "For good, or just this week?" first. Race-eve `proposeRule` is
+  explicitly RACE-gated (that walkthrough step needs a race on the account to demo).
+- **"Ate it" now exists.** 4c shipped no UI entry point for
+  `MealPlanController.logFromPlan` — the plan → `meal_logs` bridge — and the `meal_planning.ate_it`
+  / `meal_planning.logged_done_toast` content keys were dead. The plan tile sheet now offers it
+  (`meal_planning.tile_sheet.ate_it`), remote-ack with a `NeedsConnectionException` branch, hidden
+  when `servingsLeft == 0`. It is the last assertion of `meal_plan_build_flow_test.dart`.
+- **Goldens landed** — `presentation/widget_goldens_test.dart`, 18 PNGs, light + dark at
+  iPhone-SE width, driven by the frozen wire fixtures. See 07's Status for what is and is not
+  covered (screen-level goldens for meal detail / cooking mode are still open, with the reason).
 
 ### Deviations from the spec above (and why)
 - **Drift is v20, not v19.** Phase 3 took v19 for `user_entitlements`; §2 below still says v19.

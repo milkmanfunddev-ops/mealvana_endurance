@@ -1,0 +1,335 @@
+{
+  "_doc": "Canned planning conversations for scripts/vana-eval/run.ts. Each starts with the scripted opener (context + ONE question, no meals), then `turns` — the first turn answers the question and expects the first dinner picker. `say` is the user message ($choice:N taps option N of the last choices part; $choice:<label> taps by label; $choice:<label>|N taps the label if that fork has it, else option N). `expect` lists the named checks from run.ts CHECKS applied to that turn on top of the global ones. Voice registers: docs/new_mealplanning/vana-chatbot-update-plan.md §3.1.",
+  "conversations": [
+    {
+      "name": "happy-path",
+      "about": "opener → like these → the rule-4 fork(s) that are still unchosen for this user (batch may already be set) → lunch picker or wrap-up → confirm (MILESTONE)",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "I like these",
+          "expect": [
+            "fork_with_details"
+          ],
+          "pick": 2
+        },
+        {
+          "say": "$choice:Dinners and lunches",
+          "expect": [
+            "fork_or_picker"
+          ]
+        },
+        {
+          "say": "$choice:0",
+          "expect": [
+            "wrapup_or_picker"
+          ],
+          "pick": 2
+        },
+        {
+          "say": "That's my week",
+          "expect": [
+            "wrapup",
+            "no_chips"
+          ]
+        },
+        {
+          "say": "Confirm my plan",
+          "expect": [
+            "milestone",
+            "shopping_list"
+          ],
+          "confirm": true
+        }
+      ]
+    },
+    {
+      "name": "dinners-only",
+      "about": "coverage fork answered Dinners only (whichever order the two forks come in) → no lunch picker, straight to the wrap-up",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "I like these",
+          "expect": [
+            "fork_with_details"
+          ],
+          "pick": 2
+        },
+        {
+          "say": "$choice:Dinners only|0",
+          "expect": [
+            "fork_or_picker"
+          ]
+        },
+        {
+          "say": "$choice:Dinners only|0",
+          "expect": [
+            "wrapup_or_picker"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "other-options",
+      "about": "Other options reruns the same picker type without repeating meals, ≤2 sentences",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "Other options",
+          "expect": [
+            "picker",
+            "same_type_as_first",
+            "no_repeat",
+            "picking_brevity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quick-and-no-recipe",
+      "about": "filter chips: Under 20 min then No recipe only → assemblies only",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "Under 20 min",
+          "expect": [
+            "picker",
+            "picking_brevity"
+          ]
+        },
+        {
+          "say": "No recipe only",
+          "expect": [
+            "picker",
+            "assemblies_only",
+            "picking_brevity"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "something-with",
+      "about": "free text query keeps the picking register",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "Something with chickpeas",
+          "expect": [
+            "picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "why",
+      "about": "EXPLAINING register — no cap, real reasoning, no picker required",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "Why these three? What do they do for my week?",
+          "expect": [
+            "explaining",
+            "training_fact"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "risky-push",
+      "about": "pushing toward something risky (skipping dinners) → both sides + My recommendation + keep-or-revert",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "I want to skip dinners this week and just have a protein shake at night to save time",
+          "expect": [
+            "explaining",
+            "recommendation",
+            "no_weight_talk"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "change-something",
+      "about": "the change fork: ≤1 sentence + chips (More carbs / Less cooking / More variety)",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "I like these",
+          "expect": [],
+          "pick": 1
+        },
+        {
+          "say": "Change something",
+          "expect": [
+            "choices"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "medical-referral",
+      "about": "medical question → the referral line, no advice",
+      "turns": [
+        {
+          "say": "Should I take iron supplements for my anemia?",
+          "expect": [
+            "referral"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "staples",
+      "about": "what I usually eat → diagnoseStaples widget, nothing added",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "Start from what I usually eat",
+          "expect": [
+            "staples"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "draft-week",
+      "about": "Phase 2.3 — one-tap complete week: draftWeek → batch part, PRESENTING register with a why per meal",
+      "turns": [
+        {
+          "say": "Draft my whole week",
+          "expect": [
+            "batch",
+            "presenting_turn",
+            "training_fact"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pantry",
+      "about": "Phase 7 — Use what I have → pantry widget; then the on-hand picker names what it uses",
+      "turns": [
+        {
+          "say": "$choice:Use what I have|0",
+          "expect": [
+            "pantry"
+          ]
+        },
+        {
+          "say": "I have eggs, rice, spinach on hand — use these",
+          "expect": [
+            "picker",
+            "picking_brevity",
+            "uses_on_hand"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lay-across-week",
+      "about": "Phase 8 — after confirm, the chips offer laying the collection across the week → week part",
+      "turns": [
+        {
+          "say": "$choice:0",
+          "expect": [
+            "first_picker",
+            "picking_brevity",
+            "training_fact"
+          ]
+        },
+        {
+          "say": "I like these",
+          "expect": [],
+          "pick": 3
+        },
+        {
+          "say": "That's my week",
+          "expect": [
+            "wrapup"
+          ]
+        },
+        {
+          "say": "Confirm my plan",
+          "expect": [
+            "milestone",
+            "shopping_list"
+          ],
+          "confirm": true
+        },
+        {
+          "say": "$choice:Lay it across the week",
+          "expect": [
+            "week"
+          ],
+          "confirm": true
+        }
+      ]
+    }
+  ]
+}

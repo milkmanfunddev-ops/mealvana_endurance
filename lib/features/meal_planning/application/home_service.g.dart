@@ -113,7 +113,7 @@ final class HomeControllerProvider
   }
 }
 
-String _$homeControllerHash() => r'e5c0547cd8742d397f9ad671e1387d056f5ff015';
+String _$homeControllerHash() => r'a95a0e3065d6be7bb7ba4c912e7007e6e753965e';
 
 /// The Plan tab's header data for [date] (`YYYY-MM-DD`; today by default).
 ///

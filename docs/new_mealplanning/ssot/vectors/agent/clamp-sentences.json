@@ -1,0 +1,13 @@
+{
+  "section": "clamp-sentences",
+  "engine": "clampSentences(text, n) — prototype server/vana/chat.ts (default n = 2, the 2026-08-31 clamp) · edge _shared/vana/chat.ts (default n = RUNAWAY_SENTENCES = 8, the 2026-09-03 runaway guard — D-14)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "n is passed explicitly so both twins agree; the DEFAULT differs between them and is a recorded deviation. Executable on the prototype (vitest); the edge chat module imports npm:ai so the deno runner skips it.",
+  "vectors": [
+    { "id": "keep-two", "status": "proposed", "inputs": { "text": "One. Two. Three.", "n": 2 }, "expected": "One. Two.", "why": "Sentence terminators . ! ? end a sentence; whitespace is collapsed." },
+    { "id": "keep-eight", "status": "proposed", "inputs": { "text": "A. B. C. D. E. F. G. H. I. J.", "n": 8 }, "expected": "A. B. C. D. E. F. G. H.", "why": "The runaway guard: never fires on a well-behaved turn." },
+    { "id": "no-terminator-kept", "status": "proposed", "inputs": { "text": "just a fragment", "n": 2 }, "expected": "just a fragment", "why": "A trailing fragment counts as a sentence." },
+    { "id": "whitespace-collapsed", "status": "proposed", "inputs": { "text": "Race  week.\n\nEat   carbs!", "n": 5 }, "expected": "Race week. Eat carbs!", "why": "Newlines and runs of spaces collapse to one space." },
+    { "id": "question-mark-terminates", "status": "proposed", "inputs": { "text": "Ready? Then go. Now.", "n": 1 }, "expected": "Ready?", "why": "" }
+  ]
+}

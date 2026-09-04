@@ -1,0 +1,14 @@
+{
+  "section": "attribution-short",
+  "engine": "attributionShort(full) — prototype server/vana/meals.ts · edge _shared/vana/meals.ts",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "The ≤40-char label cards and the model see instead of the full source string. Executable on the prototype (vitest); the edge meals module pulls embeddings/npm:ai so the deno runner skips it.",
+  "vectors": [
+    { "id": "empty", "status": "proposed", "inputs": null, "expected": "", "why": "" },
+    { "id": "split-on-em-dash", "status": "proposed", "inputs": "Shalane Flanagan — Run Fast. Eat Slow. (2016)", "expected": "Shalane Flanagan", "why": "The first segment before ' — ', ';', ' (' or a URL." },
+    { "id": "possessive-stated-clause", "status": "proposed", "inputs": "Jan Frodeno's stated race-day breakfast (interview)", "expected": "Jan Frodeno", "why": "\"'s stated …\" and its tail are removed after the ' (' split." },
+    { "id": "over-forty-chars-ellipsis", "status": "proposed", "inputs": "A very long attribution string that goes on and on forever", "expected": "very long attribution string that…", "why": "Leading article stripped, cut at 38 chars on a word boundary, '…' appended." },
+    { "id": "url-only", "status": "proposed", "inputs": "https://example.com/some-article", "expected": "", "why": "Splitting on the URL leaves an empty first segment." },
+    { "id": "reported-by-leaves-by", "status": "characterization", "inputs": "Reported by Kristian Blummenfelt; https://x.y", "expected": "by Kristian Blummenfelt", "why": "TRIPWIRE. Only the leading 'reported' is stripped, so the label starts with 'by'. Observed, not endorsed (Q-MS1)." }
+  ]
+}

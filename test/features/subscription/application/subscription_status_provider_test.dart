@@ -29,6 +29,19 @@ class _FixedFlag extends InternalDeviceFlagNotifier {
   bool build() => value;
 }
 
+/// A tester switch a test can flip mid-run (the real notifier talks to
+/// secure storage).
+class _MutableFlag extends InternalDeviceFlagNotifier {
+  _MutableFlag(this.value);
+  bool value;
+  @override
+  bool build() => value;
+  void flip(bool next) {
+    value = next;
+    state = next;
+  }
+}
+
 const _userId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
 
 final _rcActive = SubscriptionStatus(
@@ -65,8 +78,7 @@ void main() {
     when(() => repo.clearCache()).thenAnswer((_) async {});
     when(() => service.setStatusListener(any())).thenAnswer((inv) {
       capturedListener =
-          inv.positionalArguments.first
-              as void Function(SubscriptionStatus)?;
+          inv.positionalArguments.first as void Function(SubscriptionStatus)?;
     });
     // Defaults: nothing anywhere.
     when(() => service.fetchStatus()).thenAnswer((_) async => null);
@@ -74,6 +86,9 @@ void main() {
       () => repo.fetchRemote(any(), any()),
     ).thenAnswer((_) async => SubscriptionStatus.none);
     when(() => repo.readCached(any(), any())).thenAnswer((_) async => null);
+    when(
+      () => repo.mirrorInternalFlag(any(), any()),
+    ).thenAnswer((_) async => true);
   });
 
   ProviderContainer container({bool internal = false}) {
@@ -148,13 +163,16 @@ void main() {
       expect((await resolve(c)).source, SubscriptionSource.revenuecat);
     });
 
-    test('signed out → none without contacting RevenueCat or the server', () async {
-      when(() => repo.currentUserId).thenReturn(null);
-      final c = container();
-      expect(await resolve(c), SubscriptionStatus.none);
-      verifyNever(() => service.fetchStatus());
-      verifyNever(() => repo.fetchRemote(any(), any()));
-    });
+    test(
+      'signed out → none without contacting RevenueCat or the server',
+      () async {
+        when(() => repo.currentUserId).thenReturn(null);
+        final c = container();
+        expect(await resolve(c), SubscriptionStatus.none);
+        verifyNever(() => service.fetchStatus());
+        verifyNever(() => repo.fetchRemote(any(), any()));
+      },
+    );
 
     test('build never throws — an unexpected error degrades to none', () async {
       when(() => service.fetchStatus()).thenThrow(StateError('boom'));
@@ -249,6 +267,82 @@ void main() {
         c.read(subscriptionStatusProvider).asData!.value,
         kInternalProStatus,
       );
+    });
+  });
+
+  group('users.is_internal mirror (the server-side tester bypass)', () {
+    test(
+      'an internal device mirrors true once, not on every resolve',
+      () async {
+        final c = container(internal: true);
+        await c.read(subscriptionStatusProvider.future);
+        verify(() => repo.mirrorInternalFlag(_userId, true)).called(1);
+
+        await c.read(subscriptionStatusProvider.notifier).refresh();
+        // Already mirrored — no second write.
+        verifyNever(() => repo.mirrorInternalFlag(any(), any()));
+      },
+    );
+
+    test('an ordinary device never writes users.is_internal', () async {
+      // A false-mirror on every cold start would also clobber a flag an
+      // admin set server-side for this account.
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      verifyNever(() => repo.mirrorInternalFlag(any(), any()));
+    });
+
+    test('a failed mirror is retried on the next resolve', () async {
+      when(
+        () => repo.mirrorInternalFlag(any(), any()),
+      ).thenAnswer((_) async => false);
+      final c = container(internal: true);
+      await c.read(subscriptionStatusProvider.future);
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      verify(() => repo.mirrorInternalFlag(_userId, true)).called(2);
+    });
+
+    test('flipping the switch off in-session mirrors false once', () async {
+      final flag = _MutableFlag(true);
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionServiceProvider.overrideWithValue(service),
+          userEntitlementsRepositoryProvider.overrideWithValue(repo),
+          internalDeviceFlagProvider.overrideWith(() => flag),
+        ],
+      );
+      addTearDown(c.dispose);
+      await c.read(subscriptionStatusProvider.future);
+      verify(() => repo.mirrorInternalFlag(_userId, true)).called(1);
+
+      flag.flip(false);
+      await c.read(subscriptionStatusProvider.future);
+      verify(() => repo.mirrorInternalFlag(_userId, false)).called(1);
+
+      // …and only once: later resolves have nothing left to clear.
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      verifyNever(() => repo.mirrorInternalFlag(any(), any()));
+    });
+
+    test('an identity change re-mirrors for the new account', () async {
+      final c = container(internal: true);
+      await c.read(subscriptionStatusProvider.future);
+      verify(() => repo.mirrorInternalFlag(_userId, true)).called(1);
+
+      // A different tester signs in on the same device: the memo must not
+      // carry over, or their account never gets the server-side flag.
+      const other = '9c1f3f60-0000-4000-8000-000000000002';
+      when(() => repo.currentUserId).thenReturn(other);
+      await c.read(subscriptionStatusProvider.notifier).refresh();
+      verify(() => repo.mirrorInternalFlag(other, true)).called(1);
+    });
+
+    test('signed out → nothing to mirror', () async {
+      when(() => repo.currentUserId).thenReturn(null);
+      final c = container(internal: true);
+      await c.read(subscriptionStatusProvider.future);
+      verifyNever(() => repo.mirrorInternalFlag(any(), any()));
     });
   });
 

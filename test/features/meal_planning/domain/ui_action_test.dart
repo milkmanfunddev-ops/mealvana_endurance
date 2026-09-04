@@ -350,6 +350,30 @@ void main() {
       );
     });
 
+    test('rewind / pantry_photo / set_pantry (plan Phases 6.1, 7.3)', () {
+      check(
+        const RewindAction(conversationId: 'c1', messageId: 'm-7'),
+        'rewind',
+        {'conversationId': 'c1', 'messageId': 'm-7'},
+      );
+      check(
+        const PantryPhotoAction(
+          conversationId: 'c1',
+          photoPath: 'user-1/abc.jpg',
+        ),
+        'pantry_photo',
+        {'conversationId': 'c1', 'photoPath': 'user-1/abc.jpg'},
+      );
+      check(
+        const SetPantryAction(conversationId: 'c1', items: ['eggs', 'rice']),
+        'set_pantry',
+        {
+          'conversationId': 'c1',
+          'items': ['eggs', 'rice'],
+        },
+      );
+    });
+
     test('scope keys come first and never leak when unset', () {
       final payload = const RemoveMealAction(
         planMealId: 'pm1',

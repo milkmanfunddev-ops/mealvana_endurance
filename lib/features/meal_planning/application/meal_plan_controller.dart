@@ -16,9 +16,11 @@ import '../domain/meal_plan.dart';
 import '../domain/meal_source.dart';
 import '../domain/meal_type.dart';
 import '../domain/plan_meal.dart';
+import '../domain/plan_rule.dart';
 import '../domain/ui_action.dart';
 import '../domain/vana_part.dart';
 import '../domain/week_start.dart';
+import 'plan_reminder_service.dart';
 
 part 'meal_plan_controller.g.dart';
 
@@ -252,14 +254,62 @@ class MealPlanController extends _$MealPlanController {
     String? date,
     String? conversationId,
     String? planId,
+  }) async {
+    final plan = await _remoteAck(
+      ConfirmPlanAction(
+        date: date,
+        conversationId: conversationId,
+        planId: planId,
+      ),
+      (r) => r.plan,
+    );
+    // Phase 3.5: with the device toggle on, a confirmed plan gets its
+    // check-in + debrief local notifications. Fire-and-forget — a
+    // scheduling failure never fails the confirm.
+    if (plan != null) unawaited(_scheduleReminders(plan));
+    return plan;
+  }
+
+  Future<void> _scheduleReminders(MealPlan plan) async {
+    try {
+      final reminders = ref.read(planReminderServiceProvider);
+      if (!reminders.remindersEnabled) return;
+      await reminders.scheduleForPlan(plan);
+    } catch (e) {
+      _logger.warning(
+        'plan reminders not scheduled (non-fatal)',
+        context: _context,
+        error: e,
+      );
+    }
+  }
+
+  /// Swap one ingredient inside a plan meal (`swap_ingredient`, plan Phase
+  /// 6.3): the server creates the saved variant, swaps it into the plan and
+  /// recomputes the shopping list; the returned `batch` is folded in.
+  ///
+  Future<MealPlan?> swapIngredient(
+    String planMealId, {
+    required String from,
+    required String to,
+    String? effect,
   }) => _remoteAck(
-    ConfirmPlanAction(
-      date: date,
-      conversationId: conversationId,
-      planId: planId,
-    ),
+    SwapIngredientAction(planMealId: planMealId, from: from, to: to),
     (r) => r.plan,
   );
+
+  /// Accept a rule Vana proposed (`accept_rule`) — the rule is sent back
+  /// with `accepted: true` and the server stores it on the plan. Replaces
+  /// the 4c stopgap where the chat screen sent "Accept the rule: …" as a
+  /// plain message (another model turn, no ack, no plan fold).
+  Future<MealPlan?> acceptRule(PlanRule rule, {String? conversationId}) =>
+      _remoteAck(
+        AcceptRuleAction(
+          rule: rule.copyWith(accepted: true),
+          conversationId: conversationId,
+        ),
+        (r) => r.plan,
+      );
 
   /// Archive the current plan and start an empty draft (`new_plan`).
   Future<MealPlan?> newPlan({String? conversationId}) =>

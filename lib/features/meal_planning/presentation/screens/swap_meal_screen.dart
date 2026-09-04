@@ -13,7 +13,10 @@ import '../../data/meal_library_remote_data_source.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/plan_meal.dart';
+import '../../application/meal_icon_classifier.dart';
 import '../widgets/meal_card.dart';
+import '../widgets/meal_icon_glyphs.dart';
+import '../widgets/vana_round_button.dart';
 
 /// `/food/swap/:planMealId` (05 §4): the "Replacing X" header card plus the
 /// same-type catalog (excluding what is already planned). Picking runs the
@@ -71,16 +74,36 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
     return Scaffold(
       key: ValueKey('meal_planning.swap_${widget.planMealId}'),
       backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: BackButton(color: textColor),
-        title: Text(
-          content.getValue(ContentKeys.mpSwapTitle),
-          style: AppTextStyles.sectionTitle.copyWith(color: textColor),
-        ),
-      ),
-      body: current == null
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  VanaRoundButton.back(
+                    context: context,
+                    onTap: () => context.pop(),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    content.getValue(ContentKeys.mpSwapTitle),
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: textColor,
+                      fontSize: 20,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: current == null
           ? Center(
               child: Text(
                 content.getValue(ContentKeys.mpSearchEmpty),
@@ -90,22 +113,77 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // The meal being replaced, called out in dragonfruit so it
+                // never reads as one of the options below it.
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppSpacing.md,
                   ),
-                  child: Text(
-                    ContentKeys.format(
-                      content.getValue(ContentKeys.mpSwapReplacing),
-                      {'name': current.name},
-                    ),
+                  child: Container(
                     key: const ValueKey('meal_planning.swap_replacing'),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w600,
+                    constraints: const BoxConstraints(minHeight: 60),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.blackberryLight
+                          : AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(
+                        color: AppColors.dragonfruit.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        MealIconTile(
+                          icon:
+                              current.icon ??
+                              MealIconClassifier.classify(name: current.name),
+                          size: 36,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                content.getValue(
+                                  ContentKeys.mpSwapSwappingOut,
+                                ),
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: secondary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                current.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.foodTitle.copyWith(
+                                  color: textColor,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          '×${current.servings}',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: textColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
+                const SizedBox(height: AppSpacing.sm),
                 Expanded(
                   child: _future == null
                       ? const Center(
@@ -129,9 +207,7 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                               padding: const EdgeInsets.all(AppSpacing.md),
                               itemCount: meals.length,
                               itemBuilder: (context, i) => Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.xs,
-                                ),
+                                padding: const EdgeInsets.only(bottom: 8),
                                 child: MealCard(
                                   meal: meals[i],
                                   onTap: () =>
@@ -144,6 +220,10 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                 ),
               ],
             ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

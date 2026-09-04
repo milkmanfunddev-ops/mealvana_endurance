@@ -44,6 +44,17 @@ class AppTextStyles {
     height: 1.2,
   );
 
+  // Section eyebrow / overline — the uppercase, letter-spaced label that sits
+  // above a block of content ("THIS WEEK'S PLAN"). Callers uppercase the
+  // string themselves; this only carries the type.
+  static const TextStyle overline = TextStyle(
+    fontFamily: compadre,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    letterSpacing: 2,
+    height: 1.3,
+  );
+
   // === Activity & Food Titles (Compadre Wide) ===
 
   // Activity titles (18px)

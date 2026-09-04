@@ -22,6 +22,7 @@ import '../domain/plan_meal.dart';
 import '../domain/plan_rule.dart';
 import '../domain/shopping_item.dart';
 import '../domain/ui_action.dart';
+import '../domain/memory_kind.dart';
 import '../domain/wire_record.dart';
 import 'meal_plan_remote.dart';
 
@@ -278,19 +279,32 @@ class MealPlanRepository with SyncableRepository {
               plans.isDeleted.equals(false) &
               plans.status.equals(MealPlanStatus.archived.wire).not(),
         );
-    return query.watch().map((rows) {
-      final byPlan = <String, MealPlanEntry>{};
-      final mealsByPlan = <String, List<PlanMealEntry>>{};
-      for (final row in rows) {
-        final plan = row.readTable(plans);
-        byPlan[plan.id] = plan;
-        final meal = row.readTableOrNull(meals);
-        if (meal != null) mealsByPlan.putIfAbsent(plan.id, () => []).add(meal);
-      }
-      final active = _pickActive(byPlan.values);
-      if (active == null) return null;
-      return _assemble(active, mealsByPlan[active.id] ?? const []);
-    });
+    return query
+        .watch()
+        .map((rows) {
+          final byPlan = <String, MealPlanEntry>{};
+          final mealsByPlan = <String, List<PlanMealEntry>>{};
+          for (final row in rows) {
+            final plan = row.readTable(plans);
+            byPlan[plan.id] = plan;
+            final meal = row.readTableOrNull(meals);
+            if (meal != null) {
+              mealsByPlan.putIfAbsent(plan.id, () => []).add(meal);
+            }
+          }
+          final active = _pickActive(byPlan.values);
+          if (active == null) return null;
+          return (active, mealsByPlan[active.id] ?? const <PlanMealEntry>[]);
+        })
+        .asyncMap((picked) async {
+          if (picked == null) return null;
+          final (plan, planMeals) = picked;
+          return _assemble(
+            plan,
+            planMeals,
+            lunchDinnerSlots: await _coverageSlotsFor(plan.userId),
+          );
+        });
   }
 
   /// One plan by id (with its live meals), or null. Re-emits on change.
@@ -303,15 +317,58 @@ class MealPlanRepository with SyncableRepository {
         meals.planId.equalsExp(plans.id) & meals.isDeleted.equals(false),
       ),
     ])..where(plans.id.equals(planId));
-    return query.watch().map((rows) {
+    return query.watch().asyncMap((rows) async {
       if (rows.isEmpty) return null;
       final plan = rows.first.readTable(plans);
       final planMeals = [
         for (final row in rows)
           if (row.readTableOrNull(meals) case final m?) m,
       ];
-      return _assemble(plan, planMeals);
+      return _assemble(
+        plan,
+        planMeals,
+        lunchDinnerSlots: await _coverageSlotsFor(plan.userId),
+      );
     });
+  }
+
+  /// `user_memories.key` of the coverage-scope setting (plan §5 Phase 1.6).
+  static const _coverageScopeKey = 'coverage_scope';
+
+  /// The `coverage_scope` value under which only dinner servings count.
+  static const _coverageScopeDinners = 'dinners';
+
+  /// The denominator the server uses for this athlete's coverage. Drift keeps
+  /// no coverage column (the server sends it on every plan), so the
+  /// local-first recompute in [_assemble] derives it from the
+  /// `coverage_scope` k/v settings row: `dinners` → 7, anything else (or no
+  /// row yet) → 14. The setting row reaches Drift through the memories sync,
+  /// so a plan built before it lands shows the default until the next emit.
+  Future<int> _coverageSlotsFor(String userId) async {
+    final t = _database.userMemoriesTable;
+    final row =
+        await (_database.select(t)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.isDeleted.equals(false) &
+                    t.kind.equals(MemoryKind.setting.wire) &
+                    t.key.equals(_coverageScopeKey),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    final raw = row?.value;
+    if (raw == null) return PlanCoverageService.lunchDinnerSlots;
+    // The column is JSON-encoded (`"dinners"`); tolerate a bare string too.
+    Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      decoded = raw;
+    }
+    return decoded == _coverageScopeDinners
+        ? PlanCoverageService.dinnerOnlySlots
+        : PlanCoverageService.lunchDinnerSlots;
   }
 
   Future<MealPlan?> getActivePlan(String userId, String weekStart) =>
@@ -610,7 +667,11 @@ class MealPlanRepository with SyncableRepository {
     return best;
   }
 
-  MealPlan _assemble(MealPlanEntry plan, List<PlanMealEntry> meals) {
+  MealPlan _assemble(
+    MealPlanEntry plan,
+    List<PlanMealEntry> meals, {
+    int lunchDinnerSlots = PlanCoverageService.lunchDinnerSlots,
+  }) {
     final sorted = [...meals]
       ..sort((a, b) {
         final byPosition = a.position.compareTo(b.position);
@@ -646,7 +707,10 @@ class MealPlanRepository with SyncableRepository {
       ),
       dayNotes: readStringMap({'d': _decodeMap(plan.dayNotes)}, 'd'),
       dayNotesStale: plan.dayNotesStale,
-      coverage: PlanCoverageService.compute(planMeals),
+      coverage: PlanCoverageService.compute(
+        planMeals,
+        lunchDinnerSlots: lunchDinnerSlots,
+      ),
     );
   }
 

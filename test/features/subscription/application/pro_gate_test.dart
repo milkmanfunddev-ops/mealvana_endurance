@@ -109,13 +109,17 @@ void main() {
 
     test('locked while loading, unlocked when the gate is off', () {
       expect(
-        container(gate: true, status: _LoadingStatus.new)
-            .read(proUnlockedProvider),
+        container(
+          gate: true,
+          status: _LoadingStatus.new,
+        ).read(proUnlockedProvider),
         isFalse,
       );
       expect(
-        container(gate: false, status: _LoadingStatus.new)
-            .read(proUnlockedProvider),
+        container(
+          gate: false,
+          status: _LoadingStatus.new,
+        ).read(proUnlockedProvider),
         isTrue,
       );
     });
