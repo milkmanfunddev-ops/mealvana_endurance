@@ -14,7 +14,6 @@ import '../../../../../shared/domain/activity_type.dart';
 import 'shared/workout_details_widget.dart';
 import 'shared/activity_name_field.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/intensity_distribution_widget.dart';
-import '../../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 
 /// Running Tab Content
 ///
@@ -106,18 +105,11 @@ class RunningTabContent extends ConsumerWidget {
           onModeChanged: controller.updateDurationPaceMode,
           onPaceChanged: controller.updatePace,
           onDurationChanged: controller.updateDuration,
-          // CF-6 (RULED 2026-09-03): the derived side wears EST.; the usual
-          // pace surfaces as a chip (zone suggestion when available, else
-          // the ruled 9:00 /mi fallback — closes the F-27 4:30/mi class).
-          derivedEstimateLabel:
-              formState.durationPaceMode == DurationPaceMode.byDuration
-                  ? _formatPaceLabel(
-                      formState.paceMinutes,
-                      formState.paceUnit,
-                    )
-                  : _formatDurationLabel(formState.estimatedDuration),
-          usualPaceChipLabel:
-              'your usual · ${_formatPaceLabel(formState.zoneSuggestedPace ?? 9.0, formState.paceUnit)}',
+          // CF-6 (RULED 2026-09-03): the widget renders the EST. side and the
+          // usual-pace chip itself; we only feed it the usual (zone suggestion
+          // when available, else the ruled 9:00 /mi fallback — closes the
+          // F-27 4:30/mi class).
+          usualPace: formState.zoneSuggestedPace ?? 9.0,
           enabled: true,
         ),
 
@@ -530,19 +522,3 @@ class RunningTabContent extends ConsumerWidget {
 }
 
 /// Control button for plus/minus controls (copied from kyle_design for consistency)
-
-/// CF-6 label helpers — pace as `M:SS /unit`, duration as `H HR M MIN`.
-String _formatPaceLabel(double paceMinutes, PaceUnit unit) {
-  final mins = paceMinutes.floor();
-  final secs = ((paceMinutes - mins) * 60).round();
-  final unitLabel = unit == PaceUnit.minPerKm ? '/km' : '/mi';
-  return '$mins:${secs.toString().padLeft(2, '0')} $unitLabel';
-}
-
-String? _formatDurationLabel(Duration? d) {
-  if (d == null) return null;
-  final h = d.inHours;
-  final m = d.inMinutes.remainder(60);
-  if (h == 0) return '$m MIN';
-  return '$h HR $m MIN';
-}

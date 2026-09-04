@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 
-/// Horizontal bar showing intensity distribution with colored segments
+/// Horizontal bar showing intensity distribution with colored segments.
 ///
-/// Displays three segments proportional to the zone percentages:
-/// - Green: Conversational (Z1-Z2)
-/// - Yellow: Tempo (Z3-Z4)
-/// - Red: All-Out (Z5+)
+/// Reference rendering: prototypes/create-activity-plan/v1.html (spec
+/// docs/ssot/spec/design/surfaces/create-flow-fueling-controls.md) — a slim
+/// (4px) fully-rounded full-width track whose segment widths are the zone
+/// percentages, painted with the brand zone tokens:
+/// - Electrolyte: Conversational (Z1-Z2)
+/// - Orange: Tempo (Z3-Z4)
+/// - Dragonfruit: All-Out (Z5+)
 ///
 /// Props:
-/// - conversationalPct: Percentage for Z1-Z2 (green segment)
-/// - tempoPct: Percentage for Z3-Z4 (yellow segment)
-/// - allOutPct: Percentage for Z5+ (red segment)
+/// - conversationalPct: Percentage for Z1-Z2 (electrolyte segment)
+/// - tempoPct: Percentage for Z3-Z4 (orange segment)
+/// - allOutPct: Percentage for Z5+ (dragonfruit segment)
 /// - enabled: Whether to show full opacity (true) or dimmed (false)
 class IntensityCompositeBar extends StatelessWidget {
   const IntensityCompositeBar({
@@ -18,7 +22,7 @@ class IntensityCompositeBar extends StatelessWidget {
     required this.conversationalPct,
     required this.tempoPct,
     required this.allOutPct,
-    this.height = 10.0,
+    this.height = 4.0,
     this.enabled = true,
   });
 
@@ -28,10 +32,10 @@ class IntensityCompositeBar extends StatelessWidget {
   final double height;
   final bool enabled;
 
-  // Zone colors based on design
-  static const Color zoneConversationalColor = Color(0xFF4ADE80); // Green
-  static const Color zoneTempoColor = Color(0xFFFBBF24); // Yellow/Orange
-  static const Color zoneAllOutColor = Color(0xFFEF4444); // Red
+  // Zone colors — brand tokens (no raw literals; token registry rule).
+  static const Color zoneConversationalColor = AppColors.electrolyte;
+  static const Color zoneTempoColor = AppColors.orange;
+  static const Color zoneAllOutColor = AppColors.dragonfruit;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +62,7 @@ class IntensityCompositeBar extends StatelessWidget {
       label: semanticLabel,
       readOnly: true,
       child: Container(
+        width: double.infinity,
         height: height,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(height / 2), // Fully rounded ends

@@ -255,28 +255,137 @@ void main() {
       expect(s2.paceMinutes, closeTo(10.0, 0.01));
     });
 
-    testWidgets('derived side wears EST.; fallback chip reads 9:00 /mi',
+    testWidgets(
+        'both fields visible; EST. rides the derived side and flips on a '
+        'duration edit', (t) async {
+      var mode = DurationPaceMode.byPace;
+      final modeChanges = <DurationPaceMode>[];
+      var duration = const Duration(hours: 1, minutes: 48);
+      await pumpBoxed(
+        t,
+        StatefulBuilder(
+          builder: (context, setState) => WorkoutDetailsWidget(
+            sport: ActivityType.running,
+            distance: 12,
+            distanceUnit: 'mi',
+            mode: mode,
+            estimatedDuration: duration,
+            pace: 9.0,
+            paceUnit: 'min/mi',
+            onDistanceChanged: (_) {},
+            onModeChanged: (m) => setState(() {
+              mode = m;
+              modeChanges.add(m);
+            }),
+            onPaceChanged: (_) {},
+            onDurationChanged: (d) => setState(() => duration = d),
+          ),
+        ),
+      );
+
+      // No By Duration / By Pace toggle — both sides always mounted.
+      expect(find.text('By Duration'), findsNothing);
+      expect(find.text('By Pace'), findsNothing);
+      final paceKey = find.byKey(const ValueKey('activity_create.pace_field'));
+      final hrKey =
+          find.byKey(const ValueKey('activity_create.duration_hr_field'));
+      expect(paceKey, findsOneWidget);
+      expect(hrKey, findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_create.duration_mins_field')),
+        findsOneWidget,
+      );
+
+      // Pace held ⇒ duration derived: one EST. badge, italic derived text.
+      expect(find.byKey(const ValueKey('activity_create.est_badge')),
+          findsOneWidget);
+      expect(t.widget<TextField>(hrKey).style?.fontStyle, FontStyle.italic);
+      expect(
+        t.widget<TextField>(paceKey).style?.fontStyle,
+        isNot(FontStyle.italic),
+      );
+
+      // Editing the duration flips the hold: EST. moves to the pace side.
+      await t.enterText(hrKey, '2');
+      await t.pump();
+      expect(modeChanges, contains(DurationPaceMode.byDuration));
+      expect(t.widget<TextField>(paceKey).style?.fontStyle, FontStyle.italic);
+      expect(
+        t.widget<TextField>(hrKey).style?.fontStyle,
+        isNot(FontStyle.italic),
+      );
+      expect(find.byKey(const ValueKey('activity_create.est_badge')),
+          findsOneWidget);
+    });
+
+    testWidgets('fallback chip reads 9:00 /mi and applies it on tap',
         (t) async {
+      final paceChanges = <double>[];
+      var mode = DurationPaceMode.byDuration;
+      await pumpBoxed(
+        t,
+        StatefulBuilder(
+          builder: (context, setState) => WorkoutDetailsWidget(
+            sport: ActivityType.running,
+            distance: 12,
+            distanceUnit: 'mi',
+            mode: mode,
+            estimatedDuration: const Duration(hours: 1, minutes: 48),
+            pace: 9.0,
+            paceUnit: 'min/mi',
+            onDistanceChanged: (_) {},
+            onModeChanged: (m) => setState(() => mode = m),
+            onPaceChanged: paceChanges.add,
+            onDurationChanged: (_) {},
+          ),
+        ),
+      );
+      expect(find.text('your usual · 9:00 /mi'), findsOneWidget);
+      await t.tap(
+        find.byKey(const ValueKey('activity_create.usual_pace_chip')),
+      );
+      await t.pump();
+      expect(paceChanges, [9.0]);
+    });
+
+    testWidgets(
+        'F-27 guard: 4:30 /mi over 12 mi is called out; the fix applies 9:00',
+        (t) async {
+      final paceChanges = <double>[];
       await pumpBoxed(
         t,
         WorkoutDetailsWidget(
           sport: ActivityType.running,
           distance: 12,
           distanceUnit: 'mi',
-          mode: DurationPaceMode.byDuration,
-          estimatedDuration: const Duration(hours: 1, minutes: 48),
-          pace: 9.0,
+          mode: DurationPaceMode.byPace,
+          estimatedDuration: const Duration(minutes: 54),
+          pace: 4.5, // 4:30 /mi — the F-27 class
           paceUnit: 'min/mi',
           onDistanceChanged: (_) {},
           onModeChanged: (_) {},
-          onPaceChanged: (_) {},
-          derivedEstimateLabel: '9:00 /mi',
-          usualPaceChipLabel: 'your usual · 9:00 /mi',
+          onPaceChanged: paceChanges.add,
+          onDurationChanged: (_) {},
         ),
       );
-      expect(find.text('EST.'), findsOneWidget);
-      expect(find.text('9:00 /mi'), findsOneWidget);
-      expect(find.text('your usual · 9:00 /mi'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_create.pace_guard')),
+        findsOneWidget,
+      );
+      expect(
+        find.text("That's 4:30 /mi — outside your run range."),
+        findsOneWidget,
+      );
+      // 12 mi × the 9:00 usual = 1 hr 48 min.
+      expect(
+        find.text('Use your usual 9:00 /mi → 1 hr 48 min'),
+        findsOneWidget,
+      );
+      await t.tap(
+        find.byKey(const ValueKey('activity_create.pace_guard_fix')),
+      );
+      await t.pump();
+      expect(paceChanges, [9.0]);
     });
 
     testWidgets('running tab mounts the chip with the ruled fallback',
