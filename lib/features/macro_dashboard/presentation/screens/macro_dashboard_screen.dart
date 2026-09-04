@@ -345,6 +345,10 @@ class MacroDashboardScreen extends ConsumerWidget {
       child: GestureDetector(
         key: key,
         onTap: onTap,
+        // Opaque: the pill's whole painted bounds must be tappable. Without it
+        // the detector defers to children, and the undecorated Container's
+        // padding doesn't hit-test — only the label/icon pixels would tap.
+        behavior: HitTestBehavior.opaque,
         child: CustomPaint(
           foregroundPainter: _DashedPillPainter(color: borderColor),
           child: Container(

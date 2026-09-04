@@ -31,6 +31,8 @@ import 'package:mealvana_endurance/features/fuel_timeline/presentation/widgets/t
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
+import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart'
+    show LogMealScreen;
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -287,5 +289,69 @@ void main() {
     expect(find.byType(TimelineBrickTile), findsOneWidget);
     // An existing brick is not itself groupable: no pill.
     expect(brickPill, findsNothing);
+  });
+
+  // Bug (Lee, device testing 2026-09-04): taps on the empty padding inside a
+  // dashed pill's border did nothing — the GestureDetector deferred to its
+  // children and only the label/icon pixels hit-tested. The whole painted
+  // pill must be the tap target (HitTestBehavior.opaque on the pill bounds).
+  group('dashed-pill padding is tappable', () {
+    testWidgets('Brick pill: a tap inside the border but off the label works', (
+      tester,
+    ) async {
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 16),
+      ]);
+
+      // Just inside the pill's left edge, vertically centered — within the
+      // dashed border's padding (14px before the icon), not on icon or text.
+      final pillRect = tester.getRect(brickPill);
+      final tapPoint = Offset(pillRect.left + 5, pillRect.center.dy);
+      final iconRect = tester.getRect(find.byIcon(Icons.link));
+      expect(
+        tapPoint.dx,
+        lessThan(iconRect.left),
+        reason: 'the probe must land on padding, not the icon/label',
+      );
+
+      await tester.tapAt(tapPoint);
+      await tester.pumpAndSettle();
+
+      // The action fired: leg-picking replaced the add row.
+      expect(cancel, findsOneWidget);
+      expect(brickPill, findsNothing);
+    });
+
+    testWidgets(
+      'Add Food pill: a tap inside the border but off the label works',
+      (tester) async {
+        await _pump(tester, [
+          _activity('run1', ActivityType.running, 8),
+          _activity('ride1', ActivityType.cycling, 16),
+        ]);
+        final addFood = find.byKey(
+          const ValueKey('macro_dashboard.add_food'),
+        );
+        expect(addFood, findsOneWidget);
+
+        final pillRect = tester.getRect(addFood);
+        final tapPoint = Offset(pillRect.left + 5, pillRect.center.dy);
+        final labelRect = tester.getRect(find.text('+ Add Food'));
+        expect(
+          tapPoint.dx,
+          lessThan(labelRect.left),
+          reason: 'the probe must land on padding, not the label',
+        );
+
+        await tester.tapAt(tapPoint);
+        // Bounded pumps, not pumpAndSettle: the pushed screen may animate.
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        // The action fired: the log-meal screen was pushed.
+        expect(find.byType(LogMealScreen), findsOneWidget);
+      },
+    );
   });
 }
