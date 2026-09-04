@@ -87,6 +87,9 @@ Set<DateTime> daysAffectedByActivityOn(DateTime date) {
 ///     [Activity.swimmingPacePer100mSeconds] — the `duration_hr` derivation
 ///   * [Activity.intensityDistribution] — `pct_conversational/tempo/allout`
 ///   * [Activity.intensityLevel]        — drives `is_race`
+///   * [Activity.brickMetadata]         — a brick expands into per-leg
+///     sessions (`_sessionsFromActivityRow`, 2026-09-04), so editing a leg's
+///     sport or duration moves the day's session inputs
 ///   * whether [Activity.status] is `skipped` — every input query filters
 ///     `status != 'skipped'` (v2 unified-skip model), so a Skip/Unskip moves
 ///     the day's inputs; other status transitions (planned → completed via
@@ -116,7 +119,8 @@ bool _macroInputsDiffer(Activity a, Activity b) {
       a.cyclingSpeedMph != b.cyclingSpeedMph ||
       a.swimmingPacePer100mSeconds != b.swimmingPacePer100mSeconds ||
       a.intensityDistribution != b.intensityDistribution ||
-      a.intensityLevel != b.intensityLevel;
+      a.intensityLevel != b.intensityLevel ||
+      a.brickMetadata != b.brickMetadata;
 }
 
 /// The days on which activities were added, removed, or modified between

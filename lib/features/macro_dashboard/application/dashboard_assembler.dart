@@ -1,4 +1,5 @@
 import '../../activities/domain/activity.dart';
+import '../../activities/domain/brick_session_legs.dart';
 import '../../daily_macros/domain/daily_macro_targets.dart';
 import '../../daily_macros/domain/intraday_display.dart';
 import '../../meal_logging/domain/consumed_totals.dart';
@@ -251,6 +252,30 @@ class MacroDashboardAssembler {
             pctTempo: SessionInputResolver.defaultZ3Z4Pct / 100,
             pctAllout: SessionInputResolver.defaultZ5Pct / 100,
           );
+    // A brick with legs prices as the SUM of its legs, each at its own
+    // sport's ratified rate over its own duration — the same decomposition
+    // the engine feed sends (`DailyMacroService._sessionsFromActivityRow`),
+    // so the two surfaces reconcile. INTERIM pending
+    // qa/intake/2026-09-04-brick-per-leg-pricing-ratification.md; the parent
+    // session's IF applies to every leg (per-leg IF is one of the open
+    // ratification questions). A brick with NO segment metadata falls through
+    // to the single-session path below.
+    // Bug: ops/data/bug-reports/2026-09-04-brick-priced-as-one-conservative-session.md
+    final legs = a.isBrick
+        ? (a.brickMetadata?.sessionLegs ?? const <BrickSessionLeg>[])
+        : const <BrickSessionLeg>[];
+    if (legs.isNotEmpty) {
+      var sum = 0.0;
+      for (final leg in legs) {
+        sum += DailyBaselineCalculator.sessionCost(
+          sport: leg.sport,
+          durationHr: leg.durationMinutes / 60.0,
+          intensityFactor: intensityFactor,
+          weightKg: weightKg,
+        );
+      }
+      return sum;
+    }
     return DailyBaselineCalculator.sessionCost(
       // `other` → strength, as the engine prices it: same rate either way, but
       // it also carries the engine's 30-minute default instead of 60. The

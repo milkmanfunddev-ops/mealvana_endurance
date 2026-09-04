@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
+import 'package:mealvana_endurance/features/activities/domain/brick_metadata.dart';
+import 'package:mealvana_endurance/features/activities/domain/brick_session_legs.dart';
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/integrations/application/final_surge_transformer.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/application/dashboard_assembler.dart';
@@ -192,6 +194,151 @@ void main() {
     });
   });
 
+  group('a brick prices as the sum of its legs — and both sides agree', () {
+    // The wire shape activity_mapper persists (snake_case), not the Dart
+    // constructors: run 65 → bike 100 → run 144, the brick from
+    // ops/data/bug-reports/2026-09-04-brick-priced-as-one-conservative-session.md.
+    // Until 2026-09-04 the ENGINE priced this as one 309-min running session
+    // while the DISPLAY priced it as one 309-min conservative-rate session —
+    // both wrong, and visibly contradicting each other (~2×) on one screen.
+    // INTERIM per-leg decomposition pending
+    // qa/intake/2026-09-04-brick-per-leg-pricing-ratification.md.
+    final metadata = BrickMetadata.fromJson({
+      'segment_order': ['running', 'cycling', 'running'],
+      'segments': [
+        {'sport': 'running', 'order': 1, 'duration_minutes': 65, 'intensity': 'moderate'},
+        {'sport': 'cycling', 'order': 2, 'duration_minutes': 100, 'intensity': 'moderate'},
+        {'sport': 'running', 'order': 3, 'duration_minutes': 144, 'intensity': 'moderate'},
+      ],
+      'created_from_existing': false,
+      'total_duration_minutes': 309,
+    });
+
+    final brick = Activity(
+      id: 'brick1',
+      userId: 'u1',
+      activityType: ActivityType.brick,
+      title: 'RUN/BIKE/RUN',
+      scheduledDateTime: DateTime(day.year, day.month, day.day, 6),
+      durationMinutes: 309,
+      brickMetadata: metadata,
+      createdAt: day,
+      updatedAt: day,
+    );
+
+    // What the ENGINE is now fed (one session per leg, each at its own
+    // sport's ratified rate — see brick_session_expansion_test.dart for the
+    // wire payload itself) and therefore what it prices the targets with.
+    double engineSum() {
+      var sum = 0.0;
+      for (final leg in metadata.sessionLegs) {
+        sum += DailyBaselineCalculator.sessionCost(
+          sport: leg.sport,
+          durationHr: leg.durationMinutes / 60.0,
+          intensityFactor: _zonelessIf,
+          weightKg: weightKg,
+        );
+      }
+      return sum;
+    }
+
+    test('the dashboard shows the per-leg sum and reconciles with the '
+        'targets beside it', () {
+      final targets = DailyMacroTargets(
+        id: 't1',
+        userId: 'u1',
+        targetDate: day,
+        carbG: 447,
+        protG: 85,
+        fatG: 101,
+        tdee: 3037,
+        rmr: 1064,
+        sessionKcal: engineSum(),
+        neatKcal: 275,
+        tefKcal: 304,
+        mode: 'prospective',
+        createdAt: day,
+        updatedAt: day,
+      );
+
+      final data = assembler.assemble(
+        selectedDate: day,
+        now: now,
+        activities: [brick],
+        meals: const [],
+        targets: targets,
+        consumed: const ConsumedTotals(),
+        trackingOn: true,
+        profileWeightKg: weightKg,
+      );
+
+      final displayed = data.nodes
+          .where((n) => n.isWorkout)
+          .map((n) => n.workout!.kcal ?? 0)
+          .fold<double>(0, (a, b) => a + b);
+
+      expect(displayed, closeTo(targets.sessionKcal, 1.0),
+          reason: 'the brick must price identically on both sides');
+
+      // Direction pin: the bike leg at the cycling rate lands strictly
+      // between the two old wrong answers — above the conservative-rate
+      // whole (the shipped 1,980-kcal face) and below running-rate-for-
+      // everything (what the engine used to feed the targets).
+      final conservativeWhole = DailyBaselineCalculator.sessionCost(
+        sport: 'brick',
+        durationHr: 309 / 60.0,
+        intensityFactor: _zonelessIf,
+        weightKg: weightKg,
+      );
+      final runningWhole = DailyBaselineCalculator.sessionCost(
+        sport: 'running',
+        durationHr: 309 / 60.0,
+        intensityFactor: _zonelessIf,
+        weightKg: weightKg,
+      );
+      expect(displayed, greaterThan(conservativeWhole));
+      expect(displayed, lessThan(runningWhole));
+    });
+
+    test('a brick with NO segment metadata keeps the interim conservative '
+        'fallback instead of inventing legs', () {
+      final bare = Activity(
+        id: 'brick2',
+        userId: 'u1',
+        activityType: ActivityType.brick,
+        title: 'BRICK',
+        scheduledDateTime: DateTime(day.year, day.month, day.day, 6),
+        durationMinutes: 90,
+        createdAt: day,
+        updatedAt: day,
+      );
+      final data = assembler.assemble(
+        selectedDate: day,
+        now: now,
+        activities: [bare],
+        meals: const [],
+        targets: null,
+        consumed: const ConsumedTotals(),
+        trackingOn: true,
+        profileWeightKg: weightKg,
+      );
+      final kcal =
+          data.nodes.where((n) => n.isWorkout).single.workout!.kcal;
+      expect(
+        kcal,
+        closeTo(
+          DailyBaselineCalculator.sessionCost(
+            sport: 'brick',
+            durationHr: 1.5,
+            intensityFactor: _zonelessIf,
+            weightKg: weightKg,
+          ),
+          0.001,
+        ),
+      );
+    });
+  });
+
   group('engine and display sport mappings diverge ONLY where ruled', () {
     test('they agree everywhere except the composite types', () {
       const composite = {'triathlon', 'duathlon', 'multisport', 'brick'};
@@ -201,7 +348,10 @@ void main() {
         if (composite.contains(name)) {
           expect(SessionInputResolver.displaySport(name), name,
               reason: '$name stays on the interim conservative rate pending '
-                  'qa/intake/2026-08-20-session-cost-unknown-activity-types.md');
+                  'qa/intake/2026-08-20-session-cost-unknown-activity-types.md '
+                  '(for a BRICK this is now only the no-metadata fallback — '
+                  'a brick with segments prices per-leg on both sides, see '
+                  'the brick group above)');
         } else {
           expect(
             SessionInputResolver.displaySport(name),

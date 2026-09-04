@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -9,6 +11,8 @@ import '../../../shared/database/database_provider.dart';
 import '../../../shared/core/revisioned_single_flight.dart';
 import '../../../shared/domain/session_input_resolver.dart';
 import '../../../shared/services/performance_telemetry.dart';
+import '../../activities/domain/brick_metadata.dart';
+import '../../activities/domain/brick_session_legs.dart';
 import '../../auth/domain/user_preferences.dart';
 import '../data/daily_macro_targets_repository.dart';
 import '../domain/daily_macro_targets.dart';
@@ -514,10 +518,11 @@ class DailyMacroService {
                 distance_miles, pace_target_minutes_per_mile,
                 cycling_speed_mph, swimming_pace_per_100m_seconds,
                 intensity_z1_z2_pct, intensity_z3_z4_pct, intensity_z5_pct,
-                tss, intensity_level
+                tss, intensity_level, brick_metadata
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL AND status != 'skipped'
+         AND deleted_at IS NULL
+         AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick')
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -559,10 +564,11 @@ class DailyMacroService {
                 distance_miles, pace_target_minutes_per_mile,
                 cycling_speed_mph, swimming_pace_per_100m_seconds,
                 intensity_z1_z2_pct, intensity_z3_z4_pct, intensity_z5_pct,
-                tss, intensity_level
+                tss, intensity_level, brick_metadata
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL AND status != 'skipped'
+         AND deleted_at IS NULL
+         AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick')
          ORDER BY scheduled_date_time ASC''',
           variables: [
             Variable.withString(userId),
@@ -572,7 +578,7 @@ class DailyMacroService {
         )
         .get();
 
-    return results.map(_sessionFromActivityRow).toList();
+    return results.expand(_sessionsFromActivityRow).toList();
   }
 
   /// Load context info for a day (yesterday/tomorrow)
@@ -588,7 +594,8 @@ class DailyMacroService {
           '''SELECT tss, duration_minutes, intensity_level, scheduled_date_time
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL AND status != 'skipped' ''',
+         AND deleted_at IS NULL
+         AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick') ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfDay),
@@ -615,7 +622,8 @@ class DailyMacroService {
           '''SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
          FROM activities
          WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
-         AND deleted_at IS NULL AND status != 'skipped' ''',
+         AND deleted_at IS NULL
+         AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick') ''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfWeek),
@@ -643,7 +651,7 @@ class _WeekActivityInputs {
 
   List<Map<String, dynamic>> sessionsFor(DateTime date) =>
       (_rowsByDay[_dayKey(date)] ?? const <QueryRow>[])
-          .map(_sessionFromActivityRow)
+          .expand(_sessionsFromActivityRow)
           .toList(growable: false);
 
   Map<String, dynamic> contextFor(DateTime date) =>
@@ -671,8 +679,64 @@ DateTime _activityDate(QueryRow row) => DateTime.fromMillisecondsSinceEpoch(
   row.read<int>('scheduled_date_time') * 1000,
 );
 
-Map<String, dynamic> _sessionFromActivityRow(QueryRow row) {
+/// The session(s) the engine is fed for one activity row.
+///
+/// A single-sport row stays one session, exactly as before. A BRICK row with
+/// segment metadata expands into one session PER LEG — each leg at its own
+/// sport's rate over its own duration, via the same [BrickSessionLegs]
+/// decomposition the dashboard prices with, so the targets and the display
+/// cannot disagree about the same brick. Previously the whole brick was sent
+/// as one `running` session over the summed duration (`engineSport`'s `_ =>`
+/// default), overpricing bike/swim legs while the display underpriced the
+/// same brick at the conservative rate — a ~2× visible contradiction.
+/// INTERIM pending qa/intake/2026-09-04-brick-per-leg-pricing-ratification.md.
+/// Bug: ops/data/bug-reports/2026-09-04-brick-priced-as-one-conservative-session.md
+List<Map<String, dynamic>> _sessionsFromActivityRow(QueryRow row) {
   final activityType = row.read<String>('activity_type');
+
+  // Zone distribution is a property of the stored SESSION, so every leg of a
+  // brick shares the parent's (per-leg IF from segment intensity is one of
+  // the open ratification questions — see the intake file above).
+  final pctConversational =
+      (row.readNullable<int>('intensity_z1_z2_pct') ??
+          SessionInputResolver.defaultZ1Z2Pct) /
+      100.0;
+  final pctTempo =
+      (row.readNullable<int>('intensity_z3_z4_pct') ??
+          SessionInputResolver.defaultZ3Z4Pct) /
+      100.0;
+  final pctAllout =
+      (row.readNullable<int>('intensity_z5_pct') ??
+          SessionInputResolver.defaultZ5Pct) /
+      100.0;
+
+  if (activityType == 'brick') {
+    final legs = _brickLegsFromRow(row);
+    if (legs.isNotEmpty) {
+      return [
+        for (final (i, leg) in legs.indexed)
+          {
+            'sport': leg.sport,
+            'duration_hr': leg.durationMinutes / 60.0,
+            'pct_conversational': pctConversational,
+            'pct_tempo': pctTempo,
+            'pct_allout': pctAllout,
+            // The row's TSS describes the whole brick; carry it once (first
+            // leg) so nothing downstream ever sums it N times.
+            'tss': i == 0 ? row.readNullable<double>('tss') : null,
+            // Deliberately NO activity_id on legs: the server attaches
+            // per-session Garmin completion by activity_id, and a measured
+            // WHOLE-brick kcal attached to every leg would count N times on
+            // a retrospective recalc. How a measured brick total should
+            // allocate across formula legs is an open ratification question
+            // (same intake file); until then legs stay on the formula rung.
+            'activity_id': null,
+          },
+      ];
+    }
+    // A brick with no parseable segments falls through and prices as one
+    // session — the pre-existing behaviour.
+  }
 
   // The ladder lives in SessionInputResolver so display surfaces price a
   // session exactly the way the engine is fed. Behaviour here is unchanged —
@@ -694,26 +758,34 @@ Map<String, dynamic> _sessionFromActivityRow(QueryRow row) {
 
   final sport = SessionInputResolver.engineSport(activityType);
 
-  return {
-    'sport': sport,
-    'duration_hr': durationMinutes / 60.0,
-    // Same default distribution the display resolves a zoneless session with
-    // (RULED 2026-08-22) — shared so the two cannot drift apart again.
-    'pct_conversational':
-        (row.readNullable<int>('intensity_z1_z2_pct') ??
-                SessionInputResolver.defaultZ1Z2Pct) /
-            100.0,
-    'pct_tempo':
-        (row.readNullable<int>('intensity_z3_z4_pct') ??
-                SessionInputResolver.defaultZ3Z4Pct) /
-            100.0,
-    'pct_allout':
-        (row.readNullable<int>('intensity_z5_pct') ??
-                SessionInputResolver.defaultZ5Pct) /
-            100.0,
-    'tss': row.readNullable<double>('tss'),
-    'activity_id': row.read<String>('id'),
-  };
+  return [
+    {
+      'sport': sport,
+      'duration_hr': durationMinutes / 60.0,
+      // Same default distribution the display resolves a zoneless session with
+      // (RULED 2026-08-22) — shared so the two cannot drift apart again.
+      'pct_conversational': pctConversational,
+      'pct_tempo': pctTempo,
+      'pct_allout': pctAllout,
+      'tss': row.readNullable<double>('tss'),
+      'activity_id': row.read<String>('id'),
+    },
+  ];
+}
+
+/// Parses the row's `brick_metadata` JSON into priceable legs; empty on any
+/// absent, malformed, or segment-less metadata so the caller can fall back to
+/// single-session pricing instead of dropping the workout.
+List<BrickSessionLeg> _brickLegsFromRow(QueryRow row) {
+  final raw = row.readNullable<String>('brick_metadata');
+  if (raw == null || raw.isEmpty) return const [];
+  try {
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map<String, dynamic>) return const [];
+    return BrickMetadata.fromJson(decoded).sessionLegs;
+  } on FormatException {
+    return const [];
+  }
 }
 
 Map<String, dynamic> _contextFromActivityRows(List<QueryRow> rows) {
