@@ -58,6 +58,58 @@ const _pinAnywayKey = ValueKey('formula_kit.pin_conflict_pin_anyway');
 const _labelKey = ValueKey('formula_kit.pin_conflict_label');
 const _labelHeaderKey = ValueKey('formula_kit.pin_conflict_label_header');
 
+/// The nine allergen chips in the More-filters sheet, by `Allergy.dbValue`.
+const _allergenDbValues = <String>[
+  'dairy', 'eggs', 'fish', 'gluten', 'peanuts',
+  'sesame', 'shellfish', 'soy', 'tree_nuts',
+];
+
+/// Whether the pin toggle under [toggle] currently reads as PINNED. Asks the
+/// card under test directly instead of counting labels across the screen: the
+/// library is a LAZY list, so collapsing an expanded warning shortens the card
+/// and pulls further items into the viewport — a screen-wide label count then
+/// changes from layout alone, with nothing pinned. (That false signal cost
+/// several runs on 2026-09-04.)
+Future<bool> _toggleIsPinned(
+  PatrolIntegrationTester $,
+  Finder toggle,
+) async {
+  // The card must be BUILT to be read: collapsing an expanded warning shrinks
+  // it and the lazy list can drop it out of the viewport entirely, so a plain
+  // read throws "Bad state: No element". Scroll it back in first, trying both
+  // directions because the collapse may move it either way.
+  if (toggle.evaluate().isEmpty) {
+    for (final direction in [AxisDirection.up, AxisDirection.down]) {
+      try {
+        await $.scrollUntilVisible(
+          finder: toggle,
+          scrollDirection: direction,
+          maxScrolls: 15,
+          settleBetweenScrollsTimeout: const Duration(seconds: 1),
+        );
+        break;
+      } on Exception {
+        continue;
+      }
+    }
+  }
+  final icon = find.descendant(
+    of: toggle,
+    matching: find.byWidgetPredicate(
+      (w) => w.runtimeType.toString() == '_PinIconButton',
+    ),
+  );
+  return ($.tester.widget(icon.first) as dynamic).isPinned as bool;
+}
+
+/// Whether a More-filters chip is currently selected. `_Chip` is private to
+/// `more_filters_sheet.dart`, so its `selected` field is read dynamically —
+/// the instance is reachable even though the type is not.
+bool _chipIsSelected(PatrolIntegrationTester $, Finder chip) {
+  final widget = $.tester.widget(chip) as dynamic;
+  return widget.selected as bool;
+}
+
 void main() {
   patrolTest(
     'an allergy-conflicted pin warns first, is honored, then labels and unpins',
@@ -100,6 +152,37 @@ void main() {
         const ValueKey('formula_kit.library_screen'),
       ).waitUntilVisible(timeout: const Duration(seconds: 30));
 
+      // ---- 1b. Clear the profile-seeded allergen filters ---------------
+      // WITHOUT THIS THE FLOW IS VACUOUS. The library pre-selects the
+      // athlete's profile allergens under "HIDE FORMULAS WITH", so on any
+      // account that actually HAS an allergy every conflicting formula is
+      // filtered out of the list before the walk begins — no thumbtack can
+      // ever raise FP-4a, the loop below finds nothing, and the test
+      // self-skips while reporting green. (Observed 2026-09-04: with gluten
+      // on file the Before list showed "15 / 29".)
+      //
+      // So open More filters, deselect every active allergen chip, and apply.
+      // This is a VIEW filter only — it does not touch the stored profile.
+      await $(
+        const ValueKey('formula_kit.more_filters_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+      await $(
+        const ValueKey('formula_kit.more_filters_sheet'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 20));
+      for (final allergen in _allergenDbValues) {
+        final chip = find.byKey(ValueKey('formula_kit.more_filters.allergy.$allergen'));
+        if (chip.evaluate().isEmpty) continue;
+        final selected = _chipIsSelected($, chip);
+        if (selected) {
+          await $(chip).tap(settlePolicy: SettlePolicy.noSettle);
+          await $.pump(const Duration(milliseconds: 200));
+        }
+      }
+      await $(
+        const ValueKey('formula_kit.more_filters.apply'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 600));
+
       // ---- 2. Precondition: a Before formula that conflicts -------------
       try {
         await $(
@@ -118,11 +201,29 @@ void main() {
       final toggles = _beforePinToggles();
       final toggleCount = toggles.evaluate().length;
       var conflictIndex = -1;
+      // The conflicting card's OWN key. Index-based identity is unusable here:
+      // the list is lazy AND re-sorts when a formula is pinned (pinned cards
+      // move up into "Your Formulas"), so `toggles.at(i)` stops pointing at the
+      // card it found. That mis-identification is what made the post-decision
+      // assertions read a different, genuinely-pinned card and report FP-4a as
+      // broken when it is not (verified by hand on device 2026-09-04).
+      ValueKey<String>? conflictToggleKey;
       for (var i = 0; i < toggleCount && conflictIndex < 0; i++) {
         await $(toggles.at(i)).tap(settlePolicy: SettlePolicy.noSettle);
         await $.pump(const Duration(milliseconds: 500));
-        if (find.byKey(_warningKey).evaluate().isNotEmpty) {
+        // Match the ALLERGY variant specifically. `_warningKey` is the shared
+        // root of both variants, but `PinConflictWarning.diet` deliberately
+        // passes `onChooseAnother = null` and renders NO action pair (FP-4a:
+        // a diet conflict is one soft line). Keying off the root alone made
+        // this flow walk into a diet conflict and then hunt for a button that
+        // variant never renders.
+        final isAllergyVariant =
+            find.byKey(_warningKey).evaluate().isNotEmpty &&
+            find.byKey(_chooseAnotherKey).evaluate().isNotEmpty;
+        if (isAllergyVariant) {
           conflictIndex = i;
+          conflictToggleKey =
+              toggles.evaluate().elementAt(i).widget.key as ValueKey<String>;
           break;
         }
         // Pinned a clean formula — unpin it again so the account is unchanged.
@@ -131,6 +232,18 @@ void main() {
       }
 
       if (conflictIndex < 0) {
+        // Loud on purpose: patrol's summary reports a skipped test as
+        // "Successful: 1 / Skipped: 0", so a silent skip is indistinguishable
+        // from a real pass. This flow WAS passing vacuously (2026-09-04)
+        // because the library hid every conflicting formula behind the
+        // profile-seeded allergen filter — cleared in step 1b above.
+        // ignore: avoid_print
+        print(
+          'FLOW-VACUOUS: formula_pin_conflict asserted NOTHING — no Before '
+          'formula conflicts with this account. FP-4a/FP-4b were not '
+          'exercised. Precondition: an allergy on file that a library '
+          'formula contains.',
+        );
         markTestSkipped(
           'No Before formula conflicts with this account\'s profile, so the '
           'FP-4a decision moment cannot be reached. Precondition: the account '
@@ -146,13 +259,24 @@ void main() {
         reason: 'FP-4a offers the safer action first',
       );
       expect(find.byKey(_pinAnywayKey), findsOneWidget);
+
+      final conflictToggle = find.byKey(conflictToggleKey!);
       expect(
-        find.byKey(_labelKey),
-        findsNothing,
-        reason: 'nothing is pinned yet, so no honored-pin label exists',
+        await _toggleIsPinned($, conflictToggle),
+        isFalse,
+        reason: 'the decision moment is open; nothing is pinned yet',
       );
 
       // "Choose another" dismisses WITHOUT pinning.
+      // The warning renders inline in whichever card the hunt landed on, which
+      // may be anywhere in a long list — ABOVE or below the current viewport.
+      // `scrollTo` only ever drags one way and cannot come back up, so use
+      // `ensureVisible`, which scrolls the enclosing Scrollable in whichever
+      // direction the target actually needs. (Verified by hand on device
+      // 2026-09-04: the FP-4a pair renders and is tappable — the earlier
+      // failure here was this scroll, not the button.)
+      await $.tester.ensureVisible(find.byKey(_chooseAnotherKey));
+      await $.pump(const Duration(milliseconds: 300));
       await $(_chooseAnotherKey).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
       expect(
@@ -161,24 +285,44 @@ void main() {
         reason: 'Choose another closes the decision moment',
       );
       expect(
-        find.byKey(_labelKey),
-        findsNothing,
+        await _toggleIsPinned($, conflictToggle),
+        isFalse,
         reason: 'FP-4a: Choose another must NOT pin the formula',
       );
 
       // ---- 4. Pin anyway → §1a honored, FP-4b label appears -------------
-      await $(toggles.at(conflictIndex)).tap(settlePolicy: SettlePolicy.noSettle);
+      await $(conflictToggle).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 500));
+      await $.tester.ensureVisible(find.byKey(_pinAnywayKey));
+      await $.pump(const Duration(milliseconds: 300));
       await $(_pinAnywayKey).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 800));
 
-      await $(_labelKey).waitUntilVisible(timeout: const Duration(seconds: 20));
+      // FP-4b: once pinned, the card MOVES into the "Your Formulas" section at
+      // the top of the list, so the label is very likely off-screen from where
+      // the pin was tapped. Wait for it to EXIST, then scroll it into view —
+      // waitUntilVisible alone cannot scroll and will time out on a label that
+      // is present and correct. (Confirmed by hand on device 2026-09-04:
+      // "Pinned despite your gluten allergy".)
+      // The list is LAZY and the pinned card moves UP into "Your Formulas",
+      // so after pinning from a card far down the library the label is not
+      // merely off-screen — it is not built at all, and neither
+      // `waitUntilExists` nor `ensureVisible` can see it. `scrollUntilVisible`
+      // re-evaluates the finder as it drags, so it can reach a lazily-built
+      // widget; AxisDirection.up drags downward, revealing content ABOVE.
+      await $.scrollUntilVisible(
+        finder: find.byKey(_labelKey),
+        scrollDirection: AxisDirection.up,
+        maxScrolls: 20,
+        settleBetweenScrollsTimeout: const Duration(seconds: 1),
+      );
+      await $.pump(const Duration(milliseconds: 300));
       expect(
         find.byKey(_labelKey),
         findsWidgets,
         reason:
             '§1a labeled override: the pin is HONORED and the conflict is '
-            'disclosed — never silently dropped, never silently kept',
+            'DISCLOSED — never silently dropped, never silently kept',
       );
 
       // ---- 5. FP-4b: expand → Unpin (also the cleanup) ------------------
