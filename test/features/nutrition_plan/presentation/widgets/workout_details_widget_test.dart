@@ -151,6 +151,58 @@ void main() {
       expect(changedPace, closeTo(8.5, 0.01));
     });
 
+    testWidgets(
+        'pace field formats bare digits into M:SS and commits the pace '
+        '(numeric keypad has no colon — bug 2026-09-04)', (tester) async {
+      final paceChanges = <double>[];
+      await tester.pumpWidget(build(
+        onPaceChanged: paceChanges.add,
+      ));
+
+      // The mm:ss field must NOT ask for the decimal pad — plain digits.
+      expect(
+        tester.widget<TextField>(paceField).keyboardType,
+        TextInputType.number,
+      );
+
+      // Keystroke by keystroke: 9 → 93 → 930 renders "9:30".
+      await tester.enterText(paceField, '9');
+      await tester.enterText(paceField, '93');
+      await tester.enterText(paceField, '930');
+      await tester.pump();
+      expect(tester.widget<TextField>(paceField).controller?.text, '9:30');
+      expect(paceChanges.last, closeTo(9.5, 0.01));
+
+      // Four digits split as MM:SS.
+      await tester.enterText(paceField, '1045');
+      await tester.pump();
+      expect(tester.widget<TextField>(paceField).controller?.text, '10:45');
+      expect(paceChanges.last, closeTo(10.75, 0.01));
+    });
+
+    testWidgets('swim pace field shares the colon-free digit entry', (
+      tester,
+    ) async {
+      final paceChanges = <double>[];
+      await tester.pumpWidget(build(
+        sport: ActivityType.swimming,
+        distance: 3000,
+        distanceUnit: 'meters',
+        pace: null,
+        paceUnit: 'min/100m',
+        onPaceChanged: paceChanges.add,
+      ));
+
+      expect(
+        tester.widget<TextField>(paceField).keyboardType,
+        TextInputType.number,
+      );
+      await tester.enterText(paceField, '145');
+      await tester.pump();
+      expect(tester.widget<TextField>(paceField).controller?.text, '1:45');
+      expect(paceChanges.last, closeTo(1.75, 0.01));
+    });
+
     testWidgets('cycling speed field accepts decimal input', (tester) async {
       double? changedPace;
       await tester.pumpWidget(build(
@@ -243,6 +295,83 @@ void main() {
       );
       await tester.pump();
       expect(paceChanges, [9.0]);
+    });
+
+    testWidgets(
+        'tapping the chip TEXT (not the pencil) applies the usual pace, '
+        'and the tap target is at least 44px tall (bug 2026-09-04)', (
+      tester,
+    ) async {
+      final paceChanges = <double>[];
+      await tester.pumpWidget(build(
+        mode: DurationPaceMode.byDuration,
+        onPaceChanged: paceChanges.add,
+      ));
+
+      // Tap dead-center on the label text — nowhere near the pencil icon.
+      await tester.tap(find.text('your usual · 9:00 /mi'));
+      await tester.pump();
+      expect(paceChanges, [9.0]);
+
+      // The gesture surface, not the ~21px pill, defines the hit target.
+      final chipSize = tester.getSize(
+        find.byKey(const ValueKey('activity_create.usual_pace_chip')),
+      );
+      expect(chipSize.height, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets(
+        'applying the chip while the pace field is FOCUSED updates the '
+        'visible text, not just the committed value (bug 2026-09-04: field '
+        'kept showing 7:45 after the chip set 9:00)', (tester) async {
+      // Stateful harness: the parent feeds committed pace back in, exactly
+      // like the real screen.
+      double pace = 9.0;
+      await tester.pumpWidget(StatefulBuilder(
+        builder: (context, setState) => MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: WorkoutDetailsWidget(
+                sport: ActivityType.running,
+                distance: 12.0,
+                distanceUnit: 'mi',
+                mode: DurationPaceMode.byPace,
+                estimatedDuration: const Duration(hours: 1, minutes: 48),
+                pace: pace,
+                paceUnit: 'min/mi',
+                enabled: true,
+                onDistanceChanged: (_) {},
+                onModeChanged: (_) {},
+                onPaceChanged: (v) => setState(() => pace = v),
+                onDurationChanged: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ));
+
+      // Type a pace — field is focused and stays focused.
+      await tester.enterText(paceField, '745');
+      await tester.pump();
+      expect(tester.widget<TextField>(paceField).controller?.text, '7:45');
+      expect(pace, closeTo(7.75, 0.01));
+
+      // Chip applies the usual pace while focus is still on the field.
+      await tester.tap(find.text('your usual · 9:00 /mi'));
+      await tester.pump();
+      expect(pace, 9.0);
+      expect(
+        tester.widget<TextField>(paceField).controller?.text,
+        '9:00',
+        reason: 'the display must follow an external set even when focused',
+      );
+
+      // And live typing is still not clobbered: "8" commits 8.0 but the
+      // text must stay "8" mid-entry, not snap to "8:00".
+      await tester.enterText(paceField, '8');
+      await tester.pump();
+      expect(pace, 8.0);
+      expect(tester.widget<TextField>(paceField).controller?.text, '8');
     });
 
     testWidgets('a saved usualPace overrides the sport base', (tester) async {

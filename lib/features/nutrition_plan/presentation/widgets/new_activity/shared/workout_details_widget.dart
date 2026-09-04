@@ -186,6 +186,38 @@ class WorkoutDetailsWidget extends StatelessWidget {
     if (mode != side) onModeChanged(side);
   }
 
+  /// The visible `your usual · 9:00 /mi ✏️` pill — visuals only; the tap
+  /// surface wrapping it in [build] is what handles the gesture.
+  Widget _buildUsualPacePill(bool isDark) {
+    final chipColor =
+        isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.electrolyte.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.electrolyte.withValues(alpha: 0.6),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'your usual · ${_formatPaceValue(_usual)} $_unitLabel',
+            overflow: TextOverflow.ellipsis,
+            style: AppTextStyles.smallLabel.copyWith(
+              fontSize: 11,
+              color: chipColor,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Icon(Icons.edit, size: 10, color: chipColor),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -252,53 +284,32 @@ class WorkoutDetailsWidget extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: AppSpacing.sm),
-
-        // `your usual · 9:00 /mi` chip — tapping applies the usual pace.
+        // `your usual · 9:00 /mi` chip — tapping ANYWHERE on it applies the
+        // usual pace. The pill itself is ~21px tall, so the gesture surface
+        // is opaque and vertically padded out to a ≥44px hit target (the
+        // extra area is invisible; it replaces the old 8px gaps above/below,
+        // so the pill barely moves) — bug 2026-09-04: on device only precise
+        // taps (aimed at the pencil) landed inside the bare pill.
         Align(
           alignment: Alignment.centerLeft,
           child: GestureDetector(
             key: const ValueKey('activity_create.usual_pace_chip'),
+            behavior: HitTestBehavior.opaque,
             onTap: enabled ? _applyUsual : null,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: AppColors.electrolyte.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppColors.electrolyte.withValues(alpha: 0.6),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'your usual · ${_formatPaceValue(_usual)} $_unitLabel',
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.smallLabel.copyWith(
-                      fontSize: 11,
-                      color: isDark
-                          ? AppColors.electrolyte
-                          : AppColors.electrolyteDark,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.edit,
-                    size: 10,
-                    color: isDark
-                        ? AppColors.electrolyte
-                        : AppColors.electrolyteDark,
-                  ),
+                  _buildUsualPacePill(isDark),
                 ],
               ),
             ),
           ),
         ),
-
         // F-27 guard: absurd pace called out honestly, with a one-tap fix.
         if (_guardActive && pace != null) ...[
-          const SizedBox(height: AppSpacing.sm),
           Column(
             key: const ValueKey('activity_create.pace_guard'),
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -500,6 +511,47 @@ TextStyle _linkedTextStyle({required bool held, required bool guardActive}) {
   );
 }
 
+/// Colon-free `M:SS` entry (bug 2026-09-04): the iOS numeric keypad has no
+/// ':' key, so the athlete types digits only and the formatter places the
+/// colon before the last two — 9 3 0 → `9:30`, 1 0 4 5 → `10:45`. Pasted
+/// `9:30` collapses to the same digits and reformats identically, so the
+/// blur-parse (`_PaceHalfState._parse`) semantics are unchanged. Presentation
+/// concern only — no pace math lives here.
+class _MmSsInputFormatter extends TextInputFormatter {
+  static final _nonDigit = RegExp(r'\D');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var digits = newValue.text.replaceAll(_nonDigit, '');
+    // Backspacing over the colon alone would otherwise reformat straight
+    // back to the same text; treat it as deleting the digit in front of it.
+    if (newValue.text.length < oldValue.text.length &&
+        digits == oldValue.text.replaceAll(_nonDigit, '') &&
+        digits.isNotEmpty) {
+      final colonIndex = oldValue.text.indexOf(':');
+      if (colonIndex > 0) {
+        digits = digits.replaceRange(colonIndex - 1, colonIndex, '');
+      }
+    }
+    // 2-digit minutes + 2-digit seconds is the widest parseable pace.
+    if (digits.length > 4) digits = digits.substring(0, 4);
+    final String formatted;
+    if (digits.length <= 2) {
+      formatted = digits;
+    } else {
+      final split = digits.length - 2;
+      formatted = '${digits.substring(0, split)}:${digits.substring(split)}';
+    }
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 /// Left half: `Avg Pace` (`Avg Speed` for cycling) — a single pill field with
 /// the trailing unit. Run/swim render `M:SS`; bike a decimal speed.
 class _PaceHalf extends StatefulWidget {
@@ -578,12 +630,21 @@ class _PaceHalfState extends State<_PaceHalf> {
   @override
   void didUpdateWidget(_PaceHalf oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.pace != widget.pace && !_focusNode.hasFocus) {
-      _isSyncingText = true;
-      _controller.text = _format(widget.pace);
-      _lastText = _controller.text;
-      _isSyncingText = false;
+    if (oldWidget.pace == widget.pace) return;
+    // While the field has focus, a pace change is usually this field's own
+    // live commit (typing "9" commits 9.0) — rewriting the text to "9:00"
+    // mid-keystroke would clobber the entry. But an EXTERNAL set (the
+    // `your usual` chip) must show through even when focused: if the current
+    // text already parses to the new value it was our own commit, otherwise
+    // the change came from outside and the display must follow it
+    // (bug 2026-09-04: chip applied 9:00 while the field kept showing 7:45).
+    if (_focusNode.hasFocus && _parse(_controller.text) == widget.pace) {
+      return;
     }
+    _isSyncingText = true;
+    _controller.text = _format(widget.pace);
+    _lastText = _controller.text;
+    _isSyncingText = false;
   }
 
   @override
@@ -638,9 +699,12 @@ class _PaceHalfState extends State<_PaceHalf> {
                   controller: _controller,
                   focusNode: _focusNode,
                   enabled: widget.enabled,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  // iOS numeric keypads carry no ':' — mm:ss paces take a
+                  // plain digits pad and let the formatter place the colon
+                  // (bug 2026-09-04).
+                  keyboardType: widget.isSpeed
+                      ? const TextInputType.numberWithOptions(decimal: true)
+                      : TextInputType.number,
                   textInputAction: TextInputAction.done,
                   textAlign: TextAlign.left,
                   style: _linkedTextStyle(
@@ -663,11 +727,10 @@ class _PaceHalfState extends State<_PaceHalf> {
                     ),
                   ),
                   inputFormatters: [
-                    FilteringTextInputFormatter.allow(
-                      widget.isSpeed
-                          ? RegExp(r'[\d.]')
-                          : RegExp(r'[\d:]'),
-                    ),
+                    if (widget.isSpeed)
+                      FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))
+                    else
+                      _MmSsInputFormatter(),
                   ],
                 ),
               ),
