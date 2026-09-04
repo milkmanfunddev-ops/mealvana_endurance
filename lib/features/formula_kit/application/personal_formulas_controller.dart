@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../auth/data/user_repository.dart';
 import '../data/personal_formulas_repository.dart';
+import 'component_conflict_hydration.dart';
 import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
 
@@ -45,7 +46,16 @@ class PersonalFormulasController extends _$PersonalFormulasController {
       await repo.syncFromRemote(userId);
     }
 
-    return repo.getFormulasForUser(userId);
+    final formulas = await repo.getFormulasForUser(userId);
+    // FP-4c/FP-8: the cards and editor evaluate conflicts from component
+    // metadata; refresh it from the catalog so pre-fix rows (no keys, or
+    // stale empty snapshots) label correctly.
+    return [
+      for (final f in formulas)
+        f.copyWith(
+          components: await hydrateComponentConflictMetadata(ref, f.components),
+        ),
+    ];
   }
 
   /// Personal formulas for [phase] from the loaded state (newest-first).

@@ -71,7 +71,9 @@ class PinConflictWarning extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.dragonfruit.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.dragonfruit.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: AppColors.dragonfruit.withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,32 +99,43 @@ class PinConflictWarning extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              // R-01 option 1: the safe default is the FILLED primary…
-              // 44 is the floor: the buttons' 16px/1.2 label + their 12pt
-              // vertical padding clip below it (38 shore the descenders off).
-              Expanded(
-                child: KylePrimaryButton(
-                  key: const ValueKey(
-                    'formula_kit.pin_conflict_choose_another',
-                  ),
-                  text: 'Choose another',
-                  height: 44,
-                  onPressed: onChooseAnother,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              // …and the pin stays one tap away as the OUTLINE.
-              Expanded(
-                child: KyleSecondaryButton(
-                  key: const ValueKey('formula_kit.pin_conflict_pin_anyway'),
-                  text: 'Pin anyway',
-                  height: 44,
-                  onPressed: onPinAnyway,
-                ),
-              ),
-            ],
+          // R-01 option 1: the safe default is the FILLED primary; the pin
+          // stays one tap away as the OUTLINE. 44 is the height floor: the
+          // 16px/1.2 label + 12pt vertical padding clip below it. Inside a
+          // narrow mount (library cards) the 50/50 row ellipsizes "Choose
+          // another", so the pair stacks — labels are never truncated.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final chooseAnother = KylePrimaryButton(
+                key: const ValueKey('formula_kit.pin_conflict_choose_another'),
+                text: 'Choose another',
+                height: 44,
+                onPressed: onChooseAnother,
+              );
+              final pinAnyway = KyleSecondaryButton(
+                key: const ValueKey('formula_kit.pin_conflict_pin_anyway'),
+                text: 'Pin anyway',
+                height: 44,
+                onPressed: onPinAnyway,
+              );
+              if (constraints.maxWidth < 360) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    chooseAnother,
+                    const SizedBox(height: AppSpacing.xs),
+                    pinAnyway,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: chooseAnother),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: pinAnyway),
+                ],
+              );
+            },
           ),
         ],
       ),

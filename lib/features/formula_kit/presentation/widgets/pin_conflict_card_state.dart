@@ -103,8 +103,7 @@ mixin PinConflictCardState<T extends ConsumerStatefulWidget>
           c.kind == FormulaConflictKind.allergy)
         PinConflictWarning.allergy(
           allergenDisplay: c.allergenDisplay,
-          onChooseAnother: () =>
-              setState(() => _allergyWarningVisible = false),
+          onChooseAnother: () => setState(() => _allergyWarningVisible = false),
           onPinAnyway: _pinAnyway,
         ),
       if (_dietNoteVisible && c.kind == FormulaConflictKind.diet)

@@ -34,9 +34,7 @@ class DietarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final athlete = athleteAllergyDbValues
-        .map((a) => a.toLowerCase())
-        .toSet();
+    final athlete = athleteAllergyDbValues.map((a) => a.toLowerCase()).toSet();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -112,7 +110,10 @@ class _Chip extends StatelessWidget {
         horizontal: AppSpacing.sm,
         vertical: 4,
       ),
-      decoration: BoxDecoration(color: bg, borderRadius: AppRadius.circularRadius),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: AppRadius.circularRadius,
+      ),
       child: Text(
         label,
         style: AppTextStyles.bodyMedium.copyWith(

@@ -685,8 +685,9 @@ class FormulaLibraryController extends _$FormulaLibraryController {
         // ruled save-time disclosure can never fire on a "Make this mine"
         // draft (Xuan on-device 2026-09-03: dairy fork showed no warning).
         FormulaMacros.kAllergens: _decodeStringArray(tf?.allergens ?? '[]'),
-        FormulaMacros.kExcludedDiets:
-            _decodeStringArray(tf?.excludedDiets ?? '[]'),
+        FormulaMacros.kExcludedDiets: _decodeStringArray(
+          tf?.excludedDiets ?? '[]',
+        ),
       });
     }
     return components;

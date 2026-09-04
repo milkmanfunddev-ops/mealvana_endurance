@@ -73,14 +73,24 @@ void main() {
             FormulaMacros.kFoodName: 'Applesauce',
             FormulaMacros.kQuantity: 1.0,
           },
+          // Pre-fix Add Food snapshot: keys PRESENT but stale-empty — the
+          // catalog must still win (an empty snapshot is not trustworthy).
+          {
+            FormulaMacros.kFoodId: 'tf-cottage-cheese',
+            FormulaMacros.kFoodName: 'Cottage Cheese (stale)',
+            FormulaMacros.kQuantity: 0.5,
+            FormulaMacros.kAllergens: const <String>[],
+            FormulaMacros.kExcludedDiets: const <String>[],
+          },
         ],
         createdAt: now,
         updatedAt: now,
       );
 
       final personalRepo = _MockPersonalFormulasRepository();
-      when(() => personalRepo.getById('pf-1'))
-          .thenAnswer((_) async => persisted);
+      when(
+        () => personalRepo.getById('pf-1'),
+      ).thenAnswer((_) async => persisted);
 
       final cottage = _MockTemplateFoodEntry();
       when(() => cottage.id).thenReturn('tf-cottage-cheese');
@@ -91,8 +101,9 @@ void main() {
       when(() => applesauce.allergens).thenReturn('[]');
       when(() => applesauce.excludedDiets).thenReturn('[]');
       final templateRepo = _MockTemplateFoodsRepository();
-      when(() => templateRepo.getAllTemplateFoods())
-          .thenAnswer((_) async => [cottage, applesauce]);
+      when(
+        () => templateRepo.getAllTemplateFoods(),
+      ).thenAnswer((_) async => [cottage, applesauce]);
 
       final userRepo = _MockUserRepository();
       when(() => userRepo.getCurrentUser()).thenAnswer((_) async => null);
@@ -122,11 +133,13 @@ void main() {
       expect(
         draft.components.first[FormulaMacros.kAllergens],
         ['dairy'],
-        reason: 'the editor must hydrate missing conflict metadata',
+        reason: 'the editor must hydrate conflict metadata from the catalog',
       );
+      expect(draft.components.first[FormulaMacros.kExcludedDiets], ['vegan']);
       expect(
-        draft.components.first[FormulaMacros.kExcludedDiets],
-        ['vegan'],
+        draft.components[2][FormulaMacros.kAllergens],
+        ['dairy'],
+        reason: 'a stale empty snapshot must be refreshed from the catalog',
       );
 
       // …and with the metadata present, the FP-8 disclosure's detection
@@ -135,8 +148,11 @@ void main() {
         draft.components,
         const AthleteConflictProfile(allergyDbValues: ['dairy']),
       );
-      expect(hit, isNotNull,
-          reason: 'a dairy fork must disclose for a dairy allergy');
+      expect(
+        hit,
+        isNotNull,
+        reason: 'a dairy fork must disclose for a dairy allergy',
+      );
       expect(hit!.foodName, 'Cottage Cheese');
       expect(hit.conflict.allergenDbValue, 'dairy');
     },

@@ -73,9 +73,7 @@ FormulaProfileConflict? evaluateFormulaProfileConflict({
 }) {
   // §1a kernel is the authority on whether an allergy label is required.
   if (pinConflictLabelRequired(templateAllergens, profile.allergyDbValues)) {
-    final athlete = profile.allergyDbValues
-        .map((a) => a.toLowerCase())
-        .toSet();
+    final athlete = profile.allergyDbValues.map((a) => a.toLowerCase()).toSet();
     final matched = templateAllergens.firstWhere(
       (a) => athlete.contains(a.toLowerCase()),
     );

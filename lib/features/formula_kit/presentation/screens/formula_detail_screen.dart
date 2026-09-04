@@ -101,20 +101,26 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
     try {
       switch (widget.phase) {
         case FormulaPhase.before:
-          final f = state.beforeFormulas
-              .cast<BeforeFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
-          if (f != null) await notifier.toggleBefore(formula: f, source: 'detail');
+          final f = state.beforeFormulas.cast<BeforeFormulaView?>().firstWhere(
+            (f) => f?.id == widget.id,
+            orElse: () => null,
+          );
+          if (f != null)
+            await notifier.toggleBefore(formula: f, source: 'detail');
         case FormulaPhase.during:
-          final f = state.duringFormulas
-              .cast<DuringFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
-          if (f != null) await notifier.toggleDuring(formula: f, source: 'detail');
+          final f = state.duringFormulas.cast<DuringFormulaView?>().firstWhere(
+            (f) => f?.id == widget.id,
+            orElse: () => null,
+          );
+          if (f != null)
+            await notifier.toggleDuring(formula: f, source: 'detail');
         case FormulaPhase.after:
-          final f = state.afterFormulas
-              .cast<AfterFormulaView?>()
-              .firstWhere((f) => f?.id == widget.id, orElse: () => null);
-          if (f != null) await notifier.toggleAfter(formula: f, source: 'detail');
+          final f = state.afterFormulas.cast<AfterFormulaView?>().firstWhere(
+            (f) => f?.id == widget.id,
+            orElse: () => null,
+          );
+          if (f != null)
+            await notifier.toggleAfter(formula: f, source: 'detail');
       }
     } catch (e) {
       if (mounted) {
@@ -194,8 +200,7 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
                       onPinAnyway: _completeConflictedPin,
                     ),
                   ),
-                if (_showDietNote &&
-                    conflict.kind == FormulaConflictKind.diet)
+                if (_showDietNote && conflict.kind == FormulaConflictKind.diet)
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
