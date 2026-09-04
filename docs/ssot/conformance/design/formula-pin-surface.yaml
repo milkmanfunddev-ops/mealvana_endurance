@@ -51,10 +51,18 @@ contracts:
       athlete HAS renders personalized and emphasized ("Contains gluten — your
       allergy", dragonfruit); one they do NOT have renders neutral ("Contains
       peanut"); diet exclusions render neutral ("Not Keto").
+  - id: FP-4c
+    check: >
+      A personal formula whose components conflict with the profile carries a
+      persistent compact dragonfruit line on its library card (S-04 register)
+      and, when pinned, the FP-4b conflict dot on its glyph — not gated on
+      pinning (personal formulas are standing auto-includes). RULED Xuan
+      on-device 2026-09-03 evening.
   - id: FP-8
     check: >
       New-formula authoring: a component conflicting with the profile renders
-      the save-time disclosure above Save — allergy: the full note naming the
+      the disclosure PINNED AT THE TOP of the authoring screen (AMENDED Xuan
+      on-device 2026-09-03 evening; previously above Save) — allergy: the full note naming the
       food and allergen, ending "You can still save — Mealvana will always
       include your own formulas."; diet: the softer one-liner. Save is NEVER
       disabled (disclose-never-block, §1a).  # includes the negative half:

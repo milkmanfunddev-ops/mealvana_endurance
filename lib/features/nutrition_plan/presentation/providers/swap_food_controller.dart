@@ -15,6 +15,8 @@ import '../../../auth/domain/user_preferences.dart';
 import '../../../../features/coach_mode/presentation/providers/coach_activity_detail_controller.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../../features/user_foods/data/user_foods_repository.dart';
+import '../../../onboarding/domain/allergy.dart';
+import '../../../onboarding/domain/dietary_preference.dart';
 
 part 'swap_food_controller.g.dart';
 
@@ -364,6 +366,13 @@ class SwapFoodController extends _$SwapFoodController {
       requiresPreparation: entry.requiresPreparation as bool? ?? false,
       maxServingsBefore: entry.maxServingsBefore as int?,
       maxServingsDuring: entry.maxServingsDuring as int?,
+      // FP-8: without these, a formula component added via Add Food carries
+      // no conflict metadata and the save-time disclosure can never fire
+      // (Xuan on-device 2026-09-03: from-scratch dairy snack showed nothing).
+      allergens: Allergy.fromDbArray(entry.allergens as String?),
+      excludedDiets: DietaryPreference.fromDbArray(
+        entry.excludedDiets as String?,
+      ),
     );
   }
 

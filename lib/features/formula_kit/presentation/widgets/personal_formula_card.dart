@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+
+import '../../application/athlete_conflict_profile_provider.dart';
+import '../../domain/formula_profile_conflict.dart';
 
 import '../../domain/after_filter_options.dart' show TravelFriendliness;
 import '../../domain/during_filter_options.dart' show DuringDuration;
@@ -11,7 +15,7 @@ import 'pin_toggle.dart';
 /// List card for a user-authored personal formula. Mirrors [BeforeFormulaCard]
 /// — title, component subtitle, macro pill row — with a pin toggle and a
 /// "Yours" provenance pill.
-class PersonalFormulaCard extends StatelessWidget {
+class PersonalFormulaCard extends ConsumerWidget {
   const PersonalFormulaCard({
     super.key,
     required this.formula,
@@ -58,8 +62,20 @@ class PersonalFormulaCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
+    // Personal formulas are standing auto-includes ("Mealvana will always
+    // include your own formulas"), so a profile conflict is labeled on the
+    // card itself, not only at the pin/save moments (Xuan, 2026-09-03
+    // evening; S-04 copy register; intake
+    // 2026-09-03-personal-formula-conflict-labeling.md).
+    final conflict = ref
+        .watch(athleteConflictProfileProvider)
+        .maybeWhen(
+          data: (profile) =>
+              firstComponentConflict(formula.components, profile)?.conflict,
+          orElse: () => null,
+        );
     final badges = _scopeBadges();
     final componentNames = formula.components
         .map(FormulaMacros.nameOf)
@@ -104,9 +120,39 @@ class PersonalFormulaCard extends StatelessWidget {
                     formulaId: formula.id,
                     phase: formula.phase,
                     source: 'card',
+                    conflict: conflict,
                   ),
                 ],
               ),
+              if (conflict != null) ...[
+                const SizedBox(height: AppSpacing.xs),
+                Row(
+                  key: ValueKey(
+                    'formula_kit.personal_card_conflict_${formula.id}',
+                  ),
+                  children: [
+                    const Icon(
+                      Icons.warning_amber_rounded,
+                      size: 14,
+                      color: AppColors.dragonfruit,
+                    ),
+                    const SizedBox(width: AppSpacing.xxs),
+                    Expanded(
+                      child: Text(
+                        conflict.kind == FormulaConflictKind.allergy
+                            ? 'Contains ${conflict.allergenDisplay} — '
+                                  'your allergy'
+                            : dietConflictNoteText(conflict.dietDisplay),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.dragonfruit,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               if (componentNames.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(

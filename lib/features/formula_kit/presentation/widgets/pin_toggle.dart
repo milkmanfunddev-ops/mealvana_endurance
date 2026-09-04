@@ -137,11 +137,16 @@ class PinTogglePersonalFormula extends ConsumerWidget {
     required this.formulaId,
     required this.phase,
     required this.source,
+    this.conflict,
   });
 
   final String formulaId;
   final FormulaPhase phase;
   final String source;
+
+  /// FP-4b: a pinned conflicting personal formula's glyph carries the
+  /// conflict dot, same as the system cards (Xuan, 2026-09-03 evening).
+  final FormulaProfileConflict? conflict;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -149,7 +154,7 @@ class PinTogglePersonalFormula extends ConsumerWidget {
       context: context,
       ref: ref,
       templateId: formulaId,
-      conflict: null,
+      conflict: conflict,
       onAllergyConflictPinAttempt: null,
       onDietConflictPinned: null,
       toggle: () => ref

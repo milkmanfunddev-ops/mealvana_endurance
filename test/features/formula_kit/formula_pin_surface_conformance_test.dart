@@ -17,8 +17,11 @@
 //           dragonfruit label; expanding shows the policy sentence + Keep
 //           pin / Unpin; a profile-allergy change NEVER auto-unpins
 //   FP-7  — detail DIETARY chips in human copy with the S-04 emphasis rule
-//   FP-8  — authoring save-time disclosure above Save, exact closing
-//           sentence; Save NEVER disabled (disclose-never-block, §1a)
+//   FP-4c — a conflicting personal formula's library card carries the
+//           persistent S-04 line, not gated on pinning (RULED 2026-09-03)
+//   FP-8  — authoring conflict disclosure PINNED AT THE TOP of the screen
+//           (AMENDED 2026-09-03 evening), exact closing sentence; Save
+//           NEVER disabled (disclose-never-block, §1a)
 //
 // Goldens (one PNG per manifest row, stored at goldens/<id>.png):
 //   fp_banner_collapsed_mixed · fp_banner_collapsed_none_applied ·
@@ -52,6 +55,8 @@ import 'package:mealvana_endurance/features/formula_kit/domain/formula_view.dart
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/screens/formula_editor_screen.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/before_formula_card.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/personal_formula.dart';
+import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/personal_formula_card.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/dietary_section.dart';
 import 'package:mealvana_endurance/features/formula_kit/presentation/widgets/pin_status_banner.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/plan_section.dart';
@@ -103,17 +108,16 @@ const _noPinForScope = PinDecision(
   pinSetSize: 0,
 );
 
-PinDecision _ephemeral({
-  List<SkippedPersonalFormula> skipped = const [],
-}) => PinDecision(
-  usedPin: true,
-  ephemeral: true,
-  pinnedTemplateId: 'tpl-system',
-  pinnedTemplateName: 'System Sports Drink',
-  fallthroughReason: null,
-  pinSetSize: 0,
-  skippedPersonalFormulas: skipped,
-);
+PinDecision _ephemeral({List<SkippedPersonalFormula> skipped = const []}) =>
+    PinDecision(
+      usedPin: true,
+      ephemeral: true,
+      pinnedTemplateId: 'tpl-system',
+      pinnedTemplateName: 'System Sports Drink',
+      fallthroughReason: null,
+      pinSetSize: 0,
+      skippedPersonalFormulas: skipped,
+    );
 
 BeforeSubPhase _sub(String type, {PinDecision? pin}) =>
     BeforeSubPhase(subPhaseType: type, foodItems: const [], pinDecision: pin);
@@ -173,8 +177,7 @@ class _StubEditorController extends FormulaEditorController {
   final FormulaDraft _draft;
 
   @override
-  FutureOr<FormulaDraft> build(String? formulaId, FormulaPhase phase) =>
-      _draft;
+  FutureOr<FormulaDraft> build(String? formulaId, FormulaPhase phase) => _draft;
 }
 
 // ── Harness ────────────────────────────────────────────────────────────────
@@ -191,10 +194,7 @@ Widget _app(
     home: Scaffold(
       body: scroll
           ? SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(17),
-                child: child,
-              ),
+              child: Padding(padding: const EdgeInsets.all(17), child: child),
             )
           : child,
     ),
@@ -302,7 +302,8 @@ void main() {
       expect(
         data.isOnboarding,
         isTrue,
-        reason: 'ephemeral is not the user\'s pin — banner stays in the '
+        reason:
+            'ephemeral is not the user\'s pin — banner stays in the '
             'discovery state',
       );
       expect(data.rows, isEmpty);
@@ -350,9 +351,7 @@ void main() {
         _duringSection(),
       ]);
       await tester.pumpWidget(
-        _app(
-          PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding),
-        ),
+        _app(PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding)),
       );
       await tester.tap(find.byKey(const ValueKey('pin_status_banner.header')));
       await tester.pumpAndSettle();
@@ -403,10 +402,7 @@ void main() {
       // The pin did NOT complete at the warning stage.
       final container = _containerOf(tester);
       expect(
-        container
-            .read(formulaPinControllerProvider)
-            .value!
-            .pinnedTemplateIds,
+        container.read(formulaPinControllerProvider).value!.pinnedTemplateIds,
         isEmpty,
       );
     });
@@ -432,10 +428,7 @@ void main() {
       expect(find.byKey(_warningKey), findsNothing);
       final container = _containerOf(tester);
       expect(
-        container
-            .read(formulaPinControllerProvider)
-            .value!
-            .pinnedTemplateIds,
+        container.read(formulaPinControllerProvider).value!.pinnedTemplateIds,
         isEmpty,
       );
 
@@ -447,10 +440,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(
-        container
-            .read(formulaPinControllerProvider)
-            .value!
-            .pinnedTemplateIds,
+        container.read(formulaPinControllerProvider).value!.pinnedTemplateIds,
         contains(formula.id),
       );
       expect(find.byKey(_warningKey), findsNothing);
@@ -474,16 +464,15 @@ void main() {
       expect(find.text('Doesn\'t match your keto preference.'), findsOneWidget);
       // No interrupting action pair.
       expect(find.byKey(_warningKey), findsNothing);
-      expect(find.widgetWithText(ElevatedButton, 'Choose another'),
-          findsNothing);
+      expect(
+        find.widgetWithText(ElevatedButton, 'Choose another'),
+        findsNothing,
+      );
       expect(find.widgetWithText(OutlinedButton, 'Pin anyway'), findsNothing);
       // The pin proceeded.
       final container = _containerOf(tester);
       expect(
-        container
-            .read(formulaPinControllerProvider)
-            .value!
-            .pinnedTemplateIds,
+        container.read(formulaPinControllerProvider).value!.pinnedTemplateIds,
         contains(formula.id),
       );
     });
@@ -546,10 +535,7 @@ void main() {
       expect(find.byKey(_labelKey), findsNothing);
       final container = _containerOf(tester);
       expect(
-        container
-            .read(formulaPinControllerProvider)
-            .value!
-            .pinnedTemplateIds,
+        container.read(formulaPinControllerProvider).value!.pinnedTemplateIds,
         contains(formula.id),
       );
 
@@ -563,10 +549,7 @@ void main() {
       expect(find.byKey(_labelKey), findsOneWidget);
       expect(find.text('Pinned despite your gluten allergy'), findsOneWidget);
       expect(
-        container
-            .read(formulaPinControllerProvider)
-            .value!
-            .pinnedTemplateIds,
+        container.read(formulaPinControllerProvider).value!.pinnedTemplateIds,
         contains(formula.id),
       );
     });
@@ -602,6 +585,71 @@ void main() {
       expect(diet.style?.color, isNot(AppColors.dragonfruit));
       expect(find.textContaining('gluten_free'), findsNothing);
       expect(find.textContaining('keto', findRichText: true), findsNothing);
+    });
+  });
+
+  group('FP-4c — personal-formula card conflict label (RULED 2026-09-03)', () {
+    PersonalFormula personal(List<String> allergens) => PersonalFormula(
+      id: 'pf-1',
+      userId: 'u-1',
+      name: 'Cottage Cheese + Applesauce',
+      provenance: FormulaProvenance.forkedFormula,
+      phase: FormulaPhase.before,
+      components: [
+        {
+          'food_id': 'tf-cc',
+          'food_name': 'Cottage Cheese',
+          'quantity': 1.0,
+          'allergens': allergens,
+          'excluded_diets': const <String>[],
+        },
+      ],
+      createdAt: DateTime(2026, 9, 3),
+      updatedAt: DateTime(2026, 9, 3),
+    );
+
+    Future<void> pumpCard(
+      WidgetTester tester, {
+      required PersonalFormula formula,
+      required AthleteConflictProfile profile,
+    }) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            athleteConflictProfileProvider.overrideWith((ref) async => profile),
+          ],
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: Scaffold(
+              body: PersonalFormulaCard(formula: formula, onTap: () {}),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('conflicting personal card carries the persistent S-04 line, '
+        'not gated on pinning', (tester) async {
+      await pumpCard(
+        tester,
+        formula: personal(const ['dairy']),
+        profile: const AthleteConflictProfile(allergyDbValues: ['dairy']),
+      );
+      expect(find.text('Contains dairy — your allergy'), findsOneWidget);
+    });
+
+    testWidgets('no conflict → no label (NEGATIVE)', (tester) async {
+      await pumpCard(
+        tester,
+        formula: personal(const []),
+        profile: const AthleteConflictProfile(allergyDbValues: ['dairy']),
+      );
+      expect(
+        find.byKey(const ValueKey('formula_kit.personal_card_conflict_pf-1')),
+        findsNothing,
+      );
     });
   });
 
@@ -682,6 +730,23 @@ void main() {
         findsOneWidget,
       );
 
+      // AMENDED (Xuan on-device, 2026-09-03 evening): the disclosure is
+      // pinned at the TOP of the authoring screen — above the Name field —
+      // not floating above Save.
+      final disclosureTop = tester
+          .getTopLeft(
+            find.byKey(const ValueKey('formula_kit.save_conflict_disclosure')),
+          )
+          .dy;
+      final nameFieldTop = tester
+          .getTopLeft(find.byKey(const ValueKey('formula_kit.editor_name')))
+          .dy;
+      expect(
+        disclosureTop,
+        lessThan(nameFieldTop),
+        reason: 'FP-8 amended: disclosure renders at the top of the screen',
+      );
+
       // Save is NEVER disabled by a conflict (disclose-never-block, §1a).
       final saveButton = tester.widget<ElevatedButton>(
         find.descendant(
@@ -749,9 +814,7 @@ void main() {
       final data = mixed();
       await golden(
         tester,
-        _app(
-          PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding),
-        ),
+        _app(PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding)),
         'fp_banner_collapsed_mixed',
         height: 220,
       );
@@ -764,9 +827,7 @@ void main() {
       ]);
       await golden(
         tester,
-        _app(
-          PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding),
-        ),
+        _app(PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding)),
         'fp_banner_collapsed_none_applied',
         height: 220,
       );
@@ -780,9 +841,7 @@ void main() {
       ]);
       await golden(
         tester,
-        _app(
-          PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding),
-        ),
+        _app(PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding)),
         'fp_banner_collapsed_invitation',
         height: 200,
       );
@@ -794,9 +853,7 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
-        _app(
-          PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding),
-        ),
+        _app(PinStatusBanner(rows: data.rows, isOnboarding: data.isOnboarding)),
       );
       await tester.tap(find.byKey(const ValueKey('pin_status_banner.header')));
       await tester.pumpAndSettle();

@@ -140,6 +140,13 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // FP-8 conflict disclosure — AMENDED (Xuan on-device,
+                    // 2026-09-03 evening): pinned at the TOP of the authoring
+                    // screen, matching the template detail's warning placement
+                    // (it previously floated above Save, where it overlapped
+                    // scroll content and read as detached). Save is never
+                    // disabled (§1a disclose-never-block).
+                    ..._saveConflictDisclosure(draft, atTop: true),
                     _Label('Name'),
                     const SizedBox(height: AppSpacing.xs),
                     TextField(
@@ -246,12 +253,6 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // FP-8 save-time conflict disclosure (formula-pin-surface,
-                    // RATIFIED Xuan 2026-09-03): a conflicting component is
-                    // DISCLOSED above Save — Save is never disabled (§1a
-                    // disclose-never-block; onPressed below gates on canSave
-                    // only, never on the conflict).
-                    ..._saveConflictDisclosure(draft),
                     KylePrimaryButton(
                       key: const ValueKey('formula_kit.editor_save'),
                       text: 'Save formula',
@@ -271,7 +272,10 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   /// FP-8: the disclosure widget for the first component conflicting with
   /// the athlete's profile, or nothing. Detection is pure domain
   /// ([firstComponentConflict]); the profile read is the shared provider.
-  List<Widget> _saveConflictDisclosure(FormulaDraft draft) {
+  List<Widget> _saveConflictDisclosure(
+    FormulaDraft draft, {
+    bool atTop = false,
+  }) {
     final profile = ref
         .watch(athleteConflictProfileProvider)
         .maybeWhen(data: (p) => p, orElse: () => null);
@@ -280,6 +284,7 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
     if (hit == null) return const [];
     return [
       SaveConflictDisclosure(foodName: hit.foodName, conflict: hit.conflict),
+      if (atTop) const SizedBox(height: AppSpacing.md),
     ];
   }
 
