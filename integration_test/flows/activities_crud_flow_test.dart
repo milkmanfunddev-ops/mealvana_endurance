@@ -1,6 +1,6 @@
 /// Activities (fueling-plan) CRUD walk under **Patrol** — create a running
 /// activity via the deterministic edge-function macro engine (NO LLM/AI),
-/// read it back, then delete it via swipe-to-delete.
+/// read it back, then delete it from the activity detail screen.
 ///
 /// Why "Generate Plan" and not "Use Template":
 ///   The "Use Template" button only renders when the user already has a saved
@@ -16,7 +16,7 @@
 ///                → adjust-macros (assert macros rendered) → Create Plan
 ///                → lands on the plan detail screen
 ///     → READ:   back to calendar → the activity card for our workout is present
-///     → DELETE: swipe the card left → 'Activity deleted' Undo snackbar
+///     → DELETE: open the card → app-bar trash → confirm dialog
 ///                → snackbar times out → assert the card is gone
 ///
 /// Settle-policy notes:
@@ -209,33 +209,35 @@ void main() {
             'not in this test.',
       );
 
-      // ---- 7. DELETE — swipe the card (either direction deletes) --------
-      // Unified card interaction (391e3fdb): no confirm dialog — the swipe
-      // soft-deletes immediately and shows an Undo snackbar. Raw drag + fixed
-      // pumps only: any settle here can burn its full timeout against the
-      // timeline's persistent spinner.
-      final cardRow = find.ancestor(
-        of: onTimeline,
-        matching: find.byType(Dismissible),
-      );
-      expect(
-        cardRow,
-        findsWidgets,
-        reason: 'Activity card should be wrapped in a Dismissible.',
-      );
-      await $.tester.drag(cardRow.first, const Offset(-500, 0));
-      // Run the dismiss animation with fixed pumps (no settling).
-      for (var i = 0; i < 4; i++) {
-        await $.pump(const Duration(milliseconds: 300));
-      }
-
-      // waitUntilVisible polls with plain 100 ms pumps — it never settles, so
-      // it is safe even while a spinner is animating.
+      // ---- 7. DELETE — open the activity, then the app-bar trash ---------
+      // The timeline's swipe action is **Skip**, not delete (verified on the
+      // dev build 2026-09-04: swiping a card reveals a single "Skip" panel).
+      // Deletion lives on the activity detail screen's app-bar trash icon and
+      // is CONFIRMED by a dialog — deliberately, since it "cannot be undone"
+      // and there is no undo snackbar on this path.
+      //
+      // This flow previously asserted the card was wrapped in a `Dismissible`
+      // and dragged it, which is why it had been red since before this
+      // bundle's merge (identical failure on pre-merge 80230b59): it encoded
+      // a swipe-to-delete contract the UI no longer offers.
+      await $(onTimeline).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
-        'Activity deleted',
+        const ValueKey('plan_detail.delete_button'),
+      ).waitUntilVisible(timeout: const Duration(seconds: 20));
+      await $(
+        const ValueKey('plan_detail.delete_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+
+      await $(
+        const ValueKey('activity_delete.confirm_button'),
       ).waitUntilVisible(timeout: const Duration(seconds: 15));
-      // Let the undo snackbar time out without tapping Undo (fixed pumps).
-      for (var i = 0; i < 16; i++) {
+      await $(
+        const ValueKey('activity_delete.confirm_button'),
+      ).tap(settlePolicy: SettlePolicy.noSettle);
+
+      // Deleting pops back to the timeline. Fixed pumps only — any settle here
+      // can burn its full timeout against the timeline's persistent spinner.
+      for (var i = 0; i < 10; i++) {
         await $.pump(const Duration(milliseconds: 300));
       }
 
