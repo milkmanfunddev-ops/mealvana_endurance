@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/app_external_deps.dart';
 import '../../auth/data/user_repository.dart';
+import '../../nutrition_plan/data/template_foods_repository.dart';
 import '../../nutrition_plan/domain/food.dart';
 import '../data/personal_formulas_repository.dart';
 import '../domain/formula_macros.dart';
@@ -119,7 +121,12 @@ class FormulaEditorController extends _$FormulaEditorController {
         return FormulaDraft(
           name: existing.name,
           phase: existing.phase,
-          components: _cloneComponents(existing.components),
+          // Backfill kAllergens/kExcludedDiets for components persisted
+          // before forks carried them (FP-8: without the metadata the
+          // save-time conflict disclosure can never fire on an edit).
+          components: await _hydrateConflictMetadata(
+            _cloneComponents(existing.components),
+          ),
           notes: existing.notes,
           subPhase: existing.subPhase,
           digestSpeed: existing.digestSpeed,
@@ -320,5 +327,43 @@ class FormulaEditorController extends _$FormulaEditorController {
     return components
         .map((c) => Map<String, dynamic>.from(c))
         .toList(growable: true);
+  }
+
+  /// Backfill [FormulaMacros.kAllergens]/[FormulaMacros.kExcludedDiets] on
+  /// components persisted without them (pre-2026-09-03 saves and old forks),
+  /// looked up from `template_foods` by food id. Components with the keys —
+  /// or with no matching catalog row (user foods) — pass through untouched.
+  Future<List<Map<String, dynamic>>> _hydrateConflictMetadata(
+    List<Map<String, dynamic>> components,
+  ) async {
+    final missing = components.any(
+      (c) => !c.containsKey(FormulaMacros.kAllergens),
+    );
+    if (!missing) return components;
+
+    final templateFoods = await ref
+        .read(templateFoodsRepositoryProvider)
+        .getAllTemplateFoods();
+    final byId = {for (final tf in templateFoods) tf.id: tf};
+
+    List<String> decode(String raw) {
+      try {
+        final v = jsonDecode(raw);
+        return v is List
+            ? v.map((e) => e.toString()).toList(growable: false)
+            : const [];
+      } catch (_) {
+        return const [];
+      }
+    }
+
+    for (final c in components) {
+      if (c.containsKey(FormulaMacros.kAllergens)) continue;
+      final tf = byId[c[FormulaMacros.kFoodId]];
+      if (tf == null) continue;
+      c[FormulaMacros.kAllergens] = decode(tf.allergens);
+      c[FormulaMacros.kExcludedDiets] = decode(tf.excludedDiets);
+    }
+    return components;
   }
 }
