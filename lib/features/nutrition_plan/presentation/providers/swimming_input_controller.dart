@@ -74,7 +74,9 @@ class SwimmingFormState {
     required this.selectedDate,
     required this.selectedTime,
     IntensityDistribution? intensity,
-    this.durationPaceMode = DurationPaceMode.byDuration,
+    // CF-6 reference rendering: the create flow opens PACE-held
+    // (duration wears EST.) — the prototype's default `held: 'pace'`.
+    this.durationPaceMode = DurationPaceMode.byPace,
     this.estimatedDuration,
     this.zonePaceApplied = false,
     this.zoneSuggestedPacePer100mSeconds,

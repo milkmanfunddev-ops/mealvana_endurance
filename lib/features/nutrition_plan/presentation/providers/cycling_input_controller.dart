@@ -82,7 +82,9 @@ class CyclingFormState {
     required this.selectedTime,
     this.distanceUnit = DistanceUnit.miles,
     IntensityDistribution? intensity,
-    this.durationPaceMode = DurationPaceMode.byDuration,
+    // CF-6 reference rendering: the create flow opens PACE-held
+    // (duration wears EST.) — the prototype's default `held: 'pace'`.
+    this.durationPaceMode = DurationPaceMode.byPace,
     this.estimatedDuration,
     this.preRideMinutesManuallySet = false,
     this.unitSystem = UnitSystem.imperial,

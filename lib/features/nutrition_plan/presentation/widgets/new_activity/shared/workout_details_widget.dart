@@ -427,8 +427,11 @@ class _LinkedFieldShell extends StatelessWidget {
     final borderColor = guardActive
         ? AppColors.dragonfruit
         : AppColors.cream.withValues(alpha: 0.45);
+    // The dash outline must trace the same rounded shape as the fill —
+    // mismatched radii read as a double border.
+    final radius = AppRadius.inputRadius.topLeft.x;
     return CustomPaint(
-      foregroundPainter: _DashedBorderPainter(color: borderColor, radius: 15),
+      foregroundPainter: _DashedBorderPainter(color: borderColor, radius: radius),
       child: Container(
         height: 46,
         decoration: BoxDecoration(
@@ -645,7 +648,13 @@ class _PaceHalfState extends State<_PaceHalf> {
                     guardActive: widget.guardActive,
                   ),
                   decoration: InputDecoration(
+                    // The shell draws the border; kill every themed border
+                    // state or the theme's pill outline paints inside it.
                     border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    filled: false,
                     hintText: widget.isSpeed ? '0.0' : '0:00',
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
@@ -819,7 +828,12 @@ class _DurationHalfState extends State<_DurationHalf> {
           guardActive: widget.guardActive,
         ),
         decoration: InputDecoration(
+          // The shell draws the border; kill every themed border state.
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          filled: false,
           hintText: hint,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(

@@ -84,7 +84,9 @@ class RunningFormState {
     this.distanceUnit = DistanceUnit.miles,
     this.paceUnit = PaceUnit.minPerMile,
     IntensityDistribution? intensity,
-    this.durationPaceMode = DurationPaceMode.byDuration,
+    // CF-6 reference rendering: the create flow opens PACE-held
+    // (duration wears EST.) — the prototype's default `held: 'pace'`.
+    this.durationPaceMode = DurationPaceMode.byPace,
     this.estimatedDuration,
     this.preRunMinutesManuallySet = false,
     this.zonePaceApplied = false,
@@ -217,7 +219,7 @@ class RunningInputController extends _$RunningInputController {
       preRunMinutes: recommendedMinutes,
       estimatedDuration: initialDuration,
       intensity: defaultIntensity,
-      durationPaceMode: DurationPaceMode.byDuration,
+      durationPaceMode: DurationPaceMode.byPace,
     );
 
     // NOTE: Location fetching is now triggered explicitly when this tab becomes active
