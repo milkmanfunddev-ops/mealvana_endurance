@@ -59,7 +59,9 @@ contracts:
       conflicts mount the inline FP-4a warning, a pinned conflicting formula
       carries the FP-4b collapsible label + glyph dot, an UNPINNED formula
       carries no persistent label (NEGATIVE half). Conflicts evaluate over
-      COMPONENTS (no formula-level allergen columns).
+      COMPONENTS (no formula-level allergen columns). The personal detail
+      (editor) carries the same AppBar pin glyph as the system detail (FP-7
+      parity; saved formulas only).
   - id: FP-8
     check: >
       New-formula authoring: a component conflicting with the profile renders

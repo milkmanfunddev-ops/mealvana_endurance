@@ -647,8 +647,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Choose another'), findsOneWidget,
-          reason: 'the safer action is offered, as on a library card');
+      expect(
+        find.text('Choose another'),
+        findsOneWidget,
+        reason: 'the safer action is offered, as on a library card',
+      );
       expect(find.text('Pin anyway'), findsOneWidget);
     });
 
@@ -659,8 +662,76 @@ void main() {
         formula: personal(const ['dairy']),
         profile: const AthleteConflictProfile(allergyDbValues: ['dairy']),
       );
-      expect(find.text('Contains dairy — your allergy'), findsNothing,
-          reason: 'unpinned ⇒ not in any plan ⇒ nothing to warn about');
+      expect(
+        find.text('Contains dairy — your allergy'),
+        findsNothing,
+        reason: 'unpinned ⇒ not in any plan ⇒ nothing to warn about',
+      );
+    });
+
+    testWidgets('FP-4d(d) — the personal detail (editor) mounts the AppBar '
+        'pin glyph; a conflicted pin tap raises the in-page FP-4a warning '
+        'and Pin anyway completes the pin', (tester) async {
+      final formula = personal(const ['dairy']);
+      final draft = FormulaDraft(
+        name: formula.name,
+        phase: formula.phase,
+        subPhase: 'snack',
+        components: formula.components,
+        original: formula,
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            formulaEditorControllerProvider(
+              'pf-1',
+              FormulaPhase.before,
+            ).overrideWith(() => _StubEditorController(draft)),
+            athleteConflictProfileProvider.overrideWith(
+              (ref) async =>
+                  const AthleteConflictProfile(allergyDbValues: ['dairy']),
+            ),
+            formulaPinControllerProvider.overrideWith(
+              () => _StubPinController(),
+            ),
+            appConfigProvider.overrideWithValue(
+              AppConfig.forTesting(coachInsightsEnabled: false),
+            ),
+          ],
+          child: MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            home: const FormulaEditorScreen(
+              formulaId: 'pf-1',
+              phase: FormulaPhase.before,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final glyph = find.byKey(const ValueKey('formula_kit.editor_pin_pf-1'));
+      expect(
+        glyph,
+        findsOneWidget,
+        reason: 'FP-7 parity: the personal detail carries the pin glyph',
+      );
+
+      await tester.tap(glyph);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Pin anyway'),
+        findsOneWidget,
+        reason: 'conflicted pin tap mounts the FP-4a warning in the page',
+      );
+
+      await tester.tap(find.text('Pin anyway'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Pin anyway'),
+        findsNothing,
+        reason: 'the warning dismisses once the pin completes',
+      );
     });
 
     testWidgets('no conflict → the pin gesture is never intercepted '

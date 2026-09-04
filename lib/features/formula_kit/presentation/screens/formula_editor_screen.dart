@@ -13,6 +13,7 @@ import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart
 import '../../../nutrition_plan/presentation/widgets/activity_detail/dismissible_food_item.dart';
 import '../../application/athlete_conflict_profile_provider.dart';
 import '../../application/formula_editor_controller.dart';
+import '../../application/formula_pin_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
 import '../../domain/coach_insight.dart';
@@ -22,6 +23,8 @@ import '../../domain/formula_phase.dart';
 import '../../domain/formula_profile_conflict.dart';
 import '../widgets/coach_insight_panel.dart';
 import '../widgets/filter_chip_row.dart';
+import '../widgets/pin_conflict_warning.dart';
+import '../widgets/pin_toggle.dart';
 import '../widgets/save_conflict_disclosure.dart';
 
 /// Create / edit screen for a personal formula. State-driven by
@@ -52,6 +55,12 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   bool _seeded = false;
   bool _saving = false;
 
+  // FP-4d/FP-4a: a conflicted pin tap from the AppBar toggle mounts the
+  // inline warning in the page (same decision moment as the system detail
+  // screen — personal formulas reach a plan only through the pin set).
+  bool _showConflictWarning = false;
+  bool _showDietNote = false;
+
   late final _provider = formulaEditorControllerProvider(
     widget.formulaId,
     widget.phase,
@@ -74,6 +83,32 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   /// initial phase before the draft loads.
   FormulaPhase get _currentPhase =>
       ref.read(_provider).value?.phase ?? widget.phase;
+
+  /// The draft's conflict with the current profile (component scan), or null.
+  FormulaProfileConflict? _draftConflict(FormulaDraft draft) => ref
+      .watch(athleteConflictProfileProvider)
+      .maybeWhen(
+        data: (profile) =>
+            firstComponentConflict(draft.components, profile)?.conflict,
+        orElse: () => null,
+      );
+
+  Future<void> _completeConflictedPin() async {
+    setState(() => _showConflictWarning = false);
+    try {
+      await ref
+          .read(formulaPinControllerProvider.notifier)
+          .togglePersonalFormula(
+            formulaId: widget.formulaId!,
+            phase: _currentPhase,
+            source: 'detail',
+          );
+    } catch (err) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Couldn\'t update pin: $err');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +145,26 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
             ),
           ),
         ),
+        actions: [
+          // FP-4d: the personal detail (this editor) carries the same AppBar
+          // pin glyph as the system detail (FP-7) — saved formulas only; an
+          // unsaved draft has no id to pin.
+          if (widget.formulaId != null && asyncDraft.value != null)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: PinTogglePersonalFormula(
+                key: ValueKey('formula_kit.editor_pin_${widget.formulaId}'),
+                formulaId: widget.formulaId!,
+                phase: asyncDraft.value!.phase,
+                source: 'detail',
+                conflict: _draftConflict(asyncDraft.value!),
+                onAllergyConflictPinAttempt: () =>
+                    setState(() => _showConflictWarning = true),
+                onDietConflictPinned: () =>
+                    setState(() => _showDietNote = true),
+              ),
+            ),
+        ],
       ),
       body: asyncDraft.when(
         loading: () => const Center(
@@ -146,6 +201,37 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
                     // (it previously floated above Save, where it overlapped
                     // scroll content and read as detached). Save is never
                     // disabled (§1a disclose-never-block).
+                    // FP-4a warning / diet note for a conflicted pin attempt
+                    // from the AppBar toggle — in the page, never a dialog.
+                    ...(() {
+                      final conflict = _draftConflict(draft);
+                      if (conflict == null) return const <Widget>[];
+                      return <Widget>[
+                        if (_showConflictWarning &&
+                            conflict.kind == FormulaConflictKind.allergy)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            child: PinConflictWarning.allergy(
+                              allergenDisplay: conflict.allergenDisplay,
+                              onChooseAnother: () =>
+                                  setState(() => _showConflictWarning = false),
+                              onPinAnyway: _completeConflictedPin,
+                            ),
+                          ),
+                        if (_showDietNote &&
+                            conflict.kind == FormulaConflictKind.diet)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
+                            child: PinConflictWarning.diet(
+                              dietDisplay: conflict.dietDisplay,
+                            ),
+                          ),
+                      ];
+                    })(),
                     ..._saveConflictDisclosure(draft, atTop: true),
                     _Label('Name'),
                     const SizedBox(height: AppSpacing.xs),
