@@ -84,7 +84,7 @@ function activityInScope(
  * [activityScopeOverride] replaces the [mapActivity] mapping when supplied.
  * A BRICK leg passes its discipline pair — a run leg matches
  * running + triathlon_run scoped formulas, a bike leg cycling +
- * triathlon_bike (ruled by Lee 2026-09-04: leg matches its discipline's
+ * triathlon_bike (ruled by Xuan 2026-09-04: leg matches its discipline's
  * formulas) — because the brick handler calls per-leg with the bare leg
  * sport, which alone would never match a Tri-scoped pin
  * (bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).

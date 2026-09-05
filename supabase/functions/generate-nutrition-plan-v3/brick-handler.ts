@@ -503,7 +503,7 @@ export async function handleBrickPlan(
         { water_high_ml: segmentTargets.water_high_ml }),
     });
 
-    // Pin scope for a brick LEG (ruled by Lee 2026-09-04): a leg matches its
+    // Pin scope for a brick LEG (ruled by Xuan 2026-09-04): a leg matches its
     // own discipline's formulas — bare sport AND the tri-equivalent scope.
     // Passing only `sport` made a "Tri — Bike"-scoped pin unreachable for a
     // brick's bike leg.

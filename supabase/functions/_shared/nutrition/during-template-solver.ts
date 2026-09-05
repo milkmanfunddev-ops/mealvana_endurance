@@ -215,7 +215,7 @@ export function filterPinnedTemplatesInScope(
   /** Replaces the [mapActivityTypeForTemplate] mapping for PIN scope when
    * supplied. A brick leg passes its discipline pair (run leg →
    * running + triathlon_run; bike leg → cycling + triathlon_bike — ruled by
-   * Lee 2026-09-04), since the bare leg sport alone can never match a
+   * Xuan 2026-09-04), since the bare leg sport alone can never match a
    * Tri-scoped pin. Normal (unpinned) template filtering is unaffected. */
   pinScopeActivities?: string[],
 ): DuringWorkoutTemplate[] {

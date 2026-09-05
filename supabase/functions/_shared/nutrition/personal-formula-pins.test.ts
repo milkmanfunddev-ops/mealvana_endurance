@@ -328,7 +328,7 @@ Deno.test("skips: formulas for other phases are ignored", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Brick-leg pin scope override (ruled by Lee 2026-09-04: a leg matches its
+// Brick-leg pin scope override (ruled by Xuan 2026-09-04: a leg matches its
 // own discipline's formulas — bare sport AND the tri-equivalent scope).
 // Bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable:
 // the brick handler calls per-leg with the bare sport, so a "Tri — Bike"

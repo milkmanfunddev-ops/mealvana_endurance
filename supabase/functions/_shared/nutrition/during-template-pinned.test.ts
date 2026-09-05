@@ -421,7 +421,7 @@ describe("selectTemplateCandidates pin override", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Brick-leg pin scope override (Lee 2026-09-04): a brick's bike leg matches
+// Brick-leg pin scope override (Xuan 2026-09-04): a brick's bike leg matches
 // Cycling AND Tri — Bike scoped pins; run leg Running AND Tri — Run. The
 // override widens PIN scope only — unpinned candidate selection is untouched.
 // ---------------------------------------------------------------------------

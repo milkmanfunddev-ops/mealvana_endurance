@@ -430,7 +430,7 @@ void main() {
     // A brick plan carries one During section per leg (during_segment_N).
     // Until 2026-09-04 those ids were unrecognized: a brick banner listed
     // only Snack/Top-Off/After and the athlete's During pins had no
-    // on-screen trace (Lee's Sept 5 RUN/BIKE/RUN brick — bug
+    // on-screen trace (Xuan's Sept 5 RUN/BIKE/RUN brick — bug
     // 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
     PlanSection segment(
       int order,

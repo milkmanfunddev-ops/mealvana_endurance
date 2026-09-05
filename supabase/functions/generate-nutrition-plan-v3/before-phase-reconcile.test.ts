@@ -202,7 +202,7 @@ describe('reconcileBeforePhaseAfterPins', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Floor-fill deadlock (Lee's Sept 5 brick, 2026-09-04): target ON the floor
+// Floor-fill deadlock (Xuan's Sept 5 brick, 2026-09-04): target ON the floor
 // and a residual gap smaller than the smallest add-on. 36 g pinned snack +
 // 11 g top-off = 47 g against [50-200, target 50]; the strict-improvement
 // guard rejected the 27 g banana (distance 24 > 3) and shipped the phase

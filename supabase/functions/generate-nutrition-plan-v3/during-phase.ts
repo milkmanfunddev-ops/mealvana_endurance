@@ -221,7 +221,7 @@ export async function generateDuringPhase(
    * old clients omit it and stay byte-identical to pre-safety-net v3.
    * 2026-07-03. */
   emitEphemeralDefault = false,
-  /** Pin-scope override for BRICK legs (ruled by Lee 2026-09-04): a run leg
+  /** Pin-scope override for BRICK legs (ruled by Xuan 2026-09-04): a run leg
    * matches running + triathlon_run scoped pins, a bike leg cycling +
    * triathlon_bike. Forwarded to the personal-formula matcher, the skip
    * collector, and the template pin filters ONLY — food pools, essentials

@@ -264,7 +264,7 @@ export function reconcileBeforePhaseAfterPins(
         let bestPick: { name: string; addOn: AddOn } | null = null;
         // While the phase is BELOW THE RANGE FLOOR, clearing the floor beats
         // staying under it: the improvement guard alone deadlocks whenever
-        // the remaining gap is smaller than the smallest add-on (Lee's Sept 5
+        // the remaining gap is smaller than the smallest add-on (Xuan's Sept 5
         // brick: target 50 ON the floor, phase at 47 — every ≥11 g add-on
         // "worsened" the 3 g distance, so nothing was added and the plan
         // shipped out of range; bug 2026-09-04-before-floor-fill-deadlocks-

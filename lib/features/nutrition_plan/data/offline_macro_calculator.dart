@@ -325,7 +325,7 @@ class OfflineMacroCalculator {
         t <= windowMax &&
         workoutDurationMin >= citedMinWorkoutMin;
 
-    // RULED (Lee, 2026-09-04) — IMPLEMENTED PENDING RATIFICATION
+    // RULED (Xuan, 2026-09-04) — IMPLEMENTED PENDING RATIFICATION
     // (qa/intake/2026-09-04-pre-workout-carb-band-ruling.md): the plan band
     // is target ± 12.5 % in ALL cases — publishing Thomas's full 1.0–4.0 g/kg
     // evidence RANGE as the plan band gave a ~50 kg athlete a "50g–200g"
