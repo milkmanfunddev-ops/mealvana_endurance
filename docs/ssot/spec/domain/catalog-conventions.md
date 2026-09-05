@@ -40,3 +40,13 @@ duration → LP (maxFoodItems 3, cap 2) → greedy).
 Meal-tier practicality — per-item portion caps, during-phase volume/carryability budgets, meal
 variety minimums — remains OPEN with the food-recommendation ratification
 (`qa/food-recommendation`, intake practicality file items (a)(b)(d)).
+
+## C3a — Clarification: powder mixes remain DIVISIBLE — RULED (Xuan, 2026-09-03)
+`is_indivisible = true` means *physically unportionable as consumed*: gels (cannot re-cork),
+capsules, tablets. **Powder mixes (`carb_drink_mix`, `high_carb_drink_mix`,
+`electrolyte_drink_mix`, `sports_drink_mix`) stay divisible** — dissolving 1.5 packets into a
+bottle is normal practice, especially cycling. The gels-only shipped migration was therefore the
+correct implementation of C3; the original "single-serve sticks/packets → true" wording was
+overbroad and is superseded by this clarification. Unchanged: C4's whole-consumable-units rule at
+transitions (a T-window is not a mixing moment) — fractional mixes remain fine in the during
+phase, not at T1/T2.

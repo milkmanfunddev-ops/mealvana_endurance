@@ -104,3 +104,18 @@ The control's ring icon and its accents render in **`electrolyte`** (rgb(28,249,
 - Switching the `plannedAhead` prop resets `answer` to `NONE` and clears the added row. That is
   scaffold for the demo's scenario switcher; the shipping app has one plan, not a switcher — no
   persistence contract is claimed here.
+
+---
+
+## AMENDMENT A1 — DARK-path row = the shortfall, not a fixed 8 oz (Xuan, 2026-09-03)
+**Authority:** RULING-DESK 2026-09-03 ("apply ADJ-1") on
+`intake/2026-08-26-before-card-food-embedded-fluid-and-fixed-8oz-topup.md` Q2, option (b).
+**Effective at the food-recommendation bundle's implementation — ratified text above stands until then.**
+- The `DARK` (and therefore `NOT_YET`) row's added water entry becomes **the remaining shortfall,
+  ceil'd to the nearest 0.5 cup** (`ceil((target − delivered) to 4 oz granularity)`), floored at 0 —
+  **never a fixed 8 oz, never past the fluid ceiling**. (hydration v6's own arithmetic:
+  `fluidMl − intake`, floored at 0; R-01 rounding gives the 0.5-cup granularity.)
+- Copy register, DARK body (add): "Your fluid target rises to <target>. A <amount> water entry was
+  added to close the gap — adjust it like any other item." (replaces the fixed "8 oz" sentence).
+- Q1 of the same intake file was closed by catalog-conventions A3 (embedded water counts); band
+  discipline lives in `spec/fueling/food-recommendation.md` §5/§6.

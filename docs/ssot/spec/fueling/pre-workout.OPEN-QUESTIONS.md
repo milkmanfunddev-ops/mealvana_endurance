@@ -1,7 +1,7 @@
 # Pre-Workout — Ratification Register
 
 Everything left open after the three pre-workout SSOTs were ratified on **2026-08-03**
-(carbs v2, hydration v6, sodium v3 — Xuan). **21 rows**; PW-007 is answered, PW-020 corrected in place and then partly superseded by PW-021 (2026-08-26).
+(carbs v2, hydration v6, sodium v3 — Xuan). **22 rows**; PW-007 is answered, PW-020 corrected in place and then partly superseded by PW-021 (2026-08-26).
 
 Companion to [`pre-workout.notes.md`](./pre-workout.notes.md), which holds the reasoning. **This
 file holds only status and ownership** — where a row needs an argument, it links to the notes
@@ -49,6 +49,7 @@ deviation number carry it.
 | [PW-016](#pw-016) | Drawer: two band semantics, and the pinned marker | **C** | medium | no |
 | [PW-017](#pw-017) | All vectors are obsolete across all three specs | **D** | **high** | **is** the vectors |
 | [PW-018](#pw-018) | Explanation ⇄ engine conformance for the new output shape | **D** | medium | after PW-017 |
+| [PW-022](#pw-022) | `targetBasis` now names only the TARGET's derivation, not the band | **B** | low | no — vectors unchanged by it |
 
 **Six rows gate the vector work** — PW-011, PW-012, PW-013 as code changes the vectors assert
 against, PW-019 as a boundary they must pin one way or the other, and PW-017/PW-018 as the work
@@ -303,6 +304,42 @@ the first part of the run"*) and nothing nets it against `during-workout-carbs.m
 should be settled alongside PW-001, since both are cross-spec arithmetic.
 
 ---
+
+### PW-022
+#### Is `targetBasis` still the right NAME after the band amendment? — DEFERRED (QA, 2026-09-04)
+
+**Raised by** the plan-band amendment (Xuan, 2026-09-04; intake
+`intake/2026-09-04-pre-workout-carb-band-ruling.md`). Xuan's ruling text left it explicitly to the
+ratifier: *"whether that label should be renamed is left to the ratifier."*
+
+**The question.** Before the amendment, `targetBasis: "evidenced_band"` did double duty — it named
+how the TARGET was derived *and* predicted the band's shape (`[1·BW, 4·BW]`). The amendment cuts
+the second meaning: the band is now `target ± 12.5 %` in every regime, so the value `evidenced_band`
+names a property the band no longer has. A reader who sees `evidenced_band` and expects an
+evidence-width band is now wrong.
+
+**Why this is DEFERRED and not ruled here.** Renaming it is a **contract change, not an amendment**:
+`targetBasis` is a published output field on both engines' wire responses and is consumed
+app-side. Changing the field name or its value set breaks consumers and must travel in a bundle
+with a migration, per the impact-class (c) rule — an `apply-ruling` pass may not make that change,
+and inventing the new name would be ruling, which this desk does not do.
+
+**What the amendment did instead** — the cheap, non-breaking half: `pre-workout-carbs.md` now states
+in the algorithm block and in the amendment section that `targetBasis` describes the **target's**
+derivation and never the band. The misleading-name risk is documented at the point of use.
+
+**Options when it is ruled.**
+
+| | Option | Cost |
+|---|---|---|
+| 1 | **Keep the name.** It is accurate for what it now means (was the target derived inside Thomas's cited box?). Documented; zero migration. | A reader must read the doc to avoid the old inference. |
+| 2 | **Rename** to something band-neutral (`targetDerivation`, `targetProvenance`) keeping the same value set. | Wire-contract change on two engines + every consumer + all vectors; needs a bundle. |
+| 3 | **Keep the name, rename the VALUES** (`evidenced_band` → `evidenced`). | Same breakage class as 2, smaller diff. |
+
+**QA's recommendation: option 1.** The field's meaning is unchanged and now documented; a rename
+buys clarity at the price of a twin-engine wire migration, and nothing is currently mis-computed.
+
+**Owner:** Xuan. **Does not block** the amendment, the vectors, or any suite.
 
 ## C · Code must catch up to the ratified SSOTs
 

@@ -19,6 +19,10 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
 ---
 
 ## D-001 — Pre-workout: fasted → zero pre-workout fuel
+> **RULED (Xuan, 2026-09-03): the fasted state is RETIRED** — class-c contract change staged in
+> the food-recommendation bundle (toggle removed, `is_fasted` deprecated on the wire, fasted
+> branches removed). This deviation closes by removal; ledger P17/P11 close with it.
+> Authority: RULING-DESK 2026-09-03 · `intake/2026-08-31-fasted-food-suppression-mechanism.md`.
 - **Status:** `documented` (2026-07-26). SSOT deliberately NOT evolved.
 - **Observed:** with the "Fasted Workout" toggle on, `calculatePreWorkoutTargets` returns
   all-zero pre-workout carbs/protein/fat/sodium/water and `meal_type='fasted'`.
@@ -186,3 +190,22 @@ so we notice if the behavior changes, **not** an endorsement of it as truth.
 - **Resolution path:** app/edge fix per the 2026-08-31 handback (emit positional ids, keep the
   pair as a label field) + the R8 producer-shaped seam test. The fuel *amounts* at transitions
   stay owned by the in-progress transition-nutrition slice — this entry is identity only.
+
+## D-018 — Fueling-window state resets per activity (implemented ahead of its ruling)
+- **Status:** `implemented-pending-ruling` (2026-09-03). Xuan's call: fix now, rule later.
+- **Observed / shipped:** `resetFuelingWindowForNewActivity()` on all four sport input
+  controllers, invoked once at create-screen entry (app `7418566f`, branch
+  `feature/food-recommendation-v1`). It clears the `*ManuallySet` flag and re-derives the §3a
+  default for the activity being created.
+- **Why it is not a self-ratification:** the fix sits in the **intersection of every option** the
+  open ruling could take — per-activity reset (a) and values-sticky-but-flags-reset (b) both
+  require it, and even (c) "ratify today's behaviour" was written requiring the window to still
+  re-clamp. It touches ONLY the fueling window; the lifetime of the other form state
+  (title / temperature / humidity flags) is untouched and remains the ruling's to decide.
+- **SSOT status:** `create-flow-fueling-controls.md` CF-1 says a manual change persists — it does
+  not say for how long. That gap is the open question, not a contradiction, so no ratified
+  contract was changed to match code.
+- **Un-deferred by:** `intake/2026-09-03-form-state-reset-semantics.md` (Q-CA2). When ruled, this
+  entry either folds into CF-9 as ratified behaviour or the implementation is amended to match a
+  different choice.
+

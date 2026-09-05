@@ -80,3 +80,11 @@ looks up — a single-engine vector cannot see that seam.
 - Characterization source: `app/lib/features/activities/domain/brick_eligibility.dart`,
   `brick_selection_controller.dart`, `supabase/functions/generate-macros-v4/brick-workout.ts`,
   `generate-nutrition-plan-v3/brick-handler.ts` (as of app develop `38a2e920`).
+
+## Post-ratification additions (RULED, Xuan, 2026-09-03 — create-flow desk)
+- **R1a — Two creation paths COEXIST.** Link-based creation (R1, as ratified: the brick action on
+  a day holding 2+ eligible workouts) is joined by **inline creation** in the Create Activity Plan
+  flow (sport tab BRICK → leg chips → drag-order rows with per-leg durations). Neither replaces
+  the other; eligibility rules (R2–R7) bind both paths identically.
+- **R9 — A brick holds at most 3 legs** ("BRICK IS FULL · 3 LEGS"). Applies to both creation
+  paths; extending past 3 is declined in-UI, not silently truncated.

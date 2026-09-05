@@ -1,8 +1,8 @@
 {
   "section": "pre-workout-carbs",
   "engine": "OfflineMacroCalculator.calculatePreWorkoutTargets",
-  "specVersion": "v2 (2026-08-04)",
-  "note": "Pins v2. EXPECTED-RED until the engine implements v2 (code implements v1). carbs EXACT -> compare with abs tol 1e-3 g. camelCase fields (carbsG not carbs_g). Inputs use timeBeforeWorkoutMin (minutes) not hoursBefore. tiers carry {tier,carbsG,rangeLowG,rangeHighG,composition}; composition VALUES tested by food-composition slice, presence only here. isFasted -> empty tiers + basis none.",
+  "specVersion": "v2 (2026-08-04) + plan-band amendment (Xuan, 2026-09-04)",
+  "note": "Plan band AMENDED 2026-09-04 (Xuan, post-ratification): the band is target ±12.5% (TIER_TOL) in ALL cases; the v2 in-window [1*BW, 4*BW] clause is superseded. Only carbsLowG/carbsHighG moved — 12 vectors, 24 fields; targets, tiers, tier ranges, composition and targetBasis are byte-unchanged. targetBasis still reports evidenced_band/design_choice: it describes the TARGET's derivation, not the band. Regenerated from an oracle built off the amended spec and verified against all 17 worked-example rows before emission, then re-derived by an independent second reading. NOT expected-red: the app engines already implement this (app commit 3cf3ee42, both twins, dev-deployed) — these vectors were the lagging artifact, so the suites should go GREEN with no engine change. Bundle: pre-workout-macros@v2.1.",
   "toleranceG": 0.001,
   "vectors": [
     {
@@ -16,8 +16,8 @@
       },
       "expected": {
         "carbsG": 260.0,
-        "carbsLowG": 65.0,
-        "carbsHighG": 260.0,
+        "carbsLowG": 227.5,
+        "carbsHighG": 292.5,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -56,8 +56,8 @@
       },
       "expected": {
         "carbsG": 243.75,
-        "carbsLowG": 65.0,
-        "carbsHighG": 260.0,
+        "carbsLowG": 213.28125,
+        "carbsHighG": 274.21875,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -96,8 +96,8 @@
       },
       "expected": {
         "carbsG": 227.5,
-        "carbsLowG": 65.0,
-        "carbsHighG": 260.0,
+        "carbsLowG": 199.0625,
+        "carbsHighG": 255.9375,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -136,8 +136,8 @@
       },
       "expected": {
         "carbsG": 211.25,
-        "carbsLowG": 65.0,
-        "carbsHighG": 260.0,
+        "carbsLowG": 184.84375,
+        "carbsHighG": 237.65625,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -176,8 +176,8 @@
       },
       "expected": {
         "carbsG": 400.0,
-        "carbsLowG": 100.0,
-        "carbsHighG": 400.0,
+        "carbsLowG": 350,
+        "carbsHighG": 450,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -216,8 +216,8 @@
       },
       "expected": {
         "carbsG": 195,
-        "carbsLowG": 65,
-        "carbsHighG": 260,
+        "carbsLowG": 170.625,
+        "carbsHighG": 219.375,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -256,8 +256,8 @@
       },
       "expected": {
         "carbsG": 130,
-        "carbsLowG": 65,
-        "carbsHighG": 260,
+        "carbsLowG": 113.75,
+        "carbsHighG": 146.25,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -296,8 +296,8 @@
       },
       "expected": {
         "carbsG": 113.75,
-        "carbsLowG": 65,
-        "carbsHighG": 260,
+        "carbsLowG": 99.53125,
+        "carbsHighG": 127.96875,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -329,8 +329,8 @@
       },
       "expected": {
         "carbsG": 65,
-        "carbsLowG": 65,
-        "carbsHighG": 260,
+        "carbsLowG": 56.875,
+        "carbsHighG": 73.125,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -480,8 +480,8 @@
       },
       "expected": {
         "carbsG": 0.0,
-        "carbsLowG": 0.0,
-        "carbsHighG": 0.0,
+        "carbsLowG": 0,
+        "carbsHighG": 0,
         "targetBasis": "none",
         "tiers": []
       },
@@ -538,8 +538,8 @@
       },
       "expected": {
         "carbsG": 195,
-        "carbsLowG": 65,
-        "carbsHighG": 260,
+        "carbsLowG": 170.625,
+        "carbsHighG": 219.375,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -578,8 +578,8 @@
       },
       "expected": {
         "carbsG": 270,
-        "carbsLowG": 90,
-        "carbsHighG": 360,
+        "carbsLowG": 236.25,
+        "carbsHighG": 303.75,
         "targetBasis": "evidenced_band",
         "tiers": [
           {
@@ -618,8 +618,8 @@
       },
       "expected": {
         "carbsG": 200,
-        "carbsLowG": 100,
-        "carbsHighG": 400,
+        "carbsLowG": 175,
+        "carbsHighG": 225,
         "targetBasis": "evidenced_band",
         "tiers": [
           {

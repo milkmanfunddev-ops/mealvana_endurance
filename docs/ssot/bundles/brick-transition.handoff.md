@@ -36,7 +36,9 @@ Adjust-Macros untouched) · Q-BR1/2 (characterization stands; one tripwire vecto
    (`sport_pair` label) first, consumers tolerant, then flip producer naming to positional.
 4. **Tests pinning superseded behavior** (must be updated WITH the change, commit citing the spec):
    `brick-workout-new.test.ts`, `hydration-personas.test.ts`, `strict-macro-e2e.test.ts`,
-   parity fixtures `29/30-brick-triathlon-*.json` (pin old T1/T2 names + 300 ml + weight carbs),
+   ~~parity fixtures `29/30-brick-triathlon-*.json`~~ (STRUCK 2026-09-01 per
+   intake/2026-09-01-brick-transition-impl-findings.md: verified single-blob during/post fixtures,
+   no transition pins; the real extra pin was `offline_macro_calculator_hydration_test.dart`),
    app `brick_eligibility_test.dart` (pins skipped-legs-allowed = D-007),
    `nutrition_target_overrides_brick_payload_test.dart`, `macro_dashboard_brick_test.dart`,
    `fuel_timeline_brick_test.dart`.

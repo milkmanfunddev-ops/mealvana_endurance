@@ -1,0 +1,151 @@
+bundle:  food-recommendation
+version: v1.1
+status:  ratified
+ratified: 2026-09-03            # Xuan (v1); v1.1 same day
+supersedes: >
+  food-recommendation@v1 (c902ee6) — SAME CONTRACT, corrected and now provable. v1 is not wrong,
+  it is incomplete: it froze specs + vectors with `engine: null` and NO runner arms, so it could
+  never have been landed green. v1.1 adds (a) the conformance arms built after the freeze —
+  conformance/food_recommendation_conformance_test.dart, .../pre_workout_food_composition_...,
+  the run_dart.sh arms + the §8 twin differential, and the two design manifests; (b) three
+  post-freeze rulings: FP-4d superseding FP-4c (personal formulas follow the library-card pin
+  contract — FP-4c's "standing auto-include" premise was false: pins.ts honors personal formulas
+  only when pinned), the CF-1 grid / CF-2 clamp-caption amendments + the Q-CF1 contract row, and
+  the Q-CA2 live-defect annotation; (c) the governance records — D-018, the before-card A1 golden
+  retirements, three intake files. NO vector was edited and no ratified rule reversed except the
+  FP-4c supersession Xuan ruled explicitly — hence a point release, not @v2.
+ships: >
+  the SELECTION contract — how ratified macro targets become named foods with quantities:
+  the four-step cascade and its filters, sodium-source policy, fueling-window authority
+  (default table + clamp), practicality constraints incl. the solvent-dependency rule,
+  the fasted retirement, two-engine parity, and the step-resolution telemetry. Also the
+  long-deferred food-composition runner (P10) and the two design surfaces the selection
+  contract is seen through. The macro TARGETS themselves are already shipped (carbs v2,
+  hydration v6, sodium v3, transition-nutrition v1) and are NOT re-ratified here.
+
+specs:
+  - slice:   food-recommendation
+    version: RATIFIED (Xuan, 2026-09-03)
+    spec:    spec/fueling/food-recommendation.md
+    vectors: vectors/fueling/food-recommendation.json      # 26 vectors (scripts/count-vectors.mjs fueling)
+    engine:  null — the contract spans generate-macros-v4 (Algorithm C) + generate-nutrition-plan-v3
+             (during/after/brick) + the Dart twins in lib/features/nutrition_plan/application/client_plan/;
+             the conformance arm is built at implementation
+
+  - slice:   pre-workout-food-composition
+    version: v3
+    spec:    spec/fueling/pre-workout-food-composition.md
+    vectors: vectors/fueling/pre-workout-food-composition.json   # 87 vectors
+    engine:  null — suitability function; P10's long-deferred runner is built by this bundle
+
+  - slice:   create-flow-fueling-controls
+    version: RATIFIED (Xuan, 2026-09-03)
+    spec:    spec/design/surfaces/create-flow-fueling-controls.md
+    vectors: none — design slice; conformance/design/create-flow-fueling-controls.yaml written at
+             implementation (CF-1/2/3/6/7/8 widget lines + goldens)
+    engine:  n/a (rendering + create-flow behaviour)
+
+  - slice:   formula-pin-surface
+    version: RATIFIED (Xuan, 2026-09-03)
+    spec:    spec/design/components/formula-pin-surface.md
+    vectors: none — design slice; conformance/design/formula-pin-surface.yaml written at
+             implementation (FP-2 wire-derivation, FP-4a/4b conflict states, FP-7 chip emphasis,
+             FP-8 save-time disclosure + goldens)
+    engine:  n/a (rendering); reference rendering prototypes/formula-kit/v4.html @ df84dcc-descendant
+
+depends_on:                        # ratified elsewhere, cited not re-frozen
+  - spec/domain/catalog-conventions.md v1 (+ C3a) — shipped in brick-transition@v1; this bundle
+    ADDS the solvent-dependency rule, which is ratified inside food-recommendation.md §6(e)
+    (per-product solvent_min_ml superseding C2's flat 250 ml default → the catalog-conventions
+    v1.1 amendment is written when this bundle lands)
+  - spec/domain/brick.md v1 + R1a/R9 — shipped/ruled; transitions consume this selection contract
+  - spec/fueling/{pre-workout-carbs v2, pre-workout-hydration v6, pre-workout-sodium v3,
+    during-workout-*, transition-nutrition v1} — the TARGETS this contract selects against
+
+excludes:
+  - slice:  post-workout selection
+    reason: >
+      no ratified post-workout macro targets exist yet (Xuan, 2026-09-01). The measured defects
+      (after-phase fluid delivered ≈28% of target on prod, 96% of plans under; after-sodium
+      uncontrolled both directions) are REAL and recorded as known gaps — they belong to a later
+      post-workout bundle, not this one.
+  - slice:  Coach insight
+    reason: >
+      AI-coach feature that appears in the pin prototype's authoring screen (FP-9). Out of this
+      bundle by Xuan's call (2026-09-03) — ships in a later version or not at all; prototype
+      chrome, never a contract. The implementation must NOT build it here.
+  - slice:  create-activity-plan surface + brick-leg-builder + during-card
+    reason: >
+      PROPOSED, not ratified — the fuller create-flow redesign (inline brick creation, PRECISE
+      intensity slider) and the during-card recording. Their own later effort.
+  - slice:  date/time pickers
+    reason: scope-guarded out by Xuan (2026-09-03); the app keeps its current pickers untouched.
+  - slice:  meal-tier portion caps beyond the ruled 2x / composition minimum
+    reason: >
+      §6(a) ruled the two constants; wider portion policy (per-product caps by product_type)
+      remains unruled and is not implied by this bundle.
+
+conformance:
+  runner: qa/conformance/run_dart.sh
+  invoke:
+    - run_dart.sh food-recommendation
+    - run_dart.sh pre-workout-food-composition
+    - run_dart.sh create-flow-fueling-controls
+    - run_dart.sh formula-pin-surface
+  done_when: >
+    all four slices green via run_dart.sh + the twin differential passes (every food-recommendation
+    vector produces byte-equal output on the TS and Dart engines, §8) + a dev attestation by Xuan
+    that a generated plan on the dev build shows the ruled behaviour (no fasted toggle, §3a window
+    defaults + clamp, capsule-first sodium, conflict labels).
+  note: >
+    v1.1 is NOT expected-red: the arms exist and the gate ran green at freeze time —
+    food-recommendation 28 passed / 0 failed with the twin differential byte-equal on 26 vectors ·
+    pre-workout-food-composition 88 · create-flow-fueling-controls 28 (3 goldens) ·
+    formula-pin-surface 21 (5 goldens). `engine: null` still describes the fueling slices because
+    the contract spans two edge functions plus the Dart twins; the arm, not a single symbol, is
+    the executable target. Benchmark: bench/BASELINE-2026-09-03.md (step-4 fallthrough 17.4 % of
+    the cascade scenarios) vs the post-implementation re-run (13.0 %, no 3→4 regressions).
+
+deviations:
+  - id:     D-001
+    slice:  food-recommendation §7
+    status: resolved-by-removal
+    note: >
+      Fasted → zero pre-workout fuel. RULED 2026-09-03: the fasted state is RETIRED (class-c
+      contract change carried BY this bundle — toggle removed, is_fasted deprecated on the wire,
+      fasted branches removed, feeding-card/fuel-stat AMENDMENT A1 goldens retired). Ledger items
+      P17/P11 close with it.
+  - id:     F-22/F-46/F-47
+    slice:  food-recommendation §4/§8
+    status: unratified-behaviour-being-corrected
+    note: >
+      Five live divergences between the TS and Dart electrolyte pickers (server-only 4-serving
+      supplement cap; Dart-only floor-rescue gap; min_servings ignored in Dart candidates; two
+      latent). §4.2 ruled ONE cap = the catalog row's max_servings_during, both engines. The port
+      is in scope; ops bug 2026-08-31-server-electrolyte-pick-diverges-from-dart-fix.md.
+  - id:     D-018
+    slice:  create-flow-fueling-controls
+    status: implemented-pending-ruling
+    note: >
+      Fueling-window state resets per activity (the keepAlive singletons' latched *ManuallySet
+      flag otherwise suppressed every ratified §3a re-derivation). Implemented ahead of its
+      ruling at Xuan's direction; sits in the intersection of every option the open ruling could
+      take, and touches ONLY the fueling window. Un-deferred by
+      intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
+  - id:     device-unverified-tail
+    slice:  create-flow-fueling-controls + formula-pin-surface
+    status: test-green-device-unverified
+    note: >
+      Xuan attested dev on 2026-09-03 ("I attest for v1"). FOUR client commits post-date that
+      attestation and have run in no build: app 7418566f (window reset, D-018) and
+      ad3ec376 / 18a3c160 / 2c615d7d (FP-4d personal-formula pin parity). Both suites are green
+      (create-flow 28/28, formula_kit 216/216); neither has been smoked on device. Landing must
+      either re-smoke them or carry this line forward explicitly.
+  - id:     telemetry-baseline
+    slice:  food-recommendation §10
+    status: measured-not-yet-met
+    note: >
+      Step-resolution funnel on prod (human traffic, 179 plans): steps 1+2 = 6.8% (target ≥60%),
+      step 3 = 51.6%, step 4 = 41.6% (target: any step-4 is a defect signal). This bundle ships the
+      contract and the ledger columns that make the funnel measurable; closing the gap is the
+      formula-library work that follows.

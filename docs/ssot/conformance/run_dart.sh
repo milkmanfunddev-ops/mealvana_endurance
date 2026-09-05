@@ -42,6 +42,7 @@ SLICE="${1:-pre-workout-carbs}"
 # dependency. A design slice's `vectors:` is prose starting "none" — resolve it to its
 # conformance/design/<slice>.yaml manifest instead.
 VEC_PATH="$(grep -h -E "^\s*-\s*\{\s*slice:\s*${SLICE}\s*," "$QA_ROOT"/bundles/*.yaml 2>/dev/null \
+  | grep -E 'vectors:' \
   | sed -E 's/.*vectors:[[:space:]]*([^,[:space:]]+).*/\1/' | tail -1 || true)"
 if [ -z "$VEC_PATH" ]; then
   VEC_PATH="$(awk -v slice="$SLICE" '
@@ -84,6 +85,44 @@ require_mirror() {
 echo "== QA conformance: $SLICE =="
 echo "   app:     $APP_ROOT"
 echo "   vectors: $VEC_PATH"
+
+# ---- food-recommendation: the two-engine twin arm (§8) --------------------
+# The selection contract binds the TS engine and its Dart mirror; the slice is
+# green only when BOTH engines pass every vector AND their canonical
+# selection-result outputs are byte-equal (bundle done_when). Three steps:
+# the Dart copy-in harness, the Deno runner, then cmp.
+if [ "$SLICE" = "food-recommendation" ]; then
+  VECTORS="$QA_ROOT/$VEC_PATH"
+  TEST_SRC="$QA_ROOT/conformance/food_recommendation_conformance_test.dart"
+  DEST="$APP_ROOT/test/_qa_conformance_tmp_test.dart"
+  DIFF_DIR="$APP_ROOT/build"
+  DART_OUT="$DIFF_DIR/qa_food_recommendation_dart.out"
+  TS_OUT="$DIFF_DIR/qa_food_recommendation_ts.out"
+  [ -f "$VECTORS" ]  || { echo "ABORT: vectors missing: $VECTORS"; exit 1; }
+  [ -f "$TEST_SRC" ] || { echo "ABORT: test missing: $TEST_SRC"; exit 1; }
+  command -v deno >/dev/null || { echo "ABORT: deno not installed — twin differential unrunnable"; exit 1; }
+  mkdir -p "$DIFF_DIR"; rm -f "$DART_OUT" "$TS_OUT"
+  cleanup() { rm -f "$DEST"; }
+  trap cleanup EXIT
+  cp "$TEST_SRC" "$DEST"
+  echo "   arm:     twin harness — Dart engine (real selection kernels)"
+  cd "$APP_ROOT"
+  flutter test "test/_qa_conformance_tmp_test.dart" \
+    --dart-define=QA_VECTORS="$VECTORS" --dart-define=QA_DIFF_OUT="$DART_OUT"
+  echo "   arm:     twin harness — TS engine (Deno, same vectors)"
+  QA_VECTORS="$VECTORS" QA_DIFF_OUT="$TS_OUT" \
+    deno test --allow-read --allow-env --allow-write \
+    supabase/functions/tests/food_recommendation_vectors.test.ts
+  [ -s "$DART_OUT" ] || { echo "ABORT: Dart differential output missing"; exit 1; }
+  [ -s "$TS_OUT" ]   || { echo "ABORT: TS differential output missing"; exit 1; }
+  if ! cmp -s "$DART_OUT" "$TS_OUT"; then
+    echo "ABORT: §8 twin differential FAILED — the two engines disagree:"
+    diff "$DART_OUT" "$TS_OUT" | head -20
+    exit 1
+  fi
+  echo "   twin differential: byte-equal on $(wc -l < "$DART_OUT" | tr -d ' ') vectors ✓"
+  exit 0
+fi
 
 case "$VEC_PATH" in
   vectors/fueling/*.json)

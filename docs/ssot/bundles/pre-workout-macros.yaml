@@ -72,3 +72,30 @@ deviations:
   - { id: D-001, slice: pre-workout-carbs, status: unratified, note: "isFasted -> zero pre-workout fuel. Shipped, never team-discussed. NOT ratified by this bundle; rendered per feeding-card FC-4 as characterization." }
   - { id: D-016, slice: pre-workout-carbs, status: code-must-catch-up, note: "app fueling-window stepper allows 480 min; spec caps at 240 (PW-011). Fix is in this bundle's done_when." }
   - { id: legacy-map, slice: pre-workout-sodium, status: superseded-not-deviant, note: "OfflineMacroCalculator.calculatePreWorkoutTargets still emits v1 sodium (300/450/600 mg) and water (6.5/5.5 ml/kg, 250 ml) on the offline plan path. Not a deviation to log — it is the superseded engine the card must not read (PW-012). Retiring it is app work, not a spec question." }
+
+# NOTE (2026-09-01, post-@v2 ruling): phase-card visual parity RULED — the BEFORE card's hero
+# typography (from renderings/pre-workout@v2.html) is superseded by the compact shared phase
+# style; contracts unchanged, rendering typography only. See the ruling block at the foot of
+# spec/design/surfaces/pre-workout-before-card.md and intake/2026-09-01-before-card-visual-parity
+# -with-during.md (RESOLVED). Tagged @v2 content has moved on this point: recommend point re-tag
+# pre-workout-macros@v2.1 after the app-side conformance (goldens) is green.
+
+# NOTE (2026-09-04, post-@v2.1 ruling): PLAN BAND AMENDED. The pre-workout plan band is
+# `target ± 12.5 %` (TIER_TOL) in ALL cases; the v2 in-window `[1*BW, 4*BW]` clause is
+# SUPERSEDED (Xuan, 2026-09-04; intake/2026-09-04-pre-workout-carb-band-ruling.md, RESOLVED).
+# Target derivation is UNCHANGED (window-hours x 1 g/kg x BW, capped 4 g/kg), and so is
+# `targetBasis` — it describes the TARGET's derivation, never the band; whether the LABEL should
+# be renamed is deferred as PW-022 (QA recommends keeping it: a rename is a twin-engine wire
+# change for no computational gain).
+#
+# Moved artifacts: spec/fueling/pre-workout-carbs.md (amendment + worked-examples band column +
+# invariants 11/12) and vectors/fueling/pre-workout-carbs.json (12 evidenced_band vectors, 24
+# band fields; targets/tiers/composition/targetBasis byte-unchanged).
+#
+# This is NOT expected-red: the app implements it already (app 3cf3ee42, both twins, dev-deployed)
+# — the vectors were the lagging artifact, so the suites go GREEN with no engine change.
+#
+# Tagged @v2/@v2.1 content has moved on this point: recommend an immutable point re-tag
+# pre-workout-macros@v2.2 (annotated, NEW tag — never move @v2.1) once the app-side band-derived
+# goldens and the 4 band-shape unit pins are regenerated. Tagging is ship-bundle's act, not this
+# skill's.
