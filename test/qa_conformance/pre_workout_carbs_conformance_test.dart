@@ -498,7 +498,7 @@ void main() {
     });
 
     test(
-      'inv 11 — tier windows are +/-12.5%, and in design_choice they sum to the plan band',
+      'inv 11 (amended) + inv 12 — tier windows are +/-12.5% and sum to the plan band, unconditionally',
       () {
         for (final bw in kBodyWeights) {
           for (final t in kLeadGrid) {
@@ -527,41 +527,32 @@ void main() {
                   reason: '$where: ${x.tier} high',
                 );
               }
-              if (o.targetBasis == 'design_choice') {
-                // One tolerance used everywhere => the container holds its contents EXACTLY.
-                final sumLow = o.tiers.fold<double>(
-                  0,
-                  (a, x) => a + x.rangeLowG,
-                );
-                final sumHigh = o.tiers.fold<double>(
-                  0,
-                  (a, x) => a + x.rangeHighG,
-                );
-                expect(
-                  sumLow,
-                  closeTo(o.carbsLowG, kExact),
-                  reason:
-                      '$where: sum(rangeLowG)=$sumLow != carbsLowG=${o.carbsLowG}',
-                );
-                expect(
-                  sumHigh,
-                  closeTo(o.carbsHighG, kExact),
-                  reason:
-                      '$where: sum(rangeHighG)=$sumHigh != carbsHighG=${o.carbsHighG}',
-                );
-              } else {
-                // Cited regime: the plan band is Thomas's [1*BW, 4*BW].
-                expect(
-                  o.carbsLowG,
-                  closeTo(1.0 * bw, kExact),
-                  reason: '$where: cited low',
-                );
-                expect(
-                  o.carbsHighG,
-                  closeTo(4.0 * bw, kExact),
-                  reason: '$where: cited high',
-                );
-              }
+              // Invariant 12 (RULED Xuan, 2026-09-04, post-ratification
+              // amendment): the plan band is target ± 12.5% in ALL cases —
+              // the tier-window sum equals the plan band unconditionally.
+              // (The cited-regime [1*BW, 4*BW] branch that lived here is
+              // SUPERSEDED; targetBasis still describes the TARGET's
+              // derivation, never the band.)
+              final sumLow = o.tiers.fold<double>(
+                0,
+                (a, x) => a + x.rangeLowG,
+              );
+              final sumHigh = o.tiers.fold<double>(
+                0,
+                (a, x) => a + x.rangeHighG,
+              );
+              expect(
+                sumLow,
+                closeTo(o.carbsLowG, kExact),
+                reason:
+                    '$where: sum(rangeLowG)=$sumLow != carbsLowG=${o.carbsLowG}',
+              );
+              expect(
+                sumHigh,
+                closeTo(o.carbsHighG, kExact),
+                reason:
+                    '$where: sum(rangeHighG)=$sumHigh != carbsHighG=${o.carbsHighG}',
+              );
             }
           }
         }

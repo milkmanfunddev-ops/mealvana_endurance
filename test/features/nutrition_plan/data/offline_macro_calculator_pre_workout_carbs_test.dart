@@ -137,8 +137,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 260.0,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 227.5,
+    highG: 292.5,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 156.0, 136.5, 175.5, 'meal'),
@@ -153,8 +153,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 243.75,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 213.28125,
+    highG: 274.21875,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 146.25, 127.96875, 164.53125, 'meal'),
@@ -169,8 +169,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 227.5,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 199.0625,
+    highG: 255.9375,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 136.5, 119.4375, 153.5625, 'meal'),
@@ -185,8 +185,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 211.25,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 184.84375,
+    highG: 237.65625,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 126.75, 110.90625, 142.59375, 'meal'),
@@ -201,8 +201,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 400.0,
-    lowG: 100.0,
-    highG: 400.0,
+    lowG: 350.0,
+    highG: 450.0,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 240.0, 210.0, 270.0, 'meal'),
@@ -217,8 +217,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 195.0,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 170.625,
+    highG: 219.375,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 117.0, 102.375, 131.625, 'meal'),
@@ -233,8 +233,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 130.0,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 113.75,
+    highG: 146.25,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 78.0, 68.25, 87.75, 'meal'),
@@ -249,8 +249,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 113.75,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 99.53125,
+    highG: 127.96875,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('snack', 85.3125, 74.648438, 95.976562, 'snack'),
@@ -264,8 +264,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 65.0,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 56.875,
+    highG: 73.125,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('snack', 48.75, 42.65625, 54.84375, 'snack'),
@@ -361,8 +361,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 60.0,
     fasted: false,
     carbsG: 195.0,
-    lowG: 65.0,
-    highG: 260.0,
+    lowG: 170.625,
+    highG: 219.375,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 117.0, 102.375, 131.625, 'meal'),
@@ -377,8 +377,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 120.0,
     fasted: false,
     carbsG: 270.0,
-    lowG: 90.0,
-    highG: 360.0,
+    lowG: 236.25,
+    highG: 303.75,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 162.0, 141.75, 182.25, 'meal'),
@@ -393,8 +393,8 @@ const List<_CVec> _carbVectors = <_CVec>[
     dur: 90.0,
     fasted: false,
     carbsG: 200.0,
-    lowG: 100.0,
-    highG: 400.0,
+    lowG: 175.0,
+    highG: 225.0,
     basis: 'evidenced_band',
     tiers: <_CTier>[
       _CTier('meal', 120.0, 105.0, 135.0, 'meal'),
@@ -598,13 +598,19 @@ void main() {
       expect(r.carbsHighG, closeTo(219.375, _tolG));
     });
 
-    test('dur = 60 at t = 180 flips to evidenced_band [1, 4] g/kg', () {
-      final r = _carbs(65, 180, dur: 60);
-      expect(r.targetBasis, 'evidenced_band');
-      expect(r.carbsG, closeTo(195, _tolG));
-      expect(r.carbsLowG, closeTo(65, _tolG));
-      expect(r.carbsHighG, closeTo(260, _tolG));
-    });
+    test(
+      'dur = 60 at t = 180 flips targetBasis only — the band stays ±12.5%',
+      () {
+        // Invariant 11 (AMENDED Xuan, 2026-09-04): the flip moves targetBasis,
+        // never the band. The superseded [1·BW, 4·BW] in-window band is gone
+        // (invariant 12: target ± TIER_TOL in all cases).
+        final r = _carbs(65, 180, dur: 60);
+        expect(r.targetBasis, 'evidenced_band');
+        expect(r.carbsG, closeTo(195, _tolG));
+        expect(r.carbsLowG, closeTo(170.625, _tolG));
+        expect(r.carbsHighG, closeTo(219.375, _tolG));
+      },
+    );
 
     test('duration never moves a gram, only the band', () {
       for (final t in _tGrid) {
@@ -634,17 +640,20 @@ void main() {
   // ===========================================================================
 
   group('the 4 g/kg cap', () {
-    test('binds at t = 240 for 65 kg — 260 g, sitting ON the band ceiling', () {
+    test('binds at t = 240 for 65 kg — 260 g, at the band CENTRE', () {
+      // Invariant 12: the band is target ± 12.5% everywhere, so the capped
+      // 260 g target sits at the band's centre (high = 260 × 1.125), not on
+      // its ceiling as under the superseded in-window band.
       final r = _carbs(65, 240);
       expect(r.carbsG, closeTo(260, _tolG));
-      expect(r.carbsHighG, closeTo(260, _tolG));
+      expect(r.carbsHighG, closeTo(292.50, _tolG));
       expect(r.targetBasis, 'evidenced_band');
     });
 
     test('is per-kg, not an absolute gram ceiling (100 kg -> 400 g)', () {
       final r = _carbs(100, 240);
       expect(r.carbsG, closeTo(400, _tolG));
-      expect(r.carbsHighG, closeTo(400, _tolG));
+      expect(r.carbsHighG, closeTo(450.0, _tolG)); // 400 × 1.125 (inv 12)
       // A 260 g absolute cap would show up here; a 4 g/kg cap scales.
       expect(r.carbsG, closeTo(4.0 * 100, _tolG));
     });
@@ -848,13 +857,14 @@ void main() {
     );
 
     test(
-      '11: tier windows are +/-12.5 % and sum to the design_choice plan band',
+      '11 (amended) + 12: tier windows are +/-12.5 % and sum to the plan band on the whole grid',
       () {
         for (final bw in _bwGrid) {
           for (final t in _tGrid) {
-            // dur = 30 keeps every point in the design_choice regime, where the
-            // tier envelope must sum to the plan band exactly.
-            final r = _carbs(bw, t, dur: 30);
+            // Invariant 12 (RULED Xuan, 2026-09-04): the sum identity holds
+            // unconditionally — the dur = 30 design_choice restriction that
+            // used to pin this test is obsolete.
+            final r = _carbs(bw, t);
             final where = 'bw=$bw t=$t';
             var sumLow = 0.0;
             var sumHigh = 0.0;
