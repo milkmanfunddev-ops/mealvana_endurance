@@ -219,8 +219,8 @@ describe('carb floor-fill when the gap is smaller than every add-on', () => {
 
   it('adds the banana to clear the floor instead of deadlocking', () => {
     const result: BeforePhaseResult = {
-      snack: subPhase('snack', [food({ carbs_grams: 36 })]),
-      top_up: subPhase('top_up', [food({ carbs_grams: 11 })]),
+      snack: subPhase('snack', [food({ food_id: 'snack_bar', carbs_grams: 36 })]),
+      top_up: subPhase('top_up', [food({ food_id: 'gel', carbs_grams: 11 })]),
     };
     reconcileBeforePhaseAfterPins(result, FLOOR_TARGETS, new Set(['snack']));
     const after = totals(result);
@@ -244,8 +244,8 @@ describe('carb floor-fill when the gap is smaller than every add-on', () => {
       carbs_high_g: 200,
     };
     const result: BeforePhaseResult = {
-      snack: subPhase('snack', [food({ carbs_grams: 49 })]),
-      top_up: subPhase('top_up', [food({ carbs_grams: 11 })]),
+      snack: subPhase('snack', [food({ food_id: 'snack_bar', carbs_grams: 49 })]),
+      top_up: subPhase('top_up', [food({ food_id: 'gel', carbs_grams: 11 })]),
     };
     reconcileBeforePhaseAfterPins(result, inRange, new Set(['snack']));
     const after = totals(result);

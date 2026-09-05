@@ -82,10 +82,14 @@ describe('Pre-workout overlay — cited regime (t >= 120)', () => {
     assertEquals(result.pre_run_sodium_low_mg, null);
     assertEquals(result.pre_run_sodium_high_mg, null);
 
-    // Carbs v2: t = 180 -> 3 g/kg = 210 g, plan band Thomas [1*BW, 4*BW].
+    // Carbs v2: t = 180 -> 3 g/kg = 210 g. Plan band = target ± 12.5%
+    // (inv 12, AMENDED Xuan 2026-09-04 — the [1*BW, 4*BW] in-window band is
+    // SUPERSEDED; targetBasis still tracks the TARGET's derivation).
     assertEquals(result.pre_run_carbs_g, 210);
-    assertEquals(result.pre_run_carbs_low_g, 70);
-    assertEquals(result.pre_run_carbs_high_g, 280);
+    // Wire-rounded (the overlay rounds grams on the payload): 183.75 -> 184,
+    // 236.25 -> 236.
+    assertEquals(result.pre_run_carbs_low_g, 184);
+    assertEquals(result.pre_run_carbs_high_g, 236);
     assertEquals(result.pre_run_carb_target_basis, 'evidenced_band');
     assertEquals(
       result.pre_run_carb_tiers.map((t: { tier: string }) => t.tier),

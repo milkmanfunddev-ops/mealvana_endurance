@@ -579,7 +579,9 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertExists(m.pre_run_protein_low_g);
       assertExists(m.pre_run_protein_high_g);
       assertExists(m.pre_run_fat_g);
-      assertExists(m.pre_run_sodium_mg);
+      // Sodium v3: pre-workout sodium is STRICT NULL on the wire — a number
+      // here would be the regression (the overlay suite pins the same).
+      assertEquals(m.pre_run_sodium_mg, null);
       assertExists(m.pre_run_water_ml);
       assertExists(m.pre_run_meal_type);
 
@@ -618,12 +620,14 @@ describe('generate-macros-v4 Integration Tests', () => {
       assert(selections.length > 0, 'Non-fasted athlete should have pre-workout selections');
     });
 
-    it('should return empty pre_run_selections for fasted athlete', async () => {
+    it('is_fasted is tolerated and IGNORED (fasted retired, D-001)', async () => {
+      // food-recommendation §7: the fasted state is retired; the wire field
+      // is accepted and dropped. t = 0 yields top_up meal_type like any fed
+      // request at that window — never the retired 'fasted' value.
       const { data } = await callMacrosV4(athletes.fastedRunner);
       const selections = data.macros.pre_run_selections;
       assert(Array.isArray(selections), 'pre_run_selections should be an array');
-      // Fasted: either empty selections or fasted meal_type
-      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+      assertEquals(data.macros.pre_run_meal_type, 'top_up');
     });
   });
 
@@ -654,9 +658,11 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertEquals(data.macros.pre_run_meal_type, 'snack');
     });
 
-    it('top_up type for < 1h window', async () => {
+    it('snack type at exactly 0.5h (snack tier is inclusive at >= 30 min)', async () => {
+      // Ratified tier thresholds (carbs v2): snack activates at window
+      // >= 30 min inclusive; top_up-only is the < 30 min regime.
       const { data } = await callMacrosV4(athletes.lightweightTopUp); // 0.5h
-      assertEquals(data.macros.pre_run_meal_type, 'top_up');
+      assertEquals(data.macros.pre_run_meal_type, 'snack');
     });
   });
 
@@ -732,20 +738,22 @@ describe('generate-macros-v4 Integration Tests', () => {
       }
     });
 
-    it('fasted workout gets 1.2x post-workout carb boost', async () => {
+    it('is_fasted no longer boosts post-workout carbs (fasted retired, D-001)', async () => {
+      // The 1.2x fasted post-boost went with the fasted branches. Same
+      // athlete ± the flag must produce IDENTICAL post targets.
       const fedRunner = {
         ...athletes.fastedRunner,
         is_fasted: false,
-        hours_before: 2,
       };
       const [fastedRes, fedRes] = await Promise.all([
         callMacrosV4(athletes.fastedRunner),
         callMacrosV4(fedRunner),
       ]);
 
-      assert(
-        fastedRes.data.macros.post_run_carbs_g > fedRes.data.macros.post_run_carbs_g,
-        `Fasted post carbs (${fastedRes.data.macros.post_run_carbs_g}) should be > fed (${fedRes.data.macros.post_run_carbs_g})`,
+      assertEquals(
+        fastedRes.data.macros.post_run_carbs_g,
+        fedRes.data.macros.post_run_carbs_g,
+        'is_fasted must not change post carbs',
       );
     });
 
@@ -1225,17 +1233,16 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
 
-    it('fastedLong: pre carbs = 0 (fasted), post carbs = 70 * durationMult * 1.2 ±5%', async () => {
+    it('fastedLong: is_fasted ignored (D-001) — t=0 top_up, post carbs = 70 * durationMult ±5%', async () => {
       const { data } = await callMacrosV4(athletes.fastedLong);
-      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+      assertEquals(data.macros.pre_run_meal_type, 'top_up');
       assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
       assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
 
-      // Post: duration > 2h, fasted: 70 * 1.2 * 1.2 = 100.8g
+      // Post: duration > 2h: 70 * 1.2 (the fasted 1.2x boost is retired).
       const durationH = data.macros.duration_h;
       const durationMult = durationH > 2 ? 1.2 : 1.0;
-      const fastedMult = 1.2;
-      const expectedPost = 70 * durationMult * fastedMult;
+      const expectedPost = 70 * durationMult;
       assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Fasted post carbs');
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
@@ -1351,9 +1358,11 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
 
-    it('topUpShort: pre carbs = 60 * max(0.5, 0.3) = 30g ±5% (0.5 g/kg floor)', async () => {
+    it('topUpShort: pre carbs = 60 * 0.3 = 18g ±5% (no floor — carbs v2)', async () => {
+      // The 0.5 g/kg floor is retired (carbs v2: reintroducing a floor is
+      // the regression). Target = t/60 × 1 g/kg × BW, uncapped below 4.
       const { data } = await callMacrosV4(athletes.topUpShort);
-      const expected = 60 * Math.max(0.5, Math.min(0.3, 4)); // 30 (0.5 g/kg floor)
+      const expected = 60 * Math.min(0.3, 4); // 18
       assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'topUpShort pre carbs');
       assertEquals(data.macros.pre_run_meal_type, 'top_up');
       assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
@@ -1412,17 +1421,16 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
 
-    it('heavyFastedShort: fasted, post carbs = 88 * durationMult * 1.2 ±5%', async () => {
+    it('heavyFastedShort: is_fasted ignored (D-001) — post carbs = 88 * durationMult ±5%', async () => {
       const { data } = await callMacrosV4(athletes.heavyFastedShort);
-      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+      assertEquals(data.macros.pre_run_meal_type, 'top_up');
       assertEquals(data.macros.during_sport_ceiling_g_per_h, 70, 'Running ceiling');
       assert(data.macros.during_rate_g_per_h <= 70, 'Rate <= ceiling');
 
-      // Post: fasted: 88 * durationMult * 1.2
+      // Post: 88 * durationMult (fasted boost retired).
       const durationH = data.macros.duration_h;
       const durationMult = durationH > 2 ? 1.2 : 1.0;
-      const fastedMult = 1.2;
-      const expectedPost = 88 * durationMult * fastedMult;
+      const expectedPost = 88 * durationMult;
       assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'Fasted post carbs');
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
@@ -1458,14 +1466,13 @@ describe('generate-macros-v4 Integration Tests', () => {
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
 
-    it('fastedRunner: fasted, post carbs = 65 * durationMult * 1.2 ±5%', async () => {
+    it('fastedRunner: is_fasted ignored (D-001) — post carbs = 65 * durationMult ±5%', async () => {
       const { data } = await callMacrosV4(athletes.fastedRunner);
-      assertEquals(data.macros.pre_run_meal_type, 'fasted');
+      assertEquals(data.macros.pre_run_meal_type, 'top_up');
 
       const durationH = data.macros.duration_h;
       const durationMult = durationH > 2 ? 1.2 : 1.0;
-      const fastedMult = 1.2;
-      const expectedPost = 65 * durationMult * fastedMult;
+      const expectedPost = 65 * durationMult;
       assertWithinPercent(data.macros.post_run_carbs_g, expectedPost, PERCENT_TOLERANCE, 'fastedRunner post carbs');
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
@@ -1487,7 +1494,8 @@ describe('generate-macros-v4 Integration Tests', () => {
       const { data } = await callMacrosV4(athletes.lightweightTopUp);
       const expected = 55 * Math.min(0.5, 4); // 27.5
       assertWithinPercent(data.macros.pre_run_carbs_g, expected, PERCENT_TOLERANCE, 'lightweightTopUp pre carbs');
-      assertEquals(data.macros.pre_run_meal_type, 'top_up');
+      // 0.5 h sits ON the inclusive snack boundary (>= 30 min).
+      assertEquals(data.macros.pre_run_meal_type, 'snack');
       assertInRange(data.macros.post_run_protein_g, 20, 40, 'Post protein 20-40g');
     });
   });
