@@ -176,6 +176,26 @@
     "ScheduleBlock": {
       "cardMode": "column",
       "viewport": "520x1000"
+    },
+    "FeedingCard": {
+      "cardMode": "column",
+      "viewport": "520x1400"
+    },
+    "FuelStat": {
+      "cardMode": "column",
+      "viewport": "520x600"
+    },
+    "FuelingWindowControl": {
+      "cardMode": "column",
+      "viewport": "520x800"
+    },
+    "IntensityCompositeBar": {
+      "cardMode": "column",
+      "viewport": "520x600"
+    },
+    "IntensityPresetChips": {
+      "cardMode": "column",
+      "viewport": "520x800"
     }
   },
   "readmeHeader": ".design-sync/conventions.md"

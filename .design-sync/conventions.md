@@ -4,11 +4,12 @@ Import components from `window.MealvanaDS`. No provider is required — every co
 
 - **Foundations:** `Icon`, `IconChip`, `InfoIcon`
 - **Buttons:** `PrimaryButton`, `SecondaryButton`, `SegmentedControl`, `SelectionButton`, `TertiaryButton`
-- **Inputs:** `Dropdown`, `InputField`, `Stepper`, `Switch`
+- **Inputs:** `Dropdown`, `InputField`, `IntensityCompositeBar`, `IntensityPresetChips`, `Stepper`, `Switch`
 - **Surfaces:** `Card`, `HeroImageCard`, `PhaseCard`
 - **Feedback:** `Banner`, `Snackbar`
 - **Navigation:** `DetailHeader`, `ScreenHeader`, `TabBar`, `TripleAction`
 - **Data:** `ActivityRow`, `FoodRow`, `FuelItem`, `FuelStep`, `MacroDonut`, `MacroRing`, `MacroStat`, `NutritionalTargetsCard`, `ScheduleBlock`, `SourceDot`, `SourceLegend`, `StackedBar`
+- **Fueling:** `FeedingCard`, `FuelStat`, `FuelingWindowControl`
 - **Timeline:** `StatusPill`, `Timeline`, `WorkoutCard`
 - **Dashboard:** `NetBalanceCard`, `ViewTabs`, `WeekStrip`
 - **Sheets:** `BreakdownTable`, `EnergyRow`, `EquationCard`, `HeroNumber`, `PagerDots`, `SheetHeader`
@@ -33,6 +34,7 @@ Use the tokens for any layout glue you write; never a raw hex.
 - Timeline screens: `ViewTabs` → `WeekStrip` → `NetBalanceCard` → filter `SegmentedControl` + outline `IconChip`s → `Timeline` whose entries are `WorkoutCard` (`status` planned / verified / skipped; `reveal` for swipe mockups) and `FoodRow` (`kcal/carbs/protein/fat`) → `TabBar` pinned in a `position: relative` container.
 - Sheets: `SheetHeader` first, `PagerDots` last. Energy: `EquationCard` + `BreakdownTable` + `SourceLegend`. Active energy: `HeroNumber` + `StackedBar` + `EnergyRow`s. Fuel: `size="lg"` `SegmentedControl` + three `MacroDonut`s.
 - Activity details: `DetailHeader` (delete is `tone="destructive"`) → `HeroImageCard` → `ScheduleBlock` → `Banner` → `tone="orange" size="lg"` `SegmentedControl` → `PhaseCard` per phase (`before` orange, `during` electrolyte, `after` dragonfruit) holding three `MacroStat`s then `FuelStep`s (before/after) or `FuelItem`s (during).
+- Pre-workout BEFORE card: three `FuelStat`s across the summary row (carbs · fluids · sodium), then one `FeedingCard` per tier (meal · snack · top-off). Create-flow fueling controls: `FuelingWindowControl` + `IntensityPresetChips` + `IntensityCompositeBar`.
 - Group other content in `Card` (15px, hairline); lists of foods outside the timeline are `FoodRow`s.
 - Icons: `<Icon name="…">` only (Font Awesome names as in the Flutter app: `personRunning`, `utensils`, `calendarCheck`, `gear`, `penToSquare`, `trash`…); 13–16px inline, 18–24px in an `IconChip`. No emoji anywhere.
 - Copy: Title Case labels, no exclamation marks; figures with units (`5.0 mi · 43 min`, `640 kcal · 116C · 16P · 12F`); separators use `·` inside data lines and `•` between stats.

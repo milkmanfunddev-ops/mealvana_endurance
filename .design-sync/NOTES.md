@@ -94,6 +94,19 @@ under the twin's name; when promoted, re-sync recalibrates the twin from the lib
   are NOT what Claude Design builds with — the components are.
 - Card harness width is ~380 px; screens are authored at `width: 100%; max-width: 428px`.
 
+## Fueling family port (2026-09-05)
+Five library components ported into the twin from their current Dart (all live in
+`kyle_design/` already — no promotion pending for these): `FeedingCard` + `FuelStat`
+(`fueling/feeding_card.dart`, `fueling/fuel_stat.dart` — specs `feeding-card.md` /
+`fuel-stat.md` v1, as amended by the 2026-09-01 phase-card parity ruling and AMENDMENT A1;
+ported post-amendment, so the fasted state and Sansita-30 hero were never in the twin),
+`FuelingWindowControl` (`fueling/fueling_window_control.dart` — CF-1/CF-2/Q-CF1 snap and
+clamp logic mirrored), `IntensityCompositeBar` + `IntensityPresetChips`
+(`inputs/…` — create-flow-fueling-controls surface). The feeding-card chevron uses the
+rendering's stroke path verbatim (`fueling_glyphs.dart`); the dashed Add Food pill is CSS
+`border: dashed` (Dart paints 4/3 dashes — accepted approximation, same as
+`SecondaryButton outline="dashed"`).
+
 ## Known render warns
 - `[GRID_OVERFLOW]` on every component → all are `cardMode: column` (previews are 343 px phone
   columns by design). Expected on every re-sync; not new.
