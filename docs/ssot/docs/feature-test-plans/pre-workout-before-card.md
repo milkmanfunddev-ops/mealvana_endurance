@@ -38,7 +38,7 @@ Every cell is a manifest id or an explicit open.
 | Hydration check present | ✅ contract: present, all four answers (`h2_*`) | ✅ absent (`h_suppressed_below_2h`, `before_90min`) | absent (same test) | absent (same test) |
 | Hydration check × **gated** fluid | ✅ interim P1 — suppressed (`h_suppressed_when_gated`; device ✓) — ruling owed | n/a (absent) | n/a | n/a |
 | Hydration check × **fasted** | ✅ present + answerable on device (run row 14); golden `fuelstat_fasted` — no gesture id names it, **add** | n/a | n/a | n/a |
-| Carbs band | cited `[1·BW, 4·BW]` (`fs_two_markers`) | ±12.5 % design band | ±12.5 % | `[0,0]` suppressed (`fs_three_no_number_states`) |
+| Carbs band | ✅ ±12.5 % in ALL regimes (AMENDED Xuan 2026-09-04, inv 11+12 — the cited `[1·BW, 4·BW]` column is SUPERSEDED; app `fs_two_markers` walks delivered into the tighter band, `offline_macro_calculator_pre_workout_carbs_test.dart` + `pre_workout_carbs_conformance_test.dart` + TS `pre-workout-vectors.test.ts` all repointed 2026-09-04) | ±12.5 % | ±12.5 % | `[0,0]` suppressed (`fs_three_no_number_states`) |
 | Fluids band | `[5·BW, 12·BW]`, check-independent (`h2_answer_writes_target`) | `[0, min(10·BW, ceiling)]` | same | same; M-2 no low-signal |
 | Delivered out of band | `fs_fluid_one_way_carbs_two_way` | same test | same | carbs `[0,0]`: is 1 g delivered "above ceiling" (M-2 alarm) when the band is suppressed? **OPEN — no doc says; fold into the I11 erratum as a question** |
 | Fine print `?` | **deferred S-G4** (all columns) | deferred | deferred | deferred |
@@ -97,7 +97,7 @@ Every cell is a manifest id or an explicit open.
 | Link | Failure mode it can hide | Owning doc | Cheapest layer | Pinned by |
 |---|---|---|---|---|
 | inputs → engine (weight, lead, duration, temp) | stale/fallback weight (`?? 70`-class), 480-min lead outside the ratified grid (D-016), swim water temp ignored, `tempC` null → 22 | carbs/hydration *Inputs* · PW-011 · intake `2026-08-25-pre-workout-fluid-gate-thresholds.md` (adjacent) | contract | ✅ app `test/features/nutrition_plan/data/pre_workout_boundary_collapses_test.dart` (weight → `MissingBodyWeightException`, no 70-kg stand-in); app `test/features/nutrition_plan/presentation/providers/fueling_window_clamp_test.dart` (480 → 240 on all four controllers) — not driven on device |
-| carbs math | any of inv. 1–11 regressing; tier boundary steps smoothed; floor reintroduced | carbs v2 | unit | ✅ app: `test/qa_conformance/pre_workout_carbs_conformance_test.dart` (19 vectors + property sweep over the 17-point grid × BW 30–160; CI gate `codemagic.yaml:57`) + TS `generate-macros-v4/pre-workout-vectors.test.ts`. **QA's own `conformance/pre_workout_carbs_conformance_test.dart` still calls the legacy `calculatePreWorkoutTargets` — §6.2** |
+| carbs math | any of inv. 1–12 regressing (11 amended, 12 new — band=target±12.5% unconditionally); tier boundary steps smoothed; floor reintroduced | carbs v2 | unit | ✅ app: `test/qa_conformance/pre_workout_carbs_conformance_test.dart` (19 vectors + property sweep over the 17-point grid × BW 30–160; CI gate `codemagic.yaml:57`) + TS `generate-macros-v4/pre-workout-vectors.test.ts`. **QA's own `conformance/pre_workout_carbs_conformance_test.dart` still calls the legacy `calculatePreWorkoutTargets` — §6.2** |
 | hydration math | gate → `0` not `null`; anchor A `high = 10·BW` (the v5 error); dark step missing; clearance bound outside top-off | hydration v6 | unit | ✅ app: `test/qa_conformance/pre_workout_hydration_conformance_test.dart` (21 vectors + inv. 1–5, 8, 8a, 8b, 9, 11 property sweep; CI) + TS twin. **QA's own harness does not compile — §6.2, intake 2026-08-25 erratum** |
 | sodium fields | any number emitted; the LEGACY map's 300/450/600 mg leaking into the card (PW-012 — §6.3) | sodium v3 | unit | ✅ app: `test/qa_conformance/pre_workout_sodium_conformance_test.dart` (8 vectors, null-only; CI). ⬜ for the *card*: nothing yet proves the BEFORE card reads v3's `null` and not the legacy `sodium_mg` |
 | cross-spec pin | constants drift apart | carbs inv. 10 / hydration inv. 10 | unit (build-time) | ✅ (I1) |
@@ -176,7 +176,7 @@ Every cell is a manifest id or an explicit open.
 
 | Contract | Vector file (in `vectors/`) | Consumed by |
 |---|---|---|
-| Carbs v2 (inv. 1–11, grid, boundaries) | ✅ `fueling/pre-workout-carbs.json` (19) | ✅ app `test/qa_conformance/pre_workout_carbs_conformance_test.dart` + TS `pre-workout-vectors.test.ts`; QA's `conformance/*.dart` copy stale (§6.2) |
+| Carbs v2 (inv. 1–12, grid, boundaries; band amendment 2026-09-04) | ✅ `fueling/pre-workout-carbs.json` (19) | ✅ app `test/qa_conformance/pre_workout_carbs_conformance_test.dart` + TS `pre-workout-vectors.test.ts`; QA's `conformance/*.dart` copy stale (§6.2) |
 | Hydration v6 (anchors, 8b band identity, clearance, gate) | ✅ `fueling/pre-workout-hydration.json` (21) | ✅ app `test/qa_conformance/pre_workout_hydration_conformance_test.dart` + TS; QA's copy does not compile (§6.2) |
 | Sodium v3 (null ×3, never 0) | ✅ `fueling/pre-workout-sodium.json` (8) | ✅ app `test/qa_conformance/pre_workout_sodium_conformance_test.dart` + TS |
 | Food suitability gates | ✅ `fueling/pre-workout-food-composition.json` (87) | ⬜ no runner, no engine (sibling bundle) |
