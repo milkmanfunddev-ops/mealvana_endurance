@@ -670,6 +670,31 @@ void main() {
       'fs_two_markers: delivered moves on a row change, suggested does not; suggested on a band end is not an alarm',
       (tester) async {
         await _pump(tester);
+        // Invariant 12 (RULED Xuan, 2026-09-04) tightened the plan band to
+        // target ± 12.5%, so the fixture's opening servings sit BELOW
+        // bandLow with the delivered marker clamped at the rail (by design —
+        // fs_colors pins that state dragonfruit). Marker MOTION is only
+        // observable in-band: walk delivered into the band first.
+        FuelStatData carbsStat() => tester
+            .widget<FuelStat>(
+              find.ancestor(
+                of: find.byKey(FuelStat.deliveredMarkerKey(FuelQuantity.carbs)),
+                matching: find.byType(FuelStat),
+              ),
+            )
+            .data;
+        for (var i = 0;
+            i < 25 && carbsStat().delivered <= (carbsStat().bandLow ?? 0);
+            i++) {
+          await tester.tap(find.byKey(FeedingCard.incKey('rx')));
+          await tester.pump();
+        }
+        await tester.pump(const Duration(milliseconds: 300)); // marker slide
+        expect(
+          carbsStat().delivered,
+          greaterThan(carbsStat().bandLow ?? 0),
+          reason: 'harness: delivered must reach the band to observe motion',
+        );
         final dBefore = _markerLeft(
           tester,
           FuelStat.deliveredMarkerKey(FuelQuantity.carbs),
