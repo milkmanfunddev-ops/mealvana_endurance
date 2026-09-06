@@ -1,0 +1,150 @@
+# Design conformance manifest — GESTURE / BEHAVIOR TESTS for the home shell
+# (tab bar · date header · calendar sheet). Names every widget/Patrol test that
+# MUST exist, with its required assertions. Test code lives in the app repo; qa
+# audits this manifest against the real test tree (qa-test-plan audit verb). A
+# test pins its contract only if it executes the REAL code path (no false pins).
+#
+# PIN RULE (specs delegate numbers here, not to prose): where a value reads
+# `pin: TBD-at-implementation`, the commit that lands the widget REPLACES the
+# TBD with the implemented value in this same file (harness co-evolution — the
+# daily-macros @v3 precedent). A TBD surviving past implementation is an audit
+# failure. EXPECTED-RED until the app implements against the home-shell@v1 tag.
+
+manifest: home-shell-gestures
+version: v1                 # RATIFIED (Xuan, 2026-09-06 — ruling-desk block); ships in home-shell@v1
+status: ratified
+spec_family: spec/design/   # components/tab-bar.md v1 · date-header.md v1 · calendar-sheet.md v1 · tokens.md §Materials
+suite: test/features/home_shell/home_shell_gestures_test.dart
+
+tests:
+  # ---- tab bar (components/tab-bar.md) ----
+  - id: tb1_scroll_collapses
+    contract: tab-bar Q1 trigger rule
+    assert:
+      - scroll-down past the collapse threshold -> state COLLAPSED (one circular glass button,
+        bottom-LEFT, showing only the active tab's icon)
+      - content scrolls under the bar in both states
+    pins: { collapse_threshold_px: 88 }
+  - id: tb2_scroll_reexpands
+    contract: tab-bar Q1 trigger rule (return path + hysteresis)
+    assert:
+      - scroll-up (or reaching top) -> state EXPANDED
+      - dithering at the boundary does NOT flap the state (hysteresis band)
+    pins: { expand_threshold_px: 64, hysteresis_px: 24 }
+  - id: tb3_collapsed_icon_is_active_tab
+    contract: tab-bar Q3
+    assert:
+      - with 3 destinations AND with 5, the collapsed button shows the ACTIVE tab's icon —
+        never a fixed glyph, never a count-dependent layout
+  - id: tb4_switch_travel
+    contract: tab-bar tab-switch transition (1 — highlight travel; RULED contractual 2026-09-06)
+    assert:
+      - tapping another destination animates the active highlight from old item to new —
+        position AND width both animate (no crossfade, no teleport)
+      - at the mid-transit timestamp the highlight is BETWEEN the two items (assert intermediate
+        geometry, not just the end state)
+    pins: { duration_ms: 340, easing: cubic-bezier(0.32,0.72,0,1) }
+  - id: tb5_switch_drag_tracking
+    contract: tab-bar tab-switch transition (2 — finger-tracking drag)
+    assert:
+      - a drag along the expanded bar moves the highlight fluidly under the finger — no
+        snapping between items while the drag is live
+      - release commits to the nearest destination; the travel animation completes from the
+        release position
+  - id: tb6_switch_refraction_active
+    contract: tab-bar tab-switch transition (3 — refraction in transit; tokens.md §Materials lensing)
+    assert:
+      - during transit the traveling highlight applies the lensing displacement to content
+        behind it (assert the shader/filter is active mid-transit and NOT at rest)
+      - appearance itself is golden-held (home-shell.goldens.yaml tab_bar_switch_transit_mid) —
+        this test pins activation, the golden pins the look
+    pins: { distortion_magnitude: 6.0px backdrop displacement, distortion_falloff: 8.0px outer band at half displacement }
+  - id: tb7_utility_slot_reserved   # NEGATIVE / geometry test — required
+    contract: tab-bar Q2 (option a)
+    assert:
+      - in v1 NOTHING renders in the bottom-right utility slot, in either bar state
+      - the bar itself never occupies the slot region (collapse morph targets the LEFT corner)
+
+  # ---- date header (components/date-header.md) ----
+  - id: dh1_title_tap_summons_sheet
+    contract: date-header Q1 (REST summon path)
+    assert: [tap the REST title -> the calendar sheet is summoned]
+  - id: dh2_compact_button_summons_same_sheet
+    contract: date-header Q1 (summon parity)
+    assert:
+      - tap the COMPACT calendar button -> the SAME calendar sheet component/state as dh1
+        (one sheet, two entry points — assert identity, not just "a sheet appeared")
+  - id: dh3_scroll_compacts_and_returns
+    contract: date-header Q1 (state pair)
+    assert:
+      - scroll-down past the threshold -> COMPACT (calendar button left · centred short date ·
+        gear right); content scrolls under with the fade
+      - scroll-up -> REST
+    pins: { compact_threshold_px: 56 }
+  - id: dh4_chevrons_navigate_adjacent_day
+    contract: date-header Q2
+    assert:
+      - REST-state "<" tap -> home shows the previous day; ">" tap -> the next day
+      - no sheet is summoned by a chevron tap
+  - id: dh5_no_screen_level_horizontal_swipe   # NEGATIVE TEST — required (hard constraint)
+    contract: date-header Q2 hard constraint (protects workout-card G1-G4 / G3 zero-translation)
+    assert:
+      - a horizontal drag over the timeline region produces ZERO screen-level day change and
+        zero screen-level translation
+      - the workout card under the finger still receives its own G-set (a left-drag on a
+        non-verified card still reveals per G4)
+  - id: dh6_title_copy_register
+    contract: date-header Q1 (title copy, weekday variant pinned 2026-09-06)
+    assert:
+      - current day -> title is exactly "Today, {Month D} ˅"
+      - any other day -> "{Weekday}, {Month D} ˅" (weekday replaces "Today"; nothing else changes)
+
+  # ---- calendar sheet (components/calendar-sheet.md CS-1..CS-6 + both channels) ----
+  - id: cs2_grabber_pull_dismisses_with_snapback
+    contract: calendar-sheet CS-2 (dismissal set RULED contractual 2026-09-06)
+    assert:
+      - grabber pull past the commit threshold -> sheet dismisses
+      - a SHORT pull released early -> sheet SNAPS BACK and stays open (negative half — required)
+    pins: { commit_threshold_px: 90 }
+  - id: cs3_scrim_tap_dismisses
+    contract: calendar-sheet CS-3
+    assert: [tap on the scrim (outside the sheet) -> sheet dismisses]
+  - id: cs4_day_tap_navigates_and_dismisses
+    contract: calendar-sheet CS-4
+    assert:
+      - tap a day cell -> home navigates to that date AND the sheet dismisses — assert BOTH in
+        one test (the combined contract, not two halves)
+  - id: cs5_month_navigation_keeps_sheet
+    contract: calendar-sheet CS-5
+    assert: [month chevron tap -> grid shows the adjacent month; the sheet stays open]
+  - id: cs6_today_pill
+    contract: calendar-sheet CS-6
+    assert: [Today pill tap -> current day selected and navigated to]
+  - id: cs7_dot_mapping
+    contract: calendar-sheet Q1 (dot slot <- workout-card.md v3 states)
+    assert:
+      - a day whose best workout state is PLANNED -> hollow orange ring (2 px stroke, dark centre)
+      - DONE_CONFIRMED and DONE_VERIFIED -> the SAME filled electrolyte dot (no per-source
+        distinction at cell size)
+      - a day whose only workout is SKIPPED — ACTIVE and PASSIVE alike -> NO dot (negative half
+        required; a hollow ring on a skipped day is the banned failure signal)
+      - a rest day -> no dot
+      - a multi-workout/brick day -> ONE dot, best state wins (any completed -> filled; else any
+        planned -> hollow)
+  - id: cs8_tint_binary
+    contract: calendar-sheet Q2 (tint slot; binary v1)
+    assert:
+      - a day with >= 1 athlete food log entry -> tinted (any source counts as the athlete's)
+      - a day with ONLY engine-planned items -> NOT tinted (negative half — required)
+      - tint is binary in v1 — no intensity scaling renders
+      - day boundary follows the app's existing daily-macros day definition
+  - id: cs9_today_selected_treatment
+    contract: calendar-sheet today/selected ruling (2026-09-06 — export governs)
+    assert:
+      - today renders as the cream-FILLED cell
+      - a selected non-today day renders as the 2 px cream RING
+      - selected == today -> filled (the today treatment wins)
+
+done_when: every test above exists in the app repo, executes the real code path,
+  runs in automatic CI (exclusions recorded in the feature test plan), and no
+  `TBD-at-implementation` pin survives in this file

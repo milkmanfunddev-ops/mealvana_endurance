@@ -123,6 +123,16 @@ conformance:
     match-window.md and intake/2026-08-18-platform-declared-skip-semantics.md (both recommend
     status quo, which is what the ratified text already says).
 
+    PINNED CONTENT MOVED ON BRANCH qa/home-shell (2026-09-06, class-b additions; the @v3 tag
+    itself is immutable and unchanged): spec/design/tokens.md gained the ratified §Materials
+    addition (glass, glass-sheet incl. blackberry-60% scrim, lensing boundary lifted — intake/
+    2026-09-06-glass-material-token-ruling.md, no slice version bump), and spec/design/surfaces/
+    macro-dashboard.md gained the staged home-shell recomposition section (effective only with
+    home-shell@v1 on the new screen; S-1..S-7 and the shipped composition unchanged).
+    RECOMMEND: ship-bundle cuts an annotated point re-tag so agents pin the moved content
+    (@v3 is never moved or deleted). DONE 2026-09-06 as daily-macros-dashboard@v3.2 —
+    @v3.1 was already taken by the 2026-09-04 zoneless-IF (§4c) amendment.
+
 deviations:
   - slice: calculate-daily-macros (existing implementation)
     status: superseded-not-deviant

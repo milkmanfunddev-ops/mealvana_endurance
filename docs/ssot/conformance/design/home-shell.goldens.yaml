@@ -1,0 +1,103 @@
+# Design conformance manifest — GOLDENS for the home shell
+# (tab bar · date header · calendar sheet). The design analogue of a vectors
+# file: names every golden that MUST exist, with the state and canonical-mock
+# inputs it renders from. The golden PNGs are implementation-side artifacts
+# (blessed from the first correct rendering); THIS file is what qa audits.
+#
+# Contract source: spec/design/components/{tab-bar,date-header,calendar-sheet}.md
+# (all RATIFIED v1, Xuan 2026-09-06). Materials resolve from spec/design/tokens.md
+# §Materials — every glass golden renders the ratified recipe (glass / glass-sheet
+# incl. the blackberry-60% scrim), never the design export's ad-hoc values where
+# the two differ (compact header row = glass; scrim = blackberry 60%).
+#
+# RULE: a golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass. Regeneration commits cite the spec change.
+
+manifest: home-shell-goldens
+version: v1                 # RATIFIED (Xuan, 2026-09-06 — ruling-desk block); ships in home-shell@v1
+status: ratified
+spec_family: spec/design/
+suite: test/features/home_shell/home_shell_goldens_test.dart
+
+# Canonical mock month — pinned from the ratified walk of the design export
+# (August 2026 as drawn, verified 2026-09-06). It exists to force the two cell
+# channels to DIVERGE in one frame; keep the divergence pairs when re-mocking.
+mock_month:
+  month: "August 2026"
+  today: 31                                  # cream-FILLED cell
+  selected: 12                               # cream ring (selected != today)
+  dots:
+    filled_electrolyte: [3, 5, 7, 10, 12, 14, 19, 21, 24, 26, 28, 31]   # completed days
+    hollow_orange:      [22, 29]                                        # future PLANNED days
+  tints: [3, 4, 5, 7, 8, 10, 12, 15, 17, 19, 24, 26, 29, 31]            # >= 1 athlete log
+  divergence_pairs:                          # the point of the mock — must survive any re-mock
+    dot_no_tint: [14, 21, 28]                # completed workout, unlogged day
+    tint_no_dot: [8, 15]                     # logged rest day
+  skipped_no_dot: [11]                       # SKIPPED day — number renders, dot slot EMPTY
+
+goldens:
+  # ---- tab bar (components/tab-bar.md) ----
+  - id: tab_bar_expanded_3
+    component: tab-bar
+    state: EXPANDED
+    notes: 3 destinations, house glyph on the active Fuel Timeline item (Q4), cream
+      active-highlight, glass recipe, left-anchored with the bottom-right utility slot EMPTY (Q2)
+  - id: tab_bar_expanded_5
+    component: tab-bar
+    state: EXPANDED
+    notes: the 5-destination extreme (Q3) — pill holds five icon+label items without truncation
+  - id: tab_bar_collapsed
+    component: tab-bar
+    state: COLLAPSED
+    notes: one ~52 px circular glass button, bottom-left, active tab's icon only; outer lift
+      shadow per tokens §Materials
+  - id: tab_bar_morph_mid
+    component: tab-bar
+    state: EXPANDED->COLLAPSED, mid-morph frame (fixed animation timestamp)
+    notes: the collapse morph targets the LEFT corner (Q2 coherence); pinned timestamp keeps the
+      golden deterministic
+  - id: tab_bar_switch_transit_mid
+    component: tab-bar
+    state: tab-switch, mid-transit frames (fixed timestamps)
+    notes: highlight BETWEEN items (travel + width morph) WITH the lensing displacement active
+      behind it (tokens §Materials — lensing; RULED contractual 2026-09-06). Property-based,
+      never "matches iOS"; the gesture manifest (tb4/tb6) pins the numbers, this golden pins
+      the look
+
+  # ---- date header (components/date-header.md) ----
+  - id: date_header_rest_today
+    component: date-header
+    state: REST, current day
+    notes: Sansita "Today, August 31 ˅" + slim ‹ › chevrons (Q2) + gear right
+  - id: date_header_rest_weekday
+    component: date-header
+    state: REST, non-today
+    notes: '"Wednesday, August 12 ˅" — the weekday variant pinned 2026-09-06; chevrons + gear as above'
+  - id: date_header_compact
+    component: date-header
+    state: COMPACT
+    notes: circular calendar button left · "Aug 31, 2026" centred · gear right; THE ROW ITSELF
+      renders the glass recipe (RULED 2026-09-06 — not the export's blur-14 fade); content
+      scrolling under with the fade
+
+  # ---- calendar sheet (components/calendar-sheet.md) ----
+  - id: calendar_sheet_dense_month
+    component: calendar-sheet
+    state: mock_month above, summoned over the home timeline
+    notes: the channels DIVERGE in frame — tinted rest days (8, 15) AND untinted completed days
+      (14, 21, 28) both visible; hollow rings on 22/29 with dark centres; SKIPPED day 11 with no
+      dot; today 31 filled, selected 12 ring; glass-sheet + blackberry-60% scrim; Today pill
+      bottom-left
+  - id: calendar_sheet_sparse_month
+    component: calendar-sheet
+    state: a 3-workout / 3-tint month (re-mock, keep one dot_no_tint and one tint_no_dot day)
+    notes: must read CALM — the sparse half of the intake's golden gate; same chrome and scrim
+  - id: calendar_cell_spec_card
+    component: calendar-sheet
+    state: enlarged cell-spec card
+    notes: every cell treatment in one frame — the four dot rows (hollow / filled / skipped-empty
+      / rest-empty), tint on/off, today (filled), selected (ring), selected==today (filled);
+      three-slot anatomy legible at enlarged size
+
+done_when: every golden above exists, renders from the pinned mock month (or the
+  sparse re-mock) at token-resolved colors over the ruled scrim, and passes in CI

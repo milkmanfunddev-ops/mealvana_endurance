@@ -33,6 +33,48 @@ The fuel-stat's overshoot marker (over-drinking above the fluid ceiling; a macro
 render in `dragonfruit`. The token now means destructive **or** out-of-range caution. Unblocks the
 `fuel-stat` overshoot golden.
 
+## Materials — RULED (Xuan, 2026-09-06, post-ratification addition; no version bump)
+
+**Ruling source:** [`../../intake/2026-09-06-glass-material-token-ruling.md`](../../intake/2026-09-06-glass-material-token-ruling.md)
+(RESOLVED — ruling-desk block of 2026-09-06). First translucent-blur material in the registry;
+the "hairlines do the work" elevation story is unchanged everywhere glass is not named. The
+numbers below are **the contract** (DOM-verified against the home-shell design export
+2026-09-06); the export illustrates — phase-card-parity precedent. Conformance reference is the
+app's own goldens (Flutter: `BackdropFilter` + painted rim), never a pixel match to any HTML or
+to iOS.
+
+**`glass`** — floating chrome: pills, circular buttons, **and the compact header row itself**
+(RULED 2026-09-06: the export's blur-14 blackberry fade on that row is superseded; the row takes
+this recipe like its buttons):
+- backdrop: blur 4 px · saturate 1.8 · brightness 1.12 (content behind stays recognizable, gets
+  more vivid and slightly BRIGHTER — never darker)
+- fill: vertical gradient, `cream` 7 % → 2 % alpha
+- rim, light source top: 1 px inner specular highlight, `cream` 40 % across the top arc fading to
+  `cream` 8 % at the sides; bottom inner shadow inset 0 −1 px 1 px black 25 %
+- outer lift under floating pills only: 0 8 px 24 px black 25 %
+- shapes: capsules and circles; highlights are `cream`-based — never `#fff` at full opacity
+
+**`glass-sheet`** — summoned surfaces (the calendar sheet):
+- the same backdrop chain; top radius 24; specular line under the grabber; fill `cream` 4 % → 1 %
+- **scrim: `blackberry` 60 % — rgba(56, 22, 51, 0.6) — between the page and the sheet.**
+  RULED 2026-09-06: **the export governs**; the intake's proposed black ~35 % is corrected by
+  this ruling. Load-bearing, not cosmetic: without it, page chrome bleeds through and
+  impersonates the sheet's own glyph vocabulary. Every future summoned glass surface inherits
+  the scrim.
+
+**Lensing — boundary LIFTED (RULED Xuan, 2026-09-06; reverses the filed intake's exclusion):**
+edge refraction/displacement may be **contractual on any glass chrome** where the invoking
+component spec names it (first: the tab bar's switch transition,
+[`components/tab-bar.md`](components/tab-bar.md)). Defined by **observable properties only**
+(distortion magnitude and falloff, easing/timing) — never "matches iOS" — and **per-surface
+goldens are required** for every surface that lenses. A glass surface whose spec does not name
+lensing does not lens.
+
+**Boundaries (unchanged by this addition):** timeline/content cards NEVER take glass — solid
+fill + hairline stays their ratified treatment; glass is floating chrome + summoned sheets only.
+Dark-first: the values above are for the `blackberry` ground; a light-surface variant is
+deferred until a light surface needs one.
+
 **Q-D2 — RULED (Xuan, 2026-08-14): the current `dragonfruit` delete treatment is the contract
 as-is.** Weight accepted at reference-rendering saturation and size; open to future iteration but
 not a defect. (Register finding W-9 closes with this.) *v2 note (2026-08-17, Q-D6): delete is

@@ -20,6 +20,28 @@ manifest pins slices.
 | Tokens | [`../tokens.md`](../tokens.md) | v1 (ratified) |
 | Meal card · filter row · AI card · timeline rail | **no component spec yet** — they earn one when their states/gestures get contracted; until then their truths live here or nowhere |
 
+## Home-shell recomposition — RULED (Xuan, 2026-09-06, post-ratification addition; effective with `home-shell@v1` on the new screen)
+
+**Ruling source:** [`../../../intake/2026-09-06-date-header-component.md`](../../../intake/2026-09-06-date-header-component.md)
+Q3 (RESOLVED — ruling-desk block of 2026-09-06). This section **stages** the home surface's next
+composition; the S-1…S-7 contracts and the composition table above are unchanged for the shipped
+surface until `home-shell@v1` lands on the new screen.
+
+- **Join the composition** (each pinned at v1, ratified 2026-09-06):
+  [`../components/date-header.md`](../components/date-header.md) ·
+  [`../components/tab-bar.md`](../components/tab-bar.md) ·
+  [`../components/calendar-sheet.md`](../components/calendar-sheet.md) — materials per
+  [`../tokens.md`](../tokens.md) §Materials.
+- **Leave this surface:** `ViewTabs` + `WeekStrip` (the ~150 px persistent block). Both stay in
+  the widget library — other surfaces may still compose them, and `WeekStrip` may be reused
+  inside the calendar sheet's month-grid context. The `BY MONTH` view is superseded on this
+  surface by the calendar sheet.
+- **Adjacent-day navigation** moves to the date header's chevrons (its Q2 ruling); the hard
+  no-screen-level-horizontal-swipe constraint protects this surface's workout-card G-set
+  testability (G3 zero-translation).
+- The tab bar's reserved bottom-right utility slot is part of this surface's geometry; its future
+  occupant inherits the FAB clearance rule (tab-bar.md Q2).
+
 ## Surface contracts
 
 | # | Contract |

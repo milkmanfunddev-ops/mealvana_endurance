@@ -1,0 +1,59 @@
+# Release bundle manifest — a pinned set of ratified SSOTs for one app release.
+# A code agent checks out the tag `home-shell@v1` and implements exactly these
+# slices to green conformance. Design-only bundle: conformance = the two design
+# manifests (goldens + gestures), audited qa-side, implemented app-side on a
+# NEW screen (dev-visible) — the shipped fuel-timeline home is untouched until
+# switchover. Ruling source: the 2026-09-06 ruling-desk block (four intakes,
+# all RESOLVED at qa commit 254af48).
+
+bundle: home-shell
+version: v1
+status: ratified
+ratified: 2026-09-06            # Xuan — ruling-desk block; specs written by apply-ruling same day
+ships: the liquid-glass home shell — tab bar v2 (glass, scroll collapse, contractual switch effect), date header (two states, chevrons), calendar sheet (two-channel cells), and the glass/glass-sheet material tokens
+
+specs:
+  # --- components (design; conformance = manifests, not vectors) ---
+  - { slice: tab-bar,        version: v1, spec: spec/design/components/tab-bar.md,        vectors: conformance/design/home-shell.gestures.yaml, engine: app widget layer — kyle_design/navigation (updates floating_action_buttons_bar.dart) }
+  - { slice: date-header,    version: v1, spec: spec/design/components/date-header.md,    vectors: conformance/design/home-shell.gestures.yaml, engine: app widget layer — kyle_design/navigation (replaces fuel_timeline_day_header.dart on the new screen) }
+  - { slice: calendar-sheet, version: v1, spec: spec/design/components/calendar-sheet.md, vectors: conformance/design/home-shell.gestures.yaml, engine: app widget layer — kyle_design/navigation (new) }
+  # --- materials (post-ratification addition to the ratified tokens registry) ---
+  - { slice: design-tokens-materials, version: v1+materials-2026-09-06, spec: spec/design/tokens.md, vectors: conformance/design/home-shell.goldens.yaml, engine: "lib/theme/kyle_design/ — ONE registry, no second token class" }
+  # --- surface (staged recomposition; effective on the new screen only) ---
+  - { slice: home-surface-recomposition, version: v2+home-shell-2026-09-06, spec: spec/design/surfaces/macro-dashboard.md, vectors: conformance/design/home-shell.gestures.yaml, engine: "new home screen composing the three components; ViewTabs/WeekStrip block (fuel_timeline_day_header) leaves it" }
+
+excludes:
+  - { slice: ai-elements, reason: "DEFERRED deliberately (Xuan, 2026-09-06): the export's companion pill + four modes, sparkle meal-suggestion toggle + dashed cards, Add-to-Dinner sheet, chat sheet — pending convergence with the in-flight Vana work. Do not implement, spec, or rule on any of them from this bundle" }
+  - { slice: ride-fuel-plan-editor, reason: "PARKED (Xuan, 2026-09-06): the export's editor screen contradicts ratified phase colours and gesture contracts" }
+  - { slice: utility-slot-occupant, reason: "the bottom-right slot ships EMPTY — named geometry only (tab-bar Q2, option a); the occupant is a future additive ruling and inherits the FAB clearance rule" }
+  - { slice: tint-intensity-scaling, reason: "tint is BINARY in v1 (ruled 2026-09-06); intensity scaling is a later ruling, not a defect" }
+  - { slice: light-surface-glass, reason: "materials are dark-first; a light variant is deferred until a light surface needs one (tokens.md §Materials)" }
+  - { slice: events-calendar-feature, reason: "the existing features/calendar screens (month/week views, events, carb-loading) are NOT touched — the calendar sheet supersedes only the home surface's BY MONTH view" }
+
+conformance:
+  runner: "design manifests (qa-test-plan audit verb) + app goldens/widget/Patrol suites; no numeric vectors — this bundle has no engine slices"
+  invoke:
+    - "audit conformance/design/home-shell.gestures.yaml against the app test tree (21 tests)"
+    - "audit conformance/design/home-shell.goldens.yaml against the blessed goldens (11 goldens)"
+  done_when: >
+    every test in home-shell.gestures.yaml exists, executes the real code path and passes in
+    automatic CI; every golden in home-shell.goldens.yaml is blessed from the pinned mock month
+    and passes; no `TBD-at-implementation` pin survives in the gestures manifest; the app's
+    docs/ssot mirror is byte-identical to the qa pin; /design-sync run on the new screen;
+    feature-test-plan rows flipped.
+  note: >
+    EXPECTED-RED by design: no app code implements these contracts at freeze time. The gestures
+    manifest's TBD pins are filled by the implementing commits (harness co-evolution — the
+    daily-macros @v3 precedent). Numbers govern, the export illustrates (phase-card-parity):
+    where the ruled numbers and `New Homepage with updated navbar calendar and chat.html`
+    disagree, the ruled numbers win — known divergences the rulings settled: scrim = blackberry
+    60% (export agreed, intake corrected), compact header row = glass recipe (EXPORT's blur-14
+    fade superseded), today = FILLED / selected = ring (export agreed, intake corrected),
+    tab-switch refraction + drag-tracking (in NEITHER — property-based spec is the only truth).
+    Point re-tag daily-macros-dashboard@v3.2 cut alongside this bundle (tokens.md +
+    macro-dashboard.md moved on this branch; @v3 immutable; @v3.1 was already taken by the
+    2026-09-04 zoneless-IF amendment). App handback:
+    intake/2026-09-06-home-shell-handback.md; coding-agent handoff: bundles/home-shell.handoff.md.
+
+deviations: []   # nothing shipped-but-unratified inside scope; the shipped un-specced tab bar is
+                 # superseded by tab-bar.md v1 on the new screen, not carried as a deviation
