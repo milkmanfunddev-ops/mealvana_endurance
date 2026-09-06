@@ -1,3 +1,8 @@
+// SUPERSEDED (staged): tab-bar.md v1 (`home-shell@v1`, RATIFIED Xuan
+// 2026-09-06) contracts this bar's successor — [KyleTabBar]
+// (kyle_tab_bar.dart), composed by the new dev-visible home shell. This
+// widget keeps the SHIPPED home's chrome untouched until switchover, the
+// same staging as fuel_timeline_day_header.dart; don't extend it.
 import 'dart:ui';
 
 import 'package:flutter/material.dart';

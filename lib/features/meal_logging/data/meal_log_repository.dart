@@ -212,6 +212,39 @@ class MealLogRepository with SyncableRepository {
     return result.length;
   }
 
+  /// Watch the distinct `log_date` values carrying at least one non-deleted
+  /// meal log for [userId] in the inclusive range [startDate]..[endDate]
+  /// (both `'yyyy-MM-dd'`; ISO dates compare lexicographically).
+  ///
+  /// The per-day fueling-log rollup of the home-shell calendar sheet's tint
+  /// channel (calendar-sheet.md Q2, binary v1): presence only — ANY meal-log
+  /// row counts as the athlete's, whatever its [MealLog.source]. Day
+  /// boundary is `log_date` itself, the app's existing daily-macros day
+  /// definition (a local calendar date, never a timestamp range).
+  Stream<Set<String>> watchLogDatesInRange(
+    String userId,
+    String startDate,
+    String endDate,
+  ) {
+    final query = _database.selectOnly(_database.mealLogsTable, distinct: true)
+      ..addColumns([_database.mealLogsTable.logDate])
+      ..where(
+        _database.mealLogsTable.userId.equals(userId) &
+            _database.mealLogsTable.isDeleted.equals(false) &
+            _database.mealLogsTable.logDate.isBetweenValues(
+              startDate,
+              endDate,
+            ),
+      );
+
+    return query.watch().map(
+      (rows) => rows
+          .map((r) => r.read(_database.mealLogsTable.logDate))
+          .whereType<String>()
+          .toSet(),
+    );
+  }
+
   /// Watch non-deleted logs for a calendar day, ordered by [eatenAt] then
   /// [createdAt] (most-recent first within a slot).
   ///

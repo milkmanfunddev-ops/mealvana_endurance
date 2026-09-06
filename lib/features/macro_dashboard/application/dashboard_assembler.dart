@@ -7,6 +7,7 @@ import '../../meal_logging/domain/meal_log.dart';
 import '../../nutrition_plan/application/daily_baseline_calculator.dart';
 import '../../../shared/domain/session_input_resolver.dart';
 import '../domain/dashboard_models.dart';
+import '../domain/workout_state_resolver.dart';
 
 /// The assembled macro-dashboard view state.
 class DashboardData {
@@ -134,21 +135,12 @@ class MacroDashboardAssembler {
     DateTime now,
     double? weightKg,
   ) {
-    // Two-time model: a card is done when the athlete confirmed it or a
-    // sync stamped actual_time; verified when a platform stamped it. Sync
-    // beats skip (G6): a matching sync writes actual_time + the summary id,
-    // so a skipped row that syncs reads as DONE_VERIFIED here regardless of
-    // what `status` says.
+    // The state derivation (two-time model, Q-D5/Q-D6 skip triggers, G6
+    // sync-beats-skip) lives in resolveWorkoutCardState — extracted for the
+    // home-shell calendar sheet's dot channel; the rulings are documented
+    // there.
+    final state = resolveWorkoutCardState(a, day: selectedDate, now: now);
     final done = a.status == ActivityStatus.completed || a.actualTime != null;
-    final verified = done && a.garminSummaryId != null;
-
-    // SKIPPED — two triggers (Q-D6):
-    //  ACTIVE  — status = 'skipped', written by the Skip press (allowed on
-    //            the current day). Unskip / mark-done clear it.
-    //  PASSIVE — the workout's day is past and it has neither sync nor
-    //            confirmation. Derived, never written; the CURRENT day never
-    //            shows a passive SKIPPED (the rejected same-day-22:00
-    //            trigger must not exist — Q-D5).
     final skipActive = !done && a.status == ActivityStatus.skipped;
     final selectedDay = DateTime(
       selectedDate.year,
@@ -156,17 +148,7 @@ class MacroDashboardAssembler {
       selectedDate.day,
     );
     final today = DateTime(now.year, now.month, now.day);
-    final dayPast = selectedDay.isBefore(today);
     final dayFuture = selectedDay.isAfter(today);
-    final skipPassive = !done && !skipActive && dayPast;
-
-    final state = verified
-        ? WorkoutCardState.doneVerified
-        : done
-        ? WorkoutCardState.doneConfirmed
-        : (skipActive || skipPassive)
-        ? WorkoutCardState.skipped
-        : WorkoutCardState.planned;
 
     // A skipped card has no displayed time (S-7); its sort key for the tucked
     // group is planned_time. Everything else displays actual ?? planned.

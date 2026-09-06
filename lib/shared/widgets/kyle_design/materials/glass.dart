@@ -1,0 +1,243 @@
+/// Glass material composites — `docs/ssot/spec/design/tokens.md` §Materials
+/// (RULED Xuan 2026-09-06; ships with `home-shell@v1`).
+///
+/// The painting layer for the ratified `glass` / `glass-sheet` recipes and
+/// the lensing displacement. Raw values come from [AppMaterials] (the ONE
+/// registry, `lib/theme/kyle_design/app_materials.dart`) — nothing here may
+/// carry its own alpha or blur number.
+///
+/// * [GlassSurface] — capsule/circle/rounded chrome: backdrop chain (blur 4
+///   · saturate 1.8 · brightness 1.12), cream 7→2% fill, 1 px specular rim
+///   (cream 40% top arc → 8% sides), bottom inner shadow, optional outer
+///   lift under floating pills.
+/// * [GlassSheetSurface] — the summoned-sheet variant: top radius 24, cream
+///   4→1% fill, same backdrop chain, specular line under the grabber. The
+///   scrim ([AppMaterials.sheetScrim], blackberry 60%) is composed by the
+///   summoning route, between the page and the sheet.
+/// * [GlassLens] — the traveling-highlight refraction (tokens §Materials —
+///   lensing, boundary lifted 2026-09-06). Contractual only where the
+///   invoking component spec names it (first: tab-bar.md switch transition).
+///   Displacement + falloff by observable properties; never "matches iOS".
+library;
+
+import 'dart:ui';
+
+import 'package:flutter/widgets.dart';
+
+import '../../../../theme/kyle_design/app_materials.dart';
+
+/// Floating glass chrome: capsules, circles, and the compact header row.
+class GlassSurface extends StatelessWidget {
+  const GlassSurface({
+    super.key,
+    required this.borderRadius,
+    this.lift = false,
+    this.child,
+  });
+
+  /// Shape of the chrome (capsule, circle, or rounded rect).
+  final BorderRadius borderRadius;
+
+  /// Outer lift shadow — under floating pills only (tokens §Materials).
+  final bool lift;
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: borderRadius,
+        boxShadow: lift ? AppMaterials.glassLift : null,
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: BackdropFilter(
+          filter: AppMaterials.glassBackdropFilter(),
+          child: CustomPaint(
+            foregroundPainter: GlassRimPainter(borderRadius: borderRadius),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: borderRadius,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppMaterials.glassFillTop,
+                    AppMaterials.glassFillBottom,
+                  ],
+                ),
+              ),
+              child: child,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Summoned glass sheet body (the calendar sheet). Fills its box; give it a
+/// top-radius-only shape via [GlassSheetSurface.topRadius].
+class GlassSheetSurface extends StatelessWidget {
+  const GlassSheetSurface({super.key, this.child});
+
+  final Widget? child;
+
+  static BorderRadius get topRadius => const BorderRadius.vertical(
+        top: Radius.circular(AppMaterials.sheetTopRadius),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: topRadius,
+      child: BackdropFilter(
+        filter: AppMaterials.glassBackdropFilter(),
+        child: CustomPaint(
+          foregroundPainter: GlassRimPainter(borderRadius: topRadius),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: topRadius,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppMaterials.sheetFillTop,
+                  AppMaterials.sheetFillBottom,
+                ],
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The 1 px specular rim + bottom inner shadow of the glass recipe.
+///
+/// Light source top: the inner highlight runs cream 40% across the top arc
+/// fading to cream 8% at the sides (and below); the bottom edge carries the
+/// inset 0 −1px 1px black 25% shadow.
+class GlassRimPainter extends CustomPainter {
+  const GlassRimPainter({required this.borderRadius});
+
+  final BorderRadius borderRadius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    // Inset by half the stroke so the 1 px rim reads as an inner highlight.
+    final rrect = borderRadius
+        .toRRect(rect)
+        .deflate(AppMaterials.rimWidth / 2);
+
+    final rim = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = AppMaterials.rimWidth
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          AppMaterials.rimHighlightTop,
+          AppMaterials.rimHighlightSide,
+          AppMaterials.rimHighlightSide,
+        ],
+        stops: const [0.0, 0.55, 1.0],
+      ).createShader(rect);
+    canvas.drawRRect(rrect, rim);
+
+    // Bottom inner shadow: a 1 px blurred dark line along the inside bottom.
+    final shadow = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = AppMaterials.rimWidth
+      ..color = AppMaterials.rimShadowBottom
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+    canvas.save();
+    canvas.clipRect(Rect.fromLTRB(
+      rect.left,
+      rect.bottom - rrect.blRadiusY - 2,
+      rect.right,
+      rect.bottom,
+    ));
+    canvas.drawRRect(rrect.shift(const Offset(0, -1)), shadow);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(GlassRimPainter oldDelegate) =>
+      oldDelegate.borderRadius != borderRadius;
+}
+
+/// The lensing displacement of a traveling glass highlight (tokens
+/// §Materials — lensing). Renders the backdrop displaced by [displacement]
+/// px inside the capsule, with an outer feather band of
+/// [AppMaterials.lensFalloffPx] at half displacement — magnitude and
+/// falloff are the observable properties `home-shell.gestures.yaml` tb6
+/// pins.
+///
+/// Implemented as matrix backdrop filters (translation needs no anchor and
+/// renders on every backend); mid-transit appearance is golden-held.
+class GlassLens extends StatelessWidget {
+  const GlassLens({
+    super.key,
+    required this.borderRadius,
+    required this.displacement,
+    this.child,
+  });
+
+  final BorderRadius borderRadius;
+
+  /// Horizontal backdrop displacement in px (signed: against the travel
+  /// direction). Zero renders no lens layer at all — the filter must be
+  /// active mid-transit and absent at rest (tb6).
+  final double displacement;
+
+  final Widget? child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (displacement == 0) return child ?? const SizedBox.shrink();
+    final falloff = AppMaterials.lensFalloffPx;
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        Positioned.fill(
+          child: ClipRRect(
+            borderRadius: borderRadius,
+            child: BackdropFilter(
+              // Outer feather band: half displacement.
+              filter: ImageFilter.matrix(
+                (Matrix4.identity()..setTranslationRaw(displacement / 2, 0, 0))
+                    .storage,
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(falloff),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(
+                      (borderRadius.topLeft.y - falloff)
+                          .clamp(0, double.infinity),
+                    ),
+                  ),
+                  child: BackdropFilter(
+                    // Lens core: full displacement.
+                    filter: ImageFilter.matrix(
+                      (Matrix4.identity()
+                            ..setTranslationRaw(displacement, 0, 0))
+                          .storage,
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (child != null) child!,
+      ],
+    );
+  }
+}

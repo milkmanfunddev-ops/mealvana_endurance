@@ -1261,3 +1261,42 @@ class _DashedPillPainter extends CustomPainter {
   bool shouldRepaint(_DashedPillPainter oldDelegate) =>
       oldDelegate.color != color;
 }
+
+/// The dashboard's day content WITHOUT the day-header block — the piece the
+/// home-shell recomposition keeps (macro-dashboard.md §home-shell
+/// recomposition, RULED 2026-09-06: DateHeader + TabBar + CalendarSheet join
+/// the composition; the ViewTabs + WeekStrip block leaves it).
+///
+/// Composed by the new dev-visible home-shell screen; the shipped
+/// [MacroDashboardScreen] above keeps [FuelTimelineDayHeader] untouched
+/// until switchover. Delegates to the screen's private body builders (same
+/// library), so the timeline composition exists exactly once.
+class MacroDashboardBody extends ConsumerWidget {
+  const MacroDashboardBody({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final view = ref.watch(macroDashboardViewProvider);
+    final dayAsync = ref.watch(macroDashboardDayProvider);
+    const screen = MacroDashboardScreen();
+    return dayAsync.when(
+      // Same S-1 flicker-proofing as the shipped screen: repaint in place,
+      // never strobe through a spinner on a recompute.
+      skipLoadingOnReload: true,
+      skipLoadingOnRefresh: true,
+      loading: () => const Center(
+        child: CircularProgressIndicator(color: MeTokens.electrolyte),
+      ),
+      error: (e, _) => Center(
+        child: Text(
+          'Could not load your day',
+          style: TextStyle(
+            fontFamily: 'Apercu',
+            color: MeTokens.creamAlpha(0.7),
+          ),
+        ),
+      ),
+      data: (data) => screen._body(context, ref, view, data),
+    );
+  }
+}
