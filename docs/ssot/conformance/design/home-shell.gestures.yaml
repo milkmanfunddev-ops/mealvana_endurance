@@ -52,7 +52,7 @@ tests:
       - release commits to the nearest destination; the travel animation completes from the
         release position
   - id: tb6_liquid_lens_bubble
-    # PENDING RATIFICATION (intake/2026-09-06-tab-bar-liquid-bubble.md, PROPOSED):
+    # RATIFIED (Xuan 2026-09-07, intake/2026-09-06-tab-bar-liquid-bubble.md):
     # supersedes tb6_switch_refraction_active — the Bevel-style liquid-glass
     # bubble is the active highlight at REST as well as in transit, replacing
     # the cream fill and the old lens-only-in-transit negative. Implemented

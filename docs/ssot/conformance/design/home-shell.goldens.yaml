@@ -41,8 +41,8 @@ goldens:
     component: tab-bar
     state: EXPANDED
     notes: 3 destinations, house glyph on the active Fuel Timeline item (Q4), glass recipe,
-      left-anchored with the bottom-right utility slot EMPTY (Q2). PENDING RATIFICATION
-      (intake/2026-09-06-tab-bar-liquid-bubble.md) - the active highlight is the liquid-glass
+      left-anchored with the bottom-right utility slot EMPTY (Q2). RATIFIED (Xuan 2026-09-07,
+      intake/2026-09-06-tab-bar-liquid-bubble.md) - the active highlight is the liquid-glass
       bubble (was cream fill); goldens capture the deterministic Skia FakeGlass fallback,
       the device renders true refraction
   - id: tab_bar_expanded_5
@@ -62,8 +62,8 @@ goldens:
   - id: tab_bar_switch_transit_mid
     component: tab-bar
     state: tab-switch, mid-transit frames (fixed timestamps)
-    notes: the liquid bubble BETWEEN items (travel + width morph) — PENDING RATIFICATION
-      (intake/2026-09-06-tab-bar-liquid-bubble.md); property-based, never "matches iOS"; the
+    notes: the liquid bubble BETWEEN items (travel + width morph) — RATIFIED (Xuan 2026-09-07,
+      intake/2026-09-06-tab-bar-liquid-bubble.md); property-based, never "matches iOS"; the
       gesture manifest (tb4/tb6) pins the numbers, this golden pins the look (Skia FakeGlass
       fallback; device renders true refraction + chromatic aberration)
 

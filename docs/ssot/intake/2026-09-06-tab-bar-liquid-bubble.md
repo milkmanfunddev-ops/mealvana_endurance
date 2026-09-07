@@ -1,8 +1,11 @@
-# PROPOSED — tab-bar active highlight = liquid-glass bubble (Bevel reference)
+# RESOLVED — tab-bar active highlight = liquid-glass bubble (Bevel reference)
 
-**Filed: 2026-09-06 (late evening). Status: PROPOSED — implemented ahead of ratification at
-Xuan's direction ("implement it first and leave me intake to ratify"); Xuan ratifies by
-flipping this to RESOLVED (or rules changes).**
+**Filed: 2026-09-06 (late evening). Status: RESOLVED — RATIFIED by Xuan 2026-09-07 as part of
+the home-shell@v1 release prep ("I'm pretty happy with what it is now"; flip approved with the
+release plan). The liquid-glass bubble is now the contract: it supersedes tab-bar.md Q1's
+cream-fill active highlight and the old tb6 lens-only-in-transit negative; the tb6/golden rows
+below are no longer pending. Originally: implemented ahead of ratification at Xuan's direction
+("implement it first and leave me intake to ratify").**
 **Reference: Xuan's Bevel screen recording (ScreenRecording_09-06-2026 21-54-48_1) — the lens
 travels between tabs, expands over the bar's border, and refracts the content it passes over.**
 

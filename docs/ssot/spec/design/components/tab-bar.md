@@ -20,7 +20,7 @@ reference.
 
 | State | Contract |
 |---|---|
-| `EXPANDED` | Left-anchored glass pill; icon+label items; active-item highlight (cream fill, blackberry ink). Covers 3–5 destinations (Q3) |
+| `EXPANDED` | Left-anchored glass pill; icon+label items; active-item highlight is the **raised liquid-glass bubble** — bulging past the bar's border at rest, `cream` ink on glass (AMENDED, Xuan 2026-09-07: [`../../../intake/2026-09-06-tab-bar-liquid-bubble.md`](../../../intake/2026-09-06-tab-bar-liquid-bubble.md) RESOLVED supersedes the original cream-fill/blackberry-ink ruling). Covers 3–5 destinations (Q3) |
 | `COLLAPSED` | One ~52 px circular glass button at the bottom-**left** corner showing **only the active tab's icon** — regardless of destination count (Q3) |
 
 **Trigger rule:** scroll-down past a threshold collapses; scroll-up (or reaching top) re-expands;
@@ -60,10 +60,15 @@ The full liquid-glass switch effect is **contract, not polish** — all three co
    pinned in the gesture manifest + goldens.
 2. **Finger-tracking drag** — a drag along the expanded bar moves the highlight fluidly with the
    finger (no snapping between items until release).
-3. **Refraction in transit** — the traveling highlight lenses the content behind it
-   (`../tokens.md` §Materials — lensing; boundary lifted 2026-09-06). Not drawn in the export;
-   defined **by observable properties only**: distortion magnitude and falloff, easing/timing,
-   the drag-tracking rule. **Never "matches iOS".** Mid-transit frames are golden-held.
+3. **Refraction in transit AND at rest** — the highlight is the liquid-glass bubble
+   (AMENDED, Xuan 2026-09-07: intake/2026-09-06-tab-bar-liquid-bubble.md RESOLVED — the bubble
+   refracts at REST too, with an extra bulge + thickness while traveling; the lens-only-in-
+   transit negative is superseded). `../tokens.md` §Materials — lensing; the tuned values live
+   in the ONE app registry (`AppMaterials.tabLens*`), pinned by the gesture manifest + goldens.
+   Defined **by observable properties only**: distortion magnitude and falloff, easing/timing,
+   the drag-tracking rule, crisp focused-tab rendering above the glass in every state including
+   held drags. **Never "matches iOS".** Mid-transit frames are golden-held (Skia FakeGlass
+   fallback — the device shader look is charter territory).
 
 Feasibility note (verified 2026-09-06): Impeller `ImageFilter.shader` backdrop filters; Impeller-
 tied, GPU-costed — the implementation caveats live with the app, the properties live here.
