@@ -302,7 +302,25 @@ class _KyleTabBarState extends State<KyleTabBar>
     final lensH = itemH + 2 * bulge;
     final lensW = math.max(0.0, highlightW + 2 * bulge);
     final lensVisibility = (1 - p * 1.8).clamp(0.0, 1.0);
-    final riderVisible = !dragging && lensVisibility > 0;
+    // The crisp rider: whichever tab the lens is OVER renders above the
+    // glass. Settled/travel: the destination, full strength. DRAG (Xuan
+    // 2026-09-07 iteration 4): the nearest item to the finger, with
+    // strength = how centered the lens is over it — tabs hand off
+    // crisply under the finger instead of refracting to mush.
+    int riderIndex = _activeIndex;
+    double riderStrength = 1.0;
+    if (dragging) {
+      var best = double.infinity;
+      for (var i = 0; i < n; i++) {
+        final d = (_dragX! - _itemCenter(i, itemW)).abs();
+        if (d < best) {
+          best = d;
+          riderIndex = i;
+        }
+      }
+      riderStrength = (1 - best / itemW).clamp(0.0, 1.0);
+    }
+    final riderVisible = lensVisibility > 0 && riderStrength > 0;
     // Bevel behavior, iteration 3 (Xuan 2026-09-07: the target must be IN
     // FOCUS for the whole transition): the destination's crisp copy is
     // STATIC at the destination slot, above the glass, from the moment the
@@ -334,9 +352,11 @@ class _KyleTabBarState extends State<KyleTabBar>
                         p,
                         itemW,
                         labelFade,
-                        // Hidden while its crisp copy renders above the
-                        // glass at the destination slot.
-                        carriedByLens: i == _activeIndex && riderVisible,
+                        // Faded out to the degree its crisp copy renders
+                        // above the glass.
+                        carriedByLens: i == riderIndex && riderVisible
+                            ? riderStrength
+                            : 0.0,
                       ),
                   ],
                 ),
@@ -364,18 +384,20 @@ class _KyleTabBarState extends State<KyleTabBar>
           // the lens arrives.
           if (riderVisible)
             Positioned(
-              left: toCenter - itemW / 2,
+              left: _itemCenter(riderIndex, itemW) - itemW / 2,
               top: (pillH - itemH) / 2,
               width: itemW,
               height: itemH,
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: lensVisibility,
+                  opacity: lensVisibility * riderStrength,
                   child: Center(
                     child: Transform.scale(
-                      scale: 1 + (AppMaterials.tabLensFocusZoom - 1) * t,
+                      scale: 1 +
+                          (AppMaterials.tabLensFocusZoom - 1) *
+                              (dragging ? riderStrength : t),
                       child: _itemContent(
-                        widget.destinations[_activeIndex],
+                        widget.destinations[riderIndex],
                         AppColors.cream,
                         labelFade,
                         p,
@@ -395,7 +417,7 @@ class _KyleTabBarState extends State<KyleTabBar>
     double p,
     double itemW,
     double labelFade, {
-    bool carriedByLens = false,
+    double carriedByLens = 0.0,
   }) {
     final d = widget.destinations[i];
     final active = i == _activeIndex;
@@ -423,7 +445,7 @@ class _KyleTabBarState extends State<KyleTabBar>
               if (!active) widget.onSelect(d.id);
             },
             child: Opacity(
-              opacity: carriedByLens ? 0 : 1,
+              opacity: (1 - carriedByLens).clamp(0.0, 1.0),
               child: _itemContent(d, ink, labelFade, p),
             ),
           ),

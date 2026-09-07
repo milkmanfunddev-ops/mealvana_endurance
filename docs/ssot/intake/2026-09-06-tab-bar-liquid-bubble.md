@@ -47,6 +47,11 @@ highlight (tab-bar.md Q1) and the lens-only-in-transit negative (old tb6):
    refracted. Two earlier constructions read fuzzy on device (settle-pop rider, then a
    partial-opacity rider blending with its refracted ghost — Xuan's IMG_8940 + follow-up);
    sim-verified crisp mid-flight in 10x slow motion.
+   **Iteration 4 — drags too (Xuan: "in focus before it settles" while HOLDING a drag)**: the
+   crisp copy follows the finger — whichever tab the lens is over renders above the glass at
+   proximity strength, handing off tab-to-tab as the lens slides (its in-row copy fades out
+   reciprocally). Sim-verified with a held 4s drag: Events crisp under the lens, then Timeline
+   crisp with Events trailing refracted at the lens's rear edge.
 2. **Bar readability over busy content**: the bar's material gets its OWN subdued backdrop
    chain — blur 12 · saturation 1.1 · no brightening · blackberry-55% fill (pill + collapsed
    button). The ratified glass chain (blur 4 · saturate 1.8 · brighten 1.12) amplifies exactly
