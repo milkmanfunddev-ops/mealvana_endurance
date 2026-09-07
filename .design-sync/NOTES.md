@@ -107,11 +107,29 @@ rendering's stroke path verbatim (`fueling_glyphs.dart`); the dashed Add Food pi
 `border: dashed` (Dart paints 4/3 dashes — accepted approximation, same as
 `SecondaryButton outline="dashed"`).
 
+## home-shell@v1 port (2026-09-07)
+- Mirrored per the drift rule after the app's switchover + liquid-bubble ratification:
+  `GlassSurface` (new — §Materials primitive; `.me-glass`/`.me-glass-dim`/`.me-glass-sheet`
+  chains + `--me-glass-*`/`--me-scrim`/`--me-cal-tint-*` tokens added to styles.css),
+  `DateHeader` + `CalendarSheet` (new), `TabBar` REWRITTEN to the glass contract (dimmed pill,
+  liquid-bubble active highlight as a flat translucent approximation — the true refraction is
+  Impeller-only in the app; web renders FakeGlass-equivalent, which is honest and matches
+  Flutter web). `ViewTabs` + `WeekStrip` DELETED (their Dart widgets died in the switchover) —
+  src, previews, docs, config overrides, and remote files all retired.
+- Timeline's composed-screen preview is now `HomeShellScreen` (DateHeader + glass TabBar);
+  the old `FuelTimelineScreen` export is gone — grade keys changed accordingly.
+- The three new components have no `design/ds/docs/` files yet (synthesized prompts from
+  their JSDoc, which is spec-citing and rich) — author docs on a later pass if the design
+  agent misuses them.
+
 ## Known render warns
 - `[GRID_OVERFLOW]` on every component → all are `cardMode: column` (previews are 343 px phone
   columns by design). Expected on every re-sync; not new.
 
 ## Re-sync risks
+- The remote project also carries hand-uploaded `ui_kits/`, `uploads/`, `assets/`,
+  `colors_and_type.css`, `Mobile UI Kit.html`, `SKILL.md` from the pre-converter era — NOT
+  converter output, never in the upload plan, do not delete them without Xuan's say-so.
 - The twin is hand-maintained: any `kyle_design/` change not mirrored here ships stale to Claude Design.
 - Compadre demo fonts may be replaced; re-check `extraFonts` paths after.
 - `docs/ssot/spec/design/renderings/` is the pixel reference for the macro-dashboard surface only;

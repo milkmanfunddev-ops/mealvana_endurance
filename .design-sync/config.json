@@ -89,14 +89,6 @@
       "cardMode": "column",
       "viewport": "520x2200"
     },
-    "ViewTabs": {
-      "cardMode": "column",
-      "viewport": "520x1000"
-    },
-    "WeekStrip": {
-      "cardMode": "column",
-      "viewport": "520x1000"
-    },
     "WorkoutCard": {
       "cardMode": "column",
       "viewport": "520x1000"
@@ -194,6 +186,18 @@
       "viewport": "520x600"
     },
     "IntensityPresetChips": {
+      "cardMode": "column",
+      "viewport": "520x800"
+    },
+    "DateHeader": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "CalendarSheet": {
+      "cardMode": "column",
+      "viewport": "520x1200"
+    },
+    "GlassSurface": {
       "cardMode": "column",
       "viewport": "520x800"
     }

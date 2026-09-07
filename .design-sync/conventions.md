@@ -7,14 +7,15 @@ Import components from `window.MealvanaDS`. No provider is required — every co
 - **Inputs:** `Dropdown`, `InputField`, `IntensityCompositeBar`, `IntensityPresetChips`, `Stepper`, `Switch`
 - **Surfaces:** `Card`, `HeroImageCard`, `PhaseCard`
 - **Feedback:** `Banner`, `Snackbar`
-- **Navigation:** `DetailHeader`, `ScreenHeader`, `TabBar`, `TripleAction`
+- **Navigation:** `DateHeader`, `DetailHeader`, `ScreenHeader`, `TabBar`, `TripleAction`
 - **Data:** `ActivityRow`, `FoodRow`, `FuelItem`, `FuelStep`, `MacroDonut`, `MacroRing`, `MacroStat`, `NutritionalTargetsCard`, `ScheduleBlock`, `SourceDot`, `SourceLegend`, `StackedBar`
 - **Fueling:** `FeedingCard`, `FuelStat`, `FuelingWindowControl`
 - **Timeline:** `StatusPill`, `Timeline`, `WorkoutCard`
-- **Dashboard:** `NetBalanceCard`, `ViewTabs`, `WeekStrip`
+- **Dashboard:** `NetBalanceCard`
+- **Home shell (glass):** `GlassSurface`, `CalendarSheet` — with `TabBar` and `DateHeader`, the home-shell@v1 chrome. Glass is for FLOATING CHROME ONLY: timeline/content cards never take glass (solid fill + hairline).
 - **Sheets:** `BreakdownTable`, `EnergyRow`, `EquationCard`, `HeroNumber`, `PagerDots`, `SheetHeader`
 
-The app is **dark-first**: every component defaults to the blackberry ground. The fuel timeline is `ViewTabs` + `WeekStrip` + `NetBalanceCard` + `SegmentedControl` (filters) + `Timeline` of `WorkoutCard`/`FoodRow` + `TabBar`; sheets are `SheetHeader` + (`EquationCard` | `HeroNumber`+`StackedBar`+`EnergyRow` | `MacroDonut`×3) + `SourceLegend` + `PagerDots`; activity details are `DetailHeader` + `HeroImageCard` + `ScheduleBlock` + `Banner` + orange `SegmentedControl` + `PhaseCard`s of `MacroStat`/`FuelStep`/`FuelItem`. Each component's `.prompt.md` shows its composition; the composed-screen previews on `Timeline`, `SheetHeader`, and `PhaseCard` show the whole screens.
+The app is **dark-first**: every component defaults to the blackberry ground. The home screen is `DateHeader` (title summons `CalendarSheet` over a `--me-scrim` layer) + `NetBalanceCard` + `SegmentedControl` (filters) + `Timeline` of `WorkoutCard`/`FoodRow` + the glass `TabBar` (expanded pill with the liquid-bubble active highlight, or `collapsed` circle); sheets are `SheetHeader` + (`EquationCard` | `HeroNumber`+`StackedBar`+`EnergyRow` | `MacroDonut`×3) + `SourceLegend` + `PagerDots`; activity details are `DetailHeader` + `HeroImageCard` + `ScheduleBlock` + `Banner` + orange `SegmentedControl` + `PhaseCard`s of `MacroStat`/`FuelStep`/`FuelItem`. Each component's `.prompt.md` shows its composition; the composed-screen previews on `Timeline`, `SheetHeader`, and `PhaseCard` show the whole screens.
 
 ## Surfaces and the `dark` prop
 The app is dark-first: the ground is blackberry (`--me-bg`), ink is cream (`--me-ink`), and every component defaults to `dark={true}`. **Never white** (`#fff` is a logged deviation, not a choice). For the light re-tint, wrap the subtree in `<div className="on-light">` (swaps `--me-bg/--me-ink/--me-card*` tokens) **and** pass `dark={false}` to each component inside it — components branch on the prop, not on the wrapper. Same UI, re-tinted; never redesign for a theme.
@@ -27,11 +28,11 @@ Use the tokens for any layout glue you write; never a raw hex.
 - Type roles (classes): `.me-page-title` `.me-section-title` `.me-screen-title` `.me-data-xl` (Sansita), `.me-tab` `.me-food-title` `.me-activity-title` `.me-descriptor` (Compadre / Compadre Wide caps), `.me-body` `.me-body-lg` `.me-body-sm` `.me-caption` `.me-eyebrow` `.me-data` `.me-data-number` `.me-button-label` (Apercu), `.me-mono` (Apercu Mono — figures in tables).
 - Shape: `--me-radius-md` 15px is the ratified card radius (`Card`); timeline and sheet cards use 14–18px per their Dart; `--me-radius-pill` for anything button-like; `--me-radius-input` 12px for fields.
 - Spacing: `--me-space-1..12` on a 4px grid; mobile gutter 16–17px (`--me-space-4/5`). Mobile canvas is 428px wide (iPhone Pro Max); design at `width: 100%; max-width: 428px`.
-- Elevation: none on cards — hairlines (`--me-card-line`) do the work. `--me-shadow-md` only under the floating `TripleAction` / `TabBar` pills.
+- Elevation: none on cards — hairlines (`--me-card-line`) do the work. `--me-shadow-md` only under the floating `TripleAction` pill. Floating glass chrome (`TabBar`, `GlassSurface lift`) carries `--me-glass-lift`. Glass utility classes: `.me-glass` (chrome), `.me-glass-dim` (tab-bar chain), `.me-glass-sheet` (summoned sheets); the scrim behind a sheet is `--me-scrim`; the calendar tint pair is `--me-cal-tint-fill`/`--me-cal-tint-ring`.
 
 ## Composition rules
 - One `PrimaryButton` per screen. Secondary actions are `SecondaryButton` (`size="sm" outline="dashed"` for the `+ Add Food / + Add Activity` pair); text actions are `TertiaryButton` (`tone="electrolyte"` add, default dragonfruit remove).
-- Timeline screens: `ViewTabs` → `WeekStrip` → `NetBalanceCard` → filter `SegmentedControl` + outline `IconChip`s → `Timeline` whose entries are `WorkoutCard` (`status` planned / verified / skipped; `reveal` for swipe mockups) and `FoodRow` (`kcal/carbs/protein/fat`) → `TabBar` pinned in a `position: relative` container.
+- Home screens: `DateHeader` → `NetBalanceCard` → filter `SegmentedControl` + outline `IconChip`s → `Timeline` whose entries are `WorkoutCard` (`status` planned / verified / skipped; `reveal` for swipe mockups) and `FoodRow` (`kcal/carbs/protein/fat`) → `TabBar` pinned in a `position: relative` container.
 - Sheets: `SheetHeader` first, `PagerDots` last. Energy: `EquationCard` + `BreakdownTable` + `SourceLegend`. Active energy: `HeroNumber` + `StackedBar` + `EnergyRow`s. Fuel: `size="lg"` `SegmentedControl` + three `MacroDonut`s.
 - Activity details: `DetailHeader` (delete is `tone="destructive"`) → `HeroImageCard` → `ScheduleBlock` → `Banner` → `tone="orange" size="lg"` `SegmentedControl` → `PhaseCard` per phase (`before` orange, `during` electrolyte, `after` dragonfruit) holding three `MacroStat`s then `FuelStep`s (before/after) or `FuelItem`s (during).
 - Pre-workout BEFORE card: three `FuelStat`s across the summary row (carbs · fluids · sodium), then one `FeedingCard` per tier (meal · snack · top-off). Create-flow fueling controls: `FuelingWindowControl` + `IntensityPresetChips` + `IntensityCompositeBar`.
@@ -45,8 +46,7 @@ Read `_ds/<folder>/styles.css` for every token and role class before styling. Ea
 ## Idiomatic screen
 ```tsx
 <div style={{ position: 'relative', width: '100%', maxWidth: 428, background: 'var(--me-bg)', color: 'var(--me-ink)', padding: '44px 16px 120px', boxSizing: 'border-box', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 16 }}>
-  <ViewTabs tabs={[{ value: 'week', label: 'By Week' }, { value: 'month', label: 'By Month' }]} selected="week" onChange={setView} period="August 2026" onPrev={prev} onNext={next} onSettings={openSettings} />
-  <WeekStrip days={days} selected={2} onSelect={setDay} />
+  <DateHeader title="Today, September 7" onSummonCalendar={openCalendar} onSettings={openSettings} />
   <NetBalanceCard value={-415} status="slight deficit" onExpand={openEnergy} />
   <SegmentedControl full segments={[{ value: 'all', label: 'All' }, { value: 'workout', label: 'Workout' }, { value: 'meals', label: 'Meals' }]} selected="all" onChange={setFilter} />
   <Timeline entries={[

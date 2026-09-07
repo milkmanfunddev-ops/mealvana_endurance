@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Timeline, WorkoutCard, FoodRow, SecondaryButton, Icon, ViewTabs, WeekStrip, NetBalanceCard, SegmentedControl, IconChip, TabBar } from '@mealvana/endurance-ds';
+import { Timeline, WorkoutCard, FoodRow, SecondaryButton, Icon, NetBalanceCard, SegmentedControl, IconChip, TabBar, DateHeader } from '@mealvana/endurance-ds';
 import { Phone } from './_frame';
 
 const AddRow = () => (
@@ -22,16 +22,17 @@ export const Day = () => (
   </Phone>
 );
 
-export const FuelTimelineScreen = () => {
-  const [view, setView] = useState('week'); const [day, setDay] = useState(2); const [f, setF] = useState('all'); const [tab, setTab] = useState('timeline');
-  const days = [23, 24, 25, 26, 27, 28, 29].map((d, i) => ({ day: d, letter: 'SMTWTFS'[i], hasEntries: true }));
+// home-shell@v1 (2026-09-07): the composed home surface — DateHeader replaces
+// the old ViewTabs/WeekStrip block (those Dart widgets were deleted in the
+// switchover), and the glass TabBar is the new bar.
+export const HomeShellScreen = () => {
+  const [f, setF] = useState('all'); const [tab, setTab] = useState('timeline');
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: 428, background: 'var(--me-blackberry)', color: 'var(--me-cream)', paddingTop: 60, overflow: 'hidden', boxSizing: 'border-box' }}>
-      <div style={{ padding: '0 16px' }}>
-        <ViewTabs tabs={[{ value: 'week', label: 'By Week' }, { value: 'month', label: 'By Month' }]} selected={view} onChange={setView} period="August 2026" />
+    <div style={{ position: 'relative', width: '100%', maxWidth: 428, background: 'var(--me-blackberry)', color: 'var(--me-cream)', paddingTop: 24, overflow: 'hidden', boxSizing: 'border-box' }}>
+      <div style={{ padding: '0 8px' }}>
+        <DateHeader title="Today, September 7" />
       </div>
-      <div style={{ marginTop: 24 }}><WeekStrip days={days} selected={day} onSelect={setDay} style={{ padding: '0 8px 18px' }} /></div>
-      <div style={{ padding: '18px 16px 0', display: 'grid', gap: 16 }}>
+      <div style={{ padding: '10px 16px 0', display: 'grid', gap: 16 }}>
         <NetBalanceCard value={-415} status="slight deficit" />
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <SegmentedControl full segments={[{ value: 'all', label: 'All' }, { value: 'workout', label: 'Workout' }, { value: 'meals', label: 'Meals' }]} selected={f} onChange={setF} style={{ flex: 1 }} />
