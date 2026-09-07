@@ -41,6 +41,10 @@ surface until `home-shell@v1` lands on the new screen.
   testability (G3 zero-translation).
 - The tab bar's reserved bottom-right utility slot is part of this surface's geometry; its future
   occupant inherits the FAB clearance rule (tab-bar.md Q2).
+- **Ruling #4 (Xuan 2026-09-06):** the surface's instrument block — date header (REST) + energy
+  card + filter row + add row — is PINNED (never scrolls); the timeline runs full-height beneath
+  it and dissolves under the block's `top-fade` backdrop (tokens §Materials). Restores S-1
+  glanceability: a card swipe updates net balance in a frame the athlete can see.
 
 ## Surface contracts
 

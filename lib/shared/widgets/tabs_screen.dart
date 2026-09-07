@@ -110,15 +110,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       });
     }
 
-    // Tab 0 is the recomposed home: the dashboard's day content with the
-    // shell's header clearance above it (the chrome overlays the header).
+    // Tab 0 is the recomposed home: the dashboard's day content, running
+    // full-height under the chrome — its pinned instrument block includes
+    // the header clearance so the dissolve spans from the surface top
+    // (ruling #4).
     final screens = [
       Container(
         color: isDark ? AppColors.blackberry : AppColors.cream,
-        padding: const EdgeInsets.only(
-          top: HomeShellChrome.headerClearancePx,
+        child: const MacroDashboardBody(
+          topInset: HomeShellChrome.headerClearancePx,
         ),
-        child: const MacroDashboardBody(),
       ),
       if (showCoachTab)
         const SizedBox.shrink(), // placeholder (coach portal rendered above)

@@ -1,9 +1,9 @@
 tag: home-shell@v1 @ 2744985 + daily-macros-dashboard@v3.2 @ 254af48 (both ancestors of the pin)
-commit: 5c28d44 ("apply-ruling: compact zone renders the top-fade dissolve (Xuan 2026-09-06 #3, Bevel reference)", qa/home-shell)
+commit: c04044d ("apply-ruling: the pinned instrument block (Xuan 2026-09-06 #4, Bevel reference)", qa/home-shell)
 branch: qa/home-shell
 source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
 sync-scope: WHOLE-TREE rsync --delete of spec/ vectors/ conformance/ bundles/ intake/ runs/ profiles/ scripts/ docs/ + DEVIATIONS.md + PLAN.md. Carries the 2026-09-06 ruling-desk block: home-shell@v1 (tab-bar.md v1, date-header.md v1, calendar-sheet.md v1, tokens.md §Materials, macro-dashboard.md §home-shell recomposition [staged], home-shell gestures + goldens manifests, bundle manifest + coding-agent handoff + archived export) and the daily-macros-dashboard@v3.2 point re-tag (tokens + surface moved with this branch; @v3 immutable, @v3.1 was the zoneless-IF amendment).
-synced: 2026-09-06 (qa/home-shell 5c28d44, whole tree — top-fade ruling #3); earlier 147eed7 (#2); earlier 602b647 (switchover ruling); earlier same day 3db51bf (pins filled) and 153aec4; previously 2026-09-04 (qa main d264895, whole tree); 2026-09-01 (brick-transition@v1 @ e7b1cfe); 2026-08-26 (pre-workout-macros@v2); 2026-08-18 (daily-macros)
+synced: 2026-09-06 (qa/home-shell 5c28d44, whole tree — pinned-block ruling #4); earlier same evening #3; earlier 147eed7 (#2); earlier 602b647 (switchover ruling); earlier same day 3db51bf (pins filled) and 153aec4; previously 2026-09-04 (qa main d264895, whole tree); 2026-09-01 (brick-transition@v1 @ e7b1cfe); 2026-08-26 (pre-workout-macros@v2); 2026-08-18 (daily-macros)
 policy: VERBATIM MIRROR of the QA repo (Lee, 2026-08-07) — no app-side edits to QA-tracked files, ever.
   The QA repo is authoritative; conflicts between its documents are resolved by ITS
   spec/source-authority.md precedence rules, and recorded in ITS DEVIATIONS.md — never by

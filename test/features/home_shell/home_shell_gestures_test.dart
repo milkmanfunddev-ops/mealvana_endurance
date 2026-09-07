@@ -41,6 +41,7 @@ import 'package:mealvana_endurance/features/meal_logging/domain/meal_slot.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/providers/meal_log_providers.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_calendar_sheet.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_date_header.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_tab_bar.dart';
@@ -205,10 +206,43 @@ class _ShellHostState extends State<_ShellHost> {
         showDateHeader: _active == 'timeline',
         body: Container(
           color: AppColors.blackberry,
-          padding: const EdgeInsets.only(
-            top: HomeShellChrome.headerClearancePx,
+          child: const MacroDashboardBody(
+            topInset: HomeShellChrome.headerClearancePx,
           ),
-          child: const MacroDashboardBody(),
+        ),
+      ),
+    );
+  }
+}
+
+/// dh2's parity host: the REAL KyleDateHeader wired to the REAL summon path
+/// (showHomeShellCalendarSheet), with the compact state flippable the way a
+/// scrolling composition would drive it (the home pins REST — ruling #4).
+class _ParityHost extends ConsumerStatefulWidget {
+  const _ParityHost();
+
+  @override
+  ConsumerState<_ParityHost> createState() => _ParityHostState();
+}
+
+class _ParityHostState extends ConsumerState<_ParityHost> {
+  bool _compact = false;
+
+  void flipCompact(bool value) => setState(() => _compact = value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.blackberry,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: KyleDateHeader(
+          date: ref.watch(calendarSelectedDateProvider),
+          compact: _compact,
+          onSummonCalendar: () => showHomeShellCalendarSheet(context),
+          onSettingsTap: () {},
+          onPreviousDay: () {},
+          onNextDay: () {},
         ),
       ),
     );
@@ -234,18 +268,33 @@ Finder _timeline() => find.byWidgetPredicate(
   (w) => w is Scrollable && axisDirectionToAxis(w.axisDirection) == Axis.vertical,
 ).first;
 
-/// Scroll the timeline to an absolute offset (px) via drags on the day list,
-/// correcting for touch-slop loss until the position lands on [target].
+/// Scroll the timeline to an absolute offset (px) with ONE monotonic drag —
+/// the position approaches [target] without ever overshooting, so a scroll
+/// to inside the hysteresis band can never latch a threshold it shouldn't
+/// have crossed (tb2's contract depends on the trajectory, not just the
+/// landing).
 Future<void> _scrollTo(WidgetTester tester, double target) async {
-  for (var i = 0; i < 6; i++) {
-    final state = tester.state<ScrollableState>(_timeline());
-    final delta = state.position.pixels - target;
-    if (delta.abs() < 1) break;
-    // A drag loses ~kDragSlopDefault (20 px) to touch slop before the
-    // scrollable moves — compensate so the position lands on target.
-    await tester.drag(_timeline(), Offset(0, delta + 20 * delta.sign));
-    await tester.pumpAndSettle();
+  final state = tester.state<ScrollableState>(_timeline());
+  final start = state.position.pixels;
+  if ((target - start).abs() < 1) return;
+  final dir = (target - start).sign; // + = scroll down (finger drags up)
+  final rect = tester.getRect(_timeline());
+  // Start low in the list, clear of the pinned block and the tab bar.
+  final g = await tester.startGesture(
+    Offset(rect.center.dx, rect.bottom - 180),
+  );
+  // Consume touch slop; after this the finger tracks ~1:1.
+  await g.moveBy(Offset(0, -dir * 20));
+  await tester.pump(const Duration(milliseconds: 16));
+  for (var i = 0; i < 200; i++) {
+    final remaining = target - state.position.pixels;
+    if (remaining.abs() < 0.5) break;
+    final step = remaining.abs() < 24 ? remaining : 24 * remaining.sign;
+    await g.moveBy(Offset(0, -step));
+    await tester.pump(const Duration(milliseconds: 16));
   }
+  await g.up();
+  await tester.pumpAndSettle();
   expect(
     tester.state<ScrollableState>(_timeline()).position.pixels,
     moreOrLessEquals(target, epsilon: 1),
@@ -592,9 +641,21 @@ void main() {
   });
 
   // dh2_compact_button_summons_same_sheet (summon parity)
+  // Ruling #4 note: the home pins its header in REST, so the COMPACT path
+  // is exercised by flipping the real component's state in a parity host —
+  // the contract is the ONE onSummonCalendar callback (the real
+  // showHomeShellCalendarSheet), and both states route through it.
   testWidgets('dh2_compact_button_summons_same_sheet: both entry points '
       'summon the SAME sheet component and state', (tester) async {
-    await _pumpShell(tester);
+    tester.view.physicalSize = const Size(393, 852);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+    await pumpSeeded(
+      tester,
+      const _ParityHost(),
+      overrides: _shellOverrides(),
+      settle: true,
+    );
 
     // Path A: REST title.
     await tester.tap(find.byKey(const ValueKey('kyle_date_header.title')));
@@ -602,14 +663,16 @@ void main() {
     final sheetA = tester.widget<KyleCalendarSheet>(
       find.byType(KyleCalendarSheet),
     );
-    final hostA = find.byType(HomeShellCalendarHost);
-    expect(hostA, findsOneWidget);
-    await tester.tapAt(const Offset(195, 20)); // scrim
+    expect(find.byType(HomeShellCalendarHost), findsOneWidget);
+    await tester.tapAt(const Offset(195, 20)); // scrim, above the sheet
     await tester.pumpAndSettle();
     expect(find.byType(KyleCalendarSheet), findsNothing);
 
-    // Path B: COMPACT calendar button.
-    await _scrollTo(tester, HomeShellChrome.headerCompactThresholdPx + 20);
+    // Path B: the COMPACT calendar button — same component, same callback.
+    tester
+        .state<_ParityHostState>(find.byType(_ParityHost))
+        .flipCompact(true);
+    await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey('kyle_date_header.calendar_button')),
     );
@@ -626,32 +689,50 @@ void main() {
     expect(sheetB.today, sheetA.today);
   });
 
-  // dh3_scroll_compacts_and_returns (Q1 state pair)
-  // pin: compact_threshold_px = 56
-  testWidgets('dh3_scroll_compacts_and_returns', (tester) async {
+  // dh3_pinned_block_dissolve (ruling #4 — replaces the REST⇄COMPACT scroll
+  // pair: the pinned instrument block never scrolls; the timeline runs
+  // beneath it and dissolves under its backdrop)
+  testWidgets('dh3_pinned_block_dissolve: the block (header + energy card + '
+      'filters + add row) never scrolls; the timeline dissolves under it',
+      (tester) async {
     await _pumpShell(tester);
     expect(find.byKey(const ValueKey('kyle_date_header.rest')), findsOneWidget);
-    expect(find.byKey(const ValueKey('kyle_date_header.compact')), findsNothing);
 
-    await _scrollTo(tester, HomeShellChrome.headerCompactThresholdPx + 20);
+    final headerBefore =
+        tester.getRect(find.byKey(const ValueKey('kyle_date_header.rest')));
+    final cardBefore = tester.getRect(
+      find.byKey(const ValueKey('macro_dashboard.energy_card')),
+    );
+
+    await _scrollTo(tester, 150);
+
+    // The block is PINNED: header stays REST at the same position, energy
+    // card unmoved, no compact state ever appears on the home.
+    expect(find.byKey(const ValueKey('kyle_date_header.rest')), findsOneWidget,
+        reason: 'the home header stays REST (ruling #4)');
     expect(
       find.byKey(const ValueKey('kyle_date_header.compact')),
-      findsOneWidget,
-      reason: 'COMPACT: calendar button left · short date centred · gear right',
+      findsNothing,
     );
     expect(
-      find.byKey(const ValueKey('kyle_date_header.calendar_button')),
-      findsOneWidget,
+      tester.getRect(find.byKey(const ValueKey('kyle_date_header.rest'))),
+      headerBefore,
+      reason: 'the pinned block never scrolls',
     );
-    // Content sits and scrolls under the compact row: the timeline body is
-    // an under-layer the glass row overlays.
     expect(
-      tester.getRect(find.byType(MacroDashboardBody)).top,
-      lessThan(
-        tester
-            .getRect(find.byKey(const ValueKey('kyle_date_header.compact')))
-            .bottom,
+      tester.getRect(
+        find.byKey(const ValueKey('macro_dashboard.energy_card')),
       ),
+      cardBefore,
+      reason: 'S-1 glanceability: the energy card holds its place',
+    );
+    // The timeline runs beneath the block through the dissolve layer.
+    expect(find.byType(GlassTopFade), findsOneWidget,
+        reason: 'the block sits on its GlassTopFade dissolve');
+    expect(
+      tester.state<ScrollableState>(_timeline()).position.pixels,
+      moreOrLessEquals(150, epsilon: 1),
+      reason: 'the timeline itself scrolled',
     );
 
     await _scrollTo(tester, 0);

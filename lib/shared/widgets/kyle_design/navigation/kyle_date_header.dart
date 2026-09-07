@@ -37,6 +37,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_materials.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../materials/glass.dart';
 
@@ -245,7 +246,12 @@ class KyleDateHeader extends StatelessWidget {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          const Positioned(top: 0, left: 0, right: 0, child: GlassTopFade()),
+          const Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: GlassTopFade(height: AppMaterials.topFadeHeight),
+          ),
           _compactControls(context),
         ],
       ),

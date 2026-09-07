@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/core/guarded_navigation.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../../shared/widgets/kyle_design/materials/glass.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/brick_eligibility.dart';
 import '../../../activities/domain/brick_exceptions.dart';
@@ -62,9 +63,6 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final view = ref.watch(macroDashboardViewProvider);
-    final dayAsync = ref.watch(macroDashboardDayProvider);
-
     // home-shell@v1 switchover (Xuan, 2026-09-06): the ViewTabs + WeekStrip
     // block left this surface with fuel_timeline_day_header.dart's deletion;
     // the shell's DateHeader + CalendarSheet own day navigation now
@@ -72,119 +70,67 @@ class MacroDashboardScreen extends ConsumerWidget {
     // the day content's implementation, composed via [MacroDashboardBody].
     return Container(
       color: MeTokens.blackberry,
-      child: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: dayAsync.when(
-                // A recompute (activities swipe, macro refresh) must repaint
-                // in place, never strobe through a spinner — the previous
-                // frame stays up until the new data lands (S-1's "same
-                // pump", and flicker-proofing against invalidation cascades).
-                skipLoadingOnReload: true,
-                skipLoadingOnRefresh: true,
-                loading: () => const Center(
-                  child: CircularProgressIndicator(color: MeTokens.electrolyte),
-                ),
-                error: (e, _) => Center(
-                  child: Text(
-                    'Could not load your day',
-                    style: TextStyle(
-                      fontFamily: 'Apercu',
-                      color: MeTokens.creamAlpha(0.7),
-                    ),
-                  ),
-                ),
-                data: (data) => _body(context, ref, view, data),
-              ),
-            ),
-          ],
-        ),
-      ),
+      child: const SafeArea(bottom: false, child: MacroDashboardBody()),
     );
   }
 
-  Widget _body(
+  /// The pinned instrument block's content — everything above the dissolve
+  /// boundary (RULED Xuan 2026-09-06 #4: the block never scrolls; the
+  /// timeline dissolves under it). Restores S-1's glanceability: a card
+  /// swipe updates net balance in a frame the athlete can SEE.
+  Widget _pinnedBlockContent(
     BuildContext context,
     WidgetRef ref,
     MacroDashboardViewState view,
     DashboardData data,
+    List<Activity> dayWorkouts,
+    bool picking,
   ) {
     final notifier = ref.read(macroDashboardViewProvider.notifier);
-    final nodes = data.nodes
-        .where(
-          (n) => switch (view.filter) {
-            DashboardFilter.all => true,
-            DashboardFilter.workout => n.isWorkout,
-            DashboardFilter.meals => !n.isWorkout,
-          },
-        )
-        .toList(growable: false);
-    final selectedDate = ref.watch(calendarSelectedDateProvider);
-    final dayWorkouts = _dayWorkouts(ref, selectedDate);
-    final picking = ref.watch(brickSelectionControllerProvider).isSelectionMode;
-
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 8, 18, 90),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+          child: Column(
             children: [
-              // The energy card + filter row scroll WITH the page (home-shell
-              // switchover follow-up, Xuan 2026-09-06): the export draws the
-              // whole home scrolling under the glass chrome, and the compact
-              // header's material only reads as glass with content passing
-              // beneath it. Expansion state still persists across scrolls
-              // (S-4 — it lives in the view provider, not the widget).
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 6, 0, 12),
-                child: Column(
-                  children: [
-                    // §5: tracking-off hides every derived quantity; the card
-                    // is one of them. (The EA gate itself still ran
-                    // server-side.)
-                    if (view.trackingOn && data.energy != null)
-                      EnergySummaryCard(
-                        key: const ValueKey('macro_dashboard.energy_card'),
-                        face: view.filter,
-                        expanded: view.dashOpen,
-                        data: data.energy!,
-                        onToggleExpanded: notifier.toggleDash,
-                        // E2: opens the face's sheet — the Breakdown Pager at
-                        // the face's page (reference mapping: All → Today's
-                        // Energy, Workout → Active Energy, Meals → Today's
-                        // Fuel).
-                        onFullBreakdown: () => showBreakdownPager(
-                          context,
-                          initialIndex: switch (view.filter) {
-                            DashboardFilter.all => 0,
-                            DashboardFilter.workout => 1,
-                            DashboardFilter.meals => 2,
-                          },
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    DashboardFilterRow(
-                      filter: view.filter,
-                      trackingOn: view.trackingOn,
-                      timelineOpen: view.timelineOpen,
-                      onFilter: notifier.setFilter,
-                      onToggleTracking: notifier.toggleTracking,
-                      onToggleTimeline: notifier.toggleTimeline,
-                    ),
-                  ],
+              // §5: tracking-off hides every derived quantity; the card is
+              // one of them. (The EA gate itself still ran server-side.)
+              if (view.trackingOn && data.energy != null)
+                EnergySummaryCard(
+                  key: const ValueKey('macro_dashboard.energy_card'),
+                  face: view.filter,
+                  expanded: view.dashOpen,
+                  data: data.energy!,
+                  onToggleExpanded: notifier.toggleDash,
+                  // E2: opens the face's sheet — the Breakdown Pager at the
+                  // face's page (reference mapping: All → Today's Energy,
+                  // Workout → Active Energy, Meals → Today's Fuel).
+                  onFullBreakdown: () => showBreakdownPager(
+                    context,
+                    initialIndex: switch (view.filter) {
+                      DashboardFilter.all => 0,
+                      DashboardFilter.workout => 1,
+                      DashboardFilter.meals => 2,
+                    },
+                  ),
                 ),
+              const SizedBox(height: 16),
+              DashboardFilterRow(
+                filter: view.filter,
+                trackingOn: view.trackingOn,
+                timelineOpen: view.timelineOpen,
+                onFilter: notifier.setFilter,
+                onToggleTracking: notifier.toggleTracking,
+                onToggleTimeline: notifier.toggleTimeline,
               ),
-              _addRow(context, ref, view, dayWorkouts, picking),
-              for (final node in nodes)
-                _railRow(context, ref, view, node, dayWorkouts, picking),
             ],
           ),
         ),
-        // Leg-picking action bar (step 2): Cancel · Swap · Create Brick (n).
-        // Docked below the list so it stays reachable while scrolling the day.
-        if (picking) _brickActionBar(context, ref),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+          child: _addRow(context, ref, view, dayWorkouts, picking),
+        ),
       ],
     );
   }
@@ -1273,26 +1219,41 @@ class _DashedPillPainter extends CustomPainter {
       oldDelegate.color != color;
 }
 
-/// The dashboard's day content WITHOUT the day-header block — the piece the
-/// home-shell recomposition keeps (macro-dashboard.md §home-shell
-/// recomposition, RULED 2026-09-06: DateHeader + TabBar + CalendarSheet join
-/// the composition; the ViewTabs + WeekStrip block leaves it).
+/// The dashboard's day content — the home surface the shell composes
+/// (macro-dashboard.md §home-shell recomposition + RULING #4, Xuan
+/// 2026-09-06: the pinned instrument block never scrolls; the timeline
+/// runs full-height beneath it and dissolves under the block's
+/// [GlassTopFade] backdrop, Bevel-style).
 ///
-/// Composed by the new dev-visible home-shell screen; the shipped
-/// [MacroDashboardScreen] above keeps [FuelTimelineDayHeader] untouched
-/// until switchover. Delegates to the screen's private body builders (same
-/// library), so the timeline composition exists exactly once.
-class MacroDashboardBody extends ConsumerWidget {
-  const MacroDashboardBody({super.key});
+/// [topInset] is the shell chrome's header clearance — the block includes
+/// it so the dissolve spans from the very top of the surface.
+class MacroDashboardBody extends ConsumerStatefulWidget {
+  const MacroDashboardBody({super.key, this.topInset = 0});
+
+  final double topInset;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MacroDashboardBody> createState() => _MacroDashboardBodyState();
+}
+
+class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
+  /// Measured pinned-block height (drives the list's top padding). The
+  /// pre-measure estimate only affects the first frame.
+  double _blockHeight = 340;
+
+  void _onBlockHeight(double h) {
+    if ((h - _blockHeight).abs() > 0.5) {
+      setState(() => _blockHeight = h);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final view = ref.watch(macroDashboardViewProvider);
     final dayAsync = ref.watch(macroDashboardDayProvider);
-    const screen = MacroDashboardScreen();
     return dayAsync.when(
-      // Same S-1 flicker-proofing as the shipped screen: repaint in place,
-      // never strobe through a spinner on a recompute.
+      // Same S-1 flicker-proofing as ever: repaint in place, never strobe
+      // through a spinner on a recompute.
       skipLoadingOnReload: true,
       skipLoadingOnRefresh: true,
       loading: () => const Center(
@@ -1307,7 +1268,104 @@ class MacroDashboardBody extends ConsumerWidget {
           ),
         ),
       ),
-      data: (data) => screen._body(context, ref, view, data),
+      data: (data) => _layout(context, view, data),
     );
+  }
+
+  Widget _layout(
+    BuildContext context,
+    MacroDashboardViewState view,
+    DashboardData data,
+  ) {
+    const screen = MacroDashboardScreen();
+    final nodes = data.nodes
+        .where(
+          (n) => switch (view.filter) {
+            DashboardFilter.all => true,
+            DashboardFilter.workout => n.isWorkout,
+            DashboardFilter.meals => !n.isWorkout,
+          },
+        )
+        .toList(growable: false);
+    final selectedDate = ref.watch(calendarSelectedDateProvider);
+    final dayWorkouts = screen._dayWorkouts(ref, selectedDate);
+    final picking = ref.watch(brickSelectionControllerProvider).isSelectionMode;
+
+    return Stack(
+      children: [
+        // The timeline runs full-height beneath the block and dissolves
+        // under its backdrop as it scrolls up.
+        Positioned.fill(
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(18, _blockHeight + 8, 18, 90),
+            children: [
+              for (final node in nodes)
+                screen._railRow(context, ref, view, node, dayWorkouts, picking),
+            ],
+          ),
+        ),
+        // The pinned instrument block (never scrolls) on its dissolve.
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: _BlockMeasure(
+            onHeight: _onBlockHeight,
+            child: Stack(
+              children: [
+                const Positioned.fill(child: GlassTopFade()),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: widget.topInset),
+                    screen._pinnedBlockContent(
+                      context,
+                      ref,
+                      view,
+                      data,
+                      dayWorkouts,
+                      picking,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Leg-picking action bar (step 2): Cancel · Swap · Create Brick (n).
+        // Docked at the bottom so it stays reachable while scrolling.
+        if (picking)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: screen._brickActionBar(context, ref),
+          ),
+      ],
+    );
+  }
+}
+
+/// Reports its child's laid-out height after each frame (the pinned block
+/// varies with energy-card expansion, tracking, and leg-picking).
+class _BlockMeasure extends StatefulWidget {
+  const _BlockMeasure({required this.onHeight, required this.child});
+
+  final ValueChanged<double> onHeight;
+  final Widget child;
+
+  @override
+  State<_BlockMeasure> createState() => _BlockMeasureState();
+}
+
+class _BlockMeasureState extends State<_BlockMeasure> {
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final h = context.size?.height;
+      if (h != null) widget.onHeight(h);
+    });
+    return widget.child;
   }
 }

@@ -190,48 +190,80 @@ class GlassRimPainter extends CustomPainter {
 /// decreasing sigma (Flutter has no gradient-masked backdrop filter); the
 /// dim gradient rides over them and hides the strip seams.
 class GlassTopFade extends StatelessWidget {
-  const GlassTopFade({super.key});
+  const GlassTopFade({super.key, this.height});
+
+  /// Zone height. Null fills the parent — the pinned-instrument-block
+  /// dissolve (RULED Xuan 2026-09-06 #4): the ratified 104 px fade runs at
+  /// the zone's bottom edge and everything above it holds the fade's peak
+  /// (blur 14 · `blackberry` 85%). At exactly
+  /// [AppMaterials.topFadeHeight] this reduces to the ruling-#3 treatment.
+  final double? height;
 
   @override
   Widget build(BuildContext context) {
-    const h = AppMaterials.topFadeHeight;
-    // (top offset, height, sigma) strips — strongest blur at the top.
-    const strips = [
-      (0.0, 40.0, AppMaterials.topFadeBlurSigma),
-      (40.0, 24.0, 8.0),
-      (64.0, 20.0, 4.0),
-      (84.0, 20.0, 1.5),
-    ];
     return IgnorePointer(
       child: SizedBox(
-        height: h,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            for (final (top, height, sigma) in strips)
-              Positioned(
-                top: top,
-                left: 0,
-                right: 0,
-                height: height,
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
-                    child: const SizedBox.expand(),
+        height: height,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final h = height ?? constraints.maxHeight;
+            if (!h.isFinite || h <= 0) return const SizedBox.shrink();
+            // (top, height, sigma) strips — the bottom 64 px eases the blur
+            // out; everything above holds the peak. At h = 104 these are the
+            // ratified #3 strips exactly.
+            final strips = [
+              (0.0, h - 64.0, AppMaterials.topFadeBlurSigma),
+              (h - 64.0, 24.0, 8.0),
+              (h - 40.0, 20.0, 4.0),
+              (h - 20.0, 20.0, 1.5),
+            ].where((s) => s.$2 > 0 && s.$1 >= 0);
+            // Dim gradient: peak alpha down to the last 104 px, then the
+            // ratified 85% → 55% → 0 fade to the boundary.
+            final fadeStart = ((h - AppMaterials.topFadeHeight) / h).clamp(
+              0.0,
+              1.0,
+            );
+            final midStop = ((h - AppMaterials.topFadeHeight / 2) / h).clamp(
+              0.0,
+              1.0,
+            );
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                for (final (top, stripHeight, sigma) in strips)
+                  Positioned(
+                    top: top,
+                    left: 0,
+                    right: 0,
+                    height: stripHeight,
+                    child: ClipRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: sigma,
+                          sigmaY: sigma,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppMaterials.topFadeGradient[0],
+                        AppMaterials.topFadeGradient[0],
+                        AppMaterials.topFadeGradient[1],
+                        AppMaterials.topFadeGradient[2],
+                      ],
+                      stops: [0.0, fadeStart, midStop, 1.0],
+                    ),
                   ),
                 ),
-              ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: AppMaterials.topFadeGradient,
-                  stops: AppMaterials.topFadeGradientStops,
-                ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

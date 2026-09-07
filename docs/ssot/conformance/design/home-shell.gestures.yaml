@@ -73,14 +73,21 @@ tests:
     contract: date-header Q1 (summon parity)
     assert:
       - tap the COMPACT calendar button -> the SAME calendar sheet component/state as dh1
-        (one sheet, two entry points — assert identity, not just "a sheet appeared")
-  - id: dh3_scroll_compacts_and_returns
-    contract: date-header Q1 (state pair)
+        (one sheet, two entry points — assert identity, not just "a sheet appeared").
+        Ruling #4 note - the home pins REST, so the COMPACT path is exercised by
+        flipping the real component's state in a parity host wired to the real
+        summon path
+  - id: dh3_pinned_block_dissolve
+    # RULED Xuan 2026-09-06 #4 (Bevel-reference review): replaces the REST⇄COMPACT
+    # scroll pair — the home pins its instrument block; COMPACT stays ratified at
+    # the component level (golden-held) for compositions that scroll their header.
+    contract: date-header Q1 as recomposed by ruling #4 (pinned instrument block)
     assert:
-      - scroll-down past the threshold -> COMPACT (calendar button left · centred short date ·
-        gear right); content scrolls under with the fade
-      - scroll-up -> REST
-    pins: { compact_threshold_px: 56 }
+      - the block (header REST + energy card + filter row + add row) never scrolls —
+        geometry identical before and after a timeline scroll; no COMPACT state
+        renders on the home
+      - the timeline runs full-height beneath the block and dissolves under its
+        top-fade backdrop (tokens §Materials)
   - id: dh4_chevrons_navigate_adjacent_day
     contract: date-header Q2
     assert:

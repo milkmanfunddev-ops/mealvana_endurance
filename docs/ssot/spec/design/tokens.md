@@ -57,7 +57,9 @@ the `top-fade` dissolve below, not this recipe — ruling chain Xuan 2026-09-06 
 review — reinstates the export's drawn compact-header treatment): content scrolling beneath
 blurs and dims progressively toward the top; no band, no hard edge; floating `glass` chrome
 sits on top. Export-exact values: zone height 104 px; blur 14 at the top easing to 0 down the
-zone; dim gradient `blackberry` 85% → 55% at half → transparent.
+zone; dim gradient `blackberry` 85% → 55% at half → transparent. **Generalized by ruling #4
+(same day): the zone may span a pinned instrument block — the ratified 104 px fade runs at the
+block's bottom edge and everything above holds the fade's peak.**
 
 **`glass-sheet`** — summoned surfaces (the calendar sheet):
 - the same backdrop chain; top radius 24; specular line under the grabber; fill `cream` 4 % → 1 %

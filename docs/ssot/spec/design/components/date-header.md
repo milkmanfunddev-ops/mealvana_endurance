@@ -25,6 +25,12 @@ as the blend — the fade was never the defect, the band was).
 | `REST` | One Sansita page-title line, tappable, with the settings gear right. Title copy: **"Today, {Month D} ˅"** when the shown date is the current day; **"{Weekday}, {Month D} ˅"** otherwise (pinned 2026-09-06 — observed in the export as "Wednesday, August 12 ˅"; the weekday replaces "Today", nothing else changes) |
 | `COMPACT` | Sticky dissolve zone on scroll: floating `glass` calendar button left · short centred date ("Aug 31, 2026") · floating `glass` gear right, over the progressive `top-fade` dissolve. Content blurs + dims gradually as it scrolls beneath (see Tokens note above) |
 
+**Ruling #4 (Xuan 2026-09-06, Bevel-reference review):** on the home surface the header stays
+`REST` inside the pinned instrument block (header + energy card + filter row + add row) — the
+block never scrolls; the timeline dissolves under its `top-fade` backdrop. `COMPACT` remains
+ratified at the component level (golden-held) for compositions that scroll their header; dh3
+in the gesture manifest pins the pinned-block behavior.
+
 **Summon parity (RULED):** the REST title tap and the COMPACT calendar button summon **the same
 calendar sheet** ([`calendar-sheet.md`](calendar-sheet.md)). Two entry points, one component,
 one state.

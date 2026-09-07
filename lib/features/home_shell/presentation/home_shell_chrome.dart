@@ -65,10 +65,9 @@ class HomeShellChrome extends ConsumerStatefulWidget {
   /// Injectable wall clock for tests; defaults to [DateTime.now].
   final DateTime? now;
 
-  // ---- pinned scroll thresholds (home-shell.gestures.yaml tb1/tb2/dh3) ----
+  // ---- pinned scroll thresholds (home-shell.gestures.yaml tb1/tb2) ----
   static const double tabBarCollapseThresholdPx = 88.0;
   static const double tabBarExpandThresholdPx = 64.0;
-  static const double headerCompactThresholdPx = 56.0;
 
   /// Space the overlaid REST header needs above the timeline content — the
   /// home tab's body applies it (see [TabsScreen]).
@@ -80,7 +79,6 @@ class HomeShellChrome extends ConsumerStatefulWidget {
 
 class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
   bool _tabBarCollapsed = false;
-  bool _headerCompact = false;
 
   bool _onScroll(ScrollNotification notification) {
     if (notification.metrics.axis != Axis.vertical) return false;
@@ -93,7 +91,6 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
       } else if (px < HomeShellChrome.tabBarExpandThresholdPx) {
         _tabBarCollapsed = false;
       }
-      _headerCompact = px > HomeShellChrome.headerCompactThresholdPx;
     });
     return false;
   }
@@ -131,7 +128,10 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
               right: 0,
               child: KyleDateHeader(
                 date: selectedDate,
-                compact: _headerCompact,
+                // Ruling #4: the home pins its instrument block — the header
+                // stays REST (COMPACT remains ratified at the component
+                // level for compositions that scroll their header).
+                compact: false,
                 now: widget.now,
                 onSummonCalendar: () => showHomeShellCalendarSheet(context),
                 onSettingsTap: () => context.pushOnce('/settings'),
