@@ -241,7 +241,9 @@ class _BubbleHandoff extends StatelessWidget {
         opacity: animation,
         child: SizeTransition(
           sizeFactor: animation,
-          alignment: Alignment.topLeft,
+          // -1.0 = grow anchored to the top (SizeTransition has no
+          // Alignment parameter; axisAlignment is a signed fraction).
+          axisAlignment: -1.0,
           child: child,
         ),
       ),
