@@ -61,8 +61,11 @@ void main() {
 
       final stamp = DateTime.now().millisecondsSinceEpoch;
       final mealName = 'Patrol Meal $stamp';
-      // TimelineNodeTile renders meal names uppercased.
-      final cardText = mealName.toUpperCase();
+      // MealCard renders item.name verbatim — the all-caps look on screen is
+      // the Compadre font's glyphs, not a string transform (the old
+      // TimelineNodeTile really did uppercase; home-shell's dashboard card
+      // does not).
+      final cardText = mealName;
 
       // ---- 1. Fuel Timeline → + Add Food → Manual tab --------------------
       await $(
@@ -141,6 +144,8 @@ void main() {
         findsWidgets,
         reason: 'Meal card should be wrapped in a Dismissible.',
       );
+      // Clear of the pinned block / tab bar overlays before the raw drag.
+      await revealCentered($, cardRow);
       await $.tester.drag(cardRow.first, const Offset(-500, 0));
       // Run the dismiss animation with fixed pumps (no settling).
       for (var i = 0; i < 4; i++) {

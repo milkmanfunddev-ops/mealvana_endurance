@@ -300,12 +300,30 @@ Future<bool> waitForOnTimeline(
   // Best-effort reveal — the assertion above already passed, and a row that
   // cannot be scrolled to still counts as present.
   try {
-    await $.tester.ensureVisible(finder.first);
-    await $.pump(const Duration(milliseconds: 400));
+    await revealCentered($, finder);
   } on Exception catch (e) {
     debugPrint('[flow_launcher] could not scroll the timeline row in: $e');
   }
   return true;
+}
+
+/// Scroll [finder]'s row to the vertical CENTER of its scrollable.
+///
+/// home-shell@v1: the timeline scrolls UNDER the pinned instrument block at
+/// the top and behind the tab bar at the bottom — both are overlays, so a row
+/// `ensureVisible` parks at the viewport's edge is on screen but occluded, and
+/// a tap or swipe aimed at it lands on the glass instead. Centering keeps the
+/// row in the clear band between the two. (This is exactly what broke the G1
+/// swipe in the first post-switchover Patrol run: the write never happened
+/// because the gesture never reached the card.)
+Future<void> revealCentered(PatrolIntegrationTester $, Finder finder) async {
+  final element = finder.first.evaluate().single;
+  await Scrollable.ensureVisible(
+    element,
+    alignment: 0.5,
+    duration: const Duration(milliseconds: 250),
+  );
+  await $.pump(const Duration(milliseconds: 400));
 }
 
 /// The first vertically-scrolling [Scrollable] on screen, or null.

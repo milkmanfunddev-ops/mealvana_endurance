@@ -16,17 +16,18 @@
 ///       `_expandedAll` / `_expandedMeals`, so a collapsed card has no button
 ///       at all. Flows share ONE app session, so neither `trackingOn` nor
 ///       `dashOpen` can be assumed from its default.
-///     → tap the dashboard's "breakdown" button
-///     → the sheet renders nutrition_diary.breakdown_section plus the resting
-///       and TDEE rows — the two components that are always present
-///     → dismiss and confirm we are back on the timeline.
+///     → tap the dashboard's "Full Breakdown" button
+///     → the Breakdown Pager renders (macro_dashboard.pager) with its
+///       unconditional 'Resting' burn row
+///     → dismiss via pager_close and confirm we are back on the timeline.
 ///
-/// Deliberately NOT asserted: `nutrition_diary.daily_activity_row` and
-/// `nutrition_diary.workout_row` are conditional (activity row on a non-zero
-/// activity factor, workout row on the day having workouts), so requiring them
-/// would make this flow depend on the tester account's data for the day. The
-/// section + resting + TDEE rows are unconditional, which is what makes this a
-/// stable assertion rather than a seeded-data one.
+/// Deliberately NOT asserted: the pager's Workout/Daily-activity rows carry
+/// data-dependent marks (verified/self-reported/estimated), so requiring
+/// specifics would make this flow depend on the tester account's data for the
+/// day. The pager + Resting row are unconditional, which is what makes this a
+/// stable assertion rather than a seeded-data one. (Re-anchored from the old
+/// fuel-timeline sheet's nutrition_diary.* rows when home-shell@v1 deleted
+/// that screen.)
 ///
 /// Also not asserted: the Weekly tab's `weekly_chart.*` keys. Per
 /// energy_breakdown_sheet.dart, `daily_macros`' WeeklyOverviewChart is dead
@@ -118,32 +119,31 @@ void main() {
       await $(breakdownButton).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 500));
 
+      // The dashboard's Full Breakdown opens the Breakdown Pager (the old
+      // fuel-timeline sheet and its nutrition_diary.* rows are gone with the
+      // FuelTimelineScreen). The pager surface itself plus its unconditional
+      // 'Resting' burn row are the stable anchors: Resting renders regardless
+      // of the day's data, so if the breakdown provider resolved at all it is
+      // present.
       await $(
-        const ValueKey('nutrition_diary.breakdown_section'),
+        const ValueKey('macro_dashboard.pager'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
 
-      // Resting and TDEE are the unconditional ends of the decomposition: one
-      // is the BMR floor, the other the total everything else feeds into. If
-      // the summary provider resolved at all, both are present.
       expect(
-        $(const ValueKey('nutrition_diary.resting_row')),
-        findsOneWidget,
+        $('Resting'),
+        // findsWidgets, not findsOneWidget: the info-dot overlay content also
+        // titles itself 'Resting' and may sit (offstage) in the same tree.
+        findsWidgets,
         reason:
-            'The breakdown must show the resting-energy component. Its absence '
-            'means the daily summary resolved empty rather than with a BMR.',
-      );
-      expect(
-        $(const ValueKey('nutrition_diary.tdee_row')),
-        findsOneWidget,
-        reason:
-            'The breakdown must show the TDEE total the components sum into.',
+            'The pager must show the resting-energy component. Its absence '
+            'means the daily breakdown resolved empty rather than with a BMR.',
       );
 
       // ---- 4. Dismiss, back to the timeline --------------------------------
-      // Use the sheet's own close control, not a native back press: this suite
+      // Use the pager's own close control, not a native back press: this suite
       // runs on the iOS simulator, where Patrol's pressBack is unavailable.
       await $(
-        const ValueKey('energy_breakdown.close_button'),
+        const ValueKey('macro_dashboard.pager_close'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 600));
 

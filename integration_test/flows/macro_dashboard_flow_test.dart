@@ -202,7 +202,7 @@ void main() {
     final netBefore = netText();
 
     // ---- 3. G1: full right-swipe marks done ------------------------------
-    await $.tester.ensureVisible(find.byKey(cardKey));
+    await revealCentered($, find.byKey(cardKey));
     await $.pump(const Duration(milliseconds: 300));
     await _swipe($, find.byKey(cardKey), 320);
 
@@ -259,7 +259,7 @@ void main() {
     }
 
     // ---- 5. G2: right-swipe again undoes (clears actual_time) ------------
-    await $.tester.ensureVisible(find.byKey(cardKey));
+    await revealCentered($, find.byKey(cardKey));
     await $.pump(const Duration(milliseconds: 300));
     await _swipe($, find.byKey(cardKey), 320);
 
@@ -273,7 +273,7 @@ void main() {
         reason: 'planned_time survives the undo untouched');
 
     // ---- 6. G4/G5: left-swipe reveals Skip; the press writes 'skipped' -----
-    await $.tester.ensureVisible(find.byKey(cardKey));
+    await revealCentered($, find.byKey(cardKey));
     await $.pump(const Duration(milliseconds: 300));
     await _swipe($, find.byKey(cardKey), -90);
     await $(_skipButton).waitUntilVisible(
@@ -309,7 +309,7 @@ void main() {
     expect(find.text('Skipped'), findsWidgets);
 
     // ---- 6b. Left-swipe again → Unskip → status back to planned -----------
-    await $.tester.ensureVisible(find.byKey(cardKey));
+    await revealCentered($, find.byKey(cardKey));
     await $.pump(const Duration(milliseconds: 300));
     await _swipe($, find.byKey(cardKey), -90);
     await $(_unskipButton).waitUntilVisible(
@@ -333,7 +333,7 @@ void main() {
     // cache invalidation (edge-function round trip). A drag injected into a
     // rebuilding list can be swallowed, so settle first and retry the reveal.
     await $.pump(const Duration(milliseconds: 1500));
-    await $.tester.ensureVisible(find.byKey(cardKey));
+    await revealCentered($, find.byKey(cardKey));
     await $.pump(const Duration(milliseconds: 300));
     var revealed = false;
     for (var attempt = 0; attempt < 3 && !revealed; attempt++) {

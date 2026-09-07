@@ -67,8 +67,11 @@ void main() {
 
       final stamp = DateTime.now().millisecondsSinceEpoch;
       final mealName = 'Patrol Build $stamp';
-      // TimelineNodeTile renders meal names uppercased.
-      final cardText = mealName.toUpperCase();
+      // MealCard renders item.name verbatim — the all-caps look on screen is
+      // the Compadre font's glyphs, not a string transform (the old
+      // TimelineNodeTile really did uppercase; home-shell's dashboard card
+      // does not).
+      final cardText = mealName;
 
       // ---- 1. Fuel Timeline → + Add Food → Build a meal -------------------
       await $(
