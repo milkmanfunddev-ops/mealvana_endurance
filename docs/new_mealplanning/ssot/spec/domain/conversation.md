@@ -35,7 +35,12 @@ and no tool inventory ([`../agent/tools.md`](../agent/tools.md)).
   the athlete speaks first; a general request with no message is `400 message_required`. General Vana creates
   no server row until the first message.
 - **C-4 · One draft plan per planning conversation** ([`plan.md`](plan.md) P-2); the context's PLAN line
-  describes that draft.
+  describes that draft. **Every write into that draft is conversation-scoped** whatever screen makes it —
+  a chat picker, the plan bar, or the Browse-meals screen opened from this conversation
+  (`../design/surfaces/vana-browse.md` VB-3, added 2026-09-03 evening) all carry the same `conversationId` and
+  land on the same draft; the chat surface re-reads it (`refreshDraft`) whenever a write could have happened
+  elsewhere. Verified in code 2026-09-04: no deviation of the shape "the bar reads the week's active plan
+  instead" was found current in this codebase — P-2's scoping is already correctly built and recorded.
 - **C-5 · "Other options" memory is the transcript.** `shownMealIds` is rebuilt from the persisted
   `meal_picker` / `staples` parts every turn ([`../selection/meal-suggestion.md`](../selection/meal-suggestion.md) SG-2).
 - **C-6 · The opener is a variant** — plan · check-in · debrief ([`../planning/opener-selection.md`](../planning/opener-selection.md)).

@@ -73,6 +73,16 @@ us, we decide for you… if you want control, then you can go tweak it." [MTG-05
 TEST Theme 2/4 "generate-first model is validated", SCEN-U — the full draft plan lands
 after only two questions]
 
+> **Updated 2026-09-03 evening — met by a different door than the opener.** The opener
+> itself now asks a question before proposing anything (`spec/agent/voice.md` §Opener,
+> `DEVIATIONS.md` D-020), reversing the earlier "frame + three dinners" opener that MET
+> this passage directly. `draftWeek` (the "Draft my whole week" chip, Phase 2) is the
+> zero-question door that still delivers the complete, confident proposal this passage
+> describes — just not as the opener's own default path. Whether §2.2 should govern the
+> opener's *default* experience (not just an opt-in chip) is the open half of this call —
+> see the ruling request `intake/2026-09-03-opener-question-first-reversal.md`. Not
+> reclassified as a clean MET or a clean gap; genuinely split, per that file.
+
 2.3 **One question at a time.** "Questions are asked one at a time, not in
 overwhelming lists." When a fork is real, present it as 2–4 tappable options, each
 with a one-line trade-off. [SCEN-U Key Design Elements; SCEN-U bike-food fork

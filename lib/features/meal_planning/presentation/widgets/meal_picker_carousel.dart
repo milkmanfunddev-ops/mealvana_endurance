@@ -126,10 +126,10 @@ class MealPickerCarousel extends ConsumerWidget {
   }
 }
 
-/// One 188pt pick tile (2026-09-04 redesign): no meal icon — the tick is
-/// the whole top-left, the name carries the tile, and a picked meal shows
-/// a direct swap button top-right (no overflow menu). Tap on the body
-/// opens the detail; the tick adds to the plan.
+/// One 188pt pick tile (2026-09-04 redesign): no meal icon and no kcal —
+/// the name sits up top with the tick (plus a direct swap button once
+/// picked) carved out to its right, and the tag pills sit alone at the
+/// bottom. Tap on the body opens the detail; the tick adds to the plan.
 class _PickerTile extends ConsumerWidget {
   const _PickerTile({
     super.key,
@@ -174,24 +174,26 @@ class _PickerTile extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title up top with the tick (and swap, once picked) carved
+                // out to its right — the name never runs under the controls.
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      key: ValueKey('meal_planning.picker_tick_${meal.id}'),
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onPick,
-                      child: Padding(
-                        // Right only: the tile is height-fixed and the tick
-                        // should sit flush with the text block below.
-                        padding: const EdgeInsets.only(right: 4),
-                        child: _Tick(
-                          on: selected,
-                          border: textColor.withValues(alpha: 0.4),
+                    Expanded(
+                      child: Text(
+                        meal.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          height: 1.25,
+                          color: textColor,
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    if (onSwap != null)
+                    const SizedBox(width: 8),
+                    if (onSwap != null) ...[
                       Tooltip(
                         message: content.getValue(ContentKeys.mpBtnSwap),
                         child: GestureDetector(
@@ -213,68 +215,44 @@ class _PickerTile extends ConsumerWidget {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 6),
+                    ],
+                    GestureDetector(
+                      key: ValueKey('meal_planning.picker_tick_${meal.id}'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onPick,
+                      child: _Tick(
+                        on: selected,
+                        border: textColor.withValues(alpha: 0.4),
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                // Name + why as one clamped rich text — the whole block
-                // ellipsizes together, so the tile can't overflow however
-                // the text metrics run.
+                const SizedBox(height: 6),
                 Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: meal.name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            height: 1.25,
-                            color: textColor,
-                          ),
-                        ),
-                        TextSpan(text: '\n', style: TextStyle(height: 0.6)),
-                        TextSpan(
-                          text: meal.why,
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1.25,
-                            color: muted,
-                          ),
-                        ),
-                      ],
-                    ),
-                    maxLines: 4,
+                  child: Text(
+                    meal.why,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.25,
+                      color: muted,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Tags wrap when they don't fit beside the kcal figure —
-                // the tile is only 188pt wide.
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
                   children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 6,
-                        runSpacing: 4,
-                        children: [
-                          if (meal.kind == MealKind.assembly)
-                            const VanaTag(
-                              label: 'No recipe',
-                              tone: VanaTagTone.orange,
-                            ),
-                          if (meal.batch && !selected)
-                            const VanaTag(label: 'Batch'),
-                        ],
+                    if (meal.kind == MealKind.assembly)
+                      const VanaTag(
+                        label: 'No recipe',
+                        tone: VanaTagTone.orange,
                       ),
-                    ),
-                    if (meal.kcal != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        '${meal.kcal} kcal',
-                        style: TextStyle(fontSize: 12, color: muted),
-                      ),
-                    ],
+                    if (meal.batch && !selected)
+                      const VanaTag(label: 'Batch'),
                   ],
                 ),
               ],
