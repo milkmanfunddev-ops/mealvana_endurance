@@ -117,22 +117,28 @@ class GlassSheetSurface extends StatelessWidget {
     return ClipRRect(
       borderRadius: topRadius,
       child: BackdropFilter(
-        filter: AppMaterials.glassBackdropFilter(),
+        filter: AppMaterials.sheetBackdropFilter(),
         child: CustomPaint(
           foregroundPainter: GlassRimPainter(borderRadius: topRadius),
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: topRadius,
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppMaterials.sheetFillTop,
-                  AppMaterials.sheetFillBottom,
-                ],
-              ),
+              color: AppMaterials.sheetVeil,
             ),
-            child: child,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: topRadius,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppMaterials.sheetFillTop,
+                    AppMaterials.sheetFillBottom,
+                  ],
+                ),
+              ),
+              child: child,
+            ),
           ),
         ),
       ),

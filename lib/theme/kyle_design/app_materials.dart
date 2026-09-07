@@ -64,6 +64,25 @@ class AppMaterials {
   /// glass-sheet top corner radius.
   static const double sheetTopRadius = 24.0;
 
+  /// The sheet's OWN backdrop chain (RULED Xuan 2026-09-07, on-Rad review:
+  /// "reads a little dirty" — the standard glass chain's weak blur +
+  /// saturation boost kept the page legible through the sheet). Heavy blur
+  /// melts the page into soft color fields; no brightening; the veil below
+  /// adds body while keeping the sheet clearly translucent.
+  static const double sheetBlurSigma = 18.0;
+  static const double sheetSaturation = 1.2;
+  static final Color sheetVeil = AppColors.blackberry.withValues(alpha: 0.30);
+
+  static ImageFilter sheetBackdropFilter() => ImageFilter.compose(
+        outer: ColorFilter.matrix(
+          _saturationBrightnessMatrix(sheetSaturation, 1.0),
+        ),
+        inner: ImageFilter.blur(
+          sigmaX: sheetBlurSigma,
+          sigmaY: sheetBlurSigma,
+        ),
+      );
+
   // ---- rim, light source top ----
   /// 1 px inner specular highlight: cream 40% across the top arc fading to
   /// cream 8% at the sides.

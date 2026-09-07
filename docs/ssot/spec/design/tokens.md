@@ -62,7 +62,10 @@ zone; dim gradient `blackberry` 85% → 55% at half → transparent. **Generaliz
 block's bottom edge and everything above holds the fade's peak.**
 
 **`glass-sheet`** — summoned surfaces (the calendar sheet):
-- the same backdrop chain; top radius 24; specular line under the grabber; fill `cream` 4 % → 1 %
+- its OWN backdrop chain (RULED Xuan 2026-09-07, on-Rad review — the shared chain's weak blur +
+  saturation boost left the page legible through the sheet, "reads a little dirty"): blur 18 ·
+  saturate 1.2 · no brightening, plus a `blackberry` 30 % veil inside the sheet; top radius 24;
+  specular line under the grabber; fill `cream` 4 % → 1 %
 - **scrim: `blackberry` 60 % — rgba(56, 22, 51, 0.6) — between the page and the sheet.**
   RULED 2026-09-06: **the export governs**; the intake's proposed black ~35 % is corrected by
   this ruling. Load-bearing, not cosmetic: without it, page chrome bleeds through and
