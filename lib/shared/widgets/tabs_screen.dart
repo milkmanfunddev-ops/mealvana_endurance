@@ -56,7 +56,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   List<KyleTabBarDestination> get _destinations => [
     KyleTabBarDestination(
       id: 'timeline',
-      icon: FontAwesomeIcons.house.data,
+      icon: FontAwesomeIcons.solidHouse.data,
       label: 'Timeline',
     ),
     if (kIsWeb)
@@ -228,8 +228,8 @@ class _NavigationRailSection extends StatelessWidget {
     // Build destinations list — same order as tab indices.
     final destinations = <NavigationRailDestination>[
       const NavigationRailDestination(
-        icon: FaIcon(FontAwesomeIcons.house),
-        selectedIcon: FaIcon(FontAwesomeIcons.house),
+        icon: FaIcon(FontAwesomeIcons.solidHouse),
+        selectedIcon: FaIcon(FontAwesomeIcons.solidHouse),
         label: Text('Timeline'),
       ),
       if (showCoachTab)

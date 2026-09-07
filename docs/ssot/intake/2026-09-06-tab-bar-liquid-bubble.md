@@ -59,6 +59,15 @@ highlight (tab-bar.md Q1) and the lens-only-in-transit negative (old tb6):
    45%-dim attempt). Xuan's preferred reduce-transparency route, matching Bevel's bar.
 3. **Bar raised**: bottom margin 16 → 28.
 
+## Final polish (Xuan, 2026-09-07 morning — pre-merge)
+
+- House glyph is the SOLID variant (Q4's house, filled).
+- Collapse-morph hitch fixed: the label slot's height now always animates 14->0 (gating it on
+  the fade removed ~6px of reserved height in one frame and made the icon jump-recenter);
+  the rider/row-copy handoff crossfades continuously with the lens fade. Verified by
+  centroid-tracking the icon across recorded morph frames: smooth ~1.5px/frame, no step.
+- Transit bulge settled at +10 (from +14).
+
 ## Ratification considerations (the honest trade-offs)
 
 1. **Supersedes ratified Q1**: the cream-fill active highlight is gone from the bar. The

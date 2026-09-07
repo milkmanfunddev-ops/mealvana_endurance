@@ -355,7 +355,7 @@ class _KyleTabBarState extends State<KyleTabBar>
                         // Faded out to the degree its crisp copy renders
                         // above the glass.
                         carriedByLens: i == riderIndex && riderVisible
-                            ? riderStrength
+                            ? riderStrength * lensVisibility
                             : 0.0,
                       ),
                   ],
@@ -395,7 +395,8 @@ class _KyleTabBarState extends State<KyleTabBar>
                     child: Transform.scale(
                       scale: 1 +
                           (AppMaterials.tabLensFocusZoom - 1) *
-                              (dragging ? riderStrength : t),
+                              (dragging ? riderStrength : t) *
+                              lensVisibility,
                       child: _itemContent(
                         widget.destinations[riderIndex],
                         AppColors.cream,
@@ -468,11 +469,16 @@ class _KyleTabBarState extends State<KyleTabBar>
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(d.icon, size: 20, color: ink),
-        if (labelFade > 0)
-          SizedBox(
-            height: lerp(14, 0),
-            child: Opacity(
-              opacity: labelFade,
+        // The slot's HEIGHT always animates (14 -> 0); only the paint
+        // fades. Gating the slot on labelFade removed ~6px of reserved
+        // height in one frame at p=0.555 and made the icon jump-recenter
+        // (the collapse hitch in Xuan's recording).
+        SizedBox(
+          height: lerp(14, 0),
+          child: Opacity(
+            opacity: labelFade,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
               child: Text(
                 d.label,
                 maxLines: 1,
@@ -489,6 +495,7 @@ class _KyleTabBarState extends State<KyleTabBar>
               ),
             ),
           ),
+        ),
       ],
     );
   }

@@ -101,7 +101,7 @@ Future<void> _golden(
 List<KyleTabBarDestination> _destinations(int count) => [
   KyleTabBarDestination(
     id: 'timeline',
-    icon: FontAwesomeIcons.house.data,
+    icon: FontAwesomeIcons.solidHouse.data,
     label: 'Timeline',
   ),
   KyleTabBarDestination(

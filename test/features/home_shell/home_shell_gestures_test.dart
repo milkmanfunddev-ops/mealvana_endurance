@@ -325,7 +325,7 @@ Widget _frame(Widget child) => MaterialApp(
 List<KyleTabBarDestination> _destinations(int count) => [
   KyleTabBarDestination(
     id: 'timeline',
-    icon: FontAwesomeIcons.house.data,
+    icon: FontAwesomeIcons.solidHouse.data,
     label: 'Timeline',
   ),
   KyleTabBarDestination(
@@ -389,7 +389,7 @@ void main() {
     final icon = tester.widget<Icon>(
       find.descendant(of: _collapsedButton(), matching: find.byType(Icon)),
     );
-    expect(icon.icon, FontAwesomeIcons.house.data,
+    expect(icon.icon, FontAwesomeIcons.solidHouse.data,
         reason: 'the collapsed button shows the ACTIVE tab (house — Q4)');
     // Content still scrolls under in the collapsed state.
     expect(
