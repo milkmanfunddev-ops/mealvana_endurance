@@ -39,6 +39,7 @@ class MealLog {
     this.photoPath,
     this.recipeId,
     this.savedMealId,
+    this.planMealId,
     this.notes,
     this.eatenAt,
     required this.createdAt,
@@ -86,6 +87,10 @@ class MealLog {
   /// Provenance pointer to the saved meal this was logged from (if source ==
   /// saved).
   final String? savedMealId;
+
+  /// Provenance pointer to the `plan_meals` row this was logged from (if
+  /// source == plan). Set server-side by `plan_log_from_plan`.
+  final String? planMealId;
 
   final String? notes;
 
@@ -162,6 +167,7 @@ class MealLog {
       photoPath: entry.photoPath,
       recipeId: entry.recipeId,
       savedMealId: entry.savedMealId,
+      planMealId: entry.planMealId,
       notes: entry.notes,
       eatenAt: entry.eatenAt,
       createdAt: entry.createdAt,
@@ -190,6 +196,7 @@ class MealLog {
       photoPath: Value(photoPath),
       recipeId: Value(recipeId),
       savedMealId: Value(savedMealId),
+      planMealId: Value(planMealId),
       notes: Value(notes),
       eatenAt: Value(eatenAt),
       createdAt: createdAt,
@@ -224,6 +231,7 @@ class MealLog {
       'photo_path': photoPath,
       'recipe_id': recipeId,
       'saved_meal_id': savedMealId,
+      'plan_meal_id': planMealId,
       'notes': notes,
       'eaten_at': eatenAt?.toUtc().toIso8601String(),
       'created_at': createdAt.toUtc().toIso8601String(),
@@ -260,6 +268,7 @@ class MealLog {
       photoPath: json['photo_path'] as String?,
       recipeId: json['recipe_id'] as String?,
       savedMealId: json['saved_meal_id'] as String?,
+      planMealId: json['plan_meal_id'] as String?,
       notes: json['notes'] as String?,
       eatenAt: json['eaten_at'] == null
           ? null
@@ -292,6 +301,7 @@ class MealLog {
     String? photoPath,
     String? recipeId,
     String? savedMealId,
+    String? planMealId,
     String? notes,
     DateTime? eatenAt,
     DateTime? createdAt,
@@ -316,6 +326,7 @@ class MealLog {
       photoPath: photoPath ?? this.photoPath,
       recipeId: recipeId ?? this.recipeId,
       savedMealId: savedMealId ?? this.savedMealId,
+      planMealId: planMealId ?? this.planMealId,
       notes: notes ?? this.notes,
       eatenAt: eatenAt ?? this.eatenAt,
       createdAt: createdAt ?? this.createdAt,

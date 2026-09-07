@@ -1,0 +1,4581 @@
+[
+ {
+  "id": "D-a-001",
+  "name": "Salmon, quinoa, asparagus & spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→tofu or steak (Sygo's own named swaps)",
+  "approx_macros": "~560 kcal · 45g C · 42g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Jennifer Sygo, RD (Team Canada sports dietitian), quoted in \"An ideal day of eating for a distance runner\", Canadian Running Magazine — https://runningmagazine.ca/health-nutrition/an-ideal-day-of-eating-for-a-distance-runner/",
+  "evidence": "\"Dinner: salmon, tofu or steak with some quinoa and asparagus and a spinach salad.\" — her own stated dinner, with protein named as interchangeable",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-002",
+  "name": "Tofu, quinoa, asparagus & spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, pan-seared",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu is Sygo's own named vegetarian swap for this exact dinner",
+  "approx_macros": "~480 kcal · 46g C · 26g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Jennifer Sygo, RD (Team Canada sports dietitian), quoted in \"An ideal day of eating for a distance runner\", Canadian Running Magazine — https://runningmagazine.ca/health-nutrition/an-ideal-day-of-eating-for-a-distance-runner/",
+  "evidence": "\"Dinner: salmon, tofu or steak with some quinoa and asparagus and a spinach salad.\" — her own stated dinner, with protein named as interchangeable",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-003",
+  "name": "Steak, quinoa, asparagus & spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "steak is Sygo's own named swap for this exact dinner",
+  "approx_macros": "~610 kcal · 45g C · 44g P · 24g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Jennifer Sygo, RD (Team Canada sports dietitian), quoted in \"An ideal day of eating for a distance runner\", Canadian Running Magazine — https://runningmagazine.ca/health-nutrition/an-ideal-day-of-eating-for-a-distance-runner/",
+  "evidence": "\"Dinner: salmon, tofu or steak with some quinoa and asparagus and a spinach salad.\" — her own stated dinner, with protein named as interchangeable",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-004",
+  "name": "Steak, rice & black bean bowl with guacamole",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "steak, sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "guacamole",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "salsa",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beans→omit (paleo/keto); steak→chicken or shrimp for a lighter bowl",
+  "approx_macros": "~700 kcal · 75g C · 45g P · 24g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Ashley Young, \"Week 11: Fridays Are for Steak & Rice Bowls!\", Feed Your Runner newsletter — https://feedyourrunner.substack.com/p/week-11-fridays-are-for-steak-and-67a",
+  "evidence": "\"Fridays Are for Steak & Rice Bowls!\" — described as \"our favorite\", a standing Friday-night family tradition",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-005",
+  "name": "Rotisserie chicken taco salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rotisserie chicken, shredded",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "romaine lettuce",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "corn tortilla strips",
+    "qty": "30 g",
+    "role": "starch"
+   },
+   {
+    "food": "cheese, shredded",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + starch + dairy + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "store rotisserie chicken is the whole point — swap taco seasoning to taste",
+  "approx_macros": "~520 kcal · 30g C · 42g P · 22g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Crunch Time Club newsletter, \"Crunch Time Dinner: Rotisserie Chicken Taco Salad\" — https://crunchtimeclub.substack.com/p/crunch-time-dinner-rotisserie-chicken",
+  "evidence": "\"a big fan of rotisserie chicken for fast dinners\" — \"checks all the boxes for me when it comes to fast dinners\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-006",
+  "name": "Beef, sweet potato & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, pan-seared",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken, salmon or lentils (author's own named rotation)",
+  "approx_macros": "~600 kcal · 48g C · 40g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-007",
+  "name": "Chicken, brown rice & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, sauteed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→beef, salmon or lentils",
+  "approx_macros": "~560 kcal · 55g C · 42g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-008",
+  "name": "Salmon, brown rice & zucchini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, sauteed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→beef, chicken or lentils",
+  "approx_macros": "~580 kcal · 52g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-009",
+  "name": "Lentils, brown rice & kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "green lentils, cooked",
+    "qty": "220 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "lentils→beef, chicken or salmon",
+  "approx_macros": "~540 kcal · 80g C · 22g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-010",
+  "name": "Chicken, sweet potato & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken→beef, salmon or lentils",
+  "approx_macros": "~570 kcal · 46g C · 38g P · 18g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-011",
+  "name": "Beef, brown rice & cauliflower",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, pan-seared",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken, salmon or lentils",
+  "approx_macros": "~610 kcal · 55g C · 40g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-012",
+  "name": "Halibut, fried plantains, rice & side salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "halibut, pan-seared",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "plantains, fried",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "caribbean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "halibut→any firm white fish",
+  "approx_macros": "~640 kcal · 70g C · 38g P · 18g F",
+  "prep": "30 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" (sample-day dinner) — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "listed as her dinner on a sample training day",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-013",
+  "name": "Beef burger, hummus, arugula-tomato salad & roasted sweet potato",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef burger patty, no bun",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "arugula & tomato salad",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + fat + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "beef patty→turkey or black bean patty",
+  "approx_macros": "~640 kcal · 45g C · 36g P · 30g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" (11-mile-run-day dinner) — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "listed as her dinner after an 11-mile run day",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-014",
+  "name": "Wholewheat pasta, mixed veg & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "wholewheat pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetables, steamed",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "0.5",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "pasta→rice or quinoa; avocado→nuts or seeds",
+  "approx_macros": "~520 kcal · 75g C · 15g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "David Rother, pro triathlete, \"What I Eat In A Day\" — https://www.sundried.com/blogs/nutrition/what-i-eat-in-a-day-david-rother-pro-triathlete",
+  "evidence": "his dinner base is \"rice, quinoa or wholewheat pasta\" with vegetables \"heated in whatever way is easiest\" plus \"an avocado, nuts, or seeds\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-015",
+  "name": "Quinoa, mixed veg & walnuts",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetables, steamed",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "walnuts",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "quinoa→rice or wholewheat pasta; walnuts→avocado or seeds",
+  "approx_macros": "~500 kcal · 65g C · 16g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "David Rother, pro triathlete, \"What I Eat In A Day\" — https://www.sundried.com/blogs/nutrition/what-i-eat-in-a-day-david-rother-pro-triathlete",
+  "evidence": "his dinner base is \"rice, quinoa or wholewheat pasta\" with vegetables \"heated in whatever way is easiest\" plus \"an avocado, nuts, or seeds\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-016",
+  "name": "Rice, mixed veg & sunflower seeds",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetables, steamed",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "sunflower seeds",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "rice→quinoa or wholewheat pasta; seeds→avocado or nuts",
+  "approx_macros": "~520 kcal · 80g C · 12g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "David Rother, pro triathlete, \"What I Eat In A Day\" — https://www.sundried.com/blogs/nutrition/what-i-eat-in-a-day-david-rother-pro-triathlete",
+  "evidence": "his dinner base is \"rice, quinoa or wholewheat pasta\" with vegetables \"heated in whatever way is easiest\" plus \"an avocado, nuts, or seeds\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-017",
+  "name": "Turkey, quinoa, wilted greens & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "wilted greens",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→grilled tofu",
+  "approx_macros": "~530 kcal · 55g C · 40g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Marathon Handbook, \"What To Eat During Marathon Training\" (rest-day sample dinner) — https://marathonhandbook.com/marathon-training-diet/",
+  "evidence": "rest-day sample dinner: \"roasted turkey breast or grilled tofu over quinoa and lemony wilted greens, with broccoli on the side\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-018",
+  "name": "Tofu, quinoa, wilted greens & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, roasted",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "wilted greens",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu→roasted turkey breast",
+  "approx_macros": "~480 kcal · 56g C · 24g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Marathon Handbook, \"What To Eat During Marathon Training\" (rest-day sample dinner) — https://marathonhandbook.com/marathon-training-diet/",
+  "evidence": "rest-day sample dinner: \"roasted turkey breast or grilled tofu over quinoa and lemony wilted greens, with broccoli on the side\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-019",
+  "name": "Salmon, baked sweet potato, greek salad & asparagus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, baked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "greek salad",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→tofu steaks",
+  "approx_macros": "~600 kcal · 50g C · 40g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Marathon Handbook, \"What To Eat During Marathon Training\" (evening-interval-workout sample dinner) — https://marathonhandbook.com/marathon-training-diet/",
+  "evidence": "evening-interval-workout dinner: \"roasted salmon or tofu steaks with baked sweet potato, Greek salad, and asparagus\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-020",
+  "name": "Tofu steaks, baked sweet potato, greek salad & asparagus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu steaks, roasted",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, baked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "greek salad",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "soy"
+  ],
+  "swaps": "tofu steaks→roasted salmon",
+  "approx_macros": "~520 kcal · 52g C · 24g P · 18g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Marathon Handbook, \"What To Eat During Marathon Training\" (evening-interval-workout sample dinner) — https://marathonhandbook.com/marathon-training-diet/",
+  "evidence": "evening-interval-workout dinner: \"roasted salmon or tofu steaks with baked sweet potato, Greek salad, and asparagus\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-021",
+  "name": "Pasta with lean ground turkey & side salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "wholewheat pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "ground turkey, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "turkey→lean ground beef or chicken",
+  "approx_macros": "~560 kcal · 65g C · 38g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BodySpec, \"Runner's Diet: A Complete Guide and 7-Day Plan\" (Base Building week) — https://www.bodyspec.com/blog/post/runners_diet_a_complete_guide_and_7day_plan",
+  "evidence": "Tuesday dinner: \"Pasta with lean ground turkey\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-022",
+  "name": "Chicken stir-fry with mixed veg, no rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, stir-fried",
+    "qty": "220 g",
+    "role": "veg"
+   },
+   {
+    "food": "sesame oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "chicken→tofu",
+  "approx_macros": "~360 kcal · 15g C · 40g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BodySpec, \"Runner's Diet: A Complete Guide and 7-Day Plan\" (Base Building week) — https://www.bodyspec.com/blog/post/runners_diet_a_complete_guide_and_7day_plan",
+  "evidence": "Wednesday dinner: \"Stir-fry with tofu or chicken + veggies\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-023",
+  "name": "Tofu stir-fry with mixed veg, no rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, stir-fried",
+    "qty": "220 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, stir-fried",
+    "qty": "220 g",
+    "role": "veg"
+   },
+   {
+    "food": "sesame oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "tofu→chicken",
+  "approx_macros": "~320 kcal · 16g C · 20g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BodySpec, \"Runner's Diet: A Complete Guide and 7-Day Plan\" (Base Building week) — https://www.bodyspec.com/blog/post/runners_diet_a_complete_guide_and_7day_plan",
+  "evidence": "Wednesday dinner: \"Stir-fry with tofu or chicken + veggies\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-024",
+  "name": "Omelet with spinach & feta",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "eggs",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "spinach",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "feta",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + veg + dairy",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "feta→dairy-free cheese for dairy-free",
+  "approx_macros": "~380 kcal · 4g C · 26g P · 28g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "BodySpec, \"Runner's Diet: A Complete Guide and 7-Day Plan\" (Base Building week) — https://www.bodyspec.com/blog/post/runners_diet_a_complete_guide_and_7day_plan",
+  "evidence": "Friday dinner: \"Omelet with spinach and feta\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-025",
+  "name": "Roast chicken & sweet potatoes",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken, roasted",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add any seasonal veg on the side",
+  "approx_macros": "~520 kcal · 42g C · 44g P · 16g F",
+  "prep": "40 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BodySpec, \"Runner's Diet: A Complete Guide and 7-Day Plan\" (Base Building week) — https://www.bodyspec.com/blog/post/runners_diet_a_complete_guide_and_7day_plan",
+  "evidence": "Sunday dinner: \"Roast chicken + sweet potatoes\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-026",
+  "name": "Pasta, grilled chicken & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, steamed, small portion",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "pre-session",
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "keep broccoli portion small to limit fibre before racing",
+  "approx_macros": "~620 kcal · 80g C · 40g P · 12g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "mymottiv.com, \"What to Eat the Night Before a Triathlon\" — https://www.mymottiv.com/how-to-train-for-a-triathlon/what-to-eat-night-before-triathlon",
+  "evidence": "\"A classic, easily digestible option with plenty of carbohydrate and lean protein\" — recommended night-before-race dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-027",
+  "name": "White rice stir-fry, lean beef & mixed veg",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "lean beef, stir-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, stir-fried, moderate portion",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "pre-session",
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken or tofu",
+  "approx_macros": "~640 kcal · 85g C · 38g P · 14g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "mymottiv.com, \"What to Eat the Night Before a Triathlon\" — https://www.mymottiv.com/how-to-train-for-a-triathlon/what-to-eat-night-before-triathlon",
+  "evidence": "\"Provides a mix of quick and slow-digesting carbs\" — recommended night-before-race dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-028",
+  "name": "Baked potato, salmon & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "baked potato",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "pre-session",
+   "race-week",
+   "carb-load",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→any white fish or chicken",
+  "approx_macros": "~650 kcal · 65g C · 40g P · 20g F",
+  "prep": "35 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "mymottiv.com, \"What to Eat the Night Before a Triathlon\" — https://www.mymottiv.com/how-to-train-for-a-triathlon/what-to-eat-night-before-triathlon",
+  "evidence": "\"A hearty meal packed with energy and essential nutrients\" — recommended night-before-race dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-029",
+  "name": "Pasta with simple tomato sauce",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "plain tomato sauce (jarred)",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "parmesan",
+    "qty": "20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + sauce + dairy",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "leave off parmesan/protein entirely if fibre-sensitive the night before racing",
+  "approx_macros": "~560 kcal · 95g C · 16g P · 10g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "mymottiv.com, \"What to Eat the Night Before a Triathlon\" — https://www.mymottiv.com/how-to-train-for-a-triathlon/what-to-eat-night-before-triathlon",
+  "evidence": "\"A classic, high-carb, low fibre dinner\" — recommended night-before-race carb-load option",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-030",
+  "name": "Flank steak fajitas with peppers, onion, tomato, avocado & coleslaw",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "flank steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn tortillas",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "peppers & onion, grilled",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "tomato",
+    "qty": "50 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "0.5",
+    "role": "fat"
+   },
+   {
+    "food": "coleslaw",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "steak→chicken; coleslaw is store-bought, not homemade",
+  "approx_macros": "~700 kcal · 55g C · 42g P · 28g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Runner's World Australia & New Zealand, \"Marathon-Training Meal Plan\" — https://runnersworldonline.com.au/marathon-training-meal-plan/",
+  "evidence": "flank-steak fajita dinner given as the plan's evening meal, chosen for the iron and zinc distance runners need",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-031",
+  "name": "Turkey burger, baked potato & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey burger patty, no bun",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "baked potato",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "turkey patty→black bean or Beyond Beef patty for vegetarian/vegan",
+  "approx_macros": "~560 kcal · 50g C · 38g P · 16g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Mother Runners, \"Healthy Meals for Runners (+15 Recipes)\" — https://www.themotherrunners.com/healthy-meals-for-runners-15-recipes-for-runners/",
+  "evidence": "\"Turkey burger (or black bean or Beyond Beef burger) with a baked potato and broccoli\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-032",
+  "name": "Chicken, oven fries & roasted veg",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "oven fries",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "protein interchangeable — chicken, fish, or other meat",
+  "approx_macros": "~600 kcal · 55g C · 40g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Mother Runners, \"Healthy Meals for Runners (+15 Recipes)\" — https://www.themotherrunners.com/healthy-meals-for-runners-15-recipes-for-runners/",
+  "evidence": "\"Salmon (or any fish or meat) with French fries and roasted vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-033",
+  "name": "Salmon, oven fries & roasted veg",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "oven fries",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "protein interchangeable — fish or any meat",
+  "approx_macros": "~640 kcal · 55g C · 38g P · 26g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Mother Runners, \"Healthy Meals for Runners (+15 Recipes)\" — https://www.themotherrunners.com/healthy-meals-for-runners-15-recipes-for-runners/",
+  "evidence": "\"Salmon (or any fish or meat) with French fries and roasted vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-034",
+  "name": "Chicken, kabob-style, over brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh pieces, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add a veg side to round it out",
+  "approx_macros": "~520 kcal · 50g C · 40g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "The Mother Runners, \"Healthy Meals for Runners (+15 Recipes)\" — https://www.themotherrunners.com/healthy-meals-for-runners-15-recipes-for-runners/",
+  "evidence": "\"Chicken kabobs over brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-035",
+  "name": "Loaded baked potato skins",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "baked potato skins",
+    "qty": "2 large",
+    "role": "starch"
+   },
+   {
+    "food": "cheese, shredded",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "tomato, diced",
+    "qty": "50 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "sour cream",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "add rotisserie chicken or black beans to make it a full protein meal",
+  "approx_macros": "~450 kcal · 55g C · 16g P · 18g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "The Mother Runners, \"Healthy Meals for Runners (+15 Recipes)\" — https://www.themotherrunners.com/healthy-meals-for-runners-15-recipes-for-runners/",
+  "evidence": "\"Potato skins with toppings such as cheese, tomatoes, spinach, and sour cream\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-036",
+  "name": "Avocado toast with hummus & side salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sourdough toast",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "0.5",
+    "role": "fat"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + fat + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "hummus→pesto spread",
+  "approx_macros": "~480 kcal · 50g C · 14g P · 24g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "The Mother Runners, \"Healthy Meals for Runners (+15 Recipes)\" — https://www.themotherrunners.com/healthy-meals-for-runners-15-recipes-for-runners/",
+  "evidence": "\"Avocado toast with pesto or hummus spread and a side salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-037",
+  "name": "Herb-grilled chicken & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, herb-marinated & grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted vegetables",
+    "qty": "220 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "recovery",
+   "rest-day"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add rice or potatoes if not restricting carbs",
+  "approx_macros": "~420 kcal · 15g C · 42g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Campfire Endurance Coaching, \"Triathlete Meal Plan: Fueling Success from Sunrise to Sunset\" — https://www.campfireendurance.com/blog/triathlete-meal-plan",
+  "evidence": "\"Dinner is all about recovery. This meal should help repair muscles and replenish energy stores.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-038",
+  "name": "Baked salmon & roasted vegetables, lemon-herb",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked with lemon & herbs",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted vegetables",
+    "qty": "220 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "recovery",
+   "rest-day"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "add rice or potatoes if not restricting carbs",
+  "approx_macros": "~460 kcal · 14g C · 38g P · 26g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Campfire Endurance Coaching, \"Triathlete Meal Plan: Fueling Success from Sunrise to Sunset\" — https://www.campfireendurance.com/blog/triathlete-meal-plan",
+  "evidence": "recovery dinner example: baked salmon (\"fish pocket\") with lemon-herb roasted vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-039",
+  "name": "Salmon & roasted potatoes, sheet pan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "add any tray-roasted veg alongside",
+  "approx_macros": "~520 kcal · 40g C · 36g P · 22g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Bucket List Tummy, \"Eating for Marathon Training (Easy Recipes)\" — https://www.bucketlisttummy.com/easy-recipes-for-marathon-training-marathon-nutrition-tips/",
+  "evidence": "sheet-pan salmon and potatoes listed among the marathon-training weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-040",
+  "name": "Chicken apple sausage, potatoes & frozen mixed veg, sheet pan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken apple sausage, sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, cubed & roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "frozen mixed vegetables, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "swap in any pre-cooked sausage",
+  "approx_macros": "~540 kcal · 45g C · 30g P · 24g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Bucket List Tummy, \"Eating for Marathon Training (Easy Recipes)\" — https://www.bucketlisttummy.com/easy-recipes-for-marathon-training-marathon-nutrition-tips/",
+  "evidence": "sheet-pan chicken-apple-sausage dinner listed among the marathon-training weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-041",
+  "name": "Pork chops, sweet potatoes, apples & onions, sheet pan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork chops",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, cubed & roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "apples & onions, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pork chops→chicken thighs",
+  "approx_macros": "~560 kcal · 48g C · 38g P · 20g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Bucket List Tummy, \"Eating for Marathon Training (Easy Recipes)\" — https://www.bucketlisttummy.com/easy-recipes-for-marathon-training-marathon-nutrition-tips/",
+  "evidence": "sheet-pan pork chops and sweet potatoes listed among the marathon-training weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-042",
+  "name": "Salmon, farro & kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "farro, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "farro→rice, quinoa or potatoes; kale→any listed veg",
+  "approx_macros": "~570 kcal · 55g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-043",
+  "name": "Salmon, roasted potatoes & cauliflower",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "potatoes→rice, quinoa or farro; cauliflower→any listed veg",
+  "approx_macros": "~560 kcal · 48g C · 38g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-044",
+  "name": "Salmon, rice & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "rice→potatoes, quinoa or farro; broccoli→any listed veg",
+  "approx_macros": "~580 kcal · 52g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-045",
+  "name": "Salmon, quinoa & broccolini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccolini, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "quinoa→rice, potatoes or farro; broccolini→any listed veg",
+  "approx_macros": "~560 kcal · 48g C · 38g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-046",
+  "name": "Salmon, pasta & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "pasta→rice, quinoa or potatoes; green beans→any listed veg",
+  "approx_macros": "~600 kcal · 58g C · 38g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-047",
+  "name": "Chickpeas, rice, side salad, brussels sprouts, almonds & cheese",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chickpeas",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "sliced almonds",
+    "qty": "15 g",
+    "role": "fat"
+   },
+   {
+    "food": "cheese, shaved",
+    "qty": "20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "cheese→omit for vegan",
+  "approx_macros": "~600 kcal · 80g C · 22g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "New England Nutrition & Exercise, \"7-Day Meal Plan for Runners\" — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "Day 1 dinner: \"chickpeas, rice and a salad with a side of brussels, sliced almonds and cheese\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-048",
+  "name": "Pork chops, rice, parsnips & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork chops",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "parsnips, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork chops→chicken thighs",
+  "approx_macros": "~580 kcal · 60g C · 38g P · 16g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "New England Nutrition & Exercise, \"7-Day Meal Plan for Runners\" — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "Day 2 dinner: \"pork chops with rice and parsnips and carrots\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-049",
+  "name": "Chicken, veggie fried rice & cucumber-tomato-avocado salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken, diced & stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "rice, stir-fried with veg",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber-tomato-avocado salad",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→shrimp or tofu",
+  "approx_macros": "~610 kcal · 62g C · 40g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "New England Nutrition & Exercise, \"7-Day Meal Plan for Runners\" — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "Day 3 dinner: \"chicken veggie fried rice with cucumber tomato avocado salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-050",
+  "name": "Beef, pasta with parmesan & roasted beets",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, browned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "parmesan",
+    "qty": "20 g",
+    "role": "dairy"
+   },
+   {
+    "food": "beets, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + dairy + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "beef→ground turkey",
+  "approx_macros": "~640 kcal · 65g C · 38g P · 22g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "New England Nutrition & Exercise, \"7-Day Meal Plan for Runners\" — https://www.nenutritionexercise.com/blog/7-day-meal-plan-for-runners-the-best-foods-to-fuel-your-training",
+  "evidence": "Day 5 dinner: \"cheesy beef pasta and a side of roasted red beets\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-051",
+  "name": "Baked salmon, sweet potato & roasted broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, baked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→any oily fish",
+  "approx_macros": "~610 kcal · 50g C · 38g P · 22g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Smash, \"Your Ultimate Marathon Nutrition Plan for Success\" — https://smash.com/blogs/smash-com-blog/marathon-nutrition-plan",
+  "evidence": "\"Baked salmon served with a large sweet potato and some roasted broccoli\" — the plan's foundational dinner example",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-052",
+  "name": "Rice, grilled chicken & vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→any lean protein",
+  "approx_macros": "~560 kcal · 55g C · 40g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Health Loft Co, \"Running & Diet Plan: Fuel Your Best Performance\" — https://healthloftco.com/blog/runners-diet/",
+  "evidence": "given as a post-run refuelling dinner: \"rice with grilled chicken and vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-053",
+  "name": "Chicken sandwich: bread, avocado, tomato & mustard",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "whole grain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled & sliced (or rotisserie)",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "0.5",
+    "role": "fat"
+   },
+   {
+    "food": "tomato",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "mustard",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + fat + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "grilled chicken→rotisserie chicken from the store",
+  "approx_macros": "~480 kcal · 40g C · 34g P · 20g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Correr Juntos, \"10 Quick Recipes for Runners: 15-Minute Meals\" — https://www.correrjuntos.com/blog/en/quick-recipes-for-runners",
+  "evidence": "\"Whole grain bread, grilled chicken breast sliced thin (or use rotisserie chicken from the store), half an avocado, tomato, and a touch of mustard\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-054",
+  "name": "Rotisserie chicken, rice, coleslaw & edamame bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rotisserie chicken, shredded",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "rice, precooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "coleslaw mix (cabbage & carrot)",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "edamame, frozen",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "tamari-hoisin drizzle",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tamari-hoisin→soy-free coconut aminos for soy-free",
+  "approx_macros": "~510 kcal · 52g C · 44g P · 16g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Featherstone Nutrition, \"Runner Rotisserie Chicken Salad - 15 minute meal\" — https://www.featherstonenutrition.com/recipe/runner-rotisserie-chicken-salad-15-minute-meal/",
+  "evidence": "\"The goal of this recipe is the least amount of preparation with the maximum amount of flavor\" — assembled from rotisserie chicken in 12 minutes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-055",
+  "name": "Black bean, brown rice & veggie bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "black beans",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "mushrooms, sauteed",
+    "qty": "50 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "0.5",
+    "role": "fat"
+   },
+   {
+    "food": "tomato, lettuce, cilantro & scallions",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "beans→any bean; fully vegan as written",
+  "approx_macros": "~560 kcal · 85g C · 20g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "\"Health Made Simple for Athletes, Days 5-7\" (Goodreads author blog) — https://www.goodreads.com/author_blog_posts/19322839-health-made-simple-for-athletes-days-5-7",
+  "evidence": "Sunday dinner: \"Black Bean, Brown Rice, and Veggie Burritos\" — black beans, brown rice, kale, mushrooms, bell pepper, avocado, tomato, lettuce, cilantro, scallions",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-056",
+  "name": "Ground beef, pasta & cheese with taco seasoning",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ground beef, browned with taco seasoning",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cheese, shredded",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + starch + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "ground beef→ground turkey",
+  "approx_macros": "~640 kcal · 65g C · 38g P · 24g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Bucket List Tummy, \"Eating for Marathon Training (Easy Recipes)\" — https://www.bucketlisttummy.com/easy-recipes-for-marathon-training-marathon-nutrition-tips/",
+  "evidence": "\"One Pot Cheesy Beef Taco Pasta\" listed among the marathon-training weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-057",
+  "name": "Tofu stir-fry, mixed vegetables & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, stir-fried",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, stir-fried",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu→chicken or shrimp",
+  "approx_macros": "~500 kcal · 60g C · 22g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Listonic, \"Meal Plan For Runners\" — https://listonic.com/meal-plans/en/meal-plan-for-runners",
+  "evidence": "Day 2 dinner: \"Stir-fried tofu with mixed vegetables and brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-058",
+  "name": "Baked chicken breast, quinoa & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→turkey",
+  "approx_macros": "~540 kcal · 48g C · 42g P · 14g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Listonic, \"Meal Plan For Runners\" — https://listonic.com/meal-plans/en/meal-plan-for-runners",
+  "evidence": "Day 3 dinner: \"Baked chicken breast with quinoa and roasted vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-059",
+  "name": "Beef stir-fry, bell peppers, broccoli & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell peppers, stir-fried",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, stir-fried",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken or tofu",
+  "approx_macros": "~600 kcal · 58g C · 40g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Listonic, \"Meal Plan For Runners\" — https://listonic.com/meal-plans/en/meal-plan-for-runners",
+  "evidence": "Day 4 dinner: \"Beef stir-fry with bell peppers, broccoli, and brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-060",
+  "name": "Pasta with marinara, grilled vegetables & ground turkey",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "marinara sauce (jarred)",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "grilled vegetables",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "ground turkey, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + sauce + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "ground turkey→lean ground beef",
+  "approx_macros": "~620 kcal · 78g C · 38g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Listonic, \"Meal Plan For Runners\" — https://listonic.com/meal-plans/en/meal-plan-for-runners",
+  "evidence": "Day 5 dinner: \"Pasta with marinara sauce, grilled vegetables, and lean ground turkey\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-061",
+  "name": "Grilled shrimp, quinoa & spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "shrimp, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "shrimp→grilled chicken",
+  "approx_macros": "~500 kcal · 48g C · 38g P · 12g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Listonic, \"Meal Plan For Runners\" — https://listonic.com/meal-plans/en/meal-plan-for-runners",
+  "evidence": "Day 6 dinner: \"Grilled shrimp with a quinoa and spinach salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-062",
+  "name": "Roast chicken, brown rice & steamed asparagus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken, roasted",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→turkey",
+  "approx_macros": "~560 kcal · 50g C · 44g P · 14g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Listonic, \"Meal Plan For Runners\" — https://listonic.com/meal-plans/en/meal-plan-for-runners",
+  "evidence": "Day 7 dinner: \"Roast chicken with brown rice and steamed asparagus\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-063",
+  "name": "Salmon, cauliflower rice & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked with lemon",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "cauliflower rice",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cauliflower rice→brown rice or quinoa; broccoli→asparagus or zucchini",
+  "approx_macros": "~420 kcal · 15g C · 38g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Liz's Healthy Table, \"10 Easy Ways to Eat More Salmon\" — https://www.lizshealthytable.com/2025/07/28/10-easy-ways-to-eat-more-salmon-including-my-recipe-for-panko-crusted-salmon/",
+  "evidence": "\"a well-rounded meal\" built from grilled or baked salmon with lemon plus a listed veg side (\"broccoli, asparagus, or zucchini\") and a listed starch side (\"cauliflower rice, brown rice, or quinoa\")",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-064",
+  "name": "Salmon, brown rice & asparagus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked with lemon",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "brown rice→cauliflower rice or quinoa; asparagus→broccoli or zucchini",
+  "approx_macros": "~580 kcal · 50g C · 38g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Liz's Healthy Table, \"10 Easy Ways to Eat More Salmon\" — https://www.lizshealthytable.com/2025/07/28/10-easy-ways-to-eat-more-salmon-including-my-recipe-for-panko-crusted-salmon/",
+  "evidence": "\"a well-rounded meal\" built from grilled or baked salmon with lemon plus a listed veg side (\"broccoli, asparagus, or zucchini\") and a listed starch side (\"cauliflower rice, brown rice, or quinoa\")",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-065",
+  "name": "Salmon, quinoa & zucchini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked with lemon",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "quinoa→brown rice or cauliflower rice; zucchini→broccoli or asparagus",
+  "approx_macros": "~560 kcal · 46g C · 38g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Liz's Healthy Table, \"10 Easy Ways to Eat More Salmon\" — https://www.lizshealthytable.com/2025/07/28/10-easy-ways-to-eat-more-salmon-including-my-recipe-for-panko-crusted-salmon/",
+  "evidence": "\"a well-rounded meal\" built from grilled or baked salmon with lemon plus a listed veg side (\"broccoli, asparagus, or zucchini\") and a listed starch side (\"cauliflower rice, brown rice, or quinoa\")",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-066",
+  "name": "Pasta with chicken & veggies",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken, cooked & diced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "chicken→any lean protein",
+  "approx_macros": "~580 kcal · 70g C · 36g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Peloton, \"The Ultimate Guide to Marathon Training and Race Day Nutrition\" — https://www.onepeloton.com/blog/what-to-eat-before-a-marathon",
+  "evidence": "listed as a post-marathon recovery dinner: \"Pasta with chicken and veggies\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-067",
+  "name": "Turkey avocado sandwich with fruit",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "whole grain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast, sliced",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "0.5",
+    "role": "fat"
+   },
+   {
+    "food": "fruit, sliced",
+    "qty": "1 piece",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + protein + fat + fruit",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "turkey→any deli meat or grilled chicken",
+  "approx_macros": "~460 kcal · 55g C · 28g P · 16g F",
+  "prep": "8 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Peloton, \"The Ultimate Guide to Marathon Training and Race Day Nutrition\" — https://www.onepeloton.com/blog/what-to-eat-before-a-marathon",
+  "evidence": "listed as a post-marathon recovery dinner: \"Turkey avocado sandwich and fruit\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-068",
+  "name": "Baked potato with steak & veggies",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "baked potato",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "steak→any lean protein",
+  "approx_macros": "~640 kcal · 55g C · 42g P · 22g F",
+  "prep": "30 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Peloton, \"The Ultimate Guide to Marathon Training and Race Day Nutrition\" — https://www.onepeloton.com/blog/what-to-eat-before-a-marathon",
+  "evidence": "listed as a post-marathon recovery dinner: \"Baked potato with steak and veggies\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-069",
+  "name": "Baked salmon poke bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber, edamame & carrot",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "soy-sesame drizzle",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "sesame",
+   "soy"
+  ],
+  "swaps": "raw poke swapped for baked salmon — safer and simpler for a weeknight",
+  "approx_macros": "~600 kcal · 60g C · 38g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Kate Mackz, \"What Runner Girls Eat In A Day\", Runner Girl newsletter — https://katemackz.substack.com/p/what-runner-girls-are-eating",
+  "evidence": "\"This baked salmon version is a staple for dinner\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-070",
+  "name": "Sourdough bread, chicken & peas",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sourdough bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "peas, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "butter",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chicken→turkey or salmon; bread→gluten-free bread",
+  "approx_macros": "~540 kcal · 48g C · 42g P · 16g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"our meals include some type of lean protein, like chicken, turkey, or salmon, with carbs and vegetables\" — \"Sourdough bread is eaten with almost every meal\"; listed veg sides include peas, broccoli, zucchini, green beans, kale, spinach and cabbage",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-071",
+  "name": "Sourdough bread, turkey & zucchini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sourdough bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "zucchini, sauteed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "butter",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "turkey→chicken or salmon; bread→gluten-free bread",
+  "approx_macros": "~510 kcal · 46g C · 40g P · 14g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"our meals include some type of lean protein, like chicken, turkey, or salmon, with carbs and vegetables\" — \"Sourdough bread is eaten with almost every meal\"; listed veg sides include peas, broccoli, zucchini, green beans, kale, spinach and cabbage",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-072",
+  "name": "Sourdough bread, salmon & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sourdough bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "butter",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "salmon→chicken or turkey; bread→gluten-free bread",
+  "approx_macros": "~580 kcal · 46g C · 40g P · 22g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"our meals include some type of lean protein, like chicken, turkey, or salmon, with carbs and vegetables\" — \"Sourdough bread is eaten with almost every meal\"; listed veg sides include peas, broccoli, zucchini, green beans, kale, spinach and cabbage",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-073",
+  "name": "Sourdough bread, chicken & kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sourdough bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "butter",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chicken→turkey or salmon; bread→gluten-free bread",
+  "approx_macros": "~530 kcal · 46g C · 42g P · 16g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"our meals include some type of lean protein, like chicken, turkey, or salmon, with carbs and vegetables\" — \"Sourdough bread is eaten with almost every meal\"; listed veg sides include peas, broccoli, zucchini, green beans, kale, spinach and cabbage",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-074",
+  "name": "Sourdough bread, turkey & cabbage",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sourdough bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "cabbage, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "butter",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "turkey→chicken or salmon; bread→gluten-free bread",
+  "approx_macros": "~510 kcal · 46g C · 40g P · 14g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"our meals include some type of lean protein, like chicken, turkey, or salmon, with carbs and vegetables\" — \"Sourdough bread is eaten with almost every meal\"; listed veg sides include peas, broccoli, zucchini, green beans, kale, spinach and cabbage",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-075",
+  "name": "Salmon, farro & mushrooms",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "farro, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mushrooms, sauteed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "farro→rice, quinoa or potatoes; mushrooms→any listed veg",
+  "approx_macros": "~560 kcal · 54g C · 38g P · 17g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-076",
+  "name": "Salmon, pasta & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "pasta→rice, quinoa or potatoes; spinach→any listed veg",
+  "approx_macros": "~590 kcal · 56g C · 38g P · 19g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-077",
+  "name": "Salmon, roasted potatoes & radishes",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "radishes, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "potatoes→rice, quinoa or farro; radishes→any listed veg",
+  "approx_macros": "~550 kcal · 46g C · 38g P · 19g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-078",
+  "name": "Shrimp tacos with watermelon-pineapple salsa",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "shrimp, sauteed",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn tortillas",
+    "qty": "3",
+    "role": "starch"
+   },
+   {
+    "food": "watermelon-pineapple salsa",
+    "qty": "100 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "shrimp→grilled chicken or tofu",
+  "approx_macros": "~440 kcal · 45g C · 30g P · 10g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Bucket List Tummy, \"Eating for Marathon Training (Easy Recipes)\" — https://www.bucketlisttummy.com/easy-recipes-for-marathon-training-marathon-nutrition-tips/",
+  "evidence": "\"Shrimp Tacos with Watermelon Pineapple Salsa\" listed among the marathon-training weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-079",
+  "name": "Turkey, sweet potato & brussels sprouts",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "turkey→beef, chicken, salmon or lentils",
+  "approx_macros": "~540 kcal · 48g C · 40g P · 14g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-080",
+  "name": "Lentils, sweet potato & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "green lentils, cooked",
+    "qty": "220 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "lentils→beef, chicken, turkey or salmon",
+  "approx_macros": "~500 kcal · 75g C · 20g P · 10g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-081",
+  "name": "Salmon, sweet potato & kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→beef, chicken, turkey or lentils",
+  "approx_macros": "~590 kcal · 48g C · 38g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-082",
+  "name": "Beef, sweet potato & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, pan-seared",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken, turkey, salmon or lentils",
+  "approx_macros": "~600 kcal · 46g C · 40g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-083",
+  "name": "Salmon, quinoa & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "quinoa→rice, potatoes or farro; green beans→any listed veg",
+  "approx_macros": "~565 kcal · 48g C · 38g P · 19g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-084",
+  "name": "Salmon, roasted potatoes & zucchini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "potatoes→rice, quinoa or farro; zucchini→any listed veg",
+  "approx_macros": "~560 kcal · 46g C · 38g P · 19g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-085",
+  "name": "Salmon, rice & kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "rice→potatoes, quinoa or farro; kale→any listed veg",
+  "approx_macros": "~585 kcal · 54g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-086",
+  "name": "Chicken, egg noodles & mixed veg stir-fry",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "egg noodles, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetables, stir-fried",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "chicken→shrimp or tofu",
+  "approx_macros": "~560 kcal · 60g C · 38g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Bucket List Tummy, \"Eating for Marathon Training (Easy Recipes)\" — https://www.bucketlisttummy.com/easy-recipes-for-marathon-training-marathon-nutrition-tips/",
+  "evidence": "\"Easy Egg Noodle Stir Fry with Veggies and Chicken\" listed among the marathon-training weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-087",
+  "name": "Pasta with chicken & bread",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken, cooked & diced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bread, sliced",
+    "qty": "2 slices",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "chicken→turkey or salmon",
+  "approx_macros": "~620 kcal · 90g C · 38g P · 12g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"Pasta with chicken and bread\" — \"a typical lunch/dinner option the author frequently prepares\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-088",
+  "name": "Air-fryer salmon, sweet potato, kale & feta salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, air-fried with brown sugar-mustard glaze",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, pomegranate, pistachio & feta salad",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish",
+   "tree_nuts"
+  ],
+  "swaps": "glaze→plain lemon-herb salmon to drop the added sugar",
+  "approx_macros": "~640 kcal · 55g C · 38g P · 26g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Brittany Vermeer, journalist & long-course triathlete, \"Food Is FUEL: What I Eat in a Typical Day as a Long-Course Triathlete\", Triple Threat Life newsletter — https://triplethreatlife.substack.com/p/food-is-fuel-what-i-eat-in-a-typical",
+  "evidence": "\"one of my favorites\" — winter Spanish-style salad with air-fryer salmon",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-089",
+  "name": "Salmon, roasted potatoes & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "potatoes→rice, quinoa or farro; broccoli→any listed veg",
+  "approx_macros": "~570 kcal · 48g C · 38g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-090",
+  "name": "Salmon, quinoa & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "quinoa→rice, potatoes or farro; spinach→any listed veg",
+  "approx_macros": "~555 kcal · 46g C · 38g P · 19g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-091",
+  "name": "Salmon, farro & asparagus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "farro, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "farro→rice, quinoa or potatoes; asparagus→any listed veg",
+  "approx_macros": "~565 kcal · 53g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-092",
+  "name": "Salmon, pasta & cauliflower",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "pasta→rice, quinoa or potatoes; cauliflower→any listed veg",
+  "approx_macros": "~595 kcal · 57g C · 38g P · 19g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-093",
+  "name": "Salmon, rice & mushrooms",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "mushrooms, sauteed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "rice→potatoes, quinoa or farro; mushrooms→any listed veg",
+  "approx_macros": "~575 kcal · 51g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Carrie Walder, RD, \"25+ Healthy Salmon Side Dishes\" — https://www.walderwellness.com/healthy-salmon-side-dishes/",
+  "evidence": "\"pair it with a serving of carbohydrates (in the form of potatoes or whole grains) as well as a side of non-starchy veggies\" — her listed starch options are potatoes, rice, quinoa, farro or pasta; veg options include asparagus, zucchini, green beans, broccoli, cauliflower, kale, spinach and mushrooms",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-094",
+  "name": "Ground beef & rice teriyaki bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ground beef, browned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetables, stir-fried",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "teriyaki sauce",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "ground beef→ground turkey or chicken",
+  "approx_macros": "~640 kcal · 65g C · 38g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Ashley Young, Feed Your Runner newsletter (weekly meal-plan roundups) — https://feedyourrunner.substack.com/",
+  "evidence": "\"Teriyaki ground beef bowls\" listed among the newsletter's recurring weeknight dinners",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-a-095",
+  "name": "Ground beef, rice & kimchi bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ground beef, browned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "kimchi",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "ground beef→ground turkey or tofu",
+  "approx_macros": "~600 kcal · 62g C · 36g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Ashley Young, Feed Your Runner newsletter (weekly meal-plan roundups) — https://feedyourrunner.substack.com/",
+  "evidence": "\"Korean inspired ground beef bowls\" listed among the newsletter's recurring weeknight dinners",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-a-096",
+  "name": "Chicken fajita bowl with black beans, brown rice & spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken, grilled & sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "black beans",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "peppers, onions, tomatoes & corn",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa & cheese",
+    "qty": "40 g",
+    "role": "sauce"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "chicken→tofu; cheese→omit for vegan",
+  "approx_macros": "~680 kcal · 75g C · 46g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Marathon Handbook, \"What To Eat During Marathon Training\" (long-run-day sample dinner) — https://marathonhandbook.com/marathon-training-diet/",
+  "evidence": "long-run-day dinner: \"Fajitas with chicken or tofu, black beans, brown rice, peppers, lettuce, onions, tomatoes, corn, salsa, and vegan or regular cheese, with spinach salad on the side\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-097",
+  "name": "Tofu fajita bowl with black beans, brown rice & spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, grilled & sliced",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "black beans",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "peppers, onions, tomatoes & corn",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "tex-mex",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu→chicken; fully vegan as written",
+  "approx_macros": "~600 kcal · 78g C · 28g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Marathon Handbook, \"What To Eat During Marathon Training\" (long-run-day sample dinner) — https://marathonhandbook.com/marathon-training-diet/",
+  "evidence": "long-run-day dinner: \"Fajitas with chicken or tofu, black beans, brown rice, peppers, lettuce, onions, tomatoes, corn, salsa, and vegan or regular cheese, with spinach salad on the side\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-098",
+  "name": "Turkey, brown rice & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→beef, chicken, salmon or lentils",
+  "approx_macros": "~550 kcal · 55g C · 40g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-099",
+  "name": "Chicken, sweet potato & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken→beef, turkey, salmon or lentils",
+  "approx_macros": "~560 kcal · 46g C · 38g P · 18g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-a-100",
+  "name": "Lentils, brown rice & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "green lentils, cooked",
+    "qty": "220 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "lentils→beef, chicken, turkey or salmon",
+  "approx_macros": "~530 kcal · 82g C · 20g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Teri Lyn Adams, \"My Marathon Training Diet + What I Eat in a Day\" — https://terilynadams.com/marathon-training-diet/",
+  "evidence": "\"Most of our dinners are pretty simple. It's sort of protein (beef, chicken, salmon or lentils) + sweet potatoes or brown rice + whatever veggies are in season.\"",
+  "reconstructed_from_snippet": false
+ }
+]

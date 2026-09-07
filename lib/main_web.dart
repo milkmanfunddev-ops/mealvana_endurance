@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'features/content/application/content_service.dart' show ContentDefaultsCache;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -152,6 +153,11 @@ Future<void> _runMealvanaApp(
     anonKey: config.supabaseClientKey,
     httpClient: SentryHttpClient(),
   );
+
+  // Bundled content defaults must be in memory before the first frame —
+  // widgets that read a content key in their one synchronous build never
+  // re-render on their own (CLAUDE.md: non-recoverable bootstrap lives in main).
+  await ContentDefaultsCache.preload();
 
   runApp(
     SentryWidget(

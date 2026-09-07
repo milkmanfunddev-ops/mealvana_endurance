@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/meal_planning/presentation/screens/food_screen.dart';
+import '../../features/subscription/application/pro_gate.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/home_shell/presentation/home_shell_chrome.dart';
@@ -25,9 +27,14 @@ import 'sync_status_indicator.dart';
 /// and no destination icon is a calendar glyph while the date header
 /// renders one — the rail mirrors the same set.
 class TabsScreen extends ConsumerStatefulWidget {
-  const TabsScreen({super.key, this.initialTabIndex = 0});
+  const TabsScreen({super.key, this.initialTabIndex = 0, this.initialTabName});
 
   final int initialTabIndex;
+
+  /// Tab by name ('food', 'events', 'learn', …) — resolved against the live
+  /// tab list, so it survives the Food tab appearing/disappearing with the
+  /// Pro status. Wins over [initialTabIndex].
+  final String? initialTabName;
 
   @override
   ConsumerState<TabsScreen> createState() => _TabsScreenState();
@@ -42,23 +49,52 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     _currentIndex = widget.initialTabIndex;
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final name = widget.initialTabName;
+    if (name == null) return;
+    // Resolve once, after the first build computed the index getters.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final index = switch (name) {
+        'food' => _showFoodTab ? _foodTabIndex : -1,
+        'coach' => kIsWeb ? _coachTabIndex : -1,
+        'events' || 'notes' || 'workout-notes' => _eventsTabIndex,
+        'learn' || 'survey' => _learnTabIndex,
+        _ => 0,
+      };
+      if (index >= 0) setState(() => _currentIndex = index);
+    });
+  }
+
   // Tab indices (Activities + Nutrition merged into one Fuel Timeline tab):
-  // FuelTimeline(0) -> Coach(1, web only) -> Events(1 or 2) -> Learn(2 or 3)
-  int get _coachTabIndex => 1; // Only on web
-  int get _eventsTabIndex => kIsWeb ? 2 : 1;
-  int get _learnTabIndex => kIsWeb ? 3 : 2;
+  // FuelTimeline(0) -> Food(1, Pro) -> Coach(web) -> Events -> Learn.
+  // Food exists only while Pro is unlocked; every index after it shifts.
+  bool get _showFoodTab => ref.watch(proUnlockedProvider);
+  int get _foodTabIndex => 1;
+  int get _coachTabIndex => _showFoodTab ? 2 : 1; // Only on web
+  int get _eventsTabIndex => kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
+  int get _learnTabIndex => kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
   }
 
-  /// The shell's destination set (Q3: 3 on device, 4 with the web coach).
+  /// The shell's destination set (Q3: 3–5 — 4 on device with the Pro Food
+  /// tab, 5 on web with the coach).
   List<KyleTabBarDestination> get _destinations => [
     KyleTabBarDestination(
       id: 'timeline',
       icon: FontAwesomeIcons.solidHouse.data,
       label: 'Timeline',
     ),
+    if (_showFoodTab)
+      KyleTabBarDestination(
+        id: 'food',
+        icon: FontAwesomeIcons.bowlFood.data,
+        label: 'Food',
+      ),
     if (kIsWeb)
       KyleTabBarDestination(
         id: 'coach',
@@ -79,6 +115,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
   String get _activeTabId => _currentIndex == 0
       ? 'timeline'
+      : _showFoodTab && _currentIndex == _foodTabIndex
+      ? 'food'
       : kIsWeb && _currentIndex == _coachTabIndex
       ? 'coach'
       : _currentIndex == _eventsTabIndex
@@ -87,6 +125,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
   void _onSelectTabId(String id) => _onTabSelected(switch (id) {
     'timeline' => 0,
+    'food' => _foodTabIndex,
     'coach' => _coachTabIndex,
     'events' => _eventsTabIndex,
     _ => _learnTabIndex,
@@ -97,6 +136,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final showCoachTab = kIsWeb;
+    final showFoodTab = _showFoodTab;
     final useRail = context.useNavigationRail;
 
     // Navigate to coach portal route when coach tab is selected on web
@@ -113,7 +153,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // Tab 0 is the recomposed home: the dashboard's day content, running
     // full-height under the chrome — its pinned instrument block includes
     // the header clearance so the dissolve spans from the surface top
-    // (ruling #4).
+    // (ruling #4). The Food tab (meal planning, Pro) sits right after it
+    // while unlocked; every index after it shifts.
     final screens = [
       Container(
         color: isDark ? AppColors.blackberry : AppColors.cream,
@@ -121,6 +162,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           topInset: HomeShellChrome.headerClearancePx,
         ),
       ),
+      if (showFoodTab) const FoodScreen(), // 1: Food (Pro)
       if (showCoachTab)
         const SizedBox.shrink(), // placeholder (coach portal rendered above)
       const EventsListScreen(),
@@ -173,6 +215,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             _NavigationRailSection(
               currentIndex: _currentIndex,
               showCoachTab: showCoachTab,
+              showFoodTab: showFoodTab,
               onTabSelected: _onTabSelected,
             ),
             const VerticalDivider(width: 1, thickness: 1),
@@ -213,11 +256,13 @@ class _NavigationRailSection extends StatelessWidget {
   const _NavigationRailSection({
     required this.currentIndex,
     required this.showCoachTab,
+    required this.showFoodTab,
     required this.onTabSelected,
   });
 
   final int currentIndex;
   final bool showCoachTab;
+  final bool showFoodTab;
   final ValueChanged<int> onTabSelected;
 
   @override
@@ -232,6 +277,12 @@ class _NavigationRailSection extends StatelessWidget {
         selectedIcon: FaIcon(FontAwesomeIcons.solidHouse),
         label: Text('Timeline'),
       ),
+      if (showFoodTab)
+        const NavigationRailDestination(
+          icon: FaIcon(FontAwesomeIcons.bowlFood),
+          selectedIcon: FaIcon(FontAwesomeIcons.bowlFood),
+          label: Text('Food'),
+        ),
       if (showCoachTab)
         const NavigationRailDestination(
           icon: FaIcon(FontAwesomeIcons.userTie),

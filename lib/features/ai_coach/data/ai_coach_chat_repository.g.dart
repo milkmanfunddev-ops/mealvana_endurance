@@ -55,4 +55,4 @@ final class AiCoachChatRepositoryProvider
 }
 
 String _$aiCoachChatRepositoryHash() =>
-    r'cce187cc0aaa09760fb305e65520c156fb0bd119';
+    r'2416546e9882f124e3c54a5008d4975d667a119a';

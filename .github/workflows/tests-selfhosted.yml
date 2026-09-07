@@ -63,11 +63,17 @@ env:
   MIN_FREE_DISK_GB: 25
   # patrolTest() case count across the --target list below. 20 targets, but
   # integrations_connect_flow_test declares three cases (garmin, trainingpeaks,
-  # finalsurge) and recommendation_stacking_flow_test declares two, so 23; macro_dashboard_flow_test (added 2026-08-20) declares one, so 24.
+  # finalsurge) and recommendation_stacking_flow_test declares two, so 23; macro_dashboard_flow_test (added 2026-08-20) declares one, so 24;
+  # pro_gate_flow_test (added 2026-09-02) declares one, so 25.
+  #
+  # meal_plan_build_flow_test is deliberately NOT in the target list: every
+  # turn of it calls the vana-chat / vana-action edge functions, the same AI
+  # spend that keeps ai_coach_chat_flow_test out. Run it by hand — see
+  # docs/implement_mealplanning/07-verification-release.md.
   # Bump this when you add a target or a case — the "Assert the suite actually
   # ran" step uses it to catch a silently dropped target, which otherwise still
   # exits 0.
-  EXPECTED_PATROL_TESTS: 24
+  EXPECTED_PATROL_TESTS: 25
 
 jobs:
   # Device-less suites — fast, reliable, no Xcode/simulator needed.
@@ -272,6 +278,7 @@ jobs:
             --target integration_test/flows/macro_dashboard_flow_test.dart \
             --target integration_test/flows/barcode_scanner_entry_flow_test.dart \
             --target integration_test/flows/ai_credits_balance_flow_test.dart \
+            --target integration_test/flows/pro_gate_flow_test.dart \
             --flavor dev \
             --dart-define-from-file=secrets/integration_test.env \
             -d "$PATROL_DEVICE" \

@@ -1,0 +1,4515 @@
+[
+ {
+  "id": "L-a-001",
+  "name": "Chicken, rye bread & rocket sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, sliced",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "rye bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "rocket",
+    "qty": "handful",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + bread + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "chicken→tuna or salmon or egg or houmous (BikeRadar's rotation list)",
+  "approx_macros": "~420 kcal · 45g C · 32g P · 10g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "\"Try to vary your fillings – chicken, tuna, salmon, eggs and houmous\" — named as the cyclist power-sandwich rotation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-002",
+  "name": "Tuna, spelt bread & watercress sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tuna, canned in spring water",
+    "qty": "1 small tin (120 g)",
+    "role": "protein"
+   },
+   {
+    "food": "spelt bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "watercress",
+    "qty": "handful",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + bread + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "tuna→salmon or egg or houmous; spelt→rye or wholemeal",
+  "approx_macros": "~400 kcal · 40g C · 30g P · 9g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "one of BikeRadar's named cyclist power-sandwich fillings, rotated for variety",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-003",
+  "name": "Salmon, wholemeal bread & grated carrot sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon, cooked & flaked",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "wholemeal bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "carrot, grated",
+    "qty": "1 small",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + bread + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "salmon→tuna or chicken or egg",
+  "approx_macros": "~430 kcal · 42g C · 28g P · 14g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "named cyclist power-sandwich filling; grated carrot listed alongside rocket/watercress as the veg add-in",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-004",
+  "name": "Egg, multiseed bread & sprouting bean shoots sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "boiled egg, sliced",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "multiseed bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "sprouting bean shoots",
+    "qty": "handful",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + bread + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "egg→chicken, tuna, salmon or houmous",
+  "approx_macros": "~380 kcal · 38g C · 18g P · 15g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "named cyclist power-sandwich filling in the same BikeRadar rotation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-005",
+  "name": "Houmous, wholemeal bagel & rocket sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "houmous",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "wholemeal bagel",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "rocket",
+    "qty": "handful",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + bread + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "bagel→rye bread; add roasted pepper for more veg",
+  "approx_macros": "~410 kcal · 55g C · 12g P · 15g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "houmous named as one of the vegetarian-friendly cyclist sandwich fillings",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-006",
+  "name": "Lentil & root vegetable soup with a multigrain roll",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lentil soup (sweet potato, butternut squash, root veg)",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "multigrain roll",
+    "qty": "1",
+    "role": "starch"
+   }
+  ],
+  "pattern": "soup + bread",
+  "context": [
+   "everyday",
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap roll for oatcakes (gluten-free)",
+  "approx_macros": "~380 kcal · 60g C · 16g P · 8g F",
+  "prep": "10 min (batch-cooked)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "\"Soup is a great way of getting loads of nutrients and vitamins in one pot\" — recommended cyclist lunch staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-007",
+  "name": "Chickpea, wholemeal pasta & chilli-lime salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "wholemeal pasta, cooked",
+    "qty": "50 g dry",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "salad leaves, lime juice, coriander, chilli",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "wholemeal pasta→buckwheat pasta (gluten-free)",
+  "approx_macros": "~460 kcal · 70g C · 18g P · 10g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "BikeRadar's cyclist lunch pasta dish, built from a base recipe with chickpeas for protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-008",
+  "name": "Sweet potato, feta & spring onion wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "low-fat feta",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "red chilli & spring onion",
+    "qty": "to taste",
+    "role": "veg"
+   },
+   {
+    "food": "wholemeal tortilla",
+    "qty": "1",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch + dairy + veg + wrap",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "feta→dairy-free feta for vegan",
+  "approx_macros": "~400 kcal · 13g fat · 1.3g salt (BikeRadar figure)",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "\"About 400kcal, with 13g fat and 1.3g salt\" — BikeRadar's named cyclist wrap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-009",
+  "name": "Salmon & rice bowl with vegetables",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed mixed vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→trout or tofu (vegan)",
+  "approx_macros": "~600 kcal · 70g C · 42g P · 16g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "\"Salmon is an excellent source of anti-inflammatory omega-3 fatty acids\" — listed as a go-to runner lunch bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-010",
+  "name": "Turkey deli sandwich with lettuce, tomato & mustard",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey deli meat",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "wholegrain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce & tomato",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "mustard",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + bread + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add chips/pretzels or side grains for more carbs",
+  "approx_macros": "~420 kcal · 45g C · 28g P · 9g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "listed as a classic runner deli sandwich, \"toppings, and even chips or grains\" for extra carbs",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-011",
+  "name": "Egg noodle stir-fry with protein & vegetables",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "egg noodles, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken or shrimp",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed stir-fry vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "soy sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten",
+   "shellfish",
+   "soy"
+  ],
+  "swaps": "shrimp→tofu (vegan); soy sauce→tamari (gluten-free)",
+  "approx_macros": "~550 kcal · 65g C · 35g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "\"noodles or grains with a protein source and vegetables\" cooked in soy sauce — named runner stir-fry lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-012",
+  "name": "Quesadilla with cheese, beans & chicken",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tortilla",
+    "qty": "1 large",
+    "role": "starch"
+   },
+   {
+    "food": "shredded chicken",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "black beans & cheddar cheese",
+    "qty": "100 g / 40 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chicken→pork or beef; add onions/peppers for veg; serve with a side salad",
+  "approx_macros": "~500 kcal · 45g C · 32g P · 18g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "\"cheese, beans, and meat\" quesadilla listed as a runner lunch, \"served with optional salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-013",
+  "name": "Greek yogurt, granola & mixed nuts parfait",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "greek yogurt",
+    "qty": "250 g",
+    "role": "dairy"
+   },
+   {
+    "food": "granola",
+    "qty": "50 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed nuts & seeds",
+    "qty": "20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "dairy + starch + fat",
+  "context": [
+   "everyday",
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap granola for a certified gluten-free version; nuts→sunflower seeds",
+  "approx_macros": "~480 kcal · 45g C · 30g P · 18g F",
+  "prep": "2 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "runner \"yogurt parfait\" lunch idea, layered with fruit, granola and seeds/nuts",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-014",
+  "name": "Turkey, cream cheese & spinach wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey slices",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "cream cheese",
+    "qty": "1 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "fresh spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + dairy + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "cream cheese→hummus for dairy-free",
+  "approx_macros": "~400 kcal · 38g C · 28g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"cream cheese onto your tortilla. Then layer sliced turkey and fresh spinach\" — named runner lunch wrap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-015",
+  "name": "Grilled chicken, brown rice & roasted Brussels sprouts",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "brussels sprouts, roasted with lemon",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "sprouts→carrots or squash (article's alternates)",
+  "approx_macros": "~650 kcal · 65g C · 50g P · 15g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"Grilled Chicken with Brown Rice and Roasted Vegetables\" listed with brussels sprouts as an alternate veg, finished with lemon juice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-016",
+  "name": "Veggie wrap with feta, avocado, cucumber & red pepper",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "whole wheat tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "feta cheese",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "cucumber & red pepper",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + dairy + fat + veg",
+  "context": [
+   "everyday",
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "feta→dairy-free feta for vegan",
+  "approx_macros": "~420 kcal · 42g C · 12g P · 22g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"feta cheese, avocado, cucumber, and red peppers\" — named runner veggie wrap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-017",
+  "name": "Tuna salad wrap with red onion, celery & pickles",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tuna, canned",
+    "qty": "1 tin (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "mayonnaise & dijon mustard",
+    "qty": "1.5 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "red onion, celery & sweet pickles",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tortilla",
+    "qty": "1",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "capers can replace pickles",
+  "approx_macros": "~440 kcal · 35g C · 30g P · 18g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"canned tuna mixed with diced red onion, celery, sweet pickles or capers, mayonnaise, and Dijon mustard on tortilla\" — runner tuna wrap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-018",
+  "name": "Chicken, quinoa & roasted sweet potato power bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil, paprika",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken→tofu for vegan version",
+  "approx_macros": "~640 kcal · 60g C · 48g P · 18g F",
+  "prep": "25 min (batch)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "listed as the first of \"10 Power-Packed Lunch Meal Prep Ideas for Athletes\" — the archetype protein+starch+double veg bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-019",
+  "name": "Salmon, brown rice & edamame bento box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon fillet, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "edamame, steamed",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "low-sodium soy sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten",
+   "soy"
+  ],
+  "swaps": "soy sauce→tamari (gluten-free)",
+  "approx_macros": "~680 kcal · 65g C · 40g P · 24g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep bento with salmon, brown rice, edamame and avocado, named as a power-packed lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-020",
+  "name": "Beef & sweet potato skillet with kale",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lean ground beef",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, diced",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, chopped",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "onion, olive oil",
+    "qty": "1/2",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey for a leaner version",
+  "approx_macros": "~560 kcal · 40g C · 38g P · 24g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep skillet — ground beef, sweet potato and kale — named as a power-packed lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-021",
+  "name": "Tuna-stuffed avocado with celery & greek yogurt",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tuna, canned",
+    "qty": "1 tin (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1 whole (halved)",
+    "role": "fat"
+   },
+   {
+    "food": "celery, diced",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "greek yogurt, lemon juice",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + fat + veg + dairy",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish"
+  ],
+  "swaps": "greek yogurt→mayonnaise for dairy-free",
+  "approx_macros": "~420 kcal · 15g C · 32g P · 26g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep tuna-stuffed avocado, listed as a power-packed low-carb lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-022",
+  "name": "Chickpea & couscous salad with cherry tomato & cucumber",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "couscous, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "cherry tomatoes & cucumber",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil & balsamic vinegar",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "couscous→quinoa (gluten-free)",
+  "approx_macros": "~460 kcal · 65g C · 15g P · 14g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep chickpea couscous salad, named as a power-packed vegan-friendly lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-023",
+  "name": "Egg & veggie muffin cups with side salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "eggs, baked",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, zucchini & bell pepper",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "side salad, olive oil",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "add a slice of toast for more carbs",
+  "approx_macros": "~320 kcal · 8g C · 22g P · 20g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep egg muffin cups, listed as a portable power-packed lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-024",
+  "name": "Pork tenderloin, roasted Brussels sprouts & carrots",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil & rosemary",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add rice or potatoes for more carbs pre-session",
+  "approx_macros": "~420 kcal · 20g C · 40g P · 18g F",
+  "prep": "25 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep pork tenderloin with roasted veg, named as a power-packed lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-025",
+  "name": "Tofu, quinoa & snap pea stir-fry",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "firm tofu, cubed",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "snap peas & carrots",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "sesame oil & soy sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame",
+   "soy"
+  ],
+  "swaps": "soy sauce→tamari (gluten-free)",
+  "approx_macros": "~520 kcal · 55g C · 24g P · 20g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep tofu quinoa stir-fry, named as a power-packed vegan lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-026",
+  "name": "Lentil & vegetable stir-fry with turmeric",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lentils, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "zucchini, carrots & bell pepper",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "coconut oil & turmeric",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "serve over rice for a starch add",
+  "approx_macros": "~360 kcal · 40g C · 18g P · 12g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep lentil vegetable stir-fry, listed as a power-packed vegan lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-027",
+  "name": "Turkey & hummus wrap with spinach & red pepper",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey breast, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain tortilla",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "spinach & sliced red pepper",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + protein + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "turkey→roast chicken",
+  "approx_macros": "~410 kcal · 40g C · 30g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep turkey hummus wrap, named as a power-packed grab-and-go lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-028",
+  "name": "Power baked potato with ricotta, spinach & pesto",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "russet potato, baked",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "part-skim ricotta",
+    "qty": "60 g",
+    "role": "dairy"
+   },
+   {
+    "food": "baby spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "pesto",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + dairy + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "pesto→dairy-free basil oil for vegan",
+  "approx_macros": "~450 kcal · 55g C · 18g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "\"Power Baked Potato\" — russet potato topped with ricotta, spinach and pesto, named a post-run recovery meal",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-029",
+  "name": "Roasted smashed potatoes with buffalo blue cheese & Greek yogurt",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "petite potatoes, smashed & roasted",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "buffalo sauce, greek yogurt & blue cheese",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "garlic & lemon",
+    "qty": "to taste",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + sauce",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "add grilled chicken for more protein",
+  "approx_macros": "~420 kcal · 55g C · 10g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "runner post-run recovery plate for \"appetite satisfaction\" — smashed potatoes with buffalo blue-cheese yogurt sauce",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-030",
+  "name": "Potato & black bean soup with cheddar",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "potato & black bean soup (onion, jalapeño, tomato, cumin)",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "cheddar cheese, shredded",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "soup + dairy",
+  "context": [
+   "rest-day",
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheese optional for vegan",
+  "approx_macros": "~380 kcal · 55g C · 16g P · 10g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "runner post-workout soup, \"especially beneficial after cold-weather runs\" — potato and black bean, topped with cheddar",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-031",
+  "name": "Egg & potato mini frittata with side salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "eggs & egg whites, baked with potato, onion, pepper",
+    "qty": "2 servings",
+    "role": "protein"
+   },
+   {
+    "food": "side salad",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "swap milk for oat milk (dairy-free)",
+  "approx_macros": "~380 kcal · 25g C · 22g P · 20g F",
+  "prep": "25 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "\"portable egg & potato mini frittatas\" — batch-baked and reheated for a training-day lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-032",
+  "name": "Baked potato with turkey chilli",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "russet potato, baked",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "turkey chilli (ground turkey, beans, tomato)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "cheddar, spring onion",
+    "qty": "30 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "leftover turkey chilli from dinner batch — the same jacket-potato format as the tuna/chilli/beans toppings runners rotate",
+  "approx_macros": "~560 kcal · 60g C · 40g P · 16g F",
+  "prep": "10 min (leftover reheat)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "jacket potato toppings for runners commonly rotate \"chilli con carne\" alongside tuna mayonnaise and baked beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-033",
+  "name": "Chicken thighs, white rice & roasted Mediterranean veg (three-container)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken thighs, bone-in roasted",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted Mediterranean vegetables (courgette, pepper, aubergine)",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap starch container for pasta or sweet potato; swap veg for steamed broccoli",
+  "approx_macros": "~700 kcal · 65g C · 45g P · 25g F",
+  "prep": "5 min (grab from batch containers)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "\"Grab a large portion of rice from the carb container, a portion of chicken from the protein container, and a handful of spinach. Plate it. Microwave for two minutes.\" — cyclist's weekly three-container lunch system",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-034",
+  "name": "Beef mince, pasta & steamed broccoli (three-container)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lean beef mince, cooked with garlic & onion",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "pasta→gluten-free pasta; beef→lentils for vegan",
+  "approx_macros": "~680 kcal · 70g C · 42g P · 20g F",
+  "prep": "5 min (grab from batch containers)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "the cyclist's three-container lunch system, protein container swapped to beef mince and carb container to pasta",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-035",
+  "name": "Hard-boiled eggs, baked sweet potato & spinach (three-container)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "3",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, baked",
+    "qty": "1 medium",
+    "role": "starch"
+   },
+   {
+    "food": "spinach",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "eggs→chicken thighs for the meat-eating version",
+  "approx_macros": "~420 kcal · 35g C · 22g P · 18g F",
+  "prep": "5 min (grab from batch containers)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "protein container listed as \"hard-boiled eggs\" alongside chicken thighs and beef mince in the cyclist's rotation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-036",
+  "name": "Ham, cheese & fig jam ride sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ham, sliced",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "rustic bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "fig jam",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + dairy + sauce",
+  "context": [
+   "everyday",
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap ham for prosciutto or turkey",
+  "approx_macros": "~480 kcal · 55g C · 22g P · 18g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allen Lim & Biju Thomas, Feed Zone Portables / The Feed Zone Cookbook (skratchlabs.com/products/feed-zone-portables)",
+  "evidence": "the \"Ride Sandwich\" from Feed Zone Portables — Allen Lim & Biju Thomas's pocket-food format built for pros and age-groupers alike",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-037",
+  "name": "Savory rice cakes with parmesan & egg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "white rice, cooked & pressed into cakes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "egg, beaten in",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "parmesan",
+    "qty": "20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "pre-session",
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "parmesan→nutritional yeast for dairy-free",
+  "approx_macros": "~380 kcal · 60g C · 12g P · 8g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allen Lim & Biju Thomas, Feed Zone Portables / The Feed Zone Cookbook (skratchlabs.com/products/feed-zone-portables)",
+  "evidence": "the savory rice-cake format Dr Allen Lim made famous supplying pro cyclists on the European circuit; egg and parmesan is one of the book's named variants",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-038",
+  "name": "Rotisserie chicken pita with cucumber, hummus, orange & crackers",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rotisserie chicken, shredded",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole wheat pita",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber & light mayo/hummus",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "orange",
+    "qty": "1",
+    "role": "fruit"
+   },
+   {
+    "food": "whole-grain crackers & cheese",
+    "qty": "30 g",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + veg + fruit + other",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "hummus instead of mayo for a lighter version",
+  "approx_macros": "~560 kcal · 60g C · 35g P · 18g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Precision Fuel & Hydration performance-advice blog + Berry Street, \"Athlete Meal Plan: Your 5-Day Guide To Peak Performance\" (https://www.berrystreet.co/blog/athlete-meal-plan)",
+  "evidence": "\"a whole wheat pita stuffed with rotisserie chicken, cucumber slices, and light mayo or hummus, paired with an orange, whole-grain crackers, and cheese\" — endurance-athlete lunch, \"sustained energy plus important electrolytes from the fruit\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-039",
+  "name": "Leftover roast dinner plate — chicken, potatoes & veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roast chicken, leftover",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "roast potatoes, leftover",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "leftover roast vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "reheat with a splash of gravy or stock",
+  "approx_macros": "~550 kcal · 55g C · 40g P · 18g F",
+  "prep": "5 min (reheat)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Elaine Garvican (Tri Training Harder Race Team), \"My Day on a Plate\" (https://tritrainingharder.com/blog/2017/06/elaine-garvican-my-day-on-plate.html)",
+  "evidence": "\"I always cook more than one meal's worth in one go\" — lunch is \"a bit random, sometimes just a case of whatever is in the fridge or cupboards\" from the previous night's dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-040",
+  "name": "Chicken Caesar salad with parmesan & croutons",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "romaine lettuce",
+    "qty": "2 cups",
+    "role": "veg"
+   },
+   {
+    "food": "parmesan & croutons",
+    "qty": "30 g / 20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + veg + dairy",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "croutons→gluten-free croutons; dressing usually contains anchovy (fish) and egg",
+  "approx_macros": "~480 kcal · 20g C · 42g P · 26g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "\"salad\" listed among the 15 runner lunches — \"greens with protein, healthy fats, carbs, and grains or bread\"; Caesar is the most common named variant across runner-lunch listicles",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-041",
+  "name": "Turkey club sandwich with bacon, lettuce & tomato",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey breast, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "bacon",
+    "qty": "2 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "wholegrain bread",
+    "qty": "2-3 slices",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce & tomato",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + protein + starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bacon→smoked turkey rashers",
+  "approx_macros": "~520 kcal · 45g C · 38g P · 20g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "sandwich variant of the runner \"Sandwich\" lunch idea — \"deli meat with vegetables and toppings\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-042",
+  "name": "BLT sandwich (bacon, lettuce & tomato)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "bacon",
+    "qty": "3 rashers",
+    "role": "protein"
+   },
+   {
+    "food": "white or wholegrain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce & tomato",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "mayonnaise",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "bacon→smoked tofu for a vegetarian BLT",
+  "approx_macros": "~450 kcal · 40g C · 20g P · 24g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "classic deli-sandwich variant of the runner \"Sandwich\" lunch idea named in the listicle",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-043",
+  "name": "Egg mayo sandwich with cress",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "boiled egg, mashed with mayo",
+    "qty": "2",
+    "role": "protein"
+   },
+   {
+    "food": "wholemeal bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "cress",
+    "qty": "1 tbsp",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "mayo→light mayo or mashed avocado",
+  "approx_macros": "~380 kcal · 38g C · 18g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "egg-based variant of the runner \"Eggs\" lunch idea — \"paired with toast\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-044",
+  "name": "Cheese & pickle sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "mature cheddar, sliced",
+    "qty": "50 g",
+    "role": "dairy"
+   },
+   {
+    "food": "wholemeal bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "pickle/chutney",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "dairy + starch + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "add sliced tomato or lettuce for a veg component",
+  "approx_macros": "~420 kcal · 45g C · 18g P · 18g F",
+  "prep": "3 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "classic British desk-lunch sandwich; the \"Sandwich\" lunch idea listed among the 15 runner options generalises to whatever filling is on hand",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-045",
+  "name": "Ham salad sandwich with mustard",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ham, sliced",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "wholemeal bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce, tomato & cucumber",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "mustard",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "ham→turkey or tofu slices",
+  "approx_macros": "~400 kcal · 42g C · 24g P · 14g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "deli-meat sandwich variant of the runner \"Sandwich\" lunch idea, built with vegetables and a mustard topping",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-046",
+  "name": "Chicken Caesar wrap",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled & sliced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "tortilla",
+    "qty": "1 large",
+    "role": "starch"
+   },
+   {
+    "food": "romaine lettuce & parmesan",
+    "qty": "1 cup / 20 g",
+    "role": "veg"
+   },
+   {
+    "food": "caesar dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "swap dressing for anchovy-free version if fish-allergic",
+  "approx_macros": "~500 kcal · 42g C · 38g P · 20g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "wrap-format variant of the runner \"Salad\" and \"Sandwich\" lunch ideas rolled into one — a widely repeated desk-lunch combo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-047",
+  "name": "Prawn salad sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cooked prawns, mixed with light mayo",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "granary bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce & lemon",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten",
+   "shellfish"
+  ],
+  "swaps": "prawns→tuna or salmon",
+  "approx_macros": "~380 kcal · 40g C · 26g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "seafood variant of the runner \"Sandwich\" lunch idea, matching the BikeRadar rotation's fish-protein fillings",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-048",
+  "name": "Coronation chicken sandwich",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken, cooked & mixed with curry mayo & sultanas",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "wholemeal bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce",
+    "qty": "1/2 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "curry mayo→dairy-free mayo blend",
+  "approx_macros": "~460 kcal · 45g C · 28g P · 18g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "a British chicken-salad sandwich variant of the runner \"Sandwich\" lunch idea, listed with fruit-dressed chicken salad as an alternative",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-049",
+  "name": "Chicken salad with apple, grapes & yogurt dressing",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken, cooked & shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "apple & grapes, sliced",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "greek yogurt dressing",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed greens",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + fruit + dairy + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "yogurt→mayonnaise for the classic version",
+  "approx_macros": "~420 kcal · 25g C · 35g P · 18g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"Chicken Salad with Fresh Fruits\" — \"chicken salad base topped with sliced apples, mangoes, cranberries, or grapes; dressed with yogurt or mayonnaise\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-050",
+  "name": "Salmon burger with sweet potato fries",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "canned salmon patty (salmon, egg, herbs)",
+    "qty": "1 (130 g)",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain bun",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "sweet potato fries, baked",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "bun→lettuce wrap for low-carb",
+  "approx_macros": "~560 kcal · 55g C · 32g P · 22g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"canned salmon mixed with herbs, spices, and egg formed into patties, served on whole-grain bun with sweet potato fries\" — named runner lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-051",
+  "name": "Grilled cheese sandwich with roasted tomato",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cheddar cheese",
+    "qty": "50 g",
+    "role": "dairy"
+   },
+   {
+    "food": "whole grain bread, grilled",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "tomato, roasted",
+    "qty": "1 sliced",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dairy + starch + veg",
+  "context": [
+   "everyday",
+   "travel",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "add a bowl of soup for a bigger lunch",
+  "approx_macros": "~420 kcal · 40g C · 18g P · 20g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"Grilled Cheddar Cheese Sandwich\" — \"grilled cheese on whole grain bread with roasted tomato slices\" listed as a runner lunch idea",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-052",
+  "name": "Quinoa sushi rolls with edamame",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked, spread on nori",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, peppers, cucumber & onion",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "cream cheese",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "edamame, steamed",
+    "qty": "80 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + dairy + protein",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "soy"
+  ],
+  "swaps": "cream cheese→avocado for dairy-free",
+  "approx_macros": "~440 kcal · 55g C · 20g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"quinoa spread on nori sheets topped with carrots, bell peppers, cucumbers, onions, and cream cheese; served with edamame\" — runner sushi-roll variant",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-053",
+  "name": "Black bean & quinoa salad with lime & cilantro",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "red onion, cilantro & bell pepper",
+    "qty": "1 cup",
+    "role": "veg"
+   },
+   {
+    "food": "lime juice & hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add grilled chicken for more protein",
+  "approx_macros": "~420 kcal · 65g C · 18g P · 8g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "\"black beans, cooked quinoa, red onion, chopped cilantro, and diced bell peppers\" dressed with lime and hot sauce — runner lunch salad",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-054",
+  "name": "Lentil soup with crusty bread & an apple",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lentil soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "crusty bread",
+    "qty": "1 roll",
+    "role": "starch"
+   },
+   {
+    "food": "apple",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + bread + fruit",
+  "context": [
+   "everyday",
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "bread→gluten-free roll",
+  "approx_macros": "~420 kcal · 65g C · 16g P · 6g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "\"Soups and Chilis\" named as \"some of the best make-ahead meal prep options for runners\" — the bread-and-fruit pairing follows the same soup-lunch pattern BikeRadar recommends for cyclists",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-055",
+  "name": "Chicken noodle soup with a bread roll & orange",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken noodle soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "bread roll",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "orange",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + bread + fruit",
+  "context": [
+   "rest-day",
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap noodles for rice noodles (gluten-free)",
+  "approx_macros": "~400 kcal · 55g C · 22g P · 8g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "runner \"Soups and Chilis\" make-ahead lunch category, paired with bread and fruit as a classic desk-lunch combination",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-056",
+  "name": "Tomato soup with grilled cheese & grapes",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tomato soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "grilled cheese sandwich (small)",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + starch + fruit",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "cheese→dairy-free cheese",
+  "approx_macros": "~460 kcal · 55g C · 16g P · 18g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "the soup-and-sandwich desk-lunch pattern the runner listicle groups under \"Soups and Chilis\" as a make-ahead staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-057",
+  "name": "Vegetable soup with a wholegrain roll & banana",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "vegetable soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "wholegrain roll",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + bread + fruit",
+  "context": [
+   "everyday",
+   "travel",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "roll→oatcakes (gluten-free)",
+  "approx_macros": "~380 kcal · 65g C · 12g P · 6g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "make-ahead soup lunch listed by the runner listicle, paired with bread and fruit as BikeRadar's cyclist soup-lunch does",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-058",
+  "name": "Butternut squash soup with sourdough & a pear",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "butternut squash soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "sourdough bread",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "pear",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + bread + fruit",
+  "context": [
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "sourdough→gluten-free bread",
+  "approx_macros": "~380 kcal · 60g C · 8g P · 8g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "BikeRadar, \"Power lunches for cyclists\" (https://www.bikeradar.com/advice/nutrition/power-lunches-for-cyclists)",
+  "evidence": "the butternut-squash soup BikeRadar names in its \"vitamin-boosting\" cyclist lunch, paired here with bread and fruit in the same soup-lunch pattern",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-059",
+  "name": "Minestrone soup with a bread roll & clementine",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "minestrone soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "bread roll",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "clementine",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + bread + fruit",
+  "context": [
+   "rest-day",
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "roll→gluten-free roll",
+  "approx_macros": "~380 kcal · 60g C · 12g P · 6g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "runner \"Soups and Chilis\" make-ahead lunch category, generalised to the widely eaten minestrone-and-bread pairing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-060",
+  "name": "Chicken & vegetable soup with wholemeal toast & mixed berries",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken & vegetable soup",
+    "qty": "400 ml",
+    "role": "other"
+   },
+   {
+    "food": "wholemeal toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "soup + bread + fruit",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "toast→rice cakes (gluten-free)",
+  "approx_macros": "~400 kcal · 45g C · 28g P · 8g F",
+  "prep": "10 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "make-ahead chicken soup lunch under the runner listicle's \"Soups and Chilis\" category, paired with toast and fruit",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-061",
+  "name": "Jacket potato with coleslaw & ham",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "ham, sliced",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "coleslaw",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "coleslaw usually contains egg-mayo; use a vegan slaw for egg-allergy",
+  "approx_macros": "~480 kcal · 60g C · 24g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "jacket-potato toppings for runners commonly rotate coleslaw and cold meats alongside tuna mayo, chilli and baked beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-062",
+  "name": "Jacket potato with cottage cheese & pineapple",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "cottage cheese",
+    "qty": "150 g",
+    "role": "dairy"
+   },
+   {
+    "food": "pineapple chunks",
+    "qty": "80 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + dairy + fruit",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cottage cheese→dairy-free cottage cheese",
+  "approx_macros": "~380 kcal · 65g C · 18g P · 5g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "classic British jacket-potato topping rotation, matching the tuna/chilli/beans set runners commonly pick from",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-063",
+  "name": "Jacket potato with prawns in Marie Rose sauce",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "cooked prawns",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "marie rose sauce (mayo & ketchup)",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + sauce",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "shellfish"
+  ],
+  "swaps": "prawns→tuna for shellfish allergy",
+  "approx_macros": "~460 kcal · 55g C · 22g P · 16g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "British jacket-potato topping — prawn cocktail-style filling common alongside tuna mayo and chilli",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-064",
+  "name": "Jacket potato with egg mayo & cress",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "egg mayo (boiled egg, mayo)",
+    "qty": "2 eggs",
+    "role": "protein"
+   },
+   {
+    "food": "cress",
+    "qty": "1 tbsp",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "mayo→light mayo",
+  "approx_macros": "~420 kcal · 60g C · 18g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "British jacket-potato topping rotation — egg mayo alongside tuna, chilli, beans and cheese",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-065",
+  "name": "Jacket potato with feta & roasted Mediterranean veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "feta cheese",
+    "qty": "50 g",
+    "role": "dairy"
+   },
+   {
+    "food": "roasted peppers, courgette & red onion",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + dairy + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "feta→dairy-free feta for vegan",
+  "approx_macros": "~440 kcal · 65g C · 15g P · 14g F",
+  "prep": "15 min (batch veg)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "Mediterranean-style jacket-potato filling in the same topping-rotation format runners use for tuna, chilli and cheese-and-beans",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-066",
+  "name": "Jacket sweet potato with black bean chilli & sour cream",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "black bean chilli",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sour cream & spring onion",
+    "qty": "2 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "sour cream→dairy-free yogurt for vegan",
+  "approx_macros": "~480 kcal · 75g C · 16g P · 12g F",
+  "prep": "10 min (batch chilli)",
+  "batch": true,
+  "frequency": "common",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "sweet-potato variant of the jacket-potato-plus-chilli topping pattern common across runner lunch listicles",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-067",
+  "name": "Jacket potato with cheese & sweetcorn",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "cheddar cheese, grated",
+    "qty": "50 g",
+    "role": "dairy"
+   },
+   {
+    "food": "sweetcorn",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + dairy + veg",
+  "context": [
+   "everyday",
+   "rest-day",
+   "travel"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "add tuna or beans for more protein",
+  "approx_macros": "~420 kcal · 65g C · 15g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "the most repeated British jacket-potato filling — cheese and sweetcorn — in the same topping rotation as tuna mayo and chilli",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-068",
+  "name": "Jacket potato with houmous & roasted veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "houmous",
+    "qty": "3 tbsp",
+    "role": "protein"
+   },
+   {
+    "food": "roasted veg (courgette, pepper, onion)",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "swap houmous for tahini-free bean dip if sesame-allergic",
+  "approx_macros": "~440 kcal · 68g C · 15g P · 12g F",
+  "prep": "15 min (batch veg)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "vegan jacket-potato filling in the same topping-rotation format as cheese, tuna and chilli",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-069",
+  "name": "Jacket potato with baked beans & grated cheddar",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "baked beans",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "cheddar, grated",
+    "qty": "40 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheese→dairy-free cheese for vegan",
+  "approx_macros": "~500 kcal · 80g C · 22g P · 12g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "beans-and-cheese jacket potato, the most classic version in the British topping rotation alongside tuna mayo and chilli con carne",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-070",
+  "name": "Jacket potato with chicken curry & mango chutney",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "jacket potato",
+    "qty": "1 large (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "chicken curry, leftover",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "mango chutney",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "curry→chickpea curry for vegan",
+  "approx_macros": "~540 kcal · 70g C · 32g P · 14g F",
+  "prep": "5 min (leftover)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Active.com, \"Delicious Potato Power Meals to Eat Before, During and After Your Next Run\" (https://www.active.com/running/articles/delicious-potato-power-meals-to-eat-before-during-and-after-your-next-run)",
+  "evidence": "\"chicken curry\" listed as a common jacket-potato filling in British topping rotations, alongside cheese, beans and tuna mayo",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-071",
+  "name": "Leftover roast turkey, mashed potato & green beans",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "roast turkey, leftover",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "mashed potato, leftover",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "reheat mash with a splash of milk",
+  "approx_macros": "~500 kcal · 45g C · 38g P · 16g F",
+  "prep": "5 min (reheat)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Elaine Garvican (Tri Training Harder Race Team), \"My Day on a Plate\" (https://tritrainingharder.com/blog/2017/06/elaine-garvican-my-day-on-plate.html)",
+  "evidence": "the leftover-dinner-becomes-lunch pattern named by triathlete Elaine Garvican — \"whatever is in the fridge\" from the previous night's roast",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-072",
+  "name": "Cod, new potatoes & peas (leftover fish supper)",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cod, baked, leftover",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "new potatoes, leftover",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "peas",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "british",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cod→any white fish",
+  "approx_macros": "~460 kcal · 50g C · 34g P · 10g F",
+  "prep": "5 min (reheat)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Elaine Garvican (Tri Training Harder Race Team), \"My Day on a Plate\" (https://tritrainingharder.com/blog/2017/06/elaine-garvican-my-day-on-plate.html)",
+  "evidence": "leftover-dinner-as-lunch pattern — a fish-and-two-veg supper reheated the next day, the same \"whatever's left\" approach Garvican describes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-073",
+  "name": "Shrimp, rice noodles & bok choy meal-prep box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "shrimp, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "rice noodles, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, stir-fried",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "soy sauce & sesame oil",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "sesame",
+   "shellfish",
+   "soy"
+  ],
+  "swaps": "shrimp→tofu (vegan); soy sauce→tamari",
+  "approx_macros": "~520 kcal · 60g C · 30g P · 14g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "the athlete meal-prep-box format (protein + starch + veg + light sauce) applied to a shrimp/rice-noodle combo in the same style as the tofu and salmon boxes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-074",
+  "name": "Pork loin, rice & shredded cabbage meal-prep box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "pork loin, roasted, sliced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cabbage, shredded & sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→chicken",
+  "approx_macros": "~560 kcal · 55g C · 40g P · 16g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "meal-prep-box format applied to pork loin, rice and cabbage — the same protein+starch+veg batch pattern as the beef and pork-tenderloin boxes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-075",
+  "name": "Ground turkey, wild rice & green beans meal-prep box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ground turkey, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "wild rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→lean beef",
+  "approx_macros": "~520 kcal · 50g C · 38g P · 14g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "meal-prep-box format applied to turkey, wild rice and green beans — the same batch protein+starch+veg pattern as the other athlete power bowls",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-076",
+  "name": "Cod, roasted potatoes & asparagus meal-prep box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cod fillet, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "potatoes, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cod→any firm white fish",
+  "approx_macros": "~480 kcal · 45g C · 36g P · 14g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "meal-prep-box protein+starch+veg pattern applied to a fish version — cod, roasted potatoes and asparagus",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-077",
+  "name": "Beef, barley & carrots meal-prep bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lean beef, cooked & sliced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "pearl barley, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "barley→rice for gluten-free",
+  "approx_macros": "~560 kcal · 60g C · 40g P · 14g F",
+  "prep": "25 min (batch)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "meal-prep-box protein+starch+veg pattern applied to beef, barley and carrots — the same batch format as the pork and beef-sweet-potato boxes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-078",
+  "name": "Chicken, farro & roasted asparagus meal-prep bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "farro, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "farro→quinoa (gluten-free)",
+  "approx_macros": "~540 kcal · 50g C · 42g P · 14g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "meal-prep-box protein+starch+veg pattern applied to chicken, farro and asparagus — a common ancient-grain swap in athlete power bowls",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-079",
+  "name": "Chicken, orzo & courgette ribbons",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "orzo, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "courgette, ribboned",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil & lemon",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "orzo→rice for gluten-free",
+  "approx_macros": "~560 kcal · 55g C · 42g P · 16g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "the three-container batch-lunch pattern with orzo swapped in as the carb container, courgette as the veg container",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-080",
+  "name": "Chicken, couscous & green beans",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "couscous, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "couscous→quinoa (gluten-free)",
+  "approx_macros": "~540 kcal · 50g C · 42g P · 14g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "the three-container batch-lunch pattern with couscous as the carb container and green beans as the veg container — the most repeated staple shape across the sources gathered",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-081",
+  "name": "Turkey, cheddar, grapes & crackers protein box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey slices",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "cheddar cubes",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + dairy + fruit + starch",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "crackers→gluten-free crackers",
+  "approx_macros": "~480 kcal · 45g C · 28g P · 20g F",
+  "prep": "2 min (no cook)",
+  "batch": true,
+  "frequency": "common",
+  "source": "eatbreadless.com, \"Quick Healthy High Protein Lunches for Busy Professionals\" (https://www.eatbreadless.com/blog/quick-healthy-high-protein-lunches/)",
+  "evidence": "\"no-cook or 5-minute lunch ideas designed for desk or car eating\" — stacking protein sources like turkey, cheese and crackers to reach 40g protein at lunch",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-082",
+  "name": "Rotisserie chicken, microwave rice pouch & steam-bag veg",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "rotisserie chicken, shredded",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "pre-cooked rice pouch",
+    "qty": "1 (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "steam-in-bag vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap chicken for canned salmon",
+  "approx_macros": "~560 kcal · 60g C · 42g P · 14g F",
+  "prep": "3 min (microwave)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "eatbreadless.com, \"17 Portable Healthy Meals for Busy Commuters\" (https://www.eatbreadless.com/blog/portable-quick-healthy-meals-commuters/)",
+  "evidence": "the no-cook/no-mess commuter lunch format — rotisserie chicken plus a microwave rice pouch and steam-bag veg, the office-desk version of the chicken/rice/veg staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-083",
+  "name": "Tuna, rice cakes & banana travel plate",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "tuna, canned",
+    "qty": "1 tin (140 g)",
+    "role": "protein"
+   },
+   {
+    "food": "rice cakes",
+    "qty": "4",
+    "role": "starch"
+   },
+   {
+    "food": "banana",
+    "qty": "1",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + fruit",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tuna→canned chicken or chickpeas",
+  "approx_macros": "~400 kcal · 50g C · 28g P · 6g F",
+  "prep": "2 min (no cook)",
+  "batch": true,
+  "frequency": "common",
+  "source": "eatbreadless.com, \"17 Portable Healthy Meals for Busy Commuters\" (https://www.eatbreadless.com/blog/portable-quick-healthy-meals-commuters/)",
+  "evidence": "\"rice cakes combined with canned salmon, avocado, and dried veggies make a complete portable meal\" — desk-pantry travel lunch, tuna variant",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-084",
+  "name": "Cottage cheese, edamame & crackers desk lunch",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "cottage cheese",
+    "qty": "200 g",
+    "role": "dairy"
+   },
+   {
+    "food": "edamame, steamed",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6",
+    "role": "starch"
+   }
+  ],
+  "pattern": "dairy + protein + starch",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "soy"
+  ],
+  "swaps": "crackers→gluten-free",
+  "approx_macros": "~400 kcal · 40g C · 32g P · 10g F",
+  "prep": "2 min (no cook)",
+  "batch": true,
+  "frequency": "common",
+  "source": "eatbreadless.com, \"Quick Healthy High Protein Lunches for Busy Professionals\" (https://www.eatbreadless.com/blog/quick-healthy-high-protein-lunches/)",
+  "evidence": "high-density protein stack recommended for no-cook desk lunches — \"chicken, Greek yogurt, edamame, or cottage cheese\" combined to reach 40g protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-085",
+  "name": "Ham, egg & cheese mason-jar salad",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ham, diced",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "boiled egg, sliced",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "cheddar cheese, cubed",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed greens",
+    "qty": "2 cups",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + protein + dairy + veg",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "ham→turkey",
+  "approx_macros": "~420 kcal · 8g C · 32g P · 26g F",
+  "prep": "5 min (batch, no cook)",
+  "batch": true,
+  "frequency": "common",
+  "source": "eatbreadless.com, \"17 Portable Healthy Meals for Busy Commuters\" (https://www.eatbreadless.com/blog/portable-quick-healthy-meals-commuters/)",
+  "evidence": "\"mason-jar salads\" and \"protein boxes\" named as no-mess portable-meal formats for commuters",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-086",
+  "name": "Chicken, snap peas & instant rice packable box",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, cooked & diced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "instant rice",
+    "qty": "1 packet",
+    "role": "starch"
+   },
+   {
+    "food": "snap peas",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "instant rice→instant mashed potatoes",
+  "approx_macros": "~500 kcal · 55g C · 40g P · 10g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "REI Expert Advice, \"Meal Planning for Ultralight Backpacking\" (https://www.rei.com/learn/expert-advice/meal-planning-for-ultralight-backpacking.html)",
+  "evidence": "the pick-a-protein/pick-a-starch/add-veg build described for portable athlete meals — \"dehydrated chicken, ground beef, shrimp\" then \"instant rice, instant mashed potatoes, couscous\" plus dehydrated vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-087",
+  "name": "Ground beef, couscous & dehydrated veg travel bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "ground beef, cooked (rehydrated/dehydrated)",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "couscous, instant",
+    "qty": "1 packet",
+    "role": "starch"
+   },
+   {
+    "food": "dehydrated mixed vegetables, rehydrated",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "couscous→instant rice for gluten-free",
+  "approx_macros": "~520 kcal · 55g C · 34g P · 16g F",
+  "prep": "10 min (add hot water)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "REI Expert Advice, \"Meal Planning for Ultralight Backpacking\" (https://www.rei.com/learn/expert-advice/meal-planning-for-ultralight-backpacking.html)",
+  "evidence": "the ultralight/travel build-your-own bowl formula — protein, starch, dehydrated veg and spices — adapted here to a beef/couscous combination",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-088",
+  "name": "Chicken breast, instant mashed potato & dehydrated veg travel bowl",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken, cooked (dehydrated/rehydrated)",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "instant mashed potato",
+    "qty": "1 packet",
+    "role": "starch"
+   },
+   {
+    "food": "dehydrated mixed vegetables, rehydrated",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add butter or olive oil packet for extra fat",
+  "approx_macros": "~460 kcal · 50g C · 34g P · 10g F",
+  "prep": "10 min (add hot water)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "REI Expert Advice, \"Meal Planning for Ultralight Backpacking\" (https://www.rei.com/learn/expert-advice/meal-planning-for-ultralight-backpacking.html)",
+  "evidence": "\"pick a protein (dehydrated chicken, ground beef, shrimp), then a starch (instant rice, instant mashed potatoes, couscous), and finally add dehydrated vegetables\" — the travel/race-week meal-build formula",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-089",
+  "name": "Chicken, jasmine rice & green beans with olive oil",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "jasmine rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "green beans→asparagus or courgette",
+  "approx_macros": "~680 kcal · 80g C · 48g P · 14g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Cycling Weekly, \"What do professional cyclists eat?\" (https://www.cyclingweekly.com/fitness/professional-cyclists-eat-332394)",
+  "evidence": "\"pro cyclists typically prepare meals with two sources of carbohydrates, like pasta and rice, paired with a lean protein such as chicken or turkey, and roasted vegetables\" — the chicken-rice-green-veg archetype named across the pro-cyclist and runner sources gathered",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-090",
+  "name": "Turkey, jasmine rice & asparagus",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "turkey breast, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "jasmine rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→chicken or lean pork",
+  "approx_macros": "~640 kcal · 75g C · 46g P · 12g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Cycling Weekly, \"What do professional cyclists eat?\" (https://www.cyclingweekly.com/fitness/professional-cyclists-eat-332394)",
+  "evidence": "the lean-protein + rice + roasted-vegetable pattern pro cyclists are described using for lunch, with turkey as the named protein swap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-091",
+  "name": "Chicken, white rice & cauliflower with lemon",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "cauliflower, roasted with lemon",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "cauliflower→broccoli",
+  "approx_macros": "~660 kcal · 78g C · 48g P · 12g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "the three-container batch-lunch pattern with cauliflower swapped in as the veg container instead of broccoli or spinach",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-092",
+  "name": "Chicken, rice & roasted peppers with balsamic",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted peppers, balsamic",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add olives for a Mediterranean lift",
+  "approx_macros": "~660 kcal · 78g C · 48g P · 12g F",
+  "prep": "15 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "batch protein+starch+veg lunch container system with roasted peppers as the veg swap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-093",
+  "name": "Salmon, wild rice & asparagus",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "salmon fillet, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "wild rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→trout",
+  "approx_macros": "~620 kcal · 55g C · 40g P · 22g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "the salmon+starch+veg meal-prep-box pattern with wild rice and asparagus swapped in for the brown-rice-and-edamame version",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-094",
+  "name": "Prawns, rice & mangetout stir-fry",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "prawns, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "mangetout, stir-fried",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "soy sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "gluten",
+   "shellfish",
+   "soy"
+  ],
+  "swaps": "prawns→tofu (vegan); soy sauce→tamari",
+  "approx_macros": "~540 kcal · 65g C · 30g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "stir-fry variant of the runner \"noodles or grains with a protein source and vegetables\" lunch idea, built with rice instead of noodles",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-095",
+  "name": "Tofu, brown rice & broccoli slaw with tahini",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "firm tofu, pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli slaw",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "tahini dressing",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "tofu→tempeh",
+  "approx_macros": "~560 kcal · 65g C · 22g P · 20g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Roadman Cycling, \"Weekly Meal Prep for Cyclists — Sunday System\" (https://roadmancycling.com/blog/cycling-weekly-meal-prep-guide)",
+  "evidence": "vegan variant of the three-container batch lunch, swapping in broccoli slaw and a tahini dressing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-096",
+  "name": "Steak, baked potato & broccoli",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "lean steak, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "baked potato",
+    "qty": "1 medium",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "steak→lean beef mince patty",
+  "approx_macros": "~620 kcal · 55g C · 45g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Cycling Weekly, \"What do professional cyclists eat?\" (https://www.cyclingweekly.com/fitness/professional-cyclists-eat-332394)",
+  "evidence": "the lean-protein + starch + roasted-vegetable lunch pattern pro cyclists are described using, built here with steak and a baked potato instead of rice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-097",
+  "name": "Chicken sausage, sweet potato mash & spinach",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken sausage, grilled",
+    "qty": "2 links (120 g)",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato mash",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, wilted",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "sausage→plant-based sausage for vegetarian",
+  "approx_macros": "~560 kcal · 50g C · 32g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "athlete meal-prep protein+starch+veg pattern with chicken sausage and sweet potato mash swapped in",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-098",
+  "name": "Duck breast, egg noodles & pak choi",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "duck breast, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "egg noodles, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "pak choi, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "hoisin sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten",
+   "soy"
+  ],
+  "swaps": "duck→chicken for a leaner version",
+  "approx_macros": "~600 kcal · 55g C · 38g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Nutrition for Running, \"15 Lunch Ideas for Runners\" (https://nutritionforrunning.com/15-lunch-ideas-for-runners/)",
+  "evidence": "protein-swap variant of the runner \"stir fry\" lunch idea — noodles, a protein and vegetables finished with a savoury sauce",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-099",
+  "name": "Chicken, sweet potato & Brussels sprouts sheet-pan lunch",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken thighs, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "swap sweet potato for squash",
+  "approx_macros": "~640 kcal · 55g C · 45g P · 22g F",
+  "prep": "25 min (batch)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "All About Marathon Training, \"9+ Best Lunch Ideas for Runners\" (https://www.all-about-marathon-training.com/lunch-ideas-for-runners.html)",
+  "evidence": "sheet-pan variant of the \"Grilled Chicken with Brown Rice and Roasted Vegetables\" runner lunch, with sweet potato and Brussels sprouts as the roasted swap",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "L-a-100",
+  "name": "Chicken, quinoa & steamed carrots meal-prep lunch",
+  "meal_type": "lunch",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "170 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "quinoa→couscous",
+  "approx_macros": "~600 kcal · 55g C · 46g P · 14g F",
+  "prep": "20 min (batch)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "1TouchFood, \"Lunch Meal Prep for Athletes: 10 Power-Packed Ideas\" (https://1touchfood.org/lunch-meal-prep-for-athletes/)",
+  "evidence": "closing example of the chicken+grain+veg power-bowl archetype named repeatedly across the athlete meal-prep sources gathered for this shard",
+  "reconstructed_from_snippet": false
+ }
+]

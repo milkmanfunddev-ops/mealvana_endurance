@@ -1,0 +1,24 @@
+{
+  "kind": "pantry",
+  "title": "What's in the house?",
+  "items": [
+    {
+      "name": "eggs",
+      "selected": true
+    },
+    {
+      "name": "rice",
+      "selected": true
+    },
+    {
+      "name": "spinach",
+      "selected": false
+    },
+    {
+      "name": "chicken thighs",
+      "selected": true
+    }
+  ],
+  "allowCustom": true,
+  "origin": "suggested"
+}

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'features/content/application/content_service.dart' show ContentDefaultsCache;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -219,6 +220,11 @@ Future<void> _runMealvanaApp(
   // 1. SentryWidget - Wraps app to enable screenshot capture and session replay
   // 2. ProviderScope - Riverpod state management
   // 3. RootAppWidget - MaterialApp.router with Wiredash and AppStartupWidget
+  // Bundled content defaults must be in memory before the first frame —
+  // widgets that read a content key in their one synchronous build never
+  // re-render on their own (CLAUDE.md: non-recoverable bootstrap lives in main).
+  await ContentDefaultsCache.preload();
+
   runApp(
     SentryWidget(
       child: ProviderScope(

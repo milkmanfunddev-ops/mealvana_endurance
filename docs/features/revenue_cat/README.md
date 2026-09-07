@@ -1,8 +1,8 @@
 # RevenueCat Integration for Mealvana Endurance
 
-**Last Updated**: March 17, 2026
-**Status**: Infrastructure Setup In Progress
-**Pricing**: $9.99/month or $69.99/year with 1-month free trial
+**Last Updated**: September 1, 2026
+**Status**: Subscription module BUILT (dev); store submission + prod rollout pending
+**Pricing**: $9.99/month or $69.99/year (trial configuration still open)
 
 ---
 
@@ -10,13 +10,23 @@
 
 RevenueCat is a subscription infrastructure platform that powers Mealvana Endurance's "Pro" subscription tier. This document provides a comprehensive overview of RevenueCat, implementation strategy, and integration with our existing architecture.
 
-### Current Progress (March 2026)
-- RevenueCat project and test store fully configured (products, entitlements, offerings, packages)
-- In-App Purchase Key (.p8) generated and saved
-- App Store Connect subscription products: **not yet created**
-- Real iOS app in RevenueCat: **not yet added**
-- Flutter SDK: **not yet installed**
-- See `SETUP_GUIDE.md` for detailed progress tracker and next steps
+### Current Progress (September 2026)
+- **Consumable AI-credit packs** have been live since 1.23.x (`lib/features/ai_credits/`,
+  `revenuecat-webhook` → `grant_credits`). That module owns SDK configure/logIn.
+- **Pro subscription module is built** — `lib/features/subscription/` (Phase 3 of meal planning,
+  `docs/implement_mealplanning/04-entitlement.md` is the source of truth for its state):
+  - `subscriptionStatusProvider` = RevenueCat `CustomerInfo` ∪ server row ∪ tester flag;
+    `proUnlockedProvider` / `isProUnlocked(ref)` gate `/food/*` and `/vana/*`.
+  - Server side: `public.user_entitlements` + `has_entitlement()` written by the webhook's
+    subscription branch (dev only so far).
+  - `/pro` reads the `default` offering (`$rc_monthly` / `$rc_annual`), Restore works, Buy is behind
+    `PRO_PURCHASE_ENABLED` until the App Review screenshot is uploaded.
+- Store products for the `pro` entitlement exist in ASC (dev + prod apps), Google Play and all four
+  RevenueCat store apps (created 2026-09-01). ASC subscriptions are `MISSING_METADATA` pending the
+  paywall screenshot.
+- **Meal planning is Pro-only** (Lee, 2026-09-01) — this supersedes the "cookie-gated meal planning"
+  line in the feature list below.
+- See `SETUP_GUIDE.md` for the historical setup tracker
 
 ## Table of Contents
 
@@ -112,8 +122,11 @@ Pro subscription ($9.99/month or $69.99/year with 1-month free trial) unlocks:
 10. **Carb-Loading** - Structured carb-loading plans
 11. **Adaptive Macro Adjustment** - Dynamic macro tuning
 
+**Pro (built 2026-09-01, ships dark behind `PRO_GATE_ENABLED`)**:
+- Meal planning with Vana, shopping lists, recipes & cooking mode — `lib/features/subscription/` gates
+  `/food/*` and `/vana/*`; the edge functions enforce it via `has_entitlement()`.
+
 **Cookie-Gated Features** (NOT Pro, future):
-- Meal planning
 - Import recipes
 - Coach intelligence: fueling plan pattern detection
 

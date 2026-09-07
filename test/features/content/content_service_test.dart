@@ -38,10 +38,36 @@ AppContent _content({
 // ---------------------------------------------------------------------------
 
 void main() {
+  // ContentService.initialize() kicks ContentDefaultsCache.preload(), which
+  // reads a bundled asset through rootBundle — that needs a binding.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late _MockContentRepository mockRepo;
 
   setUp(() {
     mockRepo = _MockContentRepository();
+
+    // `contentServiceProvider` calls initialize() the moment it is first
+    // read, so BOTH repository calls happen for every test — including the
+    // ones about the uninitialized service, which never stub them. An
+    // unstubbed mocktail call returns null, and null is not a
+    // `Future<AppContent?>`, so those tests died in the provider's create
+    // rather than in their own body. Default both to "no content"; a test
+    // that cares still re-stubs with its own `when`.
+    when(
+      () => mockRepo.getActiveContent(
+        environment: any(named: 'environment'),
+        locale: any(named: 'locale'),
+      ),
+    ).thenAnswer((_) async => null);
+    // refreshContent returns a non-nullable AppContent, so its default has
+    // to be an empty one rather than null.
+    when(
+      () => mockRepo.refreshContent(
+        environment: any(named: 'environment'),
+        locale: any(named: 'locale'),
+      ),
+    ).thenAnswer((_) async => _content());
   });
 
   ProviderContainer _container() {

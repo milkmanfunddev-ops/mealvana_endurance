@@ -1,0 +1,4449 @@
+[
+ {
+  "id": "D-d-001",
+  "name": "Ugali, sukuma wiki & chicken stew",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ugali (maize meal)",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "sukuma wiki (collard greens), sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "chicken thigh stew with tomato & onion",
+    "qty": "200 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→beef or goat (same profile); ugali→rice for travel",
+  "approx_macros": "~700 kcal · 90g C · 45g P · 18g F",
+  "prep": "35 min (stew simmer)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://citiusmag.com/articles/how-to-make-ugali-kenyan-stew ; CITIUS MAG",
+  "evidence": "\"Kenyan runners eat this for dinner almost every night. Generally, it's mixed with a chicken or beef stew and vegetables.\" — RunnersConnect, citing East African training-camp pattern",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-002",
+  "name": "Chapati, beans & sukuma wiki",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chapati (wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "beans, stewed with tomato",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sukuma wiki (collard greens)",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "chai tea with milk",
+    "qty": "1 cup",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + protein + veg + drink",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chapati→rice; add grilled chicken for more protein",
+  "approx_macros": "~600 kcal · 85g C · 22g P · 16g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.traininkenya.com/2018/08/08/diet-of-kenyan-runners/ ; Kenya Experience",
+  "evidence": "\"A specific example highlighted is the popular post-training meal at Mama Rambo's Hotel: beans and chapatti, accompanied by chai tea\" — served weekly across Iten training camps",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-003",
+  "name": "Ugali, cabbage & beef mchuzi stew",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ugali (maize meal)",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "cabbage, sautéed with onion & tomato",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "beef stew with mchuzi mix spice",
+    "qty": "200 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→chicken thighs (as in the original recipe)",
+  "approx_macros": "~680 kcal · 88g C · 40g P · 16g F",
+  "prep": "40 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://citiusmag.com/articles/how-to-make-ugali-kenyan-stew ; CITIUS MAG (ugali + chicken/cabbage/tomato stew recipe)",
+  "evidence": "Recipe built from the same ugali-and-stew pattern CITIUS MAG describes as the Kenyan runner's nightly dinner; beef is the stated swap for chicken thighs",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-004",
+  "name": "Ugali & mixed bean-legume stew",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ugali (maize meal)",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed bean & lentil stew",
+    "qty": "220 g",
+    "role": "protein"
+   },
+   {
+    "food": "green banana, boiled",
+    "qty": "100 g",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + other",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add sukuma wiki for extra veg",
+  "approx_macros": "~650 kcal · 100g C · 20g P · 8g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect",
+  "evidence": "\"ugali with beans or cooked green bananas or meat stew or any kind of legume stew\" documented as a regular East African training-camp dinner; elite runners eat meat rarely (under 1% of diet)",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-005",
+  "name": "Ugali, sukuma wiki & pan-fried tilapia",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ugali (maize meal)",
+    "qty": "280 g",
+    "role": "starch"
+   },
+   {
+    "food": "sukuma wiki (collard greens)",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "tilapia fillet, pan-fried",
+    "qty": "180 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tilapia→any white fish; ugali→rice",
+  "approx_macros": "~600 kcal · 85g C · 35g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.outsideonline.com/health/running/racing/race-fuel/eat-like-a-kenyan-run-like-a-kenyan/ ; Outside Online",
+  "evidence": "Outside Online documents ugali, rice, potatoes and pasta \"in constant rotation at lunch and dinner\" at Iten training camps, with fish among the occasional protein pairings",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-006",
+  "name": "Injera with shiro wat & side salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "injera (fermented teff flatbread)",
+    "qty": "2 large pieces",
+    "role": "starch"
+   },
+   {
+    "food": "shiro wat (spiced chickpea-flour stew)",
+    "qty": "250 g",
+    "role": "protein"
+   },
+   {
+    "food": "tomato-onion salad",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "ethiopian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add a boiled egg for more protein",
+  "approx_macros": "~550 kcal · 90g C · 18g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://run.outsideonline.com/nutrition-and-health/how-ethiopian-diet-impacts-running-performance/ ; Outside Online",
+  "evidence": "\"Shiro Wat: a legume-based stew\" served with injera is described as a staple Ethiopian runner combination; teff is called \"a complete protein resplendent with iron, calcium, and fiber\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-007",
+  "name": "Injera with kik alicha (split pea stew)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "injera (fermented teff flatbread)",
+    "qty": "2 large pieces",
+    "role": "starch"
+   },
+   {
+    "food": "kik alicha (split pea stew with turmeric)",
+    "qty": "250 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "ethiopian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add sautéed cabbage/carrot (atkilt) on the side",
+  "approx_macros": "~500 kcal · 85g C · 20g P · 8g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://run.outsideonline.com/nutrition-and-health/how-ethiopian-diet-impacts-running-performance/ ; Outside Online",
+  "evidence": "Kik alicha is described as \"quick to prepare and chock-full of protein,\" eaten with injera by Ethiopian endurance athletes and praised for anti-inflammatory turmeric",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-008",
+  "name": "Ugali & beans (Eliud Kipchoge staple)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ugali (maize meal)",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "beans, stewed",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "boiled potato",
+    "qty": "100 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch + protein + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add sukuma wiki for a vegetable",
+  "approx_macros": "~650 kcal · 105g C · 22g P · 8g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.triathlete.com/nutrition/international-endurance-superfoods/ ; Triathlete, citing Eliud Kipchoge's ugali-and-beans pattern",
+  "evidence": "Triathlete's international-superfoods roundup attributes ugali \"traditionally paired with beans and potatoes\" directly to Eliud Kipchoge's own diet",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-009",
+  "name": "Ugali, sukuma wiki & goat meat stew",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ugali (maize meal)",
+    "qty": "300 g",
+    "role": "starch"
+   },
+   {
+    "food": "sukuma wiki (collard greens)",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "goat meat stew",
+    "qty": "200 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "goat→chicken/beef (goat is the occasional-meat variant of the same stew)",
+  "approx_macros": "~700 kcal · 88g C · 42g P · 20g F",
+  "prep": "45 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Camp",
+  "evidence": "Kenya Camp's nutrition page lists \"meat or chicken served occasionally\" alongside the daily ugali-and-sukuma-wiki base, with dinner described as \"a heavier meal than lunch\" to fill glycogen stores before fasted morning runs",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-010",
+  "name": "Chapati, sukuma wiki & beef stew",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chapati (wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "sukuma wiki (collard greens)",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "beef stew",
+    "qty": "180 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "chapati→ugali for the more common version",
+  "approx_macros": "~650 kcal · 80g C · 38g P · 18g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Camp",
+  "evidence": "\"Special variation: Chapatti with beans, greens, or meat appears 'once a week'\" as the rotation off the daily ugali base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-011",
+  "name": "Grilled mackerel, rice & miso soup with pickled daikon",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "mackerel (saba), grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   },
+   {
+    "food": "pickled daikon",
+    "qty": "40 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + other + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "mackerel→salmon or grilled chicken",
+  "approx_macros": "~650 kcal · 80g C · 38g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://thenaturalparentmagazine.com/grilled-fish-miso-soup-japan/ ; The Natural Parent Magazine",
+  "evidence": "Grilled fish with rice and miso soup is described as the classic, everyday Japanese dinner pattern",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-012",
+  "name": "Teishoku: grilled salmon, rice, miso soup & greens",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   },
+   {
+    "food": "steamed greens (spinach or bok choy)",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + other + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "salmon→any grilled white fish or chicken",
+  "approx_macros": "~680 kcal · 80g C · 40g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://mag.marukome.co.jp/20230511/17723/ ; Marukome — Athlete Diet: Expert Tips for Peak Performance",
+  "evidence": "Marukome describes the teishoku tray — rice, soup, grilled fish, and small vegetable sides — as the standard Japanese athlete meal structure",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-013",
+  "name": "Onigiri, grilled chicken skewers & edamame",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "onigiri (rice balls with nori)",
+    "qty": "3 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "grilled chicken skewers (yakitori)",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "edamame, steamed & salted",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "chicken→grilled tofu (vegan/vegetarian)",
+  "approx_macros": "~600 kcal · 75g C · 35g P · 12g F",
+  "prep": "10 min (assembly)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/international-endurance-superfoods/ ; Triathlete",
+  "evidence": "Triathlete's international-superfoods piece cites ultrarunner Scott Jurek's reliance on onigiri (rice balls with seaweed) as a portable, real-food fuel",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-014",
+  "name": "Sushi platter dinner (pre-race)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "assorted nigiri & maki sushi",
+    "qty": "12 pieces",
+    "role": "protein"
+   },
+   {
+    "food": "steamed edamame",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + veg + other",
+  "context": [
+   "pre-session",
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "shellfish",
+   "soy"
+  ],
+  "swaps": "choose vegetable/egg maki for a pescatarian-free version",
+  "approx_macros": "~700 kcal · 95g C · 35g P · 10g F",
+  "prep": "0 min (ordered)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.triathlete.com/nutrition/international-endurance-superfoods/ ; Triathlete",
+  "evidence": "Triathlete notes Olympic marathoner Molly Seidel ate sushi the night before her Tokyo Olympics marathon",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-015",
+  "name": "Gohan, miso soup & grilled fish (balance tray)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   },
+   {
+    "food": "grilled fish (yellowtail or salmon)",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "pickled vegetables",
+    "qty": "40 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + other + protein + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "swap fish for grilled chicken",
+  "approx_macros": "~640 kcal · 80g C · 36g P · 15g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://charactorium.com/en/character/ayumi-hamasaki/cuisine/gohan-miso-soup-and-grilled-fish-the-balance-tray ; Charactorium (Japanese food culture reference)",
+  "evidence": "Described as \"the balance tray\" — gohan (rice), miso soup, and grilled fish is documented as the everyday-staple structure of a Japanese dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-016",
+  "name": "Grilled salmon, rice & miso soup",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + other",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "add a side of steamed greens",
+  "approx_macros": "~620 kcal · 78g C · 38g P · 15g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://mag.marukome.co.jp/20230511/17723/ ; Marukome — Athlete Diet: Expert Tips for Peak Performance",
+  "evidence": "\"Miso soup and rice form a classic Japanese meal that's easy to prepare and provides a good balance of carbs and protein\" alongside grilled salmon",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-017",
+  "name": "Onigiri & miso soup (race-eve)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "onigiri (rice balls)",
+    "qty": "3 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   },
+   {
+    "food": "grilled chicken, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + other + protein",
+  "context": [
+   "race-week",
+   "carb-load",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "chicken→tofu for vegetarian",
+  "approx_macros": "~550 kcal · 85g C · 25g P · 8g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://beyond-nippon.medium.com/ultimate-japanese-food-guide-for-masters-athletes-at-tokyo-marathon-2025-b80b6a8e1810 ; Beyond Nippon",
+  "evidence": "\"For athletes preparing for races, pairing onigiri with a steaming bowl of miso soup the night before provides an extra dose of sodium\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-018",
+  "name": "Grilled chicken, rice & miso soup",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + other",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "chicken→grilled fish for the more traditional version",
+  "approx_macros": "~650 kcal · 78g C · 42g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://mag.marukome.co.jp/20230511/17723/ ; Marukome — Athlete Diet: Expert Tips for Peak Performance",
+  "evidence": "The teishoku pattern of rice + soup + grilled protein + side is described as flexible between fish and other grilled proteins for Japanese athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-019",
+  "name": "Grilled bulgogi beef, rice & banchan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "bulgogi beef, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "kimchi",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach namul",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "beef→grilled tofu or mushroom for vegetarian",
+  "approx_macros": "~700 kcal · 75g C · 40g P · 20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.koreaherald.com/article/10346456 ; The Korea Herald",
+  "evidence": "\"Most Koreans still eat traditional banchan and some meat\" alongside rice, described as the everyday Korean meal pattern",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-020",
+  "name": "Grilled mackerel, rice & banchan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "mackerel, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "assorted banchan (seasoned vegetables, tofu)",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "sesame",
+   "soy"
+  ],
+  "swaps": "mackerel→any grilled white fish",
+  "approx_macros": "~600 kcal · 72g C · 34g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.romper.com/p/what-do-korean-athletes-eat-for-breakfast-its-not-exactly-a-bowl-of-lucky-charms-8174412 ; Romper",
+  "evidence": "\"Banchan can be vegetables, tofu, egg, fish, meat, seaweed, kimchi\" served alongside rice and a grilled protein as the standard Korean meal structure",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-021",
+  "name": "Korean BBQ pork belly, lettuce wraps & banchan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork belly (samgyeopsal), grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "lettuce leaves",
+    "qty": "6 leaves",
+    "role": "veg"
+   },
+   {
+    "food": "rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "ssamjang & banchan sides",
+    "qty": "80 g",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + starch + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "pork belly→grilled chicken or beef",
+  "approx_macros": "~750 kcal · 60g C · 40g P · 35g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.kimecopak.ca/blogs/cuisine/korean-bbq-calories ; KimEcopak — Korean BBQ Calories Nutrition Guide",
+  "evidence": "KimEcopak's guide documents grilled meat wrapped in lettuce with rice and banchan sides as the standard Korean BBQ dinner structure",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-022",
+  "name": "Rice, kimchi & grilled chicken",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "kimchi",
+    "qty": "70 g",
+    "role": "veg"
+   },
+   {
+    "food": "chicken thigh, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→tofu for vegetarian",
+  "approx_macros": "~600 kcal · 70g C · 38g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.romper.com/p/what-do-korean-athletes-eat-for-breakfast-its-not-exactly-a-bowl-of-lucky-charms-8174412 ; Romper",
+  "evidence": "\"Korean breakfasts typically include kimchi, rice, various vegetables, and carefully prepared meat\" — the same rice-kimchi-protein pattern repeats at dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-023",
+  "name": "Grilled galbi (short rib), rice & banchan (carb-load)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "galbi (grilled short rib)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "280 g",
+    "role": "starch"
+   },
+   {
+    "food": "assorted banchan",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "increase rice portion for heavier carb-load",
+  "approx_macros": "~800 kcal · 95g C · 45g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.koreaherald.com/article/10346456 ; The Korea Herald",
+  "evidence": "\"Korean marathon runners...consumed upwards of 5,000 calories before their event,\" built on rice-and-grilled-meat carb-loading in the lead-up to race day",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-024",
+  "name": "Rice, banchan & grilled tofu",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "grilled tofu",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "assorted banchan (seasoned vegetables)",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "tofu→grilled fish or beef",
+  "approx_macros": "~550 kcal · 70g C · 25g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.romper.com/p/what-do-korean-athletes-eat-for-breakfast-its-not-exactly-a-bowl-of-lucky-charms-8174412 ; Romper",
+  "evidence": "Banchan is described as commonly built around \"vegetables, tofu, egg\" alongside rice for a plant-forward version of the standard Korean meal",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-025",
+  "name": "Stir-fried tomato & egg over rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "stir-fried tomato & egg",
+    "qty": "200 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "add stir-fried greens on the side",
+  "approx_macros": "~500 kcal · 70g C · 18g P · 14g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://asianathletepantry.substack.com/p/from-rice-bowl-to-podium-part-2 ; Asian Athlete Pantry",
+  "evidence": "Listed as one of the go-to Asian athlete rice-bowl combinations, suitable for both pre- and post-training meals",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-026",
+  "name": "Three-cup chicken, choy sum & rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "three-cup chicken (sesame oil, soy, rice wine)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "choy sum, stir-fried",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "chicken→tofu",
+  "approx_macros": "~650 kcal · 75g C · 35g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://asianathletepantry.substack.com/p/from-rice-bowl-to-podium-part-2 ; Asian Athlete Pantry",
+  "evidence": "\"Three-cup chicken with choy sum and rice\" listed as a specific athlete rice-bowl combination",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-027",
+  "name": "Soy-braised tofu, mushrooms & rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, soy-braised",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed mushrooms, braised",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "add a stir-fried leafy green",
+  "approx_macros": "~520 kcal · 75g C · 20g P · 14g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://asianathletepantry.substack.com/p/from-rice-bowl-to-podium-part-2 ; Asian Athlete Pantry",
+  "evidence": "\"Soy braised tofu with mixed mushrooms over rice\" listed as a plant-based athlete rice-bowl option, balanced for carbs, protein and vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-028",
+  "name": "Stir-fried beef, bok choy & noodles",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "bok choy, stir-fried",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "egg noodles, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten",
+   "soy"
+  ],
+  "swaps": "noodles→rice; beef→chicken or tofu",
+  "approx_macros": "~650 kcal · 70g C · 38g P · 18g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://asianathletepantry.substack.com/p/from-rice-bowl-to-podium-part-2 ; Asian Athlete Pantry",
+  "evidence": "\"A simple bowl of noodles with protein, carb, and veggies provides everything needed in one bowl after a long training run\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-029",
+  "name": "Rice, pan-fried fish & stir-fried greens",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white fish, pan-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "stir-fried mixed greens",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "smaller rice portion at dinner than lunch, per source",
+  "approx_macros": "~550 kcal · 65g C · 35g P · 12g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.scmp.com/lifestyle/health-beauty/article/1999483/what-hong-kong-olympian-athletes-eat-four-champion-diets-you ; South China Morning Post",
+  "evidence": "Hong Kong Olympic swimmer Yvette Kong's pattern is \"rice or pasta with baked or pan-fried fish or chicken\" at the main meal, with \"dinner is a smaller portion of carbohydrates plus cooked vegetables\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-030",
+  "name": "Stir-fried chicken, mixed vegetables & rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed stir-fried vegetables (carrot, pepper, snow pea)",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "chicken→tofu or shrimp",
+  "approx_macros": "~600 kcal · 68g C · 38g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12265100/ ; China Marathon Nutrition Survey (CMNS), peer-reviewed",
+  "evidence": "The CMNS documents that \"traditional Chinese dietary patterns emphasize carbohydrate-rich staples such as rice and noodles\" paired with stir-fried protein and vegetables among Chinese marathon runners, who \"rarely adopt vegetarian and vegan diets\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-031",
+  "name": "Dal, roti, sabzi & curd",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "dal (lentil curry)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "roti (whole wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetable sabzi",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + starch + veg + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "roti→rice for gluten-free",
+  "approx_macros": "~600 kcal · 80g C · 25g P · 15g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "\"For full recovery meals within 2 hours of running, recommended options include rice + dal + sabzi + curd, or roti + egg curry + curd\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-032",
+  "name": "Rice, dal, sabzi & curd",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "dal (lentil curry)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetable sabzi",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + veg + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "add a boiled egg for extra protein",
+  "approx_macros": "~620 kcal · 90g C · 22g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "Named directly as a full post-run recovery meal: \"rice + dal + sabzi + curd\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-033",
+  "name": "Roti, egg curry & curd",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "roti (whole wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "egg curry",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "egg curry→paneer curry for egg-free",
+  "approx_macros": "~580 kcal · 70g C · 24g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "Listed as a named full recovery meal option: \"roti + egg curry + curd\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-034",
+  "name": "Dal, rice, curd & fruit (post-workout)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "dal (lentil curry)",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + dairy + fruit",
+  "context": [
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap banana for mango or papaya",
+  "approx_macros": "~600 kcal · 95g C · 20g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "\"Within 30-45 minutes post-workout, athletes should consume a carbohydrate-protein combo like dal with rice, curd and fruit... to replenish glycogen and assist muscle repair\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-035",
+  "name": "Paneer sabzi, roti & curd",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "paneer sabzi (cottage cheese & vegetable curry)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "roti (whole wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + starch + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "paneer→tofu for vegan",
+  "approx_macros": "~630 kcal · 68g C · 26g P · 26g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "\"...or paneer and roti to replenish glycogen and assist muscle repair\" listed among the standard post-run carbohydrate-protein combos",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-036",
+  "name": "Kitchari (rice, moong dal & ghee with vegetables)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "moong dal, cooked with turmeric",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "ghee",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "sweet potato, carrot & spinach, cooked in",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + fat + veg",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "ghee→oil for vegan/dairy-free",
+  "approx_macros": "~600 kcal · 90g C · 20g P · 16g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/international-endurance-superfoods/ ; Triathlete",
+  "evidence": "\"Kitchari is fast becoming the Indian triathletes' favorite race-week food. The rice, dal, and ghee in it makes it almost perfect with respect to the carbs:protein:fat ratio for athletes\" — Chaitanya Velhal, head coach, Power Peaks Athlete Lab",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-037",
+  "name": "Rice, rajma (kidney bean curry) & curd",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "rajma (kidney bean curry)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "curd→coconut yogurt for vegan",
+  "approx_macros": "~600 kcal · 95g C · 22g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "Legume-and-rice combinations (\"rice + dal\") are named repeatedly as the recovery-meal template for Indian runners; rajma-rice is the same pattern with a different legume",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-038",
+  "name": "Roti, mixed vegetable sabzi & dal",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "roti (whole wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "mixed vegetable sabzi",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "dal (lentil curry)",
+    "qty": "180 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "roti→rice",
+  "approx_macros": "~560 kcal · 78g C · 20g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "Whole grain roti with dal and vegetable sabzi is described as a core structure of the Indian runner diet plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-039",
+  "name": "Black beans, corn tortillas & avocado with lime",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "black beans, stewed",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn tortillas",
+    "qty": "3 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 medium",
+    "role": "fat"
+   },
+   {
+    "food": "lime wedge",
+    "qty": "1",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + fat + other",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add grilled chicken for more protein",
+  "approx_macros": "~500 kcal · 70g C · 16g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/diet-plans/mexican-diet-plan-for-runners ; Listonic — Mexican Diet Plan for Runners",
+  "evidence": "Cited as a Mexican-inspired dinner option for runners: \"black beans, corn tortillas, and avocado with lime\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-040",
+  "name": "Flank steak fajitas, corn & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "flank steak, grilled & sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn on the cob",
+    "qty": "1 ear",
+    "role": "starch"
+   },
+   {
+    "food": "bell peppers & onion, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 medium",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "steak→grilled chicken or shrimp",
+  "approx_macros": "~600 kcal · 45g C · 40g P · 24g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.active.com/triathlon/articles/a-3-day-meal-plan-for-triathletes ; Active.com — 3-Day Meal Plan for Triathletes",
+  "evidence": "Listed directly as a triathlete dinner option: \"flank steak fajitas with corn and avocado\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-041",
+  "name": "Grilled chicken, brown rice, black beans & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 medium",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + protein + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled tofu (vegan)",
+  "approx_macros": "~700 kcal · 75g C · 45g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/ ; Triathlete — Triathlete Diet",
+  "evidence": "\"A balanced meal for a triathlete consists of carbohydrates (a serving of brown rice or quinoa), proteins (grilled chicken or tofu), and fats (a small serving of avocado)\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-042",
+  "name": "Bandeja paisa-style plate: rice, beans, ground meat & plantain",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "pinto beans, stewed",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "ground beef, seasoned & cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "plantain, fried",
+    "qty": "100 g",
+    "role": "other"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 medium",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + protein + other + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "colombian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "ground beef→grilled chicken; skip chorizo/egg for a lighter version",
+  "approx_macros": "~850 kcal · 95g C · 45g P · 30g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://en.wikipedia.org/wiki/Bandeja_paisa ; Wikipedia (Bandeja Paisa)",
+  "evidence": "Bandeja paisa's core components — \"pinto beans, white rice, ground meat...plantain...and avocado\" — form Colombia's best-known everyday plate",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-043",
+  "name": "Grilled chicken, rice & fried plantain",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "plantain, fried (patacones)",
+    "qty": "100 g",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + other",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "colombian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add a side salad",
+  "approx_macros": "~700 kcal · 80g C · 42g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thefidgetyfoodie.com/2020/03/13/14-food-rules-of-colombia/ ; The Fidgety Foodie — 14 Food Rules of Colombia",
+  "evidence": "\"Colombian Sunday lunch often features delicious barbeques of chicken, roasted corn, grilled plantain, chorizo and guacamole\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-044",
+  "name": "Grilled steak, rice, patacones & salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "patacones (fried plantain slices)",
+    "qty": "100 g",
+    "role": "other"
+   },
+   {
+    "food": "side salad",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + other + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "colombian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "steak→grilled fish",
+  "approx_macros": "~750 kcal · 80g C · 40g P · 26g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://thefidgetyfoodie.com/2020/03/13/14-food-rules-of-colombia/ ; The Fidgety Foodie — 14 Food Rules of Colombia",
+  "evidence": "\"A standard worker's lunch (menu del día) in Colombia typically includes protein such as meat or fish, rice, patacones...and maybe some salad\" — the same structure repeats at dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-045",
+  "name": "Rice & beans with grilled chicken (Brazilian staple)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, stewed",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "chicken, grilled (free-range)",
+    "qty": "180 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein + protein",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "brazilian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled fish",
+  "approx_macros": "~680 kcal · 90g C · 42g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.cbc.ca/news/world/roberta-sudbrack-brazil-olympic-chef-food-meals-1.3712376 ; CBC News (Brazil Olympic team chef Roberta Sudbrack)",
+  "evidence": "\"Rice and beans held emotional significance for Brazilian athletes, who would be moved seeing these staple foods they grew up eating\"; only free-range, hormone-free chicken was used in the team's meals",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-d-046",
+  "name": "Grilled fish, rice, black beans & plantain",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white fish, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, stewed",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "plantain, fried",
+    "qty": "100 g",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + protein + other",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "brazilian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~700 kcal · 90g C · 40g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.food.com/amp/recipe/brazilian-chicken-and-black-beans-and-rice-67059 ; Food.com — Brazilian Chicken and Black Beans and Rice",
+  "evidence": "Rice-and-black-beans with a grilled protein is documented as the standard Brazilian plate structure, adaptable between chicken and fish",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-047",
+  "name": "Chicken tacos with corn tortillas, avocado & salsa",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken, grilled & shredded",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn tortillas",
+    "qty": "3 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 medium",
+    "role": "fat"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + fat + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled shrimp or black beans",
+  "approx_macros": "~550 kcal · 55g C · 35g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/recipes/four-healthy-taco-recipes/ ; Triathlete — 4 Healthy Taco Recipes from an Athlete-Chef",
+  "evidence": "Taco assemblies built from grilled protein, corn tortillas, avocado and salsa are presented as athlete-friendly, easy weeknight dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-048",
+  "name": "Rice, beans & roasted chicken with charred corn",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "pinto beans, stewed",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted chicken",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "charred corn on the cob",
+    "qty": "1 ear",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + protein + veg",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "colombian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled sausage (chorizo) for the traditional Sunday version",
+  "approx_macros": "~750 kcal · 90g C · 42g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thefidgetyfoodie.com/2020/03/13/14-food-rules-of-colombia/ ; The Fidgety Foodie — 14 Food Rules of Colombia",
+  "evidence": "\"Colombian Sunday lunch often features delicious barbeques of chicken, roasted corn...and guacamole\" alongside the everyday rice-and-beans base",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-049",
+  "name": "Whole grain pasta, grilled salmon & grilled vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "whole grain pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "salmon, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "grilled vegetables (zucchini, pepper)",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "pasta→rice for gluten-free",
+  "approx_macros": "~700 kcal · 80g C · 38g P · 22g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.recoveryforathletes.com/blogs/recovery-for-athletes-blog/mediterranean-diet-for-athletes-boost-performance-health-and-longevity ; Recovery for Athletes",
+  "evidence": "\"A typical dinner includes whole grain pasta with tomato sauce, grilled vegetables, and a side of grilled salmon\" as a sample Mediterranean dinner for runners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-050",
+  "name": "Grilled sardines, salad & whole grain bread",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sardines, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "greek salad (tomato, cucumber, olive, feta)",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "whole grain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + starch + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "greek",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "sardines→grilled chicken",
+  "approx_macros": "~600 kcal · 50g C · 35g P · 26g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.paliria.com/en/article/greek-power-foods-mediterranean-diet-for-fitness-enthusiasts/ ; Paliria — Greek Power Foods",
+  "evidence": "\"Seafood is a cornerstone of the Greek diet\"; sardines and salmon are named specifically for their omega-3 content, \"shown to reduce muscle soreness and improve recovery time\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-051",
+  "name": "Grilled chicken, rice & Greek salad with olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "greek salad (tomato, cucumber, olive, feta)",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "greek",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "chicken→grilled fish",
+  "approx_macros": "~700 kcal · 75g C · 42g P · 24g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.paliria.com/en/article/greek-power-foods-mediterranean-diet-for-fitness-enthusiasts/ ; Paliria — Greek Power Foods",
+  "evidence": "Greek Power Foods lists olive oil, tomato, cucumber and feta as everyday staples paired with grilled protein for fitness-focused Mediterranean dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-052",
+  "name": "Mediterranean steak & rice bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "steak, grilled & sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber-tomato salad",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "tzatziki (yogurt-cucumber sauce)",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "steak→grilled chicken",
+  "approx_macros": "~700 kcal · 70g C · 40g P · 26g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.kayscleaneats.com/athlete-meals/mediterranean-steak-rice-bowls-for-athletes/ ; Kay's Clean Eats — Mediterranean Steak & Rice Bowls for Athletes",
+  "evidence": "Presented explicitly as a high-protein family dinner built for athletes, combining grilled steak, rice, fresh vegetables and a yogurt-based sauce",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-053",
+  "name": "Grilled fish, boiled potatoes & horta (wild greens)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white fish, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "boiled potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "horta (boiled wild greens) with olive oil & lemon",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "greek",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~600 kcal · 60g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://oldwayspt.org/blog/what-would-ancient-greek-marathoner-eat/ ; Oldways — What Would an Ancient Greek Marathoner Eat",
+  "evidence": "Oldways traces the modern Greek athlete plate — grilled fish, potatoes, and olive-oil-dressed greens — back to the traditional foods a Greek marathoner would have eaten",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-054",
+  "name": "Souvlaki (grilled chicken skewers), pita & salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken souvlaki (grilled skewers)",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "pita bread",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "tomato-cucumber-onion salad",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "tzatziki",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "greek",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chicken→grilled halloumi for vegetarian",
+  "approx_macros": "~700 kcal · 65g C · 42g P · 24g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.paliria.com/en/article/greek-power-foods-mediterranean-diet-for-fitness-enthusiasts/ ; Paliria — Greek Power Foods",
+  "evidence": "Grilled skewered meat with pita, fresh salad and a yogurt-based sauce is documented as a core, everyday Greek protein-forward dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-055",
+  "name": "Lentil soup (fakes), bread & feta",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "fakes (Greek lentil soup)",
+    "qty": "350 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole grain bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "feta cheese",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "olive oil, drizzled",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + dairy + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "greek",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "omit feta for vegan",
+  "approx_macros": "~550 kcal · 65g C · 22g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.paliria.com/en/article/greek-power-foods-mediterranean-diet-for-fitness-enthusiasts/ ; Paliria — Greek Power Foods",
+  "evidence": "Legume-based soups paired with bread, cheese and olive oil are described as a traditional, protein-adequate Greek dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-056",
+  "name": "Grilled chicken, whole grain pasta & tomato salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole grain pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tomato & basil salad with olive oil",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "chicken→grilled fish",
+  "approx_macros": "~680 kcal · 78g C · 40g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.recoveryforathletes.com/blogs/recovery-for-athletes-blog/mediterranean-diet-for-athletes-boost-performance-health-and-longevity ; Recovery for Athletes",
+  "evidence": "Whole grain pasta with grilled protein and a fresh tomato salad is presented as the everyday Mediterranean-diet dinner template for endurance athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-057",
+  "name": "Grilled salmon, quinoa & Greek salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "greek salad (tomato, cucumber, olive, feta)",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken",
+  "approx_macros": "~650 kcal · 60g C · 40g P · 24g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://fitnessrec.com/articles/mediterranean-diet-for-athletes-science-based-eating-for-performance-and-longevity ; FitnessRec",
+  "evidence": "\"Salmon and sardines are loaded with omega-3s, which have been shown to reduce muscle soreness and improve recovery time\" — recommended paired with whole grains and fresh vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-058",
+  "name": "Grilled lamb chops, rice & tzatziki salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lamb chops, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber-tomato salad",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "tzatziki",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "greek",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "lamb→grilled chicken",
+  "approx_macros": "~750 kcal · 65g C · 42g P · 32g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.paliria.com/en/article/greek-power-foods-mediterranean-diet-for-fitness-enthusiasts/ ; Paliria — Greek Power Foods",
+  "evidence": "Grilled meat with a yogurt-based sauce and fresh salad follows the same everyday Greek dinner structure Paliria documents, with lamb as the occasional-meat variant",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-059",
+  "name": "Wild salmon, rice, pickled cucumber & shiitake bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "wild salmon, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "pickled cucumber",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "shiitake mushrooms, sautéed",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "ginger-soy dressing",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "nordic",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "salmon→grilled chicken",
+  "approx_macros": "~650 kcal · 70g C · 38g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.outsideonline.com/health/nutrition/what-winter-athletes-eat/ ; Outside Online",
+  "evidence": "Nordic skier Jessie Diggins describes making bowls with \"wild salmon from Alaska, with rice, pickled cucumbers, shiitake mushrooms, green beans, carrots, and a ginger-soy dressing\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-d-060",
+  "name": "Meatballs, mashed potatoes, pickled cucumber salad & lingonberries",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "meatballs (beef/pork), pan-fried",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "mashed potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "pickled cucumber salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "lingonberry sauce",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "nordic",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "meatballs→plant-based meatballs for vegetarian",
+  "approx_macros": "~700 kcal · 65g C · 35g P · 28g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.tastingtable.com/1910142/scandinavian-dishes-try-once/ ; Tasting Table — 14 Scandinavian Dishes You Need to Try",
+  "evidence": "\"A typical Scandinavian meatball dinner consists of meatballs with gravy, mashed or boiled potatoes, pickled cucumber salad, and lingonberries\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-061",
+  "name": "Grilled fish, boiled potatoes & pickled vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white fish, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "boiled potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "pickled vegetables (beets, carrots)",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "nordic",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~550 kcal · 55g C · 35g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.villagegym.co.uk/blog/food-trends-nordic-style/ ; Village Gym — The Nordic Diet",
+  "evidence": "\"The Nordic diet has ample amounts of whole grains, root vegetables, and legumes, providing complex carbohydrates required for energy storage and endurance,\" built around fish and root-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-062",
+  "name": "Rye bread, herring, boiled egg & pickles",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rye bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "pickled herring",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "boiled egg, sliced",
+    "qty": "1",
+    "role": "protein"
+   },
+   {
+    "food": "pickles",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + protein + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "nordic",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "eggs",
+   "fish",
+   "gluten"
+  ],
+  "swaps": "herring→smoked salmon",
+  "approx_macros": "~500 kcal · 55g C · 28g P · 16g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://wsg.washington.edu/scandinavian-pickled-herring-bites ; Washington Sea Grant",
+  "evidence": "Documents the classic Scandinavian light meal built from rye bread, pickled herring, egg and pickles, a pattern that also carries over to a simple dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-063",
+  "name": "Boiled potatoes, grilled pork & sauerkraut",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork chop, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "boiled potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "sauerkraut",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "eastern_european",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→grilled chicken or kielbasa",
+  "approx_macros": "~650 kcal · 55g C · 40g P · 24g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://insanelygoodrecipes.com/scandinavian-recipes/ ; Insanely Good Recipes — 30 Best Scandinavian Recipes",
+  "evidence": "Boiled/roasted potatoes with grilled meat and fermented cabbage (sauerkraut) is documented as the everyday-staple structure across Nordic and Eastern European home dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-064",
+  "name": "Roasted root vegetables, potatoes & grilled salmon",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted potatoes",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted root vegetables (carrot, parsnip, beet)",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "nordic",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken",
+  "approx_macros": "~650 kcal · 60g C · 38g P · 22g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.villagegym.co.uk/blog/food-trends-nordic-style/ ; Village Gym — The Nordic Diet",
+  "evidence": "Root vegetables and fish are named as the two pillars of the Nordic endurance-athlete diet, \"providing complex carbohydrates required for energy storage and endurance\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-065",
+  "name": "Plain pasta with olive oil & parmesan, grilled chicken & steamed vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked plain",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "olive oil & grated parmesan",
+    "qty": "1 tbsp + 20 g",
+    "role": "fat"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "steamed vegetables (green beans, carrot)",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + fat + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chicken→steamed fish (the team's other standard option)",
+  "approx_macros": "~750 kcal · 90g C · 45g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.cyclist.co.uk/in-depth/team-sky-recipes-for-cycling-success ; Cyclist.co.uk — Team Sky Recipes for Cycling Success",
+  "evidence": "\"At Sky they always give riders an option between meat and fish...they always do either meat or chicken and fish,\" served with pasta/rice/potatoes and simply grilled or oven-baked protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-066",
+  "name": "Fresh pasta, steamed fish & mixed salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "fresh pasta, cooked plain",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white fish, steamed",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed green salad with olive oil",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~680 kcal · 85g C · 38g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.teamefcoaching.com/blog/the-giro-d-italia-menu-what-the-pro-riders-eat/ ; EF Coaching — The Giro d'Italia Menu",
+  "evidence": "\"Fresh pastas, noodles and rice with a light but flavor filled main course of steamed fish and roasted or grilled chicken for protein are typical dinner components for pro cyclists\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-067",
+  "name": "Rice, grilled chicken & beet salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "beet salad with olive oil",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→steamed fish",
+  "approx_macros": "~650 kcal · 75g C · 42g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.teamefcoaching.com/blog/the-giro-d-italia-menu-what-the-pro-riders-eat/ ; EF Coaching — The Giro d'Italia Menu",
+  "evidence": "Beet salads are noted as \"popular with the riders and nutrition team for their ability to reduce inflammation and boost recovery,\" served alongside rice and grilled protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-068",
+  "name": "Mashed potato, roasted chicken & steamed green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "mashed potato",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "steamed green beans",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "chicken→steamed fish",
+  "approx_macros": "~650 kcal · 70g C · 42g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.cyclist.co.uk/in-depth/team-sky-recipes-for-cycling-success ; Cyclist.co.uk — Team Sky Recipes for Cycling Success",
+  "evidence": "\"Carbohydrates, such as pasta, rice and potatoes, are key... Lean protein, preferably oven-baked or grilled, avoiding heavy sauces or strong seasoning, is also crucial\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-069",
+  "name": "Rice, grilled fish, roasted vegetables & fresh soup",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white fish, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted vegetables (zucchini, pepper)",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "clear vegetable soup",
+    "qty": "1 bowl",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + veg + other",
+  "context": [
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~680 kcal · 78g C · 40g P · 16g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.teamefcoaching.com/blog/the-giro-d-italia-menu-what-the-pro-riders-eat/ ; EF Coaching — The Giro d'Italia Menu",
+  "evidence": "\"Dinner is perhaps the most important meal of the day during the race\"; a fresh soup is included to help with \"calming the digestive system\" alongside rice/pasta, grilled protein and vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-070",
+  "name": "Pasta salad, ham & grilled vegetables (travel dinner)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta salad, cooked & cooled",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "ham, sliced",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "grilled vegetables (zucchini, pepper)",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "ham→grilled chicken",
+  "approx_macros": "~600 kcal · 80g C · 28g P · 16g F",
+  "prep": "0 min (prepared by team chef)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.siroko.com/blog/c/what-do-pro-cyclists-eat-during-grand-tours/ ; Siroko Cycling Community",
+  "evidence": "Pasta salad and a ham sandwich are listed among the specific grand-tour dinner/travel-meal options team chefs provide riders",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-071",
+  "name": "Grilled chicken with rice, side salad & fruit-yogurt dessert",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad with olive oil",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "fruit with yogurt or crème fraîche",
+    "qty": "150 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + starch + veg + dairy",
+  "context": [
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap the dairy dessert for coconut yogurt",
+  "approx_macros": "~750 kcal · 85g C · 45g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.teamefcoaching.com/blog/the-giro-d-italia-menu-what-the-pro-riders-eat/ ; EF Coaching — The Giro d'Italia Menu",
+  "evidence": "\"Fruit-based desserts with yogurt or crème fraîche\" are described as \"a sweet morale-boosting treat\" that follows the grilled-protein-and-rice/pasta main at team dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-072",
+  "name": "Spicy chicken with rice, celeriac & mango",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, browned & simmered",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "celeriac, cubed & simmered",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "mango, cubed",
+    "qty": "80 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + starch + veg + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "serve with quinoa or sweet potato instead of rice",
+  "approx_macros": "~700 kcal · 75g C · 42g P · 20g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.cyclist.co.uk/in-depth/team-sky-recipes-for-cycling-success ; Cyclist.co.uk — Team Sky Recipes for Cycling Success",
+  "evidence": "Team Sky chef Henrik Orre's post-ride recovery dish, described as \"low in fat with a moderate level of carbs and is high in protein,\" served over rice, pasta, quinoa or sweet potato",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-073",
+  "name": "Pasta with marinara sauce (classic race-eve dinner)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "marinara (tomato) sauce",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "grated parmesan",
+    "qty": "15 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + sauce + dairy",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "add grilled chicken for extra protein",
+  "approx_macros": "~650 kcal · 110g C · 20g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://styrkr.com/en-us/blogs/training-and-nutrition-hub/what-to-eat-the-night-before-a-race ; STYRKR",
+  "evidence": "Named directly as the half-marathon/marathon race-eve example: \"pasta with marinara sauce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-074",
+  "name": "Large baked potato with grated cheese",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "baked potato, large",
+    "qty": "1 (300 g)",
+    "role": "starch"
+   },
+   {
+    "food": "grated cheese",
+    "qty": "40 g",
+    "role": "dairy"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + dairy + veg",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheese→dairy-free alternative for vegan",
+  "approx_macros": "~550 kcal · 90g C · 18g P · 14g F",
+  "prep": "45 min (baking)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://styrkr.com/en-us/blogs/training-and-nutrition-hub/what-to-eat-the-night-before-a-race ; STYRKR",
+  "evidence": "Listed as a specific race-eve dinner example for half-marathon and marathon: \"large baked potato with grated cheese\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-075",
+  "name": "White rice, grilled chicken & steamed broccoli (no-pasta race-eve)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled fish or tofu",
+  "approx_macros": "~600 kcal · 90g C · 38g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://styrkr.com/en-us/blogs/training-and-nutrition-hub/what-to-eat-the-night-before-a-race ; STYRKR and https://runnersconnect.net/pre-race-marathon-nutrition/ ; RunnersConnect",
+  "evidence": "Listed as the no-pasta race-eve alternative — \"white rice with grilled chicken\" — with a cooked vegetable added per the accompanying dietitian guidance to hit 60-90g carbohydrate and 20-30g protein the evening before a marathon",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-076",
+  "name": "Pasta with simple tomato sauce & parmesan",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "simple tomato sauce",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "grated parmesan",
+    "qty": "15 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + sauce + dairy",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "avoid heavy cream sauces per source guidance",
+  "approx_macros": "~630 kcal · 105g C · 20g P · 10g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://styrkr.com/en-us/blogs/training-and-nutrition-hub/what-to-eat-the-night-before-a-race ; STYRKR",
+  "evidence": "\"Choosing familiar foods with tomato or olive-oil-based sauces while avoiding heavy cream sauces, large amounts of cheese, and fatty meats\" is the explicit race-eve guidance",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-077",
+  "name": "Bagel with honey & banana (light race-eve option)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "bagel",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "starch + sauce + fruit",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add peanut butter for protein/fat",
+  "approx_macros": "~400 kcal · 85g C · 10g P · 3g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://styrkr.com/en-us/blogs/training-and-nutrition-hub/what-to-eat-the-night-before-a-race ; STYRKR",
+  "evidence": "Listed as one of the general race-eve dinner examples applicable across distances: \"bagels with honey\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-078",
+  "name": "Kitchari race-week dinner (rice, dal & ghee)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "moong dal, cooked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "ghee",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "ghee→oil for vegan",
+  "approx_macros": "~550 kcal · 85g C · 18g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/international-endurance-superfoods/ ; Triathlete",
+  "evidence": "\"Kitchari is fast becoming the Indian triathletes' favorite race-week food\" — Chaitanya Velhal, head coach, Power Peaks Athlete Lab, who won a 24-hour ultra-endurance bike race fueled on 3-4 kg of kitchari",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-079",
+  "name": "Rice, grilled chicken, roasted vegetables, olive oil & grated cheese",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted vegetables",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil & grated mild cheese",
+    "qty": "1 tbsp + 20 g",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "cheese→dairy-free",
+  "approx_macros": "~750 kcal · 90g C · 45g P · 22g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/pros-favorite-no-pasta-pre-race-dinners/ ; Triathlete — Pros' Favorite No-Pasta Pre-Race Dinners",
+  "evidence": "A 2010 Ironman UK winner is reported to favor \"a plate of white rice and grilled chicken with simple roasted veggies, olive oil and grated mild cheese\" the night before racing",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-d-080",
+  "name": "Plain chicken and rice (Ironman champion's race-eve staple)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, plain-cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "keep seasoning minimal per source guidance",
+  "approx_macros": "~550 kcal · 90g C · 38g P · 6g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/pros-favorite-no-pasta-pre-race-dinners/ ; Triathlete — Pros' Favorite No-Pasta Pre-Race Dinners",
+  "evidence": "\"A four-time Ironman North American Champion typically sticks with plain chicken and rice the night before, as it's a meal they can make most places with minimal stress and know it will sit well\" — cited as both the champion's race-eve staple and travel-day fallback",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-d-081",
+  "name": "Pasta with tomato sauce, side salad & bread roll",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tomato sauce",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "bread roll",
+    "qty": "1",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch + sauce + veg + starch",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add grilled chicken for protein",
+  "approx_macros": "~700 kcal · 120g C · 18g P · 10g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.cbsnews.com/newyork/news/thousands-pack-the-carbs-in-marathons-pasta-fest/ ; CBS News — Thousands Pack the Carbs in Marathon's Pasta-Fest",
+  "evidence": "Describes the pre-marathon pasta dinner tradition where \"runners often gather for a pasta dinner the night before a race to eat carbohydrates and socialize\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-082",
+  "name": "Rice or pasta with grilled chicken breast & vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rice or pasta, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "steamed vegetables",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap chicken for grilled fish or tofu",
+  "approx_macros": "~650 kcal · 85g C · 42g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://runnersconnect.net/pre-race-marathon-nutrition/ ; RunnersConnect — What to Eat Before a Marathon",
+  "evidence": "Recommended as the sports-dietitian race-eve template: 60-90g carbohydrate and 20-30g protein the evening before a marathon, built around rice/pasta with grilled protein and vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-083",
+  "name": "Rice, grilled fish & steamed vegetables (race-week, low fiber)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "white fish, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "steamed vegetables (peeled, low-fiber)",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~600 kcal · 75g C · 38g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/a-7-day-race-week-meal-plan-for-triathletes/ ; Triathlete — A 7-Day Race-Week Meal Plan for Triathletes",
+  "evidence": "Race-week dinners are built around low-fiber, familiar carb-plus-protein plates the athlete has already tested in training",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-084",
+  "name": "Grilled chicken, sweet potato & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled fish",
+  "approx_macros": "~600 kcal · 60g C · 42g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/how-to-fuel-for-your-first-race/ ; Triathlete — How to Fuel for Your First Triathlon",
+  "evidence": "Presented as a standard race-week dinner combination of lean grilled protein, a starchy carb, and a familiar cooked vegetable",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-085",
+  "name": "Shrimp tacos with corn tortillas & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "shrimp, grilled",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn tortillas",
+    "qty": "3 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 medium",
+    "role": "fat"
+   },
+   {
+    "food": "cabbage slaw",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + fat + veg",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "shrimp→grilled chicken or black beans",
+  "approx_macros": "~550 kcal · 50g C · 30g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.espn.com/espnw/life-style/article/15447798/what-athletes-eat-triathlete-beth-gerdes-training-friendly-shrimp-tacos ; ESPN espnW — What Athletes Eat: Triathlete Beth Gerdes",
+  "evidence": "Triathlete Beth Gerdes's \"training-friendly shrimp tacos\" are documented as her go-to weeknight/race-week dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-086",
+  "name": "Roti, dal & curd (race-week taper)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "roti (whole wheat flatbread)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "dal (lentil curry)",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + protein + dairy",
+  "context": [
+   "race-week",
+   "carb-load"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "roti→rice for gluten-free taper meal",
+  "approx_macros": "~550 kcal · 75g C · 22g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "The dal-and-flatbread-and-curd pattern is documented as the standard Indian runner recovery/taper dinner during race preparation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-087",
+  "name": "White rice, grilled chicken breast, side salad & dinner roll",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "dinner roll",
+    "qty": "1",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch + protein + veg + starch",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "skip the roll for a lower-carb version",
+  "approx_macros": "~650 kcal · 90g C · 42g P · 12g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.mymottiv.com/how-to-train-for-a-triathlon/what-to-eat-night-before-triathlon ; Mymottiv — What to Eat the Night Before a Triathlon",
+  "evidence": "Listed as a common restaurant-order combination recommended for the night before a triathlon: \"white rice, grilled chicken, side salad, dinner roll, and water\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-088",
+  "name": "Rice, grilled salmon & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "salmon, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted vegetables (carrot, zucchini)",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken",
+  "approx_macros": "~650 kcal · 70g C · 40g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/a-7-day-race-week-meal-plan-for-triathletes/ ; Triathlete — A 7-Day Race-Week Meal Plan for Triathletes",
+  "evidence": "Fish-and-rice dinners with roasted vegetables are among the recommended race-week dinners in the 7-day plan, chosen for being familiar, easy to digest and nutrient-dense",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-089",
+  "name": "Outback Steakhouse: romaine salad, grilled chicken & sweet potato",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "romaine salad",
+    "qty": "1 side",
+    "role": "veg"
+   },
+   {
+    "food": "grilled chicken breast",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, baked",
+    "qty": "1 (250 g)",
+    "role": "starch"
+   },
+   {
+    "food": "BBQ sauce, for dipping",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + starch + sauce",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "skip BBQ sauce to reduce sugar",
+  "approx_macros": "~600 kcal · 60g C · 42g P · 14g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/pros-favorite-no-pasta-pre-race-dinners/ ; Triathlete — Pros' Favorite No-Pasta Pre-Race Dinners",
+  "evidence": "\"Some Ironman athletes favor Outback Steakhouse for pre-race dinners, ordering items like romaine salad and grilled chicken breast with barbecue sauce for dipping along with sweet potato\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-d-090",
+  "name": "White rice, grilled chicken, side salad, dinner roll & water",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "dinner roll",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "water",
+    "qty": "500 ml",
+    "role": "drink"
+   }
+  ],
+  "pattern": "starch + protein + veg + starch + drink",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "any generic restaurant can assemble this order",
+  "approx_macros": "~650 kcal · 90g C · 40g P · 12g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.mymottiv.com/how-to-train-for-a-triathlon/what-to-eat-night-before-triathlon ; Mymottiv",
+  "evidence": "Listed explicitly as \"common pre-race restaurant meal recommendations\" for travelling triathletes: rice, grilled chicken, side salad, roll, water",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-091",
+  "name": "Grilled steak, mashed potato & green beans (travel order)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mashed potato",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed green beans",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "steak→grilled chicken (the team's more common protein)",
+  "approx_macros": "~700 kcal · 60g C · 40g P · 28g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.cyclist.co.uk/in-depth/team-sky-recipes-for-cycling-success ; Cyclist.co.uk — Team Sky Recipes for Cycling Success",
+  "evidence": "\"Carbohydrates, such as pasta, rice and potatoes, are key... Lean protein, preferably oven-baked or grilled\" — the pro-cyclist dinner formula, built to travel because any protein can be swapped in",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-092",
+  "name": "Grilled chicken, quinoa & steamed vegetables (travel order)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed vegetables (mixed)",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled fish or tofu",
+  "approx_macros": "~600 kcal · 65g C · 42g P · 14g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/a-7-day-race-week-meal-plan-for-triathletes/ ; Triathlete — A 7-Day Race-Week Meal Plan for Triathletes",
+  "evidence": "Grilled-protein-plus-whole-grain-plus-vegetable orders are the recommended fallback race-week travel dinner when an athlete's usual kitchen isn't available",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-093",
+  "name": "Grilled steak, rice & steamed vegetables (hotel restaurant order)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed vegetables",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "steak→grilled chicken or fish",
+  "approx_macros": "~700 kcal · 70g C · 45g P · 22g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/race-fueling/a-7-day-race-week-meal-plan-for-triathletes/ ; Triathlete — A 7-Day Race-Week Meal Plan for Triathletes",
+  "evidence": "Simple grilled-protein-plus-rice-plus-vegetable orders are the recommended fallback for race-week travel dinners when an athlete's usual kitchen isn't available",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-094",
+  "name": "Sushi platter & miso soup (travel dinner)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "assorted sushi (nigiri & maki)",
+    "qty": "10 pieces",
+    "role": "protein"
+   },
+   {
+    "food": "miso soup",
+    "qty": "1 bowl",
+    "role": "other"
+   },
+   {
+    "food": "edamame",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + other + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "shellfish",
+   "soy"
+  ],
+  "swaps": "choose vegetable/egg maki for a fish-free version",
+  "approx_macros": "~600 kcal · 80g C · 30g P · 10g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.triathlete.com/nutrition/international-endurance-superfoods/ ; Triathlete",
+  "evidence": "Cited as Molly Seidel's choice the night before her Tokyo Olympics marathon — sushi as a reliable, easy-to-find travel dinner in sushi-friendly race host cities",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-095",
+  "name": "Grilled fish, rice & side salad (travel-safe order)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white fish, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "fish→grilled chicken",
+  "approx_macros": "~550 kcal · 70g C · 38g P · 10g F",
+  "prep": "0 min (restaurant order)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/pre-race-marathon-nutrition/ ; RunnersConnect — What to Eat Before a Marathon",
+  "evidence": "Grilled fish or chicken with plain rice and a small salad is recommended as the safest travel/restaurant race-eve order — familiar, low-fat, low-fiber",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-096",
+  "name": "Grilled chicken, rice & roasted vegetables (post-long-run recovery)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted vegetables (carrot, zucchini, pepper)",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled tofu",
+  "approx_macros": "~700 kcal · 78g C · 45g P · 16g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.campfireendurance.com/blog/nutrition-for-beginner-triathlete ; Campfire Endurance Coaching",
+  "evidence": "\"A balanced meal for a triathlete consists of carbohydrates...proteins...and fats\" — the standard post-long-session recovery template of grilled protein, a starch and roasted vegetables",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-097",
+  "name": "Salmon, rice & steamed broccoli (omega-3 recovery dinner)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed broccoli",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken",
+  "approx_macros": "~650 kcal · 70g C · 40g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.recoveryforathletes.com/blogs/recovery-for-athletes-blog/mediterranean-diet-for-athletes-boost-performance-health-and-longevity ; Recovery for Athletes",
+  "evidence": "\"Salmon and sardines are loaded with omega-3s, which have been shown to reduce muscle soreness and improve recovery time\" — recommended as a post-session recovery protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-098",
+  "name": "Stir-fried beef, rice & mixed vegetables (recovery)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "beef, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "mixed stir-fried vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "beef→tofu or chicken",
+  "approx_macros": "~700 kcal · 80g C · 42g P · 18g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://asianathletepantry.substack.com/p/from-rice-bowl-to-podium-part-2 ; Asian Athlete Pantry",
+  "evidence": "\"A simple bowl of noodles [or rice] with protein, carb, and veggies provides everything needed in one bowl after a long training run\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-099",
+  "name": "Paneer, rice & curd (vegetarian recovery)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "paneer, pan-seared",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "curd (plain yogurt)",
+    "qty": "100 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + starch + dairy",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "paneer→tofu for vegan; rice→roti (the source's original starch)",
+  "approx_macros": "~650 kcal · 80g C · 28g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runpundit.com/blog/running-diet-plan-indian-runners ; Runpundit",
+  "evidence": "\"...or paneer and roti to replenish glycogen and assist muscle repair\" listed among the standard Indian post-run recovery combos; rice is the stated swap for roti",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-d-100",
+  "name": "Rice, grilled tofu & stir-fried greens (vegan recovery)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "tofu, grilled or pan-fried",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "stir-fried mixed greens",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "chinese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu→tempeh",
+  "approx_macros": "~600 kcal · 85g C · 28g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://asianathletepantry.substack.com/p/from-rice-bowl-to-podium-part-2 ; Asian Athlete Pantry",
+  "evidence": "\"Soy braised tofu with mixed mushrooms over rice\" and similar tofu-rice-vegetable bowls are listed as the plant-based post-training recovery option in the Asian Athlete Pantry rice-bowl roundup",
+  "reconstructed_from_snippet": false
+ }
+]

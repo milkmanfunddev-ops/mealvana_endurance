@@ -1,0 +1,12 @@
+{
+  "kind": "choices",
+  "question": "Cook once and eat it across the week, or cook most nights?",
+  "options": [
+    "Batch cook",
+    "Cook most nights"
+  ],
+  "details": [
+    "One Sunday session, less weeknight time",
+    "Fresher plates, more evenings in the kitchen"
+  ]
+}

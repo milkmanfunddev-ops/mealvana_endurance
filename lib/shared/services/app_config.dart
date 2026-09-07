@@ -36,6 +36,8 @@ class AppConfig {
     this.revenueCatApiKeyTest = '',
     this.describeMealEnabled = true,
     this.coachInsightsEnabled = false,
+    this.proGateEnabled = true,
+    this.proPurchaseEnabled = false,
     this.analyticsDevEnabled = false,
     this.enableDebugLogging = false,
     this.enableSentryProfiling = false,
@@ -155,6 +157,26 @@ class AppConfig {
   /// Defaults off for the same fail-closed cost protection as
   /// [describeMealEnabled].
   final bool coachInsightsEnabled;
+
+  /// Whether Pro-only surfaces (meal planning: `/food/*`, `/vana/*`) require
+  /// an active Pro subscription on the CLIENT.
+  ///
+  /// `PRO_GATE_ENABLED`. Falls back to **false on dev builds** (everyone sees
+  /// Food on dev — not a hide-flag, dev ships visible) and **true on prod**,
+  /// where the feature launches dark behind the paywall until the paywall
+  /// design lands. codemagic.yaml forces `false` on dev builds and fails a
+  /// prod build that omits the key. The server row (`user_entitlements`) is
+  /// the real paywall; this flag is UX only.
+  /// See docs/implement_mealplanning/04-entitlement.md.
+  final bool proGateEnabled;
+
+  /// Whether the Pro screen's Buy buttons are live.
+  ///
+  /// `PRO_PURCHASE_ENABLED`, fallback `false` everywhere: the App Review
+  /// screenshot of the paywall has not been uploaded yet, so the store
+  /// subscriptions stay un-submitted and the screen shows real prices with
+  /// purchasing disabled. Restore is always available.
+  final bool proPurchaseEnabled;
 
   /// Platform-appropriate RevenueCat public API key.
   ///
@@ -335,6 +357,17 @@ class AppConfig {
             fallback: isDevMode ? 'true' : 'false',
           ) ==
           'true',
+      // Pro gate: OPEN on dev (fallback false), CLOSED on prod (fallback
+      // true). Opposite polarity from the AI flags above on purpose — the
+      // flag means "enforce the paywall", and prod must fail closed.
+      proGateEnabled:
+          dotenv.get(
+            'PRO_GATE_ENABLED',
+            fallback: isDevMode ? 'false' : 'true',
+          ) ==
+          'true',
+      proPurchaseEnabled:
+          dotenv.get('PRO_PURCHASE_ENABLED', fallback: 'false') == 'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,
@@ -376,6 +409,8 @@ class AppConfig {
     bool aiCreditsEnabled = false,
     bool describeMealEnabled = true,
     bool coachInsightsEnabled = true,
+    bool proGateEnabled = true,
+    bool proPurchaseEnabled = false,
     bool analyticsDevEnabled = false,
     bool enableDebugLogging = true,
     bool enableSentryProfiling = false,
@@ -414,6 +449,8 @@ class AppConfig {
       aiCreditsEnabled: aiCreditsEnabled,
       describeMealEnabled: describeMealEnabled,
       coachInsightsEnabled: coachInsightsEnabled,
+      proGateEnabled: proGateEnabled,
+      proPurchaseEnabled: proPurchaseEnabled,
       analyticsDevEnabled: analyticsDevEnabled,
       enableDebugLogging: enableDebugLogging,
       enableSentryProfiling: enableSentryProfiling,
@@ -606,6 +643,17 @@ class AppConfig {
           const String.fromEnvironment('COACH_INSIGHTS_ENABLED') != ''
           ? const String.fromEnvironment('COACH_INSIGHTS_ENABLED') == 'true'
           : isDevMode,
+      // Same polarity as fromEnv: an absent define enforces the gate on prod
+      // and opens it on dev.
+      proGateEnabled: const String.fromEnvironment('PRO_GATE_ENABLED') != ''
+          ? const String.fromEnvironment('PRO_GATE_ENABLED') == 'true'
+          : !isDevMode,
+      proPurchaseEnabled:
+          const String.fromEnvironment(
+            'PRO_PURCHASE_ENABLED',
+            defaultValue: 'false',
+          ) ==
+          'true',
 
       // Debug settings
       enableDebugLogging: kDebugMode,

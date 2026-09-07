@@ -1,0 +1,1229 @@
+<!-- @dsCard group="Chat" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mealvana Kyle - Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sansita:wght@400;700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== tokens.css (inlined) ===== */
+/* ==========================================================================
+   Mealvana Endurance - Kyle Design System tokens
+   Lifted verbatim from:
+     lib/theme/kyle_design/app_colors.dart      (AppColors)
+     lib/theme/kyle_design/app_spacing.dart     (AppSpacing / AppRadius / AppShadows / AppIconSizes / AppSizes)
+     lib/theme/kyle_design/app_text_styles.dart (AppTextStyles)
+     lib/theme/kyle_design/app_theme.dart       (AppTheme.darkTheme / lightTheme ColorScheme)
+   Every value is the exact Dart constant. Nothing is rounded.
+   Default theme is DARK. Add data-theme="light" on any ancestor for the light ColorScheme.
+   ========================================================================== */
+
+:root {
+  /* ---- Font families (AppTextStyles.sansita / compadre / apercu) ----
+     Apercu and Compadre are bundled in assets/fonts/ for the app but are not
+     web-licensed here, so they fall back. Sansita is served by Google Fonts. */
+  --font-sansita: "Sansita", Georgia, serif;
+  --font-apercu: "Apercu", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-compadre: "Compadre", "Archivo", sans-serif;
+
+  /* ---- AppColors: core ---- */
+  --color-blackberry: #381633;
+  --color-blackberry-light: #4A2143;
+  --color-blackberry-dark: #2D1535;
+  --color-input-background: #5A3366;
+  --color-cream: #F8F6EB;
+  --color-cream-dark: #E8E6E0;
+  --color-orange: #F78B14;
+  --color-orange-light: #FFA05A;
+  --color-orange-dark: #E67A2E;
+  --color-electrolyte: #1CF9CF;
+  --color-electrolyte-light: #7FEEE0;
+  --color-electrolyte-dark: #3FD4C0;
+  --color-dragonfruit: #DC2597;
+  --color-dragonfruit-light: #F060A8;
+  --color-dragonfruit-dark: #D0357E;
+
+  /* ---- AppColors: semantic (aliases in Dart) ---- */
+  --color-success: var(--color-electrolyte);
+  --color-error: var(--color-dragonfruit);
+  --color-warning: var(--color-orange);
+  --color-info: var(--color-electrolyte);
+
+  /* ---- AppColors: neutral ---- */
+  --color-inactive: #9B8AA3;
+  --color-disabled: #6B5C6F;
+
+  /* ---- AppColors: text ---- */
+  --color-text-light: #381633;
+  --color-text-light-secondary: #666666;
+  --color-text-dark: #F8F6EB;
+  --color-text-dark-secondary: #CCCCCC;
+
+  /* ---- AppColors: borders ---- */
+  --color-border-light: #381633;
+  --color-border-light-secondary: #E0E0E0;
+  --color-border-dark: #F8F6EB;
+  --color-border-dark-secondary: #333333;
+
+  /* ---- AppColors: surfaces ---- */
+  --color-surface-light: #FFFFFF;
+  --color-surface-light-secondary: #F9F9F9;
+  --color-surface-dark: #4A2143;
+  --color-surface-dark-secondary: #3A1835;
+
+  /* ---- RGB triplets for withValues(alpha:) / withOpacity() ---- */
+  --rgb-blackberry: 56, 22, 51;
+  --rgb-cream: 248, 246, 235;
+  --rgb-orange: 247, 139, 20;
+  --rgb-electrolyte: 28, 249, 207;
+  --rgb-dragonfruit: 220, 37, 151;
+  --rgb-white: 255, 255, 255;
+  --rgb-black: 0, 0, 0;
+
+  /* ---- Flutter Material literals the widgets use directly (not AppColors) ---- */
+  --color-material-orange: #FF9800;     /* Colors.orange   (primary_button, add_food_button, plus_minus_control, text_field focus) */
+  --color-material-white: #FFFFFF;      /* Colors.white    (phase_tab_bar active text, snackbar error text, switch thumb) */
+  --color-material-white12: rgba(255, 255, 255, 0.12); /* Colors.white12 (_TabBar / _TypeChip track) */
+  --color-material-white24: rgba(255, 255, 255, 0.24); /* Colors.white24 (_OutlineButton border) */
+  --color-material-white60: rgba(255, 255, 255, 0.60); /* Colors.white60 (meal_log_row subtitle, dark) */
+  --color-material-black12: rgba(0, 0, 0, 0.12);       /* Colors.black12 (_OutlineButton border, light) */
+
+  /* ---- Feature palette constants referenced by the reused widgets ---- */
+  --color-macro-carbs: var(--color-electrolyte-dark);  /* kMacroColorCarbs   (macro_palette.dart) */
+  --color-macro-protein: #8E6FD8;                      /* kMacroColorProtein (macro_palette.dart) */
+  --color-macro-fat: var(--color-dragonfruit);         /* kMacroColorFat     (macro_palette.dart) */
+  --rgb-macro-protein: 142, 111, 216;
+  --color-slot-breakfast: var(--color-orange);         /* slotColor() slot_palette.dart */
+  --color-slot-lunch: var(--color-electrolyte-dark);
+  --color-slot-dinner: #8E6FD8;
+  --color-slot-snack: var(--color-dragonfruit);
+  --color-slot-untagged: #9E9E9E;
+
+  /* ---- AppSpacing (8pt grid) ---- */
+  --space-unit: 8px;
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-xxxl: 40px;
+  --space-huge: 48px;
+
+  /* AppSpacing.* EdgeInsets presets */
+  --padding-screen: 16px;                 /* screenPadding: EdgeInsets.all(md) */
+  --padding-card: 16px;                   /* cardPadding: EdgeInsets.all(md) */
+  --padding-button: 12px 24px;            /* buttonPadding: symmetric(horizontal: xl, vertical: sm) */
+  --padding-list-item: 12px 16px;         /* listItemPadding: symmetric(horizontal: md, vertical: sm) */
+  --padding-input: 16px 16px;             /* inputPadding: symmetric(horizontal: md, vertical: md) */
+  --padding-section: 20px 16px;           /* sectionPadding: symmetric(horizontal: md, vertical: lg) */
+
+  /* ---- AppRadius ---- */
+  --radius-xxs: 4px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-xxl: 32px;
+  --radius-circular: 999px;
+  --radius-button: 100px;                 /* buttonRadius (Figma: 100px fully rounded) */
+  --radius-card: 15px;                    /* cardRadius */
+  --radius-input: 15px;                   /* inputRadius */
+  --radius-activity-selector: 15px;       /* activitySelectorRadius */
+  --radius-segmented-control: 15px;       /* segmentedControlRadius */
+
+  /* ---- AppShadows ---- */
+  --shadow-light-card: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-light-elevated: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-dark-card: none;
+  --shadow-dark-elevated: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+  /* ---- AppIconSizes ---- */
+  --icon-xxs: 12px;
+  --icon-xs: 16px;
+  --icon-sm: 20px;
+  --icon-md: 24px;
+  --icon-lg: 32px;
+  --icon-xl: 48px;
+  --icon-xxl: 64px;
+  --icon-tab-bar: 24px;
+  --icon-list-item: 24px;
+  --icon-button: 20px;
+  --icon-food: 36px;
+  --icon-activity: 36px;
+  --icon-control: 20px;
+  --icon-info: 20px;
+  --icon-chevron: 20px;
+
+  /* ---- AppSizes ---- */
+  --size-button-height-primary: 56px;
+  --size-button-icon: 48px;
+  --size-control: 36px;
+  --size-input-height: 46px;
+  --size-activity-selector-width: 62px;
+  --size-activity-selector-height: 74px;
+  --size-icon-container: 36px;
+  --size-calendar-day-cell-min: 48px;
+  --size-event-dot: 6px;
+
+  /* ---- AppTextStyles (family / size / weight / line-height / letter-spacing) ---- */
+  --text-page-title-family: var(--font-sansita);
+  --text-page-title-size: 28px;
+  --text-page-title-weight: 700;
+  --text-page-title-line-height: 1.2;
+
+  --text-section-title-family: var(--font-sansita);
+  --text-section-title-size: 20px;
+  --text-section-title-weight: 700;
+  --text-section-title-line-height: 1.3;
+
+  --text-date-time-family: var(--font-sansita);
+  --text-date-time-size: 24px;
+  --text-date-time-weight: 700;
+  --text-date-time-line-height: 1.2;
+
+  --text-date-picker-header-family: var(--font-apercu);
+  --text-date-picker-header-size: 18px;
+  --text-date-picker-header-weight: 700;
+  --text-date-picker-header-line-height: 1.2;
+
+  --text-activity-title-family: var(--font-compadre);
+  --text-activity-title-size: 18px;
+  --text-activity-title-weight: 400;
+  --text-activity-title-line-height: 1.3;
+  --text-activity-title-letter-spacing: 0.5px;
+
+  --text-subtitle-family: var(--font-compadre);
+  --text-subtitle-size: 16px;
+  --text-subtitle-weight: 400;
+  --text-subtitle-line-height: 1.4;
+  --text-subtitle-letter-spacing: 0.5px;
+
+  --text-descriptor-family: var(--font-compadre);
+  --text-descriptor-size: 14px;
+  --text-descriptor-weight: 400;
+  --text-descriptor-line-height: 1.4;
+  --text-descriptor-letter-spacing: 0.5px;
+
+  --text-food-title-family: var(--font-apercu);
+  --text-food-title-size: 14px;
+  --text-food-title-weight: 500;
+  --text-food-title-line-height: 1.3;
+  --text-food-title-letter-spacing: 0;
+
+  --text-body-large-family: var(--font-apercu);
+  --text-body-large-size: 16px;
+  --text-body-large-weight: 400;
+  --text-body-large-line-height: 1.5;
+
+  --text-body-medium-family: var(--font-apercu);
+  --text-body-medium-size: 14px;
+  --text-body-medium-weight: 400;
+  --text-body-medium-line-height: 1.5;
+
+  --text-body-small-family: var(--font-apercu);
+  --text-body-small-size: 12px;
+  --text-body-small-weight: 400;
+  --text-body-small-line-height: 1.5;
+
+  --text-data-number-family: var(--font-apercu);
+  --text-data-number-size: 32px;
+  --text-data-number-weight: 600;
+  --text-data-number-line-height: 1.2;
+
+  --text-data-number-large-family: var(--font-apercu);
+  --text-data-number-large-size: 48px;
+  --text-data-number-large-weight: 700;
+  --text-data-number-large-line-height: 1.2;
+
+  --text-input-text-family: var(--font-apercu);
+  --text-input-text-size: 16px;
+  --text-input-text-weight: 400;
+  --text-input-text-line-height: 1.4;
+
+  --text-small-label-family: var(--font-apercu);
+  --text-small-label-size: 12px;
+  --text-small-label-weight: 500;
+  --text-small-label-line-height: 1.3;
+
+  --text-button-primary-family: var(--font-sansita);
+  --text-button-primary-size: 16px;
+  --text-button-primary-weight: 700;
+  --text-button-primary-line-height: 1.2;
+
+  --text-button-tertiary-family: var(--font-apercu);
+  --text-button-tertiary-size: 14px;
+  --text-button-tertiary-weight: 500;
+  --text-button-tertiary-line-height: 1.2;
+
+  --text-segmented-control-family: var(--font-sansita);
+  --text-segmented-control-size: 12px;
+  --text-segmented-control-weight: 700;
+  --text-segmented-control-line-height: 1.2;
+
+  --text-tab-selector-family: var(--font-apercu);
+  --text-tab-selector-size: 12px;
+  --text-tab-selector-weight: 500;
+  --text-tab-selector-line-height: 1.3;
+  --text-tab-selector-letter-spacing: 0.5px;
+
+  --text-calendar-day-family: var(--font-apercu);
+  --text-calendar-day-size: 16px;
+  --text-calendar-day-weight: 400;
+  --text-calendar-day-line-height: 1.2;
+
+  --text-calendar-day-letter-family: var(--font-apercu);
+  --text-calendar-day-letter-size: 12px;
+  --text-calendar-day-letter-weight: 500;
+  --text-calendar-day-letter-line-height: 1.3;
+  --text-calendar-day-letter-letter-spacing: 0.5px;
+
+  --text-macro-label-family: var(--font-apercu);
+  --text-macro-label-size: 10px;
+  --text-macro-label-weight: 500;
+  --text-macro-label-line-height: 1.3;
+  --text-macro-label-letter-spacing: 0.5px;
+
+  --text-nutrition-fact-family: var(--font-apercu);
+  --text-nutrition-fact-size: 10px;
+  --text-nutrition-fact-weight: 500;
+  --text-nutrition-fact-line-height: 1.3;
+  --text-nutrition-fact-letter-spacing: 0.5px;
+
+  /* Widget-local text style not in AppTextStyles: SectionHeaderText (typography/section_header_text.dart) */
+  --text-section-header-family: var(--font-sansita);
+  --text-section-header-size: 17px;
+  --text-section-header-weight: 700;
+  --text-section-header-line-height: 1.2;
+
+  /* ---- Theme ColorScheme (AppTheme.darkTheme is the default) ---- */
+  --theme-scaffold-background: var(--color-blackberry);           /* scaffoldBackgroundColor */
+  --theme-surface: var(--color-surface-dark);                     /* colorScheme.surface              #4A2143 */
+  --theme-on-surface: var(--color-text-dark);                     /* colorScheme.onSurface            #F8F6EB */
+  --theme-on-surface-variant: var(--color-text-dark-secondary);   /* colorScheme.onSurfaceVariant     #CCCCCC */
+  --theme-outline: var(--color-border-dark);                      /* colorScheme.outline              #F8F6EB */
+  --theme-outline-variant: var(--color-text-dark);                /* colorScheme.outlineVariant: unset -> Flutter falls back to onBackground -> onSurface */
+  --theme-surface-container-highest: var(--color-blackberry);     /* colorScheme.surfaceContainerHighest #381633 */
+  --theme-primary: var(--color-orange);
+  --theme-secondary: var(--color-electrolyte);
+  --theme-error: var(--color-dragonfruit);
+  --theme-card-border: var(--color-border-dark-secondary);        /* cardTheme side: borderDarkSecondary #333333 */
+  --theme-divider: var(--color-border-dark-secondary);            /* dividerTheme */
+  --theme-input-border: var(--color-border-dark);                 /* inputDecorationTheme enabledBorder */
+  --theme-switch-track-selected: var(--color-electrolyte);
+  --theme-card-shadow: var(--shadow-dark-card);
+  --theme-elevated-shadow: var(--shadow-dark-elevated);
+
+  /* "isDark ? AppColors.cream : AppColors.blackberry" pair used by most widgets */
+  --theme-fg: var(--color-cream);
+  --theme-fg-inverse: var(--color-blackberry);
+  --rgb-theme-fg: var(--rgb-cream);
+  --rgb-theme-fg-inverse: var(--rgb-blackberry);
+  --rgb-theme-on-surface: var(--rgb-cream);
+  /* "isDark ? AppColors.blackberryLight : AppColors.surfaceLight" (chat bubbles, meal card, input bar) */
+  --theme-raised: var(--color-blackberry-light);
+}
+
+[data-theme="light"] {
+  --theme-scaffold-background: var(--color-cream);
+  --theme-surface: var(--color-surface-light);                    /* #FFFFFF */
+  --theme-on-surface: var(--color-text-light);                    /* #381633 */
+  --theme-on-surface-variant: var(--color-text-light-secondary);  /* #666666 */
+  --theme-outline: var(--color-border-light);                     /* #381633 */
+  --theme-outline-variant: var(--color-text-light);               /* fallback -> onSurface #381633 */
+  --theme-surface-container-highest: var(--color-cream);          /* #F8F6EB */
+  --theme-card-border: var(--color-border-light-secondary);       /* #E0E0E0 */
+  --theme-divider: var(--color-border-light-secondary);
+  --theme-input-border: var(--color-border-light);
+  --theme-switch-track-selected: var(--color-electrolyte-dark);
+  --theme-card-shadow: var(--shadow-light-card);
+  --theme-elevated-shadow: var(--shadow-light-elevated);
+
+  --theme-fg: var(--color-blackberry);
+  --theme-fg-inverse: var(--color-cream);
+  --rgb-theme-fg: var(--rgb-blackberry);
+  --rgb-theme-fg-inverse: var(--rgb-cream);
+  --rgb-theme-on-surface: var(--rgb-blackberry);
+  --theme-raised: var(--color-surface-light);
+}
+
+/* ===== kyle.css (inlined) ===== */
+/* ==========================================================================
+   Mealvana Endurance - Kyle component classes
+   Each class reproduces one Flutter widget under lib/shared/widgets/kyle_design/
+   (or one of the feature widgets the meal-planning design reuses). Every value
+   comes from tokens.css; the Dart file and exact values are quoted per block.
+   Flutter defines no hover state, so none is styled here. Pressed/disabled are
+   styled only where the widget defines them.
+   ========================================================================== */
+
+/* ---- Text style utilities (AppTextStyles) ---------------------------- */
+.t-page-title      { font: var(--text-page-title-weight) var(--text-page-title-size)/var(--text-page-title-line-height) var(--text-page-title-family); }
+.t-section-title   { font: var(--text-section-title-weight) var(--text-section-title-size)/var(--text-section-title-line-height) var(--text-section-title-family); }
+.t-date-time       { font: var(--text-date-time-weight) var(--text-date-time-size)/var(--text-date-time-line-height) var(--text-date-time-family); }
+.t-date-picker-header { font: var(--text-date-picker-header-weight) var(--text-date-picker-header-size)/var(--text-date-picker-header-line-height) var(--text-date-picker-header-family); }
+.t-activity-title  { font: var(--text-activity-title-weight) var(--text-activity-title-size)/var(--text-activity-title-line-height) var(--text-activity-title-family); letter-spacing: var(--text-activity-title-letter-spacing); }
+.t-subtitle        { font: var(--text-subtitle-weight) var(--text-subtitle-size)/var(--text-subtitle-line-height) var(--text-subtitle-family); letter-spacing: var(--text-subtitle-letter-spacing); }
+.t-descriptor      { font: var(--text-descriptor-weight) var(--text-descriptor-size)/var(--text-descriptor-line-height) var(--text-descriptor-family); letter-spacing: var(--text-descriptor-letter-spacing); }
+.t-food-title      { font: var(--text-food-title-weight) var(--text-food-title-size)/var(--text-food-title-line-height) var(--text-food-title-family); letter-spacing: var(--text-food-title-letter-spacing); }
+.t-body-large      { font: var(--text-body-large-weight) var(--text-body-large-size)/var(--text-body-large-line-height) var(--text-body-large-family); }
+.t-body-medium     { font: var(--text-body-medium-weight) var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); }
+.t-body-small      { font: var(--text-body-small-weight) var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family); }
+.t-data-number     { font: var(--text-data-number-weight) var(--text-data-number-size)/var(--text-data-number-line-height) var(--text-data-number-family); }
+.t-data-number-large { font: var(--text-data-number-large-weight) var(--text-data-number-large-size)/var(--text-data-number-large-line-height) var(--text-data-number-large-family); }
+.t-input-text      { font: var(--text-input-text-weight) var(--text-input-text-size)/var(--text-input-text-line-height) var(--text-input-text-family); }
+.t-small-label     { font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.t-button-primary  { font: var(--text-button-primary-weight) var(--text-button-primary-size)/var(--text-button-primary-line-height) var(--text-button-primary-family); }
+.t-button-tertiary { font: var(--text-button-tertiary-weight) var(--text-button-tertiary-size)/var(--text-button-tertiary-line-height) var(--text-button-tertiary-family); }
+.t-segmented-control { font: var(--text-segmented-control-weight) var(--text-segmented-control-size)/var(--text-segmented-control-line-height) var(--text-segmented-control-family); }
+.t-tab-selector    { font: var(--text-tab-selector-weight) var(--text-tab-selector-size)/var(--text-tab-selector-line-height) var(--text-tab-selector-family); letter-spacing: var(--text-tab-selector-letter-spacing); }
+.t-calendar-day    { font: var(--text-calendar-day-weight) var(--text-calendar-day-size)/var(--text-calendar-day-line-height) var(--text-calendar-day-family); }
+.t-calendar-day-letter { font: var(--text-calendar-day-letter-weight) var(--text-calendar-day-letter-size)/var(--text-calendar-day-letter-line-height) var(--text-calendar-day-letter-family); letter-spacing: var(--text-calendar-day-letter-letter-spacing); }
+.t-macro-label     { font: var(--text-macro-label-weight) var(--text-macro-label-size)/var(--text-macro-label-line-height) var(--text-macro-label-family); letter-spacing: var(--text-macro-label-letter-spacing); }
+.t-nutrition-fact  { font: var(--text-nutrition-fact-weight) var(--text-nutrition-fact-size)/var(--text-nutrition-fact-line-height) var(--text-nutrition-fact-family); letter-spacing: var(--text-nutrition-fact-letter-spacing); }
+
+/* ---- Shared reset for button-like elements ---- */
+.k-btn-primary, .k-btn-secondary, .k-btn-tertiary, .k-btn-add-food, .k-btn-circular,
+.k-segmented__item, .k-selection, .k-choice, .k-filter-chip, .k-phase-tab, .k-tab-pill__item,
+.k-type-chip, .k-preset-chip, .k-slot-select, .k-log-it, .k-send, .k-retry, .k-stepper__btn,
+.k-pill-slider__label, .k-nav-pill__btn, .k-outline-btn {
+  appearance: none; border: 0; background: none; margin: 0; cursor: pointer;
+  font-family: inherit; color: inherit; box-sizing: border-box; text-decoration: none;
+}
+.k-btn-primary:disabled, .k-btn-secondary:disabled, .k-btn-tertiary:disabled,
+.k-choice.is-disabled, .k-preset-chip.is-disabled, .k-stepper__btn:disabled { cursor: default; }
+
+/* =====================================================================
+   BUTTONS
+   ===================================================================== */
+
+/* KylePrimaryButton  (buttons/primary_button.dart)
+   SizedBox(height: AppSizes.buttonHeightPrimary = 56), ElevatedButton
+   backgroundColor: Colors.orange (#FF9800 - Material, NOT AppColors.orange)
+   foregroundColor: AppColors.textLight (#381633)
+   disabledBackgroundColor: Colors.orange.withOpacity(0.4), elevation 0
+   shape: AppRadius.buttonRadius (100), padding: AppSpacing.buttonPadding (12 24)
+   textStyle: AppTextStyles.buttonPrimary (Sansita 16/700/1.2)
+   icon: AppIconSizes.button (20) + SizedBox(width: xs = 8)
+   Small variant (KylePrimaryButtonSmall): height 40, isFullWidth false
+   Icon-only (KylePrimaryIconButton): 48x48, AppColors.orange (#F78B14), circular, icon size*0.5 */
+.k-btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  height: var(--size-button-height-primary); width: 100%;
+  padding: var(--padding-button);
+  background: var(--color-material-orange); color: var(--color-text-light);
+  border-radius: var(--radius-button);
+  font: var(--text-button-primary-weight) var(--text-button-primary-size)/var(--text-button-primary-line-height) var(--text-button-primary-family);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.k-btn-primary:disabled { background: rgba(255, 152, 0, 0.4); }
+.k-btn-primary--small { height: 40px; width: auto; }
+.k-btn-primary--inline { width: auto; }
+.k-btn-primary .k-icon { width: var(--icon-button); height: var(--icon-button); }
+.k-btn-primary--icon {
+  width: var(--size-button-icon); height: var(--size-button-icon); padding: 0;
+  background: var(--color-orange); border-radius: var(--radius-circular);
+}
+.k-btn-primary--icon:disabled { background: rgba(var(--rgb-orange), 0.4); }
+.k-btn-primary--icon .k-icon { width: 24px; height: 24px; } /* size * 0.5 */
+/* isLoading: 20x20 CircularProgressIndicator strokeWidth 2, color textLight */
+.k-spinner {
+  display: inline-block; width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: k-spin 1s linear infinite;
+}
+@keyframes k-spin { to { transform: rotate(360deg); } }
+
+/* KyleSecondaryButton  (buttons/secondary_button.dart)
+   OutlinedButton height 56, transparent bg, side: BorderSide(width: 2)
+   variant orange:     fg/border AppColors.orange (#F78B14)
+   variant blackberry: fg/border AppColors.textLight (#381633)
+   variant light:      fg/border colorScheme.onSurface
+   disabledForegroundColor: foreground.withOpacity(0.4)  (border is a fixed side -> stays)
+   radius 100, padding 12 24, text buttonPrimary. Small: height 44. Icon-only: 48 circle. */
+.k-btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  height: var(--size-button-height-primary); width: 100%;
+  padding: var(--padding-button);
+  background: transparent; color: var(--color-orange);
+  border: 2px solid var(--color-orange); border-radius: var(--radius-button);
+  font: var(--text-button-primary-weight) var(--text-button-primary-size)/var(--text-button-primary-line-height) var(--text-button-primary-family);
+  white-space: nowrap;
+}
+.k-btn-secondary:disabled { color: rgba(var(--rgb-orange), 0.4); }
+.k-btn-secondary--blackberry { color: var(--color-text-light); border-color: var(--color-text-light); }
+.k-btn-secondary--blackberry:disabled { color: rgba(var(--rgb-blackberry), 0.4); }
+.k-btn-secondary--light { color: var(--theme-on-surface); border-color: var(--theme-on-surface); }
+.k-btn-secondary--light:disabled { color: rgba(var(--rgb-theme-on-surface), 0.4); }
+.k-btn-secondary--small { height: 44px; width: auto; }
+.k-btn-secondary--inline { width: auto; }
+.k-btn-secondary .k-icon { width: var(--icon-button); height: var(--icon-button); }
+.k-btn-secondary--icon { width: var(--size-button-icon); height: var(--size-button-icon); padding: 0; border-radius: var(--radius-circular); }
+.k-btn-secondary--icon .k-icon { width: 24px; height: 24px; }
+
+/* KyleTertiaryButton  (buttons/tertiary_button.dart)
+   TextButton, transparent, foregroundColor AppColors.dragonfruit, disabled dragonfruit 0.4
+   shape AppRadius.smRadius (12), padding symmetric(horizontal: sm=12, vertical: xs=8)
+   textStyle buttonTertiary (Apercu 14/500/1.2); icon AppIconSizes.sm (20) + gap xs (8)
+   Underlined: TextDecoration.underline, decorationColor dragonfruit
+   Small: padding 8 4, text smallLabel (12/500/1.3), icon xs (16) + gap xxs (4)
+   Icon-only: icon md (24), padding sm (12), circular ink */
+.k-btn-tertiary {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent; color: var(--color-dragonfruit); border-radius: var(--radius-sm);
+  font: var(--text-button-tertiary-weight) var(--text-button-tertiary-size)/var(--text-button-tertiary-line-height) var(--text-button-tertiary-family);
+}
+.k-btn-tertiary:disabled { color: rgba(var(--rgb-dragonfruit), 0.4); }
+.k-btn-tertiary .k-icon { width: var(--icon-sm); height: var(--icon-sm); }
+.k-btn-tertiary--underlined { text-decoration: underline; text-decoration-color: var(--color-dragonfruit); }
+.k-btn-tertiary--small {
+  padding: var(--space-xxs) var(--space-xs); gap: var(--space-xxs);
+  font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family);
+}
+.k-btn-tertiary--small .k-icon { width: var(--icon-xs); height: var(--icon-xs); }
+.k-btn-tertiary--icon { padding: var(--space-sm); border-radius: var(--radius-circular); }
+.k-btn-tertiary--icon .k-icon { width: var(--icon-md); height: var(--icon-md); }
+
+/* KyleAddFoodButton  (buttons/add_food_button.dart)
+   Material transparent, radius buttonRadius (100), Container padding 12 16,
+   border Border.all(color: Colors.orange #FF9800, width 2),
+   FaIcon plus size controlIcon (20) color Colors.orange, gap sm (12),
+   text buttonPrimary.copyWith(color: Colors.orange, fontWeight: bold) */
+.k-btn-add-food {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: transparent; color: var(--color-material-orange);
+  border: 2px solid var(--color-material-orange); border-radius: var(--radius-button);
+  font: 700 var(--text-button-primary-size)/var(--text-button-primary-line-height) var(--text-button-primary-family);
+}
+.k-btn-add-food .k-icon { width: var(--icon-control); height: var(--icon-control); }
+.k-btn-add-food--full { display: flex; width: 100%; }
+
+/* CircularActionButton  (buttons/circular_action_button.dart)
+   size 42, iconSize 20, circle; bg param (transparent default) icon cream (dark) / blackberry (light) */
+.k-btn-circular {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; border-radius: 50%; background: transparent; color: var(--theme-fg);
+}
+.k-btn-circular .k-icon { width: 20px; height: 20px; }
+
+/* KyleSegmentedControl  (buttons/segmented_control.dart)
+   Container padding all xs (8); Row of Expanded _SegmentButton:
+   margin symmetric(horizontal: 1), padding symmetric(horizontal: md=16, vertical: sm=12)
+   border Border.all(color: isDark ? cream : blackberry, width 2), radius segmentedControlRadius (15)
+   selected fill: cream (dark) / blackberry (light); text segmentedControl (Sansita 12/700) w700
+   selected text blackberry (dark) / cream (light); unselected cream / blackberry. 200ms animation.
+   With-values variant: padding 12 12, second line smallLabel 10px, alpha 0.8 selected / 0.6 unselected */
+.k-segmented { display: flex; padding: var(--space-xs); box-sizing: border-box; }
+.k-segmented__item {
+  flex: 1 1 0; margin: 0 1px; padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--theme-fg); border-radius: var(--radius-segmented-control);
+  background: transparent; color: var(--theme-fg); text-align: center;
+  font: var(--text-segmented-control-weight) var(--text-segmented-control-size)/var(--text-segmented-control-line-height) var(--text-segmented-control-family);
+  transition: background-color 200ms, color 200ms;
+}
+.k-segmented__item.is-selected { background: var(--theme-fg); color: var(--theme-fg-inverse); }
+.k-segmented--values .k-segmented__item { padding: var(--space-sm) var(--space-sm); }
+.k-segmented__value {
+  display: block; margin-top: 4px;
+  font: var(--text-small-label-weight) 10px/var(--text-small-label-line-height) var(--text-small-label-family);
+  color: rgba(var(--rgb-theme-fg), 0.6);
+}
+.k-segmented__item.is-selected .k-segmented__value { color: rgba(var(--rgb-theme-fg-inverse), 0.8); }
+
+/* KyleSelectionButton  (buttons/selection_button.dart)
+   padding: icon ? (12 8) : (16 12); border 2 selected fg : fg 0.3; radius inputRadius (15)
+   selected fill fg; label bodyMedium w600, selected fg-inverse / unselected fg 0.7
+   icon variant: Icon 28, gap 4, label smallLabel 9px w700, icon+label fg-inverse / fg 0.5
+   Group: Row of Expanded, spacing xs (8) */
+.k-selection {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: var(--space-md) var(--space-sm);
+  border: 2px solid rgba(var(--rgb-theme-fg), 0.3); border-radius: var(--radius-input);
+  background: transparent; color: rgba(var(--rgb-theme-fg), 0.7); text-align: center;
+  font: 600 var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family);
+}
+.k-selection.is-selected { background: var(--theme-fg); border-color: var(--theme-fg); color: var(--theme-fg-inverse); }
+.k-selection--icon { padding: var(--space-sm) var(--space-xs); color: rgba(var(--rgb-theme-fg), 0.5); gap: 4px;
+  font: 700 9px/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-selection--icon .k-icon { width: 28px; height: 28px; }
+.k-selection-group { display: flex; gap: var(--space-xs); }
+.k-selection-group .k-selection { flex: 1 1 0; }
+
+/* =====================================================================
+   CHIPS
+   ===================================================================== */
+
+/* _ChoiceButton  (features/ai_coach/presentation/widgets/ai_coach_choice_buttons.dart)
+   padding symmetric(horizontal: md=16, vertical: xs=8), radius AppRadius.circular (999), border width 1
+   selected: bg electrolyte, border electrolyte, text blackberry, w700
+   enabled:  border electrolyte 0.6, bg electrolyte 0.1 (dark) / 0.07 (light), text electrolyte (dark) / electrolyteDark (light), w500
+   disabled: border cream 0.15 (dark) / blackberry 0.1 (light), bg transparent, text cream 0.3 / blackberry 0.3, w500
+   text: bodySmall (Apercu 12/1.5). Wrap spacing xs (8). Question label: bodyMedium fg 0.85, gap sm (12). */
+.k-choice {
+  display: inline-block; padding: var(--space-xs) var(--space-md);
+  border: 1px solid rgba(var(--rgb-electrolyte), 0.6); border-radius: var(--radius-circular);
+  background: rgba(var(--rgb-electrolyte), 0.1); color: var(--color-electrolyte);
+  font: 500 var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family);
+}
+[data-theme="light"] .k-choice { background: rgba(var(--rgb-electrolyte), 0.07); color: var(--color-electrolyte-dark); }
+.k-choice.is-selected { background: var(--color-electrolyte); border-color: var(--color-electrolyte); color: var(--color-blackberry); font-weight: 700; }
+.k-choice.is-disabled { background: transparent; border-color: rgba(var(--rgb-cream), 0.15); color: rgba(var(--rgb-cream), 0.3); font-weight: 500; }
+[data-theme="light"] .k-choice.is-disabled { border-color: rgba(var(--rgb-blackberry), 0.1); color: rgba(var(--rgb-blackberry), 0.3); }
+.k-choice-group { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.k-choice-question {
+  font: var(--text-body-medium-weight) var(--text-body-medium-size)/1.5 var(--text-body-medium-family);
+  color: rgba(var(--rgb-theme-fg), 0.85); margin: 0 0 var(--space-sm);
+}
+
+/* _PromptChip  (ai_coach_chat_screen.dart)
+   padding 16 8, border electrolyte 0.7 (1px), radius 999, bg electrolyte 0.12 (dark) / 0.08 (light)
+   text bodySmall electrolyte (dark) / electrolyteDark (light). Wrap spacing sm (12). */
+.k-prompt-chip {
+  display: inline-block; padding: var(--space-xs) var(--space-md);
+  border: 1px solid rgba(var(--rgb-electrolyte), 0.7); border-radius: var(--radius-circular);
+  background: rgba(var(--rgb-electrolyte), 0.12); color: var(--color-electrolyte);
+  font: var(--text-body-small-weight) var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family);
+}
+[data-theme="light"] .k-prompt-chip { background: rgba(var(--rgb-electrolyte), 0.08); color: var(--color-electrolyte-dark); }
+
+/* _SlotChip  (ai_coach_meal_card.dart)
+   padding symmetric(horizontal: xs=8, vertical: xxs=4), bg electrolyte 0.15, radius 999,
+   border electrolyte 0.4 width 0.5, text bodySmall 11px w600 electrolyteDark */
+.k-slot-chip {
+  display: inline-block; padding: var(--space-xxs) var(--space-xs);
+  background: rgba(var(--rgb-electrolyte), 0.15); border: 0.5px solid rgba(var(--rgb-electrolyte), 0.4);
+  border-radius: var(--radius-circular); color: var(--color-electrolyte-dark);
+  font: 600 11px/var(--text-body-small-line-height) var(--text-body-small-family);
+}
+
+/* _SlotChip  (meal_logging/presentation/widgets/meal_log_row.dart)
+   padding symmetric(horizontal: 7, vertical: 2), bg slotColor 0.18, radius 6,
+   text bodySmall 11px w700 slotColor. Colours from slot_palette.dart. */
+.k-slot-chip--log {
+  padding: 2px 7px; border: 0; border-radius: 6px; font-weight: 700;
+  --slot: var(--color-slot-untagged); --slot-rgb: 158, 158, 158;
+  background: rgba(var(--slot-rgb), 0.18); color: var(--slot);
+}
+.k-slot-chip--breakfast { --slot: var(--color-slot-breakfast); --slot-rgb: var(--rgb-orange); }
+.k-slot-chip--lunch     { --slot: var(--color-slot-lunch);     --slot-rgb: 63, 212, 192; }
+.k-slot-chip--dinner    { --slot: var(--color-slot-dinner);    --slot-rgb: var(--rgb-macro-protein); }
+.k-slot-chip--snack     { --slot: var(--color-slot-snack);     --slot-rgb: var(--rgb-dragonfruit); }
+
+/* _SlotSelector chips  (ai_coach_meal_card.dart _LogConfirmSheet)
+   padding symmetric(horizontal: md=16, vertical: xxs+2=6), radius 999, border 1
+   selected: bg electrolyte, border electrolyte, text blackberry w700
+   unselected: bg electrolyte 0.1, border electrolyte 0.3, text electrolyteDark w500; bodySmall */
+.k-slot-select {
+  display: inline-block; padding: 6px var(--space-md);
+  background: rgba(var(--rgb-electrolyte), 0.1); border: 1px solid rgba(var(--rgb-electrolyte), 0.3);
+  border-radius: var(--radius-circular); color: var(--color-electrolyte-dark);
+  font: 500 var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family);
+}
+.k-slot-select.is-selected { background: var(--color-electrolyte); border-color: var(--color-electrolyte); color: var(--color-blackberry); font-weight: 700; }
+
+/* _Chip  (features/formula_kit/presentation/widgets/filter_chip_row.dart)
+   Row height 40, padding horizontal md (16), separator sm (12)
+   bg: selected electrolyte 0.25 : colorScheme.surfaceContainerHighest
+   border 1: selected electrolyte : colorScheme.outlineVariant; radius circularRadius (999)
+   padding symmetric(horizontal: sm=12, vertical: xs=8)
+   text bodyMedium 13px, w600 selected / w500, color colorScheme.onSurface */
+.k-filter-chip-row { display: flex; gap: var(--space-sm); height: 40px; align-items: center; padding: 0 var(--space-md); overflow-x: auto; }
+.k-filter-chip {
+  display: inline-flex; align-items: center; padding: var(--space-xs) var(--space-sm);
+  background: var(--theme-surface-container-highest); border: 1px solid var(--theme-outline-variant);
+  border-radius: var(--radius-circular); color: var(--theme-on-surface);
+  font: 500 13px/var(--text-body-medium-line-height) var(--text-body-medium-family);
+}
+.k-filter-chip.is-selected { background: rgba(var(--rgb-electrolyte), 0.25); border-color: var(--color-electrolyte); font-weight: 600; }
+
+/* PhaseTabBar  (features/formula_kit/presentation/widgets/phase_tab_bar.dart)
+   Row padding vertical sm (12), Expanded tabs, SizedBox width sm (12)
+   Material color: active AppColors.orange : surfaceContainerHighest; radius circularRadius
+   padding symmetric(vertical: sm=12, horizontal: md=16)
+   text bodyMedium; active Colors.white w600 / onSurface w500 */
+.k-phase-tabs { display: flex; gap: var(--space-sm); padding: var(--space-sm) 0; }
+.k-phase-tab {
+  flex: 1 1 0; padding: var(--space-sm) var(--space-md); text-align: center;
+  background: var(--theme-surface-container-highest); border-radius: var(--radius-circular); color: var(--theme-on-surface);
+  font: 500 var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family);
+}
+.k-phase-tab.is-active { background: var(--color-orange); color: var(--color-material-white); font-weight: 600; }
+
+/* _TabBar  (features/meal_logging/presentation/screens/log_meal_screen.dart)
+   Container height 38, bg Colors.white12 (dark) / black 0.07 (light), radius 20
+   items Expanded, AnimatedContainer 180ms margin all 3, selected bg cream (dark) / blackberry (light), radius 17
+   text 12.5px, w700 selected / w500; selected blackberry (dark) / cream; unselected cream 0.7 (dark) / blackberry 0.6
+   No fontFamily set -> inherits DefaultTextStyle (theme bodyMedium = Apercu). */
+.k-tab-pill { display: flex; height: 38px; background: var(--color-material-white12); border-radius: 20px; box-sizing: border-box; }
+[data-theme="light"] .k-tab-pill { background: rgba(0, 0, 0, 0.07); }
+.k-tab-pill__item {
+  flex: 1 1 0; margin: 3px; padding: 0 4px; border-radius: 17px; background: transparent;
+  color: rgba(var(--rgb-theme-fg), 0.7); text-align: center; white-space: nowrap;
+  display: flex; align-items: center; justify-content: center;
+  font: 500 12.5px/1 var(--font-apercu); transition: background-color 180ms;
+}
+[data-theme="light"] .k-tab-pill__item { color: rgba(var(--rgb-theme-fg), 0.6); }
+.k-tab-pill__item.is-selected { background: var(--theme-fg); color: var(--theme-fg-inverse); font-weight: 700; }
+
+/* _TypeChip  (log_meal_screen.dart)
+   padding 12 5, radius 20, selected bg electrolyte : white12 (dark) / black 0.08 (light)
+   text 12px, w700 selected / w400; selected blackberry, unselected Colors.white (dark) / blackberry */
+.k-type-chip {
+  display: inline-block; padding: 5px 12px; border-radius: 20px;
+  background: var(--color-material-white12); color: var(--color-material-white);
+  font: 400 12px/1.5 var(--font-apercu); white-space: nowrap; transition: background-color 150ms;
+}
+[data-theme="light"] .k-type-chip { background: rgba(0, 0, 0, 0.08); color: var(--color-blackberry); }
+.k-type-chip.is-selected { background: var(--color-electrolyte); color: var(--color-blackberry); font-weight: 700; }
+
+/* IntensityPresetChips  (inputs/intensity_preset_chips.dart)
+   Wrap spacing xs (8); padding symmetric(horizontal: md=16, vertical: sm=12); radius 999
+   selected: bg orange 0.15, border orange width 2, text orange w700
+   unselected: transparent, border 1 cream 0.4 (dark) / blackberry 0.4, text cream / blackberry w400
+   disabled: border cream 0.2 / blackberry 0.2, text cream 0.3 / blackberry 0.3; text bodySmall */
+.k-preset-chips { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
+.k-preset-chip {
+  display: inline-block; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-circular);
+  background: transparent; border: 1px solid rgba(var(--rgb-theme-fg), 0.4); color: var(--theme-fg);
+  font: 400 var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family);
+  transition: background-color 200ms, border-color 200ms;
+}
+.k-preset-chip.is-selected { background: rgba(var(--rgb-orange), 0.15); border: 2px solid var(--color-orange); color: var(--color-orange); font-weight: 700; }
+.k-preset-chip.is-disabled { border-color: rgba(var(--rgb-theme-fg), 0.2); color: rgba(var(--rgb-theme-fg), 0.3); }
+
+/* =====================================================================
+   CARDS
+   ===================================================================== */
+
+/* BaseCard  (cards/base_card.dart)
+   bg colorScheme.surface, radius AppRadius.cardRadius (15), padding all md (16), no border, elevation 0
+   elevation > 0: BoxShadow black 0.1, blurRadius elevation*2, offset (0, elevation) */
+.k-card {
+  background: var(--theme-surface); border-radius: var(--radius-card); padding: var(--padding-card);
+  color: var(--theme-on-surface); box-sizing: border-box;
+}
+.k-card--elevated-2 { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+.k-card--elevated-4 { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+/* Theme Card (app_theme.dart cardTheme): surface bg, radius 15, side borderDarkSecondary #333333 (dark) / #E0E0E0 (light), margin vertical xs (8) */
+.k-card--themed { border: 1px solid var(--theme-card-border); margin: var(--space-xs) 0; padding: 0; }
+/* HeaderCard / TitledCard: header then SizedBox(height: headerSpacing = sm 12); TitledCard title titleMedium(bold) = subtitle style Compadre 16 bold, subtitle bodyMedium onSurfaceVariant, gap xs (8) */
+.k-card__header { margin-bottom: var(--space-sm); }
+.k-card__title { font: 700 var(--text-subtitle-size)/var(--text-subtitle-line-height) var(--text-subtitle-family); letter-spacing: var(--text-subtitle-letter-spacing); color: var(--theme-on-surface); margin: 0; }
+.k-card__subtitle { font: var(--text-body-medium-weight) var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); color: var(--theme-on-surface-variant); margin: var(--space-xs) 0 0; }
+.k-card__actions { display: flex; justify-content: flex-end; margin-top: var(--space-md); }
+
+/* ActivityHeroCard  (cards/activity_hero_card.dart)
+   margin horizontal md (16), Material surface radius 15, padding all lg (20)
+   border Border.all(colorScheme.outline 0.2) (1px)
+   KyleActivityIcon 36 + gap md (16); title subtitle (Compadre 16) onSurface; gap xs (8); subtitle bodyMedium onSurfaceVariant
+   TodaysActivityCard: margin 16 12, padding md (16), completed border electrolyte 0.3, title electrolyte, circleCheck 20 electrolyte
+   UpcomingEventCard: icon circle 36 electrolyte 0.2 + calendar 18 electrolyte; date badge padding 12 8, bg electrolyte 0.1, radius 15, smallLabel electrolyte (bold + regular) */
+.k-hero-card {
+  background: var(--theme-surface); border-radius: var(--radius-card); padding: var(--space-lg);
+  border: 1px solid rgba(var(--rgb-theme-on-surface), 0.2); color: var(--theme-on-surface); box-sizing: border-box;
+}
+.k-hero-card--today { padding: var(--space-md); }
+.k-hero-card--completed { border-color: rgba(var(--rgb-electrolyte), 0.3); }
+.k-hero-card__row { display: flex; align-items: center; gap: var(--space-md); }
+.k-hero-card__title { font: var(--text-subtitle-weight) var(--text-subtitle-size)/var(--text-subtitle-line-height) var(--text-subtitle-family); letter-spacing: var(--text-subtitle-letter-spacing); margin: 0; }
+.k-hero-card--completed .k-hero-card__title { color: var(--color-electrolyte); }
+.k-hero-card__subtitle { font: var(--text-body-medium-weight) var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); color: var(--theme-on-surface-variant); margin: var(--space-xs) 0 0; }
+.k-hero-card__actions { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-md); }
+.k-hero-card__actions .k-btn-primary { flex: 1 1 0; }
+.k-event-icon { width: var(--icon-activity); height: var(--icon-activity); border-radius: 50%; background: rgba(var(--rgb-electrolyte), 0.2); color: var(--color-electrolyte); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.k-event-icon .k-icon { width: 18px; height: 18px; }
+.k-date-badge { padding: var(--space-xs) var(--space-sm); background: rgba(var(--rgb-electrolyte), 0.1); border-radius: var(--radius-input); text-align: center; color: var(--color-electrolyte);
+  font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-date-badge strong { font-weight: 700; display: block; }
+
+/* AiCoachMealCard  (features/ai_coach/presentation/widgets/ai_coach_meal_card.dart)
+   BaseCard bg blackberryLight (dark) / surfaceLight (light), border 1 electrolyte 0.25, padding all md (16)
+   header row: name sectionTitle 15px fg, SizedBox(width: xs=8), _SlotChip
+   gap xxs (4); description bodySmall fg 0.6 height 1.5; gap sm (12); _MacroRow; gap md (16); _LogItButton right-aligned
+   _MacroRow: Wrap spacing md (16) runSpacing xs (8); fire icon 11 electrolyte + 3px; labels bodySmall 12 w500 fg 0.75
+   _LogItButton: padding symmetric(horizontal: md=16, vertical: xxs+2=6), bg electrolyte, radius 999,
+   plus icon 11 blackberry + gap xxs (4), text buttonPrimary 13px blackberry */
+.k-meal-card {
+  background: var(--theme-raised); border: 1px solid rgba(var(--rgb-electrolyte), 0.25);
+  border-radius: var(--radius-card); padding: var(--padding-card); color: var(--theme-fg); box-sizing: border-box;
+}
+.k-meal-card__header { display: flex; align-items: flex-start; gap: var(--space-xs); }
+.k-meal-card__name { flex: 1 1 auto; margin: 0; font: var(--text-section-title-weight) 15px/var(--text-section-title-line-height) var(--text-section-title-family); }
+.k-meal-card__desc { margin: var(--space-xxs) 0 0; color: rgba(var(--rgb-theme-fg), 0.6); font: var(--text-body-small-weight) var(--text-body-small-size)/1.5 var(--text-body-small-family); }
+.k-macro-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-md); margin-top: var(--space-sm); }
+.k-macro-row__kcal { display: inline-flex; align-items: center; gap: 3px; }
+.k-macro-row__kcal .k-icon { width: 11px; height: 11px; color: var(--color-electrolyte); }
+.k-macro-row__label { color: rgba(var(--rgb-theme-fg), 0.75); font: 500 12px/var(--text-body-small-line-height) var(--text-body-small-family); }
+.k-meal-card__footer { display: flex; justify-content: flex-end; margin-top: var(--space-md); }
+.k-log-it {
+  display: inline-flex; align-items: center; gap: var(--space-xxs); padding: 6px var(--space-md);
+  background: var(--color-electrolyte); border-radius: var(--radius-circular); color: var(--color-blackberry);
+  font: var(--text-button-primary-weight) 13px/var(--text-button-primary-line-height) var(--text-button-primary-family);
+}
+.k-log-it .k-icon { width: 11px; height: 11px; }
+/* _LogConfirmSheet confirm button: height 48, bg electrolyte (0.5 when loading), radius 999, buttonPrimary blackberry */
+.k-confirm { display: flex; align-items: center; justify-content: center; height: 48px; width: 100%; background: var(--color-electrolyte); border-radius: var(--radius-circular); color: var(--color-blackberry);
+  font: var(--text-button-primary-weight) var(--text-button-primary-size)/var(--text-button-primary-line-height) var(--text-button-primary-family); }
+.k-confirm.is-loading { background: rgba(var(--rgb-electrolyte), 0.5); }
+/* sheet handle: 36x4, fg 0.2, radius 999 */
+.k-sheet-handle { width: 36px; height: 4px; border-radius: var(--radius-circular); background: rgba(var(--rgb-theme-fg), 0.2); margin: 0 auto; }
+
+/* MacroTargetsTable  (cards/macro_targets_table.dart)
+   margin 16 12; Material surface radius 15; border Border.all(colorScheme.outline) 1px (full opacity)
+   header padding all sm (12): title sectionTitle onSurface; circleInfo 20 dragonfruit
+   rows: border-bottom outline 0.3 1px; cells Expanded padding 12 12, border-right outline 0.3 (not last)
+   header cells smallLabel bold onSurfaceVariant centered; first column smallLabel bold onSurface; data dataNumber 15px onSurface centered */
+.k-macro-table { background: var(--theme-surface); border: 1px solid var(--theme-outline); border-radius: var(--radius-card); color: var(--theme-on-surface); overflow: hidden; }
+.k-macro-table__header { display: flex; align-items: center; padding: var(--space-sm); }
+.k-macro-table__title { flex: 1; margin: 0; font: var(--text-section-title-weight) var(--text-section-title-size)/var(--text-section-title-line-height) var(--text-section-title-family); }
+.k-macro-table__info { color: var(--color-dragonfruit); width: var(--icon-control); height: var(--icon-control); padding: 12px; box-sizing: content-box; }
+.k-macro-table__row { display: flex; border-bottom: 1px solid rgba(var(--rgb-theme-on-surface), 0.3); }
+.k-macro-table__cell { flex: 1 1 0; padding: var(--space-sm); border-right: 1px solid rgba(var(--rgb-theme-on-surface), 0.3); text-align: center;
+  font: var(--text-data-number-weight) 15px/var(--text-data-number-line-height) var(--text-data-number-family); }
+.k-macro-table__cell:last-child { border-right: 0; }
+.k-macro-table__row--head .k-macro-table__cell { color: var(--theme-on-surface-variant); font: 700 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-macro-table__cell--label { text-align: left; font: 700 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+
+/* NutritionSectionCard  (cards/nutrition_section_card.dart)
+   margin 16 12; surface; radius 15; border outline 0.2
+   header padding all md (16): title activityTitle (Compadre 18) onSurface; chevron 20 onSurfaceVariant; gap sm (12)
+   macro summary: padding all sm (12), bg electrolyte 0.1, radius inputRadius (15); _MacroItem: label smallLabel bold electrolyte, gap xxs (4), value dataNumber 20 onSurface, target smallLabel onSurfaceVariant
+   food item: margin-bottom sm (12), padding all sm (12), border outline 0.1, radius 15; icon 36 circle electrolyte + icon 18 textLight; gap sm (12); name foodTitle onSurface; gap xxs (4); quantity smallLabel onSurfaceVariant; pen 20 Colors.orange; trash 20 dragonfruit */
+.k-nutrition-card { background: var(--theme-surface); border: 1px solid rgba(var(--rgb-theme-on-surface), 0.2); border-radius: var(--radius-card); color: var(--theme-on-surface); }
+.k-nutrition-card__header { padding: var(--space-md); }
+.k-nutrition-card__title-row { display: flex; align-items: center; }
+.k-nutrition-card__title { flex: 1; margin: 0; font: var(--text-activity-title-weight) var(--text-activity-title-size)/var(--text-activity-title-line-height) var(--text-activity-title-family); letter-spacing: var(--text-activity-title-letter-spacing); }
+.k-nutrition-card__chevron { width: var(--icon-control); height: var(--icon-control); color: var(--theme-on-surface-variant); }
+.k-macro-summary { display: flex; margin-top: var(--space-sm); padding: var(--space-sm); background: rgba(var(--rgb-electrolyte), 0.1); border-radius: var(--radius-input); }
+.k-macro-item { flex: 1 1 0; text-align: center; }
+.k-macro-item__label { color: var(--color-electrolyte); font: 700 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-macro-item__value { margin-top: var(--space-xxs); font: var(--text-data-number-weight) 20px/var(--text-data-number-line-height) var(--text-data-number-family); }
+.k-macro-item__target { color: var(--theme-on-surface-variant); font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-nutrition-card__body { padding: var(--space-md) 0 0; }
+.k-food-row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-sm); margin: 0 0 var(--space-sm); border: 1px solid rgba(var(--rgb-theme-on-surface), 0.1); border-radius: var(--radius-input); }
+.k-food-row__body { flex: 1 1 auto; min-width: 0; }
+.k-food-row__name { margin: 0; font: var(--text-food-title-weight) var(--text-food-title-size)/var(--text-food-title-line-height) var(--text-food-title-family); }
+.k-food-row__qty { margin: var(--space-xxs) 0 0; color: var(--theme-on-surface-variant); font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-food-row__edit { color: var(--color-material-orange); width: var(--icon-control); height: var(--icon-control); }
+.k-food-row__remove { color: var(--color-dragonfruit); width: var(--icon-control); height: var(--icon-control); }
+.k-icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 12px; background: none; border: 0; cursor: pointer; } /* IconButton default 48 hit target */
+
+/* FoodItemCard  (cards/food_item_card.dart)
+   BaseCard; header row padding all md (16): KyleFoodIcon 36, gap md (16), name foodTitle onSurface, gap xs (8), serving bodyMedium onSurfaceVariant, chevron 20 onSurfaceVariant
+   expanded: Divider(height 1); padding all md (16)
+   nutrition grid: padding all sm (12), bg surfaceContainerHighest 0.3, radius smRadius (12); 'Nutrition Facts' smallLabel bold onSurfaceVariant; gap sm (12)
+   fact: value dataNumber 20 (orange / electrolyte / dragonfruit / onSurface), gap xs (8), label smallLabel onSurfaceVariant
+   quantity: 'Quantity:' bodyMedium onSurface, gap md (16); control border 2 Colors.orange radius buttonRadius (100);
+   minus/plus padding 12 8 icon 20 AppColors.orange; value padding 16 8 bodyMedium bold onSurface */
+.k-food-card { background: var(--theme-surface); border-radius: var(--radius-card); color: var(--theme-on-surface); padding: var(--padding-card); }
+.k-food-card__row { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md); }
+.k-food-card__body { flex: 1 1 auto; }
+.k-food-card__name { margin: 0; font: var(--text-food-title-weight) var(--text-food-title-size)/var(--text-food-title-line-height) var(--text-food-title-family); }
+.k-food-card__serving { margin: var(--space-xs) 0 0; color: var(--theme-on-surface-variant); font: var(--text-body-medium-weight) var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); }
+.k-food-card__chevron { width: var(--icon-chevron); height: var(--icon-chevron); color: var(--theme-on-surface-variant); }
+.k-divider { height: 1px; background: var(--theme-divider); border: 0; margin: 0; }
+.k-food-card__expanded { padding: var(--space-md); }
+.k-facts { padding: var(--space-sm); background: rgba(var(--rgb-theme-fg-inverse), 0.3); border-radius: var(--radius-sm); }
+[data-theme="light"] .k-facts { background: rgba(var(--rgb-cream), 0.3); }
+.k-facts__title { color: var(--theme-on-surface-variant); font: 700 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); margin: 0 0 var(--space-sm); }
+.k-facts__grid { display: grid; grid-template-columns: 1fr 1fr; row-gap: var(--space-sm); }
+.k-fact { text-align: center; }
+.k-fact__value { font: var(--text-data-number-weight) 20px/var(--text-data-number-line-height) var(--text-data-number-family); }
+.k-fact__value--calories { color: var(--color-orange); }
+.k-fact__value--carbs { color: var(--color-electrolyte); }
+.k-fact__value--protein { color: var(--color-dragonfruit); }
+.k-fact__value--fat { color: var(--theme-on-surface); }
+.k-fact__label { margin-top: var(--space-xs); color: var(--theme-on-surface-variant); font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-quantity { display: flex; align-items: center; gap: var(--space-md); margin-top: var(--space-md); font: var(--text-body-medium-weight) var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); }
+.k-quantity__control { display: inline-flex; align-items: center; border: 2px solid var(--color-material-orange); border-radius: var(--radius-button); }
+.k-quantity__btn { display: inline-flex; padding: var(--space-xs) var(--space-sm); color: var(--color-orange); background: none; border: 0; cursor: pointer; }
+.k-quantity__btn .k-icon { width: var(--icon-control); height: var(--icon-control); }
+.k-quantity__value { padding: var(--space-xs) var(--space-md); font-weight: 700; }
+.k-food-card__actions { display: flex; gap: var(--space-md); margin-top: var(--space-md); }
+.k-food-card__actions > * { flex: 1 1 0; }
+
+/* MealLogRow  (features/meal_logging/presentation/widgets/meal_log_row.dart)
+   Card(margin vertical 4) -> theme cardTheme (surface, radius 15, border #333333 / #E0E0E0); InkWell radius 12
+   padding fromLTRB(12, 10, 4, 10); _LeadingPhoto 40x40 radius 20 (or KyleFoodIcon size 40); gap 12
+   name theme bodyMedium w600 (ellipsis); gap 8; _SlotChip; gap 4
+   _MacroSummaryLine: kcal 14px w700 Colors.white (dark) / onSurface; ' kcal' 12px subtitleColor (white60 dark / onSurfaceVariant light)
+   separator '  .  ' 12px subtitleColor; macros 12px w600 kMacroColorCarbs / kMacroColorProtein / kMacroColorFat
+   star IconButton 20: orange when favorite else subtitleColor */
+.k-meal-row { display: flex; align-items: center; gap: 12px; padding: 10px 4px 10px 12px; margin: 4px 0;
+  background: var(--theme-surface); border: 1px solid var(--theme-card-border); border-radius: var(--radius-card); color: var(--theme-on-surface); box-sizing: border-box; }
+.k-meal-row__photo { width: 40px; height: 40px; border-radius: 20px; object-fit: cover; flex: none; }
+.k-meal-row__body { flex: 1 1 auto; min-width: 0; }
+.k-meal-row__title { display: flex; align-items: center; gap: 8px; }
+.k-meal-row__name { font: 600 var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-meal-row__macros { margin-top: 4px; font-family: var(--font-apercu); font-size: 12px; color: var(--color-material-white60); }
+[data-theme="light"] .k-meal-row__macros { color: var(--theme-on-surface-variant); }
+.k-meal-row__kcal { font-size: 14px; font-weight: 700; color: var(--color-material-white); }
+[data-theme="light"] .k-meal-row__kcal { color: var(--theme-on-surface); }
+.k-meal-row__c { font-weight: 600; color: var(--color-macro-carbs); }
+.k-meal-row__p { font-weight: 600; color: var(--color-macro-protein); }
+.k-meal-row__f { font-weight: 600; color: var(--color-macro-fat); }
+.k-meal-row__star { width: 20px; height: 20px; color: var(--color-material-white60); }
+[data-theme="light"] .k-meal-row__star { color: var(--theme-on-surface-variant); }
+.k-meal-row__star.is-favorite { color: var(--color-orange); }
+
+/* _MacroTile  (features/daily_macros/presentation/widgets/macro_summary_strip.dart)
+   height 68; bg tintColor 0.18 (dark) / 0.13 (light); radius 10; padding 6 6; tiles separated by SizedBox(width: 6)
+   big: 19px w800 height 1.1 fg; gap 2; label 10px w600 letterSpacing 0.3 tintColor; gap 2; caption 9px w400 fg 0.45 height 1.1
+   Strip: BaseCard padding all sm (12); bar_chart icon 16 fg 0.30 top-right */
+.k-macro-strip { display: flex; gap: 6px; }
+.k-macro-strip > .k-macro-tile { flex: 1 1 0; }
+.k-macro-tile { height: 68px; padding: 6px; border-radius: 10px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  --tint-rgb: var(--rgb-orange); --tint: var(--color-orange); background: rgba(var(--tint-rgb), 0.18); color: var(--theme-fg); font-family: var(--font-apercu); }
+[data-theme="light"] .k-macro-tile { background: rgba(var(--tint-rgb), 0.13); }
+.k-macro-tile--kcal    { --tint-rgb: var(--rgb-orange); --tint: var(--color-orange); }
+.k-macro-tile--carbs   { --tint-rgb: 63, 212, 192; --tint: var(--color-macro-carbs); }
+.k-macro-tile--protein { --tint-rgb: var(--rgb-macro-protein); --tint: var(--color-macro-protein); }
+.k-macro-tile--fat     { --tint-rgb: var(--rgb-dragonfruit); --tint: var(--color-macro-fat); }
+.k-macro-tile__big { font-size: 19px; font-weight: 800; line-height: 1.1; white-space: nowrap; }
+.k-macro-tile__label { margin-top: 2px; font-size: 10px; font-weight: 600; letter-spacing: 0.3px; color: var(--tint); }
+.k-macro-tile__caption { margin-top: 2px; font-size: 9px; font-weight: 400; line-height: 1.1; color: rgba(var(--rgb-theme-fg), 0.45); }
+.k-macro-strip-card { position: relative; padding: var(--space-sm); }
+.k-macro-strip-card__trends { position: absolute; top: 0; right: 0; padding: 4px; width: 16px; height: 16px; box-sizing: content-box; color: rgba(var(--rgb-theme-fg), 0.30); }
+
+/* =====================================================================
+   INPUTS
+   ===================================================================== */
+
+/* KyleInputField  (inputs/kyle_input_field.dart)
+   Container height 48, bg AppColors.inputBackground (#5A3366), radius 12, no border in any state
+   text inputText (Apercu 16/400/1.4) cream; hint cream 0.5; contentPadding 16 14
+   suffix: lowercase, bodySmall cream 0.4, right padding 16 */
+.k-input { display: flex; align-items: center; height: 48px; background: var(--color-input-background); border-radius: 12px; box-sizing: border-box; }
+.k-input__field { flex: 1 1 auto; min-width: 0; height: 100%; padding: 14px 16px; background: transparent; border: 0; outline: 0; color: var(--color-cream); box-sizing: border-box;
+  font: var(--text-input-text-weight) var(--text-input-text-size)/var(--text-input-text-line-height) var(--text-input-text-family); }
+.k-input__field::placeholder { color: rgba(var(--rgb-cream), 0.5); }
+.k-input__suffix { padding-right: 16px; text-transform: lowercase; color: rgba(var(--rgb-cream), 0.4);
+  font: var(--text-body-small-weight) var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family); }
+
+/* KyleTextField  (inputs/text_field.dart)
+   label smallLabel onSurface, bottom padding xs (8)
+   TextFormField filled transparent; contentPadding AppSpacing.inputPadding (16 16); radius inputRadius (15)
+   enabled border colorScheme.outline 1px; focused Colors.orange 2px; error dragonfruit 1px; focusedError dragonfruit 2px; disabled outline 0.3
+   text inputText onSurface; hint onSurface 0.5; prefix/suffix icon 20 onSurface 0.5
+   (Dart declares AppSizes.inputHeight = 46 but the widget sizes from padding + text, so height is auto here) */
+.k-text-field { display: block; color: var(--theme-on-surface); }
+.k-text-field__label { display: block; margin-bottom: var(--space-xs); font: var(--text-small-label-weight) var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-text-field__box { display: flex; align-items: center; border: 1px solid var(--theme-outline); border-radius: var(--radius-input); background: transparent; box-sizing: border-box; }
+.k-text-field__box:focus-within { border: 2px solid var(--color-material-orange); }
+.k-text-field__box.is-error { border: 1px solid var(--color-dragonfruit); }
+.k-text-field__box.is-error:focus-within { border-width: 2px; }
+.k-text-field__box.is-disabled { border-color: rgba(var(--rgb-theme-on-surface), 0.3); }
+.k-text-field__input { flex: 1 1 auto; min-width: 0; padding: var(--padding-input); background: transparent; border: 0; outline: 0; color: inherit;
+  font: var(--text-input-text-weight) var(--text-input-text-size)/var(--text-input-text-line-height) var(--text-input-text-family); }
+.k-text-field__input::placeholder { color: rgba(var(--rgb-theme-on-surface), 0.5); }
+.k-text-field__icon { width: var(--icon-control); height: var(--icon-control); color: rgba(var(--rgb-theme-on-surface), 0.5); flex: none; }
+.k-text-field__icon--prefix { margin-left: 12px; }
+.k-text-field__icon--suffix { margin-right: 12px; }
+
+/* KyleSwitch  (inputs/kyle_switch.dart)
+   Material 3 Switch geometry (Flutter default, not in Dart source): track 52x32, thumb 16 unselected / 24 selected
+   thumb Colors.white (disabled white 0.65); trackOutline transparent
+   selected track: electrolyte (dark) / electrolyteDark (light)
+   unselected track: onSurface 0.32 (dark) / 0.26 (light); disabled: unselected 0.45 */
+.k-switch { position: relative; display: inline-block; width: 52px; height: 32px; border-radius: 16px; background: rgba(var(--rgb-theme-on-surface), 0.32); cursor: pointer; vertical-align: middle; }
+[data-theme="light"] .k-switch { background: rgba(var(--rgb-theme-on-surface), 0.26); }
+.k-switch__thumb { position: absolute; top: 8px; left: 8px; width: 16px; height: 16px; border-radius: 50%; background: var(--color-material-white); transition: left 150ms, width 150ms, height 150ms, top 150ms; }
+.k-switch.is-on { background: var(--theme-switch-track-selected); }
+.k-switch.is-on .k-switch__thumb { top: 4px; left: 24px; width: 24px; height: 24px; }
+.k-switch.is-disabled { background: rgba(var(--rgb-theme-on-surface), 0.144); cursor: default; } /* 0.32 * 0.45 */
+[data-theme="light"] .k-switch.is-disabled { background: rgba(var(--rgb-theme-on-surface), 0.117); } /* 0.26 * 0.45 */
+.k-switch.is-disabled .k-switch__thumb { background: rgba(var(--rgb-white), 0.65); }
+
+/* KylePlusMinusControl  (inputs/plus_minus_control.dart)
+   label descriptor (Compadre 14) w700 onSurface, gap sm (12)
+   Row: _ControlButton 36x36 (AppSizes.controlSize), circular, transparent bg,
+   side BorderSide(Colors.orange #FF9800, width 2) (0.4 opacity when disabled)
+   icon 20 (AppIconSizes.controlIcon): cream (dark) / AppColors.orange (light); disabled 0.4
+   SizedBox(width: xl = 24) each side; value dataNumber 20px w700 onSurface (0.4 disabled), centered */
+.k-stepper { color: var(--theme-on-surface); }
+.k-stepper__label { display: block; margin-bottom: var(--space-sm); font: 700 var(--text-descriptor-size)/var(--text-descriptor-line-height) var(--text-descriptor-family); letter-spacing: var(--text-descriptor-letter-spacing); }
+.k-stepper__row { display: flex; align-items: center; gap: var(--space-xl); }
+.k-stepper__btn { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: var(--size-control); height: var(--size-control); border-radius: var(--radius-circular);
+  border: 2px solid var(--color-material-orange); background: transparent; color: var(--theme-fg); }
+[data-theme="light"] .k-stepper__btn { color: var(--color-orange); }
+.k-stepper__btn .k-icon { width: var(--icon-control); height: var(--icon-control); }
+.k-stepper__btn:disabled { border-color: rgba(255, 152, 0, 0.4); color: rgba(var(--rgb-theme-fg), 0.4); }
+[data-theme="light"] .k-stepper__btn:disabled { color: rgba(var(--rgb-orange), 0.4); }
+.k-stepper__value { flex: 1 1 auto; text-align: center; font: 700 20px/var(--text-data-number-line-height) var(--text-data-number-family); }
+.k-stepper.is-disabled .k-stepper__value { color: rgba(var(--rgb-theme-on-surface), 0.4); }
+
+/* TwoOptionPillSlider  (inputs/two_option_pill_slider.dart)
+   height 46 (default), radius height/2 = 23; trackColor / thumbColor / border are constructor params
+   thumb: 50% width, Padding(thumbInset = 2), radius (height/2) - inset = 21; AnimatedAlign 220ms easeInOut
+   labels Expanded, padding horizontal xs (8), textStyle param; selected w700 / unselected w500
+   disabled: Opacity 0.6. Colours below are the preview's parameter choices, not widget defaults. */
+.k-pill-slider { position: relative; height: 46px; border-radius: 23px; background: var(--track, rgba(var(--rgb-theme-fg), 0.12)); overflow: hidden; box-sizing: border-box; }
+.k-pill-slider.is-disabled { opacity: 0.6; }
+.k-pill-slider__thumb { position: absolute; top: 2px; bottom: 2px; left: 2px; width: calc(50% - 2px); border-radius: 21px; background: var(--thumb, var(--color-electrolyte)); transition: left 220ms ease-in-out; }
+.k-pill-slider.is-right .k-pill-slider__thumb { left: 50%; }
+.k-pill-slider__labels { position: relative; display: flex; height: 100%; }
+.k-pill-slider__label { flex: 1 1 0; display: flex; align-items: center; justify-content: center; padding: 0 var(--space-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--unselected, var(--theme-fg)); font: 500 var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); }
+.k-pill-slider__label.is-selected { color: var(--selected, var(--color-blackberry)); font-weight: 700; }
+
+/* KyleDropdown  (inputs/kyle_dropdown.dart)
+   label descriptor w700 cream (dark) / blackberry; gap sm (12)
+   Container width 100%, padding symmetric(horizontal: md=16, vertical: 4), radius 15,
+   bg blackberry 0.3 (dark) / cream (light), border 2 cream (dark) / blackberry
+   value style dataNumber (Apercu 32/600) cream; keyboard_arrow_down 24; menu items dataNumber 14px */
+.k-dropdown { color: var(--theme-fg); }
+.k-dropdown__label { display: block; margin-bottom: var(--space-sm); font: 700 var(--text-descriptor-size)/var(--text-descriptor-line-height) var(--text-descriptor-family); letter-spacing: var(--text-descriptor-letter-spacing); }
+.k-dropdown__box { display: flex; align-items: center; width: 100%; padding: 4px var(--space-md); box-sizing: border-box;
+  background: rgba(var(--rgb-blackberry), 0.3); border: 2px solid var(--theme-fg); border-radius: 15px; }
+[data-theme="light"] .k-dropdown__box { background: var(--color-cream); }
+.k-dropdown__value { flex: 1 1 auto; font: var(--text-data-number-weight) var(--text-data-number-size)/var(--text-data-number-line-height) var(--text-data-number-family); }
+.k-dropdown__chevron { width: 24px; height: 24px; flex: none; }
+
+/* _OutlineButton  (log_meal_screen.dart AI tab)
+   padding vertical 12; border 1.5 Colors.white24 (dark) / Colors.black12; radius AppRadius.md (16)
+   icon 24 fg; gap 4; bodySmall w600 fg; disabled Opacity 0.5 */
+.k-outline-btn { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px 0; width: 100%;
+  border: 1.5px solid var(--color-material-white24); border-radius: var(--radius-md); color: var(--theme-fg);
+  font: 600 var(--text-body-small-size)/var(--text-body-small-line-height) var(--text-body-small-family); }
+[data-theme="light"] .k-outline-btn { border-color: var(--color-material-black12); }
+.k-outline-btn .k-icon { width: 24px; height: 24px; }
+.k-outline-btn.is-disabled { opacity: 0.5; }
+
+/* =====================================================================
+   FEEDBACK
+   ===================================================================== */
+
+/* MealvanaSnackbar  (feedback/mealvana_snackbar.dart)
+   SnackBar floating, elevation 8, shape radius AppRadius.md (16) + side textColor 0.2 width 1
+   margin symmetric(horizontal: md=16, vertical: lg=20); padding symmetric(horizontal: md=16, vertical: md=16)
+   icon 20 + SizedBox(width: sm=12); text bodyLarge (Apercu 16) w600 height 1.3
+   success: bg electrolyte, text/icon/action blackberry (circleCheck)
+   error:   bg dragonfruit, text/icon Colors.white, action cream (circleExclamation)
+   warning: bg orange, text/icon/action blackberry (triangleExclamation)
+   info:    bg cream, text/icon blackberry, action electrolyteDark (circleInfo)
+   loading: bg cream, text blackberry, action electrolyteDark, 20px spinner strokeWidth 2.5 blackberry */
+.k-snackbar { display: flex; align-items: center; gap: var(--space-sm); margin: var(--space-lg) var(--space-md); padding: var(--space-md);
+  border-radius: var(--radius-md); border: 1px solid rgba(var(--text-rgb), 0.2); box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.2);
+  font: 600 var(--text-body-large-size)/1.3 var(--text-body-large-family); box-sizing: border-box; }
+.k-snackbar .k-icon { width: 20px; height: 20px; flex: none; }
+.k-snackbar__msg { flex: 1 1 auto; }
+.k-snackbar__action { background: none; border: 0; padding: 0 8px; cursor: pointer; font: 500 14px/1.2 var(--font-apercu); color: var(--action); }
+.k-snackbar--success { --text-rgb: var(--rgb-blackberry); --action: var(--color-blackberry); background: var(--color-electrolyte); color: var(--color-blackberry); }
+.k-snackbar--error   { --text-rgb: var(--rgb-white); --action: var(--color-cream); background: var(--color-dragonfruit); color: var(--color-material-white); }
+.k-snackbar--warning { --text-rgb: var(--rgb-blackberry); --action: var(--color-blackberry); background: var(--color-orange); color: var(--color-blackberry); }
+.k-snackbar--info    { --text-rgb: var(--rgb-blackberry); --action: var(--color-electrolyte-dark); background: var(--color-cream); color: var(--color-blackberry); }
+.k-snackbar--loading { --text-rgb: var(--rgb-blackberry); --action: var(--color-electrolyte-dark); background: var(--color-cream); color: var(--color-blackberry); }
+.k-snackbar--loading .k-spinner { border-width: 2.5px; color: var(--color-blackberry); }
+
+/* =====================================================================
+   ICONS
+   ===================================================================== */
+
+/* KyleFoodIcon / KyleActivityIcon  (icons/food_icon.dart, icons/activity_icon.dart)
+   size 36 (AppIconSizes.foodIcon / activityIcon), circle, bg electrolyte, icon size*0.5 = 18, icon color textLight (#381633)
+   KyleFoodPreferenceIcon: border 2; avoid dragonfruit 0.2 / dragonfruit; dislike orange 0.2 / orange; neutral electrolyte 0.2 / electrolyte;
+   like electrolyte 0.4 / electrolyte; love electrolyte / electrolyte, icon textLight
+   KyleActivityTypeSelectorIcon: selected electrolyte + icon textLight (border 0); unselected electrolyte 0.2 + border 2 electrolyte + icon electrolyte */
+.k-food-icon, .k-activity-icon { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: var(--icon-food); height: var(--icon-food); border-radius: 50%; background: var(--color-electrolyte); color: var(--color-text-light); box-sizing: border-box; }
+.k-food-icon .k-icon, .k-activity-icon .k-icon { width: 50%; height: 50%; }
+.k-food-icon--40 { width: 40px; height: 40px; }
+.k-food-icon--pref { border: 2px solid transparent; }
+.k-food-icon--avoid   { background: rgba(var(--rgb-dragonfruit), 0.2); border-color: var(--color-dragonfruit); color: var(--color-dragonfruit); }
+.k-food-icon--dislike { background: rgba(var(--rgb-orange), 0.2); border-color: var(--color-orange); color: var(--color-orange); }
+.k-food-icon--neutral { background: rgba(var(--rgb-electrolyte), 0.2); border-color: var(--color-electrolyte); color: var(--color-electrolyte); }
+.k-food-icon--like    { background: rgba(var(--rgb-electrolyte), 0.4); border-color: var(--color-electrolyte); color: var(--color-electrolyte); }
+.k-food-icon--love    { background: var(--color-electrolyte); border-color: var(--color-electrolyte); color: var(--color-text-light); }
+.k-activity-icon--unselected { background: rgba(var(--rgb-electrolyte), 0.2); border: 2px solid var(--color-electrolyte); color: var(--color-electrolyte); }
+/* KyleFoodIconWithLabel: SizedBox(height: xs=8), theme bodySmall (smallLabel 12/500 secondary) -> onSurface w500 */
+.k-icon-label { display: inline-flex; flex-direction: column; align-items: center; gap: var(--space-xs); text-align: center;
+  color: var(--theme-on-surface); font: 500 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+
+/* FloatingActionButtonsBar  (navigation/floating_action_buttons_bar.dart)
+   Positioned bottom 16, centered; ClipRRect radius 25; BackdropFilter blur 8
+   Container height 43, padding horizontal 4, bg blackberry 0.35 (dark) / white 0.35 (light), border 1 cream (dark) / blackberry
+   CircularActionButton 42 each, SizedBox(width: 8) between
+   active: bg cream (dark) / Colors.white (light), icon blackberry; inactive: transparent, icon cream / blackberry */
+.k-nav-pill { display: inline-flex; align-items: center; gap: 8px; height: 43px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 25px; border: 1px solid var(--theme-fg); background: rgba(var(--rgb-blackberry), 0.35);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+[data-theme="light"] .k-nav-pill { background: rgba(var(--rgb-white), 0.35); }
+.k-nav-pill__btn { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 50%; background: transparent; color: var(--theme-fg); }
+.k-nav-pill__btn .k-icon { width: 20px; height: 20px; }
+.k-nav-pill__btn.is-active { background: var(--color-cream); color: var(--color-blackberry); }
+[data-theme="light"] .k-nav-pill__btn.is-active { background: var(--color-material-white); }
+
+/* =====================================================================
+   TYPOGRAPHY / DATA
+   ===================================================================== */
+
+/* SectionHeaderText  (typography/section_header_text.dart)
+   TextStyle(Sansita, 17, w700, height 1.2), cream (dark) / blackberry (light)
+   Padding top 24, bottom 12, left 16, right 16 */
+.k-section-header { margin: 0; padding: 24px 16px 12px; color: var(--theme-fg);
+  font: var(--text-section-header-weight) var(--text-section-header-size)/var(--text-section-header-line-height) var(--text-section-header-family); }
+
+/* LargeStatDisplay  (data/large_stat.dart)
+   margin 16 12; padding all lg (20); bg surface; radius 15; border outline 0.2
+   two Expanded columns: Icon 48 (AppIconSizes.xl) iconColor or onSurfaceVariant; gap sm (12);
+   label smallLabel bold onSurfaceVariant; gap xs (8); value dataNumberLarge 28px onSurface
+   SingleLargeStat: value dataNumberLarge 48px. CompactStatDisplay: padding md (16), rows padding vertical xs (8), icon 20, gap sm (12), value dataNumber 24px */
+.k-large-stat { display: flex; padding: var(--space-lg); background: var(--theme-surface); border: 1px solid rgba(var(--rgb-theme-on-surface), 0.2); border-radius: var(--radius-card); color: var(--theme-on-surface); box-sizing: border-box; }
+.k-large-stat__item { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.k-large-stat__icon { width: var(--icon-xl); height: var(--icon-xl); color: var(--theme-on-surface-variant); }
+.k-large-stat__label { margin-top: var(--space-sm); color: var(--theme-on-surface-variant); font: 700 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-large-stat__value { margin-top: var(--space-xs); font: var(--text-data-number-large-weight) 28px/var(--text-data-number-large-line-height) var(--text-data-number-large-family); }
+.k-large-stat--single .k-large-stat__value { font-size: var(--text-data-number-large-size); }
+.k-compact-stat { padding: var(--space-md); background: var(--theme-surface); border: 1px solid rgba(var(--rgb-theme-on-surface), 0.2); border-radius: var(--radius-card); color: var(--theme-on-surface); }
+.k-compact-stat__row { display: flex; align-items: center; gap: var(--space-sm); padding: var(--space-xs) 0; }
+.k-compact-stat__row .k-icon { width: var(--icon-control); height: var(--icon-control); color: var(--theme-on-surface-variant); }
+.k-compact-stat__label { flex: 1 1 auto; color: var(--theme-on-surface-variant); font: 700 var(--text-small-label-size)/var(--text-small-label-line-height) var(--text-small-label-family); }
+.k-compact-stat__value { font: var(--text-data-number-weight) 24px/var(--text-data-number-line-height) var(--text-data-number-family); }
+
+/* =====================================================================
+   CHAT
+   ===================================================================== */
+
+/* AiCoachAvatar  (features/ai_coach/presentation/widgets/ai_coach_avatar.dart)
+   size 40 default (28 inside _AssistantBubble); circle electrolyte
+   BoxShadow electrolyte 0.35, blurRadius 8, offset (0, 2)
+   'M' Sansita w700, fontSize (size * 0.42).clamp(12, 40), blackberry, height 1.0
+   isPulsing: scale 1.0 -> 1.12, 900ms easeInOut, reversing */
+.k-avatar { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 40px; height: 40px; border-radius: 50%; background: var(--color-electrolyte); color: var(--color-blackberry);
+  box-shadow: 0 2px 8px rgba(var(--rgb-electrolyte), 0.35);
+  font: 700 16.8px/1 var(--font-sansita); }
+.k-avatar--28 { width: 28px; height: 28px; font-size: 12px; } /* 28 * 0.42 = 11.76 -> clamped to 12 */
+.k-avatar--64 { width: 64px; height: 64px; font-size: 26.88px; }
+.k-avatar.is-pulsing { animation: k-pulse 1800ms ease-in-out infinite; }
+@keyframes k-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+
+/* _UserBubble  (ai_coach_chat_screen.dart)
+   right-aligned; padding symmetric(horizontal: md=16, vertical: sm=12); bg electrolyte
+   radius topLeft lg(20) topRight lg(20) bottomLeft lg(20) bottomRight xs(8)
+   text bodyMedium blackberry height 1.5 */
+.k-bubble-user { display: inline-block; max-width: 100%; padding: var(--space-sm) var(--space-md); background: var(--color-electrolyte); color: var(--color-blackberry);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-xs) var(--radius-lg);
+  font: var(--text-body-medium-weight) var(--text-body-medium-size)/1.5 var(--text-body-medium-family); }
+.k-bubble-row--user { display: flex; justify-content: flex-end; }
+/* _AssistantBubble
+   Row: AiCoachAvatar(28) with top padding xxs (4); SizedBox(width: sm=12); Column
+   bubble padding 16 12; bg blackberryLight (dark) / surfaceLight (light)
+   radius topLeft xs(8) topRight lg(20) bottomLeft lg(20) (xs(8) when uiParts follow) bottomRight lg(20)
+   text bodyMedium fg height 1.6; uiParts below with SizedBox(height: xs=8) */
+.k-bubble-row--ai { display: flex; align-items: flex-start; gap: var(--space-sm); }
+.k-bubble-row--ai .k-avatar { margin-top: var(--space-xxs); }
+.k-bubble-ai { display: inline-block; padding: var(--space-sm) var(--space-md); background: var(--theme-raised); color: var(--theme-fg);
+  border-radius: var(--radius-xs) var(--radius-lg) var(--radius-lg) var(--radius-lg);
+  font: var(--text-body-medium-weight) var(--text-body-medium-size)/1.6 var(--text-body-medium-family); }
+.k-bubble-ai--has-parts { border-bottom-left-radius: var(--radius-xs); }
+.k-bubble-parts { margin-top: var(--space-xs); display: flex; flex-direction: column; gap: var(--space-xs); }
+/* _TypingIndicator: three 6px dots, margin right 4, fg 0.5 (dark) / blackberry 0.4 (light), alpha oscillates 0.3..1 over 1200ms */
+.k-typing { display: inline-flex; align-items: center; }
+.k-typing__dot { width: 6px; height: 6px; margin-right: 4px; border-radius: 50%; background: rgba(var(--rgb-theme-fg), 0.5); animation: k-typing 1200ms linear infinite; }
+[data-theme="light"] .k-typing__dot { background: rgba(var(--rgb-theme-fg), 0.4); }
+.k-typing__dot:nth-child(2) { animation-delay: 240ms; }
+.k-typing__dot:nth-child(3) { animation-delay: 480ms; }
+@keyframes k-typing { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+/* message list: ListView padding 16 16, separator SizedBox(height: sm=12) */
+.k-chat-list { display: flex; flex-direction: column; gap: var(--space-sm); padding: var(--space-md); }
+
+/* _buildInputBar  (ai_coach_chat_screen.dart)
+   Container padding fromLTRB(md=16, sm=12, sm=12, md=16); bg blackberry (dark) / cream; border-top 0.5 cream 0.2 (dark) / blackberry 0.15
+   TextField: maxHeight 140; fill blackberryLight (dark) / surfaceLight; radius lg (20)
+   enabledBorder 0.5 borderColor; focusedBorder electrolyte 1.5; contentPadding 16 12; text bodyMedium fg; hint fg 0.4
+   SizedBox(width: sm=12); _SendButton 44 circle electrolyte, send_rounded 20 blackberry
+   _StreamingIndicator: 44 box with 20px spinner strokeWidth 2.5 electrolyte */
+.k-input-bar { display: flex; align-items: flex-end; gap: var(--space-sm); padding: 12px 12px 16px 16px;
+  background: var(--theme-scaffold-background); border-top: 0.5px solid rgba(var(--rgb-theme-fg), 0.2); box-sizing: border-box; }
+[data-theme="light"] .k-input-bar { border-top-color: rgba(var(--rgb-theme-fg), 0.15); }
+.k-input-bar__field { flex: 1 1 auto; min-width: 0; max-height: 140px; padding: var(--space-sm) var(--space-md); box-sizing: border-box; resize: none; outline: 0;
+  background: var(--theme-raised); color: var(--theme-fg); border: 0.5px solid rgba(var(--rgb-theme-fg), 0.2); border-radius: var(--radius-lg);
+  font: var(--text-body-medium-weight) var(--text-body-medium-size)/var(--text-body-medium-line-height) var(--text-body-medium-family); }
+[data-theme="light"] .k-input-bar__field { border-color: rgba(var(--rgb-theme-fg), 0.15); }
+.k-input-bar__field::placeholder { color: rgba(var(--rgb-theme-fg), 0.4); }
+.k-input-bar__field:focus { border: 1.5px solid var(--color-electrolyte); }
+.k-send { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--color-electrolyte); color: var(--color-blackberry); }
+.k-send .k-icon { width: 20px; height: 20px; }
+.k-streaming { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 44px; height: 44px; color: var(--color-electrolyte); }
+.k-streaming .k-spinner { border-width: 2.5px; }
+/* _RetryButton: padding symmetric(horizontal: lg=20, vertical: sm=12), bg electrolyte, radius 999, buttonPrimary blackberry */
+.k-retry { display: inline-flex; padding: var(--space-sm) var(--space-lg); background: var(--color-electrolyte); border-radius: var(--radius-circular); color: var(--color-blackberry);
+  font: var(--text-button-primary-weight) var(--text-button-primary-size)/var(--text-button-primary-line-height) var(--text-button-primary-family); }
+
+/* Generic inline SVG icon slot */
+.k-icon { display: inline-block; flex: none; width: var(--icon-md); height: var(--icon-md); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: middle; }
+.k-icon .k-icon { width: 100%; height: 100%; display: block; }
+.k-icon--fill { fill: currentColor; stroke: none; }
+
+
+/* ---- preview chrome (not part of the kit) ---- */
+body { margin: 0; padding: 32px; background: var(--theme-scaffold-background); color: var(--theme-fg); font-family: var(--font-apercu); }
+.pv-h1 { font: 700 28px/1.2 var(--font-sansita); margin: 0 0 8px; }
+.pv-h2 { font: 700 20px/1.3 var(--font-sansita); margin: 0 0 16px; }
+.pv-lead { font: 400 14px/1.5 var(--font-apercu); color: rgba(var(--rgb-theme-fg), 0.7); margin: 0 0 32px; max-width: 760px; }
+.pv-section { margin: 0 0 48px; }
+.pv-grid { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+.pv-col { display: flex; flex-direction: column; gap: 24px; }
+.pv-item { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pv-sw { width: 148px; }
+.pv-w320 { width: 320px; } .pv-w360 { width: 360px; } .pv-wfull { width: 100%; max-width: 760px; }
+.pv-cap { margin: 0; font: 400 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; color: rgba(var(--rgb-theme-fg), 0.62); white-space: pre-wrap; }
+.pv-cap b { color: var(--theme-fg); font-weight: 600; }
+.pv-light { background: var(--theme-scaffold-background); color: var(--theme-fg); padding: 16px; border-radius: 15px; }
+.pv-swatch { height: 64px; border-radius: 12px; border: 1px solid rgba(var(--rgb-theme-fg), 0.15); }
+.pv-space-box { height: 72px; display: flex; align-items: flex-end; }
+.pv-space { background: var(--color-electrolyte); }
+.pv-size { background: rgba(var(--rgb-electrolyte), 0.25); border: 1px solid var(--color-electrolyte); box-sizing: border-box; max-width: 148px; }
+.pv-radius { width: 96px; height: 64px; background: var(--color-surface-dark); border: 2px solid var(--color-cream); box-sizing: border-box; }
+.pv-shadow-box { width: 148px; height: 64px; border-radius: 15px; background: var(--theme-surface); }
+.pv-table { border-collapse: collapse; font: 400 12px/1.4 var(--font-apercu); }
+.pv-table th, .pv-table td { text-align: left; padding: 6px 12px 6px 0; border-bottom: 1px solid rgba(var(--rgb-theme-fg), 0.15); vertical-align: top; }
+.pv-blur-bg { padding: 16px; border-radius: 15px; background: linear-gradient(135deg, var(--color-surface-dark), var(--color-orange) 60%, var(--color-electrolyte)); display: inline-block; }
+</style>
+</head>
+<body>
+<h1 class="pv-h1">Chat</h1>
+<p class="pv-lead">lib/features/ai_coach/presentation/screens/ai_coach_chat_screen.dart (bubbles, typing indicator, prompt chips, input bar, send, retry) and widgets/ai_coach_avatar.dart.</p>
+<section class="pv-section"><h2 class="pv-h2">AiCoachAvatar</h2><div class="pv-grid">
+<div class="pv-item"><span class="k-avatar k-avatar--28">M</span><p class="pv-cap">size 28 (in _AssistantBubble): font (28*0.42=11.76).clamp(12,40) = 12</p></div>
+<div class="pv-item"><span class="k-avatar">M</span><p class="pv-cap">size 40 (default): circle electrolyte, shadow electrolyte 0.35 blur 8 offset (0,2), 'M' Sansita w700 16.8px blackberry height 1.0</p></div>
+<div class="pv-item"><span class="k-avatar k-avatar--64">M</span><p class="pv-cap">size 64 (empty state): font 26.88px</p></div>
+<div class="pv-item"><span class="k-avatar is-pulsing">M</span><p class="pv-cap">isPulsing: Transform.scale 1.0 to 1.12, 900ms easeInOut, reversing while streaming</p></div>
+</div></section>
+<section class="pv-section"><h2 class="pv-h2">Message bubbles</h2><div class="pv-grid">
+<div class="pv-item pv-w360"><div class="k-chat-list" style="padding:0">
+<div class="k-bubble-row--user"><span class="k-bubble-user">What should I eat two hours before tomorrow's long run?</span></div>
+<div class="k-bubble-row--ai"><span class="k-avatar k-avatar--28">M</span><div><span class="k-bubble-ai">Aim for 60 to 90 g of easy carbs about two hours out. A bagel with honey or a bowl of oats with banana both work well.</span></div></div>
+<div class="k-bubble-row--ai"><span class="k-avatar k-avatar--28">M</span><div><span class="k-bubble-ai"><span class="k-typing"><span class="k-typing__dot"></span><span class="k-typing__dot"></span><span class="k-typing__dot"></span></span></span></div></div>
+</div><p class="pv-cap">_UserBubble: right, padding 12 16, bg electrolyte, radius 20/20/8/20 (bottom-right xs), bodyMedium blackberry lh 1.5. _AssistantBubble: avatar 28 (top pad 4) + gap 12; bg blackberryLight #4A2143, radius 8/20/20/20 (top-left xs), bodyMedium cream lh 1.6. _TypingIndicator: three 6px dots gap 4, cream 0.5, alpha 0.3 to 1 over 1200ms. List padding 16, separator 12.</p></div>
+<div class="pv-item pv-w360"><div class="k-bubble-row--ai"><span class="k-avatar k-avatar--28">M</span><div style="flex:1;min-width:0"><span class="k-bubble-ai k-bubble-ai--has-parts">Here is one option that fits your lunch targets:</span><div class="k-bubble-parts"><div class="k-meal-card"><div class="k-meal-card__header"><h3 class="k-meal-card__name">Turkey and avocado wrap</h3><span class="k-slot-chip">Lunch</span></div><p class="k-meal-card__desc">Whole-wheat wrap, sliced turkey, avocado, spinach and tomato.</p><div class="k-macro-row"><span class="k-macro-row__kcal"><span class="k-icon" style="width:11px;height:11px"><svg class="k-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22c4 0 7-3 7-7 0-3-2-5-3-7-1 2-2 3-3 3 0-3-1-6-4-8 0 4-4 6-4 12 0 4 3 7 7 7z"/></svg></span><span class="k-macro-row__label">520 kcal</span></span><span class="k-macro-row__label">48g C</span><span class="k-macro-row__label">36g P</span><span class="k-macro-row__label">20g F</span></div><div class="k-meal-card__footer"><span class="k-log-it"><svg class="k-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Log it</span></div></div><div><p class="k-choice-question">Want another option?</p><div class="k-choice-group"><span class="k-choice">Yes, something lighter</span><span class="k-choice">No, that works</span></div></div></div></div></div><p class="pv-cap">hasUiParts: prose bubble bottom-left radius becomes xs (8); parts stack below with gap 8 (AiCoachMealCard, AiCoachChoiceButtons)</p></div>
+<div class="pv-item pv-w360" data-theme="light"><div class="pv-light"><div class="k-chat-list" style="padding:0"><div class="k-bubble-row--user"><span class="k-bubble-user">Light theme user bubble</span></div><div class="k-bubble-row--ai"><span class="k-avatar k-avatar--28">M</span><div><span class="k-bubble-ai">Assistant bubble on surfaceLight #FFFFFF with blackberry text.</span></div></div></div></div><p class="pv-cap">light: assistant bg surfaceLight, text blackberry; user bubble unchanged</p></div>
+</div></section>
+<section class="pv-section"><h2 class="pv-h2">Empty state prompt chips</h2><div class="pv-grid">
+<div class="pv-item pv-w360"><div class="k-choice-group" style="gap:12px"><span class="k-prompt-chip">Plan my race-day breakfast</span><span class="k-prompt-chip">How much sodium do I need?</span><span class="k-prompt-chip">Suggest a recovery dinner</span></div><p class="pv-cap">_PromptChip Wrap spacing 12 / runSpacing 12; padding 8 16, border 1 electrolyte 0.7, bg electrolyte 0.12, radius 999, bodySmall electrolyte</p></div>
+</div></section>
+<section class="pv-section"><h2 class="pv-h2">Input bar</h2><div class="pv-grid">
+<div class="pv-item pv-w360"><div class="k-input-bar"><textarea class="k-input-bar__field" rows="1" placeholder="Ask Mealvana anything..."></textarea><span class="k-send"><svg class="k-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span></div><p class="pv-cap">padding LTRB 16 12 12 16, bg blackberry, border-top 0.5 cream 0.2; field fill blackberryLight, radius 20, border 0.5 cream 0.2, contentPadding 12 16, bodyMedium cream, hint cream 0.4, maxHeight 140; gap 12; _SendButton 44 circle electrolyte, send_rounded 20 blackberry</p></div>
+<div class="pv-item pv-w360"><div class="k-input-bar"><textarea class="k-input-bar__field" rows="1" style="border:1.5px solid var(--color-electrolyte)">Two hours before</textarea><span class="k-send"><svg class="k-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span></div><p class="pv-cap">focused: border electrolyte 1.5</p></div>
+<div class="pv-item pv-w360"><div class="k-input-bar"><textarea class="k-input-bar__field" rows="1" placeholder="Ask Mealvana anything..." disabled></textarea><span class="k-streaming"><span class="k-spinner"></span></span></div><p class="pv-cap">isStreaming: field disabled; _StreamingIndicator 44 box with 20px spinner strokeWidth 2.5 electrolyte (AnimatedSwitcher 200ms)</p></div>
+<div class="pv-item pv-w360" data-theme="light"><div class="pv-light" style="padding:0"><div class="k-input-bar"><textarea class="k-input-bar__field" rows="1" placeholder="Ask Mealvana anything..."></textarea><span class="k-send"><svg class="k-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span></div></div><p class="pv-cap">light: bar bg cream, border blackberry 0.15, field fill surfaceLight</p></div>
+</div></section>
+<section class="pv-section"><h2 class="pv-h2">Error state</h2><div class="pv-grid">
+<div class="pv-item"><span class="k-retry">Retry</span><p class="pv-cap">_RetryButton: padding 12 20, bg electrolyte, radius 999, buttonPrimary blackberry (shown under a dragonfruit error icon 48 + bodyMedium message)</p></div>
+</div></section>
+
+</body>
+</html>
