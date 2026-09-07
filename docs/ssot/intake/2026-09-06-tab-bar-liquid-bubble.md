@@ -39,6 +39,16 @@ highlight (tab-bar.md Q1) and the lens-only-in-transit negative (old tb6):
   manifest); tb4/tb5/tb7 unchanged and green; goldens `tab_bar_expanded_3/5`, `morph_mid`,
   `switch_transit_mid` re-blessed from the FakeGlass fallback rendering.
 
+## Iteration 2 (Xuan, 2026-09-07 — on-Rad review, all three sim-verified)
+
+1. **Focused tab crisp + zoomed**: the active item's content now rides ABOVE the glass layer
+   entirely (never refracted/blurred by construction) at `tabLensFocusZoom` 1.08 — brighter
+   and slightly larger than the other tabs.
+2. **Bar readability over busy content**: the bar's material gains a dark fill under the blur
+   (`tabBarBackdropDim` = blackberry 45%) — Xuan's preferred "reduce the transparency" route,
+   matching Bevel's dark-fill-plus-blur bar; applies to the pill and the collapsed button.
+3. **Bar raised**: bottom margin 16 → 28.
+
 ## Ratification considerations (the honest trade-offs)
 
 1. **Supersedes ratified Q1**: the cream-fill active highlight is gone from the bar. The

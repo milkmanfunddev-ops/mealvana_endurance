@@ -34,6 +34,7 @@ class GlassSurface extends StatelessWidget {
     required this.borderRadius,
     this.lift = false,
     this.nested = false,
+    this.dimmed = false,
     this.child,
   });
 
@@ -42,6 +43,10 @@ class GlassSurface extends StatelessWidget {
 
   /// Outer lift shadow — under floating pills only (tokens §Materials).
   final bool lift;
+
+  /// Dark fill under the blur (the tab bar: busy content behind must never
+  /// outshout the labels — Xuan iteration 2026-09-07 #2).
+  final bool dimmed;
 
   /// Chrome sitting ON another glass surface (the compact header row's
   /// circular buttons): keeps the recipe's fill + rim but does NOT re-apply
@@ -60,13 +65,19 @@ class GlassSurface extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: borderRadius,
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [AppMaterials.glassFillTop, AppMaterials.glassFillBottom],
-          ),
+          color: dimmed ? AppMaterials.tabBarBackdropDim : null,
         ),
-        child: child,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: borderRadius,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppMaterials.glassFillTop, AppMaterials.glassFillBottom],
+            ),
+          ),
+          child: child,
+        ),
       ),
     );
     if (nested) {

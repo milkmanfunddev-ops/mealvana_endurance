@@ -66,7 +66,7 @@ tests:
         tab_bar_switch_transit_mid, which captures the deterministic Skia fallback)
       - through the collapse morph the bubble fades out (the collapsed button is its
         own glass circle)
-    pins: { thickness: 16 (+14 in motion), refractive_index: 1.40, chromatic_aberration: 2.0, blur: 1.5, bulge_px: 6 (+14 in motion — the Bevel transit spill), renderer: liquid_glass_renderer 0.2.0-dev.4 (FakeGlass fallback on Skia) }
+    pins: { thickness: 16 (+14 in motion), refractive_index: 1.40, chromatic_aberration: 2.0, blur: 1.5, bulge_px: 6 (+14 in motion — the Bevel transit spill), renderer: liquid_glass_renderer 0.2.0-dev.4 (FakeGlass fallback on Skia), focus_zoom: 1.08, bar_dim: blackberry 45%, bar_bottom_margin: 28 }
   - id: tb7_utility_slot_reserved   # NEGATIVE / geometry test — required
     contract: tab-bar Q2 (option a)
     assert:

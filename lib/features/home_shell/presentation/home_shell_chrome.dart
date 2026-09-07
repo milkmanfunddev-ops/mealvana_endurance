@@ -151,7 +151,7 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
           // stays EMPTY in v1 (nothing composes there, deliberately).
           Positioned(
             left: 14,
-            bottom: 16,
+            bottom: 28,
             child: Offstage(
               offstage: !widget.showTabBar,
               child: KyleTabBar(

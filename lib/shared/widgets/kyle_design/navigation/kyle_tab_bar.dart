@@ -251,6 +251,7 @@ class _KyleTabBarState extends State<KyleTabBar>
         child: GlassSurface(
           borderRadius: BorderRadius.circular(KyleTabBar.collapsedSize / 2),
           lift: true,
+          dimmed: true,
           child: SizedBox(
             width: KyleTabBar.collapsedSize,
             height: KyleTabBar.collapsedSize,
@@ -315,6 +316,7 @@ class _KyleTabBarState extends State<KyleTabBar>
           GlassSurface(
             borderRadius: BorderRadius.circular(100),
             lift: true,
+            dimmed: true,
             child: SizedBox(
               width: pillW,
               height: pillH,
@@ -350,14 +352,33 @@ class _KyleTabBarState extends State<KyleTabBar>
                   radius: lensH / 2,
                   visibility: lensVisibility,
                   motion: motion,
-                  child: settled
-                      ? _itemContent(
-                          widget.destinations[_activeIndex],
-                          AppColors.cream,
-                          labelFade,
-                          p,
-                        )
-                      : null,
+                ),
+              ),
+            ),
+          // The focused tab's content rides ABOVE the glass layer — crisp by
+          // construction (never refracted/blurred) and slightly zoomed
+          // (Xuan iteration 2026-09-07 #1).
+          if (lensVisibility > 0)
+            Positioned(
+              left: center - lensW / 2,
+              top: (pillH - itemH) / 2 - bulge,
+              width: lensW,
+              height: lensH,
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 120),
+                  opacity: settled ? 1 : 0,
+                  child: Center(
+                    child: Transform.scale(
+                      scale: AppMaterials.tabLensFocusZoom,
+                      child: _itemContent(
+                        widget.destinations[_activeIndex],
+                        AppColors.cream,
+                        labelFade,
+                        p,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

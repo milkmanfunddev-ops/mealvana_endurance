@@ -138,7 +138,7 @@ Widget _barOverGround({
     Positioned.fill(child: _ground()),
     Positioned(
       left: 14,
-      bottom: 16,
+      bottom: 28,
       child: KyleTabBar(
         destinations: destinations,
         activeId: activeId,

@@ -109,6 +109,16 @@ class AppMaterials {
   /// How far the bubble bulges past the bar's border at rest.
   static const double tabLensBulgePx = 6.0;
 
+  /// The focused tab's content scales up slightly on the lens (readability
+  /// + the magnified-through-glass read; Xuan iteration 2026-09-07 #1).
+  static const double tabLensFocusZoom = 1.08;
+
+  /// Dark fill under the tab bar's blur (Xuan iteration 2026-09-07 #2 —
+  /// reduce the bar's transparency so busy content behind never outshouts
+  /// the labels; the Bevel bar is a dark fill + blur).
+  static final Color tabBarBackdropDim =
+      AppColors.blackberry.withValues(alpha: 0.45);
+
   /// EXTRA bulge while the lens travels or is dragged — Bevel's lens spills
   /// well over the bar in motion and settles back down.
   static const double tabLensTransitBulgePx = 14.0;
