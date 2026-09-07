@@ -297,6 +297,10 @@ class _KyleTabBarState extends State<KyleTabBar>
     final lensH = itemH + 2 * bulge;
     final lensW = math.max(0.0, highlightW + 2 * bulge);
     final lensVisibility = (1 - p * 1.8).clamp(0.0, 1.0);
+    // Bevel behavior: at rest the active label rides CRISP on top of the
+    // lens (the refracted copy beneath is hidden); in transit the lens
+    // glides empty over the static labels.
+    final settled = !_travel.isAnimating && !dragging;
     return GestureDetector(
       onHorizontalDragStart: _onDragStart,
       onHorizontalDragUpdate: _onDragUpdate,
@@ -315,7 +319,16 @@ class _KyleTabBarState extends State<KyleTabBar>
                 child: Row(
                   children: [
                     SizedBox(width: KyleTabBar.pillPadding * (1 - p)),
-                    for (var i = 0; i < n; i++) _item(i, p, itemW, labelFade),
+                    for (var i = 0; i < n; i++)
+                      _item(
+                        i,
+                        p,
+                        itemW,
+                        labelFade,
+                        // Hidden while its crisp copy rides the lens.
+                        carriedByLens:
+                            i == _activeIndex && settled && lensVisibility > 0,
+                      ),
                   ],
                 ),
               ),
@@ -332,6 +345,14 @@ class _KyleTabBarState extends State<KyleTabBar>
                   key: const ValueKey('kyle_tab_bar.highlight'),
                   radius: lensH / 2,
                   visibility: lensVisibility,
+                  child: settled
+                      ? _itemContent(
+                          widget.destinations[_activeIndex],
+                          AppColors.cream,
+                          labelFade,
+                          p,
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -340,7 +361,13 @@ class _KyleTabBarState extends State<KyleTabBar>
     );
   }
 
-  Widget _item(int i, double p, double itemW, double labelFade) {
+  Widget _item(
+    int i,
+    double p,
+    double itemW,
+    double labelFade, {
+    bool carriedByLens = false,
+  }) {
     final d = widget.destinations[i];
     final active = i == _activeIndex;
     double lerp(double a, double b) => a + (b - a) * p;
@@ -366,36 +393,52 @@ class _KyleTabBarState extends State<KyleTabBar>
             onTap: () {
               if (!active) widget.onSelect(d.id);
             },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(d.icon, size: 20, color: ink),
-                if (labelFade > 0)
-                  SizedBox(
-                    height: lerp(14, 0),
-                    child: Opacity(
-                      opacity: labelFade,
-                      child: Text(
-                        d.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.visible,
-                        softWrap: false,
-                        style: TextStyle(
-                          fontFamily: AppTextStyles.apercu,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.2,
-                          height: 1.0,
-                          color: ink,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            child: Opacity(
+              opacity: carriedByLens ? 0 : 1,
+              child: _itemContent(d, ink, labelFade, p),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  /// One item's icon + label — shared by the in-row items and the crisp
+  /// copy riding the lens, so the two can never drift apart.
+  Widget _itemContent(
+    KyleTabBarDestination d,
+    Color ink,
+    double labelFade,
+    double p,
+  ) {
+    double lerp(double a, double b) => a + (b - a) * p;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(d.icon, size: 20, color: ink),
+        if (labelFade > 0)
+          SizedBox(
+            height: lerp(14, 0),
+            child: Opacity(
+              opacity: labelFade,
+              child: Text(
+                d.label,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                softWrap: false,
+                style: TextStyle(
+                  fontFamily: AppTextStyles.apercu,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
+                  height: 1.0,
+                  color: ink,
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

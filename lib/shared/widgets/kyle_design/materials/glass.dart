@@ -195,13 +195,23 @@ class GlassRimPainter extends CustomPainter {
 /// package automatically renders its flat FakeGlass approximation, keeping
 /// CI deterministic.
 class LiquidLensBubble extends StatelessWidget {
-  const LiquidLensBubble({super.key, required this.radius, this.visibility = 1});
+  const LiquidLensBubble({
+    super.key,
+    required this.radius,
+    this.visibility = 1,
+    this.child,
+  });
 
   /// Capsule corner radius of the bubble.
   final double radius;
 
   /// 0..1 — fades the whole effect (the collapse morph drives this).
   final double visibility;
+
+  /// Rendered crisply ON TOP of the glass (the Bevel behavior: the resting
+  /// active label rides the lens instead of being refracted to mush under
+  /// it; in transit the lens glides empty over the static labels).
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -216,7 +226,9 @@ class LiquidLensBubble extends StatelessWidget {
         saturation: AppMaterials.tabLensSaturation,
         lightIntensity: AppMaterials.tabLensLightIntensity,
       ),
-      child: const SizedBox.expand(),
+      child: SizedBox.expand(
+        child: child == null ? null : Center(child: child),
+      ),
     );
   }
 }
