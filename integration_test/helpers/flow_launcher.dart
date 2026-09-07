@@ -194,17 +194,34 @@ Future<void> _resetSharedAppState(PatrolIntegrationTester $) async {
 /// means *today's* timeline rather than inherit whatever the previous test
 /// left behind.
 ///
-/// Best-effort by design: `fuel_timeline.today_button` only renders when the
-/// timeline is off today, so its absence is the success case, not an error.
-/// If the timeline cannot be reached at all the caller's own assertion reports
-/// that, which is a better error than one thrown from inside a helper.
+/// Best-effort by design: the home-shell date header only renders on the
+/// Timeline tab, so its absence is the success case, not an error. If the
+/// timeline cannot be reached at all the caller's own assertion reports that,
+/// which is a better error than one thrown from inside a helper.
+///
+/// home-shell@v1: the old `fuel_timeline.today_button` is gone. Going back to
+/// today is now "open the calendar sheet, tap today's day cell" — a day-cell
+/// tap sets the date AND dismisses the sheet in one contract (CS-4; the Today
+/// pill deliberately keeps the sheet open, CS-6, so it's the wrong affordance
+/// here). The sheet always opens on the current month, so today's cell is
+/// `kyle_calendar_sheet.day_<today.day>`.
 Future<void> ensureTimelineOnToday(PatrolIntegrationTester $) async {
-  const todayButton = ValueKey('fuel_timeline.today_button');
-  const filterAll = ValueKey('fuel_timeline.filter_all');
+  // The REST header's title cluster summons the sheet (the compact variant's
+  // calendar_button circle never renders — the header is always REST).
+  const headerTitle = ValueKey('kyle_date_header.title');
+  final todayCell = ValueKey('kyle_calendar_sheet.day_${DateTime.now().day}');
+  const filterAll = ValueKey('macro_dashboard.filter_all');
 
   try {
-    if ($(todayButton).exists) {
-      await $(todayButton).tap(settlePolicy: SettlePolicy.noSettle);
+    // On today the title reads "Today, <Month> <D>" — no sheet round-trip
+    // needed (the old today_button's only-renders-when-off-today economy).
+    final onToday = $(find.textContaining('Today, ')).exists;
+    if (!onToday && $(headerTitle).exists) {
+      await $(headerTitle).tap(settlePolicy: SettlePolicy.noSettle);
+      await $.pump(const Duration(milliseconds: 600));
+      if ($(todayCell).exists) {
+        await $(todayCell).tap(settlePolicy: SettlePolicy.noSettle);
+      }
       await $.pump(const Duration(milliseconds: 600));
     }
     if ($(filterAll).exists) {

@@ -4,7 +4,7 @@
 ///
 /// Flow:
 ///   launchApp → ensureAuthenticated (reuse session, else email login)
-///     → Fuel Timeline → "+ Add Food" (fuel_timeline.add_food) → LogMealScreen
+///     → Fuel Timeline → "+ Add Food" (macro_dashboard.add_food) → LogMealScreen
 ///     → "Build a meal" app-bar action (log_meal.build_a_meal_button)
 ///     → BuildMealScreen empty state → "+ Add food" (build_meal.add_food_button)
 ///     → search "banana" (add_food.search_field), await results
@@ -75,10 +75,10 @@ void main() {
         const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
-        const ValueKey('fuel_timeline.add_food'),
+        const ValueKey('macro_dashboard.add_food'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(
-        const ValueKey('fuel_timeline.add_food'),
+        const ValueKey('macro_dashboard.add_food'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
 

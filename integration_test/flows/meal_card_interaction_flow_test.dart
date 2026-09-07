@@ -69,10 +69,10 @@ void main() {
         const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
-        const ValueKey('fuel_timeline.add_food'),
+        const ValueKey('macro_dashboard.add_food'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(
-        const ValueKey('fuel_timeline.add_food'),
+        const ValueKey('macro_dashboard.add_food'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
 
       await $('Manual').waitUntilVisible(timeout: const Duration(seconds: 15));

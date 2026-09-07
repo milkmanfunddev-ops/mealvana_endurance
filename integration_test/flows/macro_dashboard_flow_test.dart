@@ -100,7 +100,7 @@ void main() {
         dashboardFound = true;
         break;
       }
-      if ($(const ValueKey('fuel_timeline.filter_all')).exists) break;
+      if ($(const ValueKey('macro_dashboard.filter_all')).exists) break;
     }
     expect(dashboardFound, isTrue,
         reason: 'the dashboard tab must render — there is no flag and no '

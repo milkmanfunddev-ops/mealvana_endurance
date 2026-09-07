@@ -67,7 +67,7 @@ void main() {
         const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
-        const ValueKey('fuel_timeline.add_food'),
+        const ValueKey('macro_dashboard.add_food'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
 
       // ---- 2. Make sure the breakdown button is reachable -------------------
@@ -87,13 +87,13 @@ void main() {
       // (3) is already handled: ensureTimelineOnToday (called by
       // ensureAuthenticated) selects the All filter, and flows share one app
       // session so that reset matters.
-      const breakdownButton = ValueKey('fuel_timeline.breakdown_button');
-      const dashToggle = ValueKey('fuel_timeline.dash_expand_toggle');
+      const breakdownButton = ValueKey('macro_dashboard.full_breakdown');
+      const dashToggle = ValueKey('macro_dashboard.energy_expand');
 
       if (!$(dashToggle).exists) {
         // No card at all → tracking really is off. This is the only case where
         // touching the tracking toggle is correct.
-        final tracking = $(const ValueKey('fuel_timeline.tracking_toggle'));
+        final tracking = $(const ValueKey('macro_dashboard.tracking_toggle'));
         if (tracking.exists) {
           await tracking.tap(settlePolicy: SettlePolicy.noSettle);
           await $.pump(const Duration(milliseconds: 800));
@@ -148,7 +148,7 @@ void main() {
       await $.pump(const Duration(milliseconds: 600));
 
       await $(
-        const ValueKey('fuel_timeline.add_food'),
+        const ValueKey('macro_dashboard.add_food'),
       ).waitUntilVisible(timeout: const Duration(seconds: 15));
     },
     timeout: const Timeout(Duration(minutes: 5)),
