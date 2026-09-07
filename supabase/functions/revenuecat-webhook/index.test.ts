@@ -31,6 +31,15 @@ import {
   assertEquals,
 } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { describe, it, beforeEach } from 'https://deno.land/std@0.224.0/testing/bdd.ts';
+import {
+  entitlementRowFor,
+  isProEvent,
+  isStaleEvent,
+  PRO_PRODUCT_IDS,
+  type RcEvent,
+  SUBSCRIPTION_EVENT_TYPES,
+  transferParties,
+} from './entitlements.ts';
 
 // ---------------------------------------------------------------------------
 // Handler mirror (kept 1:1 with revenuecat-webhook/index.ts)
@@ -481,4 +490,204 @@ Deno.test('mirror fidelity — constants match revenuecat-webhook/index.ts', asy
   assert(src.includes("'23505'"), 'index.ts no longer special-cases unique violations');
   assert(src.includes("'23503'"), 'index.ts no longer acks cross-project user misses');
   assert(src.includes("p_reason: 'grant_purchase'"), 'grant reason drifted');
+});
+
+// ---------------------------------------------------------------------------
+// G. Pro subscription → user_entitlements
+//
+// The mapping lives in ./entitlements.ts and is imported here directly (no
+// mirror), so these tests run the code the handler runs. The handler wiring
+// (branch order, upsert target, 23503 ack) is asserted against index.ts source.
+// ---------------------------------------------------------------------------
+
+const NOW_MS = Date.parse('2026-09-01T12:00:00Z');
+const IN_30_DAYS_MS = NOW_MS + 30 * 24 * 60 * 60 * 1000;
+const YESTERDAY_MS = NOW_MS - 24 * 60 * 60 * 1000;
+
+function proEvent(overrides: Record<string, unknown> = {}): RcEvent {
+  return {
+    id: 'evt-pro-001',
+    type: 'INITIAL_PURCHASE',
+    app_user_id: USER_ID,
+    product_id: 'mealvana_pro_monthly',
+    entitlement_ids: ['pro'],
+    store: 'APP_STORE',
+    period_type: 'NORMAL',
+    event_timestamp_ms: NOW_MS,
+    expiration_at_ms: IN_30_DAYS_MS,
+    ...overrides,
+  };
+}
+
+describe('G. Pro subscription mapping (entitlements.ts)', () => {
+  it('isProEvent: entitlement_ids containing pro wins regardless of product', () => {
+    assert(isProEvent({ entitlement_ids: ['pro'], product_id: 'anything' }));
+    assert(!isProEvent({ entitlement_ids: ['other'], product_id: 'mealvana_credits_50' }));
+  });
+
+  it('isProEvent: every one of the Pro store SKUs matches without entitlement_ids', () => {
+    for (const sku of PRO_PRODUCT_IDS) {
+      assert(isProEvent({ product_id: sku }), `${sku} should be a Pro SKU`);
+    }
+    // Play may send the bare subscription id without the base-plan suffix.
+    assert(isProEvent({ product_id: 'mealvana_pro_annual' }));
+  });
+
+  it('isProEvent: a credit pack is NOT a Pro event (falls through to grant path)', () => {
+    assert(!isProEvent({ product_id: 'mealvana_credits_50' }));
+    assert(!isProEvent({ product_id: 'mealvana_credits_test_1_prod' }));
+    assert(!isProEvent({}));
+  });
+
+  it('SUBSCRIPTION_EVENT_TYPES covers the lifecycle the spec lists', () => {
+    for (
+      const t of [
+        'INITIAL_PURCHASE',
+        'RENEWAL',
+        'CANCELLATION',
+        'UNCANCELLATION',
+        'EXPIRATION',
+        'BILLING_ISSUE',
+        'PRODUCT_CHANGE',
+        'SUBSCRIPTION_PAUSED',
+        'SUBSCRIPTION_EXTENDED',
+        'TEST',
+      ]
+    ) {
+      assert(SUBSCRIPTION_EVENT_TYPES.has(t), `${t} missing`);
+    }
+    assert(!SUBSCRIPTION_EVENT_TYPES.has('NON_RENEWING_PURCHASE'), 'consumables are not subscriptions');
+  });
+
+  it('INITIAL_PURCHASE with a future expiry → active row with the event fields', () => {
+    const row = entitlementRowFor(proEvent(), NOW_MS);
+    assertEquals(row.entitlement, 'pro');
+    assertEquals(row.active, true);
+    assertEquals(row.product_id, 'mealvana_pro_monthly');
+    assertEquals(row.store, 'APP_STORE');
+    assertEquals(row.period_type, 'NORMAL');
+    assertEquals(row.expires_at, new Date(IN_30_DAYS_MS).toISOString());
+    assertEquals(row.updated_at, new Date(NOW_MS).toISOString());
+    assertEquals(row.unsubscribe_detected_at, null);
+    assertEquals(row.billing_issue_detected_at, null);
+    assertEquals(row.source, 'revenuecat');
+  });
+
+  it('a past expiration_at_ms → inactive even on RENEWAL', () => {
+    const row = entitlementRowFor(
+      proEvent({ type: 'RENEWAL', expiration_at_ms: YESTERDAY_MS }),
+      NOW_MS,
+    );
+    assertEquals(row.active, false);
+  });
+
+  it('EXPIRATION → inactive even if expiration_at_ms is (clock-skew) in the future', () => {
+    const row = entitlementRowFor(
+      proEvent({ type: 'EXPIRATION', expiration_at_ms: NOW_MS + 60_000 }),
+      NOW_MS,
+    );
+    assertEquals(row.active, false);
+  });
+
+  it('missing expiration_at_ms → inactive (never grant open-ended access by accident)', () => {
+    const row = entitlementRowFor(proEvent({ expiration_at_ms: undefined }), NOW_MS);
+    assertEquals(row.active, false);
+    assertEquals(row.expires_at, null);
+  });
+
+  it('CANCELLATION keeps access until expiry and stamps unsubscribe_detected_at', () => {
+    const row = entitlementRowFor(proEvent({ type: 'CANCELLATION' }), NOW_MS);
+    assertEquals(row.active, true);
+    assertEquals(row.unsubscribe_detected_at, new Date(NOW_MS).toISOString());
+  });
+
+  it('UNCANCELLATION clears unsubscribe_detected_at carried from the stored row', () => {
+    const previous = entitlementRowFor(proEvent({ type: 'CANCELLATION' }), NOW_MS);
+    const row = entitlementRowFor(
+      proEvent({ type: 'UNCANCELLATION', event_timestamp_ms: NOW_MS + 1000 }),
+      NOW_MS,
+      previous,
+    );
+    assertEquals(row.unsubscribe_detected_at, null);
+    assertEquals(row.active, true);
+  });
+
+  it('BILLING_ISSUE stamps billing_issue_detected_at; the next RENEWAL clears it', () => {
+    const issue = entitlementRowFor(proEvent({ type: 'BILLING_ISSUE' }), NOW_MS);
+    assertEquals(issue.billing_issue_detected_at, new Date(NOW_MS).toISOString());
+    assertEquals(issue.active, true, 'grace period keeps access while RC extends expiry');
+
+    const renewal = entitlementRowFor(
+      proEvent({ type: 'RENEWAL', event_timestamp_ms: NOW_MS + 1000 }),
+      NOW_MS,
+      issue,
+    );
+    assertEquals(renewal.billing_issue_detected_at, null);
+  });
+
+  it('PRODUCT_CHANGE keeps a stored cancellation timestamp (event is silent on it)', () => {
+    const cancelled = entitlementRowFor(proEvent({ type: 'CANCELLATION' }), NOW_MS);
+    const changed = entitlementRowFor(
+      proEvent({
+        type: 'PRODUCT_CHANGE',
+        product_id: 'mealvana_pro_annual',
+        event_timestamp_ms: NOW_MS + 1000,
+      }),
+      NOW_MS,
+      cancelled,
+    );
+    assertEquals(changed.unsubscribe_detected_at, cancelled.unsubscribe_detected_at);
+    assertEquals(changed.product_id, 'mealvana_pro_annual');
+  });
+
+  it('event fields missing from the payload fall back to the stored row', () => {
+    const previous = entitlementRowFor(proEvent(), NOW_MS);
+    const row = entitlementRowFor(
+      proEvent({ product_id: undefined, store: undefined, period_type: undefined }),
+      NOW_MS,
+      previous,
+    );
+    assertEquals(row.product_id, 'mealvana_pro_monthly');
+    assertEquals(row.store, 'APP_STORE');
+    assertEquals(row.period_type, 'NORMAL');
+  });
+
+  it('isStaleEvent: an event older than the stored updated_at is stale; same/newer is not', () => {
+    const stored = new Date(NOW_MS).toISOString();
+    assert(isStaleEvent(proEvent({ event_timestamp_ms: NOW_MS - 1 }), stored));
+    assert(!isStaleEvent(proEvent({ event_timestamp_ms: NOW_MS }), stored));
+    assert(!isStaleEvent(proEvent({ event_timestamp_ms: NOW_MS + 1 }), stored));
+    assert(!isStaleEvent(proEvent(), null), 'no stored row → never stale');
+    assert(!isStaleEvent(proEvent({ event_timestamp_ms: undefined }), stored));
+  });
+
+  it('transferParties reads both user lists and ignores empties', () => {
+    const { from, to } = transferParties({
+      type: 'TRANSFER',
+      transferred_from: ['a', ''],
+      transferred_to: ['b'],
+    });
+    assertEquals(from, ['a']);
+    assertEquals(to, ['b']);
+    assertEquals(transferParties({}), { from: [], to: [] });
+  });
+});
+
+Deno.test('wiring fidelity — index.ts routes Pro events to user_entitlements before the grant path', async () => {
+  const src = await Deno.readTextFile(new URL('./index.ts', import.meta.url));
+  const proBranch = src.indexOf('SUBSCRIPTION_EVENT_TYPES.has(type) && isProEvent(event)');
+  const grantGate = src.indexOf('if (!GRANTING_EVENT_TYPES.has(type))');
+  assert(proBranch > 0, 'index.ts no longer routes Pro subscription events');
+  assert(proBranch < grantGate, 'Pro branch must run before the consumable grant path');
+  assert(src.includes("from('user_entitlements')"), 'index.ts no longer writes user_entitlements');
+  assert(
+    src.includes("onConflict: 'user_id,entitlement'"),
+    'upsert must conflict on the (user_id, entitlement) primary key',
+  );
+  assert(src.includes('TRANSFER_EVENT_TYPE'), 'index.ts no longer handles TRANSFER');
+  // The 23503 ack must exist in the Pro branch too (dev/prod share one RC project).
+  assert(
+    src.split("'23503'").length - 1 >= 2,
+    'both the grant path and the entitlement path must ack cross-project user misses',
+  );
 });

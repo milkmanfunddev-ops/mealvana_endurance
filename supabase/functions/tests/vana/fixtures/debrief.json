@@ -1,0 +1,19 @@
+{
+  "kind": "debrief",
+  "planId": "22222222-2222-4222-8222-222222222222",
+  "completed": 4,
+  "planned": 5,
+  "skipReason": "late shift Thursday",
+  "memories": [
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "kind": "pattern",
+      "key": null,
+      "fact": "Skips the Thursday cook when work runs late",
+      "value": null,
+      "confidence": 0.8,
+      "lastConfirmedAt": "2026-09-13T18:00:00Z",
+      "source": "debrief"
+    }
+  ]
+}

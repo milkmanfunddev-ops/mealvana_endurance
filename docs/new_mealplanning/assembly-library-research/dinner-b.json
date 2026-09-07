@@ -1,0 +1,5024 @@
+[
+ {
+  "id": "D-b-001",
+  "name": "Rice, baked tofu & roasted broccoli bowl with sriracha",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tofu, baked",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "sriracha",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "sesame seeds",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-002",
+  "name": "Quinoa, black beans & roasted sweet potato bowl with salsa",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-003",
+  "name": "Farro, chickpea & roasted cauliflower bowl with tahini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "farro, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "tahini sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-004",
+  "name": "Bulgur, edamame & roasted beet bowl with balsamic vinaigrette",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "bulgur wheat, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "edamame, shelled",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "beets, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "balsamic vinaigrette, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-005",
+  "name": "Wheatberries, white bean & raw cabbage-carrot bowl with hummus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "wheatberries, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "cabbage, shredded",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, shredded",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-006",
+  "name": "Rice, kidney bean & roasted green bean bowl with teriyaki",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "kidney beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "green beans, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "teriyaki sauce, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-007",
+  "name": "Quinoa, tempeh & roasted pepper-onion bowl with sriracha",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, roasted",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "onion, roasted",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "sriracha",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-008",
+  "name": "Spelt, lentil & raw pepper-carrot bowl with balsamic",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "spelt, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green lentils, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, raw",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, raw",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "balsamic vinaigrette, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-009",
+  "name": "Rice, seitan & roasted broccoli bowl with tzatziki (dairy-free)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "seitan, sliced",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "dairy-free tzatziki, jarred",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-010",
+  "name": "Amaranth, black bean & roasted sweet potato bowl with pico de gallo",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "amaranth, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "pico de gallo, jarred",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-011",
+  "name": "Quinoa, chickpea & roasted green bean bowl with hummus and pumpkin seeds",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "green beans, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "pumpkin seeds",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-012",
+  "name": "Rice, edamame & roasted cauliflower bowl with peanut sauce",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "edamame, shelled",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "peanut sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-013",
+  "name": "Farro, white bean & roasted beet bowl with pesto",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "farro, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "beets, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "pesto, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-014",
+  "name": "Bulgur, black bean & raw cabbage bowl with sriracha and almonds",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "bulgur wheat, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "cabbage, shredded",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "sriracha",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "almonds, sliced",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-015",
+  "name": "Quinoa, kidney bean & roasted pepper-carrot bowl with salsa and radish",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kidney beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, roasted",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, roasted",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "radish, sliced",
+    "qty": "30 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap starch for any whole grain; swap protein for any bean/legume/tofu/tempeh/seitan; swap sauce for any bottled dressing",
+  "approx_macros": "~600-700 kcal · 85-100g C · 25-30g P · 15-20g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-016",
+  "name": "Brown rice, broccoli & black bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-017",
+  "name": "Brown rice, kale & chickpea bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-018",
+  "name": "Farro, spinach & white bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "farro, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-019",
+  "name": "Brown rice, green beans & kidney bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "kidney beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-020",
+  "name": "Quinoa, broccoli & lentil bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "green lentils, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-021",
+  "name": "Brown rice, Brussels sprouts & black bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-022",
+  "name": "Barley, chard & pinto bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pearl barley, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "swiss chard, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "pinto beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-023",
+  "name": "Brown rice, zucchini & chickpea bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, sauteed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap grain, green or bean freely -- the formula is deliberately interchangeable",
+  "approx_macros": "~550-650 kcal · 80-95g C · 22-28g P · 12-16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/vegetarian-diet-athletes/ ; No Meat Athlete podcast (Matt Frazier, vegan ultrarunner, and Doug Hay)",
+  "evidence": "Matt and Doug describe their \"favorite healthy dinner\" as the grain/green/bean meal, \"which can be as simple as a bean and veggie bowl with brown rice\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-024",
+  "name": "Black beans & rice with guacamole and pico de gallo",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "pico de gallo, jarred",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + fat + sauce",
+  "context": [
+   "everyday",
+   "travel",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any canned bean works; swap rice for quinoa for extra protein",
+  "approx_macros": "~600 kcal · 95g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/rice-and-beans/ ; No Meat Athlete (Matt Frazier)",
+  "evidence": "featured as a repeatable staple format -- \"Rice and Beans 5 Ways\" -- topped mexican-style \"with guacamole and pico de gallo\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-025",
+  "name": "Pinto beans & rice with salsa and avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "pinto beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat + sauce",
+  "context": [
+   "everyday",
+   "travel",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any canned bean works; swap rice for quinoa for extra protein",
+  "approx_macros": "~600 kcal · 95g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/rice-and-beans/ ; No Meat Athlete (Matt Frazier)",
+  "evidence": "featured as a repeatable staple format -- \"Rice and Beans 5 Ways\" -- topped mexican-style \"with guacamole and pico de gallo\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-026",
+  "name": "Kidney beans & rice with hot sauce and lime",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "kidney beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "lime",
+    "qty": "1 wedge",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + fat + sauce",
+  "context": [
+   "everyday",
+   "travel",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any canned bean works; swap rice for quinoa for extra protein",
+  "approx_macros": "~600 kcal · 95g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/rice-and-beans/ ; No Meat Athlete (Matt Frazier)",
+  "evidence": "featured as a repeatable staple format -- \"Rice and Beans 5 Ways\" -- topped mexican-style \"with guacamole and pico de gallo\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-027",
+  "name": "Black beans & coconut rice with mango and cilantro",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "coconut rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mango, diced",
+    "qty": "80 g",
+    "role": "fruit"
+   },
+   {
+    "food": "cilantro",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + fat + sauce",
+  "context": [
+   "everyday",
+   "travel",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any canned bean works; swap rice for quinoa for extra protein",
+  "approx_macros": "~600 kcal · 95g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/rice-and-beans/ ; No Meat Athlete (Matt Frazier)",
+  "evidence": "featured as a repeatable staple format -- \"Rice and Beans 5 Ways\" -- topped mexican-style \"with guacamole and pico de gallo\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-028",
+  "name": "Garbanzo beans & rice with salsa and corn",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "corn, canned",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + fat + sauce",
+  "context": [
+   "everyday",
+   "travel",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any canned bean works; swap rice for quinoa for extra protein",
+  "approx_macros": "~600 kcal · 95g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.nomeatathlete.com/rice-and-beans/ ; No Meat Athlete (Matt Frazier)",
+  "evidence": "featured as a repeatable staple format -- \"Rice and Beans 5 Ways\" -- topped mexican-style \"with guacamole and pico de gallo\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-029",
+  "name": "Rice, chickpeas & tofu bowl (high-calorie)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "400 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "270 g",
+    "role": "protein"
+   },
+   {
+    "food": "tofu, cubed",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein + protein",
+  "context": [
+   "race-week",
+   "carb-load",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "scale rice up or down for calorie needs; PCRM's plan pairs this with whole-wheat toast and jam elsewhere in the day",
+  "approx_macros": "~900 kcal · 140g C · 45g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.pcrm.org/good-nutrition/athletes/vegan-diet-for-the-ultra-athlete ; Physicians Committee for Responsible Medicine (PCRM), sample high-calorie vegan ultra-athlete meal plan",
+  "evidence": "sample dinner in PCRM's published high-calorie vegan ultra-athlete meal plan: chickpeas, cubed tofu and rice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-030",
+  "name": "Rice, black beans & tofu bowl (high-calorie)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "400 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "270 g",
+    "role": "protein"
+   },
+   {
+    "food": "tofu, cubed",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein + protein",
+  "context": [
+   "race-week",
+   "carb-load",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "scale rice up or down for calorie needs; PCRM's plan pairs this with whole-wheat toast and jam elsewhere in the day",
+  "approx_macros": "~900 kcal · 140g C · 45g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.pcrm.org/good-nutrition/athletes/vegan-diet-for-the-ultra-athlete ; Physicians Committee for Responsible Medicine (PCRM), sample high-calorie vegan ultra-athlete meal plan",
+  "evidence": "sample dinner in PCRM's published high-calorie vegan ultra-athlete meal plan: chickpeas, cubed tofu and rice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-031",
+  "name": "Quinoa, chickpeas & tofu bowl (high-calorie)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "350 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "270 g",
+    "role": "protein"
+   },
+   {
+    "food": "tofu, cubed",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein + protein",
+  "context": [
+   "race-week",
+   "carb-load",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "scale rice up or down for calorie needs; PCRM's plan pairs this with whole-wheat toast and jam elsewhere in the day",
+  "approx_macros": "~900 kcal · 140g C · 45g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.pcrm.org/good-nutrition/athletes/vegan-diet-for-the-ultra-athlete ; Physicians Committee for Responsible Medicine (PCRM), sample high-calorie vegan ultra-athlete meal plan",
+  "evidence": "sample dinner in PCRM's published high-calorie vegan ultra-athlete meal plan: chickpeas, cubed tofu and rice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-032",
+  "name": "Oyster mushroom bulgogi bowl with edamame and miso-tahini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "oyster mushroom, bulgogi-style",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "beets, marinated",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "cucumber, chili-pickled",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, shredded",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "edamame, shelled",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "shallot, fried",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "miso-tahini sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "korean-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "sesame",
+   "shellfish",
+   "soy"
+  ],
+  "swaps": "swap oyster mushroom for tempeh or seitan if unavailable",
+  "approx_macros": "~700 kcal · 95g C · 28g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.poweredbyplantscycling.com/about ; https://ediblemadison.com/stories/powered-by-plants ; Powered by Plants Cycling, RAGBRAI vegan cycling team (chef Lauren Montelbano)",
+  "evidence": "actual team-dinner menu items served to the riders during their 500-mile RAGBRAI ride across Iowa",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-033",
+  "name": "Jackfruit taco bar with sofrito beans, Spanish rice and slaw",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "jackfruit carnitas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sofrito beans",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "spanish rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cilantro-lime slaw",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "corn tortillas",
+    "qty": "2",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "corn tortillas keep this gluten-free if the sofrito beans are checked for cross-contact",
+  "approx_macros": "~750 kcal · 105g C · 22g P · 20g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.poweredbyplantscycling.com/about ; https://ediblemadison.com/stories/powered-by-plants ; Powered by Plants Cycling, RAGBRAI vegan cycling team (chef Lauren Montelbano)",
+  "evidence": "actual team-dinner menu items served to the riders during their 500-mile RAGBRAI ride across Iowa",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-034",
+  "name": "Lentil bolognese pasta bake with tofu ricotta",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "lentil bolognese, jarred marinara base",
+    "qty": "200 g",
+    "role": "sauce"
+   },
+   {
+    "food": "tofu ricotta",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + sauce + protein + veg",
+  "context": [
+   "everyday",
+   "carb-load",
+   "race-week"
+  ],
+  "cuisine": "italian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "use gluten-free pasta if needed; swap tofu ricotta for cashew ricotta",
+  "approx_macros": "~750 kcal · 110g C · 28g P · 16g F",
+  "prep": "15 min (jarred sauce, pre-cooked lentils)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.poweredbyplantscycling.com/about ; https://ediblemadison.com/stories/powered-by-plants ; Powered by Plants Cycling, RAGBRAI vegan cycling team (chef Lauren Montelbano)",
+  "evidence": "actual team-dinner menu items served to the riders during their 500-mile RAGBRAI ride across Iowa",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-035",
+  "name": "Tempeh & rice with steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap tempeh for tofu or seitan",
+  "approx_macros": "~650 kcal · 85g C · 32g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.clearlyveg.org/blog/2017/03/04/ultramarathoner-scott-jurek-being-vegan-keeps-me-track/ ; https://www.happyhealthylonglife.com/happy_healthy_long_life/2012/06/eat-and-run.html ; Scott Jurek, vegan ultramarathoner, \"Eat & Run\"",
+  "evidence": "Jurek describes his staples as \"brown rice, quinoa, lentils and beans\" and tempeh as \"one of his favourite foods\"; dinner is typically \"beans and whole grains, maybe some whole-grain pasta\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-036",
+  "name": "Brown rice, quinoa, lentils & beans bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "100 g",
+    "role": "starch"
+   },
+   {
+    "food": "green lentils, canned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + starch + protein + protein + fat",
+  "context": [
+   "everyday",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any one grain and any one legume also works -- these four are simply what he keeps stocked",
+  "approx_macros": "~700 kcal · 105g C · 30g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.clearlyveg.org/blog/2017/03/04/ultramarathoner-scott-jurek-being-vegan-keeps-me-track/ ; https://www.happyhealthylonglife.com/happy_healthy_long_life/2012/06/eat-and-run.html ; Scott Jurek, vegan ultramarathoner, \"Eat & Run\"",
+  "evidence": "Jurek describes his staples as \"brown rice, quinoa, lentils and beans\" and tempeh as \"one of his favourite foods\"; dinner is typically \"beans and whole grains, maybe some whole-grain pasta\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-037",
+  "name": "Whole-grain pasta with white beans and greens",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "whole-grain pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sauteed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday",
+   "carb-load"
+  ],
+  "cuisine": "italian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "use jarred marinara instead of oil if a saucier dish is wanted; swap white beans for chickpeas",
+  "approx_macros": "~650 kcal · 95g C · 26g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.clearlyveg.org/blog/2017/03/04/ultramarathoner-scott-jurek-being-vegan-keeps-me-track/ ; https://www.happyhealthylonglife.com/happy_healthy_long_life/2012/06/eat-and-run.html ; Scott Jurek, vegan ultramarathoner, \"Eat & Run\"",
+  "evidence": "Jurek describes his staples as \"brown rice, quinoa, lentils and beans\" and tempeh as \"one of his favourite foods\"; dinner is typically \"beans and whole grains, maybe some whole-grain pasta\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-038",
+  "name": "Tempeh with brown rice and black beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "tamari",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + protein + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap black beans for pinto or kidney beans",
+  "approx_macros": "~700 kcal · 90g C · 35g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.clearlyveg.org/blog/2017/03/04/ultramarathoner-scott-jurek-being-vegan-keeps-me-track/ ; https://www.happyhealthylonglife.com/happy_healthy_long_life/2012/06/eat-and-run.html ; Scott Jurek, vegan ultramarathoner, \"Eat & Run\"",
+  "evidence": "Jurek describes his staples as \"brown rice, quinoa, lentils and beans\" and tempeh as \"one of his favourite foods\"; dinner is typically \"beans and whole grains, maybe some whole-grain pasta\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-039",
+  "name": "Quinoa, lentils & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green lentils, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "roasted mixed vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "any roasted vegetable mix works",
+  "approx_macros": "~600 kcal · 85g C · 26g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.clearlyveg.org/blog/2017/03/04/ultramarathoner-scott-jurek-being-vegan-keeps-me-track/ ; https://www.happyhealthylonglife.com/happy_healthy_long_life/2012/06/eat-and-run.html ; Scott Jurek, vegan ultramarathoner, \"Eat & Run\"",
+  "evidence": "Jurek describes his staples as \"brown rice, quinoa, lentils and beans\" and tempeh as \"one of his favourite foods\"; dinner is typically \"beans and whole grains, maybe some whole-grain pasta\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-040",
+  "name": "Rice, quinoa, black beans, guacamole & hot sauce bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + starch + protein + fat + sauce",
+  "context": [
+   "everyday",
+   "recovery",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "use just rice or just quinoa if short on time",
+  "approx_macros": "~750 kcal · 105g C · 25g P · 22g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/ ; Rich Roll, vegan ultra-endurance athlete, The Plantpower Way",
+  "evidence": "described as Rich Roll's \"typical fare\" for his large main dinner: \"large bowls of rice and quinoa with black beans, guacamole, and hot sauce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-041",
+  "name": "Veggie burrito with rice, beans & salsa",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "flour tortilla",
+    "qty": "1 large",
+    "role": "starch"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "lettuce, shredded",
+    "qty": "40 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + starch + protein + sauce + veg",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "use a corn tortilla or lettuce wrap for gluten-free",
+  "approx_macros": "~650 kcal · 100g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/ ; Rich Roll, vegan ultra-endurance athlete, The Plantpower Way",
+  "evidence": "described as Rich Roll's \"typical fare\" for his large main dinner: \"large bowls of rice and quinoa with black beans, guacamole, and hot sauce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-042",
+  "name": "Rice & lentils with avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green lentils, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap lentils for quinoa for a lighter version",
+  "approx_macros": "~600 kcal · 90g C · 22g P · 14g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thechalkboardmag.com/ultraman-rich-roll-vegan-athlete-daily-diet/ ; Rich Roll, vegan ultra-endurance athlete, The Plantpower Way",
+  "evidence": "described as Rich Roll's \"typical fare\" for his large main dinner: \"large bowls of rice and quinoa with black beans, guacamole, and hot sauce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-043",
+  "name": "Chickpea curry with rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "broccoli",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "onion",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "veg + veg + protein + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap the protein for any of chickpeas/tofu/tempeh -- Bausch rotates all three in this same dinner",
+  "approx_macros": "~650 kcal · 85g C · 26g P · 16g F",
+  "prep": "15 min (jarred curry sauce)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Dotsie Bausch, Olympic silver-medal cyclist",
+  "evidence": "her \"quick curry\" dinner: veggies simmered with \"chickpeas, tofu, or tempeh\" in a store-bought curry sauce, served over rice -- explicitly offered as an interchangeable protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-044",
+  "name": "Tofu curry with rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "broccoli",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "onion",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "tofu, cubed",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "veg + veg + protein + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap the protein for any of chickpeas/tofu/tempeh -- Bausch rotates all three in this same dinner",
+  "approx_macros": "~650 kcal · 85g C · 26g P · 16g F",
+  "prep": "15 min (jarred curry sauce)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Dotsie Bausch, Olympic silver-medal cyclist",
+  "evidence": "her \"quick curry\" dinner: veggies simmered with \"chickpeas, tofu, or tempeh\" in a store-bought curry sauce, served over rice -- explicitly offered as an interchangeable protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-045",
+  "name": "Tempeh curry with rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "broccoli",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "onion",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "tempeh, cubed",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "veg + veg + protein + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap the protein for any of chickpeas/tofu/tempeh -- Bausch rotates all three in this same dinner",
+  "approx_macros": "~650 kcal · 85g C · 26g P · 16g F",
+  "prep": "15 min (jarred curry sauce)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Dotsie Bausch, Olympic silver-medal cyclist",
+  "evidence": "her \"quick curry\" dinner: veggies simmered with \"chickpeas, tofu, or tempeh\" in a store-bought curry sauce, served over rice -- explicitly offered as an interchangeable protein",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-046",
+  "name": "Burrito bowl with rice, beans & vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, sauteed",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "onion, sauteed",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap black beans for pinto or a legume of choice",
+  "approx_macros": "~600 kcal · 90g C · 22g P · 12g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Sonya Looney, professional vegan mountain biker",
+  "evidence": "her dinner rotation is described as \"burritos, burrito bowls, quinoa/broccoli wraps, pasta dishes with veggies, homemade cashew-based sauce, and a legume\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-047",
+  "name": "Quinoa & broccoli wrap",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "whole-wheat tortilla",
+    "qty": "1 large",
+    "role": "starch"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "use a gluten-free wrap if needed",
+  "approx_macros": "~500 kcal · 75g C · 16g P · 12g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Sonya Looney, professional vegan mountain biker",
+  "evidence": "her dinner rotation is described as \"burritos, burrito bowls, quinoa/broccoli wraps, pasta dishes with veggies, homemade cashew-based sauce, and a legume\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-048",
+  "name": "Pasta with vegetables, cashew sauce & white beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, sauteed",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "cashew cream sauce, jarred",
+    "qty": "100 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + veg + veg + sauce + protein",
+  "context": [
+   "everyday",
+   "carb-load"
+  ],
+  "cuisine": "italian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "use gluten-free pasta if needed; swap white beans for chickpeas",
+  "approx_macros": "~700 kcal · 100g C · 24g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Sonya Looney, professional vegan mountain biker",
+  "evidence": "her dinner rotation is described as \"burritos, burrito bowls, quinoa/broccoli wraps, pasta dishes with veggies, homemade cashew-based sauce, and a legume\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-049",
+  "name": "Burrito bowl with quinoa, black beans & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, roasted",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "corn, canned",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap quinoa for rice",
+  "approx_macros": "~620 kcal · 90g C · 24g P · 12g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Sonya Looney, professional vegan mountain biker",
+  "evidence": "her dinner rotation is described as \"burritos, burrito bowls, quinoa/broccoli wraps, pasta dishes with veggies, homemade cashew-based sauce, and a legume\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-050",
+  "name": "Plant-based burger with sweet potato fries",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "plant-based burger patty",
+    "qty": "1 (113 g)",
+    "role": "protein"
+   },
+   {
+    "food": "whole-wheat bun",
+    "qty": "1",
+    "role": "starch"
+   },
+   {
+    "food": "sweet potato fries, oven-baked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "ketchup",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + starch + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "american",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "use a lettuce wrap instead of a bun for gluten-free",
+  "approx_macros": "~700 kcal · 90g C · 24g P · 24g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Nick Squires, plant-based endurance athlete",
+  "evidence": "his dinners: \"Beyond Burgers\" or Trader Joe's Turkeyless Protein Patties, and \"pasta with 'meatballs' and spinach salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-051",
+  "name": "Pasta with plant-based meatballs and spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pasta, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based meatballs",
+    "qty": "6 (150 g)",
+    "role": "protein"
+   },
+   {
+    "food": "marinara sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + sauce + veg",
+  "context": [
+   "everyday",
+   "carb-load"
+  ],
+  "cuisine": "italian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "use gluten-free pasta if needed",
+  "approx_macros": "~750 kcal · 95g C · 32g P · 22g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.nomeatathlete.com/plant-based-athlete-day-in-the-life/ ; Nick Squires, plant-based endurance athlete",
+  "evidence": "his dinners: \"Beyond Burgers\" or Trader Joe's Turkeyless Protein Patties, and \"pasta with 'meatballs' and spinach salad\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-052",
+  "name": "Chilli non carne with kidney beans and vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "kidney beans, canned",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "onion",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "tomato, canned",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + veg + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap kidney beans for black beans",
+  "approx_macros": "~600 kcal · 85g C · 24g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.alpecincycling.com/en/nutrition/vegan-boost-cycling-performance/ ; Alex Parren, sports nutritionist quoted by Alpecin Cycling",
+  "evidence": "nutritionist's three recommended vegan cyclist dinners: \"chilli non carne (vegan chilli) with vegetables and kidney beans\"; \"a chickpea curry\"; \"sweet potato dhal ... made with red lentils\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-053",
+  "name": "Chickpea curry with rice and spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chickpeas, canned",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, wilted in",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + sauce + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap chickpeas for chicken-style seitan pieces",
+  "approx_macros": "~600 kcal · 90g C · 22g P · 10g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.alpecincycling.com/en/nutrition/vegan-boost-cycling-performance/ ; Alex Parren, sports nutritionist quoted by Alpecin Cycling",
+  "evidence": "nutritionist's three recommended vegan cyclist dinners: \"chilli non carne (vegan chilli) with vegetables and kidney beans\"; \"a chickpea curry\"; \"sweet potato dhal ... made with red lentils\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-054",
+  "name": "Sweet potato & red lentil dhal with rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, cubed & simmered",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "red lentils, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "100 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "veg + protein + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap red lentils for split peas",
+  "approx_macros": "~600 kcal · 95g C · 22g P · 8g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.alpecincycling.com/en/nutrition/vegan-boost-cycling-performance/ ; Alex Parren, sports nutritionist quoted by Alpecin Cycling",
+  "evidence": "nutritionist's three recommended vegan cyclist dinners: \"chilli non carne (vegan chilli) with vegetables and kidney beans\"; \"a chickpea curry\"; \"sweet potato dhal ... made with red lentils\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-055",
+  "name": "Chickpea curry with sweet potato and rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chickpeas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, cubed & simmered",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery",
+   "carb-load"
+  ],
+  "cuisine": "indian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "combines two of Parren's recommended dinners into one bowl",
+  "approx_macros": "~650 kcal · 100g C · 22g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.alpecincycling.com/en/nutrition/vegan-boost-cycling-performance/ ; Alex Parren, sports nutritionist quoted by Alpecin Cycling",
+  "evidence": "nutritionist's three recommended vegan cyclist dinners: \"chilli non carne (vegan chilli) with vegetables and kidney beans\"; \"a chickpea curry\"; \"sweet potato dhal ... made with red lentils\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-056",
+  "name": "Kidney bean chilli non carne with rice and avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "kidney beans, canned",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "tomato, canned",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "bell pepper",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + sauce + veg + starch + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap rice for baked potato",
+  "approx_macros": "~680 kcal · 90g C · 24g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.alpecincycling.com/en/nutrition/vegan-boost-cycling-performance/ ; Alex Parren, sports nutritionist quoted by Alpecin Cycling",
+  "evidence": "nutritionist's three recommended vegan cyclist dinners: \"chilli non carne (vegan chilli) with vegetables and kidney beans\"; \"a chickpea curry\"; \"sweet potato dhal ... made with red lentils\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-057",
+  "name": "White rice, plant-based meat, avocado, hummus & kimchi bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "plant-based meat crumble",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "kimchi",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + fat + sauce + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "fusion",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame",
+   "soy"
+  ],
+  "swaps": "swap plant-based meat for black beans",
+  "approx_macros": "~700 kcal · 95g C · 26g P · 20g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://plantbasednews.org/lifestyle/health-and-fitness/eat-in-a-day-vegan-runner/ ; Hellah Sidibe, vegan marathon/ultrarunner",
+  "evidence": "his own words: \"a hearty bowl of white rice, Impossible plant-based meat, avocado, hummus, and kimchi\" is his \"go-to favorite right now\" on high-mileage training days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-058",
+  "name": "Sweet potato, rice, avocado & hummus bowl with leftovers",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "leftover roasted vegetables",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "veg + starch + fat + sauce + veg",
+  "context": [
+   "everyday",
+   "travel",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap in whatever vegetable leftovers are on hand -- that's the point of the combo",
+  "approx_macros": "~650 kcal · 90g C · 16g P · 22g F",
+  "prep": "10 min (reheat)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners ; Abby & Cordis Hall, vegan ultrarunners",
+  "evidence": "their own description: \"sweet potato + rice + avocado + hummus + leftovers,\" a no-recipe combination they eat frequently",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-059",
+  "name": "Miso-tahini ramen with tofu and greens",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ramen noodles, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "miso-tahini broth, jarred paste + water",
+    "qty": "400 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "tofu, cubed",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bok choy, wilted in broth",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + sauce + protein + veg",
+  "context": [
+   "everyday",
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "japanese-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame",
+   "soy"
+  ],
+  "swaps": "use rice noodles for a gluten-free version",
+  "approx_macros": "~600 kcal · 85g C · 24g P · 16g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners ; Abby & Cordis Hall, vegan ultrarunners",
+  "evidence": "their go-to \"vegan ramen with miso tahini broth\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-060",
+  "name": "Peanut tempeh Thai salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "cabbage, shredded",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, shredded",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "peanut sauce, jarred",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "rice noodles, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + veg + sauce + starch",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "thai-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "swap tempeh for tofu",
+  "approx_macros": "~600 kcal · 70g C · 26g P · 20g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners ; Abby & Cordis Hall, vegan ultrarunners",
+  "evidence": "their \"Thai Salad\" combining peanut tempeh with vegetables, described as go-to comfort food",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-061",
+  "name": "Falafel burger with mashed potatoes",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "falafel patty, pre-made",
+    "qty": "3 (150 g)",
+    "role": "protein"
+   },
+   {
+    "food": "mashed potatoes",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "side salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "tahini sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "swap mashed potatoes for rice",
+  "approx_macros": "~650 kcal · 80g C · 22g P · 20g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.abbyandcordis.com/blog/2020/2/3/go-to-vegan-recipes-for-hungry-ultrarunners ; Abby & Cordis Hall, vegan ultrarunners",
+  "evidence": "their go-to falafel burgers (Forks Over Knives recipe) with the instruction \"BLITZ IT. FLIP IT\" -- i.e. a fast weeknight staple",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-062",
+  "name": "Herb-rubbed tofu with jasmine rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, herb-rubbed & pan-seared",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "jasmine rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "steamed green beans",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap jasmine rice for basmati",
+  "approx_macros": "~600 kcal · 85g C · 26g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.aol.com/cynthia-erivo-just-shared-her-210834313.html ; Cynthia Erivo, vegan actress/performer with a demanding physical schedule",
+  "evidence": "reported as her \"go-to dinner\": herb-rubbed tofu with jasmine rice",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-063",
+  "name": "Baked sweet potato with chickpeas and sesame",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "tahini sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "sesame seeds",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + protein + sauce + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "swap chickpeas for black beans",
+  "approx_macros": "~550 kcal · 80g C · 18g P · 14g F",
+  "prep": "10 min (pre-baked potato)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onegreenplanet.org/vegan-food/weekly-meal-plan-endurance-athletes-vegan-menu/ ; One Green Planet, weekly vegan endurance-athlete meal plan",
+  "evidence": "one of the seven named dinners in a published weekly vegan endurance-athlete meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-064",
+  "name": "Chipotle sweet potato and black bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "chipotle sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "veg + protein + sauce + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap black beans for pinto beans",
+  "approx_macros": "~600 kcal · 90g C · 20g P · 12g F",
+  "prep": "12 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onegreenplanet.org/vegan-food/weekly-meal-plan-endurance-athletes-vegan-menu/ ; One Green Planet, weekly vegan endurance-athlete meal plan",
+  "evidence": "one of the seven named dinners in a published weekly vegan endurance-athlete meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-065",
+  "name": "Roasted vegetables with white beans and spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "roasted mixed vegetables",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + protein + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap white beans for chickpeas",
+  "approx_macros": "~500 kcal · 55g C · 20g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.onegreenplanet.org/vegan-food/weekly-meal-plan-endurance-athletes-vegan-menu/ ; One Green Planet, weekly vegan endurance-athlete meal plan",
+  "evidence": "one of the seven named dinners in a published weekly vegan endurance-athlete meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-066",
+  "name": "Stir-fried tofu with broccoli, carrots & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, stir-fried",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, stir-fried",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-067",
+  "name": "Baked sweet potato stuffed with black beans, peppers & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, diced",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado",
+    "qty": "1/2",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-068",
+  "name": "Tempeh stir-fry with peppers, broccoli & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, stir-fried",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, stir-fried",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-069",
+  "name": "Baked tofu with sweet potato & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, baked",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-070",
+  "name": "Lentil stew with carrots, spinach & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "green lentils, canned",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "carrot, simmered",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach, wilted",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-071",
+  "name": "Tempeh tacos with black beans & peppers",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, crumbled & seasoned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "whole-grain tortillas",
+    "qty": "2",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper, diced",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-072",
+  "name": "Tofu stir-fry with mushrooms, peppers & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mushroom, stir-fried",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper, stir-fried",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap any grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 75g C · 26g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegetarian-meal-plan-for-cyclists ; Listonic, published vegetarian meal plan for cyclists",
+  "evidence": "one of the seven dinners listed day-by-day in this published cyclist meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-073",
+  "name": "Baked tofu with steamed broccoli & brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap the grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 80g C · 24g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegan-meal-plan-for-runners ; Listonic, published vegan meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day in this published vegan runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-074",
+  "name": "Tempeh stir-fry with kale, peppers & quinoa",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, stir-fried",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper, stir-fried",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap the grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 80g C · 24g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegan-meal-plan-for-runners ; Listonic, published vegan meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day in this published vegan runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-075",
+  "name": "Tofu & vegetable curry with brown rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tofu, cubed",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed vegetables, simmered in curry",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "curry sauce, jarred",
+    "qty": "150 ml",
+    "role": "sauce"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap the grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 80g C · 24g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegan-meal-plan-for-runners ; Listonic, published vegan meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day in this published vegan runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-076",
+  "name": "Vegan chilli with quinoa",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "kidney beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "tomato, canned",
+    "qty": "150 g",
+    "role": "sauce"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap the grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 80g C · 24g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegan-meal-plan-for-runners ; Listonic, published vegan meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day in this published vegan runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-077",
+  "name": "Stuffed peppers with quinoa, black beans & vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "bell pepper, halved & baked",
+    "qty": "2",
+    "role": "veg"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "150 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn, canned",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap the grain, bean or vegetable for another from the same role",
+  "approx_macros": "~600 kcal · 80g C · 24g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/vegan-meal-plan-for-runners ; Listonic, published vegan meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day in this published vegan runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-078",
+  "name": "Grilled salmon with sweet potato & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg/starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap the fish/shellfish for another from this list -- salmon, shrimp and tuna are used interchangeably across the week",
+  "approx_macros": "~550 kcal · 45g C · 34g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/pescatarian-meal-plan-for-runners ; Listonic, published pescatarian meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day (repeated across the week) in this published pescatarian runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-079",
+  "name": "Grilled shrimp with brown rice & steamed kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "shrimp, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, steamed",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg/starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "swap the fish/shellfish for another from this list -- salmon, shrimp and tuna are used interchangeably across the week",
+  "approx_macros": "~550 kcal · 45g C · 34g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/pescatarian-meal-plan-for-runners ; Listonic, published pescatarian meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day (repeated across the week) in this published pescatarian runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-080",
+  "name": "Grilled shrimp with quinoa & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "shrimp, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg/starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "shellfish"
+  ],
+  "swaps": "swap the fish/shellfish for another from this list -- salmon, shrimp and tuna are used interchangeably across the week",
+  "approx_macros": "~550 kcal · 45g C · 34g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/pescatarian-meal-plan-for-runners ; Listonic, published pescatarian meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day (repeated across the week) in this published pescatarian runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-081",
+  "name": "Grilled tuna with sweet potato & steamed kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tuna steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "kale, steamed",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg/starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap the fish/shellfish for another from this list -- salmon, shrimp and tuna are used interchangeably across the week",
+  "approx_macros": "~550 kcal · 45g C · 34g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/pescatarian-meal-plan-for-runners ; Listonic, published pescatarian meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day (repeated across the week) in this published pescatarian runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-082",
+  "name": "Grilled tuna with brown rice & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tuna steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, steamed",
+    "qty": "100 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap tuna for salmon or shrimp",
+  "approx_macros": "~600 kcal · 70g C · 36g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/pescatarian-meal-plan-for-runners ; Listonic, published pescatarian meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day (repeated across the week) in this published pescatarian runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-083",
+  "name": "Grilled salmon with quinoa & steamed kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, steamed",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery",
+   "carb-load"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap salmon for tuna or shrimp",
+  "approx_macros": "~600 kcal · 70g C · 38g P · 18g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://listonic.com/meal-plans/en/pescatarian-meal-plan-for-runners ; Listonic, published pescatarian meal plan for runners",
+  "evidence": "one of the dinners listed day-by-day (repeated across the week) in this published pescatarian runner meal plan",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-084",
+  "name": "Salmon, brown rice, roasted carrots & broccoli rabe with Asian sauce",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot, roasted",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli rabe, roasted",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "Asian-style sauce, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery",
+   "race-week"
+  ],
+  "cuisine": "asian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap broccoli rabe for broccoli",
+  "approx_macros": "~650 kcal · 65g C · 38g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/recipes/two-sustainable-seafood-recipes-athletes-will-love/ ; Triathlete.com",
+  "evidence": "the salmon bowl is presented as a triathlete meal: salmon with brown rice, roasted carrots and broccoli rabe in an Asian-style sauce, framed as fuel that \"can fuel any triathlete's active adventures\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-085",
+  "name": "Salmon, quinoa & roasted vegetables bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "roasted mixed vegetables",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap quinoa for brown rice",
+  "approx_macros": "~620 kcal · 60g C · 38g P · 20g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/recipes/two-sustainable-seafood-recipes-athletes-will-love/ ; Triathlete.com",
+  "evidence": "described as \"a hearty bowl of salmon, quinoa, and vegetables\" that can \"fuel any triathlete's active adventures\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-086",
+  "name": "Salmon, brown rice & roasted asparagus with teriyaki",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "asparagus, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "teriyaki sauce, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "soy"
+  ],
+  "swaps": "swap asparagus for broccoli",
+  "approx_macros": "~650 kcal · 65g C · 38g P · 20g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/recipes/two-sustainable-seafood-recipes-athletes-will-love/ ; Triathlete.com",
+  "evidence": "the salmon bowl is presented as a triathlete meal: salmon with brown rice, roasted carrots and broccoli rabe in an Asian-style sauce, framed as fuel that \"can fuel any triathlete's active adventures\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-087",
+  "name": "Salmon, quinoa & roasted carrots with Asian sauce",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot, roasted",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "Asian-style sauce, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "asian-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap carrots for broccoli rabe",
+  "approx_macros": "~630 kcal · 62g C · 38g P · 18g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/recipes/two-sustainable-seafood-recipes-athletes-will-love/ ; Triathlete.com",
+  "evidence": "the salmon bowl is presented as a triathlete meal: salmon with brown rice, roasted carrots and broccoli rabe in an Asian-style sauce, framed as fuel that \"can fuel any triathlete's active adventures\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-088",
+  "name": "Salmon, brown rice & roasted broccoli bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap broccoli for any roasted vegetable",
+  "approx_macros": "~600 kcal · 60g C · 38g P · 18g F",
+  "prep": "18 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.triathlete.com/nutrition/recipes/two-sustainable-seafood-recipes-athletes-will-love/ ; Triathlete.com",
+  "evidence": "the salmon bowl is presented as a triathlete meal: salmon with brown rice, roasted carrots and broccoli rabe in an Asian-style sauce, framed as fuel that \"can fuel any triathlete's active adventures\"",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-089",
+  "name": "Mediterranean salmon with rice, chickpeas, tomatoes & olives",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "cherry tomatoes",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "olives",
+    "qty": "30 g",
+    "role": "fat"
+   },
+   {
+    "food": "feta cheese",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "lemon",
+    "qty": "1 wedge",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + protein + veg + fat + dairy",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish"
+  ],
+  "swaps": "omit feta for a dairy-free version",
+  "approx_macros": "~700 kcal · 75g C · 40g P · 24g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://juliasalbum.com/salmon-rice/ ; recipe site framed as a weeknight staple",
+  "evidence": "described as deserving \"a regular spot in your weeknight dinner rotation\": salmon, rice, chickpeas, tomatoes, olives, lemon and feta",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-090",
+  "name": "Mediterranean salmon with rice, chickpeas & olives (no feta)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "100 g",
+    "role": "protein"
+   },
+   {
+    "food": "olives",
+    "qty": "30 g",
+    "role": "fat"
+   },
+   {
+    "food": "lemon",
+    "qty": "1 wedge",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + protein + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "add feta and tomatoes for the full version",
+  "approx_macros": "~630 kcal · 70g C · 38g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://juliasalbum.com/salmon-rice/ ; recipe site framed as a weeknight staple",
+  "evidence": "described as deserving \"a regular spot in your weeknight dinner rotation\": salmon, rice, chickpeas, tomatoes, olives, lemon and feta",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-b-091",
+  "name": "Loaded sweet potato with black beans, kale & green goddess dressing",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, sauteed",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "green goddess dressing, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "veg + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "use pre-shredded kale and canned beans to speed prep -- author's own shortcut",
+  "approx_macros": "~500 kcal · 70g C · 18g P · 14g F",
+  "prep": "10 min (pre-baked potato)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://karalydon.com/recipes/vegan-loaded-sweet-potato/ ; Kara Lydon, RD, sports dietitian",
+  "evidence": "author calls it \"one of my go-to weeknight meals\" and notes readers report it \"has become a dinner staple\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-092",
+  "name": "Turmeric sweet potato, green beans & crispy chickpeas",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, roasted with turmeric",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "green beans, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "chickpeas, roasted crispy",
+    "qty": "150 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "veg + veg + protein",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap green beans for broccoli",
+  "approx_macros": "~450 kcal · 65g C · 16g P · 10g F",
+  "prep": "25 min (sheet pan)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.veggiebalance.com/turmeric-roasted-sweet-potato-green-beans-crunchy-chickpeas/ ; Veggie Balance",
+  "evidence": "presented as \"an easy weeknight dinner\" sheet-pan combination",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-093",
+  "name": "Loaded sweet potato with baked beans & guacamole",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "baked beans",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "guacamole",
+    "qty": "3 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + protein + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap baked beans for black beans",
+  "approx_macros": "~500 kcal · 75g C · 15g P · 14g F",
+  "prep": "8 min (pre-baked potato)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thishealthykitchen.com/loaded-sweet-potatoes/ ; This Healthy Kitchen",
+  "evidence": "framed as an easy vegan loaded sweet potato dinner, stuffed with \"smoky 'baked' beans\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-094",
+  "name": "Sweet potato, green beans & white beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "green beans, roasted",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "veg + veg + protein + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap white beans for chickpeas",
+  "approx_macros": "~450 kcal · 60g C · 16g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://eatsomethingvegan.com/sweet-potatoes-and-green-beans/ ; Eat Something Vegan",
+  "evidence": "sweet potatoes and green beans presented as \"a healthy and filling\" combination served alongside a protein for a quick weeknight dinner",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-095",
+  "name": "Southwestern potato bowl with beans, vegetables & hot sauce",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "potato, boiled & cooled",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "corn, canned",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "bell pepper, diced",
+    "qty": "40 g",
+    "role": "veg"
+   },
+   {
+    "food": "hot sauce",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "southwestern",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap black beans for pinto beans",
+  "approx_macros": "~500 kcal · 80g C · 18g P · 8g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.forksoverknives.com/recipes/vegan-menus-collections/30-minute-meals/ ; Forks Over Knives, 30-minute plant-based meals collection",
+  "evidence": "listed as a named 30-minute plant-based dinner: \"Southwestern Potato Bowl\" -- potato base with beans, vegetables and hot sauce",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-096",
+  "name": "Couscous, chickpea & salad bowl with tahini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "couscous, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed salad vegetables",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "tahini sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mediterranean-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "use quinoa instead of couscous for gluten-free",
+  "approx_macros": "~550 kcal · 80g C · 20g P · 14g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.forksoverknives.com/recipes/vegan-menus-collections/30-minute-meals/ ; Forks Over Knives, 30-minute plant-based meals collection",
+  "evidence": "listed as a named 30-minute plant-based dinner: \"Couscous Bowls\" pairing quick-cooking couscous with \"salad vegetables, chickpeas, and a drizzle of tahini sauce\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-097",
+  "name": "Couscous, canned lentil & salad bowl with tahini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "couscous, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green lentils, canned",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed salad vegetables",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "tahini sauce, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "travel"
+  ],
+  "cuisine": "mediterranean-inspired",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "sesame"
+  ],
+  "swaps": "swap lentils for the chickpeas in the original Forks Over Knives version",
+  "approx_macros": "~550 kcal · 80g C · 22g P · 12g F",
+  "prep": "8 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.forksoverknives.com/recipes/vegan-menus-collections/30-minute-meals/ ; Forks Over Knives, 30-minute plant-based meals collection",
+  "evidence": "listed as a named 30-minute plant-based dinner: \"Couscous Bowls\" pairing quick-cooking couscous with \"salad vegetables, chickpeas, and a drizzle of tahini sauce\" -- lentils substituted for chickpeas per the source's own interchangeable-legume framing",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-098",
+  "name": "Wheatberries, chickpea & roasted brussels sprouts bowl with vinaigrette",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "wheatberries, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chickpeas, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "balsamic vinaigrette, bottled",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap wheatberries for farro or barley",
+  "approx_macros": "~600 kcal · 85g C · 24g P · 14g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-099",
+  "name": "Quinoa, white bean & roasted carrot bowl with tzatziki",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "white beans, canned",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "carrot, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "dairy-free tzatziki, jarred",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap white beans for cannellini or lima beans",
+  "approx_macros": "~580 kcal · 80g C · 22g P · 12g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-b-100",
+  "name": "Rice, tempeh & roasted cauliflower bowl with hummus",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "brown rice, cooked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "tempeh, pan-seared",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap tempeh for baked tofu",
+  "approx_macros": "~650 kcal · 90g C · 28g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://greenletes.com/plant-based-bowl-formula/ ; Greenletes, plant-based athlete/dietitian recipe site",
+  "evidence": "\"one of my go-to dinners (and lunches)\" -- author's plant-based bowl formula (base + protein + veg + topping + sauce), explicitly built to be swapped",
+  "reconstructed_from_snippet": false
+ }
+]

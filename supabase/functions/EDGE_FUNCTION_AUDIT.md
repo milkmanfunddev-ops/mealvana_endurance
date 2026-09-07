@@ -84,3 +84,21 @@ supabase functions deploy <name> --project-ref wvmvsodrvbkxfydabqed
 
 **The durable fix** is to raise `min_app_version` past the `-v3`/`-v4` cutover so old clients are
 force-upgraded rather than 404'd. That is a product call and was not done here.
+
+---
+
+## Added 2026-09-01 — meal planning (Vana), dev only
+
+Phase 2 of `docs/implement_mealplanning/` (spec: `03-backend.md`). Deployed to **dev** (`vlmtsdzpnjnavdgytcmi`)
+with `--no-verify-jwt`; **not on prod** until the Phase 5/6 runbook (prod has none of the meal-planning tables yet).
+Shared code: `supabase/functions/_shared/vana/` (also imported by `jade-chat` — redeploy all four on any change there).
+
+| Function | Caller | Notes |
+|---|---|---|
+| `vana-chat` | 1.24 client (`lib/features/meal_planning`, replaces `jade-chat` for `ai_coach`) | NDJSON chat, Pro-gated (403 `pro_required`; dev secret `PRO_GATE_ENABLED=false`), rate-limited via `vana_calls`, **no credit debit**. |
+| `vana-action` | 1.24 client | Model-free plan edits/reads (`{type, payload}` → `{parts, ...}`); `confirm_plan` → `confirm_meal_plan()` RPC, then invokes `vana-day-notes`. |
+| `vana-day-notes` | `vana-action` / `vana-chat` (server-to-server, under `EdgeRuntime.waitUntil`, with the athlete's JWT) | Never invoked directly by the client — do not delete on that basis. |
+| `jade-chat` | ≤1.23.x client | Now a thin alias of the Vana **general** chat (same route, envelope and credit debit); writes `vana_*` tables directly. Retire once `min_app_version` passes 1.24. |
+
+Secrets: `AI_GATEWAY_API_KEY` (existing), `PRO_GATE_ENABLED`, optional `VANA_CHAT_MODEL` / `VANA_TOOL_MODEL` /
+`VANA_EMBED_MODEL`. Telemetry: one `vana_calls` row per model call + `ai_usage`.

@@ -48,6 +48,10 @@ import 'tables/race_checklist_items_table.dart';
 import 'tables/meal_logs_table.dart';
 import 'tables/saved_meals_table.dart';
 import 'tables/recipes_table.dart';
+import 'tables/user_entitlements_table.dart';
+import 'tables/meal_plans_table.dart';
+import 'tables/plan_meals_table.dart';
+import 'tables/user_memories_table.dart';
 
 // DAOs (extracted for modularity)
 import 'daos/user_dao.dart';
@@ -152,6 +156,13 @@ part 'app_database.g.dart';
 
     // Curated recipe catalog (read-only mirror)
     RecipesTable,
+
+    // Pro subscription entitlement cache (read-only mirror of the user's own
+    // user_entitlements rows; written server-side by the RevenueCat webhook)
+    UserEntitlementsTable,
+    MealPlansTable,
+    PlanMealsTable,
+    UserMemoriesTable,
   ],
   daos: [
     UserDao,
@@ -279,13 +290,34 @@ class AppDatabase extends _$AppDatabase {
   /// value in migration 20260814120000). Supabase
   /// app_config.current_schema_version must be bumped to 18 when this ships.
   ///
-  /// v19 added template_foods.min_servings_during + is_indivisible (mirrors of
-  /// existing Supabase columns the client solvers now read — §4.2 one-cap twin
-  /// port) and template_foods.solvent_min_ml (catalog-conventions v1.1 solvent
-  /// dependency, food-recommendation@v1 §6(e); Supabase migration
-  /// 20260903120000). Supabase app_config.current_schema_version must be
-  /// bumped to 19 when the build carrying this ships.
-  int get schemaVersion => 19;
+  /// v19 forked on 2026-09-06: `develop` used v19 for the template_foods
+  /// food-recommendation columns while `mealplanning` used v19 for
+  /// `user_entitlements` (and v20 for the meal-planning tables). Both lines
+  /// shipped dev builds at their own v19, so the merge lands as v21 and the
+  /// ladder below runs every forked step for any device below 21 — each step
+  /// is idempotent (ensureTable / addColumn), so a device that already has one
+  /// side's v19 is unaffected by re-running it.
+  ///
+  /// v19 (mealplanning) added `user_entitlements` — a read-only local mirror of
+  /// the user's Pro subscription rows (docs/implement_mealplanning/04-entitlement.md).
+  /// Server-side the table is written only by the revenuecat-webhook edge
+  /// function; the app caches its own row so the Pro gate can answer offline
+  /// and before RevenueCat responds on a cold start.
+  ///
+  /// v20 (mealplanning) added the meal-planning user data (Phase 4b of
+  /// docs/implement_mealplanning): `meal_plans`, `plan_meals`, `user_memories`
+  /// (all offline-first with `needs_upload`), `meal_logs.plan_meal_id`, and
+  /// the `saved_meals` planning columns (`icon notes meal_types batch
+  /// library_meal_id`).
+  ///
+  /// v21 (was develop's v19) added template_foods.min_servings_during +
+  /// is_indivisible (mirrors of existing Supabase columns the client solvers
+  /// now read — §4.2 one-cap twin port) and template_foods.solvent_min_ml
+  /// (catalog-conventions v1.1 solvent dependency, food-recommendation@v1
+  /// §6(e); Supabase migration 20260903120000). Supabase
+  /// app_config.current_schema_version must be bumped to 21 when the build
+  /// carrying this ships.
+  int get schemaVersion => 21;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -549,13 +581,46 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'calories_burned', 'REAL');
         }
 
-        // v19: food-recommendation@v1 catalog columns on template_foods —
-        // min_servings_during + is_indivisible (Supabase mirrors the client
-        // solvers now read, §4.2 one-cap twin port) and solvent_min_ml
-        // (catalog-conventions v1.1). All defaulted or nullable; addColumn is
-        // idempotent for web user_version replays. Values arrive via the
-        // template_foods full resync (the repository selects *).
+        // v19 (mealplanning line): user_entitlements — local cache of the Pro
+        // subscription row (Phase 3 of meal planning). ensureTable is
+        // idempotent for web user_version replays; no columns change on
+        // existing tables. Re-run under v21 too — see the fork note there.
         if (from < 19) {
+          await ensureTable(userEntitlementsTable);
+        }
+
+        // v20: meal-planning user data (Phase 4b). Three new tables plus
+        // additive nullable/defaulted columns on meal_logs and saved_meals.
+        // ensureTable / addColumn are idempotent for web user_version replays.
+        if (from < 20) {
+          await ensureTable(mealPlansTable);
+          await ensureTable(planMealsTable);
+          await ensureTable(userMemoriesTable);
+          await addColumn('meal_logs', 'plan_meal_id', 'TEXT');
+          await addColumn('saved_meals', 'icon', 'TEXT');
+          await addColumn('saved_meals', 'notes', 'TEXT');
+          await addColumn(
+            'saved_meals',
+            'meal_types',
+            "TEXT NOT NULL DEFAULT '[]'",
+          );
+          await addColumn('saved_meals', 'batch', 'INTEGER');
+          await addColumn('saved_meals', 'library_meal_id', 'TEXT');
+        }
+
+        // v21 (develop's former v19): food-recommendation@v1 catalog columns
+        // on template_foods — min_servings_during + is_indivisible (Supabase
+        // mirrors the client solvers now read, §4.2 one-cap twin port) and
+        // solvent_min_ml (catalog-conventions v1.1). All defaulted or
+        // nullable; addColumn is idempotent, so develop devices that already
+        // ran this at 19 are unaffected. Values arrive via the template_foods
+        // full resync (the repository selects *).
+        //
+        // Fork catch-up: a device coming from develop's own v19 never ran the
+        // mealplanning v19 step above (from == 19 skips `from < 19`), so make
+        // sure user_entitlements exists here as well — idempotent.
+        if (from < 21) {
+          await ensureTable(userEntitlementsTable);
           await addColumn(
             'template_foods',
             'min_servings_during',

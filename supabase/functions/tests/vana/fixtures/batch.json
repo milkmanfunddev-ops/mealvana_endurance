@@ -1,0 +1,132 @@
+{
+  "parts": [
+    {
+      "kind": "batch",
+      "plan": {
+        "id": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+        "weekStart": "2026-08-30",
+        "status": "draft",
+        "batchCooking": true,
+        "conversationId": "a73f6db2-352e-4d92-bad1-defd605d4516",
+        "brief": null,
+        "days": {},
+        "rules": [],
+        "meals": [
+          {
+            "id": "ec906825-ca28-4540-b55c-5ec6be601aec",
+            "planId": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+            "source": "saved",
+            "libraryMealId": null,
+            "savedMealId": "fd993bbb-a13a-43e7-a662-ea71ed2ae64a",
+            "name": "Egg & Veggie Scramble",
+            "mealType": "dinner",
+            "session": "fresh-fri",
+            "servings": 4,
+            "servingsLeft": 4,
+            "kcal": 280,
+            "carbsG": 8,
+            "proteinG": 22,
+            "fatG": 18,
+            "swapsApplied": [],
+            "comments": [],
+            "position": 0,
+            "icon": "egg"
+          },
+          {
+            "id": "27f80b00-9a1f-492f-9ac5-8bbaa67b5250",
+            "planId": "588c137e-826c-46d4-8a73-f57b1a3d4143",
+            "source": "library",
+            "libraryMealId": "AD-105",
+            "savedMealId": null,
+            "name": "Wheatberries, white bean & raw cabbage-carrot bowl with hummus",
+            "mealType": "dinner",
+            "session": "cook-sun",
+            "servings": 4,
+            "servingsLeft": 4,
+            "kcal": null,
+            "carbsG": null,
+            "proteinG": null,
+            "fatG": null,
+            "swapsApplied": [],
+            "comments": [],
+            "position": 1,
+            "icon": "beans"
+          }
+        ],
+        "shopping": [
+          {
+            "aisle": "Produce",
+            "name": "Cabbage",
+            "qty": "320 g",
+            "checked": false,
+            "have": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "aisle": "Produce",
+            "name": "Carrot",
+            "qty": "240 g",
+            "checked": false,
+            "have": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "aisle": "Protein",
+            "name": "Egg & veggie scramble",
+            "qty": "4 serving",
+            "checked": false,
+            "have": false,
+            "fromMealIds": [
+              "ec906825-ca28-4540-b55c-5ec6be601aec"
+            ]
+          },
+          {
+            "aisle": "Pantry",
+            "name": "White beans",
+            "qty": "600 g",
+            "checked": false,
+            "have": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "aisle": "Other",
+            "name": "Hummus",
+            "qty": "12 tbsp",
+            "checked": false,
+            "have": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          },
+          {
+            "aisle": "Other",
+            "name": "Wheatberries",
+            "qty": "800 g",
+            "checked": false,
+            "have": false,
+            "fromMealIds": [
+              "27f80b00-9a1f-492f-9ac5-8bbaa67b5250"
+            ]
+          }
+        ],
+        "coverage": {
+          "lunchDinnerSlots": 14,
+          "covered": 8,
+          "perDay": {
+            "kcal": 160,
+            "carbsG": 5,
+            "proteinG": 13
+          }
+        },
+        "dayNotes": {},
+        "dayNotesStale": true
+      }
+    }
+  ]
+}

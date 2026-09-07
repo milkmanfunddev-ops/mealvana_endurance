@@ -23,6 +23,8 @@ import '../../../features/meal_logging/data/saved_meals_repository.dart';
 import '../../../features/integrations/presentation/providers/integrations_providers.dart';
 import '../../../features/formula_kit/data/formula_pins_repository.dart';
 import '../../../features/onboarding/data/onboarding_survey_repository.dart';
+import '../../../features/meal_planning/data/meal_plan_repository.dart';
+import '../../../features/meal_planning/data/user_memory_repository.dart';
 
 // Provider imports for invalidation
 import '../../../features/activities/presentation/providers/activities_controller.dart';
@@ -305,6 +307,11 @@ class SyncCoordinator extends _$SyncCoordinator {
           return ref.read(formulaPinsRepositoryProvider);
         case 'onboarding_surveys':
           return ref.read(onboardingSurveyRepositoryProvider);
+        // Meal planning (Phase 4b): local-first plan edits + Vana settings.
+        case 'meal_plans':
+          return ref.read(mealPlanRepositoryProvider);
+        case 'user_memories':
+          return ref.read(userMemoryRepositoryProvider);
         default:
           return null;
       }
@@ -337,6 +344,8 @@ class SyncCoordinator extends _$SyncCoordinator {
     'integrations',
     'formula_pins',
     'onboarding_surveys',
+    'meal_plans',
+    'user_memories',
   ];
 
   /// Test-only view of the dirty-record upload roster, so a regression test

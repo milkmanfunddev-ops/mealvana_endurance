@@ -1,0 +1,4508 @@
+[
+ {
+  "id": "D-c-001",
+  "name": "Chicken breast, basmati rice & roasted carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "basmati rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "carrots→green beans; rice→GF corn pasta",
+  "approx_macros": "~620 kcal · 75g C · 45g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-002",
+  "name": "Turkey breast, red rice & zucchini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, roasted",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "red rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→chicken thigh; red rice→brown rice",
+  "approx_macros": "~580 kcal · 70g C · 42g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-003",
+  "name": "Pork tenderloin, white potato & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white potato, boiled",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→chicken breast; potato→sweet potato",
+  "approx_macros": "~600 kcal · 78g C · 40g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-004",
+  "name": "Lean ground beef, quinoa & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ground beef, 90/10, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey; quinoa→white rice",
+  "approx_macros": "~630 kcal · 68g C · 44g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-005",
+  "name": "Chicken thigh, sweet potato & bok choy",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, roasted, skinless",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "bok choy→carrots (lower FODMAP margin)",
+  "approx_macros": "~610 kcal · 72g C · 43g P · 13g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-006",
+  "name": "Pork loin chops, brown rice & snow peas",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork loin chop, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "snow peas, stir-steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→turkey breast",
+  "approx_macros": "~590 kcal · 68g C · 40g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-007",
+  "name": "Sirloin steak, white rice & cherry tomatoes",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "cherry tomatoes, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "sirloin→chicken breast (lower fat)",
+  "approx_macros": "~650 kcal · 70g C · 46g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-008",
+  "name": "Ground turkey, jasmine rice & snap peas",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ground turkey, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "jasmine rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "sugar snap peas, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→lean ground beef",
+  "approx_macros": "~600 kcal · 74g C · 40g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-009",
+  "name": "Chicken breast, white potato & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, baked",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white potato, roasted",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "carrots→green beans; potato→rice for lower fibre race-week",
+  "approx_macros": "~630 kcal · 78g C · 46g P · 12g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-010",
+  "name": "Beef mince, basmati rice & courgette",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean beef mince, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "basmati rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "courgette (zucchini), sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→turkey mince",
+  "approx_macros": "~640 kcal · 72g C · 44g P · 15g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-011",
+  "name": "Chicken thigh, red rice & broccoli florets",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, grilled, skinless",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "red rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli florets, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "red rice→brown rice",
+  "approx_macros": "~600 kcal · 70g C · 43g P · 13g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-012",
+  "name": "Turkey breast, quinoa & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "quinoa→white rice",
+  "approx_macros": "~590 kcal · 66g C · 42g P · 13g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-013",
+  "name": "Pork tenderloin, sweet potato & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, mashed",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→chicken thigh",
+  "approx_macros": "~610 kcal · 74g C · 40g P · 13g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-014",
+  "name": "Chicken breast, white rice & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "race-week",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "the celiac-safe plain plate — swap veg freely",
+  "approx_macros": "~610 kcal · 76g C · 45g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-015",
+  "name": "Sirloin steak, baked potato & cherry tomatoes",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "baked potato",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "cherry tomatoes, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "sirloin→pork loin chop",
+  "approx_macros": "~660 kcal · 76g C · 44g P · 16g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-016",
+  "name": "Ground beef, white rice & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey",
+  "approx_macros": "~630 kcal · 74g C · 42g P · 15g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-017",
+  "name": "Chicken breast, brown rice & bok choy",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "bok choy→carrots for lower-FODMAP margin",
+  "approx_macros": "~590 kcal · 68g C · 45g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-018",
+  "name": "Turkey mince, jasmine rice & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey mince, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "jasmine rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→lean ground beef",
+  "approx_macros": "~600 kcal · 72g C · 41g P · 13g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-019",
+  "name": "Pork loin, white rice & courgette",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork loin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "courgette, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→turkey breast",
+  "approx_macros": "~600 kcal · 74g C · 40g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-020",
+  "name": "Chicken thigh, quinoa & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, roasted, skinless",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "quinoa→basmati rice",
+  "approx_macros": "~610 kcal · 68g C · 44g P · 13g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-021",
+  "name": "Beef mince, sweet potato & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean beef mince, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→turkey mince",
+  "approx_macros": "~630 kcal · 74g C · 42g P · 15g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-022",
+  "name": "Chicken breast, red rice & cucumber salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "red rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber, sliced",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "red rice→basmati rice",
+  "approx_macros": "~590 kcal · 68g C · 45g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-023",
+  "name": "Turkey breast, white potato & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white potato, boiled",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli florets, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "potato→rice",
+  "approx_macros": "~600 kcal · 76g C · 41g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-024",
+  "name": "Pork tenderloin, quinoa & zucchini",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "zucchini, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→chicken thigh",
+  "approx_macros": "~600 kcal · 66g C · 41g P · 14g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-025",
+  "name": "Chicken breast, basmati rice & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "basmati rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "low-fibre swap for race week: peeled carrots for green beans",
+  "approx_macros": "~610 kcal · 74g C · 45g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-026",
+  "name": "Sirloin steak, sweet potato & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "sirloin→pork loin",
+  "approx_macros": "~650 kcal · 70g C · 44g P · 16g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-027",
+  "name": "Ground turkey, white rice & bell pepper",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ground turkey, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green bell pepper, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "turkey→lean beef mince",
+  "approx_macros": "~600 kcal · 74g C · 40g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-028",
+  "name": "Chicken thigh, brown rice & carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, roasted, skinless",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "brown rice→white rice (lower fibre, race week)",
+  "approx_macros": "~610 kcal · 70g C · 44g P · 13g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-029",
+  "name": "Pork loin chop, red rice & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork loin chop, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "red rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→turkey breast",
+  "approx_macros": "~600 kcal · 68g C · 41g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-030",
+  "name": "Beef mince, quinoa & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean beef mince, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli florets, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "beef→turkey mince",
+  "approx_macros": "~630 kcal · 66g C · 44g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Celiac.com forum thread \"Marathon Training\" https://www.celiac.com/forums/topic/60812-marathon-training/ ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf",
+  "evidence": "\"a large plate of white rice with grilled chicken and olive oil\" was a tested celiac race dinner; Triathlete/TriGirl frame meat/fish/eggs + rice/quinoa/potato + non-starchy veg as the naturally gluten-free foundation for GF or DF triathletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-031",
+  "name": "Grilled sirloin, baked sweet potato fries & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato fries, baked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   },
+   {
+    "food": "sea salt",
+    "qty": "pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + fat + other",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "sirloin→grilled chicken thigh",
+  "approx_macros": "~630 kcal · 45g C · 44g P · 22g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-032",
+  "name": "Baked sweet potato with sautéed greens, chicken & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + veg + protein + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken→ground beef (\"chili\" version)",
+  "approx_macros": "~640 kcal · 55g C · 42g P · 24g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-033",
+  "name": "Chicken and veggie skewers with spinach salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, cubed & grilled on skewers",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper & courgette, skewered & grilled",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach, fresh, with tomato",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "walnut oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "walnut oil→olive oil (removes tree_nuts)",
+  "approx_macros": "~480 kcal · 20g C · 40g P · 24g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-034",
+  "name": "Roast pork tenderloin, roasted root veg & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "carrots & parsnip, roasted",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pork→turkey breast",
+  "approx_macros": "~480 kcal · 28g C · 40g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-035",
+  "name": "Grilled chicken thigh, roasted butternut squash & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, grilled, skinless",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "butternut squash, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli florets, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "squash→sweet potato",
+  "approx_macros": "~500 kcal · 35g C · 44g P · 15g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-036",
+  "name": "Ground beef & sweet potato skillet with spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, diced & pan-seared",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "spinach, wilted in",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey",
+  "approx_macros": "~610 kcal · 50g C · 42g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-037",
+  "name": "Turkey burger patties, roasted carrots & courgette (no bun)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey burger patty, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "courgette, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add sweet potato mash for a higher-carb training day",
+  "approx_macros": "~460 kcal · 20g C · 40g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-038",
+  "name": "Roast chicken leg, mashed sweet potato & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken leg, roasted, skin on",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, mashed",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "sweet potato mash cooked without butter/milk stays dairy-free",
+  "approx_macros": "~560 kcal · 48g C · 42g P · 18g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-039",
+  "name": "Grilled pork chop, roasted beetroot & rocket",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork loin chop, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "beetroot, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "rocket (arugula), fresh",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pork→sirloin steak",
+  "approx_macros": "~480 kcal · 26g C · 38g P · 20g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-040",
+  "name": "Sirloin steak, roasted sweet potato & sautéed kale",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "kale, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "steak→pork tenderloin",
+  "approx_macros": "~640 kcal · 46g C · 44g P · 22g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-041",
+  "name": "Chicken breast, roasted beets & steamed green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "beetroot, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add rice for a training-day version",
+  "approx_macros": "~440 kcal · 22g C · 42g P · 16g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-042",
+  "name": "Roast turkey breast, roasted parsnip & broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey breast, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "parsnip, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "broccoli florets, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "parsnip→carrots",
+  "approx_macros": "~430 kcal · 24g C · 40g P · 16g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-043",
+  "name": "Pork tenderloin, roasted squash & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "acorn squash, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "squash→sweet potato",
+  "approx_macros": "~460 kcal · 30g C · 38g P · 18g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-044",
+  "name": "Grilled chicken thigh, roasted radish & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, grilled, skinless",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "radish, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "radish→carrots for a milder low-carb veg",
+  "approx_macros": "~420 kcal · 14g C · 44g P · 16g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-045",
+  "name": "Beef mince & courgette skillet, no starch",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "courgette, sautéed",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "tomato, diced, fresh",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "add rice for a training-day plate",
+  "approx_macros": "~440 kcal · 14g C · 40g P · 22g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/ ; Triathlete.com \"A 7 Day Meal Plan For Triathletes\" / gluten-free foundation note https://www.triathlete.com/nutrition/meal-plan-for-triathlete-diet/",
+  "evidence": "thepaleodiet.com's endurance sample menus pair lean protein with roasted starchy veg and greens for rest-day/easy-day paleo plates; Triathlete.com lists \"grilled sirloin with baked sweet potato fries\" and \"baked sweet potato topped with sautéed greens, chili and avocado\" as GF paleo-style dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-046",
+  "name": "Tri-tip steak, mixed salad & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tri-tip steak, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "mixed salad greens",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "tri-tip→sirloin steak",
+  "approx_macros": "~560 kcal · 8g C · 42g P · 38g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-047",
+  "name": "Ribeye steak, roasted broccoli & butter",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "ribeye steak, pan-seared",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli florets, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "grass-fed butter, melted",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "butter→olive oil (removes dairy, keeps paleo-compatible)",
+  "approx_macros": "~640 kcal · 10g C · 44g P · 46g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-048",
+  "name": "Grilled chicken thighs, sautéed spinach & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, grilled, skin on",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "2 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "chicken thigh→pork loin chop",
+  "approx_macros": "~520 kcal · 8g C · 40g P · 34g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-049",
+  "name": "Pork chop, roasted cauliflower & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork loin chop, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "cauliflower, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pork→chicken breast",
+  "approx_macros": "~500 kcal · 16g C · 38g P · 30g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-050",
+  "name": "Ground beef & courgette \"noodle\" skillet",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "courgette, spiralised & sautéed",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey (leaner keto option)",
+  "approx_macros": "~460 kcal · 12g C · 38g P · 28g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-051",
+  "name": "Sirloin steak, green beans & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "green beans, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "sirloin→tri-tip steak",
+  "approx_macros": "~560 kcal · 10g C · 44g P · 36g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-052",
+  "name": "Chicken thigh, roasted brussels sprouts & bacon fat",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, roasted, skin on",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "brussels sprouts, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "bacon fat, for roasting",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "bacon fat→olive oil for a lighter version",
+  "approx_macros": "~540 kcal · 12g C · 42g P · 34g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-053",
+  "name": "Beef mince lettuce cups with avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean ground beef, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "iceberg lettuce leaves",
+    "qty": "6 leaves",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, diced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   },
+   {
+    "food": "tomato, diced",
+    "qty": "80 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "beef→ground turkey",
+  "approx_macros": "~450 kcal · 12g C · 38g P · 26g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-054",
+  "name": "Turkey burger patty, roasted asparagus & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "turkey burger patty, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "asparagus, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "turkey patty→chicken thigh",
+  "approx_macros": "~430 kcal · 8g C · 38g P · 24g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-055",
+  "name": "Pork tenderloin, roasted zucchini & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork tenderloin, roasted",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "zucchini, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "pork→sirloin steak",
+  "approx_macros": "~480 kcal · 14g C · 38g P · 28g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs ; Canadian Running Magazine \"Zach Bitter's nutrition philosophy\" https://runningmagazine.ca/health-nutrition/zach-bitters-nutrition-philosophy/",
+  "evidence": "Zach Bitter: \"on a recovery day he would consume a lot of animal products like salmon, eggs and red meat\"; his stated dinner is \"something like a tri-tip steak,\" eaten with a low-carb, high-fat, meat-and-vegetables pattern he varies by training load",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-056",
+  "name": "Poached salmon, steamed kale & avocado with lime",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet, poached",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   },
+   {
+    "food": "lime juice, fresh",
+    "qty": "1 wedge",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + veg + fat + other",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken breast (removes fish allergen)",
+  "approx_macros": "~520 kcal · 12g C · 38g P · 34g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Jeff Volek & Stephen Phinney, The Art and Science of Low Carbohydrate Performance — electrolyte-rich training-day meal guidance (chard/collards/avocado/salmon) https://www.artandscienceoflowcarb.com/the-art-and-science-of-low-carbohydrate-performance/ ; TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/",
+  "evidence": "Volek & Phinney's low-carb-performance guidance prioritises \"electrolyte-rich foods such as Swiss chard, collard greens, avocado, and salmon\" in training-day meals; thepaleodiet.com's rest-day sample dinner is \"poached wild salmon on a bed of steamed kale, mixed green salad, avocado... a drizzle of extra virgin olive oil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-057",
+  "name": "Grilled salmon, sautéed chard & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "swiss chard, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1.5 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→pan-seared tofu (adds soy, removes fish)",
+  "approx_macros": "~530 kcal · 8g C · 36g P · 36g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Jeff Volek & Stephen Phinney, The Art and Science of Low Carbohydrate Performance — electrolyte-rich training-day meal guidance (chard/collards/avocado/salmon) https://www.artandscienceoflowcarb.com/the-art-and-science-of-low-carbohydrate-performance/ ; TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/",
+  "evidence": "Volek & Phinney's low-carb-performance guidance prioritises \"electrolyte-rich foods such as Swiss chard, collard greens, avocado, and salmon\" in training-day meals; thepaleodiet.com's rest-day sample dinner is \"poached wild salmon on a bed of steamed kale, mixed green salad, avocado... a drizzle of extra virgin olive oil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-058",
+  "name": "Baked salmon, roasted collard greens & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "collard greens, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→baked cod (still fish)",
+  "approx_macros": "~510 kcal · 10g C · 37g P · 32g F",
+  "prep": "25 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Jeff Volek & Stephen Phinney, The Art and Science of Low Carbohydrate Performance — electrolyte-rich training-day meal guidance (chard/collards/avocado/salmon) https://www.artandscienceoflowcarb.com/the-art-and-science-of-low-carbohydrate-performance/ ; TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/",
+  "evidence": "Volek & Phinney's low-carb-performance guidance prioritises \"electrolyte-rich foods such as Swiss chard, collard greens, avocado, and salmon\" in training-day meals; thepaleodiet.com's rest-day sample dinner is \"poached wild salmon on a bed of steamed kale, mixed green salad, avocado... a drizzle of extra virgin olive oil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-059",
+  "name": "Poached wild salmon, steamed kale & mixed green salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "salmon fillet, poached",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "kale, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "mixed green salad",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken breast",
+  "approx_macros": "~500 kcal · 14g C · 36g P · 30g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Jeff Volek & Stephen Phinney, The Art and Science of Low Carbohydrate Performance — electrolyte-rich training-day meal guidance (chard/collards/avocado/salmon) https://www.artandscienceoflowcarb.com/the-art-and-science-of-low-carbohydrate-performance/ ; TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/",
+  "evidence": "Volek & Phinney's low-carb-performance guidance prioritises \"electrolyte-rich foods such as Swiss chard, collard greens, avocado, and salmon\" in training-day meals; thepaleodiet.com's rest-day sample dinner is \"poached wild salmon on a bed of steamed kale, mixed green salad, avocado... a drizzle of extra virgin olive oil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-060",
+  "name": "Grilled tuna steak, sautéed spinach & olive oil",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tuna steak, grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tuna→salmon fillet",
+  "approx_macros": "~460 kcal · 6g C · 40g P · 26g F",
+  "prep": "15 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Jeff Volek & Stephen Phinney, The Art and Science of Low Carbohydrate Performance — electrolyte-rich training-day meal guidance (chard/collards/avocado/salmon) https://www.artandscienceoflowcarb.com/the-art-and-science-of-low-carbohydrate-performance/ ; TheDoDoDiet.com — thepaleodiet.com \"Sample Menus for Endurance Athletes\" https://thepaleodiet.com/sample-menus-for-endurance-athletes/",
+  "evidence": "Volek & Phinney's low-carb-performance guidance prioritises \"electrolyte-rich foods such as Swiss chard, collard greens, avocado, and salmon\" in training-day meals; thepaleodiet.com's rest-day sample dinner is \"poached wild salmon on a bed of steamed kale, mixed green salad, avocado... a drizzle of extra virgin olive oil\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-061",
+  "name": "Three-egg omelette, sautéed spinach & cheddar",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "eggs, whole",
+    "qty": "3 large",
+    "role": "protein"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "cheddar cheese, shredded",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + dairy + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "cheddar→dairy-free cheese shreds (removes dairy)",
+  "approx_macros": "~420 kcal · 6g C · 28g P · 32g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "Mark Sisson, Primal Blueprint / Primal Endurance — primal dinner pattern (meat, eggs, vegetables) via Healthline \"Primal Diet: Food Lists, Benefits, and Downsides\" https://www.healthline.com/nutrition/primal-diet ; Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs",
+  "evidence": "the Primal/keto endurance pattern (Mark Sisson's Primal Blueprint, echoed by Zach Bitter's recovery-day \"salmon, eggs and red meat\") treats eggs as an unlimited protein paired freely with vegetables and full-fat dairy on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-062",
+  "name": "Baked eggs with roasted vegetables & feta",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "eggs, whole, baked",
+    "qty": "3 large",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper & tomato, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "feta cheese, crumbled",
+    "qty": "30 g",
+    "role": "dairy"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + dairy + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "mediterranean",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "mediterranean",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "feta→dairy-free feta alternative",
+  "approx_macros": "~440 kcal · 12g C · 24g P · 32g F",
+  "prep": "20 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Mark Sisson, Primal Blueprint / Primal Endurance — primal dinner pattern (meat, eggs, vegetables) via Healthline \"Primal Diet: Food Lists, Benefits, and Downsides\" https://www.healthline.com/nutrition/primal-diet ; Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs",
+  "evidence": "the Primal/keto endurance pattern (Mark Sisson's Primal Blueprint, echoed by Zach Bitter's recovery-day \"salmon, eggs and red meat\") treats eggs as an unlimited protein paired freely with vegetables and full-fat dairy on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-063",
+  "name": "Scrambled eggs, mushrooms & spinach",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "eggs, whole, scrambled",
+    "qty": "3 large",
+    "role": "protein"
+   },
+   {
+    "food": "mushrooms, sautéed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "spinach, sautéed",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "eggs→firm tofu scramble (removes eggs, adds soy, becomes vegan)",
+  "approx_macros": "~380 kcal · 6g C · 26g P · 28g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Mark Sisson, Primal Blueprint / Primal Endurance — primal dinner pattern (meat, eggs, vegetables) via Healthline \"Primal Diet: Food Lists, Benefits, and Downsides\" https://www.healthline.com/nutrition/primal-diet ; Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs",
+  "evidence": "the Primal/keto endurance pattern (Mark Sisson's Primal Blueprint, echoed by Zach Bitter's recovery-day \"salmon, eggs and red meat\") treats eggs as an unlimited protein paired freely with vegetables and full-fat dairy on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-064",
+  "name": "Egg & vegetable frittata wedge with side salad",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "eggs, whole, baked into frittata",
+    "qty": "3 large",
+    "role": "protein"
+   },
+   {
+    "food": "courgette & onion, in frittata",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "mixed green salad",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "parmesan, grated",
+    "qty": "20 g",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "protein + veg + dairy",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "parmesan→nutritional yeast (removes dairy)",
+  "approx_macros": "~410 kcal · 10g C · 26g P · 28g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Mark Sisson, Primal Blueprint / Primal Endurance — primal dinner pattern (meat, eggs, vegetables) via Healthline \"Primal Diet: Food Lists, Benefits, and Downsides\" https://www.healthline.com/nutrition/primal-diet ; Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs",
+  "evidence": "the Primal/keto endurance pattern (Mark Sisson's Primal Blueprint, echoed by Zach Bitter's recovery-day \"salmon, eggs and red meat\") treats eggs as an unlimited protein paired freely with vegetables and full-fat dairy on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-065",
+  "name": "Eggs, sautéed kale & goat cheese",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "eggs, whole, fried",
+    "qty": "3 large",
+    "role": "protein"
+   },
+   {
+    "food": "kale, sautéed",
+    "qty": "100 g",
+    "role": "veg"
+   },
+   {
+    "food": "goat cheese, crumbled",
+    "qty": "25 g",
+    "role": "dairy"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + dairy + fat",
+  "context": [
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "goat cheese→omit for dairy-free",
+  "approx_macros": "~400 kcal · 6g C · 26g P · 30g F",
+  "prep": "12 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Mark Sisson, Primal Blueprint / Primal Endurance — primal dinner pattern (meat, eggs, vegetables) via Healthline \"Primal Diet: Food Lists, Benefits, and Downsides\" https://www.healthline.com/nutrition/primal-diet ; Men's Journal \"How Ultrarunner Zach Bitter Thrives on a Low-Carb Diet\" https://www.mensjournal.com/health-fitness/zach-bitter-100-mile-american-record-holder-he-also-eats-almost-no-carbs",
+  "evidence": "the Primal/keto endurance pattern (Mark Sisson's Primal Blueprint, echoed by Zach Bitter's recovery-day \"salmon, eggs and red meat\") treats eggs as an unlimited protein paired freely with vegetables and full-fat dairy on easy days",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-066",
+  "name": "Tinned tuna, rice cakes & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tuna, tinned in spring water",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "rice cakes, plain",
+    "qty": "4 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "avocado, mashed",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + fat",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "tuna→tinned chicken breast (removes fish)",
+  "approx_macros": "~420 kcal · 40g C · 28g P · 16g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/ ; Monash FODMAP \"A guide to low FODMAP meal planning\" https://www.monashfodmap.com/blog/a-guide-to-low-fodmap-meal-planning/ (rice + chicken + low-FODMAP veg tested serving sizes) ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "A Little Bit Yummy lists \"tinned tuna or chicken with rice cakes or gluten-free crackers, topped with mayonnaise or avocado\" and a \"chicken sandwich or salad featuring lettuce, grated carrot, and green pepper\" as low-FODMAP post-workout meals; Monash confirms rice up to 1 cup cooked and garlic-infused oil (1 tbsp) as low-FODMAP staples for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-067",
+  "name": "Tinned chicken, gluten-free crackers & mayonnaise",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, tinned/cooked & shredded",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "gluten-free crackers",
+    "qty": "8 crackers",
+    "role": "starch"
+   },
+   {
+    "food": "mayonnaise",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + fat",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "mayonnaise→avocado (removes eggs)",
+  "approx_macros": "~400 kcal · 38g C · 26g P · 14g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/ ; Monash FODMAP \"A guide to low FODMAP meal planning\" https://www.monashfodmap.com/blog/a-guide-to-low-fodmap-meal-planning/ (rice + chicken + low-FODMAP veg tested serving sizes) ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "A Little Bit Yummy lists \"tinned tuna or chicken with rice cakes or gluten-free crackers, topped with mayonnaise or avocado\" and a \"chicken sandwich or salad featuring lettuce, grated carrot, and green pepper\" as low-FODMAP post-workout meals; Monash confirms rice up to 1 cup cooked and garlic-infused oil (1 tbsp) as low-FODMAP staples for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-068",
+  "name": "Low-FODMAP chicken salad: lettuce, grated carrot & green pepper",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled & sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "lettuce, shredded",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "carrot, grated",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "green bell pepper, sliced",
+    "qty": "60 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "add rice cakes for more carbs on a training day",
+  "approx_macros": "~380 kcal · 14g C · 40g P · 18g F",
+  "prep": "10 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/ ; Monash FODMAP \"A guide to low FODMAP meal planning\" https://www.monashfodmap.com/blog/a-guide-to-low-fodmap-meal-planning/ (rice + chicken + low-FODMAP veg tested serving sizes) ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "A Little Bit Yummy lists \"tinned tuna or chicken with rice cakes or gluten-free crackers, topped with mayonnaise or avocado\" and a \"chicken sandwich or salad featuring lettuce, grated carrot, and green pepper\" as low-FODMAP post-workout meals; Monash confirms rice up to 1 cup cooked and garlic-infused oil (1 tbsp) as low-FODMAP staples for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-069",
+  "name": "Firm tofu, rice & low-FODMAP vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, pan-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot & green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "garlic-infused olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu→grilled chicken breast (removes soy)",
+  "approx_macros": "~560 kcal · 78g C · 26g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/ ; Monash FODMAP \"A guide to low FODMAP meal planning\" https://www.monashfodmap.com/blog/a-guide-to-low-fodmap-meal-planning/ (rice + chicken + low-FODMAP veg tested serving sizes) ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "A Little Bit Yummy lists \"tinned tuna or chicken with rice cakes or gluten-free crackers, topped with mayonnaise or avocado\" and a \"chicken sandwich or salad featuring lettuce, grated carrot, and green pepper\" as low-FODMAP post-workout meals; Monash confirms rice up to 1 cup cooked and garlic-infused oil (1 tbsp) as low-FODMAP staples for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-070",
+  "name": "Low-FODMAP chicken & rice bowl with bok choy",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled, diced",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   },
+   {
+    "food": "bok choy, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "garlic-infused olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "bok choy→carrots",
+  "approx_macros": "~590 kcal · 78g C · 44g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/ ; Monash FODMAP \"A guide to low FODMAP meal planning\" https://www.monashfodmap.com/blog/a-guide-to-low-fodmap-meal-planning/ (rice + chicken + low-FODMAP veg tested serving sizes) ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "A Little Bit Yummy lists \"tinned tuna or chicken with rice cakes or gluten-free crackers, topped with mayonnaise or avocado\" and a \"chicken sandwich or salad featuring lettuce, grated carrot, and green pepper\" as low-FODMAP post-workout meals; Monash confirms rice up to 1 cup cooked and garlic-infused oil (1 tbsp) as low-FODMAP staples for athletes",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-071",
+  "name": "Quinoa bowl, grilled chicken & avocado",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled, sliced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   },
+   {
+    "food": "mixed salad leaves",
+    "qty": "60 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "starch + protein + fat + veg",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→grilled salmon (adds fish)",
+  "approx_macros": "~560 kcal · 55g C · 40g P · 18g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-072",
+  "name": "Baked sweet potato & grilled chicken",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sweet potato, baked",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "recovery",
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→baked cod (adds fish)",
+  "approx_macros": "~560 kcal · 55g C · 46g P · 12g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-073",
+  "name": "New potato salad with poached salmon",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "new potatoes, boiled & cooled",
+    "qty": "250 g",
+    "role": "starch"
+   },
+   {
+    "food": "salmon fillet, poached",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "olive oil & lemon dressing",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + fat",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "salmon→grilled chicken (removes fish)",
+  "approx_macros": "~540 kcal · 48g C · 38g P · 20g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-074",
+  "name": "Rice noodle & chicken stir-fry with tamari",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "rice noodles, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "carrot & green beans, stir-fried",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "tamari (gluten-free soy sauce)",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tamari→coconut aminos (removes soy)",
+  "approx_macros": "~570 kcal · 68g C · 42g P · 12g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-075",
+  "name": "Corn pasta with chicken, vegetables & tomato sauce (no cheese)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "corn pasta, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, diced & cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "courgette & pepper, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "tomato sauce, plain (no cheese)",
+    "qty": "100 g",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + veg + sauce",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "chicken→prawns (adds shellfish)",
+  "approx_macros": "~600 kcal · 82g C · 40g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-076",
+  "name": "Rice risotto-style bowl with chicken & vegetables (no cheese)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white rice, cooked risotto-style",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "chicken breast, diced",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "peas & courgette, stirred through",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "starch + protein + veg + fat",
+  "context": [
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "italian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→prawns (adds shellfish, traditional version)",
+  "approx_macros": "~600 kcal · 78g C · 42g P · 14g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-077",
+  "name": "Vegetable-and-avocado sushi rolls with edamame & tamari",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "vegetable & avocado sushi rolls",
+    "qty": "8 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "edamame, steamed",
+    "qty": "100 g",
+    "role": "other"
+   },
+   {
+    "food": "tamari (gluten-free soy sauce)",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + other + sauce",
+  "context": [
+   "recovery",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "add a side of grilled salmon for a non-vegetarian version (adds fish)",
+  "approx_macros": "~430 kcal · 72g C · 16g P · 8g F",
+  "prep": "0 min (takeout)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-078",
+  "name": "Grilled white fish, mashed potato & steamed broccoli",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "white fish fillet (cod/haddock), grilled",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white potato, mashed (no butter/milk)",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli florets, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "dairy",
+   "fish"
+  ],
+  "swaps": "fish→chicken breast (removes fish)",
+  "approx_macros": "~530 kcal · 55g C · 40g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-079",
+  "name": "Tandoori-spiced chicken, brown rice & mixed vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, tandoori-spiced & grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "brown rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot, courgette & pepper, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "indian",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "check spice mix is a certified gluten-free blend",
+  "approx_macros": "~560 kcal · 68g C · 44g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-080",
+  "name": "Baked chicken thighs with a citrus glaze & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, baked & glazed",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato & courgette, roasted",
+    "qty": "200 g",
+    "role": "veg"
+   },
+   {
+    "food": "orange juice & honey glaze",
+    "qty": "2 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "glaze can be swapped for a plain herb rub for lower sugar",
+  "approx_macros": "~550 kcal · 45g C · 40g P · 16g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; Taste Flavor Co. \"7-Day Gluten-Free Meal Plan for Endurance Athletes\" https://tasteflavorco.com/blogs/blog/7-day-gluten-free-meal-plan-for-endurance-athletes",
+  "evidence": "TriGirl's gluten-free/dairy-free triathlete guide lists these exact combinations as \"main meals for the night before training or racing\" — e.g. \"Quinoa or brown rice with chicken and avocado,\" \"Baked sweet potato and grilled chicken,\" \"New potato salad with poached salmon,\" \"Risotto... rice, chicken or prawns and vegetables (no cheese)\"; Taste Flavor Co.'s 7-day GF endurance plan supplies the glazed-chicken and roasted-vegetable dinners",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-081",
+  "name": "Baked honey-mustard chicken thighs & roasted potatoes",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken thigh, baked with honey-mustard rub",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "use a certified GF mustard to keep this gluten-free",
+  "approx_macros": "~570 kcal · 58g C · 42g P · 14g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-082",
+  "name": "Slow-cooker pork with rice & roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "pork shoulder, slow-cooked & shredded",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot & courgette, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "pork→chicken thigh",
+  "approx_macros": "~600 kcal · 75g C · 40g P · 14g F",
+  "prep": "4 hr (slow cooker, mostly hands-off)",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-083",
+  "name": "Salsa chicken sheet-pan with rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, baked with salsa",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "salsa (plain tomato, onion, chili)",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   },
+   {
+    "food": "bell pepper, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + sauce + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "confirm salsa brand is gluten-free (most jarred salsas are)",
+  "approx_macros": "~570 kcal · 74g C · 42g P · 10g F",
+  "prep": "30 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-084",
+  "name": "Korean-style chicken & broccoli over rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, stir-fried in coconut-aminos sauce",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "broccoli florets, stir-fried",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "korean",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "coconut aminos replaces soy sauce, keeping this soy- and gluten-free",
+  "approx_macros": "~580 kcal · 76g C · 42g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-085",
+  "name": "Skillet jambalaya-style rice with chicken & sausage (nightshade-forward, no shellfish)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, diced",
+    "qty": "120 g",
+    "role": "protein"
+   },
+   {
+    "food": "pork sausage, gluten-free, sliced",
+    "qty": "80 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked in",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "bell pepper, celery & tomato, sautéed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "cajun",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "confirm sausage is a certified gluten-free brand",
+  "approx_macros": "~610 kcal · 72g C · 44g P · 14g F",
+  "prep": "35 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-086",
+  "name": "Lemon chicken & rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, pan-seared with lemon",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "lemon juice, fresh",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "protein + starch + veg + other",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "a Monash-tested low-FODMAP combination as written",
+  "approx_macros": "~580 kcal · 72g C · 44g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-087",
+  "name": "Chicken fried rice (egg-free, dairy-free version)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, diced & stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, day-old, stir-fried",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot, peas & green onion tops, stir-fried",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "coconut aminos",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "traditional versions add scrambled egg — omit for egg-free",
+  "approx_macros": "~590 kcal · 78g C · 40g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-088",
+  "name": "Bang bang-style chicken & rice bowl (mayo-free)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled & sliced",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   },
+   {
+    "food": "cucumber & carrot, shredded",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "chili-lime dressing (oil-based, no mayo)",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "traditional bang bang sauce uses mayo (egg) — this version swaps in an oil-based chili-lime dressing",
+  "approx_macros": "~560 kcal · 72g C · 42g P · 10g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-089",
+  "name": "Ground beef taco bowl with rice, lettuce & salsa (no cheese, no sour cream)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "lean ground beef, seasoned & cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   },
+   {
+    "food": "lettuce, shredded",
+    "qty": "80 g",
+    "role": "veg"
+   },
+   {
+    "food": "salsa, plain",
+    "qty": "3 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "confirm taco seasoning is a certified gluten-free blend",
+  "approx_macros": "~600 kcal · 76g C · 40g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-090",
+  "name": "Roasted chicken drumsticks, potatoes & green beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken drumsticks, roasted, skin on",
+    "qty": "220 g",
+    "role": "protein"
+   },
+   {
+    "food": "white potato, roasted",
+    "qty": "220 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap potato for rice on race week for lower fibre",
+  "approx_macros": "~610 kcal · 55g C · 46g P · 18g F",
+  "prep": "40 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Allergy Awesomeness \"31 Gluten-Free Dairy-Free Egg-Free Dinner Recipes\" (also nut-free) https://allergyawesomeness.com/gluten-free-dairy-free-egg-free-dinner-recipes/ ; Monash FODMAP recipe index — chicken + rice family (lemon chicken & rice; chicken fried rice) https://www.monashfodmap.com/recipe/monash-low-fodmap-recipe-index/",
+  "evidence": "Allergy Awesomeness catalogues 31 dinners confirmed \"gluten free dairy free egg free\" and nut-free built on the same chicken/rice/beef/vegetable pattern (honey-mustard chicken & potatoes, salsa chicken sheet-pan, Korean chicken & broccoli, fried rice); Monash's tested lemon-chicken-and-rice recipe anchors the plain version",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "D-c-091",
+  "name": "Sweet potato, tofu & black bean bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, pan-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, cooked",
+    "qty": "100 g",
+    "role": "other"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + other + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu→grilled chicken (removes soy, no longer vegan)",
+  "approx_macros": "~610 kcal · 68g C · 26g P · 24g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/",
+  "evidence": "TriGirl's GF/DF triathlete list names firm tofu as the standard vegetarian protein swap in these same rice/vegetable assemblies; low-FODMAP guidance caps legumes at roughly half-cup servings within an otherwise plant-based bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-092",
+  "name": "Tofu & vegetable stir-fry with rice, no soy sauce",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "firm tofu, cubed & stir-fried",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli & carrot, stir-fried",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "garlic-infused oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "rest-day"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tofu itself carries the soy tag even without added soy sauce",
+  "approx_macros": "~600 kcal · 78g C · 24g P · 16g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/",
+  "evidence": "TriGirl's GF/DF triathlete list names firm tofu as the standard vegetarian protein swap in these same rice/vegetable assemblies; low-FODMAP guidance caps legumes at roughly half-cup servings within an otherwise plant-based bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-093",
+  "name": "Lentil & rice bowl with roasted vegetables",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "green lentils, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrot & courgette, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "lentils are low-FODMAP only in small (~1/2 cup) servings — check personal tolerance",
+  "approx_macros": "~560 kcal · 90g C · 22g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/",
+  "evidence": "TriGirl's GF/DF triathlete list names firm tofu as the standard vegetarian protein swap in these same rice/vegetable assemblies; low-FODMAP guidance caps legumes at roughly half-cup servings within an otherwise plant-based bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-094",
+  "name": "Tempeh, jasmine rice & steamed snow peas",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "tempeh, sliced & pan-fried",
+    "qty": "150 g",
+    "role": "protein"
+   },
+   {
+    "food": "jasmine rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "snow peas, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "coconut aminos",
+    "qty": "1 tbsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "protein + starch + veg + sauce",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "tempeh→grilled chicken (removes soy)",
+  "approx_macros": "~560 kcal · 74g C · 24g P · 14g F",
+  "prep": "20 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/",
+  "evidence": "TriGirl's GF/DF triathlete list names firm tofu as the standard vegetarian protein swap in these same rice/vegetable assemblies; low-FODMAP guidance caps legumes at roughly half-cup servings within an otherwise plant-based bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-095",
+  "name": "Black bean & rice bowl with roasted peppers",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "black beans, cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "bell pepper, roasted",
+    "qty": "120 g",
+    "role": "veg"
+   },
+   {
+    "food": "avocado, sliced",
+    "qty": "1/2 fruit",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "portion beans to ~1/2 cup for lower-FODMAP tolerance",
+  "approx_macros": "~580 kcal · 85g C · 20g P · 16g F",
+  "prep": "15 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/ ; A Little Bit Yummy \"Sports Fuelling and the Low FODMAP Diet\" https://alittlebityummy.com/blog/sports-fuelling-and-the-low-fodmap-diet/",
+  "evidence": "TriGirl's GF/DF triathlete list names firm tofu as the standard vegetarian protein swap in these same rice/vegetable assemblies; low-FODMAP guidance caps legumes at roughly half-cup servings within an otherwise plant-based bowl",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-096",
+  "name": "Baked cod, quinoa & roasted carrots",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "cod fillet, baked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "quinoa, cooked",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "carrots, roasted",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "cod→chicken breast (removes fish, becomes fully allergen-free)",
+  "approx_macros": "~560 kcal · 76g C · 40g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/",
+  "evidence": "University of Arizona Campus Health's gluten-free dinners handout lists \"Mexican skillet dinners with rice\" and \"grilled shish kebobs\" alongside Triathlete/TriGirl's \"grilled chicken, roasted vegetables, or rice bowls\" as the everyday GF/DF athlete foundation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-097",
+  "name": "Grilled chicken, roasted vegetables & rice bowl",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   },
+   {
+    "food": "broccoli, carrot & courgette, roasted",
+    "qty": "180 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "everyday",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "the general-purpose GF/DF triathlete plate — swap veg freely",
+  "approx_macros": "~600 kcal · 76g C · 45g P · 12g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/",
+  "evidence": "University of Arizona Campus Health's gluten-free dinners handout lists \"Mexican skillet dinners with rice\" and \"grilled shish kebobs\" alongside Triathlete/TriGirl's \"grilled chicken, roasted vegetables, or rice bowls\" as the everyday GF/DF athlete foundation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-098",
+  "name": "Grilled shish kebabs (chicken, pepper & onion) with rice",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, cubed & grilled on skewers",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "bell pepper & red onion, skewered & grilled",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "white rice, cooked",
+    "qty": "190 g",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + veg + starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "chicken→beef cubes",
+  "approx_macros": "~570 kcal · 72g C · 44g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/",
+  "evidence": "University of Arizona Campus Health's gluten-free dinners handout lists \"Mexican skillet dinners with rice\" and \"grilled shish kebobs\" alongside Triathlete/TriGirl's \"grilled chicken, roasted vegetables, or rice bowls\" as the everyday GF/DF athlete foundation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-099",
+  "name": "Mexican skillet dinner: chicken, rice & black beans",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "chicken breast, diced & cooked",
+    "qty": "180 g",
+    "role": "protein"
+   },
+   {
+    "food": "white rice, cooked in",
+    "qty": "180 g",
+    "role": "starch"
+   },
+   {
+    "food": "black beans, cooked",
+    "qty": "100 g",
+    "role": "other"
+   },
+   {
+    "food": "tomato & bell pepper, sautéed",
+    "qty": "120 g",
+    "role": "veg"
+   }
+  ],
+  "pattern": "protein + starch + other + veg",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "mexican",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "portion beans down for lower-FODMAP tolerance",
+  "approx_macros": "~600 kcal · 78g C · 44g P · 10g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/",
+  "evidence": "University of Arizona Campus Health's gluten-free dinners handout lists \"Mexican skillet dinners with rice\" and \"grilled shish kebobs\" alongside Triathlete/TriGirl's \"grilled chicken, roasted vegetables, or rice bowls\" as the everyday GF/DF athlete foundation",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "D-c-100",
+  "name": "Grilled steak, roasted sweet potato & green beans (nut-free rest-day plate)",
+  "meal_type": "dinner",
+  "components": [
+   {
+    "food": "sirloin steak, grilled",
+    "qty": "200 g",
+    "role": "protein"
+   },
+   {
+    "food": "sweet potato, roasted",
+    "qty": "200 g",
+    "role": "starch"
+   },
+   {
+    "food": "green beans, steamed",
+    "qty": "150 g",
+    "role": "veg"
+   },
+   {
+    "food": "olive oil",
+    "qty": "1 tbsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "protein + starch + veg + fat",
+  "context": [
+   "rest-day",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "steak→grilled chicken thigh",
+  "approx_macros": "~640 kcal · 46g C · 44g P · 18g F",
+  "prep": "25 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "University of Arizona Campus Health \"Gluten Free Dinners\" handout https://health.arizona.edu/sites/default/files/gluten_free_dinners_0.pdf ; Triathlete.com / TriGirl UK \"Tips for the Gluten-Free or Dairy-Free Triathlete\" https://www.trigirl.co.uk/nutrition-for-female-triathletes/gluten-free-or-dairy-free-triathlete/",
+  "evidence": "University of Arizona Campus Health's gluten-free dinners handout lists \"Mexican skillet dinners with rice\" and \"grilled shish kebobs\" alongside Triathlete/TriGirl's \"grilled chicken, roasted vegetables, or rice bowls\" as the everyday GF/DF athlete foundation",
+  "reconstructed_from_snippet": false
+ }
+]

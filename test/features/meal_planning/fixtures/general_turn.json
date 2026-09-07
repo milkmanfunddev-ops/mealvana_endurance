@@ -1,0 +1,57 @@
+{
+  "status": 200,
+  "headers": {
+    "x-conversation-id": "1a3996c2-d4fa-480f-a3dd-fb68ba6fefa5",
+    "x-vana-kind": "general",
+    "content-type": "application/x-ndjson; charset=utf-8"
+  },
+  "lines": [
+    {
+      "type": "text",
+      "delta": "I'll pull"
+    },
+    {
+      "type": "text",
+      "delta": " together your profile, tomorrow's workout, and macro targets to give you a pre-session frame."
+    },
+    {
+      "type": "status",
+      "tool": "getProfile"
+    },
+    {
+      "type": "status",
+      "tool": "getWorkouts"
+    },
+    {
+      "type": "status",
+      "tool": "getMacroTargets"
+    },
+    {
+      "type": "text",
+      "delta": "\n"
+    },
+    {
+      "type": "text",
+      "delta": "I"
+    },
+    {
+      "type": "text",
+      "delta": " don't see a workout logged for tomorrow (September 2). Can you tell me what session you're planning—distance, intensity, and"
+    },
+    {
+      "type": "text",
+      "delta": " how far out it is from when you'd eat? That'll help me point you to the right pre"
+    },
+    {
+      "type": "text",
+      "delta": "-session meal timing and size."
+    },
+    {
+      "type": "done",
+      "usage": {
+        "input_tokens": 6192,
+        "output_tokens": 220
+      }
+    }
+  ]
+}

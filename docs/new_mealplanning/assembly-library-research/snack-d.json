@@ -1,0 +1,3785 @@
+[
+ {
+  "id": "S-d-001",
+  "name": "Onigiri (rice ball), plain with nori",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white rice, cooked, formed into triangle",
+    "qty": "1 rice ball (~120 g)",
+    "role": "starch"
+   },
+   {
+    "food": "nori (seaweed sheet)",
+    "qty": "1 strip",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + wrap",
+  "context": [
+   "everyday",
+   "pre-session",
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add umeboshi or salmon flake filling for variety",
+  "approx_macros": "~180 kcal · 40g C · 3g P · 0g F",
+  "prep": "5 min (bought pre-made at any konbini)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://run.outsideonline.com/recipes/the-rice-ball-revolution-onigiri-might-be-the-ultimate-endurance-snack/ ; Outside Run — \"The Rice Ball Revolution: Onigiri Might Be the Ultimate Endurance Snack\"",
+  "evidence": "\"onigiri is rich in simple carbohydrates... many ultrarunners, including Scott Jurek, pack these traditional Japanese rice balls in their bags for long runs\"; eaten cold for higher resistant-starch content.",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-d-002",
+  "name": "Onigiri with umeboshi (pickled plum) filling",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white rice, cooked, formed into triangle",
+    "qty": "1 rice ball (~120 g)",
+    "role": "starch"
+   },
+   {
+    "food": "umeboshi (pickled plum)",
+    "qty": "1 whole",
+    "role": "other"
+   },
+   {
+    "food": "nori (seaweed sheet)",
+    "qty": "1 strip",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + sour filling + wrap",
+  "context": [
+   "race-week",
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap umeboshi for salted salmon flake (adds fish)",
+  "approx_macros": "~185 kcal · 40g C · 3g P · 0g F",
+  "prep": "bought pre-made",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "pickled plum listed among the foods on the Tokyo Marathon course itself, alongside chocolate and azuki-bean paste, for runners to grab on the move.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-003",
+  "name": "Sweet potato bun, convenience-store bought",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sweet potato bread bun (konbini)",
+    "qty": "1 bun (~90 g)",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch bun",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "any Lawson/Family Mart bread bun works the same way",
+  "approx_macros": "~230 kcal · 40g C · 5g P · 5g F",
+  "prep": "bought",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "\"I grabbed a sweet potato bun at Lawson's, and it was delicious\" — grabbed as a between-buffet-meal top-up during Tokyo Marathon race week.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-004",
+  "name": "Red bean roll + baguette sandwich, konbini snack pair",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "red bean paste bread roll",
+    "qty": "1 roll",
+    "role": "starch"
+   },
+   {
+    "food": "baguette sandwich (ham or egg)",
+    "qty": "1 small sandwich",
+    "role": "other"
+   }
+  ],
+  "pattern": "sweet bread + savory bread",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "swap ham sandwich for a vegetarian egg-salad version",
+  "approx_macros": "~420 kcal · 60g C · 14g P · 12g F",
+  "prep": "bought at Starbucks/konbini",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "\"I went with a baguette sandwich and a red bean roll\" — grabbed together from a Starbucks near the hotel the day before the marathon.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-005",
+  "name": "Chocolate-pudding-filled roll, konbini snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "bread roll filled with chocolate pudding",
+    "qty": "1 roll",
+    "role": "starch"
+   }
+  ],
+  "pattern": "sweet filled bread",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "swap for custard-filled roll (same shelf)",
+  "approx_macros": "~260 kcal · 38g C · 5g P · 9g F",
+  "prep": "bought at Family Mart",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "\"I stopped at Family Mart and found some rolls that were filled with chocolate pudding\" — used as an easy pre-race carb top-up.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-006",
+  "name": "Hi-Chew candy, quick sugar hit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Hi-Chew fruit chews",
+    "qty": "1 small pack",
+    "role": "other"
+   }
+  ],
+  "pattern": "candy",
+  "context": [
+   "race-week",
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap flavor freely — same fast-carb role",
+  "approx_macros": "~140 kcal · 30g C · 0g P · 2g F",
+  "prep": "bought at 7-Eleven",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "\"I hopped into 7-Eleven for some Hi-Chew to finish out the day\" — grabbed the evening before race day as a small sweet snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-007",
+  "name": "Azuki bean paste, race-course grab",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "azuki (red bean) paste, single-serve",
+    "qty": "1 packet",
+    "role": "other"
+   }
+  ],
+  "pattern": "sweetened legume paste",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap for chocolate square (same course table)",
+  "approx_macros": "~90 kcal · 20g C · 2g P · 0g F",
+  "prep": "handed out on course",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "listed among the race-course snack options at Tokyo Marathon: \"including pickled plum, chocolate, azuki-bean paste\".",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-008",
+  "name": "Toast with jam, hotel-buffet grab",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "toast + spread",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap jam for honey",
+  "approx_macros": "~140 kcal · 25g C · 3g P · 2g F",
+  "prep": "bought at hotel breakfast buffet",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "part of the buffet-breakfast plate the morning before racing: \"toast with jam, an orange bun, a slice of baguette, breakfast potatoes, and yogurt\".",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-009",
+  "name": "Orange bun, hotel-buffet grab",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "orange-flavored sweet bun",
+    "qty": "1 bun",
+    "role": "starch"
+   }
+  ],
+  "pattern": "sweet bread",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "any citrus-glazed bun works",
+  "approx_macros": "~220 kcal · 35g C · 5g P · 6g F",
+  "prep": "bought at hotel breakfast buffet",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "one of the pre-race breakfast-buffet items eaten alongside toast and yogurt during Tokyo Marathon carb-load days.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-010",
+  "name": "Mochi in warm broth, post-training warm-up snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mochi (rice cake)",
+    "qty": "2 pieces",
+    "role": "starch"
+   },
+   {
+    "food": "clear broth",
+    "qty": "1 cup",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + warm broth",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "japanese",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "swap broth base vegetarian dashi vs. bonito dashi (removes fish)",
+  "approx_macros": "~180 kcal · 35g C · 4g P · 1g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://run.outsideonline.com/recipes/the-rice-ball-revolution-onigiri-might-be-the-ultimate-endurance-snack/ ; Outside Run — \"The Rice Ball Revolution: Onigiri Might Be the Ultimate Endurance Snack\"",
+  "evidence": "mochi in broth described as delivering \"water, electrolytes, and protein from the broth, quick-digesting carbohydrates from the rice cakes, and the warming effect of a bowl of soup\" as a recovery-style snack.",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-d-011",
+  "name": "Chai (Kenyan milky tea) + mandazi",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chai (black tea, boiled with milk + sugar)",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   },
+   {
+    "food": "mandazi (fried Swahili bread)",
+    "qty": "1 piece",
+    "role": "starch"
+   }
+  ],
+  "pattern": "drink + fried bread",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap mandazi for plain bread if deep-fried food unwanted",
+  "approx_macros": "~260 kcal · 35g C · 6g P · 10g F",
+  "prep": "bought or camp kitchen",
+  "batch": false,
+  "frequency": "staple",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "at Kenyan training camps there's \"a snack around 10:30 a.m. (usually mandazi, a kind of lightly fried Swahili bread)\" alongside the day's tea breaks, which the article calls \"sacred\".",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-012",
+  "name": "Chai + white bread with margarine",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chai (black tea, boiled with milk + sugar)",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   },
+   {
+    "food": "white bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "margarine",
+    "qty": "1 tsp",
+    "role": "fat"
+   }
+  ],
+  "pattern": "drink + bread + fat",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap margarine for jam or peanut butter",
+  "approx_macros": "~280 kcal · 40g C · 7g P · 9g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "\"white bread with margarine, jam, or peanut butter\" is listed as the everyday tea-time accompaniment at Kenyan running camps.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-013",
+  "name": "Chai + white bread with jam",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chai (black tea, boiled with milk + sugar)",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   },
+   {
+    "food": "white bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "drink + bread + spread",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap jam for honey",
+  "approx_macros": "~290 kcal · 45g C · 6g P · 7g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "jam-topped bread with tea is one of the three standard bread toppings named for Kenyan runners' tea breaks (margarine, jam, or peanut butter).",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-014",
+  "name": "Chai + white bread with peanut butter",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chai (black tea, boiled with milk + sugar)",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   },
+   {
+    "food": "white bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "drink + bread + spread",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "swap peanut butter for margarine if peanut-allergic",
+  "approx_macros": "~320 kcal · 42g C · 9g P · 12g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "peanut-butter bread with tea named alongside margarine and jam as the standard Kenyan runner tea-time bread topping.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-015",
+  "name": "Chai + chapati",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chai (black tea, boiled with milk + sugar)",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   },
+   {
+    "food": "chapati",
+    "qty": "1 piece",
+    "role": "starch"
+   }
+  ],
+  "pattern": "drink + flatbread",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "chapati keeps well and travels for a training-camp snack bag",
+  "approx_macros": "~270 kcal · 38g C · 6g P · 9g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "\"chapatti or bread with afternoon tea\" is called out as the routine afternoon snack pairing at Kenyan camps.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-016",
+  "name": "Tea with milk and sugar, multiple cups a day",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "black tea, boiled with milk + sugar",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "milky sweet tea",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap dairy milk for evaporated/plant milk to remove dairy",
+  "approx_macros": "~90 kcal · 12g C · 2g P · 3g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "\"The Kenyans love their tea...and they love putting lots of milk and sugar in their tea. It's incredible\" — Jeff Gaudette, noting Kenyan runners average over a liter of tea a day, more than plain water.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-017",
+  "name": "Sugarcane, chewed raw",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sugarcane stick",
+    "qty": "1 stick",
+    "role": "other"
+   }
+  ],
+  "pattern": "raw cane",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed — eaten as-is",
+  "approx_macros": "~60 kcal · 15g C · 0g P · 0g F",
+  "prep": "none",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "a commenter with East African training experience notes runners \"also love chewing sugarcane\" as a between-run snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-018",
+  "name": "Boiled sweet potato, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "sweet potato, boiled",
+    "qty": "1 medium (~150 g)",
+    "role": "starch"
+   }
+  ],
+  "pattern": "boiled root veg",
+  "context": [
+   "everyday",
+   "recovery",
+   "pre-session"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~130 kcal · 30g C · 2g P · 0g F",
+  "prep": "20 min boil",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "sweet potatoes are named among the everyday carbohydrate staples in the Kenyan runner diet, alongside bread and bananas.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-019",
+  "name": "Green banana, boiled",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "green banana, boiled",
+    "qty": "1 medium",
+    "role": "starch"
+   }
+  ],
+  "pattern": "boiled starch",
+  "context": [
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "swap for ripe banana eaten raw",
+  "approx_macros": "~110 kcal · 26g C · 1g P · 0g F",
+  "prep": "15 min boil",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "green bananas are listed among the starchy staples Kenyan runners eat regularly.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-020",
+  "name": "Watermelon, post-run",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "watermelon, cubed",
+    "qty": "250 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~75 kcal · 19g C · 1g P · 0g F",
+  "prep": "0 min (pre-cut)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "watermelon is named as one of the standard post-run fruits Kenyan runners eat for rehydration and recovery.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-021",
+  "name": "Cantaloupe / honeydew melon, post-run",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cantaloupe or honeydew melon, cubed",
+    "qty": "250 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "interchange cantaloupe/honeydew freely",
+  "approx_macros": "~90 kcal · 22g C · 1g P · 0g F",
+  "prep": "0 min (pre-cut)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "cantaloupe and honeydew are named alongside watermelon as the post-run fruit staples in the Kenyan runner diet.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-022",
+  "name": "White bread with margarine, evening tea break",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "margarine",
+    "qty": "1 tsp",
+    "role": "fat"
+   },
+   {
+    "food": "chai (black tea, boiled with milk + sugar)",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "bread + fat + drink",
+  "context": [
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap margarine for peanut butter or jam",
+  "approx_macros": "~280 kcal · 40g C · 7g P · 9g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "described as one of the routine evening tea-break snacks alongside dinner at Kenyan training camps.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-023",
+  "name": "Ripe banana, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana, ripe",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "everyday",
+   "pre-session",
+   "travel"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~105 kcal · 27g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://runnersconnect.net/diet-of-kenyan-runners/ ; RunnersConnect — \"Diet of Kenyan Runners\" (Jeff Gaudette, w/ athlete + commenter quotes)",
+  "evidence": "bananas are named among the everyday carbohydrate staples eaten by Kenyan runners, both green (boiled) and ripe (raw).",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-024",
+  "name": "Chapati with peanut butter, packed snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chapati",
+    "qty": "1 piece",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "flatbread + spread",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "kenyan",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "swap peanut butter for margarine",
+  "approx_macros": "~260 kcal · 32g C · 7g P · 11g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.kenya-camp.com/post/nutrition-at-a-kenyan-running-camp-what-runners-eat-in-iten ; Kenya Experience — \"Nutrition at a Kenyan Running Camp: What Runners Eat in Iten\"",
+  "evidence": "chapati is named as one of the tea-time breads Kenyan runners eat, commonly spread with the same margarine/jam/peanut-butter options used on bread.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-025",
+  "name": "Rice cake, banana + peanut butter + cacao nibs",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with cream cheese",
+    "qty": "1 square (~70 g)",
+    "role": "starch"
+   },
+   {
+    "food": "banana, mashed",
+    "qty": "1/2 banana",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "cacao nibs",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + spread",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "peanuts"
+  ],
+  "swaps": "swap peanut butter for almond butter (tree_nuts) or omit for nut-free",
+  "approx_macros": "~260 kcal · 38g C · 5g P · 9g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "EF Pro Cycling's team rice-cake recipe names banana + peanut butter + cacao nibs as one of the standard add-in combinations riders \"pull out of musettes during races.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-026",
+  "name": "Rice cake, blueberry + dark chocolate",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with cream cheese",
+    "qty": "1 square (~70 g)",
+    "role": "starch"
+   },
+   {
+    "food": "blueberries",
+    "qty": "2 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "dark chocolate (72%+), chopped",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + chocolate",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap dark chocolate for dried cherries",
+  "approx_macros": "~230 kcal · 34g C · 4g P · 8g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "listed as one of EF Pro Cycling's popular team rice-cake fillings, alongside bacon + maple syrup and cranberry + orange zest + white chocolate.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-027",
+  "name": "Rice cake, bacon + maple syrup",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with cream cheese",
+    "qty": "1 square (~70 g)",
+    "role": "starch"
+   },
+   {
+    "food": "bacon, cooked and crumbled",
+    "qty": "1 slice",
+    "role": "protein"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + sweetener",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap bacon for smoked turkey for a leaner version",
+  "approx_macros": "~250 kcal · 32g C · 6g P · 10g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "bacon + maple syrup is one of the savory-sweet rice-cake combinations in EF Pro Cycling's team recipe for long race days.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-028",
+  "name": "Rice cake, cranberry + orange zest + white chocolate",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with cream cheese",
+    "qty": "1 square (~70 g)",
+    "role": "starch"
+   },
+   {
+    "food": "dried cranberries",
+    "qty": "1 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "orange zest",
+    "qty": "1/2 tsp",
+    "role": "other"
+   },
+   {
+    "food": "white chocolate, chopped",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + citrus + chocolate",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap white chocolate for extra dried fruit",
+  "approx_macros": "~250 kcal · 36g C · 4g P · 9g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "named in EF Pro Cycling's list of popular rice-cake add-in combinations riders carry on the bike.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-029",
+  "name": "Rice cake, tart cherry + lemon zest",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with cream cheese",
+    "qty": "1 square (~70 g)",
+    "role": "starch"
+   },
+   {
+    "food": "dried tart cherries",
+    "qty": "1 tbsp",
+    "role": "fruit"
+   },
+   {
+    "food": "lemon zest",
+    "qty": "1/2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + citrus",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap tart cherry for dried cranberry",
+  "approx_macros": "~220 kcal · 33g C · 4g P · 7g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "named among the team's rotating rice-cake fillings, chosen for the tart-cherry recovery angle on long race blocks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-030",
+  "name": "Panini: white bread, jam + cream cheese",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "soft white crustless bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "cream cheese",
+    "qty": "1 tbsp",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "bread + spread + spread",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "add thin ham for extra protein",
+  "approx_macros": "~230 kcal · 34g C · 5g P · 7g F",
+  "prep": "5 min, made by team soigneur",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "\"soft white crustless bread, smeared with jam and cream cheese\" is described as the classic musette-bag panino handed up to riders early in a race.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-031",
+  "name": "Panini: white bread, jam + cream cheese + ham",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "soft white crustless bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "cream cheese",
+    "qty": "1 tbsp",
+    "role": "dairy"
+   },
+   {
+    "food": "ham, thin sliced",
+    "qty": "1 slice",
+    "role": "protein"
+   }
+  ],
+  "pattern": "bread + spread + protein",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "drop ham for the vegetarian version",
+  "approx_macros": "~270 kcal · 34g C · 9g P · 8g F",
+  "prep": "5 min, made by team soigneur",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "ham is noted as sometimes added to the classic jam-and-cream-cheese musette panino.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-032",
+  "name": "Waffle sandwich, jam-filled",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "waffle, cut in half",
+    "qty": "1 waffle",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "waffle + spread",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "swap jam for Nutella or peanut/almond butter",
+  "approx_macros": "~220 kcal · 32g C · 4g P · 8g F",
+  "prep": "5 min, wrap in foil",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "waffles \"cut into smaller pieces, put together like a sandwich and filled with jam\" are named as a standard on-bike pocket food.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-033",
+  "name": "Waffle sandwich, Nutella-filled",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "waffle, cut in half",
+    "qty": "1 waffle",
+    "role": "starch"
+   },
+   {
+    "food": "chocolate hazelnut spread",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "waffle + spread",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap Nutella for jam to drop tree nuts",
+  "approx_macros": "~240 kcal · 33g C · 4g P · 10g F",
+  "prep": "5 min, wrap in foil",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "Nutella is named alongside jam and vanilla cream as a standard filling for the waffle sandwiches riders carry in jersey pockets.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-034",
+  "name": "Waffle sandwich, peanut butter-filled",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "waffle, cut in half",
+    "qty": "1 waffle",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "waffle + spread",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "swap peanut butter for almond butter",
+  "approx_macros": "~250 kcal · 30g C · 6g P · 11g F",
+  "prep": "5 min, wrap in foil",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "peanut or almond butter is listed as one of the waffle-sandwich fillings riders wrap in foil for jersey pockets.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-035",
+  "name": "Stroopwafel, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "stroopwafel (caramel waffle cookie)",
+    "qty": "1 waffle",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component sweet",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "none needed — eaten as-is",
+  "approx_macros": "~150 kcal · 24g C · 2g P · 5g F",
+  "prep": "0 min (bought)",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "stroopwafels are named among the standard jersey-pocket foods pro cyclists carry, alongside dried fruit and bananas.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-036",
+  "name": "Coconut macaroon, plain",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "coconut macaroon",
+    "qty": "1 macaroon",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component sweet",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "tree_nuts"
+  ],
+  "swaps": "none needed — eaten as-is",
+  "approx_macros": "~90 kcal · 10g C · 1g P · 5g F",
+  "prep": "0 min (bought)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "coconut macaroons are named as a jersey-pocket food riders carry alongside stroopwafels and dried fruit.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-037",
+  "name": "Banana, from the musette",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~105 kcal · 27g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "bananas are named as a standard item riders pull from the musette bag during long races.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-038",
+  "name": "Dried fruit mix, jersey pocket",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mixed dried fruit (apricot, fig, raisin)",
+    "qty": "30 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "travel"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~90 kcal · 22g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "dried fruits are named among the standard foods riders carry in jersey pockets on long race days.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-039",
+  "name": "Rice cake, British Cycling version — savory rice + tuna",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked",
+    "qty": "1 square (~80 g)",
+    "role": "starch"
+   },
+   {
+    "food": "tuna, canned, flaked",
+    "qty": "40 g",
+    "role": "protein"
+   },
+   {
+    "food": "soy sauce",
+    "qty": "1 tsp",
+    "role": "sauce"
+   }
+  ],
+  "pattern": "starch + protein + sauce",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish",
+   "gluten",
+   "soy"
+  ],
+  "swaps": "swap tuna for cooked chicken",
+  "approx_macros": "~220 kcal · 30g C · 12g P · 4g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.britishcycling.org.uk/knowledge/nutrition/recipes/snack/article/izn20150612-Rice-cakes-0 ; British Cycling — Rice Cakes (nutrition recipe)",
+  "evidence": "British Cycling's rice-cake recipe is a national-federation nutrition resource specifically written for riders' training and racing fuel.",
+  "reconstructed_from_snippet": true
+ },
+ {
+  "id": "S-d-040",
+  "name": "Musette grab: energy bar, whole",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "energy bar",
+    "qty": "1 bar",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component bar",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "check label for gluten-free / nut-free variants",
+  "approx_macros": "~200 kcal · 32g C · 4g P · 6g F",
+  "prep": "0 min (bought)",
+  "batch": false,
+  "frequency": "staple",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "an \"energy bar or two\" is listed as a standard musette-bag item pro cyclists grab during a race.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-041",
+  "name": "Musette grab: cookies",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cookies",
+    "qty": "2 cookies",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component sweet",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~180 kcal · 26g C · 2g P · 8g F",
+  "prep": "0 min (bought)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "cookies are named as a rider's special-request musette item, prepared by the team soigneur alongside standard fare.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-042",
+  "name": "Bacon + maple rice square, mid-stage grab",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with cream cheese",
+    "qty": "2 squares (~140 g)",
+    "role": "starch"
+   },
+   {
+    "food": "bacon, cooked and crumbled",
+    "qty": "2 slices",
+    "role": "protein"
+   },
+   {
+    "food": "maple syrup",
+    "qty": "2 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + protein + sweetener, larger portion",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "halve the portion for a shorter stage",
+  "approx_macros": "~430 kcal · 55g C · 11g P · 17g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "a doubled-up version of EF Pro Cycling's bacon + maple syrup rice cake, sized for a longer stage's mid-race fueling window.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-043",
+  "name": "Panini, jam-only (vegan)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "soft white crustless bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "jam",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + spread",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "add cream cheese back in for the classic non-vegan version",
+  "approx_macros": "~180 kcal · 34g C · 4g P · 2g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.roadbikerider.com/what-s-in-a-musette-bag-d1/ ; RoadBikeRider — \"What's in a Musette Bag?\"",
+  "evidence": "a plain jam version of the classic musette panino, dropping the cream cheese named in the original recipe.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-044",
+  "name": "Rice cake, plain sugar + coconut oil (base recipe)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "short-grain white rice, cooked with sugar + coconut oil",
+    "qty": "1 square (~65 g)",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch only",
+  "context": [
+   "pre-session",
+   "race-week"
+  ],
+  "cuisine": "european",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "add any of the team's named fillings — banana+PB, blueberry+chocolate, bacon+maple",
+  "approx_macros": "~170 kcal · 32g C · 2g P · 3g F",
+  "prep": "made ahead, cut into squares",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.efprocycling.com/tips-recipes/team-recipe-on-the-bike-rice-cakes/ ; EF Pro Cycling — Team Recipe: On-the-Bike Rice Cakes",
+  "evidence": "the unfilled base of EF Pro Cycling's official team rice-cake recipe — the plain squares are cut and then customized with the team's popular add-ins.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-045",
+  "name": "Banana + peanut butter, travel-bag snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + spread",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "peanuts"
+  ],
+  "swaps": "swap peanut butter for almond butter",
+  "approx_macros": "~290 kcal · 34g C · 8g P · 16g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.precisionhydration.com/performance-advice/nutrition/what-to-eat-during-an-ultramarathon/ ; Precision Hydration — \"Custard, chips, and hummus sandwiches: how to fuel ultras\" (Damian Hall)",
+  "evidence": "banana with peanut butter is recommended for ultramarathon runners as a fat-plus-carb combination, valued for being calorie-dense on long training/race days.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-046",
+  "name": "Justin's nut butter packet + banana, airport carry-on",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter, single-serve packet",
+    "qty": "1 packet (32 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + single-serve spread",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap almond butter packet for honey peanut butter packet",
+  "approx_macros": "~300 kcal · 30g C · 8g P · 18g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.precisionhydration.com/performance-advice/nutrition/what-to-eat-during-an-ultramarathon/ ; Precision Hydration — \"Custard, chips, and hummus sandwiches: how to fuel ultras\" (Damian Hall)",
+  "evidence": "single-serve nut-butter packets are called out as small enough to clear TSA carry-on liquids rules, making them a go-to airport travel snack for endurance athletes.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-047",
+  "name": "Trail mix, nuts + seeds + dried fruit",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "trail mix (nuts, seeds, dried fruit)",
+    "qty": "1/3 cup (~45 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "mixed nuts + fruit",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "buy a peanut-free / seed-only mix for nut allergies",
+  "approx_macros": "~210 kcal · 20g C · 6g P · 13g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "trail mix is called out for travel because it needs \"little to no water, making it an energy-dense snack\" — a standard airport/gas-station grab.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-048",
+  "name": "Roasted chickpeas, crunchy travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted chickpeas",
+    "qty": "1/2 cup (~60 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component legume",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~140 kcal · 22g C · 6g P · 4g F",
+  "prep": "0 min (bought)",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "roasted chickpeas are named as \"a healthier snack for runners looking for something crunchy\" on the go.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-049",
+  "name": "Protein bar, whole",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "protein bar",
+    "qty": "1 bar",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component bar",
+  "context": [
+   "travel",
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "check label for gluten-free / dairy-free bars",
+  "approx_macros": "~220 kcal · 24g C · 15g P · 8g F",
+  "prep": "0 min (bought)",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "protein bars are named as a standard convenient travel snack \"designed for pre/post-workout macronutrient ratios.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-050",
+  "name": "Apple + almond butter, gas-station-friendly",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "apple",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "almond butter",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + spread",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap almond butter for sunflower seed butter for nut-free",
+  "approx_macros": "~280 kcal · 32g C · 6g P · 16g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "apple with almond butter is named as having an \"ideal ratio of all three macronutrients, along with some fiber\" for an anytime snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-051",
+  "name": "Hummus + crudités, packable travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hummus",
+    "qty": "1/4 cup (~60 g)",
+    "role": "other"
+   },
+   {
+    "food": "carrot and celery sticks",
+    "qty": "1 cup",
+    "role": "veg"
+   }
+  ],
+  "pattern": "dip + raw veg",
+  "context": [
+   "travel",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "check tahini content for sesame allergy",
+  "approx_macros": "~180 kcal · 18g C · 6g P · 10g F",
+  "prep": "5 min to portion",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "hummus with crudités is named for providing \"complex carbohydrates, protein, healthy fats, and a little bit of fiber\" in a packable form.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-052",
+  "name": "Edamame, steamed and salted",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "edamame, steamed, salted",
+    "qty": "1 cup (~155 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component legume",
+  "context": [
+   "travel",
+   "everyday",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "soy"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~190 kcal · 15g C · 17g P · 8g F",
+  "prep": "5 min steam",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "edamame is named for being rich in \"protein, filling fiber, antioxidants, vitamin K, iron, and calcium\" as an anytime snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-053",
+  "name": "Rice cake with tuna, packed travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cake (plain)",
+    "qty": "2 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "tuna, canned, flaked",
+    "qty": "60 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap tuna for turkey, hummus, or ricotta",
+  "approx_macros": "~210 kcal · 20g C · 16g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "rice cakes topped with nut butter, tuna, turkey, hummus, or ricotta are named together as a light, digestible pre-run travel option.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-054",
+  "name": "Rice cake with turkey, packed travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cake (plain)",
+    "qty": "2 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "turkey slices",
+    "qty": "60 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap turkey for tuna, hummus, or ricotta",
+  "approx_macros": "~190 kcal · 20g C · 14g P · 3g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "rice cakes with turkey are named among the light, digestible pre-run topping options for travel.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-055",
+  "name": "Rice cake with hummus, packed travel snack (vegan)",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cake (plain)",
+    "qty": "2 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "hummus",
+    "qty": "3 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + spread",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "sesame"
+  ],
+  "swaps": "swap hummus for nut butter",
+  "approx_macros": "~200 kcal · 26g C · 7g P · 7g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "rice cakes with hummus are named among the light, digestible topping options for travel, alongside nut butter, tuna, turkey, and ricotta.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-056",
+  "name": "Rice cake with ricotta, packed travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cake (plain)",
+    "qty": "2 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "ricotta cheese",
+    "qty": "1/4 cup (~60 g)",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "starch + dairy",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap ricotta for hummus for dairy-free",
+  "approx_macros": "~190 kcal · 20g C · 8g P · 6g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "rice cakes with ricotta are named among the light, digestible topping options for travel-day pre-run snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-057",
+  "name": "Toast + nut butter, quick pre-run travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "toast (white or whole-wheat)",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "nut butter",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "toast + spread",
+  "context": [
+   "travel",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap for gluten-free toast; swap nut butter for seed butter",
+  "approx_macros": "~220 kcal · 26g C · 6g P · 10g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "toast with nut butter is named as a \"quick carbs\" option for morning runners heading out, including on travel days.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-058",
+  "name": "String cheese + crackers, gas-station combo",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "string cheese",
+    "qty": "1 stick",
+    "role": "dairy"
+   },
+   {
+    "food": "whole-grain crackers",
+    "qty": "6 crackers",
+    "role": "starch"
+   }
+  ],
+  "pattern": "dairy + crackers",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap crackers for a gluten-free variety",
+  "approx_macros": "~200 kcal · 18g C · 9g P · 9g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "protein-and-carb pairings like cheese and crackers fall under the article's convenient travel-snack category for runners on the move.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-059",
+  "name": "Beef jerky + dried fruit, road-trip pack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "beef jerky",
+    "qty": "30 g",
+    "role": "protein"
+   },
+   {
+    "food": "dried fruit (apricot or mango)",
+    "qty": "30 g",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "travel"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "swap beef jerky for turkey jerky",
+  "approx_macros": "~180 kcal · 20g C · 12g P · 4g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "jerky-plus-dried-fruit pairings sit alongside trail mix and protein bars in the article's list of energy-dense, low-water travel snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-060",
+  "name": "Hard-boiled eggs, travel snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2 eggs",
+    "role": "protein"
+   }
+  ],
+  "pattern": "single-component protein",
+  "context": [
+   "travel",
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~156 kcal · 1g C · 13g P · 11g F",
+  "prep": "10 min boil, ahead of travel",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "hard-boiled eggs are listed at 78 kcal/egg among the standard aid-station-and-travel foods runners carry for protein on ultra-distance race days.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-061",
+  "name": "Banana + nut butter, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "nut butter",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "fruit + spread",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap nut butter for sunflower seed butter",
+  "approx_macros": "~250 kcal · 30g C · 6g P · 13g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "banana plus nut butter is named as a pre-run snack providing \"quick-acting carbohydrates to top off your blood glucose levels\" before a session or race.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-062",
+  "name": "Toast + nut butter, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "toast",
+    "qty": "1 slice",
+    "role": "starch"
+   },
+   {
+    "food": "nut butter",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "toast + spread",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap for gluten-free toast",
+  "approx_macros": "~220 kcal · 26g C · 6g P · 10g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "toast with nut butter is named as a \"quick carbs for morning runners\" option before a race or session.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-063",
+  "name": "Oatmeal + fruit and nuts, pre-race breakfast snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "oatmeal, cooked",
+    "qty": "1/2 cup dry (~120 g cooked)",
+    "role": "starch"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "chopped walnuts",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + fruit + nuts",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "tree_nuts"
+  ],
+  "swaps": "swap oats for a certified gluten-free brand",
+  "approx_macros": "~280 kcal · 45g C · 8g P · 9g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "oatmeal with fruit and nuts is named for providing \"complex carbohydrates, which provide lasting energy\" ahead of training or racing.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-064",
+  "name": "Rice cake with nut butter, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cake (plain)",
+    "qty": "2 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "nut butter",
+    "qty": "2 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + spread",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "tree_nuts"
+  ],
+  "swaps": "swap for seed butter for nut-free",
+  "approx_macros": "~230 kcal · 24g C · 7g P · 12g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "rice cakes with nut butter are named as a \"light and digestible\" pre-run option among the article's recommended pre-run snacks.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-065",
+  "name": "Banana + hard-boiled eggs + English muffin, race-morning combo",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   },
+   {
+    "food": "hard-boiled eggs",
+    "qty": "1 egg",
+    "role": "protein"
+   },
+   {
+    "food": "whole-wheat English muffin",
+    "qty": "1 muffin",
+    "role": "starch"
+   }
+  ],
+  "pattern": "fruit + protein + starch",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "swap egg for a plant protein if vegan",
+  "approx_macros": "~320 kcal · 45g C · 14g P · 8g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "this combination is named for combining \"protein with complex carbs\" ahead of a run or race.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-066",
+  "name": "Rice cake with tuna, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "rice cake (plain)",
+    "qty": "2 cakes",
+    "role": "starch"
+   },
+   {
+    "food": "tuna, canned, flaked",
+    "qty": "60 g",
+    "role": "protein"
+   }
+  ],
+  "pattern": "starch + protein",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian"
+  ],
+  "allergens": [
+   "fish"
+  ],
+  "swaps": "swap tuna for turkey",
+  "approx_macros": "~210 kcal · 20g C · 16g P · 4g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "rice cakes with tuna are named among the article's light, digestible pre-run topping options.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-067",
+  "name": "Coffee + banana, pre-race morning ritual",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "black coffee",
+    "qty": "1 cup (~250 ml)",
+    "role": "drink"
+   },
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "drink + fruit",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 27g C · 1g P · 0g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "staple",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "coffee is listed among the standard pre-race items ultra and marathon runners rely on, commonly paired with a piece of fruit to start race morning.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-068",
+  "name": "Porridge, plain, race-morning staple",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "porridge (oats cooked in water or milk)",
+    "qty": "1 cup",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch only",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "use water instead of milk for vegan/dairy-free",
+  "approx_macros": "~150 kcal · 27g C · 5g P · 3g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://www.precisionhydration.com/performance-advice/nutrition/what-to-eat-during-an-ultramarathon/ ; Precision Hydration — \"Custard, chips, and hummus sandwiches: how to fuel ultras\" (Damian Hall)",
+  "evidence": "porridge is named among the substantial foods ultra-distance runners rely on around long race efforts, alongside white bread and rice pudding.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-069",
+  "name": "White bread, plain, race-morning top-up",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white bread",
+    "qty": "2 slices",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch only",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "swap for gluten-free bread",
+  "approx_macros": "~140 kcal · 26g C · 4g P · 1g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.precisionhydration.com/performance-advice/nutrition/what-to-eat-during-an-ultramarathon/ ; Precision Hydration — \"Custard, chips, and hummus sandwiches: how to fuel ultras\" (Damian Hall)",
+  "evidence": "plain white bread is named among the low-fuss, easily tolerated carb foods ultrarunners use around race day.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-070",
+  "name": "Whole orange, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "orange, peeled",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~62 kcal · 15g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "oranges are listed among the standard aid-station and race-day fruit staples at 60 kcal per fruit.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-071",
+  "name": "Banana, plain, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "banana",
+    "qty": "1 medium",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~105 kcal · 27g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "bananas at 105 kcal / 27 g carbs are listed as one of the most standard race-day foods across marathons and ultras.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-072",
+  "name": "Fresh mango, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "mango, sliced",
+    "qty": "1 cup (~165 g)",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~100 kcal · 25g C · 1g P · 0g F",
+  "prep": "5 min to slice",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.precisionhydration.com/performance-advice/nutrition/what-to-eat-during-an-ultramarathon/ ; Precision Hydration — \"Custard, chips, and hummus sandwiches: how to fuel ultras\" (Damian Hall)",
+  "evidence": "fresh mango is named by ultrarunner Damian Hall among the whole-fruit options he relies on during long race efforts.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-073",
+  "name": "Yogurt, plain, race-morning buffet snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "plain yogurt",
+    "qty": "1 cup (~245 g)",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "dairy only",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap for a dairy-free yogurt",
+  "approx_macros": "~150 kcal · 17g C · 9g P · 4g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "yogurt appears alongside toast and breakfast potatoes as one of the standard hotel-buffet items eaten the morning before a race.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-074",
+  "name": "Breakfast potatoes, plain, race-morning buffet snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "roasted breakfast potatoes",
+    "qty": "1 cup (~150 g)",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch only",
+  "context": [
+   "race-week",
+   "pre-session"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~150 kcal · 30g C · 3g P · 2g F",
+  "prep": "0 min (buffet)",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://www.featherstonenutrition.com/meghanns-tokyo-marathon-recap/ ; Meghann, Featherstone Nutrition — Tokyo Marathon race-week recap",
+  "evidence": "breakfast potatoes are named as part of the standard hotel-buffet plate eaten the morning before racing.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-075",
+  "name": "Grapes, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "grapes",
+    "qty": "1 cup (~92 g)",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~62 kcal · 16g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "grapes at 62 kcal per cup are listed among the standard whole-fruit foods used around marathons, ultramarathons, and FKTs.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-076",
+  "name": "Watermelon, race-morning snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "watermelon, cubed",
+    "qty": "1 cup (~152 g)",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "fruit only",
+  "context": [
+   "race-week",
+   "pre-session",
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~46 kcal · 12g C · 1g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "watermelon at 46 kcal per cup is listed as a standard aid-station and race-day fruit staple.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-077",
+  "name": "Boiled potatoes with salt, aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "boiled potatoes, halved",
+    "qty": "1/2 cup (~90 g)",
+    "role": "starch"
+   },
+   {
+    "food": "salt",
+    "qty": "1 pinch",
+    "role": "other"
+   }
+  ],
+  "pattern": "starch + salt",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~92 kcal · 21g C · 2g P · 0g F",
+  "prep": "20 min boil, ahead of race",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "boiled potatoes at 92 kcal per half-cup are listed as a standard ultra-distance aid-station food, typically served with salt.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-078",
+  "name": "Pretzels, aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pretzels",
+    "qty": "1 handful (~30 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component salty carb",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten"
+  ],
+  "swaps": "check for a gluten-free pretzel brand",
+  "approx_macros": "~110 kcal · 23g C · 3g P · 1g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "pretzels at 110 kcal are listed among the standard aid-station and travel foods for marathons and ultras.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-079",
+  "name": "PB&J sandwich, aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white bread",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "peanut butter",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   },
+   {
+    "food": "jam",
+    "qty": "1.5 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "bread + spread + spread",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "peanuts"
+  ],
+  "swaps": "swap peanut butter for sunflower seed butter for nut-free",
+  "approx_macros": "~360 kcal · 37g C · 9g P · 12g F",
+  "prep": "5 min, made ahead",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "the PB&J sandwich at 360 kcal is listed as a standard aid-station food for ultramarathons, marked as an \"ultra-plus\" staple.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-080",
+  "name": "Grilled cheese sandwich, ultra aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "white bread, grilled",
+    "qty": "2 slices",
+    "role": "starch"
+   },
+   {
+    "food": "cheese, melted",
+    "qty": "2 slices",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "bread + dairy",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "gluten"
+  ],
+  "swaps": "swap for a dairy-free cheese",
+  "approx_macros": "~366 kcal · 28g C · 16g P · 20g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "grilled cheese is listed as a substantial ultramarathon aid-station food, at 366 kcal, favored on the longest ultra distances.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-081",
+  "name": "Gummy bears, aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "gummy bears",
+    "qty": "1 handful (~40 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component sugar",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "check gelatin source for vegetarian-friendly gummies",
+  "approx_macros": "~100 kcal · 23g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "gummy bears at 100 kcal are listed among the standard aid-station foods used during marathons and ultramarathons.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-082",
+  "name": "Dark chocolate square, aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "dark chocolate (72%+)",
+    "qty": "1 square (~30 g)",
+    "role": "other"
+   }
+  ],
+  "pattern": "single-component sweet",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "check label — some 72% bars are dairy-free",
+  "approx_macros": "~230 kcal · 19g C · 3g P · 15g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "dark chocolate at 230 kcal is listed among the ultra-plus aid-station foods for long-distance racing.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-083",
+  "name": "Cola, flat, aid-station drink-snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cola, flat",
+    "qty": "1 cup (~240 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "drink only",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~103 kcal · 25g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "coca-cola at 43 kcal per 100 ml is listed as a classic aid-station drink used across marathons and ultramarathons.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-084",
+  "name": "Ginger ale, aid-station drink-snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "ginger ale",
+    "qty": "1 cup (~240 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "drink only",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~82 kcal · 22g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "ginger ale is listed among the ultra-plus aid-station drinks, valued for settling the stomach on long race efforts.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-085",
+  "name": "Pickle juice, shot, ultra aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "pickle juice",
+    "qty": "1/2 cup (~120 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "drink only",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "none needed",
+  "approx_macros": "~25 kcal · 6g C · 0g P · 0g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "pickle juice at 50 kcal/cup is listed as a DIY ultramarathon aid-station remedy for cramping.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-086",
+  "name": "Beef broth, warm cup, ultra aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "beef broth, warm",
+    "qty": "1 cup (~240 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "drink only",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "keto",
+   "low_carb",
+   "omnivore",
+   "paleo"
+  ],
+  "allergens": [],
+  "swaps": "swap for vegetable broth for a vegetarian version",
+  "approx_macros": "~15 kcal · 1g C · 3g P · 0g F",
+  "prep": "5 min to warm",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "warm beef broth at 15 kcal per cup is listed as a standard ultra-plus aid-station item, valued for sodium and warmth on long races.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-087",
+  "name": "Top Ramen noodles, cup, ultra aid-station snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "instant ramen noodles, prepared",
+    "qty": "1 cup (~190 kcal)",
+    "role": "starch"
+   }
+  ],
+  "pattern": "starch (savory)",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "gluten",
+   "soy"
+  ],
+  "swaps": "check broth base for a vegetarian-friendly version",
+  "approx_macros": "~190 kcal · 27g C · 5g P · 7g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://thestringbean.co/common-foods-for-marathons-ultramarathons-and-fkts/ ; The Stringbean — \"Common Foods for Marathons, Ultramarathons and FKTs\"",
+  "evidence": "Top Ramen is listed as a substantial \"ultra-plus\" aid-station food, providing warm salty carbs on the longest ultra distances.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-088",
+  "name": "Cottage cheese with fruit and nuts, before-bed recovery",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1 cup (~225 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "walnuts, chopped",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + fruit + nuts",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "tree_nuts"
+  ],
+  "swaps": "swap walnuts for pumpkin seeds for nut-free",
+  "approx_macros": "~260 kcal · 20g C · 26g P · 9g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://www.snackinginsneakers.com/cottage-cheese-before-bed/ ; Snacking in Sneakers — \"Why Cottage Cheese Before Bed Can Help Athletes Recover Better\"",
+  "evidence": "\"For a bedtime snack, I'm a big fan of plain cottage cheese with fruit and nuts\" — recommended specifically for casein's slow-release overnight muscle repair.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-089",
+  "name": "Cottage cheese, berries, banana + honey, before-bed recovery bowl",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1 cup (~225 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/3 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "banana, sliced",
+    "qty": "1/2 banana",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + fruit + fruit + sweetener",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap honey for maple syrup for a vegan-friendlier sweetener",
+  "approx_macros": "~290 kcal · 32g C · 27g P · 6g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://achieverunningclub.com/recipes/cottage-cheese-for-runners/ ; Achieve Running Club — \"Cottage Cheese for Runners\"",
+  "evidence": "the article's recommended post-run recovery bowl: \"Top with berries, banana, and honey for a sweet, protein-packed post-run snack,\" also framed for its overnight-recovery casein content.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-090",
+  "name": "Cottage cheese with melon, post-long-run recovery",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1 cup (~225 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "cantaloupe, cubed",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap cantaloupe for pineapple or berries",
+  "approx_macros": "~220 kcal · 14g C · 26g P · 5g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "cottage cheese with melon/berries/pineapple is named \"especially for post-long-run recovery,\" one of the article's core protein-carb recovery pairings.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-091",
+  "name": "Cottage cheese, savory: cucumber, tomato + herbs",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1 cup (~225 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "cucumber, chopped",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "tomato, chopped",
+    "qty": "1/2 cup",
+    "role": "veg"
+   },
+   {
+    "food": "fresh herbs (dill or chives)",
+    "qty": "1 tbsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + veg + veg + herb",
+  "context": [
+   "recovery",
+   "everyday"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "low_carb",
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none needed for the savory version",
+  "approx_macros": "~190 kcal · 10g C · 25g P · 5g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://achieverunningclub.com/recipes/cottage-cheese-for-runners/ ; Achieve Running Club — \"Cottage Cheese for Runners\"",
+  "evidence": "a savory cottage-cheese combination named as an alternative to the sweet version: \"combine with chopped cucumber, tomato, and herbs.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-092",
+  "name": "Cottage cheese with berries and honey, before-bed",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1 cup (~225 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   },
+   {
+    "food": "honey",
+    "qty": "1 tsp",
+    "role": "other"
+   }
+  ],
+  "pattern": "dairy + fruit + sweetener",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap berries seasonally; swap honey for a drizzle of jam",
+  "approx_macros": "~260 kcal · 24g C · 27g P · 5g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://www.snackinginsneakers.com/cottage-cheese-before-bed/ ; Snacking in Sneakers — \"Why Cottage Cheese Before Bed Can Help Athletes Recover Better\"",
+  "evidence": "casein-rich cottage cheese with fruit is recommended \"before bed\" specifically because it \"digests slowly and feeds your muscles steadily over several hours.\"",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-093",
+  "name": "Greek yogurt with berries, before-bed recovery",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "Greek yogurt, plain",
+    "qty": "1 cup (~245 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "mixed berries",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "mediterranean",
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap for a lactose-free Greek yogurt",
+  "approx_macros": "~230 kcal · 20g C · 22g P · 4g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "Greek yogurt with granola/fruit is named for its \"ideal ratio of complex carbohydrates to protein,\" used here in the slow-digesting evening-recovery role alongside cottage cheese.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-094",
+  "name": "Chocolate milk, before-bed recovery drink",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "chocolate milk",
+    "qty": "1 cup (~240 ml)",
+    "role": "drink"
+   }
+  ],
+  "pattern": "single-component recovery drink",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap for a fortified plant-milk chocolate drink",
+  "approx_macros": "~190 kcal · 26g C · 8g P · 5g F",
+  "prep": "0 min",
+  "batch": true,
+  "frequency": "staple",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "chocolate milk is named for containing \"protein, carbohydrates, and calcium to rebuild, repair, and refuel\" after training, used here as a before-bed recovery option.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-095",
+  "name": "Hard-boiled eggs + toast, before-bed protein snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "hard-boiled eggs",
+    "qty": "2 eggs",
+    "role": "protein"
+   },
+   {
+    "food": "toast",
+    "qty": "1 slice",
+    "role": "starch"
+   }
+  ],
+  "pattern": "protein + starch",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "pescatarian",
+   "vegetarian"
+  ],
+  "allergens": [
+   "eggs",
+   "gluten"
+  ],
+  "swaps": "swap toast for a gluten-free slice",
+  "approx_macros": "~290 kcal · 25g C · 19g P · 13g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "hard-boiled eggs with a complex-carb source are named as a post-run protein pairing for muscle repair, applicable to the last snack before sleep.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-096",
+  "name": "Turkey + grapes, before-bed recovery snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "turkey slices",
+    "qty": "60 g",
+    "role": "protein"
+   },
+   {
+    "food": "grapes",
+    "qty": "1 cup (~92 g)",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "protein + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore"
+  ],
+  "allergens": [],
+  "swaps": "swap grapes for cherries",
+  "approx_macros": "~160 kcal · 17g C · 15g P · 2g F",
+  "prep": "5 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "lean turkey paired with grapes/cherries/crackers is named as a protein-plus-carb recovery snack, following a preferred 3:1 or 4:1 carb-to-protein ratio.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-097",
+  "name": "Cottage cheese chips, savory before-bed protein snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese chips (baked)",
+    "qty": "1 small bag (~30 g)",
+    "role": "dairy"
+   }
+  ],
+  "pattern": "single-component savory protein",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "none needed",
+  "approx_macros": "~110 kcal · 6g C · 14g P · 4g F",
+  "prep": "0 min (bought)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://achieverunningclub.com/recipes/cottage-cheese-for-runners/ ; Achieve Running Club — \"Cottage Cheese for Runners\"",
+  "evidence": "cottage cheese chips are named as a savory, crunchy protein-snack alternative for athletes who don't like the texture of the plain cheese.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-098",
+  "name": "Cottage cheese with pineapple, before-bed recovery",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1 cup (~225 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "pineapple, cubed",
+    "qty": "1/2 cup",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "dairy + fruit",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy"
+  ],
+  "swaps": "swap pineapple for melon or berries",
+  "approx_macros": "~230 kcal · 18g C · 26g P · 5g F",
+  "prep": "5 min",
+  "batch": true,
+  "frequency": "common",
+  "source": "https://marathonhandbook.com/best-snacks-for-runners/ ; Marathon Handbook — \"Best Snacks For Runners: 17 Real Options\"",
+  "evidence": "pineapple is named alongside melon and berries as one of the standard cottage-cheese recovery pairings for post-long-run and overnight recovery.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-099",
+  "name": "Cottage cheese scramble-topper, before-bed protein boost",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "cottage cheese, plain",
+    "qty": "1/2 cup (~110 g)",
+    "role": "dairy"
+   },
+   {
+    "food": "scrambled eggs",
+    "qty": "2 eggs",
+    "role": "protein"
+   }
+  ],
+  "pattern": "dairy + protein",
+  "context": [
+   "recovery"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "vegetarian"
+  ],
+  "allergens": [
+   "dairy",
+   "eggs"
+  ],
+  "swaps": "swap for egg whites only to cut fat",
+  "approx_macros": "~260 kcal · 4g C · 26g P · 15g F",
+  "prep": "10 min",
+  "batch": false,
+  "frequency": "occasional",
+  "source": "https://achieverunningclub.com/recipes/cottage-cheese-for-runners/ ; Achieve Running Club — \"Cottage Cheese for Runners\"",
+  "evidence": "adding cottage cheese to scrambled eggs is named as a post-run breakfast boost, applicable as a savory late-evening protein snack.",
+  "reconstructed_from_snippet": false
+ },
+ {
+  "id": "S-d-100",
+  "name": "Baby food pouch, ultra race-week snack",
+  "meal_type": "snack",
+  "components": [
+   {
+    "food": "fruit puree baby food pouch",
+    "qty": "1 pouch (~100 g)",
+    "role": "fruit"
+   }
+  ],
+  "pattern": "single-component puree",
+  "context": [
+   "race-week"
+  ],
+  "cuisine": "general",
+  "diets_ok": [
+   "omnivore",
+   "paleo",
+   "vegan",
+   "vegetarian"
+  ],
+  "allergens": [],
+  "swaps": "flavor is personal preference — trial in training first",
+  "approx_macros": "~80 kcal · 19g C · 0g P · 0g F",
+  "prep": "0 min (bought)",
+  "batch": true,
+  "frequency": "occasional",
+  "source": "https://www.precisionhydration.com/performance-advice/nutrition/what-to-eat-during-an-ultramarathon/ ; Precision Hydration — \"Custard, chips, and hummus sandwiches: how to fuel ultras\" (Damian Hall)",
+  "evidence": "ultrarunner Damian Hall names baby food pouches among his race-day fuel options, while cautioning \"we're all a bit different, so the baby food pouches...that work for your mate might not necessarily work for you.\"",
+  "reconstructed_from_snippet": false
+ }
+]

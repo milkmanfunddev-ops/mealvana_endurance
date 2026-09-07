@@ -1,15 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show debugPrint;
-import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../shared/services/app_config.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
+import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../meal_planning/data/vana_chat_repository.dart';
+import '../../meal_planning/data/vana_exceptions.dart';
+import '../../meal_planning/data/vana_transport.dart';
 import '../domain/ai_coach_conversation.dart';
 import '../domain/ai_coach_message.dart';
 import '../domain/ai_coach_ui_part.dart';
@@ -115,20 +115,22 @@ class AiCoachSendResult {
 ///   - [fetchMessages] — query `jade_messages` for a conversation (ascending
 ///     order), also via the Supabase client. Selects `metadata` column so
 ///     persisted [AiCoachUiPart]s are loaded from history.
-///   - [sendMessage] — stream a POST to `/functions/v1/jade-chat` using the
-///     raw `http` package (the Supabase SDK does not support streaming).
-///     Parses NDJSON lines and emits typed [AiCoachStreamEvent] instances.
+///   - [sendMessage] — stream a POST to `/functions/v1/jade-chat`. The HTTP
+///     transport (bearer auth, status → exception mapping, NDJSON line
+///     splitting) is the shared [VanaChatRepository] with
+///     `functionName: 'jade-chat'`; this class keeps its own line parser
+///     because the coach's part kinds (`meal_cards`) differ from Vana's.
 class AiCoachChatRepository {
   AiCoachChatRepository({
     required SupabaseClient supabase,
-    required AppConfig config,
+    required VanaChatRepository transport,
     required AppLogger logger,
   }) : _supabase = supabase,
-       _config = config,
+       _transport = transport,
        _logger = logger;
 
   final SupabaseClient _supabase;
-  final AppConfig _config;
+  final VanaChatRepository _transport;
   final AppLogger _logger;
 
   // ── Conversations ──────────────────────────────────────────────────────────
@@ -257,54 +259,38 @@ class AiCoachChatRepository {
 
   /// POSTs [bodyMap] to the jade-chat edge function and returns a
   /// [AiCoachSendResult]. Shared by [sendMessage] and [requestOpener].
+  ///
+  /// Delegates the HTTP round-trip to [VanaChatRepository.streamRaw] and maps
+  /// its typed errors onto this repository's public error types so existing
+  /// callers (and tests) are unaffected:
+  ///   offline → [AiCoachChatOfflineError]; 402 → [InsufficientCreditsException]
+  ///   (passes through untouched); 401 / 403 / 429 / other →
+  ///   [AiCoachChatServerError].
   Future<AiCoachSendResult> _streamRequest(
     Map<String, dynamic> bodyMap, {
     required String? fallbackConversationId,
   }) async {
-    final session = _supabase.auth.currentSession;
-    if (session == null) {
-      throw const AiCoachChatServerError(401, 'No active session');
-    }
+    _logger.info('AiCoachChatRepository._streamRequest → jade-chat');
 
-    final uri = Uri.parse('${_config.supabaseUrl}/functions/v1/jade-chat');
-
-    final request = http.Request('POST', uri)
-      ..headers['Authorization'] = 'Bearer ${session.accessToken}'
-      ..headers['apikey'] = _config.supabaseAnonKey
-      ..headers['Content-Type'] = 'application/json'
-      ..body = jsonEncode(bodyMap);
-
-    _logger.info('AiCoachChatRepository._streamRequest → $uri');
-
-    http.StreamedResponse streamed;
+    final NdjsonResponse response;
     try {
-      streamed = await http.Client().send(request);
-    } catch (e, st) {
-      _logger.error(
-        'AiCoachChatRepository._streamRequest network error',
-        error: e,
-        stackTrace: st,
-      );
-      throw AiCoachChatOfflineError(e);
-    }
-
-    if (streamed.statusCode != 200) {
-      final responseBody = await streamed.stream.bytesToString();
-      _logger.error(
-        'AiCoachChatRepository._streamRequest HTTP ${streamed.statusCode}: $responseBody',
-      );
-      // 402 → out of AI credits. Throw the typed exception so the presentation
-      // layer can route the user to the buy-credits paywall.
-      if (streamed.statusCode == 402) {
-        throw _insufficientCreditsFromBody(responseBody);
-      }
-      throw AiCoachChatServerError(streamed.statusCode, responseBody);
+      response = await _transport.streamRaw(bodyMap);
+    } on VanaOfflineException catch (e) {
+      throw AiCoachChatOfflineError(e.cause);
+    } on VanaUnauthenticatedException catch (e) {
+      throw AiCoachChatServerError(401, e.message);
+    } on ProRequiredException catch (e) {
+      throw AiCoachChatServerError(403, e.reason);
+    } on VanaRateLimitedException catch (e) {
+      throw AiCoachChatServerError(429, 'rate_limited:${e.retryAfterSeconds}');
+    } on VanaServerException catch (e) {
+      throw AiCoachChatServerError(e.statusCode, e.body);
     }
 
     // The conversation id is sent in a response header (even for new
     // conversations the server sets it before streaming begins).
     final resolvedConversationId =
-        streamed.headers['x-conversation-id'] ?? fallbackConversationId ?? '';
+        response.conversationId ?? fallbackConversationId ?? '';
 
     _logger.info(
       'AiCoachChatRepository._streamRequest: conv=$resolvedConversationId streaming NDJSON',
@@ -312,79 +298,20 @@ class AiCoachChatRepository {
 
     return AiCoachSendResult(
       conversationId: resolvedConversationId,
-      eventStream: _parseNdjsonStream(streamed.stream),
-    );
-  }
-
-  /// Parse a jade-chat 402 body into an [InsufficientCreditsException].
-  /// The body is expected to be the standard
-  /// `{ error, message, balance, cost }` shape but degrades gracefully.
-  InsufficientCreditsException _insufficientCreditsFromBody(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map<String, dynamic>) {
-        return InsufficientCreditsException.fromMap(decoded);
-      }
-    } catch (_) {
-      // fall through to defaults
-    }
-    return const InsufficientCreditsException(
-      balance: 0,
-      cost: 0,
-      message: 'Not enough AI credits.',
+      eventStream: response.lines
+          .map(_parseLine)
+          .where((e) => e != null)
+          .cast<AiCoachStreamEvent>(),
     );
   }
 
   // ── NDJSON parsing ─────────────────────────────────────────────────────────
 
-  /// Transforms the raw HTTP byte stream into a [Stream<AiCoachStreamEvent>].
-  ///
-  /// Strategy:
-  ///   1. Decode bytes → UTF-8 string chunks (chunks may split mid-line).
-  ///   2. Buffer a partial-line tail; flush complete lines (terminated by \n).
-  ///   3. Parse each complete line as JSON; map to a [AiCoachStreamEvent].
-  ///   4. Unknown JSON shapes / parse failures are logged and skipped.
-  Stream<AiCoachStreamEvent> _parseNdjsonStream(
-    Stream<List<int>> byteStream,
-  ) async* {
-    final buffer = StringBuffer();
-
-    await for (final chunk in byteStream.transform(utf8.decoder)) {
-      buffer.write(chunk);
-
-      // Extract all complete lines from the buffer.
-      final raw = buffer.toString();
-      final lines = raw.split('\n');
-
-      // The last element is either empty (chunk ended with \n) or a partial
-      // line waiting for more data. Keep it in the buffer.
-      buffer.clear();
-      buffer.write(lines.last);
-
-      for (int i = 0; i < lines.length - 1; i++) {
-        final line = lines[i].trim();
-        if (line.isEmpty) continue;
-
-        final event = _parseLine(line);
-        if (event != null) yield event;
-      }
-    }
-
-    // Flush any remaining buffered content (should be empty or just whitespace
-    // after a well-formed done event, but handle gracefully).
-    final remaining = buffer.toString().trim();
-    if (remaining.isNotEmpty) {
-      final event = _parseLine(remaining);
-      if (event != null) yield event;
-    }
-  }
-
-  /// Parses a single NDJSON line into a [AiCoachStreamEvent].
+  /// Maps one decoded NDJSON line into a [AiCoachStreamEvent].
   ///
   /// Returns null for unrecognised or malformed lines (graceful degradation).
-  AiCoachStreamEvent? _parseLine(String line) {
+  AiCoachStreamEvent? _parseLine(Map<String, dynamic> json) {
     try {
-      final json = jsonDecode(line) as Map<String, dynamic>;
       final type = json['type'] as String?;
 
       switch (type) {
@@ -409,12 +336,12 @@ class AiCoachChatRepository {
           return AiCoachStreamErrorEvent(message);
 
         default:
-          // Future protocol additions — ignore.
+          // Future protocol additions (e.g. `status`) — ignore.
           return null;
       }
     } catch (e) {
       debugPrint(
-        '[AiCoachChatRepository] NDJSON parse error on line: $line — $e',
+        '[AiCoachChatRepository] NDJSON parse error on line: $json — $e',
       );
       return null;
     }
@@ -427,9 +354,16 @@ class AiCoachChatRepository {
 
 @riverpod
 AiCoachChatRepository aiCoachChatRepository(Ref ref) {
+  final supabase = ref.watch(supabaseClientProvider);
+  final logger = ref.watch(appLoggerProvider);
   return AiCoachChatRepository(
-    supabase: ref.watch(supabaseClientProvider),
-    config: ref.watch(appConfigProvider),
-    logger: ref.watch(appLoggerProvider),
+    supabase: supabase,
+    transport: VanaChatRepository(
+      transport: ref.watch(vanaTransportProvider),
+      supabase: supabase,
+      logger: logger,
+      functionName: 'jade-chat',
+    ),
+    logger: logger,
   );
 }

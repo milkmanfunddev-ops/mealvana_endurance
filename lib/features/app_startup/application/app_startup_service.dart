@@ -26,6 +26,7 @@ import '../../../shared/services/dirty_record_backup_service.dart';
 import '../../../shared/models/dirty_record_backup.dart';
 import '../presentation/widgets/dirty_record_recovery_dialog.dart';
 import '../../ai_credits/data/revenuecat_service.dart';
+import '../../subscription/application/subscription_status_provider.dart';
 
 /// Service responsible for providing individual startup operations using Drift
 /// Following Andrea Bizzotto's app initialization patterns
@@ -426,6 +427,12 @@ class AppStartupService {
       if (userId != null && userId.isNotEmpty) {
         await revenueCat.logIn(userId);
       }
+      // Pro entitlement: prime the status provider now that the SDK is
+      // configured and identified. `refresh()` (re)attaches the CustomerInfo
+      // listener and resolves RevenueCat ∪ server row ∪ tester flag, so a
+      // provider that was first read before this point (router redirect,
+      // tabs) picks up the real answer instead of "not configured".
+      await ref.read(subscriptionStatusProvider.notifier).refresh();
     } catch (e, stackTrace) {
       _logger.error(
         'RevenueCat initialization failed',

@@ -75,7 +75,7 @@ final class PersonalFormulasControllerProvider
 }
 
 String _$personalFormulasControllerHash() =>
-    r'477c9c4867726167f345c275ecc372a8ff006c5f';
+    r'bb095eefe2e74cc60615e85ceb85d64556efb06f';
 
 /// Owns the current user's "Your Formulas" list — user-authored personal
 /// formulas from the `personal_formulas` table.

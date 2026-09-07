@@ -1,0 +1,17 @@
+{
+  "section": "week-contexts",
+  "engine": "weekContexts(ctx) — prototype server/vana/tools.ts · edge _shared/vana/tools.ts (identical logic)",
+  "specVersion": "v1 RECORDED (2026-09-03)",
+  "note": "The context tags suggestMeals / draftWeek search by when the model passes none. Inputs are the two context fields the rule reads. Executable on the prototype (vitest); the edge tools module imports npm:ai so the deno runner skips it.",
+  "vectors": [
+    { "id": "race-in-7-days", "status": "proposed", "inputs": { "race": { "daysOut": 7 }, "character": "moderate training" }, "expected": ["carb-load", "race-week"], "why": "A race 0–7 days out overrides the week character." },
+    { "id": "race-today", "status": "proposed", "inputs": { "race": { "daysOut": 0 }, "character": "full rest" }, "expected": ["carb-load", "race-week"], "why": "daysOut 0 is inside the window." },
+    { "id": "race-in-8-days-falls-to-character", "status": "proposed", "inputs": { "race": { "daysOut": 8 }, "character": "high-load training" }, "expected": ["recovery", "pre-session"], "why": "Outside the 7-day window the race is ignored." },
+    { "id": "race-in-past-ignored", "status": "proposed", "inputs": { "race": { "daysOut": -1 }, "character": "easy / recovery" }, "expected": ["rest-day", "everyday"], "why": "A negative daysOut never triggers carb-load." },
+    { "id": "easy-week", "status": "proposed", "inputs": { "race": null, "character": "easy / recovery" }, "expected": ["rest-day", "everyday"], "why": "/rest|recovery|easy/." },
+    { "id": "full-rest-week", "status": "proposed", "inputs": { "race": null, "character": "full rest" }, "expected": ["rest-day", "everyday"], "why": "'rest' matches." },
+    { "id": "high-load-week", "status": "proposed", "inputs": { "race": null, "character": "high-load training" }, "expected": ["recovery", "pre-session"], "why": "/high/." },
+    { "id": "moderate-week", "status": "proposed", "inputs": { "race": null, "character": "moderate training" }, "expected": ["everyday", "recovery"], "why": "The default pair." },
+    { "id": "race-week-character-without-event-row", "status": "characterization", "inputs": { "race": null, "character": "race week" }, "expected": ["everyday", "recovery"], "why": "TRIPWIRE. A race detected from an activity title (week-character) but with no `events` row yields NO carb-load tags — the two race signals are not joined. Observed, not endorsed (Q-WC3)." }
+  ]
+}

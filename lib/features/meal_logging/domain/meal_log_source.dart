@@ -1,7 +1,7 @@
 /// How a [MealLog] entry was originally created.
 ///
 /// Wire values match the `meal_logs.source` CHECK constraint in the database
-/// (`'photo'|'manual'|'describe'|'saved'|'recipe'|'jade_baseline'`).
+/// (`'photo'|'manual'|'describe'|'saved'|'recipe'|'jade_baseline'|'plan'`).
 ///
 /// Forward-compat: [fromWireValue] returns `null` for unknown/null values so
 /// an older binary reading a value written by a newer client skips the row
@@ -23,7 +23,11 @@ enum MealLogSource {
   recipe('recipe'),
 
   /// Prepopulated by Mealvana AI as part of a baseline daily plan.
-  aiCoachBaseline('jade_baseline');
+  aiCoachBaseline('jade_baseline'),
+
+  /// Logged from a meal-plan meal (`log_from_plan` → `plan_log_from_plan`
+  /// RPC); [MealLog.planMealId] points at the `plan_meals` row.
+  plan('plan');
 
   const MealLogSource(this.wireValue);
 
