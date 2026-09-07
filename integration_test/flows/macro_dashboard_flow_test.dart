@@ -302,9 +302,14 @@ void main() {
         reason: 'planned_time survives the skip untouched');
 
     // S-7: the card stays on the surface (tucked, no timestamp) — it does
-    // NOT leave like a delete would.
+    // NOT leave like a delete would. The day list is LAZY (the state-change
+    // rebuild can leave the card outside the built window, unmounted but very
+    // much still on the surface), so assert scrollable-to presence, not
+    // currently-mounted presence — waitForOnTimeline scrolls until it mounts
+    // and still fails loudly if the card truly left.
     await $.pump(const Duration(milliseconds: 400));
-    expect(find.byKey(cardKey), findsOneWidget,
+    final tuckedPresent = await waitForOnTimeline($, find.byKey(cardKey));
+    expect(tuckedPresent, isTrue,
         reason: 'a skipped card stays on the timeline, tucked');
     expect(find.text('Skipped'), findsWidgets);
 

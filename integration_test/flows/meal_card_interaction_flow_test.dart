@@ -1,15 +1,17 @@
 /// Unified meal/activity card interaction (391e3fdb) under **Patrol** —
 /// log a meal manually, tap its Fuel Timeline card to open the edit surface,
-/// come back, then swipe the card to delete it with the Undo snackbar.
+/// come back, then delete it via the expanded card's Remove pill (Undo
+/// snackbar). home-shell's MealCard has no Dismissible — tap expands, and
+/// Edit food / Remove are pills on the expanded face.
 ///
 /// Flow:
 ///   launchApp (flavor-aware) → ensureAuthenticated (reuse session, else login)
 ///     → Fuel Timeline tab → "+ Add Food" → Manual tab
 ///     → enter a uniquely-named meal → Save → back to the timeline
-///     → the meal card appears (timeline names render UPPERCASE)
-///     → TAP the card → 'Edit Meal' screen opens (tap-anywhere-to-edit)
+///     → the meal card appears (name verbatim; Compadre glyphs read as caps)
+///     → TAP the card → expands → 'Edit food' → 'Edit Meal' screen opens
 ///     → back (no edits, so no discard prompt)
-///     → SWIPE the card → 'Meal deleted' MealvanaSnackbar with Undo
+///     → expand again → 'Remove' → 'Meal deleted' MealvanaSnackbar with Undo
 ///     → snackbar times out → the card is gone
 ///
 /// Settle-policy notes:
@@ -17,7 +19,7 @@
 ///   tracking/plan data refreshes, so every default-settle tap burns its full
 ///   10 s pumpAndTrySettle. All taps here use SettlePolicy.noSettle, gated by
 ///   waitUntilVisible (plain 100 ms pump polls — never settles) and fixed
-///   $.pump durations. The Dismissible swipe uses a raw drag + fixed pumps.
+///   $.pump durations.
 ///
 /// Auth:
 ///   Boots via the shared launcher (helpers/flow_launcher.dart) and signs in
@@ -42,7 +44,7 @@ import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
-    'log a meal → tap card opens edit → swipe card deletes with Undo',
+    'log a meal → expand card → Edit food opens edit → Remove deletes with Undo',
     ($) async {
       await launchApp();
       // Do NOT call pumpAndSettle: the app may have a persistent loading
@@ -120,11 +122,19 @@ void main() {
         reason: 'Logged meal "$cardText" never appeared on the Fuel Timeline.',
       );
 
-      // ---- 4. TAP the card → edit surface (tap-anywhere-to-edit) ---------
+      // ---- 4. TAP the card → expands → 'Edit food' opens the edit surface -
+      // home-shell's MealCard contract: tap toggles expansion (the old
+      // timeline card's tap-anywhere-to-edit is gone); the expanded face
+      // carries 'Edit food' and 'Remove' pill buttons.
       // noSettle: the Edit Meal screen loads async and the timeline spinner
       // would otherwise burn the settle timeout. waitUntilVisible polls with
       // plain pumps, so it tolerates the load.
+      await revealCentered($, find.text(cardText));
       await $(cardText).tap(settlePolicy: SettlePolicy.noSettle);
+      await $(
+        'Edit food',
+      ).waitUntilVisible(timeout: const Duration(seconds: 10));
+      await $('Edit food').tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         'Edit Meal',
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
@@ -134,20 +144,18 @@ void main() {
       await $.pump(const Duration(milliseconds: 400));
       await $(cardText).waitUntilVisible(timeout: const Duration(seconds: 20));
 
-      // ---- 5. SWIPE the card → soft delete + Undo snackbar ---------------
-      final cardRow = find.ancestor(
-        of: find.text(cardText),
-        matching: find.byType(Dismissible),
-      );
-      expect(
-        cardRow,
-        findsWidgets,
-        reason: 'Meal card should be wrapped in a Dismissible.',
-      );
-      // Clear of the pinned block / tab bar overlays before the raw drag.
-      await revealCentered($, cardRow);
-      await $.tester.drag(cardRow.first, const Offset(-500, 0));
-      // Run the dismiss animation with fixed pumps (no settling).
+      // ---- 5. 'Remove' pill → soft delete + Undo snackbar -----------------
+      // The card collapses when we return from the edit screen — expand it
+      // again if the pills are not showing (expansion is view state on the
+      // shared app session, so never assume it).
+      await revealCentered($, find.text(cardText));
+      if (!$('Remove').exists) {
+        await $(cardText).tap(settlePolicy: SettlePolicy.noSettle);
+        await $(
+          'Remove',
+        ).waitUntilVisible(timeout: const Duration(seconds: 10));
+      }
+      await $('Remove').tap(settlePolicy: SettlePolicy.noSettle);
       for (var i = 0; i < 4; i++) {
         await $.pump(const Duration(milliseconds: 300));
       }
