@@ -301,23 +301,30 @@ class MacroDashboardScreen extends ConsumerWidget {
               horizontal: icon == null ? 0 : 14,
             ),
             alignment: Alignment.center,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 14, color: color),
-                  const SizedBox(width: 6),
-                ],
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: 'Apercu',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12.5,
-                    color: color,
+            // scaleDown: on narrow devices (SE width) with the Brick pill
+            // present, the Expanded share drops below the label's intrinsic
+            // width — the label shrinks a hair instead of overflowing (same
+            // treatment as the tab-bar labels).
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 14, color: color),
+                    const SizedBox(width: 6),
+                  ],
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Apercu',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12.5,
+                      color: color,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -39,6 +39,7 @@ import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 
 import '../../helpers/widget_test_harness.dart';
+import '../home_shell/home_shell_test_fonts.dart';
 
 final _day = DateTime(2026, 8, 14);
 
@@ -124,6 +125,9 @@ Future<void> _pump(WidgetTester tester, List<Activity> activities) async {
 }
 
 void main() {
+  // Real font metrics: the SE-width regression test below measures actual
+  // label widths; Ahem's square glyphs false-overflow the energy card.
+  setUpAll(loadHomeShellFonts);
   setUp(HeldTargets.clear);
 
   final brickPill = find.byKey(const ValueKey('macro_dashboard.create_brick'));
@@ -236,6 +240,22 @@ void main() {
   testWidgets('a single activity shows no pill', (tester) async {
     await _pump(tester, [_activity('run1', ActivityType.running, 8)]);
     expect(brickPill, findsNothing);
+  });
+
+  testWidgets('add row with Brick pill fits SE-class width (375pt)', (
+    tester,
+  ) async {
+    // Regression (device sweep, 2026-09-07): with the Brick pill present the
+    // Expanded share dropped below "+ Add Activity"'s intrinsic width on a
+    // 375pt screen — the pill's inner Row overflowed 8.6px. The label now
+    // scales down instead. Overflow would fail this test via FlutterError.
+    await tester.binding.setSurfaceSize(const Size(375, 667));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await _pump(tester, [
+      _activity('run1', ActivityType.running, 8),
+      _activity('ride1', ActivityType.cycling, 16),
+    ]);
+    expect(brickPill, findsOneWidget);
   });
 
   testWidgets('tapping Brick enters leg-picking: pick bar replaces the adds', (
