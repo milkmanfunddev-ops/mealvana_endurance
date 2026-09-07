@@ -95,15 +95,23 @@ class AppMaterials {
   /// The active tab's raised glass lens: refracts the bar's labels and the
   /// page behind it (Impeller shader; flat FakeGlass fallback on Skia, so
   /// tests and goldens render deterministically).
-  static const double tabLensThickness = 14.0;
-  static const double tabLensRefractiveIndex = 1.35;
-  static const double tabLensChromaticAberration = 0.8;
+  static const double tabLensThickness = 16.0;
+
+  /// Extra glass thickness while the lens is in motion (stronger refraction
+  /// mid-transit, the Bevel look).
+  static const double tabLensTransitThicknessBoost = 14.0;
+  static const double tabLensRefractiveIndex = 1.40;
+  static const double tabLensChromaticAberration = 2.0;
   static const double tabLensBlur = 1.5;
   static const double tabLensSaturation = 1.15;
   static const double tabLensLightIntensity = 0.4;
 
-  /// How far the bubble bulges past the bar's border (the Bevel overflow).
+  /// How far the bubble bulges past the bar's border at rest.
   static const double tabLensBulgePx = 6.0;
+
+  /// EXTRA bulge while the lens travels or is dragged — Bevel's lens spills
+  /// well over the bar in motion and settles back down.
+  static const double tabLensTransitBulgePx = 14.0;
 
   // ---- lensing (tokens §Materials, boundary lifted 2026-09-06) ----
   /// Distortion magnitude of the traveling-highlight lens: the backdrop

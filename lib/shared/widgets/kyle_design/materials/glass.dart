@@ -199,6 +199,7 @@ class LiquidLensBubble extends StatelessWidget {
     super.key,
     required this.radius,
     this.visibility = 1,
+    this.motion = 0,
     this.child,
   });
 
@@ -207,6 +208,11 @@ class LiquidLensBubble extends StatelessWidget {
 
   /// 0..1 — fades the whole effect (the collapse morph drives this).
   final double visibility;
+
+  /// 0..1 — how much the lens is in motion (travel/drag). Motion thickens
+  /// the glass (stronger refraction + dispersion mid-transit, the Bevel
+  /// spill).
+  final double motion;
 
   /// Rendered crisply ON TOP of the glass (the Bevel behavior: the resting
   /// active label rides the lens instead of being refracted to mush under
@@ -219,7 +225,8 @@ class LiquidLensBubble extends StatelessWidget {
       shape: LiquidRoundedSuperellipse(borderRadius: radius),
       settings: LiquidGlassSettings(
         visibility: visibility.clamp(0.0, 1.0),
-        thickness: AppMaterials.tabLensThickness,
+        thickness: AppMaterials.tabLensThickness +
+            AppMaterials.tabLensTransitThicknessBoost * motion.clamp(0.0, 1.0),
         refractiveIndex: AppMaterials.tabLensRefractiveIndex,
         chromaticAberration: AppMaterials.tabLensChromaticAberration,
         blur: AppMaterials.tabLensBlur,

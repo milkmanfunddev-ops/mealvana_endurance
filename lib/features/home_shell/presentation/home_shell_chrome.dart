@@ -119,13 +119,16 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
               child: widget.body,
             ),
           ),
-          // Date header — REST in the clearance band, COMPACT overlaying
-          // scrolled content (the row itself takes the glass recipe).
-          if (widget.showDateHeader)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
+          // Date header — kept in the tree via Offstage (NOT a conditional
+          // child: adding/removing it shifts the tab bar's element slot and
+          // Flutter then recreates the bar's State — killing the travel
+          // animation on every Timeline transition).
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Offstage(
+              offstage: !widget.showDateHeader,
               child: KyleDateHeader(
                 date: selectedDate,
                 // Ruling #4: the home pins its instrument block — the header
@@ -143,22 +146,24 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
                     .setDate(selectedDate.add(const Duration(days: 1))),
               ),
             ),
+          ),
           // Tab bar — left-anchored (Q2); the bottom-right utility slot
           // stays EMPTY in v1 (nothing composes there, deliberately).
-          if (widget.showTabBar)
-            Positioned(
-              left: 14,
-              bottom: 16,
+          Positioned(
+            left: 14,
+            bottom: 16,
+            child: Offstage(
+              offstage: !widget.showTabBar,
               child: KyleTabBar(
                 destinations: widget.destinations,
                 activeId: widget.activeTabId,
                 collapsed: _tabBarCollapsed,
                 maxWidth: barMaxWidth,
                 onSelect: widget.onSelectTab,
-                onCollapsedTap: () =>
-                    setState(() => _tabBarCollapsed = false),
+                onCollapsedTap: () => setState(() => _tabBarCollapsed = false),
               ),
             ),
+          ),
         ],
       ),
     );

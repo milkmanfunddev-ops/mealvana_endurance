@@ -293,7 +293,11 @@ class _KyleTabBarState extends State<KyleTabBar>
     // It sits OUTSIDE the pill's clip so the overflow reads (Bevel's
     // silhouette); it fades out through the collapse morph (the collapsed
     // button is its own glass circle).
-    final bulge = AppMaterials.tabLensBulgePx * (1 - p);
+    final motion = dragging ? 1.0 : math.sin(math.pi * t);
+    final bulge =
+        (AppMaterials.tabLensBulgePx +
+            AppMaterials.tabLensTransitBulgePx * motion) *
+        (1 - p);
     final lensH = itemH + 2 * bulge;
     final lensW = math.max(0.0, highlightW + 2 * bulge);
     final lensVisibility = (1 - p * 1.8).clamp(0.0, 1.0);
@@ -345,6 +349,7 @@ class _KyleTabBarState extends State<KyleTabBar>
                   key: const ValueKey('kyle_tab_bar.highlight'),
                   radius: lensH / 2,
                   visibility: lensVisibility,
+                  motion: motion,
                   child: settled
                       ? _itemContent(
                           widget.destinations[_activeIndex],
