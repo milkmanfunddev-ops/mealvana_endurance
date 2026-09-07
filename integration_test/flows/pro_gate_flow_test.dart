@@ -19,7 +19,7 @@
 ///
 /// Flow:
 ///   launchApp → ensureAuthenticated
-///     → read whether `bottom_nav.food_tab` exists
+///     → read whether `kyle_tab_bar.item.food` exists
 ///     → router.push('/food'), assert food screen XOR pro screen accordingly
 ///     → back out, router.push('/vana'), same assertion
 ///
@@ -40,7 +40,7 @@ import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
 
-const _foodTab = ValueKey('bottom_nav.food_tab');
+const _foodTab = ValueKey('kyle_tab_bar.item.food');
 const _foodScreen = ValueKey('meal_planning.food_screen');
 const _vanaScreen = ValueKey('meal_planning.vana_chat_screen');
 const _proScreen = ValueKey('pro_version.screen');

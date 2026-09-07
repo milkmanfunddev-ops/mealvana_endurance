@@ -40,7 +40,7 @@ import '../helpers/flow_launcher.dart';
 import '../helpers/supabase_probe.dart';
 import '../helpers/test_config.dart';
 
-const _foodTab = ValueKey('bottom_nav.food_tab');
+const _foodTab = ValueKey('kyle_tab_bar.item.food');
 const _foodScreen = ValueKey('meal_planning.food_screen');
 const _tabPlan = ValueKey('meal_planning.tab_plan');
 const _tabShopping = ValueKey('meal_planning.tab_shopping');
