@@ -91,7 +91,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
           child: Column(
             children: [
               // §5: tracking-off hides every derived quantity; the card is
@@ -128,7 +128,7 @@ class MacroDashboardScreen extends ConsumerWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           child: _addRow(context, ref, view, dayWorkouts, picking),
         ),
       ],
@@ -240,21 +240,27 @@ class MacroDashboardScreen extends ConsumerWidget {
         child: buttons,
       );
     }
-    // The rail terminus (hollow "now" marker + line) is TIMELINE furniture,
-    // not chrome: it scrolls with the list (_railTerminus) so the rail is
-    // one continuous stroke — the pinned row keeps only the pills, at the
-    // same gutter indent (ruling #4 follow-up: the rail-disconnection fix).
+    // The pinned gutter carries a full-height rail SEGMENT (line only — the
+    // hollow "now" marker scrolls with the timeline in _railTerminus): it
+    // starts flush under the mode tab and meets the scrolling rail exactly
+    // at the block's bottom edge, so the stroke reads as one line from the
+    // filter row to the last card (Rad review, Xuan 2026-09-06).
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(width: 54),
           const SizedBox(width: 10),
-          const SizedBox(width: 16),
+          SizedBox(
+            width: 16,
+            child: Center(
+              child: Container(width: 2, color: MeTokens.creamAlpha(0.12)),
+            ),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.only(top: 12, bottom: 16),
               child: buttons,
             ),
           ),
@@ -269,7 +275,7 @@ class MacroDashboardScreen extends ConsumerWidget {
   /// dissolves under the pinned block with the rest of the timeline.
   Widget _railTerminus() {
     return SizedBox(
-      height: 26,
+      height: 18,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -281,12 +287,12 @@ class MacroDashboardScreen extends ConsumerWidget {
               alignment: Alignment.topCenter,
               children: [
                 Positioned(
-                  top: 8,
+                  top: 0,
                   bottom: 0,
                   child: Container(width: 2, color: MeTokens.creamAlpha(0.12)),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.only(top: 4),
                   child: Container(
                     width: 9,
                     height: 9,
@@ -1319,7 +1325,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
         // under its backdrop as it scrolls up.
         Positioned.fill(
           child: ListView(
-            padding: EdgeInsets.fromLTRB(18, _blockHeight + 8, 18, 90),
+            padding: EdgeInsets.fromLTRB(18, _blockHeight, 18, 90),
             children: [
               if (view.timelineOpen) screen._railTerminus(),
               for (final node in nodes)
