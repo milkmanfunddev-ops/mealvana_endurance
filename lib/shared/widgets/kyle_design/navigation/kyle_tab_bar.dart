@@ -302,17 +302,13 @@ class _KyleTabBarState extends State<KyleTabBar>
     final lensH = itemH + 2 * bulge;
     final lensW = math.max(0.0, highlightW + 2 * bulge);
     final lensVisibility = (1 - p * 1.8).clamp(0.0, 1.0);
-    // Bevel behavior: the DESTINATION's crisp zoomed copy rides the lens,
-    // fading in through the arrival (not popping at full settle — Xuan
-    // 2026-09-07: "before it settles, what is supposed to be in focus is
-    // out of focus"). While dragging the lens glides empty; the underlying
-    // copy hides once the rider carries it.
-    final settled = !_travel.isAnimating && !dragging;
-    final riderOpacity = dragging
-        ? 0.0
-        : settled
-        ? 1.0
-        : ((t - 0.45) / 0.35).clamp(0.0, 1.0);
+    final riderVisible = !dragging && lensVisibility > 0;
+    // Bevel behavior, iteration 3 (Xuan 2026-09-07: the target must be IN
+    // FOCUS for the whole transition): the destination's crisp copy is
+    // STATIC at the destination slot, above the glass, from the moment the
+    // travel starts — the lens slides in underneath it. Only tabs the lens
+    // passes over get refracted. While dragging the lens glides empty over
+    // the static row.
     return GestureDetector(
       onHorizontalDragStart: _onDragStart,
       onHorizontalDragUpdate: _onDragUpdate,
@@ -338,11 +334,9 @@ class _KyleTabBarState extends State<KyleTabBar>
                         p,
                         itemW,
                         labelFade,
-                        // Hidden while its crisp copy rides the lens.
-                        carriedByLens:
-                            i == _activeIndex &&
-                            riderOpacity > 0.5 &&
-                            lensVisibility > 0,
+                        // Hidden while its crisp copy renders above the
+                        // glass at the destination slot.
+                        carriedByLens: i == _activeIndex && riderVisible,
                       ),
                   ],
                 ),
@@ -364,23 +358,22 @@ class _KyleTabBarState extends State<KyleTabBar>
                 ),
               ),
             ),
-          // The focused tab's content rides ABOVE the glass layer — crisp by
-          // construction (never refracted/blurred), slightly zoomed, and
-          // fading in WITH the lens's arrival (travel-driven, not a settle
-          // pop).
-          if (lensVisibility > 0 && riderOpacity > 0)
+          // The focused tab's content — STATIC at the destination slot,
+          // ABOVE the glass layer: crisp by construction for the entire
+          // transition (the lens slides in underneath it), zooming in as
+          // the lens arrives.
+          if (riderVisible)
             Positioned(
-              left: center - lensW / 2,
-              top: (pillH - itemH) / 2 - bulge,
-              width: lensW,
-              height: lensH,
+              left: toCenter - itemW / 2,
+              top: (pillH - itemH) / 2,
+              width: itemW,
+              height: itemH,
               child: IgnorePointer(
                 child: Opacity(
-                  opacity: riderOpacity * lensVisibility,
+                  opacity: lensVisibility,
                   child: Center(
                     child: Transform.scale(
-                      scale: 1 +
-                          (AppMaterials.tabLensFocusZoom - 1) * riderOpacity,
+                      scale: 1 + (AppMaterials.tabLensFocusZoom - 1) * t,
                       child: _itemContent(
                         widget.destinations[_activeIndex],
                         AppColors.cream,

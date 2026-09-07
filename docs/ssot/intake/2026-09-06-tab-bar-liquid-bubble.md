@@ -41,10 +41,12 @@ highlight (tab-bar.md Q1) and the lens-only-in-transit negative (old tb6):
 
 ## Iteration 2 (Xuan, 2026-09-07 — on-Rad review, all three sim-verified)
 
-1. **Focused tab crisp + zoomed**: the active item's content rides ABOVE the glass layer
-   entirely (never refracted/blurred by construction) at `tabLensFocusZoom` 1.08, and fades
-   in WITH the lens's arrival (travel-driven from t≈0.45, not a settle pop — Xuan's
-   IMG_8940: "before it settles, what is supposed to be in focus is out of focus").
+1. **Focused tab crisp + zoomed — iteration 3**: the destination's content renders STATIC at
+   the destination slot, above the glass, for the ENTIRE transition — the lens slides in
+   underneath it (zoom 1.08 ramps with arrival). Only tabs the lens passes over get
+   refracted. Two earlier constructions read fuzzy on device (settle-pop rider, then a
+   partial-opacity rider blending with its refracted ghost — Xuan's IMG_8940 + follow-up);
+   sim-verified crisp mid-flight in 10x slow motion.
 2. **Bar readability over busy content**: the bar's material gets its OWN subdued backdrop
    chain — blur 12 · saturation 1.1 · no brightening · blackberry-55% fill (pill + collapsed
    button). The ratified glass chain (blur 4 · saturate 1.8 · brighten 1.12) amplifies exactly
