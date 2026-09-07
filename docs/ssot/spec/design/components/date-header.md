@@ -7,9 +7,11 @@ adjacent-day affordance. It replaces the persistent `ViewTabs` + `WeekStrip` blo
 surface — that recomposition is the surface's business
 ([`../surfaces/macro-dashboard.md`](../surfaces/macro-dashboard.md), home-shell recomposition,
 2026-09-06).
-**Tokens / material:** [`../tokens.md`](../tokens.md) §Materials — the compact row **and** its
-circular buttons take the `glass` recipe (RULED 2026-09-06: the export's blur-14 blackberry fade
-on the row is superseded; the row is `glass` like its buttons).
+**Tokens / material:** [`../tokens.md`](../tokens.md) §Materials — the compact row carries **NO
+material of its own**; only its circular buttons take the `glass` recipe (RULED Xuan 2026-09-06
+**#2**, on-device review of the first Rad build — reverses the same-day row-takes-glass ruling.
+The export's blur-14 blackberry fade stays superseded, and no band replaces it: a full-width
+backdrop region reads as a slab, not glass).
 **Companion artifact:** `New Homepage with updated navbar calendar and chat.html` (walked live
 2026-09-06) — illustrates; this file governs.
 **Ruling source:** [`../../../intake/2026-09-06-date-header-component.md`](../../../intake/2026-09-06-date-header-component.md) (RESOLVED).
@@ -19,7 +21,7 @@ on the row is superseded; the row is `glass` like its buttons).
 | State | Contract |
 |---|---|
 | `REST` | One Sansita page-title line, tappable, with the settings gear right. Title copy: **"Today, {Month D} ˅"** when the shown date is the current day; **"{Weekday}, {Month D} ˅"** otherwise (pinned 2026-09-06 — observed in the export as "Wednesday, August 12 ˅"; the weekday replaces "Today", nothing else changes) |
-| `COMPACT` | Sticky glass row on scroll: circular calendar button left · short centred date ("Aug 31, 2026") · gear right. Content scrolls under with a fade. The row itself takes `glass` (see Tokens note above) |
+| `COMPACT` | Sticky bandless row on scroll: floating `glass` calendar button left · short centred date ("Aug 31, 2026") · floating `glass` gear right. Content scrolls under the buttons and the date directly — the row paints NO material (see Tokens note above) |
 
 **Summon parity (RULED):** the REST title tap and the COMPACT calendar button summon **the same
 calendar sheet** ([`calendar-sheet.md`](calendar-sheet.md)). Two entry points, one component,
@@ -47,7 +49,7 @@ section.
 ## Conformance (design vectors)
 
 - **Goldens (L1):** REST (today copy), REST (non-today weekday copy), COMPACT — at
-  token-resolved colors, the compact row rendered in `glass`.
+  token-resolved colors, the compact row BANDLESS with floating `glass` buttons (ruling #2).
 - **Gesture manifest (L2):** title tap → sheet summoned; compact calendar button → the same
   sheet; chevron taps → adjacent-day navigation (date changes, no sheet); scroll transition
   REST ⇄ COMPACT (thresholds pinned in the manifest); **negative test:** a horizontal drag over

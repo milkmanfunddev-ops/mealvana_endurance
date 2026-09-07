@@ -2,19 +2,22 @@
 ///
 /// Spec: `docs/ssot/spec/design/components/date-header.md` **v1** (RATIFIED
 /// Xuan 2026-09-06, ruling-desk block; ships as `home-shell@v1`). Material:
-/// `docs/ssot/spec/design/tokens.md` §Materials — the COMPACT row AND its
-/// circular buttons take the `glass` recipe (RULED 2026-09-06: the export's
-/// blur-14 blackberry fade on the row is superseded). Companion artifact:
-/// the archived home-shell export — illustrates; the spec governs.
+/// `docs/ssot/spec/design/tokens.md` §Materials — the COMPACT row carries
+/// NO material of its own; only its circular buttons take the `glass`
+/// recipe (RULED Xuan 2026-09-06 #2, on-device review — reverses the
+/// same-day row-takes-glass ruling; the export's blur-14 fade stays
+/// superseded, and no band replaces it). Companion artifact: the archived
+/// home-shell export — illustrates; the spec governs.
 ///
 /// Contracts held here:
 /// * **Q1 states** — `REST`: one Sansita page-title line, tappable, gear
 ///   right. Title copy: "Today, {Month D} ˅" on the current day,
 ///   "{Weekday}, {Month D} ˅" otherwise (weekday variant pinned
 ///   2026-09-06 — the weekday replaces "Today", nothing else changes).
-///   `COMPACT`: sticky glass row — circular calendar button left, centred
-///   short date ("Aug 31, 2026"), gear right; content scrolls under with a
-///   fade. Scroll thresholds are the composing screen's, pinned by
+///   `COMPACT`: sticky bandless row — floating glass calendar button left,
+///   centred short date ("Aug 31, 2026"), floating glass gear right;
+///   content scrolls under the buttons and the date directly. Scroll
+///   thresholds are the composing screen's, pinned by
 ///   `home-shell.gestures.yaml` (dh3), never prose.
 /// * **Summon parity (RULED)** — the REST title tap and the COMPACT
 ///   calendar button summon the SAME calendar sheet: both paths call the
@@ -229,44 +232,43 @@ class KyleDateHeader extends StatelessWidget {
 
   // ---- COMPACT ----
   Widget _compactRow(BuildContext context) {
-    return GlassSurface(
+    // RULED (Xuan, 2026-09-06 #2, on-device review — reverses the same-day
+    // row-takes-glass ruling): the compact row carries NO material of its
+    // own; only its circular buttons take the glass recipe. No band, no
+    // fade — content scrolls under the floating buttons and the date.
+    return SizedBox(
       key: const ValueKey('kyle_date_header.compact'),
-      // The ROW ITSELF takes the glass recipe (RULED 2026-09-06 — not the
-      // export's blur-14 fade). Full-width bar: square corners.
-      borderRadius: BorderRadius.zero,
-      child: SizedBox(
-        height: compactRowHeight,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          child: Row(
-            children: [
-              _glassCircleButton(
-                key: const ValueKey('kyle_date_header.calendar_button'),
-                label: 'Pick a day',
-                icon: Icons.calendar_today_outlined,
-                onTap: onSummonCalendar,
-              ),
-              Expanded(
-                child: Center(
-                  child: Text(
-                    shortCopy(date),
-                    style: const TextStyle(
-                      fontFamily: AppTextStyles.sansita,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 17,
-                      color: AppColors.cream,
-                    ),
+      height: compactRowHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: Row(
+          children: [
+            _glassCircleButton(
+              key: const ValueKey('kyle_date_header.calendar_button'),
+              label: 'Pick a day',
+              icon: Icons.calendar_today_outlined,
+              onTap: onSummonCalendar,
+            ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  shortCopy(date),
+                  style: const TextStyle(
+                    fontFamily: AppTextStyles.sansita,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    color: AppColors.cream,
                   ),
                 ),
               ),
-              _glassCircleButton(
-                key: const ValueKey('kyle_date_header.compact_settings'),
-                label: 'Settings',
-                icon: Icons.settings_outlined,
-                onTap: onSettingsTap,
-              ),
-            ],
-          ),
+            ),
+            _glassCircleButton(
+              key: const ValueKey('kyle_date_header.compact_settings'),
+              label: 'Settings',
+              icon: Icons.settings_outlined,
+              onTap: onSettingsTap,
+            ),
+          ],
         ),
       ),
     );
@@ -284,13 +286,11 @@ class KyleDateHeader extends StatelessWidget {
       child: GestureDetector(
         key: key,
         onTap: onTap,
-        // Nested: the row already applies the glass backdrop chain — the
-        // buttons keep the fill + rim without re-saturating it (and in-row
-        // chrome never lifts; tokens §Materials reserves lift for floating
-        // pills).
+        // Floating chrome over the page (the compact row carries no material
+        // of its own — RULED Xuan 2026-09-06 #2): full glass recipe + lift.
         child: GlassSurface(
           borderRadius: BorderRadius.circular(23),
-          nested: true,
+          lift: true,
           child: SizedBox(
             width: 46,
             height: 46,

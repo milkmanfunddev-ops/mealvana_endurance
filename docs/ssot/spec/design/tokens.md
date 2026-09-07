@@ -43,9 +43,10 @@ numbers below are **the contract** (DOM-verified against the home-shell design e
 app's own goldens (Flutter: `BackdropFilter` + painted rim), never a pixel match to any HTML or
 to iOS.
 
-**`glass`** — floating chrome: pills, circular buttons, **and the compact header row itself**
-(RULED 2026-09-06: the export's blur-14 blackberry fade on that row is superseded; the row takes
-this recipe like its buttons):
+**`glass`** — floating chrome: pills and circular buttons. *(The compact header row carries NO
+material of its own — RULED Xuan 2026-09-06 **#2**, on-device review, reversing the same-day
+row-takes-glass ruling; the export's blur-14 fade stays superseded and no band replaces it. Only
+the row's floating buttons take this recipe.)*:
 - backdrop: blur 4 px · saturate 1.8 · brightness 1.12 (content behind stays recognizable, gets
   more vivid and slightly BRIGHTER — never darker)
 - fill: vertical gradient, `cream` 7 % → 2 % alpha
