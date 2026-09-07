@@ -157,7 +157,7 @@ class AppMaterials {
 
   /// EXTRA bulge while the lens travels or is dragged — Bevel's lens spills
   /// well over the bar in motion and settles back down.
-  static const double tabLensTransitBulgePx = 14.0;
+  static const double tabLensTransitBulgePx = 10.0;
 
   // ---- lensing (tokens §Materials, boundary lifted 2026-09-06) ----
   /// Distortion magnitude of the traveling-highlight lens: the backdrop
