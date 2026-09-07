@@ -617,6 +617,50 @@ void main() {
         reason: 'no bubble in the collapsed state');
   });
 
+  // EXTRA (regression, not a manifest row): the collapse morph must land
+  // exactly where the collapsed button renders — the 5px sideways snap in
+  // Xuan's 2026-09-07 recordings came from the pill padding animating to 0
+  // while the collapsed button centers its icon with a 5px inset.
+  testWidgets('collapse morph ends pixel-continuous with the collapsed '
+      'button (no sideways snap)', (tester) async {
+    var collapsed = false;
+    late StateSetter setOuter;
+    await tester.pumpWidget(
+      _frame(
+        StatefulBuilder(
+          builder: (context, setState) {
+            setOuter = setState;
+            return KyleTabBar(
+              destinations: _destinations(3),
+              activeId: 'timeline',
+              collapsed: collapsed,
+              onSelect: (_) {},
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    setOuter(() => collapsed = true);
+    await tester.pump();
+    // One frame before the subtree swap (340ms total).
+    await tester.pump(const Duration(milliseconds: 335));
+    final iconBefore = tester.getCenter(
+      find.descendant(of: find.byType(KyleTabBar), matching: find.byType(Icon)),
+    );
+    await tester.pumpAndSettle();
+    final iconAfter = tester.getCenter(
+      find.descendant(
+        of: _collapsedButton(),
+        matching: find.byType(Icon),
+      ),
+    );
+    expect((iconAfter.dx - iconBefore.dx).abs(), lessThan(1.0),
+        reason: 'no horizontal snap at the morph -> button swap');
+    expect((iconAfter.dy - iconBefore.dy).abs(), lessThan(1.0),
+        reason: 'no vertical snap at the morph -> button swap');
+  });
+
   // tb7_utility_slot_reserved (Q2, option a) — NEGATIVE / geometry
   testWidgets('tb7_utility_slot_reserved: NOTHING renders in the '
       'bottom-right utility slot in either state; the collapse morph targets '

@@ -345,7 +345,11 @@ class _KyleTabBarState extends State<KyleTabBar>
                 borderRadius: BorderRadius.circular(100),
                 child: Row(
                   children: [
-                    SizedBox(width: KyleTabBar.pillPadding * (1 - p)),
+                    // Constant padding (export-exact): shrinking it made the
+                    // morph end with the icon at x=21 while the collapsed
+                    // button centers at x=26 — the 5px sideways snap in
+                    // Xuan's second report.
+                    const SizedBox(width: KyleTabBar.pillPadding),
                     for (var i = 0; i < n; i++)
                       _item(
                         i,
