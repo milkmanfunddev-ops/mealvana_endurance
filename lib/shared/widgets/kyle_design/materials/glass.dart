@@ -91,7 +91,9 @@ class GlassSurface extends StatelessWidget {
       child: ClipRRect(
         borderRadius: borderRadius,
         child: BackdropFilter(
-          filter: AppMaterials.glassBackdropFilter(),
+          filter: dimmed
+              ? AppMaterials.tabBarBackdropFilter()
+              : AppMaterials.glassBackdropFilter(),
           child: painted,
         ),
       ),

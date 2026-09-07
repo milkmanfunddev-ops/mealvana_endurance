@@ -117,7 +117,24 @@ class AppMaterials {
   /// reduce the bar's transparency so busy content behind never outshouts
   /// the labels; the Bevel bar is a dark fill + blur).
   static final Color tabBarBackdropDim =
-      AppColors.blackberry.withValues(alpha: 0.45);
+      AppColors.blackberry.withValues(alpha: 0.55);
+
+  /// The dimmed bar's OWN backdrop chain: heavy blur, NO saturation boost
+  /// (the standard glass chain saturates 1.8x + brightens — it amplifies
+  /// exactly the bright content the bar needs to mute; the teal chip in
+  /// Xuan's IMG_8941 burned straight through it).
+  static const double tabBarBlurSigma = 12.0;
+  static const double tabBarSaturation = 1.1;
+
+  static ImageFilter tabBarBackdropFilter() => ImageFilter.compose(
+        outer: ColorFilter.matrix(
+          _saturationBrightnessMatrix(tabBarSaturation, 1.0),
+        ),
+        inner: ImageFilter.blur(
+          sigmaX: tabBarBlurSigma,
+          sigmaY: tabBarBlurSigma,
+        ),
+      );
 
   /// EXTRA bulge while the lens travels or is dragged — Bevel's lens spills
   /// well over the bar in motion and settles back down.

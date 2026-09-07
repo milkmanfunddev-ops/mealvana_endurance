@@ -41,12 +41,15 @@ highlight (tab-bar.md Q1) and the lens-only-in-transit negative (old tb6):
 
 ## Iteration 2 (Xuan, 2026-09-07 — on-Rad review, all three sim-verified)
 
-1. **Focused tab crisp + zoomed**: the active item's content now rides ABOVE the glass layer
-   entirely (never refracted/blurred by construction) at `tabLensFocusZoom` 1.08 — brighter
-   and slightly larger than the other tabs.
-2. **Bar readability over busy content**: the bar's material gains a dark fill under the blur
-   (`tabBarBackdropDim` = blackberry 45%) — Xuan's preferred "reduce the transparency" route,
-   matching Bevel's dark-fill-plus-blur bar; applies to the pill and the collapsed button.
+1. **Focused tab crisp + zoomed**: the active item's content rides ABOVE the glass layer
+   entirely (never refracted/blurred by construction) at `tabLensFocusZoom` 1.08, and fades
+   in WITH the lens's arrival (travel-driven from t≈0.45, not a settle pop — Xuan's
+   IMG_8940: "before it settles, what is supposed to be in focus is out of focus").
+2. **Bar readability over busy content**: the bar's material gets its OWN subdued backdrop
+   chain — blur 12 · saturation 1.1 · no brightening · blackberry-55% fill (pill + collapsed
+   button). The ratified glass chain (blur 4 · saturate 1.8 · brighten 1.12) amplifies exactly
+   the bright content the bar must mute (Xuan's IMG_8941: a teal chip burned through the first
+   45%-dim attempt). Xuan's preferred reduce-transparency route, matching Bevel's bar.
 3. **Bar raised**: bottom margin 16 → 28.
 
 ## Ratification considerations (the honest trade-offs)

@@ -302,10 +302,17 @@ class _KyleTabBarState extends State<KyleTabBar>
     final lensH = itemH + 2 * bulge;
     final lensW = math.max(0.0, highlightW + 2 * bulge);
     final lensVisibility = (1 - p * 1.8).clamp(0.0, 1.0);
-    // Bevel behavior: at rest the active label rides CRISP on top of the
-    // lens (the refracted copy beneath is hidden); in transit the lens
-    // glides empty over the static labels.
+    // Bevel behavior: the DESTINATION's crisp zoomed copy rides the lens,
+    // fading in through the arrival (not popping at full settle — Xuan
+    // 2026-09-07: "before it settles, what is supposed to be in focus is
+    // out of focus"). While dragging the lens glides empty; the underlying
+    // copy hides once the rider carries it.
     final settled = !_travel.isAnimating && !dragging;
+    final riderOpacity = dragging
+        ? 0.0
+        : settled
+        ? 1.0
+        : ((t - 0.45) / 0.35).clamp(0.0, 1.0);
     return GestureDetector(
       onHorizontalDragStart: _onDragStart,
       onHorizontalDragUpdate: _onDragUpdate,
@@ -333,7 +340,9 @@ class _KyleTabBarState extends State<KyleTabBar>
                         labelFade,
                         // Hidden while its crisp copy rides the lens.
                         carriedByLens:
-                            i == _activeIndex && settled && lensVisibility > 0,
+                            i == _activeIndex &&
+                            riderOpacity > 0.5 &&
+                            lensVisibility > 0,
                       ),
                   ],
                 ),
@@ -356,21 +365,22 @@ class _KyleTabBarState extends State<KyleTabBar>
               ),
             ),
           // The focused tab's content rides ABOVE the glass layer — crisp by
-          // construction (never refracted/blurred) and slightly zoomed
-          // (Xuan iteration 2026-09-07 #1).
-          if (lensVisibility > 0)
+          // construction (never refracted/blurred), slightly zoomed, and
+          // fading in WITH the lens's arrival (travel-driven, not a settle
+          // pop).
+          if (lensVisibility > 0 && riderOpacity > 0)
             Positioned(
               left: center - lensW / 2,
               top: (pillH - itemH) / 2 - bulge,
               width: lensW,
               height: lensH,
               child: IgnorePointer(
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 120),
-                  opacity: settled ? 1 : 0,
+                child: Opacity(
+                  opacity: riderOpacity * lensVisibility,
                   child: Center(
                     child: Transform.scale(
-                      scale: AppMaterials.tabLensFocusZoom,
+                      scale: 1 +
+                          (AppMaterials.tabLensFocusZoom - 1) * riderOpacity,
                       child: _itemContent(
                         widget.destinations[_activeIndex],
                         AppColors.cream,
