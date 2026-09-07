@@ -52,6 +52,7 @@ Read the real values before writing anything here.
 | P1 | Schema → prod | | | |
 | P2 | Functions → prod | | | |
 | P3 | Integration tests — locally | | | |
+| P3b | `/device-sweep` on the RC (UI-bearing bundles; else N/A) | | board PASS, link | |
 | P4 | Merge → `release/*` | | | |
 | P5 | TestFlight hand smoke | | | |
 | P6 | Release notes + submit | | downloadable | |
