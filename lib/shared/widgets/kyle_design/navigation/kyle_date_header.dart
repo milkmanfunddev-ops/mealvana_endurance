@@ -284,9 +284,13 @@ class KyleDateHeader extends StatelessWidget {
       child: GestureDetector(
         key: key,
         onTap: onTap,
+        // Nested: the row already applies the glass backdrop chain — the
+        // buttons keep the fill + rim without re-saturating it (and in-row
+        // chrome never lifts; tokens §Materials reserves lift for floating
+        // pills).
         child: GlassSurface(
           borderRadius: BorderRadius.circular(23),
-          lift: true,
+          nested: true,
           child: SizedBox(
             width: 46,
             height: 46,

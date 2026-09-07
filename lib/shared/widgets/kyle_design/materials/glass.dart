@@ -32,6 +32,7 @@ class GlassSurface extends StatelessWidget {
     super.key,
     required this.borderRadius,
     this.lift = false,
+    this.nested = false,
     this.child,
   });
 
@@ -41,10 +42,38 @@ class GlassSurface extends StatelessWidget {
   /// Outer lift shadow — under floating pills only (tokens §Materials).
   final bool lift;
 
+  /// Chrome sitting ON another glass surface (the compact header row's
+  /// circular buttons): keeps the recipe's fill + rim but does NOT re-apply
+  /// the backdrop chain — the host surface already saturated/brightened the
+  /// backdrop, and stacking the filter compounds it (saturation ~3.2×),
+  /// which reads as a separate surface on device. Never lifts (in-row
+  /// chrome is not a floating pill).
+  final bool nested;
+
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
+    final painted = CustomPaint(
+      foregroundPainter: GlassRimPainter(borderRadius: borderRadius),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppMaterials.glassFillTop,
+              AppMaterials.glassFillBottom,
+            ],
+          ),
+        ),
+        child: child,
+      ),
+    );
+    if (nested) {
+      return ClipRRect(borderRadius: borderRadius, child: painted);
+    }
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: borderRadius,
@@ -54,23 +83,7 @@ class GlassSurface extends StatelessWidget {
         borderRadius: borderRadius,
         child: BackdropFilter(
           filter: AppMaterials.glassBackdropFilter(),
-          child: CustomPaint(
-            foregroundPainter: GlassRimPainter(borderRadius: borderRadius),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppMaterials.glassFillTop,
-                    AppMaterials.glassFillBottom,
-                  ],
-                ),
-              ),
-              child: child,
-            ),
-          ),
+          child: painted,
         ),
       ),
     );
