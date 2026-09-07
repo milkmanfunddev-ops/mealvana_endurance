@@ -307,17 +307,9 @@ Finder _collapsedButton() =>
 
 Finder _highlight() => find.byKey(const ValueKey('kyle_tab_bar.highlight'));
 
-/// The lens (tb6): BackdropFilter layers inside the highlight subtree.
-int _lensLayerCount(WidgetTester tester) => _highlight().evaluate().isEmpty
-    ? 0
-    : tester
-          .widgetList(
-            find.descendant(
-              of: _highlight(),
-              matching: find.byType(BackdropFilter),
-            ),
-          )
-          .length;
+/// The lens bubble (tb6, PROPOSED liquid-bubble amendment): the
+/// LiquidLensBubble under the highlight key.
+Finder _lensBubble() => find.byType(LiquidLensBubble);
 
 // ---------------------------------------------------------------------------
 // Component-scoped hosts
@@ -562,35 +554,67 @@ void main() {
         reason: 'the travel animation completed from the release position');
   });
 
-  // tb6_switch_refraction_active (transition part 3; tokens §Materials lensing)
-  // pins: distortion_magnitude = 6.0 px, distortion_falloff = 8.0 px band
-  testWidgets('tb6_switch_refraction_active: the lens filter is active '
-      'mid-transit and NOT at rest', (tester) async {
+  // tb6_liquid_lens_bubble (transition part 3 + Q1 highlight — PROPOSED
+  // amendment, intake 2026-09-06-tab-bar-liquid-bubble, pending Xuan's
+  // ratification: the Bevel-style bubble is present at REST on the active
+  // item and travels with refraction in transit, superseding the
+  // cream-fill highlight and the old lens-only-in-transit negative).
+  // pins: thickness 14 · refractiveIndex 1.35 · chromaticAberration 0.25 ·
+  //       bulge 6px over the bar border
+  testWidgets('tb6_liquid_lens_bubble: the liquid-glass bubble sits on the '
+      'active item at rest, bulges past the bar border, travels in transit, '
+      'and fades through the collapse morph', (tester) async {
     String active = 'timeline';
+    var collapsed = false;
+    late StateSetter setOuter;
     await tester.pumpWidget(
       _frame(
         StatefulBuilder(
-          builder: (context, setState) => KyleTabBar(
-            destinations: _destinations(3),
-            activeId: active,
-            onSelect: (id) => setState(() => active = id),
-          ),
+          builder: (context, setState) {
+            setOuter = setState;
+            return KyleTabBar(
+              destinations: _destinations(3),
+              activeId: active,
+              collapsed: collapsed,
+              onSelect: (id) => setState(() => active = id),
+            );
+          },
         ),
       ),
     );
     await tester.pumpAndSettle();
-    expect(_lensLayerCount(tester), 0,
-        reason: 'no lens at rest — the filter only exists in transit');
 
+    // AT REST: the bubble is present over the active item and overflows the
+    // bar's border (the Bevel bulge).
+    expect(_lensBubble(), findsOneWidget,
+        reason: 'the bubble is the resting highlight (PROPOSED)');
+    final barRect = tester.getRect(find.byType(GlassSurface).first);
+    final bubbleRect = tester.getRect(_highlight());
+    expect(bubbleRect.top, lessThan(barRect.top),
+        reason: 'the bubble bulges over the bar border');
+    expect(bubbleRect.bottom, greaterThan(barRect.bottom));
+    final timelineRect = tester.getRect(
+      find.byKey(const ValueKey('kyle_tab_bar.item.timeline')),
+    );
+    expect((bubbleRect.center.dx - timelineRect.center.dx).abs(), lessThan(2),
+        reason: 'the bubble rests on the active item');
+
+    // IN TRANSIT: the same bubble travels between items (refraction is the
+    // shader's; appearance golden-held in tab_bar_switch_transit_mid).
     await tester.tap(find.byKey(const ValueKey('kyle_tab_bar.item.learn')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 170));
-    expect(_lensLayerCount(tester), 2,
-        reason: 'mid-transit the lens renders its core + falloff band '
-            '(appearance is golden-held: tab_bar_switch_transit_mid)');
-
+    expect(_lensBubble(), findsOneWidget);
+    final midRect = tester.getRect(_highlight());
+    expect(midRect.center.dx, greaterThan(timelineRect.center.dx + 5));
     await tester.pumpAndSettle();
-    expect(_lensLayerCount(tester), 0, reason: 'lens gone at rest');
+
+    // COLLAPSE MORPH: the bubble fades out — the collapsed button is its
+    // own glass circle.
+    setOuter(() => collapsed = true);
+    await tester.pumpAndSettle();
+    expect(_lensBubble(), findsNothing,
+        reason: 'no bubble in the collapsed state');
   });
 
   // tb7_utility_slot_reserved (Q2, option a) — NEGATIVE / geometry

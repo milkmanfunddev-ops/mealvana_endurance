@@ -278,7 +278,6 @@ class _KyleTabBarState extends State<KyleTabBar>
     final t = KyleTabBar.switchCurve.transform(_travel.value);
     final toCenter = _itemCenter(_activeIndex, itemW);
     final fromCenter = _travelFromX ?? _itemCenter(_travelFromIndex, itemW);
-    final inTransit = _travel.isAnimating;
     final dragging = _dragX != null;
     final center = dragging ? _dragX! : fromCenter + (toCenter - fromCenter) * t;
     // Width morphs through the move: the capsule stretches along the travel
@@ -287,52 +286,56 @@ class _KyleTabBarState extends State<KyleTabBar>
         ? 0.0
         : (toCenter - fromCenter).abs() * 0.3 * math.sin(math.pi * t);
     final highlightW = (itemW + stretch) * (1 - p);
-    // Refraction (transition part 3): active only while the highlight is
-    // moving — never at rest (tb6).
-    final direction = dragging
-        ? 0.0
-        : (toCenter - fromCenter).sign;
-    final displacement = (inTransit || dragging)
-        ? AppMaterials.lensDisplacementPx *
-              (dragging ? 1.0 : direction * math.sin(math.pi * t))
-        : 0.0;
 
+    // The liquid bubble (PROPOSED 2026-09-06, Bevel reference): a raised
+    // glass lens over the active item that bulges past the pill's border
+    // and refracts the labels + page beneath it, at rest and in transit.
+    // It sits OUTSIDE the pill's clip so the overflow reads (Bevel's
+    // silhouette); it fades out through the collapse morph (the collapsed
+    // button is its own glass circle).
+    final bulge = AppMaterials.tabLensBulgePx * (1 - p);
+    final lensH = itemH + 2 * bulge;
+    final lensW = math.max(0.0, highlightW + 2 * bulge);
+    final lensVisibility = (1 - p * 1.8).clamp(0.0, 1.0);
     return GestureDetector(
       onHorizontalDragStart: _onDragStart,
       onHorizontalDragUpdate: _onDragUpdate,
       onHorizontalDragEnd: _onDragEnd,
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(100),
-        lift: true,
-        child: SizedBox(
-          width: pillW,
-          height: pillH,
-          child: ClipRRect(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          GlassSurface(
             borderRadius: BorderRadius.circular(100),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: (center - highlightW / 2).clamp(0.0, pillW),
-                  top: (pillH - itemH) / 2,
-                  width: math.max(0, highlightW),
-                  height: itemH,
-                  child: _Highlight(
-                    key: const ValueKey('kyle_tab_bar.highlight'),
-                    displacement: displacement,
-                    opacity: 0.92 * (1 - p),
-                    radius: itemH / 2,
-                  ),
-                ),
-                Row(
+            lift: true,
+            child: SizedBox(
+              width: pillW,
+              height: pillH,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(100),
+                child: Row(
                   children: [
                     SizedBox(width: KyleTabBar.pillPadding * (1 - p)),
                     for (var i = 0; i < n; i++) _item(i, p, itemW, labelFade),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          if (lensVisibility > 0)
+            Positioned(
+              left: center - lensW / 2,
+              top: (pillH - itemH) / 2 - bulge,
+              width: lensW,
+              height: lensH,
+              child: IgnorePointer(
+                child: LiquidLensBubble(
+                  key: const ValueKey('kyle_tab_bar.highlight'),
+                  radius: lensH / 2,
+                  visibility: lensVisibility,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -344,8 +347,10 @@ class _KyleTabBarState extends State<KyleTabBar>
     // Non-active items shrink away during the morph; the active one narrows
     // to the collapsed icon button (export-exact interpolation).
     final w = active ? lerp(itemW, KyleTabBar.collapsedItemSize) : itemW * (1 - p);
+    // No cream fill under the active item anymore (liquid bubble,
+    // PROPOSED 2026-09-06): active ink is cream on glass.
     final ink = active
-        ? Color.lerp(AppColors.blackberry, AppColors.cream, p)!
+        ? AppColors.cream
         : AppColors.cream.withValues(alpha: 0.72 * math.max(0.0, 1 - p * 1.8));
     if (w <= 0.5) return const SizedBox.shrink();
     return ClipRect(
@@ -390,38 +395,6 @@ class _KyleTabBarState extends State<KyleTabBar>
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// The active-item highlight: cream capsule, lensing the backdrop while it
-/// travels ([GlassLens] — tokens §Materials, named contractual by
-/// tab-bar.md).
-class _Highlight extends StatelessWidget {
-  const _Highlight({
-    super.key,
-    required this.displacement,
-    required this.opacity,
-    required this.radius,
-  });
-
-  final double displacement;
-  final double opacity;
-  final double radius;
-
-  @override
-  Widget build(BuildContext context) {
-    final capsule = BorderRadius.circular(radius);
-    return GlassLens(
-      borderRadius: capsule,
-      displacement: displacement,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: capsule,
-          color: AppColors.cream.withValues(alpha: opacity.clamp(0.0, 1.0)),
-        ),
-        child: const SizedBox.expand(),
       ),
     );
   }

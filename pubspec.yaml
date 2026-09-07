@@ -127,6 +127,7 @@ dependencies:
   # across sessions — see lib/shared/widgets/root_app_widget.dart.
   accessibility_tools: 2.2.3
   purchases_flutter: ^10.3.0
+  liquid_glass_renderer: ^0.2.0-dev.4
 
 
 dev_dependencies:

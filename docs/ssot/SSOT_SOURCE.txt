@@ -1,5 +1,5 @@
 tag: home-shell@v1 @ 2744985 + daily-macros-dashboard@v3.2 @ 254af48 (both ancestors of the pin)
-commit: c04044d ("apply-ruling: the pinned instrument block (Xuan 2026-09-06 #4, Bevel reference)", qa/home-shell)
+commit: eca57b3 ("intake: tab-bar liquid-glass bubble PROPOSED (Bevel reference)", qa/home-shell)
 branch: qa/home-shell
 source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
 sync-scope: WHOLE-TREE rsync --delete of spec/ vectors/ conformance/ bundles/ intake/ runs/ profiles/ scripts/ docs/ + DEVIATIONS.md + PLAN.md. Carries the 2026-09-06 ruling-desk block: home-shell@v1 (tab-bar.md v1, date-header.md v1, calendar-sheet.md v1, tokens.md §Materials, macro-dashboard.md §home-shell recomposition [staged], home-shell gestures + goldens manifests, bundle manifest + coding-agent handoff + archived export) and the daily-macros-dashboard@v3.2 point re-tag (tokens + surface moved with this branch; @v3 immutable, @v3.1 was the zoneless-IF amendment).

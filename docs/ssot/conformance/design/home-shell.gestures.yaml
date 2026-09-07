@@ -51,14 +51,22 @@ tests:
         snapping between items while the drag is live
       - release commits to the nearest destination; the travel animation completes from the
         release position
-  - id: tb6_switch_refraction_active
-    contract: tab-bar tab-switch transition (3 — refraction in transit; tokens.md §Materials lensing)
+  - id: tb6_liquid_lens_bubble
+    # PENDING RATIFICATION (intake/2026-09-06-tab-bar-liquid-bubble.md, PROPOSED):
+    # supersedes tb6_switch_refraction_active — the Bevel-style liquid-glass
+    # bubble is the active highlight at REST as well as in transit, replacing
+    # the cream fill and the old lens-only-in-transit negative. Implemented
+    # ahead of ratification at Xuan's direction (2026-09-06 evening).
+    contract: tab-bar active highlight = liquid-glass bubble (PROPOSED; was transition part 3)
     assert:
-      - during transit the traveling highlight applies the lensing displacement to content
-        behind it (assert the shader/filter is active mid-transit and NOT at rest)
-      - appearance itself is golden-held (home-shell.goldens.yaml tab_bar_switch_transit_mid) —
-        this test pins activation, the golden pins the look
-    pins: { distortion_magnitude: 6.0px backdrop displacement, distortion_falloff: 8.0px outer band at half displacement }
+      - at rest the bubble sits on the active item and BULGES past the bar's border
+        (top and bottom overflow)
+      - in transit the same bubble travels between items, refracting the labels and
+        the page beneath it (true refraction on Impeller; appearance golden-held in
+        tab_bar_switch_transit_mid, which captures the deterministic Skia fallback)
+      - through the collapse morph the bubble fades out (the collapsed button is its
+        own glass circle)
+    pins: { thickness: 14, refractive_index: 1.35, chromatic_aberration: 0.25, blur: 1.5, bulge_px: 6, renderer: liquid_glass_renderer 0.2.0-dev.4 (FakeGlass fallback on Skia) }
   - id: tb7_utility_slot_reserved   # NEGATIVE / geometry test — required
     contract: tab-bar Q2 (option a)
     assert:

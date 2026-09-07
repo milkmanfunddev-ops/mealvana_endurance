@@ -89,6 +89,22 @@ class AppMaterials {
   /// is corrected by that ruling. Between the page and the sheet.
   static final Color sheetScrim = AppColors.blackberry.withValues(alpha: 0.60);
 
+  // ---- liquid-glass bubble (tab-bar active highlight; PROPOSED Xuan
+  // 2026-09-06, Bevel recording — intake
+  // 2026-09-06-tab-bar-liquid-bubble, pending ratification) ----
+  /// The active tab's raised glass lens: refracts the bar's labels and the
+  /// page behind it (Impeller shader; flat FakeGlass fallback on Skia, so
+  /// tests and goldens render deterministically).
+  static const double tabLensThickness = 14.0;
+  static const double tabLensRefractiveIndex = 1.35;
+  static const double tabLensChromaticAberration = 0.25;
+  static const double tabLensBlur = 1.5;
+  static const double tabLensSaturation = 1.15;
+  static const double tabLensLightIntensity = 0.4;
+
+  /// How far the bubble bulges past the bar's border (the Bevel overflow).
+  static const double tabLensBulgePx = 6.0;
+
   // ---- lensing (tokens §Materials, boundary lifted 2026-09-06) ----
   /// Distortion magnitude of the traveling-highlight lens: the backdrop
   /// inside the lens is displaced by up to this many px against the travel

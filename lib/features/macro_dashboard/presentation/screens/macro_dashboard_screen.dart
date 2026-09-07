@@ -235,8 +235,11 @@ class MacroDashboardScreen extends ConsumerWidget {
             ],
           );
     if (!view.timelineOpen) {
+      // Timeline-off keeps the same breathing room under the mode tab as
+      // the rail layout (Rad review, Xuan 2026-09-06: the pills floated up
+      // flush against the dashboard with no gap).
       return Padding(
-        padding: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.only(top: 12, bottom: 16),
         child: buttons,
       );
     }

@@ -23,6 +23,7 @@ library;
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
+import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 import '../../../../theme/kyle_design/app_materials.dart';
 
@@ -179,6 +180,45 @@ class GlassRimPainter extends CustomPainter {
   @override
   bool shouldRepaint(GlassRimPainter oldDelegate) =>
       oldDelegate.borderRadius != borderRadius;
+}
+
+/// The liquid-glass lens bubble — the tab bar's active-item highlight
+/// (PROPOSED Xuan 2026-09-06, Bevel reference recording; intake
+/// `2026-09-06-tab-bar-liquid-bubble`, pending ratification — supersedes
+/// the cream-fill highlight and tb6's lens-only-in-transit negative).
+///
+/// A raised glass shape that REFRACTS whatever is painted beneath it — the
+/// bar's own labels and the page behind the translucent bar — with
+/// chromatic aberration at the rim ([AppMaterials] tabLens* values). On
+/// Impeller (iOS device) this is a true refraction shader
+/// (`liquid_glass_renderer`); under Skia (`flutter test`, goldens) the
+/// package automatically renders its flat FakeGlass approximation, keeping
+/// CI deterministic.
+class LiquidLensBubble extends StatelessWidget {
+  const LiquidLensBubble({super.key, required this.radius, this.visibility = 1});
+
+  /// Capsule corner radius of the bubble.
+  final double radius;
+
+  /// 0..1 — fades the whole effect (the collapse morph drives this).
+  final double visibility;
+
+  @override
+  Widget build(BuildContext context) {
+    return LiquidGlass.withOwnLayer(
+      shape: LiquidRoundedSuperellipse(borderRadius: radius),
+      settings: LiquidGlassSettings(
+        visibility: visibility.clamp(0.0, 1.0),
+        thickness: AppMaterials.tabLensThickness,
+        refractiveIndex: AppMaterials.tabLensRefractiveIndex,
+        chromaticAberration: AppMaterials.tabLensChromaticAberration,
+        blur: AppMaterials.tabLensBlur,
+        saturation: AppMaterials.tabLensSaturation,
+        lightIntensity: AppMaterials.tabLensLightIntensity,
+      ),
+      child: const SizedBox.expand(),
+    );
+  }
 }
 
 /// The top-of-page dissolve zone (RULED Xuan 2026-09-06 #3 — the export's
