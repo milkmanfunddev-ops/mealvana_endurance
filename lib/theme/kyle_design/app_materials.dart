@@ -97,7 +97,7 @@ class AppMaterials {
   /// tests and goldens render deterministically).
   static const double tabLensThickness = 14.0;
   static const double tabLensRefractiveIndex = 1.35;
-  static const double tabLensChromaticAberration = 0.25;
+  static const double tabLensChromaticAberration = 0.8;
   static const double tabLensBlur = 1.5;
   static const double tabLensSaturation = 1.15;
   static const double tabLensLightIntensity = 0.4;

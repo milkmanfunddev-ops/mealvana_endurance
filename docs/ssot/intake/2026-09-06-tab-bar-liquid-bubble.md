@@ -28,7 +28,7 @@ highlight (tab-bar.md Q1) and the lens-only-in-transit negative (old tb6):
   check), so `flutter test` + goldens render deterministically.
 - Composite: `LiquidLensBubble` in `kyle_design/materials/glass.dart`; values in the ONE
   registry (`AppMaterials.tabLens*`): thickness 14 · refractiveIndex 1.35 ·
-  chromaticAberration 0.25 · blur 1.5 · saturation 1.15 · lightIntensity 0.4 · bulge 6px.
+  chromaticAberration 0.8 (raised from 0.25 at Xuan's direction after the Bevel dispersion frame — IMG_8939) · blur 1.5 · saturation 1.15 · lightIntensity 0.4 · bulge 6px.
 - Conformance: tb6 rewritten (`tb6_liquid_lens_bubble`, marked PENDING RATIFICATION in the
   manifest); tb4/tb5/tb7 unchanged and green; goldens `tab_bar_expanded_3/5`, `morph_mid`,
   `switch_transit_mid` re-blessed from the FakeGlass fallback rendering.
