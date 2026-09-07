@@ -240,11 +240,12 @@ class MacroDashboardScreen extends ConsumerWidget {
         child: buttons,
       );
     }
-    // The pinned gutter carries a full-height rail SEGMENT (line only — the
-    // hollow "now" marker scrolls with the timeline in _railTerminus): it
+    // The pinned gutter carries a full-height rail SEGMENT (line only): it
     // starts flush under the mode tab and meets the scrolling rail exactly
     // at the block's bottom edge, so the stroke reads as one line from the
-    // filter row to the last card (Rad review, Xuan 2026-09-06).
+    // filter row to the last card. The old hollow "now" terminus is retired
+    // (Rad review, Xuan 2026-09-06 — it led to nothing; the first entry's
+    // own dot leads the stream).
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -262,51 +263,6 @@ class MacroDashboardScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.only(top: 12, bottom: 16),
               child: buttons,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The timeline's top terminus — the hollow "now" marker the rail runs up
-  /// to (the reference rendering's top-of-timeline treatment). Lives in the
-  /// SCROLLING list so the rail below it is one continuous stroke that
-  /// dissolves under the pinned block with the rest of the timeline.
-  Widget _railTerminus() {
-    return SizedBox(
-      height: 18,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(width: 54),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 16,
-            child: Stack(
-              alignment: Alignment.topCenter,
-              children: [
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  child: Container(width: 2, color: MeTokens.creamAlpha(0.12)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Container(
-                    width: 9,
-                    height: 9,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: MeTokens.blackberry,
-                      border: Border.all(
-                        color: MeTokens.creamAlpha(0.35),
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -1327,7 +1283,6 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
           child: ListView(
             padding: EdgeInsets.fromLTRB(18, _blockHeight, 18, 90),
             children: [
-              if (view.timelineOpen) screen._railTerminus(),
               for (final node in nodes)
                 screen._railRow(context, ref, view, node, dayWorkouts, picking),
             ],
