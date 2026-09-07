@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: Session Intensity, Energy Cost & Carb Demand
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration1_spec` (Formulas 3, 4, 5) and `daily_macro_calc_iteration4_spec`
 (Formula 19). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/session.ts` (name match only — not yet diffed).
@@ -75,7 +75,27 @@ of relative intensity; strength scales linearly.
 
 ## Formula 5 — `carbDemand` → grams
 
-Three steps.
+**Strength branch — RULED (Xuan, 2026-08-13, Q-003):** strength sessions do **not** use the
+intensity ladder. They use a flat, intensity-independent rate:
+
+```
+if sport == STRENGTH:
+    return 27 × duration_hr × (weight_kg / 75)     # IF ignored; no ×1.15 multiplier
+```
+
+The literature basis, in brief: resistance-exercise glycogen depletion tracks **duration and set
+count, not load** (Robergs 1991 — identical depletion at 35 % and 70 % 1RM for equal work;
+Hamidvand 2025 meta-analysis, 20 studies — depletion scales with minutes and sets and *falls* with
+%1RM), so an intensity multiplier has the wrong shape. Whole-body glycogen cost of a moderate-hard
+RT hour is ~25–45 g (Hamidvand 2025 converted to grams; MacDougall 1999), and 27 g/hr sits inside
+that band. IF itself is an endurance construct (NP/FTP) with no gym meaning — TrainingPeaks scores
+strength as a flat per-hour stress. **Tagging:** the *structure* (reduced flat rate, intensity-
+independent) is research-derived, confidence B−; the *number* 27 is a Mealvana design choice
+(defensible range 15–40 g/hr; no source publishes a per-hour RT figure), confidence C. This ruling
+vindicates the Iteration 4 test row (27 + 69 = 96) and makes Iteration 1's full-day strength carb
+(300 + 40 = 340) the stale cell — corrected in `assembly.md`.
+
+**Endurance sports (RUNNING, CYCLING, SWIMMING)** — three steps.
 
 **Step 1 — oxidation rate by intensity.** Piecewise-linear interpolation through anchor points,
 expressed as g/hr for a **75 kg reference athlete**:
@@ -158,26 +178,31 @@ for s in sorted:
   elif s.duration_hr > 1.0:   max_prot_bump = max(max_prot_bump, 0.2 × weight_kg)
 
 total_carb = min(total_carb, 12.0 × weight_kg)           # local cap, see note
-return { session_carb: round(total_carb), prot_bump: round(max_prot_bump) }
+return { session_carb: total_carb, prot_bump: max_prot_bump }    # UNROUNDED — see below
 ```
 
 **Notes on this formula as written:**
 - It applies the `12.0 × weight_kg` ceiling to the **session contribution alone**, before the
   baseline is added — while the assembly applies the same ceiling again to the total. The local cap
   is therefore redundant except in pathological cases. Recorded as-is.
-- It **rounds** its two return values, unlike the single-session path which carries unrounded
-  values forward. This contradicts [R1](README.md#cross-cutting-rules) — see
-  [Q-002](OPEN-QUESTIONS.md#q-002).
+- **RULED (Xuan, 2026-08-13, Q-002):** the source's `round()` on both return values is **removed**.
+  Formula 19 returns unrounded, like the single-session path; rounding happens once, at assembly
+  step 12, consistent with [R1](README.md#cross-cutting-rules). The table below shows the unrounded
+  sums; the integers previously published (169, 222) are what step 12 produces from them — the
+  ruling changes no end-of-pipeline number in these rows, only where the rounding happens. (It can
+  shift a published multi-session expectation by ~1 g where a mid-pipeline round previously
+  swallowed a fraction, e.g. `prot_bump = 22.5` now survives to the total.)
 
 | Sessions (time order, 75 kg) | Compounding | session carb | prot bump |
 |---|---|---|---|
 | bike 2 hr IF 0.80, run 0.75 hr IF 0.78 | ×1.0, ×1.1 | 126.5 + 42.9 = **169** | 15 |
 | swim 0.5 hr IF 0.70, bike 2 hr IF 0.80, run 1 hr IF 0.78 | ×1.0, ×1.1, ×1.21 | 20 + 139.2 + 62.9 = **222** | 15 |
-| strength 1 hr IF 0.70, run 1.5 hr IF 0.74 | ×1.0 (no compound), ×1.0 (1st endurance) | see [Q-003](OPEN-QUESTIONS.md#q-003) | 22.5 |
+| strength 1 hr IF 0.70, run 1.5 hr IF 0.74 | ×1.0 (no compound), ×1.0 (1st endurance) | 27 + 69 = **96** (strength flat rate — Q-003 RULED) | 22.5 |
 | single: run 1.5 hr IF 0.74 | n/a | **69** | 15 |
 
-The strength + run row is the one case where the source test table and the formula disagree; it is
-registered as [Q-003](OPEN-QUESTIONS.md#q-003) rather than resolved here.
+The strength + run row previously disagreed with the source test table (formula said 40 + 69 = 109;
+the table said 96). **RULED** — the table was right and encoded an unwritten rule: strength uses the
+flat 27 g/hr rate above. [Q-003](OPEN-QUESTIONS.md#q-003).
 
 ## Constants — provenance
 
@@ -193,3 +218,4 @@ registered as [Q-003](OPEN-QUESTIONS.md#q-003) rather than resolved here.
 | long/intense multiplier | ×1.15 | **Uncited** |
 | multiplier triggers | dur > 1.5 hr, IF > 0.85 | **Uncited** |
 | compounding factor | 1.1 per endurance position | **Uncited** |
+| strength flat carb rate | 27 g/hr @ 75 kg, IF-independent | **Structure research-derived** (Robergs 1991 PMID 2055849; Hamidvand 2025 PMC12717450; TrainingPeaks flat strength TSS); **number is a design choice** inside the 15–40 g/hr defensible band. Ruled Q-003, 2026-08-13 |

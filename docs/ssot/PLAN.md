@@ -31,12 +31,6 @@ The pilot loop, repeated per slice. **Per slice:**
 - **Fueling engine A** (pure `OfflineMacroCalculator`, per-workout): pre / during / post ×
   carbs · protein · fat · sodium · hydration. During-carbs alone (duration bands × gut
   multipliers × sport ceilings) will yield 20–40 vectors.
-  **Pre-workout: steps 2–3 DONE 2026-08-03** — carbs v2, hydration v6 and sodium v3 all RATIFIED
-  (`spec/fueling/pre-workout-{carbs,hydration,sodium}.md`, reasoning in `pre-workout.notes.md`).
-  Step 4 (vector) is the next action; all v1 vectors are obsolete because the output shape changed.
-  Everything deferred or still owed is indexed in
-  **`spec/fueling/pre-workout.OPEN-QUESTIONS.md`** — 18 rows, of which **PW-011 / PW-012 / PW-013
-  are app changes the vectors must assert against**, so they gate step 5, not step 4.
 - **Recommendation scaling core** (pure `FormulaMacros.carbScaleFactor` / `scaledQuantity`,
   `formula_kit/domain/formula_macros.dart`): scale a kit's components to a carb target,
   snapped to 0.5-serving steps. Exactly vectorable; already has `formula_macros_test.dart` to
@@ -44,10 +38,6 @@ The pilot loop, repeated per slice. **Per slice:**
   `_snapToFriendly`).
 - **Daily-macro engine B** (server-only `calculate-daily-macros`, no Dart mirror): vectors run
   against the edge function, not Dart. Later in the sweep (needs a callable test endpoint).
-  **Step 2 (record) DONE 2026-07-28** — `spec/daily-macros/` (9 sections, iterations 1–5 of the
-  Notion "Daily Macro Calculation" doc; iteration 6 / proration deliberately excluded). Step 3
-  (ratify) is blocked on `spec/daily-macros/OPEN-QUESTIONS.md` — 12 SSOT-internal contradictions,
-  5 of which must be ruled on before vectoring.
 
 **Dart↔server contract:** the Dart calc + scaling both *mirror* Supabase edge functions
 (`generate-macros-v4`, `personal-formula-pins`). The same vector table should run against
@@ -100,6 +90,167 @@ UUIDs, and repo-ordered food selection → **not** exact-vectorable. Cover with 
 scaled carbs ≈ target (within 0.5-serving rounding) · fluid total ≥ target · sodium ≤ 110 % of
 target · no component < 0.5 serving. Via Riverpod overrides + frozen clock, or covered
 end-to-end by the Phase-3 sim layer.
+
+## Phase 5 — The DATA SSOT (producer row shapes) — a ratification family in its own right
+
+**Queued 2026-08-22.** Every family above ratifies *math*: given these inputs, this output. No
+family ratifies **what the inputs actually look like in production** — the shapes of the rows
+the app itself writes. That hole shipped a bug: providers deliberately write
+`activities.duration_minutes = NULL` whenever a workout carries distance or pace (asserted ten
+times in `final_surge_transformer_test.dart`, with a documented expectation that consumers
+derive the minutes), four consumers each resolved it their own way, and the newest one skipped
+the derivation entirely — pricing every distance-prescribed session at a flat 60 minutes, ~47%
+low on a 15-mile run, while the macro targets on the same screen used the correct value.
+Full analysis: `ops/data/bug-reports/2026-08-22-dashboard-prices-distance-sessions-at-flat-60min.md`.
+
+Vectors are the right instrument, pointed one layer lower. Math vectors say *given inputs →
+output*; **shape vectors say: these are the row shapes production actually contains, and this
+is the resolution ladder each derived field follows.** Same artifact, same ratification gate,
+same two-runtime consumption.
+
+Proposed shape, reusing the existing conventions — no new top-level folders:
+
+- `spec/producers/*.md` — one doc per writer (final-surge, training-peaks, runna, garmin,
+  manual create). Normative statement of which fields it writes, which it deliberately leaves
+  NULL, and what it expects consumers to do about each.
+- `spec/producers/resolution-ladders.md` — for each derived quantity (duration, IF, weight,
+  pace), the ONE ordered ladder every consumer must follow. Today's divergences are the first
+  content: duration (distance×pace → default 30/60 vs bare `?? 60`), `other`→sport mapping
+  (strength@30 vs unmapped@60), zoneless IF (engine 70/20/10 = 0.7715 vs display flat 0.74 —
+  already open as `intake/2026-08-20-zoneless-if-default-engine-vs-display.md`).
+- `vectors/producers/*.json` — the ratified corpus: real provider payloads → the `Activity`
+  rows they produce → the resolved inputs each ladder yields. Ratified through the normal ⚖ gate.
+
+**Where the contract TESTS live:** in `app/`, like every other runner — this repo owns the
+contract, not the harness. Registered as a conformance slice in `bundles/<bundle>.yaml` and
+dispatched by `conformance/run_dart.sh` exactly as the fueling and design slices are; the app
+side mirrors `vectors/producers/` into `docs/ssot/vectors/` under the existing byte-check. The
+new app-side tier is a **producer→consumer contract tier**: run real payloads through the real
+transformers, feed the resulting rows to every consumer that derives or prices, assert the
+ladder. Nothing in `qa/` needs a new folder; nothing in `app/` needs a new dispatch mechanism.
+
+Blocked on: ⚖ Xuan ratifying the family (raised as `intake/2026-08-22-data-ssot-producer-shapes.md`).
+Not blocked on: the ladder-unification fix itself, which is a plain bug fix against behaviour
+the engine already implements correctly and ships ahead of ratification.
+
+## Phase 6 — The ENGINEERING SSOT (twin computations: where they live, whose answer wins)
+
+**Proposed by Xuan 2026-08-22.** A third kind of SSOT, orthogonal to the other two:
+
+| family | answers |
+|---|---|
+| math (`spec/daily-macros`, `spec/fueling`, …) | what is the correct formula? |
+| data (Phase 5, `spec/producers`) | what shapes do the inputs actually take? |
+| **engineering (this phase)** | **where does a computation live, and whose answer wins?** |
+
+**The proposed rule (Xuan's words, with two refinements):** *for functions that need a twin, the
+server side must mirror the client side's payload and preempt the client's results.* Stated as
+clauses:
+
+0. **A twin exists only by ratification** (Xuan, 2026-08-22: *"the fact there is a twin side is
+   also an engineering SSOT"*). Twinning is a permanent cost — two implementations, a parity
+   burden that never expires, and a second answer that can diverge from the first. A computation
+   is twinned only where a stated requirement demands it: offline capability, or feedback the
+   athlete must see faster than a server round-trip. The justification is recorded in the twin
+   registry alongside the pair. **Corollary:** a twin discovered in the code and not in the
+   registry is a DEVIATION to log, never a fait accompli to absorb — which is precisely what the
+   four independent duration ladders were (engine input builder, dashboard, onboarding insights,
+   plan preview) before 2026-08-22. Nobody decided to have four; they accreted, and each new one
+   was invisible to the others.
+
+1. **Shape symmetry.** A twinned endpoint's RESPONSE must not be lossier than its REQUEST. If the
+   client sends N sessions, it gets N results back, at the granularity it would otherwise compute
+   locally, keyed so each maps to its input. A server that computes a value and drops it at the
+   response boundary forces the client to recompute — which is how two answers to one question
+   start existing.
+2. **Server preempts — *while fresh*.** The server's result is authoritative and displaces the
+   local one. **Refinement:** preemption is conditional on the cached result not being
+   invalidated. A stale server answer describes inputs the athlete has since changed, so
+   "preempt" must never mean "show a stale number" — where invalidation already exists (Q-016
+   `invalidateFromDate`), an invalidated day falls back to the twin until the recalculation lands.
+3. **The twin is the fallback, and stays parity-pinned.** The client implementation does not go
+   away: it prices a just-added or offline session, must be visibly labelled an estimate, and
+   must be superseded the instant a server result arrives. **Refinement:** because it survives,
+   it stays pinned to the server implementation by parity vectors — the discipline that already
+   keeps `sessionCost` honest across TS and Dart. Deleting the twin is not the goal; demoting it
+   is.
+
+A fourth clause worth ratifying alongside: **any locally-computed figure displayed beside
+server-computed figures must be reconcilable** — a test asserts the displayed sum equals the
+server's own total. That cross-check is the tripwire the whole 2026-08-22 episode lacked; it is
+implemented for one surface already in
+`app/test/contracts/session_pricing_producer_consumer_test.dart`.
+
+### The concrete gap this family exists to close
+
+`calculate-daily-macros-v6` violates clause 1 today, and the macro dashboard therefore violates
+clauses 2 and 3:
+
+- `pipeline.ts:587` maps every `ResolvedSessionData` down to source TAGS (`kcal_source`,
+  `if_source`, `tss_source`, `duration_source`) and discards the per-session `session_kcal`,
+  `duration_hr` and `intensity_factor` it has just computed. Request carries N sessions;
+  response carries one day total plus N provenance labels.
+- `dashboard_assembler.dart:362–370` therefore sums locally-computed cards for the workout total,
+  while `targets.sessionKcal` — the engine's own answer, already cached on the device — is used
+  only for weekly carb periodization (`:464`).
+- `lib/features/macro_dashboard/` contains no connectivity check at all, so the twin is the sole
+  source online and offline alike — the opposite of the intended fallback role.
+
+Athlete-visible cost, measured on a real account 2026-08-22: a projected burn of 2,933 against a
+3,037 fuel target on the same card, ~104 kcal apart, with the engine's own 1,394 sitting unused
+on the device. Registered for post-ship verification as **`DEVIATIONS.md` D-005** — close it by
+re-observing the app, not by reading the diff.
+
+Proposed shape, reusing existing conventions:
+- `spec/engineering/twin-computations.md` — the clauses, normative.
+- `spec/engineering/twin-registry.md` — every twinned computation, its server home, its client
+  home, **why it is twinned at all** (clause 0), its parity-vector slice, and whether the
+  response is shape-symmetric today.
+- Conformance: the existing parity vectors already pin clause 3; clauses 1 and 2 are pinned by
+  contract tests in `app/` (the Phase-5 tier), dispatched as a normal slice.
+
+### Where it lives: `qa/spec/` — mirrored, not relocated
+
+Asked 2026-08-22: should this be a `qa/` spec family or an `app/` principle document? **Both, via
+the mechanism that already exists** — authored and ratified in `qa/spec/engineering/`, mirrored
+verbatim into `app/docs/ssot/spec/engineering/` under the same byte-check
+(`conformance/run_dart.sh` `require_mirror`) that already carries the nutrition specs across.
+No new mechanism, no second copy to drift.
+
+Why authorship must sit in `qa/`, not `app/`:
+- **Ratification only exists here.** The ⚖ gate, the intake loop, `DEVIATIONS.md`, versioned
+  bundles — an "SSOT" outside that machinery is just a document, and documents lose to code.
+- **"Implementation is not authorization" needs an author who isn't the implementer.** A rule
+  about how app code must behave, authored in the app repo by the people writing that code, is
+  the exact conflict of interest the two-repo split exists to remove. D-005 exists *because* an
+  engineer made a reasonable local decision that contradicted unstated intent.
+- **The verification target already lives here** (`DEVIATIONS.md` D-005). Rule and tripwire
+  belong in one repo.
+- **Bundles are the only versioning/gating channel** into `app/`. A rule in `app/docs/` cannot be
+  tagged `@vN`, cannot appear in a handoff, and cannot gate a land.
+
+Why it must nonetheless be *readable* in `app/`: it is consumed at coding time, next to
+`docs/technical/foa-architecture.md` and `write-consistency-policy.md`. The mirror gives that for
+free, and `app/CLAUDE.md` gets a one-line pointer under its docs map — a pointer, never a
+restatement (CLAUDE.md's own standing rule).
+
+**The test for which side a future rule falls on:** does it change what an athlete sees, or
+whether the product tells the truth? → `qa/spec/`, ratifiable. Is it purely internal craft —
+naming, folder layout, FOA layering, state-management choice — with no athlete-visible
+consequence? → `app/docs/technical/`, no ratification needed. Twin precedence is emphatically the
+first kind: it decided 2,933 vs 3,037 on a real athlete's screen.
+
+Honest note on precedent: `app/docs/technical/write-consistency-policy.md` (offline-first vs
+remote-ack) is the same genre and lives on the app side today. It sits on the line — a
+coach-on-athlete write not appearing IS athlete-visible — so if this family is ratified, whether
+that policy should migrate or be referenced is worth ruling at the same time rather than leaving
+two homes for one kind of rule.
+
+Blocked on: ⚖ Xuan ratifying the family (raised as
+`intake/2026-08-22-engineering-ssot-twin-computations.md`). Note this phase requires an EDGE
+FUNCTION change and therefore a deploy — unlike Phase 5's fix, it cannot ride a client-only
+hotfix. The response change is purely additive, so old clients are unaffected and no coordinated
+release is required.
 
 ---
 

@@ -1,0 +1,43 @@
+# Design conformance manifest — the brick TRANSITION card + explanation drawer.
+# Written at implementation per spec §Conformance (transition-card.md v1,
+# RATIFIED Xuan 2026-09-01). The app-side suite asserts the TC lines the spec
+# names; golden screenshots hold the rest (layout, hues) and none exist yet —
+# the card ships unblessed pending a goldens pass (the component predates the
+# kyle_design library; promotion follows source-authority.md §3).
+#
+# RULE: assertions may only change AFTER the design spec changes — never to
+# make a red test pass. Regeneration commits cite the spec change.
+
+manifest: transition-card
+version: v1
+status: ratified                 # transition-card.md v1 (Xuan, 2026-09-01)
+spec_family: spec/design/
+spec: spec/design/components/transition-card.md
+
+# App-side suite run_dart.sh executes for this manifest.
+suite: test/features/nutrition_plan/transition_card_conformance_test.dart
+
+contracts:
+  - id: TC-1
+    check: positional title on a bike→run brick (the D-008 order) — "TRANSITION 1",
+      subtitle "Quick refuel between segments"; never sport-pair
+  - id: TC-2
+    check: stat trio CARBS · FLUIDS · SODIUM; carbs delivered/target over the
+      [0,30] band rail; fluids + sodium plain tallies (no /target half);
+      PROTEIN absent
+  - id: TC-4
+    check: drawer carb formula equals the ratified T-1 math for a known input
+      (52.5 g/h × 33 min ÷ 60 → clamp → 29 g); fluid + sodium sections are
+      delivered-only with no formula implying a target (T-5)
+  - id: TC-5
+    check: copy sport-pair-aware or neutral — no swim/wetsuit references on a
+      non-swim brick (F-D); the quick-carbs cue agrees with a nonzero target
+      and a 0 g dose gets honest copy (F-C)
+
+not_covered:
+  - TC-3 (feeding rows) — the standard feeding-row component, asserted by its
+    own family; C4 selection constraints are catalog-conventions' conformance
+  - TC-6 / Q-TC1 — the Adjust-Your-Macros aggregate is deliberately untouched
+    this bundle (open ruling)
+  - goldens — no transition-card goldens exist; first bless requires a
+    ratified rendering pass, tracked outside this manifest

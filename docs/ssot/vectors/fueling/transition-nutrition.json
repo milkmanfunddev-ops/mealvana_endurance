@@ -1,0 +1,266 @@
+{
+  "section": "transition-nutrition",
+  "engine": null,
+  "specVersion": "v1 (2026-09-01, ratified)",
+  "note": "Pins RATIFIED v1 (T-1..T-5 + constants; Xuan 2026-09-01). EXPECTED-RED: no engine implements this spec -- today generate-macros-v4/brick-workout.ts computes transition carbs as weight x 0.3/0.35 g/kg above a 180-min cliff (unratified characterization, retired by this spec); defining the published entry point (Dart mirror + edge) is part of the brick-transition bundle. engine=null until that entry point exists, like food-composition v3. BUNDLE: brick-transition (manifest at ship-bundle). Rate inputs inherit the during-workout-carbs slice (status 'recorded' there -- its own one boundary question is open and does not affect these bands). ORACLE CONVENTIONS the spec does not state: (1) rounding is half-away-from-zero; no emitted vector sits on a .5 so the convention is unchallenged by this file; (2) settle(swim)=0 -- the rate is 0 into a swim so the gap never matters; (3) a zero-intake PREVIOUS leg contributes its full duration INSTEAD OF the 15-min pre-buffer (W3's own arithmetic: 35+3+10, not 15+35+3+10). doseG is an integer by T-4 (whole grams); toleranceG kept for harness uniformity. bandLowG/bandHighG assert T-1's [0,30] on every transition. NOT COVERED (see coverage note): a raw dose landing exactly on 30 (no clean integer inputs produce it); run-ceiling effects below the clamp (mathematically unobservable in doseG: any next-run rate >70 requires mid>70, and 70 g/h over the minimum 30-min run gap already exceeds the clamp); sodium/fluid (T-5: tallies, no target -- nothing to assert numerically; the DESIGN contract TC-2/TC-4 owns their rendering).",
+  "toleranceG": 0.001,
+  "vectors": [
+    {
+      "id": "w1-clamp-bike60-run45-tmin5",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "cycling",
+            "durationMin": 60
+          },
+          {
+            "sport": "running",
+            "durationMin": 45
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate",
+        "transitionMin": 5
+      },
+      "expected": {
+        "doseG": 30,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "W1. cum through run=105 -> band 45-60 mid 52.5, run ceil 70 -> 52.5 g/h; gap 15+5+15=35; raw 52.5*35/60=30.625 -> 31 -> clamp 30"
+    },
+    {
+      "id": "w2-pass-run20-bike20-tmin2",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "running",
+            "durationMin": 20
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 20
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 7,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "W2. cum=40 -> band 0-30 mid 15, bike ceil 120 -> 15; gap 15+2+10=27; raw 6.75 -> 7, inside [0,30]"
+    },
+    {
+      "id": "w3-swim-extends-gap-tmin3",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "swimming",
+            "durationMin": 35
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 180
+          },
+          {
+            "sport": "running",
+            "durationMin": 110
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate",
+        "transitionMin": 3
+      },
+      "expected": {
+        "doseG": 30,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "W3. T-3: swim (zero-intake) contributes its full 35 min instead of the 15-min pre-buffer. cum through bike=215 -> band 60-90 mid 75, ceil 120 -> 75; gap 35+3+10=48; raw 60 -> clamp 30"
+    },
+    {
+      "id": "w4-into-swim-zero",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "cycling",
+            "durationMin": 60
+          },
+          {
+            "sport": "swimming",
+            "durationMin": 30
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 0,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "W4. next sport swim: ratified ceiling 0 -> rate 0 -> dose 0. 0 is a legitimate band endpoint, not an error"
+    },
+    {
+      "id": "default-tmin-3-run20-bike20",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "running",
+            "durationMin": 20
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 20
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate"
+      },
+      "expected": {
+        "doseG": 7,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "transitionMin absent -> default 3 (constants table). gap 15+3+10=28; 15*28/60=7.0 -> 7"
+    },
+    {
+      "id": "boundary-cum-90-run45-bike45-tmin2",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "running",
+            "durationMin": 45
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 45
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 24,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "cum through bike = 90 exactly -> 90-<150 band 45-60 (inclusive low), mid 52.5, ceil 120; gap 27; raw 23.625 -> 24"
+    },
+    {
+      "id": "boundary-cum-89-run45-bike44-tmin2",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "running",
+            "durationMin": 45
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 44
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "moderate",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 20,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "cum 89 -> 60-<90 band 30-60 (strict < at 90), mid 45; gap 27; raw 20.25 -> 20. Pair with cum-90: pins the boundary side"
+    },
+    {
+      "id": "gut-high-run20-bike20-tmin2",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "running",
+            "durationMin": 20
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 20
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "high",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 8,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "gut 1.2x scales the band [0,36] -> mid 18 (during slice's multiplier inherited via T-2); gap 27; raw 8.1 -> 8"
+    },
+    {
+      "id": "gut-low-run20-bike20-tmin2",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "running",
+            "durationMin": 20
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 20
+          }
+        ],
+        "transitionIndex": 0,
+        "gutTolerance": "low",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 5,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "gut 0.7x -> band [0,21] mid 10.5; gap 27; raw 4.725 -> 5"
+    },
+    {
+      "id": "t2-triathlon-clamps-tmin2",
+      "status": "ratified",
+      "inputs": {
+        "segments": [
+          {
+            "sport": "swimming",
+            "durationMin": 35
+          },
+          {
+            "sport": "cycling",
+            "durationMin": 180
+          },
+          {
+            "sport": "running",
+            "durationMin": 110
+          }
+        ],
+        "transitionIndex": 1,
+        "gutTolerance": "moderate",
+        "transitionMin": 2
+      },
+      "expected": {
+        "doseG": 30,
+        "bandLowG": 0,
+        "bandHighG": 30
+      },
+      "why": "T2 of the W3 event: next=run, cum=325 -> band 80-100 mid 90, RUN CEIL 70 binds -> 70; gap 15+2+15=32; raw 37.33 -> 37 -> clamp 30"
+    }
+  ]
+}

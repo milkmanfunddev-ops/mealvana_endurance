@@ -23,6 +23,14 @@ flutter analyze
 ```
 Count errors / warnings / infos. Errors are always Critical.
 
+### 3b. Design-library tripwire
+```bash
+scripts/design-library-check.sh --warn
+```
+Enforces the CLAUDE.md principle (design-bearing components live in `kyle_design/` and cite
+their spec; one token registry; no raw colors outside `lib/theme/`). Any *new* violation in the
+changed files is Critical; pre-existing ones are reported as Warnings until the sweep clears them.
+
 ### 4. Targeted tests (auto-run — don't ask)
 Map changed paths to tests and run them:
 - `lib/features/<x>/...` → `test/**/<x>*` and `test/features/<x>/` if present

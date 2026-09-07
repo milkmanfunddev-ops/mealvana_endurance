@@ -88,6 +88,23 @@ class TemplateFoodsTable extends Table {
       integer().withDefault(const Constant(4)).named('max_servings_during')();
   IntColumn get maxServingsAfter =>
       integer().withDefault(const Constant(4)).named('max_servings_after')();
+
+  /// Smallest offerable during-phase serving (mirrors Supabase; §4.2 one-cap
+  /// ruling, food-recommendation@v1 twin port — the Dart solver must honour
+  /// the same candidate floor the server does).
+  RealColumn get minServingsDuring =>
+      real().withDefault(const Constant(1.0)).named('min_servings_during')();
+
+  /// Whole-unit semantics (catalog-conventions C3). Previously approximated
+  /// client-side by a product-type heuristic; the column is authoritative.
+  BoolColumn get isIndivisible =>
+      boolean().withDefault(const Constant(false)).named('is_indivisible')();
+
+  /// Catalog-conventions v1.1 (food-recommendation §6(e)): label-derived
+  /// minimum solvent water per serving for concentrated products. NULL =
+  /// undeclared → consumers fall back to the flat 250 ml pairing default,
+  /// never to 0.
+  RealColumn get solventMinMl => real().nullable().named('solvent_min_ml')();
   BoolColumn get toExcludeFromSolver => boolean()
       .withDefault(const Constant(false))
       .named('to_exclude_from_solver')();

@@ -1,0 +1,446 @@
+{
+  "section": "brick-eligibility",
+  "engine": null,
+  "specVersion": "v1 (2026-08-31, ratified)",
+  "note": "Pins spec/domain/brick.md RATIFIED v1 (Xuan 2026-08-31) \u2014 the FIRST domain-family slice; file lives at vectors/domain/, not vectors/fueling/. engine=null: brick_eligibility.dart is app-internal, not a published interface; defining the published predicate (and its seam) is part of the brick-transition bundle. EXPECTED-RED on two vectors by ruling: r5-* (skipped legs are linkable in code today \u2014 D-007). BUNDLE: brick-transition. Gate identities are part of the contract (min-legs / max-legs / ineligible-leg): a rejection for the wrong reason is a failure. ORACLE CONVENTIONS: candidateIds preserve day order; create-time validation order is subset-check then count (no spec order given; no emitted case fails two gates at once so order is unchallenged). NOT COVERED: R7 delete-brick=ungroup (stateful behaviour \u2014 app-side widget/integration test, not a pure-predicate vector); R8 positional transition identity (a cross-function SEAM, covered by the bundle's producer-shaped seam test per qa 8b12b9d, not assertable in one engine); past/future-day legs (input shape carries no date \u2014 Q-BR1); direct brick extension (Q-BR2). One characterization tripwire pins the open Q-BR1 done/verified case.",
+  "vectors": [
+    {
+      "id": "r2-two-runs-offered",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "r1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "r2",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": true,
+        "candidateIds": [
+          "r1",
+          "r2"
+        ]
+      },
+      "why": "R1+R2: 2 eligible on the day, same sport legal; no distinct-sport condition survives R2"
+    },
+    {
+      "id": "r1-ineligible-between-does-not-block",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "w1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "w2",
+            "sport": "strength",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "w3",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": true,
+        "candidateIds": [
+          "w1",
+          "w3"
+        ]
+      },
+      "why": "R1: adjacency withdrawn \u2014 strength between run and bike changes nothing; candidates are the two eligible"
+    },
+    {
+      "id": "single-eligible-not-offered",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "w1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "w2",
+            "sport": "strength",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": false,
+        "candidateIds": [
+          "w1"
+        ]
+      },
+      "why": "R1: threshold is 2+ eligible; strength is never a leg (R3)"
+    },
+    {
+      "id": "r5-skipped-partner-blocks-offer",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "w1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "w2",
+            "sport": "bike",
+            "status": "skipped",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": false,
+        "candidateIds": [
+          "w1"
+        ]
+      },
+      "why": "R5 (ruled AGAINST current code, D-007): a skipped workout is not eligible, leaving 1 \u2014 no offer"
+    },
+    {
+      "id": "r5-skipped-excluded-from-candidates",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "w1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "w2",
+            "sport": "bike",
+            "status": "skipped",
+            "isBrick": false
+          },
+          {
+            "id": "w3",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": true,
+        "candidateIds": [
+          "w1",
+          "w3"
+        ]
+      },
+      "why": "R5: offer stands via w1+w3; the skipped w2 must be absent from candidateIds"
+    },
+    {
+      "id": "r3-existing-brick-not-a-leg",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "b1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": true
+          },
+          {
+            "id": "w1",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": false,
+        "candidateIds": [
+          "w1"
+        ]
+      },
+      "why": "R3: a brick row is not eligible; only w1 remains \u2014 no offer (direct extension is Q-BR2, open)"
+    },
+    {
+      "id": "r3-no-eligible-sports",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "w1",
+            "sport": "strength",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "w2",
+            "sport": "other",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": false,
+        "candidateIds": []
+      },
+      "why": "R3: sport set is swim|bike|run only \u2014 empty candidates"
+    },
+    {
+      "id": "r4-create-two-ok",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "a",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "b",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ],
+        "pickedLegIds": [
+          "a",
+          "b"
+        ]
+      },
+      "expected": {
+        "createAllowed": true,
+        "gate": null,
+        "legOrder": [
+          "a",
+          "b"
+        ]
+      },
+      "why": "R4 min met; R6 legOrder = pick order"
+    },
+    {
+      "id": "r6-pick-order-not-timeline",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "a",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "b",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ],
+        "pickedLegIds": [
+          "b",
+          "a"
+        ]
+      },
+      "expected": {
+        "createAllowed": true,
+        "gate": null,
+        "legOrder": [
+          "b",
+          "a"
+        ]
+      },
+      "why": "R6: athlete picked bike first \u2014 legOrder [b,a] even though timeline is [a,b]"
+    },
+    {
+      "id": "r2-create-same-sport-ok",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "a",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "b",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          }
+        ],
+        "pickedLegIds": [
+          "a",
+          "b"
+        ]
+      },
+      "expected": {
+        "createAllowed": true,
+        "gate": null,
+        "legOrder": [
+          "a",
+          "b"
+        ]
+      },
+      "why": "R2: duplicate sports legal at create (Lee's field ruling, ratified)"
+    },
+    {
+      "id": "r4-create-four-rejected",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "a",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "b",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "c",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "d",
+            "sport": "swim",
+            "status": "planned",
+            "isBrick": false
+          }
+        ],
+        "pickedLegIds": [
+          "a",
+          "b",
+          "c",
+          "d"
+        ]
+      },
+      "expected": {
+        "createAllowed": false,
+        "gate": "max-legs",
+        "legOrder": null
+      },
+      "why": "R4: max 3 \u2014 gate identity must be max-legs, not a generic failure"
+    },
+    {
+      "id": "r4-create-one-rejected",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "a",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "b",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ],
+        "pickedLegIds": [
+          "a"
+        ]
+      },
+      "expected": {
+        "createAllowed": false,
+        "gate": "min-legs",
+        "legOrder": null
+      },
+      "why": "R4: min 2 \u2014 gate min-legs"
+    },
+    {
+      "id": "r5-create-with-skipped-rejected",
+      "status": "ratified",
+      "inputs": {
+        "day": [
+          {
+            "id": "a",
+            "sport": "run",
+            "status": "planned",
+            "isBrick": false
+          },
+          {
+            "id": "b",
+            "sport": "bike",
+            "status": "skipped",
+            "isBrick": false
+          },
+          {
+            "id": "c",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ],
+        "pickedLegIds": [
+          "a",
+          "b"
+        ]
+      },
+      "expected": {
+        "createAllowed": false,
+        "gate": "ineligible-leg",
+        "legOrder": null
+      },
+      "why": "R5 at create time: picking the skipped b fails as ineligible-leg (EXPECTED-RED: code accepts silently, D-007)"
+    },
+    {
+      "id": "qbr1-done-verified-linkable-TRIPWIRE",
+      "status": "characterization",
+      "inputs": {
+        "day": [
+          {
+            "id": "w1",
+            "sport": "run",
+            "status": "done_verified",
+            "isBrick": false
+          },
+          {
+            "id": "w2",
+            "sport": "bike",
+            "status": "planned",
+            "isBrick": false
+          }
+        ]
+      },
+      "expected": {
+        "offered": true,
+        "candidateIds": [
+          "w1",
+          "w2"
+        ]
+      },
+      "why": "Q-BR1 OPEN: spec rules nothing for done/verified legs; current behaviour (linkable) pinned as a tripwire, never truth. Flips or ratifies at the Q-BR1 ruling"
+    }
+  ]
+}

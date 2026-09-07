@@ -1,0 +1,538 @@
+{
+  "section": "food-recommendation",
+  "engine": null,
+  "specVersion": "RATIFIED (Xuan, 2026-09-03)",
+  "note": "EXPECTED-RED: no runner exists yet \u2014 the engine symbol is null (the contract spans generate-macros-v4 + generate-nutrition-plan-v3 + the Dart twins); the bundle builds the harness (P10 pattern). Today the code implements: the retired synthetic 4-cap, free sub-ceiling overshoot, recommendedHoursBefore instead of the \u00a73a table, no clamp, no solvent column, no conflict label. Conventions assumed (named per \u00a76 of the skill): pinned-servings snap-to-0.5 (W1); \u00a73a session classes as discrete inputs (the harness derives class from duration/intensity); early-start boundary strictly < 07:00; clamp floor 15 min. Twin rule \u00a78: every vector runs on BOTH engines and results must be equal (the differential is part of the harness, not separate vectors). Bundle: food-recommendation.",
+  "toleranceG": 0.001,
+  "vectors": [
+    {
+      "id": "window-table-race",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "race",
+        "start_hour": 9,
+        "race": true,
+        "minutes_until_start": 1440
+      },
+      "expected": {
+        "default_window_min": 180,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a table: race \u2192 180min; no early-start (start 9:00 \u2265 07), no clamp bind; phases per meal\u2265120/snack\u226530"
+    },
+    {
+      "id": "window-table-longge2.5h",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "long>=2.5h",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 1440
+      },
+      "expected": {
+        "default_window_min": 180,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a table: long>=2.5h \u2192 180min; no early-start (start 9:00 \u2265 07), no clamp bind; phases per meal\u2265120/snack\u226530"
+    },
+    {
+      "id": "window-table-mid1.5-2.5h",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "mid1.5-2.5h",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 1440
+      },
+      "expected": {
+        "default_window_min": 150,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a table: mid1.5-2.5h \u2192 150min; no early-start (start 9:00 \u2265 07), no clamp bind; phases per meal\u2265120/snack\u226530"
+    },
+    {
+      "id": "window-table-60-90-moderate",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "60-90-moderate",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 1440
+      },
+      "expected": {
+        "default_window_min": 120,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a table: 60-90-moderate \u2192 120min; no early-start (start 9:00 \u2265 07), no clamp bind; phases per meal\u2265120/snack\u226530"
+    },
+    {
+      "id": "window-table-60-90-easy",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "60-90-easy",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 1440
+      },
+      "expected": {
+        "default_window_min": 60,
+        "active_phases": [
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a table: 60-90-easy \u2192 60min; no early-start (start 9:00 \u2265 07), no clamp bind; phases per meal\u2265120/snack\u226530"
+    },
+    {
+      "id": "window-table-lt60",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "<60",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 1440
+      },
+      "expected": {
+        "default_window_min": 45,
+        "active_phases": [
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a table: <60 \u2192 45min; no early-start (start 9:00 \u2265 07), no clamp bind; phases per meal\u2265120/snack\u226530"
+    },
+    {
+      "id": "early-start-0600-training",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "60-90-moderate",
+        "start_hour": 6,
+        "race": false,
+        "minutes_until_start": 600
+      },
+      "expected": {
+        "default_window_min": 60,
+        "active_phases": [
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a early-start: training start<07:00 \u2192 min(120,60)=60; 60<120 no meal, \u226530 snack (W3)"
+    },
+    {
+      "id": "early-start-boundary-0700",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "60-90-moderate",
+        "start_hour": 7,
+        "race": false,
+        "minutes_until_start": 600
+      },
+      "expected": {
+        "default_window_min": 120,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a early-start applies strictly BEFORE 07:00; at 07:00 the table default 120 stands (boundary)"
+    },
+    {
+      "id": "early-start-race-exempt-0500",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "race",
+        "start_hour": 5,
+        "race": true,
+        "minutes_until_start": 600
+      },
+      "expected": {
+        "default_window_min": 180,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a: races keep table default regardless of start time \u2014 5 a.m. race keeps 180 (W2 family)"
+    },
+    {
+      "id": "clamp-45min-out",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "60-90-moderate",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 45
+      },
+      "expected": {
+        "default_window_min": 45,
+        "active_phases": [
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73 clamp: window=min(120,45)=45; 45\u226530 \u2192 snack active (W4 as corrected 2026-09-03)"
+    },
+    {
+      "id": "clamp-boundary-120",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "race",
+        "start_hour": 9,
+        "race": true,
+        "minutes_until_start": 120
+      },
+      "expected": {
+        "default_window_min": 120,
+        "active_phases": [
+          "meal",
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73 clamp inclusive bound: exactly 120 min remaining keeps the meal tier (\u2265120)"
+    },
+    {
+      "id": "clamp-boundary-119",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "race",
+        "start_hour": 9,
+        "race": true,
+        "minutes_until_start": 119
+      },
+      "expected": {
+        "default_window_min": 119,
+        "active_phases": [
+          "snack",
+          "top_up"
+        ]
+      },
+      "why": "\u00a73: 119<120 \u2192 meal tier not offered \u2014 never scheduled in the past"
+    },
+    {
+      "id": "clamp-boundary-29",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "<60",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 29
+      },
+      "expected": {
+        "default_window_min": 29,
+        "active_phases": [
+          "top_up"
+        ]
+      },
+      "why": "\u00a73: 29<30 \u2192 top_up only (snack threshold is \u226530)"
+    },
+    {
+      "id": "clamp-floor-15",
+      "status": "ratified",
+      "inputs": {
+        "session_class": "<60",
+        "start_hour": 9,
+        "race": false,
+        "minutes_until_start": 5
+      },
+      "expected": {
+        "default_window_min": 15,
+        "active_phases": [
+          "top_up"
+        ]
+      },
+      "why": "\u00a73a early-start note: clamp floor 15 min (\"time available, floor 15 min\" row)"
+    },
+    {
+      "id": "electrolyte-carryable-comparable-fit",
+      "status": "ratified",
+      "inputs": {
+        "pool": [
+          {
+            "name": "electrolyte_capsule",
+            "sodium_mg": 190,
+            "max_servings": 8,
+            "carryable": true
+          },
+          {
+            "name": "pickle_juice_shot",
+            "sodium_mg": 940,
+            "max_servings": 3,
+            "carryable": false
+          }
+        ],
+        "current_sodium_mg": 0,
+        "sodium_target_mg": 900,
+        "sodium_upper_mg": 990
+      },
+      "expected": {
+        "pick": "electrolyte_capsule",
+        "servings": 5,
+        "delivered_mg": 950
+      },
+      "why": "\u00a74.1+\u00a74.3 (W5): capsule\u00d75 dist 50, pickle dist 40; |50-40|=10 \u2264 0.10\u00d7900=90 \u2192 comparable \u2192 carryable wins"
+    },
+    {
+      "id": "electrolyte-closeness-outside-tolerance",
+      "status": "ratified",
+      "inputs": {
+        "pool": [
+          {
+            "name": "electrolyte_capsule",
+            "sodium_mg": 190,
+            "max_servings": 2,
+            "carryable": true
+          },
+          {
+            "name": "pickle_juice_shot",
+            "sodium_mg": 940,
+            "max_servings": 3,
+            "carryable": false
+          }
+        ],
+        "current_sodium_mg": 0,
+        "sodium_target_mg": 900,
+        "sodium_upper_mg": 990
+      },
+      "expected": {
+        "pick": "pickle_juice_shot",
+        "servings": 1,
+        "delivered_mg": 940
+      },
+      "why": "\u00a74.3 other side: capsule capped \u00d72=380 (dist 520) vs pickle 940 (dist 40); |520-40|=480 > 90 \u2192 closeness wins"
+    },
+    {
+      "id": "electrolyte-catalog-cap-not-4",
+      "status": "ratified",
+      "inputs": {
+        "pool": [
+          {
+            "name": "electrolyte_capsule",
+            "sodium_mg": 190,
+            "max_servings": 8,
+            "carryable": true
+          }
+        ],
+        "current_sodium_mg": 0,
+        "sodium_target_mg": 1500,
+        "sodium_upper_mg": 1650
+      },
+      "expected": {
+        "pick": "electrolyte_capsule",
+        "servings": 8,
+        "delivered_mg": 1520
+      },
+      "why": "\u00a74.2: cap = catalog max_servings_during (8), NOT the retired synthetic 4 \u2014 \u00d78 reaches 1520 (F-22 fix pinned)"
+    },
+    {
+      "id": "electrolyte-symmetric-overshoot",
+      "status": "ratified",
+      "inputs": {
+        "pool": [
+          {
+            "name": "big_stick",
+            "sodium_mg": 1000,
+            "max_servings": 4,
+            "carryable": false
+          },
+          {
+            "name": "electrolyte_capsule",
+            "sodium_mg": 190,
+            "max_servings": 8,
+            "carryable": true
+          }
+        ],
+        "current_sodium_mg": 0,
+        "sodium_target_mg": 760,
+        "sodium_upper_mg": 1100
+      },
+      "expected": {
+        "pick": "electrolyte_capsule",
+        "servings": 4,
+        "delivered_mg": 760
+      },
+      "why": "\u00a74.1: symmetric \u2014 stick 1000 overshoots by 240 (dist 240), capsules\u00d74 exact (dist 0); not comparable (240>76) \u2192 capsules. Retired arithmetic gave the stick sub-ceiling overshoot free"
+    },
+    {
+      "id": "backfill-essential-capsule-not-salt",
+      "status": "ratified",
+      "inputs": {
+        "deficit_mg": 300,
+        "essentials": [
+          {
+            "name": "salt",
+            "sodium_mg": 390,
+            "carryable": true,
+            "form": "packet"
+          },
+          {
+            "name": "electrolyte_capsule",
+            "sodium_mg": 190,
+            "carryable": true,
+            "form": "capsule"
+          }
+        ]
+      },
+      "expected": {
+        "pick": "electrolyte_capsule",
+        "servings": 2,
+        "delivered_mg": 380
+      },
+      "why": "\u00a74.5 (W6): backfill sodium essential prefers capsule/tablet; salt packet last resort"
+    },
+    {
+      "id": "meal-single-item-scale-cap",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "candidate": {
+          "name": "banana",
+          "carbs_g": 27,
+          "components": 1
+        },
+        "carb_target_g": 81
+      },
+      "expected": {
+        "allowed": false,
+        "reason": "single_item_scale_exceeds_2x"
+      },
+      "why": "\u00a76a: 81/27=3.0\u00d7 > 2\u00d7 \u2014 a single food may not be scaled past 2\u00d7 to fake a meal (Banana-\u00d73 case, W8)"
+    },
+    {
+      "id": "meal-composition-minimum",
+      "status": "ratified",
+      "inputs": {
+        "tier": "meal",
+        "candidate": {
+          "name": "oatmeal",
+          "components": 1,
+          "single_food_sufficient": false
+        }
+      },
+      "expected": {
+        "allowed": false,
+        "reason": "meal_requires_2_components"
+      },
+      "why": "\u00a76a: meal-tier feeding needs \u22652 components unless flagged single-food-sufficient"
+    },
+    {
+      "id": "solvent-session-total",
+      "status": "ratified",
+      "inputs": {
+        "scheduled": [
+          {
+            "name": "high_carb_drink_mix",
+            "servings": 2,
+            "solvent_min_ml": 600
+          }
+        ],
+        "plain_water_ml": 1000
+      },
+      "expected": {
+        "satisfied": false,
+        "required_water_ml": 1200
+      },
+      "why": "\u00a76e (W7): session plain water 1000 < \u03a3 solvent minima 2\u00d7600=1200 \u2192 constraint unsatisfied; solvent water counts toward hydration (no extra demand)"
+    },
+    {
+      "id": "solvent-pins-exempt",
+      "status": "ratified",
+      "inputs": {
+        "path": "personal_formula_pin",
+        "scheduled": [
+          {
+            "name": "high_carb_drink_mix",
+            "servings": 2,
+            "solvent_min_ml": 600
+          }
+        ],
+        "plain_water_ml": 0
+      },
+      "expected": {
+        "constraint_applies": false
+      },
+      "why": "\u00a76e scope: solvent contract binds SELECTION paths only; pins keep uniform scaling + existing backfill (ruled 2026-09-03)"
+    },
+    {
+      "id": "precedence-pin-beats-default",
+      "status": "ratified",
+      "inputs": {
+        "pins": [
+          {
+            "template": "Oatmeal",
+            "scope_match": true
+          }
+        ],
+        "eligible_unpinned": [
+          "Rice + Banana",
+          "Potato + Salt"
+        ],
+        "athlete_allergies": [
+          "gluten"
+        ],
+        "meal_carb_target_g": 94
+      },
+      "expected": {
+        "selected": "Oatmeal",
+        "servings": 3.5,
+        "conflict_label": true
+      },
+      "why": "\u00a71/\u00a71a (W1): in-scope pin wins over eligible defaults; filters+clamp bypassed (94/27=3.481\u21923.5 snap-0.5 convention); conflict label REQUIRED"
+    },
+    {
+      "id": "precedence-personal-beats-system-pin",
+      "status": "ratified",
+      "inputs": {
+        "personal_formula": {
+          "name": "My Mix",
+          "scope_match": true
+        },
+        "pinned_system_template": {
+          "name": "Oatmeal",
+          "scope_match": true
+        }
+      },
+      "expected": {
+        "selected": "My Mix",
+        "step": 1
+      },
+      "why": "\u00a71: step 1 (personal formula) outranks step 2 (pinned system template) when both in scope"
+    },
+    {
+      "id": "honesty-unrenderable-pin-downgrades",
+      "status": "ratified",
+      "inputs": {
+        "pins": [
+          {
+            "template": "Ghost",
+            "renderable": false
+          }
+        ]
+      },
+      "expected": {
+        "used_pin": false,
+        "fallthrough_reason": "pinned_template_unrenderable"
+      },
+      "why": "\u00a71 honesty contract: an unrenderable pin downgrades explicitly, never claims success"
+    }
+  ]
+}

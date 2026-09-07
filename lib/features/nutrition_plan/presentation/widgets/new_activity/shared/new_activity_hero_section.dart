@@ -33,7 +33,7 @@ class NewActivityHeroSection extends ConsumerWidget {
     if (isBrick) {
       final brickFormState = ref.watch(brickInputControllerProvider);
       return BrickCompositeHeroImage(
-        selectedSports: brickFormState.selectedSports,
+        selectedSports: brickFormState.sports,
         height: 200,
       );
     }

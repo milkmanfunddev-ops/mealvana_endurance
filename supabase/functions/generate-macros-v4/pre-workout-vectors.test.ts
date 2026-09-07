@@ -408,22 +408,26 @@ describe('pre-workout cross-slice pins', () => {
     );
   });
 
-  it('the two carb bands are deliberately different objects', () => {
-    // The payload's plan band is Thomas's [1*BW, 4*BW]; the solver's is
-    // carbs_g * (1 -/+ 0.125). Conflating them lets a 65 kg athlete's 195 g
-    // plan accept 260 g of food. Pin that they do NOT coincide in the cited
-    // regime, and that the per-tier windows carry the SOLVER tolerance.
+  it('the two carb bands deliberately COINCIDE (invariant 12)', () => {
+    // INVERTED 2026-09-04. Formerly pinned the plan band as Thomas's
+    // [1*BW, 4*BW], deliberately distinct from the solver's ±12.5%. The
+    // post-ratification amendment (pre-workout-carbs.md "The plan band —
+    // RULED (Xuan, 2026-09-04)", invariant 12) collapses the plan band to
+    // target ± TIER_TOL in ALL cases — so the tier-window sum now EQUALS
+    // the plan band, and this pin holds the two objects together instead
+    // of apart. targetBasis still flips on the evidence window; the band
+    // no longer follows it (invariant 11, amended).
     const out = calculatePreWorkoutCarbs({
       bodyWeightKg: 65,
       timeBeforeWorkoutMin: 180,
       workoutDurationMin: 90,
     });
     assertEquals(out.carbs_g, 195);
-    assertEquals(out.carbs_low_g, 65); // 1 * BW — plan band
-    assertEquals(out.carbs_high_g, 260); // 4 * BW — plan band
+    assertAlmostEquals(out.carbs_low_g, 195 * 0.875, TOL); // 170.625
+    assertAlmostEquals(out.carbs_high_g, 195 * 1.125, TOL); // 219.375
     const tierSumLow = out.tiers.reduce((a, t) => a + t.range_low_g, 0);
     const tierSumHigh = out.tiers.reduce((a, t) => a + t.range_high_g, 0);
-    assertAlmostEquals(tierSumLow, 195 * 0.875, TOL); // 170.625, not 65
-    assertAlmostEquals(tierSumHigh, 195 * 1.125, TOL); // 219.375, not 260
+    assertAlmostEquals(tierSumLow, out.carbs_low_g, TOL);
+    assertAlmostEquals(tierSumHigh, out.carbs_high_g, TOL);
   });
 });

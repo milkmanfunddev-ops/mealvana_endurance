@@ -175,7 +175,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
           context,
           'Fluids (${UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric)})',
           UnitFormatter.fluidUnitLabel(useMetric: widget.useMetric),
-          widget.macroTargets.preRun.fluidsFlOz,
+          widget.macroTargets.preRun.fluidsFlOz ?? 0,
           MacroField.preRunFluids,
         ),
         // Sodium v3: Mealvana sets no pre-workout sodium target, so there is
@@ -465,7 +465,7 @@ class _MacroSectionCardState extends State<MacroSectionCard>
       case MacroField.preRunFatCap:
         return widget.macroTargets.preRun.fatCapG;
       case MacroField.preRunFluids:
-        return widget.macroTargets.preRun.fluidsFlOz;
+        return widget.macroTargets.preRun.fluidsFlOz ?? 0;
       // MacroField.preRunSodium falls through to the default: sodium v3 sets
       // no pre-workout sodium target, so there is no value to edit.
 

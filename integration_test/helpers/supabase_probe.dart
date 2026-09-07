@@ -130,15 +130,28 @@ class SupabaseProbe {
   /// Flows stamp titles with epoch millis, so this identifies exactly the row
   /// the calling flow just created — something the Fuel Timeline cannot do for
   /// a brick, whose tile renders no name at all.
-  Future<Map<String, dynamic>?> activityByTitle(String title) async {
-    final rows = await select(
-      'activities',
-      query:
-          'user_id=eq.$userId'
-          '&title=eq.${Uri.encodeQueryComponent(title)}'
-          '&select=*',
-    );
-    return rows.isEmpty ? null : rows.first;
+  ///
+  /// Writes are local-first and uploaded asynchronously, so a row can be a
+  /// few seconds behind the screen that confirmed it. Pass [waitFor] to poll
+  /// (once a second) for that long before concluding it is absent; the default
+  /// is a single read, which is what a "gone" check wants.
+  Future<Map<String, dynamic>?> activityByTitle(
+    String title, {
+    Duration waitFor = Duration.zero,
+  }) async {
+    final deadline = DateTime.now().add(waitFor);
+    while (true) {
+      final rows = await select(
+        'activities',
+        query:
+            'user_id=eq.$userId'
+            '&title=eq.${Uri.encodeQueryComponent(title)}'
+            '&select=*',
+      );
+      if (rows.isNotEmpty) return rows.first;
+      if (!DateTime.now().isBefore(deadline)) return null;
+      await Future<void>.delayed(const Duration(seconds: 1));
+    }
   }
 
   /// The meal log named [name] for this athlete, or null.
@@ -230,4 +243,19 @@ int? brickSegmentCount(Map<String, dynamic> activity) {
   final meta = brickMetadataOf(activity);
   final segments = meta?['segments'] ?? meta?['segment_order'];
   return segments is List ? segments.length : null;
+}
+
+/// The legs' sports in stored order (`segments[i].sport`, falling back to
+/// `segment_order`), or null when unreadable.
+List<String>? brickSegmentSports(Map<String, dynamic> activity) {
+  final meta = brickMetadataOf(activity);
+  final segments = meta?['segments'];
+  if (segments is List) {
+    return [
+      for (final s in segments)
+        if (s is Map && s['sport'] is String) s['sport'] as String,
+    ];
+  }
+  final order = meta?['segment_order'];
+  return order is List ? order.whereType<String>().toList() : null;
 }

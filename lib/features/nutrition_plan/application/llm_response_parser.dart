@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/nutrition_plan.dart';
 import '../domain/food_item_data.dart';
 import '../domain/macro_targets.dart' as targets;
+import '../domain/transition_identity.dart';
 import 'food_data_transformation_service.dart';
 import '../../activities/domain/brick_metadata.dart';
 import '../../../shared/domain/activity_type.dart';
@@ -368,10 +369,14 @@ class LLMResponseParser {
       }
     }
 
+    // Keyed by the NORMALIZED positional name (brick.md R8; tolerant of
+    // legacy sport-pair-era spellings via digit extraction).
     final transitionTargetsMap = <String, Map<String, dynamic>>{};
     for (final trans in transitionTargetsList) {
       if (trans is Map<String, dynamic>) {
-        final name = trans['transition_name'] as String?;
+        final name = normalizeTransitionName(
+          trans['transition_name'] as String?,
+        );
         if (name != null) {
           transitionTargetsMap[name] = trans;
         }
@@ -456,10 +461,14 @@ class LLMResponseParser {
         ),
       );
 
-      // Add transition after each segment (except the last)
-      final transitionsData =
-          planData['transitions'] as Map<String, dynamic>? ?? {};
-      final transitionKey = 'T${segmentIndex + 1}';
+      // Add transition after each segment (except the last) — positional
+      // key per brick.md R8, tolerant of legacy key spellings.
+      final transitionsData = <String, dynamic>{
+        for (final e
+            in (planData['transitions'] as Map<String, dynamic>? ?? {}).entries)
+          normalizeTransitionName(e.key) ?? e.key: e.value,
+      };
+      final transitionKey = transitionKeyForIndex(segmentIndex);
       if (transitionsData.containsKey(transitionKey)) {
         final transitionItems =
             transitionsData[transitionKey] as List<dynamic>? ?? [];

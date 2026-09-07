@@ -1,3 +1,4 @@
+import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -17,7 +18,11 @@ import '../../../domain/time_slot_assignment.dart';
 import 'macro_summary_row.dart';
 import 'dismissible_food_item.dart';
 import 'brick_nutrition_sections.dart';
-import 'before_phase_widget.dart';
+import 'pre_workout_before_card.dart';
+import '../../../application/pre_workout_before_card_assembler.dart';
+import '../../../domain/fueling_window_limits.dart';
+import '../../../domain/pre_workout_before_card_model.dart';
+import '../../../domain/pre_workout_hydration_check.dart';
 import 'during_phase_section_widget.dart';
 import 'phase_explanation_sheet.dart';
 
@@ -81,6 +86,8 @@ class NutritionSectionsBuilder extends ConsumerStatefulWidget {
     required this.onAdjustSlotQuantity,
     required this.onMoveSipFoodToSlot,
     required this.onScaleSubPhase,
+    required this.onAnswerHydrationCheck,
+    required this.onChangeHydrationAnswer,
     required this.consumeSwipeHint,
     this.enableSectionHeroes = false,
     this.heroTagSeed,
@@ -98,6 +105,12 @@ class NutritionSectionsBuilder extends ConsumerStatefulWidget {
   final AdjustSlotQuantityCallback onAdjustSlotQuantity;
   final MoveSipFoodToSlotCallback onMoveSipFoodToSlot;
   final ScaleSubPhaseCallback onScaleSubPhase;
+
+  /// Hydration check H-2 / H-3 (surface B-3): the controller recomputes the
+  /// fluid target, adds / removes the tagged water row and persists — one
+  /// atomic write — then the rebuilt state re-renders the whole card.
+  final ValueChanged<HydrationCheckAnswer> onAnswerHydrationCheck;
+  final VoidCallback onChangeHydrationAnswer;
   final bool Function() consumeSwipeHint;
   final bool enableSectionHeroes;
   final String? heroTagSeed;
@@ -142,6 +155,9 @@ class _NutritionSectionsBuilderState
         onAdjustSlotQuantity: widget.onAdjustSlotQuantity,
         onMoveSipFoodToSlot: widget.onMoveSipFoodToSlot,
         onScaleSubPhase: widget.onScaleSubPhase,
+        onAnswerHydrationCheck: widget.onAnswerHydrationCheck,
+        onChangeHydrationAnswer: widget.onChangeHydrationAnswer,
+        bodyWeightKgOrNull: _bodyWeightKgOrNull(brickSettings?.weightPounds),
         macroTargets: widget.state.macroTargets,
         showSwipeHint: widget.consumeSwipeHint(),
         enableSectionHeroes: widget.enableSectionHeroes,
@@ -203,50 +219,33 @@ class _NutritionSectionsBuilderState
         // changed here.
         final sectionTitle = _shortPhaseLabel(category);
 
-        // Use BeforePhaseWidget for before sections with sub-phases (V2 template plans)
+        // The ratified BEFORE card (surface pre-workout-before-card v1) for
+        // before sections with sub-phases (V2 template plans). Numbers come
+        // from the engine's targets; membership from the frozen lead time.
         if (category == 'before_run' && section.hasSubPhases) {
+          final activity = widget.state.activity;
+          final data = PreWorkoutBeforeCardAssembler.assemble(
+            preRun: widget.state.macroTargets?.preRun,
+            subPhases: section.subPhases!,
+            timeBeforeWorkoutMin: clampFuelingWindowMinutes(
+              activity?.timeBeforeMinutes ?? 0,
+            ).toDouble(),
+            bodyWeightKg: _bodyWeightKgOrNull(settings?.weightPounds),
+            hydrationCheck: plan.preWorkoutHydrationCheck,
+            categoryPrefix: 'before_run',
+          );
           return _wrapWithSectionHero(
             section.id,
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-              child: BeforePhaseWidget(
-                section: section,
-                sectionColor: sectionColor,
-                sectionTitle: sectionTitle.toUpperCase(),
-                useImperial: useImperial,
-                planId: widget.state.activity?.id,
-                onSwapFood: widget.onSwapFood,
-                onDeleteFood: widget.onDeleteFood,
-                onUpdateQuantity: widget.onUpdateQuantity,
-                onScaleSubPhase: widget.onScaleSubPhase,
+              child: PreWorkoutBeforeCard(
+                data: data,
+                title: sectionTitle.toUpperCase(),
+                onStep: (row, newQuantity) =>
+                    _onBeforeRowStep(row, newQuantity),
                 onAddFood: widget.onAddFood,
-                showSwipeHint: widget.consumeSwipeHint(),
-                macroTargets: widget.state.macroTargets,
-                bodyWeightKg: bodyWeightKg,
-                sportLabel: activityType.displayName,
-                activityType: activityType,
-                carbsLow: widget.state.macroTargets?.preRun.carbsLowG?.round(),
-                carbsHigh: widget.state.macroTargets?.preRun.carbsHighG
-                    ?.round(),
-                proteinLow: widget.state.macroTargets?.preRun.proteinLowG
-                    ?.round(),
-                proteinHigh: widget.state.macroTargets?.preRun.proteinHighG
-                    ?.round(),
-                // Sodium v3: no pre-workout sodium band — deliberately not
-                // passed.
-                fluidsLow: widget.state.macroTargets?.preRun.fluidsLowMl
-                    ?.round(),
-                fluidsHigh: widget.state.macroTargets?.preRun.fluidsHighMl
-                    ?.round(),
-                carbsOverridden: false,
-                proteinOverridden: false,
-                sodiumOverridden: false,
-                fluidsOverridden: false,
-                carbsOverrideLabel: null,
-                proteinOverrideLabel: null,
-                sodiumOverrideLabel: null,
-                fluidsOverrideLabel: null,
-                onRegenerate: _buildRegenCallback(),
+                onAnswerHydrationCheck: widget.onAnswerHydrationCheck,
+                onChangeHydrationAnswer: widget.onChangeHydrationAnswer,
               ),
             ),
           );
@@ -685,6 +684,23 @@ class _NutritionSectionsBuilderState
   double _getBodyWeightKg(double? weightPounds) {
     if (weightPounds == null || weightPounds <= 0) return 70.0;
     return weightPounds * 0.453592;
+  }
+
+  /// The BEFORE card's weight: absent stays absent (no 70-kg stand-in) — the
+  /// FC-1 "Light Meal" threshold then simply cannot be evaluated.
+  double? _bodyWeightKgOrNull(double? weightPounds) {
+    if (weightPounds == null || weightPounds <= 0) return null;
+    return weightPounds * UnitFormatter.kKgPerLb;
+  }
+
+  /// FC-G2 → the controller. A stepper driven to 0 removes the row
+  /// (deferred-ledger P3: "stepper to 0 removes any row"; no swipe-to-delete).
+  void _onBeforeRowStep(FeedingFoodRow row, double newQuantity) {
+    if (newQuantity <= 0) {
+      widget.onDeleteFood(row.id, row.category);
+    } else {
+      widget.onUpdateQuantity(row.id, row.category, newQuantity);
+    }
   }
 
   /// Short "Before"/"During"/"After" heading used only on this screen so the

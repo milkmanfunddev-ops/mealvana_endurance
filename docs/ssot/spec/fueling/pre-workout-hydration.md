@@ -171,6 +171,15 @@ second is frozen at plan generation; this is the one place they are deliberately
 - **Below `TIER_TOPOFF_MAX` it is too late.** The snack window has closed and there is nowhere for
   the correction to go; the consumer stops offering it rather than applying it late.
 
+**PW-021 — RULED (Xuan, 2026-08-26): the `offerCheck` predicate above is RETIRED.** No consumer
+reads a live clock — the planned start time is not accurate enough for a "current window" to be
+right, and a live indicator is not practical for athletes to follow. The check is available for the
+life of any plan with `timeBeforeWorkoutMin >= T_REF`, inside the snack-window card as before,
+and its timing is carried by copy: *"Do this about two hours before you start,
+once you've finished your pre-run meal."* Below `T_REF` no cue is shown inline — it lives in the
+fine print behind `?` (notes §7 ¶4), which narrows contractual point 3 above to "one tap away". The
+two bullets below record the reasoning the copy now carries. Register: `pre-workout.OPEN-QUESTIONS.md` PW-021.
+
 **PW-020, ratified 2026-08-04.** v6 as first written stated only the lower bound while its own
 heading said "while the snack window is open" — the prose was the intent and the predicate
 under-enforced it. Notes §5.19.

@@ -111,12 +111,15 @@ class ContextualBanner extends StatelessWidget {
         ) !=
         null)
       return true;
-    if (_validatePreRunMacro(
-          MacroField.preRunFluids,
-          macroTargets.preRun.fluidsFlOz,
-          bodyWeightKg,
-        ) !=
-        null)
+    // Gate path: no fluid target stated → nothing to validate.
+    final preFluidsFlOz = macroTargets.preRun.fluidsFlOz;
+    if (preFluidsFlOz != null &&
+        _validatePreRunMacro(
+              MacroField.preRunFluids,
+              preFluidsFlOz,
+              bodyWeightKg,
+            ) !=
+            null)
       return true;
     // Sodium v3: there is no pre-workout sodium target, so there is nothing to
     // validate and no banner to raise about it.

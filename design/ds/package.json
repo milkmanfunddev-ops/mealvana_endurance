@@ -1,0 +1,33 @@
+{
+  "name": "@mealvana/endurance-ds",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mealvana Endurance design system — the React twin of lib/shared/widgets/kyle_design, synced to Claude Design. Source of truth for tokens/behaviour: docs/ssot/spec/design/.",
+  "type": "module",
+  "main": "./dist/index.es.js",
+  "module": "./dist/index.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.es.js" },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "npm run build:js && npm run build:dts && npm run build:css",
+    "build:js": "esbuild src/index.tsx --bundle --format=esm --jsx=automatic --external:react --external:react-dom --external:react/jsx-runtime --outfile=dist/index.es.js",
+    "build:dts": "tsc -p tsconfig.json",
+    "build:css": "mkdir -p dist && cp src/styles.css dist/styles.css"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "esbuild": "^0.24.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "typescript": "^5.6.3"
+  }
+}

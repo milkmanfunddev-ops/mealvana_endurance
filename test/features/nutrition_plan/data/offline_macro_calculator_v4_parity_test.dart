@@ -178,13 +178,14 @@ void main() {
   // =========================================================================
   // post-workout carbs
   // =========================================================================
+  // The fasted x1.2 cases are gone with the fasted product state
+  // (food-recommendation §7 / D-001, Xuan 2026-09-03).
   group('calculatePostWorkoutCarbs', () {
-    test('1.5h, 70kg, not fasted → 70g', () {
+    test('1.5h, 70kg → 70g', () {
       expect(
         OfflineMacroCalculator.calculatePostWorkoutCarbs(
           weightKg: 70.0,
           durationH: 1.5,
-          isFasted: false,
         ),
         70,
       );
@@ -195,67 +196,32 @@ void main() {
         OfflineMacroCalculator.calculatePostWorkoutCarbs(
           weightKg: 70.0,
           durationH: 2.5,
-          isFasted: false,
         ),
         (70 * 1.2).round(),
-      );
-    });
-
-    test('fasted multiplier → ×1.2 → 84g (for 1.5h)', () {
-      expect(
-        OfflineMacroCalculator.calculatePostWorkoutCarbs(
-          weightKg: 70.0,
-          durationH: 1.5,
-          isFasted: true,
-        ),
-        (70 * 1.2).round(),
-      );
-    });
-
-    test('fasted + >2h → ×1.44 → 101g', () {
-      expect(
-        OfflineMacroCalculator.calculatePostWorkoutCarbs(
-          weightKg: 70.0,
-          durationH: 2.5,
-          isFasted: true,
-        ),
-        (70 * 1.2 * 1.2).round(),
       );
     });
   });
 
   // =========================================================================
-  // post-workout protein — fasted adds 0.05/kg
+  // post-workout protein (the fasted +0.05/kg bump is retired —
+  // food-recommendation §7 / D-001, Xuan 2026-09-03)
   // =========================================================================
   group('calculatePostWorkoutProtein', () {
-    test('1.5h, 70kg, not fasted → 0.30×70=21', () {
+    test('1.5h, 70kg → 0.30×70=21', () {
       expect(
         OfflineMacroCalculator.calculatePostWorkoutProtein(
           weightKg: 70.0,
           durationH: 1.5,
-          isFasted: false,
         ),
         21,
       );
     });
 
-    test('fasted adds 0.05/kg → 0.35×70=24', () {
-      expect(
-        OfflineMacroCalculator.calculatePostWorkoutProtein(
-          weightKg: 70.0,
-          durationH: 1.5,
-          isFasted: true,
-        ),
-        (70 * 0.35).round(),
-      );
-    });
-
-    test('3h not fasted → 0.40×80kg=32', () {
+    test('3h → 0.40×80kg=32', () {
       expect(
         OfflineMacroCalculator.calculatePostWorkoutProtein(
           weightKg: 80.0,
           durationH: 3.0,
-          isFasted: false,
         ),
         (80 * 0.40).round(),
       );
@@ -419,7 +385,6 @@ void main() {
         speedMph: 14.7,
         terrain: 'flat',
         hoursBefore: 2.0,
-        isFasted: false,
         gutTraining: 'moderate',
       );
     });
@@ -458,8 +423,7 @@ void main() {
           speedMph: 14.7,
           terrain: 'flat',
           hoursBefore: 3.0,
-          isFasted: false,
-          gutTraining: 'moderate',
+            gutTraining: 'moderate',
         );
       });
 
@@ -477,37 +441,10 @@ void main() {
     },
   );
 
-  // =========================================================================
-  // Full calculateRunningMacros integration — fasted
-  // =========================================================================
-  group('calculateRunningMacros — fasted', () {
-    late Map<String, dynamic> result;
-    setUp(() {
-      result = OfflineMacroCalculator.calculateRunningMacros(
-        weightKg: 70.0,
-        distanceMiles: 6.0,
-        paceMinPerMile: 9.0,
-        hoursBefore: 0.5,
-        isFasted: true,
-        gutTraining: 'moderate',
-      );
-    });
-
-    test('pre_run_carbs_g = 0 (fasted)', () {
-      expect(result['pre_run_carbs_g'], 0);
-    });
-
-    test('pre_run_protein_g = 0 (fasted)', () {
-      expect(result['pre_run_protein_g'], 0);
-    });
-
-    test('pre_run_meal_type = fasted', () {
-      expect(result['pre_run_meal_type'], 'fasted');
-    });
-
-    test('post_run_carbs_g has fasted multiplier applied', () {
-      // 6mi×9min = 54min → not >2h, fasted multiplier ×1.2 → 70×1.0×1.2=84
-      expect(result['post_run_carbs_g'], (70 * 1.2).round());
-    });
-  });
+  // The "calculateRunningMacros — fasted" integration group is retired with
+  // the fasted product state (food-recommendation §7 / D-001, Xuan
+  // 2026-09-03): the sport entry points no longer take a fasted flag.
+  // D-001's zero path itself stays pinned in
+  // offline_macro_calculator_pre_workout_carbs_test.dart (vector
+  // fasted-180-65 + invariant 8).
 }

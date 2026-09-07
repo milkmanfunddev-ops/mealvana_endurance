@@ -111,6 +111,7 @@ class FoodOperationsService {
       isDrink: food.isDrink,
       isIndivisible: food.isIndivisible,
       templateId: food.templateId,
+      origin: food.origin,
       scaleMultiplier: food.scaleMultiplier,
       timingCategory: food.timingCategory,
     );

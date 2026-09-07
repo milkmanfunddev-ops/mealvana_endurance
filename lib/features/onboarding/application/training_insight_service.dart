@@ -138,7 +138,20 @@ class TrainingInsightService {
     final weeklyDurationHours =
         (totalMinutes / 60.0) * (7.0 / math.max(windowDays, 1));
 
-    final pattern = _weekdayPattern(minutesByWeekday);
+    // How many times each weekday actually occurred in the window,
+    // INCLUDING the ones with no session — a Friday that came round twice
+    // and was trained once is genuinely a lighter Friday than a Wednesday
+    // trained the only time it appeared.
+    final weekdayOccurrences = <int, int>{};
+    for (
+      var day = DateTime(earliest.year, earliest.month, earliest.day);
+      !day.isAfter(DateTime(latest.year, latest.month, latest.day));
+      day = day.add(const Duration(days: 1))
+    ) {
+      weekdayOccurrences.update(day.weekday, (n) => n + 1, ifAbsent: () => 1);
+    }
+
+    final pattern = _weekdayPattern(minutesByWeekday, weekdayOccurrences);
 
     // Earliest first so the diagnostic sheet reads chronologically.
     final sessions = usable.map(_toSession).toList()
@@ -161,21 +174,38 @@ class TrainingInsightService {
     );
   }
 
-  /// The two most- and two least-loaded weekdays by total imported minutes,
-  /// each returned in weekday order (Monday-first). Needs at least
-  /// [minWeekdaysForPattern] distinct weekdays represented — with fewer,
-  /// "heavy" vs "light" is just noise — and with exactly that minimum the
-  /// two groups are disjoint by construction (top 2 / bottom 2 of ≥4).
+  /// The two most- and two least-loaded weekdays by AVERAGE minutes per
+  /// occurrence, each returned in weekday order (Monday-first).
+  ///
+  /// Averaging rather than summing matters whenever the window isn't a
+  /// whole number of weeks: a 10-day import contains two Fridays but only
+  /// one Wednesday, and ranking by totals would promote Friday purely for
+  /// having come round twice.
+  ///
+  /// Needs at least [minWeekdaysForPattern] distinct weekdays trained —
+  /// with fewer, "heavy" vs "light" is just noise — and with exactly that
+  /// minimum the two groups are disjoint by construction (top 2 / bottom 2
+  /// of ≥4).
   static ({List<int> heavy, List<int> light}) _weekdayPattern(
     Map<int, int> minutesByWeekday,
+    Map<int, int> weekdayOccurrences,
   ) {
     if (minutesByWeekday.length < minWeekdaysForPattern) {
       return (heavy: const [], light: const []);
     }
-    final byLoad = minutesByWeekday.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final heavy = byLoad.take(2).map((e) => e.key).toList()..sort();
-    final light = byLoad.reversed.take(2).map((e) => e.key).toList()..sort();
+    final byLoad =
+        minutesByWeekday.entries
+            .map(
+              (e) => (
+                weekday: e.key,
+                avg: e.value / math.max(weekdayOccurrences[e.key] ?? 1, 1),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.avg.compareTo(a.avg));
+    final heavy = byLoad.take(2).map((e) => e.weekday).toList()..sort();
+    final light = byLoad.reversed.take(2).map((e) => e.weekday).toList()
+      ..sort();
     return (heavy: heavy, light: light);
   }
 

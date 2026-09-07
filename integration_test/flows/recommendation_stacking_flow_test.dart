@@ -49,7 +49,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:patrol/patrol.dart';
 
 import 'package:mealvana_endurance/features/nutrition_plan/domain/pre_workout_feeding_labels.dart';
-import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 
 import '../helpers/flow_launcher.dart';
 
@@ -69,9 +68,11 @@ import '../helpers/flow_launcher.dart';
 //
 // Deriving from `preWorkoutFeedingTitle` means a future rename moves these with
 // the app. The flow builds a RUNNING activity, so that is the sport to pass.
-final _fullMeal = preWorkoutFeedingTitle('meal', sport: ActivityType.running);
-final _snack = preWorkoutFeedingTitle('snack');
-final _topOff = preWorkoutFeedingTitle('top_up');
+// FC-1 (feeding-card v1, RATIFIED 2026-08-26): "Pre-Run Meal" for every
+// sport — the sport-aware variant is retired (deferred-ledger P4).
+final _fullMeal = preWorkoutFeedingTitle(PreWorkoutFeedingTier.meal);
+final _snack = preWorkoutFeedingTitle(PreWorkoutFeedingTier.snack);
+final _topOff = preWorkoutFeedingTitle(PreWorkoutFeedingTier.topOff);
 
 void main() {
   patrolTest(
@@ -165,10 +166,10 @@ Future<bool> _generateRunPlanWithWindow(
     const ValueKey('bottom_nav.timeline_tab'),
   ).tap(settlePolicy: SettlePolicy.noSettle);
   await $(
-    const ValueKey('fuel_timeline.add_activity'),
+    const ValueKey('macro_dashboard.add_activity'),
   ).waitUntilVisible(timeout: const Duration(seconds: 20));
   await $(
-    const ValueKey('fuel_timeline.add_activity'),
+    const ValueKey('macro_dashboard.add_activity'),
   ).tap(settlePolicy: SettlePolicy.noSettle);
   await $(
     const ValueKey('activity_create.tab_running'),
@@ -213,9 +214,37 @@ Future<bool> _generateRunPlanWithWindow(
   // defaults to off, so we do not toggle it. (If a profile ever defaults
   // fasted-on, the ≥120 test would lose its occasions — revisit here if so.)
 
+  // ---- Schedule tomorrow (ruled clamp headroom) ---------------------------
+  // CF-1 (create-flow-fueling-controls, AMENDED 2026-09-03): the stepper's
+  // MAXIMUM is min(240, time-until-start). A quick-add activity seeds at
+  // now + ~1 h (defaultNewActivityDateTime), so the ≥120-min H5 window is
+  // UNREACHABLE from the stepper without rescheduling — by design, not by
+  // defect. Move the session to tomorrow (same seeded time ⇒ ~24 h out ⇒
+  // the full 240 cap) via the real pickers: date grid → OK → time OK.
+  await _ensureVisibleInForm(
+    $,
+    const ValueKey('activity_create.edit_datetime_button'),
+  );
+  await $(
+    const ValueKey('activity_create.edit_datetime_button'),
+  ).tap(settlePolicy: SettlePolicy.noSettle);
+  await $.pump(const Duration(milliseconds: 600));
+  final tomorrow = DateTime.now().add(const Duration(days: 1));
+  if (tomorrow.day == 1) {
+    // Month boundary: tomorrow's cell lives in the next month's grid.
+    await $(const Key('nextMonthIcon')).tap(settlePolicy: SettlePolicy.noSettle);
+    await $.pump(const Duration(milliseconds: 300));
+  }
+  await $('${tomorrow.day}').tap(settlePolicy: SettlePolicy.noSettle);
+  await $.pump(const Duration(milliseconds: 200));
+  await $('OK').tap(settlePolicy: SettlePolicy.noSettle); // date dialog
+  await $.pump(const Duration(milliseconds: 600));
+  await $('OK').tap(settlePolicy: SettlePolicy.noSettle); // time dialog (keep)
+  await $.pump(const Duration(milliseconds: 400));
+
   // ---- Deterministic fueling window ---------------------------------------
   // Floor it (the minus button clamps at 0 and becomes a no-op ElevatedButton),
-  // then step up. Each step is 15 min (running_tab_content.dart: value ± 15).
+  // then step up. Each step is 15 min on the 00/15/30/45 grid (CF-1).
   FocusManager.instance.primaryFocus?.unfocus();
   await $.pump(const Duration(milliseconds: 800));
   await _ensureVisibleInForm(

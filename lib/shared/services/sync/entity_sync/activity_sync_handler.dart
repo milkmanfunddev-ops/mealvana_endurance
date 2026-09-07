@@ -181,8 +181,9 @@ class ActivitySyncHandler {
           ),
           intensityTarget: Value(data['intensity_target'] as String?),
           timeBeforeMinutes: Value(data['time_before_minutes'] as int?),
-          // Tolerates old remote rows without the column (null → false).
-          isFasted: Value(SyncTypeConverters.toBool(data['is_fasted'])),
+          // The remote fasted flag is deliberately not read: the fasted
+          // product state is retired (food-recommendation §7 / D-001) and
+          // the local column stays dormant (W-3).
           completedAt: Value(incomingCompletedAt),
           completionRating: Value(data['completion_rating'] as int?),
           completionNotes: Value(data['completion_notes'] as String?),
@@ -366,7 +367,6 @@ class ActivitySyncHandler {
       'intensity_z3_z4_pct': activity.intensityZ3Z4Pct,
       'intensity_z5_pct': activity.intensityZ5Pct,
       'time_before_minutes': activity.timeBeforeMinutes,
-      'is_fasted': activity.isFasted,
       'notes': activity.notes,
       'cycling_speed_mph': activity.cyclingSpeedMph,
       'cycling_terrain': activity.cyclingTerrain,

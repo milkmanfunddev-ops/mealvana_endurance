@@ -1,0 +1,110 @@
+/* ============================================================
+   Mealvana Endurance — foundations (tokens + role-based type)
+   Values derived from docs/ssot/spec/design/tokens.md (meaning lives there) and
+   measured from the ratified rendering renderings/macro-dashboard@v1.html.
+   DARK-FIRST: the app defaults to ThemeMode.dark. Light is the re-tint.
+   Fonts are declared in ../fonts.css (shipped to fonts/ by design-sync).
+   ============================================================ */
+:root {
+  /* Kyle's Endurance palette — hex-exact to the 2025-09 sheet */
+  --me-blackberry:        rgb(56, 22, 51);
+  --me-blackberry-light:  rgb(74, 33, 67);
+  --me-blackberry-dark:   rgb(45, 21, 53);
+  --me-cream:             rgb(248, 246, 235);
+  --me-cream-dark:        rgb(232, 230, 224);
+  --me-orange:            rgb(247, 139, 20);   /* energy & intake accent; primary CTA */
+  --me-orange-light:      rgb(255, 160, 90);
+  --me-electrolyte:       rgb(28, 249, 207);   /* burn / activity side, verified, done-swipe */
+  --me-electrolyte-dark:  rgb(63, 212, 192);
+  --me-dragonfruit:       rgb(220, 37, 151);   /* destructive — may not signify anything else */
+  --me-yolk:              rgb(255, 198, 41);   /* RESERVED — no meaning contract yet (Q-SA2) */
+  --me-inactive:          rgb(155, 138, 163);
+  --me-hairline:          rgb(198, 195, 178);
+  --me-input-bg:          rgb(90, 51, 102);
+
+  /* Ground + ink — dark-first */
+  --me-bg:                var(--me-blackberry);
+  --me-ink:               var(--me-cream);
+  --me-ink-2:             rgba(248, 246, 235, 0.65);   /* secondary text on dark */
+  --me-ink-3:             rgba(248, 246, 235, 0.5);    /* eyebrows, times, muted */
+  --me-ink-4:             rgba(248, 246, 235, 0.45);   /* units */
+  --me-card:              rgba(248, 246, 235, 0.06);   /* card fill on dark (measured) */
+  --me-card-line:         rgba(248, 246, 235, 0.14);   /* card + control hairline on dark */
+  --me-card-raised:       var(--me-blackberry-light);
+
+  /* Data colours as they appear in the ratified macro-dashboard rendering
+     (surface-level truth; the global macro meaning contract is DEFERRED, Q-SA3) */
+  --me-data-carbs:        var(--me-electrolyte);
+  --me-data-protein:      rgb(167, 139, 250);
+  --me-data-fat:          rgb(236, 84, 153);
+
+  /* Type families */
+  --me-font-display:  "Sansita", Georgia, serif;
+  --me-font-ui:       "Compadre", Georgia, serif;
+  --me-font-ui-wide:  "Compadre Wide", "Compadre", Georgia, serif;
+  --me-font-body:     "Apercu", ui-sans-serif, system-ui, sans-serif;
+  --me-font-mono:     "Apercu Mono", ui-monospace, monospace;
+
+  /* Radii — card 15 px is RATIFIED (Q-SA4); buttons and chips are pills */
+  --me-radius-sm:   8px;
+  --me-radius-input: 12px;
+  --me-radius-md:   15px;
+  --me-radius-lg:   20px;
+  --me-radius-pill: 100px;
+
+  /* Spacing (4 px grid; 17 px screen gutter) */
+  --me-space-1: 4px;  --me-space-2: 8px;  --me-space-3: 12px; --me-space-4: 16px;
+  --me-space-5: 17px; --me-space-6: 20px; --me-space-7: 24px; --me-space-8: 32px;
+  --me-space-9: 40px; --me-space-10: 48px; --me-space-12: 64px;
+
+  /* Sizes */
+  --me-button-height: 56px;
+  --me-button-height-sm: 44px;
+  --me-input-height: 48px;
+  --me-chip: 56px;          /* filled icon circle on cards (measured) */
+  --me-chip-sm: 36px;
+
+  /* Elevation — restrained; prefer hairlines */
+  --me-shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --me-shadow-md: 0 8px 20px -4px rgba(0, 0, 0, 0.35);
+
+  --me-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --me-duration-fast: 120ms;
+  --me-duration-base: 220ms;
+}
+
+/* Light re-tint: wrap a subtree in .on-light (and pass dark={false} to components) */
+.on-light {
+  --me-bg: var(--me-cream);
+  --me-ink: var(--me-blackberry);
+  --me-ink-2: rgba(56, 22, 51, 0.7);
+  --me-ink-3: rgba(56, 22, 51, 0.55);
+  --me-ink-4: rgba(56, 22, 51, 0.45);
+  --me-card: var(--me-cream);
+  --me-card-line: var(--me-blackberry);
+  --me-card-raised: var(--me-cream-dark);
+  background: var(--me-bg); color: var(--me-ink);
+}
+.on-dark { background: var(--me-blackberry); color: var(--me-cream); }
+
+html { font-family: var(--me-font-body); color: var(--me-ink); background: var(--me-bg); }
+body { background: var(--me-bg); color: var(--me-ink); margin: 0; }
+
+/* Role-based type — sizes measured from the rendering */
+.me-page-title    { font-family: var(--me-font-display); font-weight: 700; font-size: 27px; line-height: 1.1; letter-spacing: -0.01em; }
+.me-section-title { font-family: var(--me-font-display); font-weight: 700; font-size: 19px; line-height: 1.15; }
+.me-screen-title  { font-family: var(--me-font-display); font-weight: 700; font-size: 17px; line-height: 1.1; text-align: center; }
+.me-tab           { font-family: var(--me-font-ui-wide); font-size: 18px; line-height: 1; letter-spacing: 0.12em; text-transform: uppercase; }
+.me-eyebrow       { font-family: var(--me-font-body); font-weight: 500; font-size: 9.5px; line-height: 1; letter-spacing: 0.12em; text-transform: uppercase; color: var(--me-ink-3); }
+.me-food-title    { font-family: var(--me-font-ui); font-size: 17px; line-height: 1.15; letter-spacing: 0.02em; text-transform: uppercase; }
+.me-activity-title{ font-family: var(--me-font-ui); font-size: 20px; line-height: 1.1; letter-spacing: 0.02em; text-transform: uppercase; }
+.me-descriptor    { font-family: var(--me-font-ui); font-size: 14px; line-height: 1.4; letter-spacing: 0.5px; }
+.me-body          { font-family: var(--me-font-body); font-weight: 400; font-size: 13px; line-height: 1.5; }
+.me-body-lg       { font-family: var(--me-font-body); font-weight: 400; font-size: 16px; line-height: 1.5; }
+.me-body-sm       { font-family: var(--me-font-body); font-weight: 400; font-size: 11px; line-height: 1.45; color: var(--me-ink-2); }
+.me-caption       { font-family: var(--me-font-body); font-weight: 400; font-size: 10.5px; line-height: 1.2; color: var(--me-ink-3); }
+.me-data          { font-family: var(--me-font-body); font-weight: 500; font-size: 11px; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.me-data-number   { font-family: var(--me-font-body); font-weight: 600; font-size: 32px; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.me-data-xl       { font-family: var(--me-font-display); font-weight: 700; font-size: 27px; line-height: 1; font-variant-numeric: tabular-nums; }
+.me-mono          { font-family: var(--me-font-mono); font-size: 12px; }
+.me-button-label  { font-family: var(--me-font-display); font-weight: 700; font-size: 16px; line-height: 20px; }

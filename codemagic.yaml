@@ -429,6 +429,12 @@ workflows:
         - pattern: 'develop'
           include: true
       cancel_previous_builds: true
+      # Docs-only pushes: use [skip ci] in the commit title instead of a
+      # changeset filter — the `when: changeset` block previously here
+      # (nested under triggering:) is not where Codemagic accepts it and is
+      # suspected of invalidating the config (no builds fired from the
+      # 2026-08-20 bug-batch merge). [skip ci] is documented, proven in this
+      # repo, and costs nothing when forgotten except one build.
 
     scripts:
       - *write_dotenv_files
@@ -646,6 +652,12 @@ workflows:
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
+      # Docs-only pushes: use [skip ci] in the commit title instead of a
+      # changeset filter — the `when: changeset` block previously here
+      # (nested under triggering:) is not where Codemagic accepts it and is
+      # suspected of invalidating the config (no builds fired from the
+      # 2026-08-20 bug-batch merge). [skip ci] is documented, proven in this
+      # repo, and costs nothing when forgotten except one build.
 
     scripts:
       - *write_dotenv_files
@@ -858,12 +870,11 @@ workflows:
         credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
         track: beta  # Open testing track (Play target-API notice asks for a testable release)
         submit_as_draft: false
-        # Play refuses automatic send-for-review while the console has pending
-        # items (App-access credentials). Without this the 1.23.0 publish
-        # failed AFTER a successful AAB upload: "Changes cannot be sent for
-        # review automatically. Please set changesNotSentForReview to true."
-        # Releases land in the console and must be sent for review manually.
-        changes_not_sent_for_review: true
+        # 2026-08-21: the console's pending items are resolved, and Play now
+        # REJECTS the old workaround ("changesNotSentForReview must not be
+        # set"). Releases send for review automatically again. If Play ever
+        # re-acquires pending items, flip changes_not_sent_for_review: true
+        # back on (1.23.0-era failure mode).
       slack:
         channel: '#builds'
         notify:
@@ -1419,14 +1430,16 @@ workflows:
         FLUTTER_ENV: dev
 
     triggering:
-      events:
-        - pull_request
+      # DISABLED 2026-08-20 — Lee's ruling: "those integration tests cannot be
+      # run by Codemagic" (~9c/min; one run billed 1h31m ~= $9). Run the suite
+      # locally (patrol test / run-algorithm-tests.sh --e2e) or on Lee's M1 via
+      # .github/workflows/tests-selfhosted.yml. Re-enable by restoring
+      # `events: [pull_request]`.
+      # (Was: PR gate on release/* PRs; the push-to-develop run is the separate
+      # integration-tests-develop workflow because Codemagic applies
+      # branch_patterns to every event in the block.)
+      events: []
       branch_patterns:
-        # PR gate only. The push-to-develop run is a separate workflow
-        # (integration-tests-develop) because Codemagic applies branch_patterns
-        # to every event in the block — keeping both here would also fire the
-        # dev-backend suite on a release/* push, where integration-tests-prod
-        # is the one that should run.
         - pattern: 'release/*'
           include: true
       cancel_previous_builds: true
@@ -1473,7 +1486,6 @@ workflows:
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
-            --target integration_test/flows/fuel_timeline_flow_test.dart \
             --target integration_test/flows/meal_log_build_flow_test.dart \
             --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \
@@ -1531,8 +1543,10 @@ workflows:
         FLUTTER_ENV: dev
 
     triggering:
-      events:
-        - push
+      # DISABLED 2026-08-20 — Lee's ruling (see integration-tests above): this
+      # exact workflow ran 1h31m on a develop push (~$9). Re-enable by
+      # restoring `events: [push]` only if the suite ever moves back off the M1.
+      events: []
       branch_patterns:
         - pattern: 'develop'
           include: true
@@ -1573,7 +1587,7 @@ workflows:
           patrol test \
             --target integration_test/patrol_smoke_test.dart \
             --target integration_test/flows/auth_flow_test.dart \
-            --target integration_test/flows/fuel_timeline_flow_test.dart \
+            --target integration_test/flows/macro_dashboard_flow_test.dart \
             --target integration_test/flows/meal_log_build_flow_test.dart \
             --target integration_test/flows/meal_card_interaction_flow_test.dart \
             --target integration_test/flows/activities_crud_flow_test.dart \
@@ -1631,8 +1645,10 @@ workflows:
         FLUTTER_ENV: prod
 
     triggering:
-      events:
-        - push
+      # DISABLED 2026-08-20 — Lee's ruling (see integration-tests above).
+      # Re-enable by restoring `events: [push]` only if the suite moves back
+      # off the M1.
+      events: []
       branch_patterns:
         - pattern: 'release/*'
           include: true
@@ -1722,11 +1738,10 @@ workflows:
 
     triggering:
       events:
+        # PR-only (Lee, 2026-08-21): the every-push run doubled build minutes
+        # and duplicated what the release build already gates on. Reverting the
+        # 2026-07-21 run-on-every-push ruling; add `- push` back here to restore.
         - pull_request
-        # Push runs the same quality gate on every develop push (Lee,
-        # 2026-07-21: tests must run on develop, not only at release time) and
-        # on pushes to release/* branches themselves.
-        - push
       branch_patterns:
         - pattern: 'release/*'
           include: true

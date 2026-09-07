@@ -1,0 +1,387 @@
+{
+  "section": "neat-tef",
+  "engine": "calculate-daily-macros (neat-tef)",
+  "specVersion": "v1 (2026-08-14, ratified)",
+  "note": "Pins RATIFIED v1 (Xuan, 2026-08-14). EXPECTED-RED until calculate-daily-macros implements the ruled specs. Expected values follow R1: the UNROUNDED chain, abs tol 1e-3 (display rounding is half-up, pinned by F10's 136.5->137). Source tables that used rounded intermediates (NEAT 378 vs 377.784) drift <=1.5 kcal from these vectors; R1 governs, the vectors are the truth. F12/F13/F14/F15; fat values are PRE-CAP by construction (10b lives in assembly).",
+  "toleranceKcal": 0.001,
+  "vectors": [
+    {
+      "id": "tier-hours-4.9",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": 4.9
+      },
+      "expected": {
+        "baseNeat": 0.3
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-hours-5.0",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": 5.0
+      },
+      "expected": {
+        "baseNeat": 0.25
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-hours-8.0",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": 8.0
+      },
+      "expected": {
+        "baseNeat": 0.2
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-hours-12.0",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": 12.0
+      },
+      "expected": {
+        "baseNeat": 0.17
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-hours-18.0",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": 18.0
+      },
+      "expected": {
+        "baseNeat": 0.13
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-hours-None",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": null
+      },
+      "expected": {
+        "baseNeat": 0.25
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-hours-0",
+      "status": "ratified",
+      "inputs": {
+        "weeklyHours": 0
+      },
+      "expected": {
+        "baseNeat": 0.3
+      },
+      "why": "F12: boundaries inclusive at the lower edge; null -> MODERATE; 0 -> RECREATIONAL"
+    },
+    {
+      "id": "tier-ctl-29.9",
+      "status": "ratified",
+      "inputs": {
+        "ctl": 29.9
+      },
+      "expected": {
+        "baseNeat": 0.3
+      },
+      "why": "F12 CTL variant replaces hours when TP supplies CTL"
+    },
+    {
+      "id": "tier-ctl-30",
+      "status": "ratified",
+      "inputs": {
+        "ctl": 30
+      },
+      "expected": {
+        "baseNeat": 0.25
+      },
+      "why": "F12 CTL variant replaces hours when TP supplies CTL"
+    },
+    {
+      "id": "tier-ctl-55",
+      "status": "ratified",
+      "inputs": {
+        "ctl": 55
+      },
+      "expected": {
+        "baseNeat": 0.2
+      },
+      "why": "F12 CTL variant replaces hours when TP supplies CTL"
+    },
+    {
+      "id": "tier-ctl-85",
+      "status": "ratified",
+      "inputs": {
+        "ctl": 85
+      },
+      "expected": {
+        "baseNeat": 0.17
+      },
+      "why": "F12 CTL variant replaces hours when TP supplies CTL"
+    },
+    {
+      "id": "tier-ctl-120",
+      "status": "ratified",
+      "inputs": {
+        "ctl": 120
+      },
+      "expected": {
+        "baseNeat": 0.13
+      },
+      "why": "F12 CTL variant replaces hours when TP supplies CTL"
+    },
+    {
+      "id": "tier-ctl-0",
+      "status": "ratified",
+      "inputs": {
+        "ctl": 0
+      },
+      "expected": {
+        "baseNeat": 0.3
+      },
+      "why": "F12 CTL variant replaces hours when TP supplies CTL"
+    },
+    {
+      "id": "daymod-1.15-2s",
+      "status": "ratified",
+      "inputs": {
+        "sessions": [
+          {
+            "durationHr": 1
+          },
+          {
+            "durationHr": 1
+          }
+        ],
+        "yesterdayTss": null
+      },
+      "expected": {
+        "modifier": 1.15
+      },
+      "why": "F13 first-match-wins: DOUBLE"
+    },
+    {
+      "id": "daymod-1.1-1s",
+      "status": "ratified",
+      "inputs": {
+        "sessions": [
+          {
+            "durationHr": 0.75
+          }
+        ],
+        "yesterdayTss": null
+      },
+      "expected": {
+        "modifier": 1.1
+      },
+      "why": "F13 first-match-wins: TRAINING (0.75 exactly qualifies)"
+    },
+    {
+      "id": "daymod-0.9-0s",
+      "status": "ratified",
+      "inputs": {
+        "sessions": [],
+        "yesterdayTss": 200
+      },
+      "expected": {
+        "modifier": 0.9
+      },
+      "why": "F13 first-match-wins: REST_AFTER_HARD (zero sessions + ytss>=150)"
+    },
+    {
+      "id": "daymod-1.0-1s",
+      "status": "ratified",
+      "inputs": {
+        "sessions": [
+          {
+            "durationHr": 0.5
+          }
+        ],
+        "yesterdayTss": 200
+      },
+      "expected": {
+        "modifier": 1.0
+      },
+      "why": "F13 first-match-wins: one SHORT session after hard yesterday falls to REST \u2014 third rule needs zero sessions"
+    },
+    {
+      "id": "daymod-1.0-0s",
+      "status": "ratified",
+      "inputs": {
+        "sessions": [],
+        "yesterdayTss": null
+      },
+      "expected": {
+        "modifier": 1.0
+      },
+      "why": "F13 first-match-wins: REST"
+    },
+    {
+      "id": "neat-343",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "baseNeat": 0.2,
+        "dayModifier": 1.0,
+        "lifestyle": "DESK"
+      },
+      "expected": {
+        "neatKcal": 343.44
+      },
+      "why": "F14 purely multiplicative, no clamp; display rounds half-up"
+    },
+    {
+      "id": "neat-378",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "baseNeat": 0.2,
+        "dayModifier": 1.1,
+        "lifestyle": "DESK"
+      },
+      "expected": {
+        "neatKcal": 377.784
+      },
+      "why": "F14 purely multiplicative, no clamp; display rounds half-up"
+    },
+    {
+      "id": "neat-309",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "baseNeat": 0.2,
+        "dayModifier": 0.9,
+        "lifestyle": "DESK"
+      },
+      "expected": {
+        "neatKcal": 309.096
+      },
+      "why": "F14 purely multiplicative, no clamp; display rounds half-up"
+    },
+    {
+      "id": "neat-658",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "baseNeat": 0.3,
+        "dayModifier": 1.0,
+        "lifestyle": "ACTIVE"
+      },
+      "expected": {
+        "neatKcal": 658.26
+      },
+      "why": "F14 purely multiplicative, no clamp; display rounds half-up"
+    },
+    {
+      "id": "neat-285",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "baseNeat": 0.13,
+        "dayModifier": 1.15,
+        "lifestyle": "MIXED"
+      },
+      "expected": {
+        "neatKcal": 285.246
+      },
+      "why": "F14 purely multiplicative, no clamp; display rounds half-up"
+    },
+    {
+      "id": "neat-382",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "baseNeat": 0.2,
+        "dayModifier": 1.0,
+        "lifestyle": "MIXED"
+      },
+      "expected": {
+        "neatKcal": 381.6
+      },
+      "why": "F14 purely multiplicative, no clamp; display rounds half-up"
+    },
+    {
+      "id": "f15-rest",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "neatKcal": 343,
+        "sessionKcal": 0,
+        "carbG": 300,
+        "protG": 115,
+        "weightKg": 75
+      },
+      "expected": {
+        "tdee": 2500.861,
+        "fatPreCapG": 93.429,
+        "tef": 249.861,
+        "fatAtFloor": false
+      },
+      "why": "F15 iterative TEF, delta<10 early exit, approached from below (I9). PRE-CAP residual \u2014 the cap is assembly 10b. Inputs are the UNROUNDED chain per R1 (the spec table's 3879 used rounded NEAT 378)"
+    },
+    {
+      "id": "f15-run-90min",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "neatKcal": 377.784,
+        "sessionKcal": 1204.72,
+        "carbG": 369,
+        "protG": 130,
+        "weightKg": 75
+      },
+      "expected": {
+        "tdee": 3877.95,
+        "fatPreCapG": 209.106,
+        "tef": 387.446,
+        "fatAtFloor": false
+      },
+      "why": "F15 iterative TEF, delta<10 early exit, approached from below (I9). PRE-CAP residual \u2014 the cap is assembly 10b. Inputs are the UNROUNDED chain per R1 (the spec table's 3879 used rounded NEAT 378)"
+    },
+    {
+      "id": "f15-rest-after-hard",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "neatKcal": 309,
+        "sessionKcal": 0,
+        "carbG": 394,
+        "protG": 123,
+        "weightKg": 75
+      },
+      "expected": {
+        "tdee": 2477.8,
+        "fatPreCapG": 60.0,
+        "tef": 260.8,
+        "fatAtFloor": true
+      },
+      "why": "F15 iterative TEF, delta<10 early exit, approached from below (I9). PRE-CAP residual \u2014 the cap is assembly 10b. Inputs are the UNROUNDED chain per R1 (the spec table's 3879 used rounded NEAT 378)"
+    },
+    {
+      "id": "f15-pre-race",
+      "status": "ratified",
+      "inputs": {
+        "rmr": 1908,
+        "neatKcal": 377.784,
+        "sessionKcal": 1479.31,
+        "carbG": 798,
+        "protG": 159,
+        "weightKg": 75
+      },
+      "expected": {
+        "tdee": 4201.894,
+        "fatPreCapG": 60.0,
+        "tef": 436.8,
+        "fatAtFloor": true
+      },
+      "why": "F15 iterative TEF, delta<10 early exit, approached from below (I9). PRE-CAP residual \u2014 the cap is assembly 10b. Inputs are the UNROUNDED chain per R1 (the spec table's 3879 used rounded NEAT 378)"
+    }
+  ]
+}

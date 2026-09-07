@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: Resting Metabolic Rate
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration1_spec` (Formula 1) and `daily_macro_calc_iteration5_spec`
 (Formula 24). **Engine:** B. **Conformance target:** `calculate-daily-macros/formulas/rmr.ts`
 (name match only — not yet diffed).
@@ -31,7 +31,13 @@ else:
   rmr = calculateRMR(athlete); source = FORMULA
 ```
 
-Not gated on `mode` as written — see [Q-011](OPEN-QUESTIONS.md#q-011). If Garmin body composition
+**Intentionally not gated on `mode` — RULED (Xuan, 2026-08-13, [Q-011](OPEN-QUESTIONS.md#q-011)):
+RMR is source-first regardless of mode.** BMR is not a same-day measurement — a Garmin daily
+summary's BMR describes the athlete, not the day — so the retrospective/prospective distinction
+that gates the other resolvers has nothing to gate here. In practice prospective runs fall back to
+the formula anyway because the summary does not exist before the day syncs (1908 prospective,
+1920 retrospective in the end-to-end table); this ruling makes that data-availability behaviour the
+stated contract rather than an accident. If Garmin body composition
 supplies a fresh `weight_kg` / `body_fat_pct`, the athlete profile is updated **before** RMR is
 computed, so the new values propagate (see [`platform-resolution.md`](platform-resolution.md)).
 

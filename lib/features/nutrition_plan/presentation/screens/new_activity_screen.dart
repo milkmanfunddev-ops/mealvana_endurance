@@ -28,6 +28,7 @@ import '../../../personal_templates/application/template_scaling_service.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../data/nutrition_plan_mapper.dart';
 import '../providers/macro_targets_controller.dart';
+import '../utils/post_create_navigation.dart';
 import '../../../activities/application/activities_service.dart';
 import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart';
 import '../../../../shared/widgets/content_area.dart';
@@ -157,6 +158,29 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
     final coordinatorState = ref.read(newActivityCoordinatorProvider);
 
+    // Fueling window belongs to the activity being created, not to the app
+    // session. The sport controllers are keepAlive singletons, so a window the
+    // athlete stepped on a previous activity — and the *ManuallySet flag that
+    // step latched — otherwise rides into this one and permanently suppresses
+    // the ratified §3a re-derivation (Race Pace ⇒ 3 h could never fire again).
+    // Same shape, and same remedy, as the stale-title reset further down.
+    // Xuan, on-device 2026-09-03; ops bug
+    // 2026-09-03-fueling-window-sticks-across-activities.md.
+    // An explicit widget.timeBeforeMinutes seed still wins: it is applied after
+    // this reset and marks the window manually-set, which is correct.
+    ref
+        .read(runningInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+    ref
+        .read(cyclingInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+    ref
+        .read(swimmingInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+    ref
+        .read(brickInputControllerProvider.notifier)
+        .resetFuelingWindowForNewActivity();
+
     // Select the appropriate sport tab based on activity type
     if (widget.activityType != null) {
       final sportTab = _getSportTabFromActivityType(widget.activityType!);
@@ -276,12 +300,6 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   void _initializeRunningController() {
     final controller = ref.read(runningInputControllerProvider.notifier);
 
-    // isFasted is per-activity state with no seed source (Activity doesn't
-    // persist it). The controller is keepAlive, so clear any leftover fasted
-    // toggle from a previous workout — otherwise this activity would silently
-    // generate with is_fasted=true and show 0g pre-workout targets.
-    controller.resetFasted();
-
     if (widget.initialDistance != null) {
       DebugLogger.info(
         '📏 NEW ACTIVITY: Initializing distance: ${widget.initialDistance} miles',
@@ -328,10 +346,6 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// Initialize cycling controller with synced activity data
   Future<void> _initializeCyclingController() async {
     final controller = ref.read(cyclingInputControllerProvider.notifier);
-
-    // Clear any keepAlive leftover fasted toggle from a previous workout
-    // (see _initializeRunningController for rationale).
-    controller.resetFasted();
 
     await controller.waitForPreferencesLoaded();
 
@@ -469,12 +483,6 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
   /// 3. Otherwise → start fresh with defaults
   void _initializeBrickController() {
     final initialTitle = widget.initialTitle;
-
-    // Clear any keepAlive leftover fasted toggle from a previous workout.
-    // The metadata/event init paths below rebuild state with isFasted: false
-    // anyway; this covers the plain "start fresh" path (see
-    // _initializeRunningController for rationale).
-    ref.read(brickInputControllerProvider.notifier).resetFasted();
 
     if (widget.activityId != null) {
       DebugLogger.info(
@@ -809,15 +817,27 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
       // Navigate to activity detail screen (skip adjust-macros)
       final isCoachView = widget.forUserId != null;
-      context.push(
-        '/current-plan',
-        extra: {
-          'activityId': activityId,
-          'isNewActivity': true,
-          'fromTemplate': true,
-          if (isCoachView) 'isCoachView': true,
-        },
-      );
+      if (isCoachView) {
+        context.push(
+          '/current-plan',
+          extra: {
+            'activityId': activityId,
+            'isNewActivity': true,
+            'fromTemplate': true,
+            'isCoachView': true,
+          },
+        );
+      } else {
+        // Unwind the spent creation form instead of pushing on top of it:
+        // the activity already exists, so backing out of the plan must land
+        // on the dashboard, never on a still-armed form that can create a
+        // duplicate.
+        showPlanAfterSuccessfulCreate(
+          context,
+          activityId: activityId,
+          fromTemplate: true,
+        );
+      }
     } catch (e) {
       DebugLogger.error('Error applying template: $e');
       if (!mounted) return;

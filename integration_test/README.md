@@ -100,7 +100,7 @@ Two workflows in `codemagic.yaml` run these on Apple-silicon Mac runners:
 | `flows/activities_crud_flow_test.dart` | Activity CRUD |
 | `flows/formula_create_pin_flow_test.dart` | Create + pin a formula |
 | `flows/formula_pin_flow_test.dart` | Pin an existing formula |
-| `flows/fuel_timeline_flow_test.dart` | Fuel timeline |
+| ~~`flows/fuel_timeline_flow_test.dart`~~ | RETIRED 2026-08-21 with the legacy Fuel Timeline tab (flag deleted; archived under `_archived/integration_test/`) |
 | `flows/meal_card_interaction_flow_test.dart` | Meal/activity card interactions — tap to edit, swipe to delete |
 | `flows/meal_log_build_flow_test.dart` | Build-a-meal: search → add → log → swipe-delete |
 | `flows/event_checklist_carbload_flow_test.dart` | Event checklist + carb-load |

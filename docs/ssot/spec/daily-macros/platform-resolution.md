@@ -1,6 +1,10 @@
 # SSOT — Daily Macros: Platform Data Resolution (Garmin / TrainingPeaks / Final Surge)
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v2 (Xuan, 2026-08-18 — Q-D7 / Q-018: the two-time model's mark-done write
+becomes `actual_time = planned_time`, reversing the 2026-08-14 `= now`; a contract change — the
+ratified vector `two-time-mark-done` and a worked consequence change — so it ships in
+`daily-macros-dashboard@v3`, never folded into `@v2`. Supersedes v1, RATIFIED Xuan 2026-08-14,
+which `@v1`/`@v2` pin; every other paragraph of this file is byte-identical to v1.)** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration5_spec` (Formulas 22–27). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/resolve.ts` (name match only — not yet diffed).
 
@@ -116,12 +120,17 @@ daily active kcal *lower* than the session it should contain.
 ## Formula 25 — `resolveTomorrow(tp_data, manual_tomorrow)`
 
 ```
-tp_data.tomorrow_planned present  → { tss, duration_hr, is_race } from TP   [TP_CALENDAR]
-elif manual_tomorrow present      → manual values                            [MANUAL]
+manual_tomorrow present           → manual values                            [MANUAL]
+elif tp_data.tomorrow_planned     → { tss, duration_hr, is_race } from TP   [TP_CALENDAR]
 else                              → null (no pre-load)
 ```
 
-TP wins over a manual flag when both are set.
+**Manual wins over TP when both are set — RULED (Xuan, 2026-08-13), reversing the recorded
+order.** `tomorrow` is a *declaration*, not a measurement: an athlete who explicitly marks
+tomorrow a race must not lose to a calendar sync missing the flag. Consistent with Q-005 (the
+engine never silently overrides an athlete's setting). Measured *numbers* stay platform-first;
+declarations are athlete-first. *(The source Notion page records the old order — push-back
+needed.)*
 
 ## Formula 26 — `resolveWeeklyRatio(tp_data, manual_ratio)`
 
@@ -139,6 +148,23 @@ If Garmin body composition supplies weight or body-fat percentage, the athlete p
 and the new values propagate through **everything** weight-dependent: baseline macros, session
 cost, carb demand, LBM/FFM, the fat floor and both clamps. Example: weight 74.2 kg with BF 15.5 %
 → LBM 62.7 → protein base `1.8 × 62.7 = 113 g`.
+
+**Raw propagation accepted as-is (Xuan, 2026-08-13).** Smoothing (e.g. 7-day rolling weight) was
+considered and deliberately not adopted for now; revisit only if scale-user targets visibly
+oscillate.
+
+**Manual profile edits — which cached days recalculate — RULED (Xuan, 2026-08-17,
+post-ratification addition; [Q-016](OPEN-QUESTIONS.md#q-016)).** The policy is
+**source-independent**: it covers any MANUAL write to an engine input (weight, height, body-fat
+percentage, lifestyle, typical weekly hours, carb-cycle opt-in, training phase — Settings is
+merely the surface). On such a write, **today's and future cached daily plans are invalidated and
+recalculated with the new values; past days are never touched** — a delivered plan is the
+historical record of what the athlete was told to eat, and recalculating it would retroactively
+flip "hit your target" verdicts. Consistent with the "today is for today" ruling (F27) and with
+the Garmin rung above, which likewise updates the profile *before* today's computation, never
+history. The spec owns this policy; the app owns the mechanism (cache invalidation — cf. the
+activity-change window in `macro_cache_invalidation.dart`). Raised via intake:
+`intake/2026-08-17-manual-input-change-invalidation.md`.
 
 ---
 
@@ -160,8 +186,90 @@ delta = {
 return { plan: retro_plan, delta, sources: retro_plan.sources }
 ```
 
-**A skipped workout is a first-class case:** no Garmin activity synced → the retrospective run
-reverts to a rest day (`session_kcal = 0`, carb back to ≈ baseline).
+**The retro plan replaces today's plan, including the remaining day — RULED (Xuan, 2026-08-13).**
+"Today is for today": after sync, the athlete's live targets are the retrospective ones, even when
+that shrinks mid-afternoon numbers they were eating toward. Known cost, accepted for this
+iteration; `plan_recalc_log` (above) captures `local_sync_time`, the delta, and the EA status
+transition precisely so the next iteration can assess how disruptive this is in practice before
+designing a softer landing. Display note: a post-sync shrink can flip net-balance copy to
+"surplus" through no action of the athlete's — the intraday-display suppression rules apply to
+`pre_override` only, so this transition is the first candidate the log data should examine.
+
+**A skipped workout is a first-class case — with a confirmation rung (RULED, Xuan, 2026-08-13):**
+"no sync" and "didn't happen" are different facts, and the athlete is the tiebreaker. The
+retrospective ladder for an unsynced session:
+
+```
+garmin activity synced                     → measured values             [GARMIN]
+elif athlete confirmed "workout done"      → FORMULA values at the resolved IF/duration  [MANUAL]
+else                                       → rest day (session_kcal = 0, carb ≈ baseline)
+```
+
+**Soft delete + sync matching — RULED (Xuan, 2026-08-14).** Activity deletion sets
+`status = 'deleted'`; the row persists. **The sync import matcher MUST match against deleted rows
+too** — an incoming platform activity that matches a tombstone is dropped, not re-imported. A
+matcher that filters `status != 'deleted'` before matching reintroduces the exact bug the
+tombstone exists to prevent (deleted workouts reappearing after every sync). Display side:
+`intraday-display.md` §4b.
+
+**The match key — RULED (Xuan, 2026-08-14).** "Matches" means, in priority order:
+
+```
+1. platform activity id equal            (where the platform supplies one — Garmin/TP do)
+2. else: same platform AND same sport AND start time within ±15 minutes
+```
+
+The fallback exists for platforms/paths without stable ids; the ±15 min window is `[design]`
+(wide enough for device-clock skew, narrow enough that a genuine second session survives). The
+same key governs BOTH tombstone matching and ordinary re-sync dedup — one definition, two
+consumers, so they cannot drift.
+
+
+
+**Two time fields per workout — RULED (Xuan, 2026-08-14); the mark-done write RE-RULED (Xuan,
+2026-08-18, Q-D7 / [Q-018](OPEN-QUESTIONS.md#q-018) — v2, contract change →
+`daily-macros-dashboard@v3`).** Every session row carries `planned_time` and `actual_time`
+(nullable), and they are never conflated:
+
+```
+planned_time : set at scheduling; the swipe gesture NEVER writes it
+actual_time  : written by Garmin sync (activity start), OR by mark-done (= planned_time —
+               "it happened as planned"; the 2026-08-14 text said = now, reversed by Q-D7);
+               CLEARED by mark-undone (back to null — the card shows planned_time again)
+```
+
+Display rule: a card shows `actual_time` when present, else `planned_time`. Consequences the
+implementer must honour: marking a 5:30 PM workout done at 3:00 PM (or at 8:00 PM) **leaves it at
+5:30 PM** on the timeline — the confirmation says it happened as planned; it is not a timestamp of
+the swipe (under the superseded 2026-08-14 text it moved to 3:00 PM); the same on a past day —
+yesterday's unsynced session confirmed as planned stays on yesterday, at its slot, and never lands
+on today's timeline or in today's `workout_so_far`; mark-done is **not offered on a future day**
+at all (design contract `spec/design/components/workout-card.md` G1, v3); `workout_so_far` in the
+intraday display keys off `actual_time` presence, never off `planned_time` having passed
+(unchanged by Q-D7 — a session marked done before its planned time counts in full); and a later
+Garmin sync overwrites a mark-done `actual_time` with the measured start (`MANUAL → GARMIN`
+upgrade, same as the kcal path — unchanged). Supabase carries both columns on the workout row.
+Vectors: `two-time-mark-done` (regenerated 2026-08-18), `two-time-mark-done-after-planned`,
+`two-time-sync-overwrites-mark-done`, `two-time-mark-undone`. Raised via
+`intake/2026-08-18-mark-done-on-non-current-day.md`.
+
+The confirmation is a first-class input (home-page affordance — see the design prompt in the
+reconciliation worklist), so a dead watch or delayed sync never silently strips a real workout's
+fuel from the plan. A later Garmin sync for a confirmed session upgrades `MANUAL → GARMIN` and
+re-runs the recalc.
+
+**`SKIPPED` — the athlete's "didn't happen" as a first-class write — ADDED (RATIFIED Xuan, 2026-08-17, post-ratification addition shipping in
+`daily-macros-dashboard@v2`; design contract `spec/design/components/workout-card.md` Q-D6).** The ladder above is unchanged; this names how a workout
+lands on its third rung *before* the day is over. The workout row's `status` gains `skipped`
+(alongside the `deleted` tombstone): written by the athlete's Skip on the card — allowed on the
+current day — cleared by Unskip or by mark-done. A `status = 'skipped'` session contributes
+**zero** to the day's session demand and fuel windows exactly as the else-rung does, even while
+`planned_time` is still in the future. Passive skip (day past, `actual_time` null, not
+`skipped`) is **derived**, never written. **Sync beats skip:** the Garmin rung sits above both — a
+platform activity matching a skipped row (same match key as above) upgrades it to measured values
+and clears `skipped`; the matcher MUST NOT filter `status = 'skipped'` rows out before matching,
+for the same reason it must not filter tombstones. Delete (`status = 'deleted'`) is deferred to a
+future bundle; the tombstone rule stays as written.
 
 ---
 
@@ -191,21 +299,78 @@ IF-0.76 rate is `40 + 0.6 × 15 = 49 g/hr` over 1.5 hr ✓.
 estimate (1205), which drops TDEE by 412 kcal. Carb barely moves — it keys off IF, not kcal — but
 fat, the residual, absorbs almost the whole difference.
 
+### Garmin-first affirmed, with mandatory calibration logging — RULED (Xuan, 2026-08-13)
+
+**The ladder stands: Garmin session kcal wins where present.** The device is on the athlete's
+wrist for the actual session; it is the most trustworthy signal we have. But the question of *how
+much* better it is than the formula has never been measured on our own population — Garmin
+`ActiveKilocalories` is itself a model — so **any correction (damping, blending, capping the
+formula-vs-Garmin delta) is deliberately deferred until we have data, and collecting that data is
+a requirement of this spec, not an optional nicety:**
+
+Every `recalculateAfterSync` run MUST persist one row to `public.plan_recalc_log` (Supabase,
+`plan_generation_log` pattern: append-only, RLS enabled with no policies, service-role writes):
+
+```sql
+create table if not exists public.plan_recalc_log (
+  id           uuid primary key default gen_random_uuid(),
+  created_at   timestamptz not null default now(),
+  device_id    text,
+  local_sync_time time,       -- time-of-day the recalc landed (ruling 5's question)
+  sessions     jsonb,         -- [{sport, duration_hr, resolved_if,
+                              --   formula_kcal, garmin_kcal, kcal_source}]
+  delta        jsonb,         -- the F27 delta object, verbatim
+  ea_status_before text, ea_status_after text
+);
+```
+
+`sessions[].formula_kcal` is computed with the SAME resolved IF/duration as the Garmin comparison —
+the pair must be like-for-like or the calibration is noise. Evaluation question, recorded now so
+the analysis answers it: *what is the distribution of `garmin_kcal − formula_kcal` by sport and
+duration, and does the resulting fat/TDEE swing (ruling 5) warrant a correction?*
+
 ## Regression requirement
 
 With `garmin_connected = false` and `tp_connected = false`, output must be **identical to
 Iteration 4** for the same inputs, and no `GARMIN` or `TP*` source tags may appear anywhere in the
 output. Every Iteration 1–4 case must still pass unchanged.
 
-## `sources` object
+## `sources` object — RULED (Xuan, 2026-08-13, [Q-012](OPEN-QUESTIONS.md#q-012))
 
 Must carry a source tag for: `rmr`, `neat`, `session_kcal` (array, one per session), `IF` (array,
-one per session), `tomorrow`, `weekly_ratio`. Tag vocabulary observed across the ladders:
-`GARMIN`, `TP_ACTUAL`, `TP_PLANNED`, `TP`, `TP_CALENDAR`, `ZONE_DIST`, `FORMULA`, `MANUAL`. The
-SSOT does not fully specify the object's shape — see [Q-012](OPEN-QUESTIONS.md#q-012).
+one per session), `tomorrow`, `weekly_ratio`.
+
+**The tag enum is pinned to exactly seven values:**
+`GARMIN` · `TP_ACTUAL` · `TP_PLANNED` · `TP_CALENDAR` · `ZONE_DIST` · `FORMULA` · `MANUAL`.
+The bare `TP` that appeared for the weekly ratio was inconsistent naming, not an eighth source —
+it **normalises to `TP_PLANNED`**. A tag outside the enum is a conformance failure.
+
+### Display mapping — sources enum → athlete-facing chips (F-13, PROPOSED 2026-08-13)
+
+The dashboard renders the seven tags as four chips. The mapping is **total** — a chip the enum
+cannot produce, or a tag with no chip, is a conformance failure. `[design]`, awaiting ratification
+with this file:
+
+| Tag | Chip |
+|---|---|
+| `GARMIN` | `verified · Garmin` |
+| `TP_ACTUAL` | `verified · TrainingPeaks` |
+| `MANUAL` | `self-reported` |
+| `TP_PLANNED`, `TP_CALENDAR` | `planned (estimate)` |
+| `FORMULA`, `ZONE_DIST` | `estimated` |
+
+Rationale: *verified* = a platform measured it after the fact; *planned* = a human scheduled it;
+*estimated* = we computed it. `ZONE_DIST` is a computation over athlete-entered buckets, hence
+*estimated*, not *self-reported* — the athlete reported the zones, not the number shown.
+
+**`delta` is `null` on every path except retrospective recalculation** (`recalculateAfterSync`),
+where it carries the shape defined above. Not absent, not zeros — `null`, so a consumer can
+distinguish "no recalculation happened" from "recalculation happened and nothing moved".
 
 ## Deferred by the SSOT (explicitly, not oversights)
 - **CTL staleness detection** — a CTL over 30 days old is used anyway; deferred to "v2.1".
-- **HR-derived IF** — listed as a capability of `garmin_avg_hr` and referenced by an edge case
-  ("TP IF takes priority over Garmin HR-derived IF"), but no derivation is given and the IF ladder
-  in Formula 22 has no Garmin rung. See [Q-010](OPEN-QUESTIONS.md#q-010).
+- **HR-derived IF — RULED deferred (Xuan, 2026-08-13, [Q-010](OPEN-QUESTIONS.md#q-010)),** like
+  CTL staleness. `garmin_avg_hr` is collected but unused; the IF ladder falls from `TP_PLANNED`
+  straight to `ZONE_DIST`, and the edge case ("TP IF takes priority over Garmin HR-derived IF") is
+  vacuously satisfied. If the rung is ever added it slots between `TP_PLANNED` and `ZONE_DIST` and
+  requires its own derivation spec first — an implementer must NOT invent one.

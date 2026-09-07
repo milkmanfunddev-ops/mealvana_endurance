@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../theme/app_theme.dart';
 import '../../domain/nutrition_plan.dart';
 import '../../domain/macro_targets.dart' as targets_model;
-import '../../domain/pre_workout_display_rounding.dart';
 import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 
 /// Separate widget for section subtitles that can be updated independently
@@ -47,8 +46,10 @@ class SectionSubtitleWidget extends StatelessWidget {
     // Match on section.id (before_run, during_run, after_run) not title for sport-agnostic matching
     if (section.id.contains('before')) {
       final pre = macroTargets!.preRun;
-      final carbsTarget = round5(pre.carbsG).round();
-      final fluidsTarget = round25(pre.fluidsMl).round();
+      // M-5 / R-01: whole units at the display edge; the gate path is
+      // handled by `hasFluidTarget` below.
+      final carbsTarget = pre.carbsG.round();
+      final fluidsTarget = (pre.fluidsMl ?? 0).round();
 
       badges = [
         _buildMacroBadge(

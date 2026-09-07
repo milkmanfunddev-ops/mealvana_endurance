@@ -184,13 +184,18 @@ void main() {
         isTrue,
         reason: 'dev-ios should deploy on push to develop.',
       );
+      // ▶ Lee 08-20 (playbook §0 standing order #1): Codemagic NEVER runs
+      // integration/Patrol tests — one run billed 1h31m, about USD 9. The flow gate
+      // for a develop push is the M1 self-hosted workflow
+      // (tests-selfhosted.yml, on: push) plus the local run; Codemagic's
+      // integration lanes must stay trigger-DISABLED.
       expect(
-        eventsOf('integration-tests-develop').contains('push') &&
-            branchesOf('integration-tests-develop').contains('develop'),
-        isTrue,
+        eventsOf('integration-tests-develop'),
+        isEmpty,
         reason:
-            'Nothing would exercise the flows on a push to develop — the dev '
-            'TestFlight build would ship untested.',
+            'integration-tests-develop must stay trigger-disabled on '
+            'Codemagic (Lee 08-20); the M1 workflow owns push-triggered '
+            'flows.',
       );
       expect(
         eventsOf('pr-validation').contains('push') &&
@@ -200,16 +205,16 @@ void main() {
       );
     });
 
-    test('a push to release/* runs the prod-backend tests', () {
+    test('a push to release/* runs NO Codemagic integration lane', () {
+      // ▶ Lee 08-20 (playbook §0): the release gate is P3 — integration
+      // tests run LOCALLY before the release/* push, never on Codemagic's
+      // meter. The lane exists only for manual starts.
       expect(
-        eventsOf('integration-tests-prod').contains('push') &&
-            branchesOf(
-              'integration-tests-prod',
-            ).any((b) => b.startsWith('release')),
-        isTrue,
+        eventsOf('integration-tests-prod'),
+        isEmpty,
         reason:
-            'A release push deploys to the App Store lane; the prod-backend '
-            'Patrol suite has to run on that same trigger.',
+            'integration-tests-prod must stay trigger-disabled on Codemagic '
+            '(Lee 08-20); the pre-release gate is the local P3 run.',
       );
     });
 

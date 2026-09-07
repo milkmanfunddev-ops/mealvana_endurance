@@ -1,6 +1,6 @@
 # SSOT — Daily Macros: Baseline Macros & Carb Cycling
 
-**Status: RECORDED — awaiting ratification** (2026-07-28). Source: Notion
+**Status: RATIFIED v1 (Xuan, 2026-08-14).** Recorded 2026-07-28; Source: Notion
 `daily_macro_calc_iteration1_spec` (Formula 2) and `daily_macro_calc_iteration4_spec`
 (Formula 20). **Engine:** B. **Conformance target:**
 `calculate-daily-macros/formulas/baseline.ts` (name match only — not yet diffed).
@@ -51,6 +51,18 @@ Gating details that the test tables pin explicitly:
 - Allowed in `BASE`, `BUILD`, `TAPER`, `OFF_SEASON`. Blocked only in `PEAK` and `RACE_WEEK`.
 - Cycling reduces the **baseline**; session carb demand and recovery debt still add on top of the
   reduced figure.
+
+**Cycling is currently unobservable in the returned plan — RULED (Xuan, 2026-08-17,
+post-ratification addition; [Q-017](OPEN-QUESTIONS.md#q-017)).** On any qualifying day the raw fat
+residual exceeds the Q-014 30 %E cap in both branches, and because TDEE is carb-independent when
+fat is above its floor, assembly step 10b converges the post-cap carb to
+`(TDEE − prot×4 − fat_cap×9)/4` — the identical plan with or without the cycled baseline
+(verified numerically, QA + producer independently). **This no-op is the accepted v1 contract:**
+F20's gates and the pre-cap worked examples above remain exactly as ratified, and implementations
+must NOT compensate (no 10b exemption under this version). The fix — qualifying cycled days exempt
+from 10b redistribution so fat absorbs the easy day — is ruled *in principle* but is a **contract
+change staged for the next bundle version** (it alters the ratified pipeline; see the register
+entry). Raised via intake: `intake/2026-08-17-carb-cycling-unobservable-under-fat-cap.md`.
 
 ## Constants — provenance
 

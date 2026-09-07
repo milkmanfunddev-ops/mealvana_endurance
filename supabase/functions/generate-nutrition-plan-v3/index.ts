@@ -105,6 +105,9 @@ serve(withSentry(async (req) => {
   try {
     const parseStart = performance.now();
     const input: PlanInputV2 = await req.json();
+    // §10 test-traffic marker: remote e2e suites send x-mealvana-test; the
+    // ledger records it into `source` so funnel queries can exclude them.
+    const testSource = req.headers.get("x-mealvana-test");
     console.log(
       `[PLAN-V3-TIMING] parse_input completed in ${elapsedMs(parseStart)}ms`,
     );
@@ -216,7 +219,7 @@ serve(withSentry(async (req) => {
     if (activityType === "brick") {
       const response = await timeAsync(
         "brick_total",
-        () => handleBrickPlan(supabase, input, planId, userPins),
+        () => handleBrickPlan(supabase, input, planId, userPins, testSource),
       );
       console.log(
         `[PLAN-V3-TIMING] request_total completed in ${
@@ -485,9 +488,15 @@ serve(withSentry(async (req) => {
         beforeFoods: flattenBeforeFoods(
           beforeResult as Record<string, { foods?: FoodResult[] }>,
         ),
+        // §10: before/after paths + test-traffic marker.
+        beforeResult: beforeResult as Record<
+          string,
+          { foods?: FoodResult[]; pin_decision?: Record<string, unknown> }
+        >,
         duringResult: duringPhaseResult,
         afterResult: afterPhaseResult,
         warnings,
+        testSource,
       }),
     );
     // deno-lint-ignore no-explicit-any

@@ -1,8 +1,10 @@
 import 'dart:convert';
 import '../domain/nutrition_plan.dart';
+import '../domain/pre_workout_hydration_check.dart';
 import '../domain/food_item_data.dart';
 import '../domain/macro_shortfall.dart';
 import '../domain/time_slot_assignment.dart';
+import '../domain/transition_identity.dart';
 import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 import 'package:mealvana_endurance/features/formula_kit/domain/pin_decision.dart';
 
@@ -51,6 +53,9 @@ class NutritionPlanMapper {
       isDeleted: json['isDeleted'] as bool? ?? false,
       conflictResolution:
           json['conflictResolution'] as String? ?? 'last_write_wins',
+      preWorkoutHydrationCheck: PreWorkoutHydrationCheckRecord.fromJson(
+        json[PreWorkoutHydrationCheckRecord.jsonKey],
+      ),
     );
   }
 
@@ -424,6 +429,9 @@ class NutritionPlanMapper {
           : false,
       conflictResolution:
           json['conflict_resolution'] as String? ?? 'last_write_wins',
+      preWorkoutHydrationCheck: PreWorkoutHydrationCheckRecord.fromJson(
+        planData?[PreWorkoutHydrationCheckRecord.jsonKey],
+      ),
     );
   }
 
@@ -536,6 +544,13 @@ class NutritionPlanMapper {
         plan['during_segments'] as Map<String, dynamic>? ?? {};
     final duringSegmentShortfalls =
         plan['during_segment_shortfalls'] as Map<String, dynamic>? ?? {};
+    // Per-segment pin decisions — additive sibling key emitted by the brick
+    // handler since 2026-09-04; older payloads simply lack it and every
+    // segment section stays decision-less (the banner then synthesizes
+    // "No pin found" rows). Bug
+    // 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable.
+    final duringSegmentPinDecisions =
+        plan['during_segment_pin_decisions'] as Map<String, dynamic>? ?? {};
     final transitionsData = plan['transitions'] as Map<String, dynamic>? ?? {};
 
     // Build segment targets map from phases.during_segments
@@ -549,16 +564,22 @@ class NutritionPlanMapper {
       }
     }
 
-    // Build transition targets map from phases.transitions
+    // Build transition targets map from phases.transitions, keyed by the
+    // NORMALIZED positional name (brick.md R8; tolerant of legacy
+    // sport-pair-era spellings via digit extraction).
     final transitionTargetsMap = <String, Map<String, dynamic>>{};
     final transitionTargetsList =
         phases?['transitions'] as List<dynamic>? ?? [];
     for (final t in transitionTargetsList) {
       if (t is Map<String, dynamic>) {
-        final name = t['transition_name'] as String?;
+        final name = normalizeTransitionName(t['transition_name'] as String?);
         if (name != null) transitionTargetsMap[name] = t;
       }
     }
+    final normalizedTransitionsData = <String, dynamic>{
+      for (final e in transitionsData.entries)
+        normalizeTransitionName(e.key) ?? e.key: e.value,
+    };
 
     int segmentIndex = 0;
     for (final entry in duringSegmentsData.entries) {
@@ -586,11 +607,17 @@ class NutritionPlanMapper {
               )
               .toList();
 
+      final segmentPinDecisionJson =
+          duringSegmentPinDecisions[segmentOrder] as Map<String, dynamic>?;
+
       sections.add(
         PlanSection(
           id: 'during_segment_$segmentOrder',
           title: 'During $sportName',
           subtitle: null,
+          pinDecision: segmentPinDecisionJson != null
+              ? PinDecision.fromJson(segmentPinDecisionJson)
+              : null,
           foodItems: foodItems,
           carbsTarget: (segTargets?['carbs_g'] as num?)?.toDouble(),
           sodiumTarget: (segTargets?['sodium_mg'] as num?)?.toDouble(),
@@ -605,11 +632,12 @@ class NutritionPlanMapper {
         ),
       );
 
-      // Add transition after each segment (except the last)
-      final transitionKey = 'T${segmentIndex + 1}';
-      if (transitionsData.containsKey(transitionKey)) {
+      // Add transition after each segment (except the last) — positional
+      // key per brick.md R8.
+      final transitionKey = transitionKeyForIndex(segmentIndex);
+      if (normalizedTransitionsData.containsKey(transitionKey)) {
         final transitionItems =
-            transitionsData[transitionKey] as List<dynamic>? ?? [];
+            normalizedTransitionsData[transitionKey] as List<dynamic>? ?? [];
         final transTargets = transitionTargetsMap[transitionKey];
 
         sections.add(
@@ -725,6 +753,9 @@ class NutritionPlanMapper {
       'updatedAt': plan.updatedAt?.toIso8601String(),
       'isDeleted': plan.isDeleted,
       'conflictResolution': plan.conflictResolution,
+      if (plan.preWorkoutHydrationCheck != null)
+        PreWorkoutHydrationCheckRecord.jsonKey: plan.preWorkoutHydrationCheck!
+            .toJson(),
     };
   }
 }

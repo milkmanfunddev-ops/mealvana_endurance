@@ -27,28 +27,5 @@ fi
 
 echo "→ launching $BUNDLE on $UDID"
 xcrun simctl launch "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
-
-# Best-effort staleness check: warn when the installed bundle predates app HEAD.
-# (Can NOT detect a leftover integration-test build — same bundle id, so the caller
-# must still verify via screenshot that the real app UI renders. See qa-smoke SKILL.md.)
-find_workspace() { local d="$1"; while [ "$d" != "/" ]; do
-  [ -f "$d/workspace.env" ] && { echo "$d"; return; }; d="$(dirname "$d")"; done; }
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MV_ROOT="$(find_workspace "$SCRIPT_DIR")"
-if [ -n "$MV_ROOT" ]; then
-  # shellcheck disable=SC1091
-  source "$MV_ROOT/workspace.env" 2>/dev/null || true
-  APP_PATH="$(xcrun simctl get_app_container "$UDID" "$BUNDLE" app 2>/dev/null || true)"
-  if [ -n "${APP_ROOT:-}" ] && [ -n "$APP_PATH" ] && [ -d "$APP_ROOT/.git" ]; then
-    INSTALLED_EPOCH="$(stat -f %m "$APP_PATH/Runner" 2>/dev/null || stat -f %m "$APP_PATH" 2>/dev/null || echo 0)"
-    HEAD_EPOCH="$(git -C "$APP_ROOT" log -1 --format=%ct 2>/dev/null || echo 0)"
-    if [ "$INSTALLED_EPOCH" -gt 0 ] && [ "$HEAD_EPOCH" -gt 0 ] && [ "$INSTALLED_EPOCH" -lt "$HEAD_EPOCH" ]; then
-      echo "⚠ installed app ($(date -r "$INSTALLED_EPOCH" '+%Y-%m-%d %H:%M')) is OLDER than app HEAD" \
-           "($(git -C "$APP_ROOT" log -1 --format='%h %cd' --date=format:'%Y-%m-%d %H:%M')) —" \
-           "rebuild with \$APP_ROOT/scripts/run_dev.sh -d $UDID for the latest dev version"
-    fi
-  fi
-fi
-
 echo "✓ simulator ready"
 echo "$UDID"

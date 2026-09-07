@@ -65,6 +65,8 @@ import 'package:mealvana_endurance/features/formula_kit/domain/personal_formula.
 import 'package:mealvana_endurance/features/nutrition_plan/domain/food.dart';
 
 import '../helpers/widget_test_harness.dart';
+import 'package:mealvana_endurance/features/formula_kit/application/athlete_conflict_profile_provider.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/formula_profile_conflict.dart';
 
 // ─── Minimal seeded domain objects ────────────────────────────────────────────
 
@@ -284,6 +286,11 @@ void main() {
         overrides: [
           formulaLibraryControllerProvider.overrideWith(
             _EmptyLibraryController.new,
+          ),
+          // FP: the cards watch the athlete conflict profile; stub it so the
+          // smoke pump doesn't instantiate a real AppDatabase.
+          athleteConflictProfileProvider.overrideWith(
+            (ref) async => const AthleteConflictProfile(),
           ),
           formulaPinControllerProvider.overrideWith(_EmptyPinController.new),
           personalFormulasControllerProvider.overrideWith(

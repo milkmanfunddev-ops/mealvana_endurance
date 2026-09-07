@@ -133,6 +133,7 @@ class ProportionalScalingService {
       servingSize: item.servingSize,
       isDrink: item.isDrink,
       templateId: item.templateId,
+      origin: item.origin,
       scaleMultiplier: multiplier,
     );
   }

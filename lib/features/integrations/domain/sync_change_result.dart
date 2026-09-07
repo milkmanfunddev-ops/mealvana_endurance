@@ -12,6 +12,7 @@ class SyncChangeResult {
     required this.updatedActivities,
     required this.deletedActivityIds,
     required this.unchangedCount,
+    this.tombstoneDroppedCount = 0,
   });
 
   /// Activities that exist in remote but not in local (need to be inserted)
@@ -25,6 +26,11 @@ class SyncChangeResult {
 
   /// Count of activities that exist in both and are unchanged
   final int unchangedCount;
+
+  /// Count of incoming provider workouts dropped because they matched a
+  /// status='deleted' tombstone (soft-delete ruling: matched tombstones are
+  /// never re-imported)
+  final int tombstoneDroppedCount;
 
   /// Total number of changes detected (new + updated + deleted)
   int get totalChanges =>
@@ -45,7 +51,8 @@ class SyncChangeResult {
         'new: ${newActivities.length}, '
         'updated: ${updatedActivities.length}, '
         'deleted: ${deletedActivityIds.length}, '
-        'unchanged: $unchangedCount'
+        'unchanged: $unchangedCount, '
+        'tombstoneDropped: $tombstoneDroppedCount'
         ')';
   }
 }

@@ -1,6 +1,8 @@
 # SSOT — Pre-Workout Carbohydrates
 
 **Status: RATIFIED v2 (Xuan, 2026-08-04).** Supersedes v1 RATIFIED (Xuan, 2026-07-26).
+**Amended 2026-09-04 — the plan band is `target ± 12.5 %` in ALL cases (Xuan, post-ratification
+addition; see "The plan band" below). The v2 in-window `1–4 g/kg` band clause is SUPERSEDED.**
 **Engine:** `OfflineMacroCalculator.calculatePreWorkoutTargets`
 (`app/lib/features/nutrition_plan/data/offline_macro_calculator.dart:98`), mirrors
 `generate-macros-v4/pre-workout.ts`. **Code implements v1.**
@@ -30,8 +32,10 @@ Five things change:
    **Thomas 2016 Table 2** (origin: **Burke 2011 Table II**); "1 g/kg/hr" appears in no source.
    Notes §3.1.
 2. **The meal/snack boundary moves 90 → 120 min.** Notes §3.3.
-3. **The plan band becomes the cited 1–4 g/kg**; ±12.5% is demoted to a per-tier solver tolerance.
-   Notes §3.4.
+3. ~~**The plan band becomes the cited 1–4 g/kg**; ±12.5% is demoted to a per-tier solver
+   tolerance.~~ Notes §3.4. **SUPERSEDED by the 2026-09-04 amendment** — the band is
+   `target ± 12.5 %` in all cases. What survives from this item is the *citation* change (item 1)
+   and the tier tolerance; only the PLAN BAND reverted.
 4. **Composition moves out.** Fat/fibre/protein guidelines and the food list now live in their own
    SSOT, `pre-workout-food-composition.md`; this document controls the carbohydrate *quantity* only.
 5. **The 0.5 g/kg floor (D-002) is removed** — Xuan, 2026-08-03. It bound only at t−15 and t−0, and
@@ -124,13 +128,14 @@ else:
 
 carbsG = total
 
-# plan band
+# plan band — AMENDED 2026-09-04: one rule, no regime split
+carbsLowG  = total * (1 - TIER_TOL)
+carbsHighG = total * (1 + TIER_TOL)
+
+# targetBasis is UNCHANGED. It describes how the TARGET was derived — whether the
+# target sits inside Thomas's cited box — and never described the band's width.
 inWindow = (60 <= t <= WINDOW_MAX) AND (workoutDurationMin >= 60)
-if inWindow:
-    carbsLowG = 1.0 * BW ; carbsHighG = 4.0 * BW ; targetBasis = "evidenced_band"
-else:
-    carbsLowG = total * (1 - TIER_TOL) ; carbsHighG = total * (1 + TIER_TOL)
-    targetBasis = "design_choice"
+targetBasis = "evidenced_band" if inWindow else "design_choice"
 
 # Each tier is a RANGE the food selector lands within, not a point: ±12.5% of that tier's portion.
 for tier in tiers:
@@ -148,12 +153,26 @@ window is guidance, not a hard gate: where the nearest real food falls just outs
 match. What is guaranteed is the plan total — see below.
 
 **One tolerance, used everywhere — so the container always holds its contents.** ±12.5 % is applied
-to each tier's portion *and*, in the design_choice regime, to the plan total. Because the tier
-portions sum to `total`, the tier windows sum to exactly the plan band — no floor, no special
-envelope. Inside the cited window the plan band is Thomas's `[1·BW, 4·BW]` instead, which holds the
-±12.5 % tier envelope everywhere except within one tolerance-width of the 1 g/kg floor (t−60), where
-the delivered total may sit up to 12.5 % under Thomas's minimum — mild and self-correcting, not
-clamped.
+to each tier's portion *and* to the plan total, in **every** regime. Because the tier portions sum
+to `total`, the tier windows sum to exactly the plan band — no floor, no special envelope, no
+exception.
+
+### The plan band — RULED (Xuan, 2026-09-04, post-ratification amendment)
+
+**The plan band is `target ± 12.5 %` in all cases.** The v2 clause that published Thomas's
+`[1·BW, 4·BW]` as the athlete's per-plan band whenever the window was open is superseded.
+
+*Why.* **The cited 1–4 g/kg range is a statement about the literature, not a per-plan tolerance.**
+Publishing it as the athlete's band rendered a 50 kg athlete a `50 g – 200 g` slider around a 50 g
+target — a 150 g-wide band that dwarfs the plan it describes and reads on device as a defect
+(Xuan, 2026-09-04, IMG_8893). A band is the tolerance around *this* plan; the evidence window
+belongs in the citation table and the notes, which still carry it.
+
+*What does NOT change.* The **target** derivation is untouched:
+`total = min(t/60, 4.0) × BW`. Invariant 4 — containment of the TARGET in the cited box for
+`60 <= t <= 240` — still holds, by construction and unchanged; that is the claim of
+non-contradiction against Thomas 2016, and it was never a claim about the band. `targetBasis`
+also keeps its values and its meaning.
 
 **Tiers stack.** An athlete entering at t−180 receives meal, snack and top-off; at t−45, snack and
 top-off; at t−20, only the top-off. `carbsG` is the **plan total**, not a single feeding.
@@ -217,12 +236,18 @@ feeding — the exact misreading v1 encouraged. **No `tier` integer, ever** — 
 8. `isFasted` returns zeros and an empty `tiers` array, never `null`.
 9. `composition` present on every tier.
 10. **Cross-spec pin.** `TIER_MEAL_MIN == pre-workout-hydration.T_REF`; fail loudly on divergence.
-11. **Tier windows are ±12.5 %, and sum to the plan band.** Each tier has
+11. **Tier windows are ±12.5 %, and sum to the plan band — in EVERY regime.** Each tier has
     `rangeLowG = carbsG·0.875` and `rangeHighG = carbsG·1.125`, with `rangeLowG <= carbsG <= rangeHighG`.
-    Because the same 12.5 % governs the plan total in the design_choice regime,
-    `Σ rangeLowG == carbsLowG` and `Σ rangeHighG == carbsHighG` **exactly** — assert equality. In the
-    cited regime the plan band is `[1·BW, 4·BW]`; the ±12.5 % tier envelope sits inside it except
-    within a tolerance-width of the 1 g/kg floor, an accepted mild undershoot (not a hard violation).
+    Because the same 12.5 % governs the plan total, `Σ rangeLowG == carbsLowG` and
+    `Σ rangeHighG == carbsHighG` **exactly** — assert equality. **Amended 2026-09-04:** this now holds
+    unconditionally; the old cited-regime exception (band `[1·BW, 4·BW]`, with a tolerated undershoot
+    near the 1 g/kg floor) is gone.
+12. **The band is a pure function of the target, independent of `targetBasis`** (amended 2026-09-04).
+    `carbsLowG == carbsG·0.875` and `carbsHighG == carbsG·1.125` for every input, INCLUDING the
+    `evidenced_band` rows. A conformance suite must assert this on a cited-window row specifically —
+    that row is where the superseded clause used to diverge, so it is the one that proves the
+    amendment landed. Corollary: the two carb bands (pre-workout plan band, per-tier window) are now
+    the SAME shape; any test pinning them as "deliberately different objects" is superseded.
 
 ## Constants — basis and confidence
 
@@ -281,19 +306,19 @@ feeding — the exact misreading v1 encouraged. **No `tier` integer, ever** — 
 
 | t | meal | snack | top-off | **total** | g/kg | plan band | basis |
 |---|---|---|---|---|---|---|---|
-| 240 | 156.00 | 78.00 | 26.00 | **260.00** | 4.00 | 65 – 260 | evidenced_band |
-| 225 | 146.25 | 73.125 | 24.375 | **243.75** | 3.75 | 65 – 260 | evidenced_band |
-| 210 | 136.50 | 68.25 | 22.75 | **227.50** | 3.50 | 65 – 260 | evidenced_band |
-| 195 | 126.75 | 63.375 | 21.125 | **211.25** | 3.25 | 65 – 260 | evidenced_band |
-| 180 | 117.00 | 58.50 | 19.50 | **195.00** | 3.00 | 65 – 260 | evidenced_band |
-| 165 | 107.25 | 53.625 | 17.875 | **178.75** | 2.75 | 65 – 260 | evidenced_band |
-| 150 | 97.50 | 48.75 | 16.25 | **162.50** | 2.50 | 65 – 260 | evidenced_band |
-| 135 | 87.75 | 43.875 | 14.625 | **146.25** | 2.25 | 65 – 260 | evidenced_band |
-| 120 | 78.00 | 39.00 | 13.00 | **130.00** | 2.00 | 65 – 260 | evidenced_band |
-| 105 | — | 85.3125 *(light meal)* | 28.4375 | **113.75** | 1.75 | 65 – 260 | evidenced_band |
-| 90 | — | 73.125 | 24.375 | **97.50** | 1.50 | 65 – 260 | evidenced_band |
-| 75 | — | 60.9375 | 20.3125 | **81.25** | 1.25 | 65 – 260 | evidenced_band |
-| 60 | — | 48.75 | 16.25 | **65.00** | 1.00 | 65 – 260 | evidenced_band |
+| 240 | 156.00 | 78.00 | 26.00 | **260.00** | 4.00 | 227.50 – 292.50 | evidenced_band |
+| 225 | 146.25 | 73.125 | 24.375 | **243.75** | 3.75 | 213.28 – 274.22 | evidenced_band |
+| 210 | 136.50 | 68.25 | 22.75 | **227.50** | 3.50 | 199.06 – 255.94 | evidenced_band |
+| 195 | 126.75 | 63.375 | 21.125 | **211.25** | 3.25 | 184.84 – 237.66 | evidenced_band |
+| 180 | 117.00 | 58.50 | 19.50 | **195.00** | 3.00 | 170.63 – 219.38 | evidenced_band |
+| 165 | 107.25 | 53.625 | 17.875 | **178.75** | 2.75 | 156.41 – 201.09 | evidenced_band |
+| 150 | 97.50 | 48.75 | 16.25 | **162.50** | 2.50 | 142.19 – 182.81 | evidenced_band |
+| 135 | 87.75 | 43.875 | 14.625 | **146.25** | 2.25 | 127.97 – 164.53 | evidenced_band |
+| 120 | 78.00 | 39.00 | 13.00 | **130.00** | 2.00 | 113.75 – 146.25 | evidenced_band |
+| 105 | — | 85.3125 *(light meal)* | 28.4375 | **113.75** | 1.75 | 99.53 – 127.97 | evidenced_band |
+| 90 | — | 73.125 | 24.375 | **97.50** | 1.50 | 85.31 – 109.69 | evidenced_band |
+| 75 | — | 60.9375 | 20.3125 | **81.25** | 1.25 | 71.09 – 91.41 | evidenced_band |
+| 60 | — | 48.75 | 16.25 | **65.00** | 1.00 | 56.88 – 73.13 | evidenced_band |
 | 45 | — | 36.5625 | 12.1875 | **48.75** | 0.75 | 42.66 – 54.84 | design_choice |
 | 30 | — | 24.375 | 8.125 | **32.50** | 0.50 | 28.44 – 36.56 | design_choice |
 | 15 | — | — | 16.25 | **16.25** | 0.25 | 14.22 – 18.28 | design_choice |
@@ -302,8 +327,11 @@ feeding — the exact misreading v1 encouraged. **No `tier` integer, ever** — 
 
 Each tier column is the **aim**; the food-match window is **±12.5 %** of it — e.g. at t−180, 65 kg
 the meal is 117.00 g (102.375 – 131.625), the snack 58.50 g (51.19 – 65.81), the top-off 19.50 g
-(17.06 – 21.94). In the design_choice rows the `plan band` is ±12.5 % of the total, which is the sum
-of the tier windows.
+(17.06 – 21.94). **The `plan band` column is ±12.5 % of the total in EVERY row** (amended
+2026-09-04) and is exactly the sum of that row's tier windows. Before the amendment the thirteen
+`evidenced_band` rows all read `65 – 260` — Thomas's evidence range, identical regardless of the
+target; that is the clause this table's band column no longer follows. `basis` is unchanged and
+still describes the TARGET.
 
 † **At `t = 0` the band is `[0, 0]`.** The aim is 0 (no time to eat) and ±12.5 % of 0 is 0. That
 over-states — nothing forbids a gel at the gun — so the consumer MUST suppress the range rather than

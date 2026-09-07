@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/src/internals.dart' show Override;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
 import 'package:mealvana_endurance/features/auth/application/auth_service.dart'
     show currentUserProvider;
@@ -40,6 +41,60 @@ class MockAnalyticsTracker extends Mock implements AnalyticsTracker {}
 
 class MockSentryReporter extends Mock implements SentryReporter {}
 
+/// A [SentryReporter] mock whose Future-returning reporting methods are stubbed
+/// as no-ops. Error paths in repositories/controllers report to Sentry inside
+/// their catch blocks; an unstubbed mock throws there ("type 'Null' is not a
+/// subtype of type Future-of-void"), turning an expected best-effort failure
+/// (e.g. the fake network refusing a push) into a test crash.
+MockSentryReporter mockSentryReporter() {
+  final sentry = MockSentryReporter();
+  when(
+    () => sentry.reportCriticalError(
+      any(),
+      stackTrace: any(named: 'stackTrace'),
+      context: any(named: 'context'),
+      tags: any(named: 'tags'),
+    ),
+  ).thenAnswer((_) async {});
+  when(
+    () => sentry.reportEdgeFunctionError(
+      any(),
+      any(),
+      responseTime: any(named: 'responseTime'),
+      statusCode: any(named: 'statusCode'),
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenAnswer((_) async {});
+  when(
+    () => sentry.reportDatabaseError(
+      any(),
+      operation: any(named: 'operation'),
+      table: any(named: 'table'),
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenAnswer((_) async {});
+  when(
+    () => sentry.reportNetworkError(
+      any(),
+      url: any(named: 'url'),
+      method: any(named: 'method'),
+      statusCode: any(named: 'statusCode'),
+      timeout: any(named: 'timeout'),
+      stackTrace: any(named: 'stackTrace'),
+    ),
+  ).thenAnswer((_) async {});
+  when(
+    () => sentry.setUserContext(
+      deviceId: any(named: 'deviceId'),
+      appVersion: any(named: 'appVersion'),
+      onboardingCompleted: any(named: 'onboardingCompleted'),
+      gutTrainingLevel: any(named: 'gutTrainingLevel'),
+    ),
+  ).thenAnswer((_) async {});
+  when(() => sentry.clearUserContext()).thenAnswer((_) async {});
+  return sentry;
+}
+
 class MockAppLogger extends Mock implements AppLogger {}
 
 class MockSharedPreferences extends Mock implements SharedPreferences {}
@@ -49,7 +104,7 @@ class MockSharedPreferences extends Mock implements SharedPreferences {}
 /// this provider for analytics, and many read `supabaseClient.auth`, so both
 /// are stubbed with safe no-op defaults (no current user/session, empty auth
 /// stream). Applied by default in [smokeScreen].
-Override mockAppExternalDeps() {
+Override mockAppExternalDeps({SupabaseClient? supabaseClient}) {
   final analytics = MockAnalyticsTracker();
   when(
     () => analytics.track(any(), properties: any(named: 'properties')),
@@ -59,8 +114,8 @@ Override mockAppExternalDeps() {
   return appExternalDepsProvider.overrideWithValue(
     AppExternalDeps(
       analytics: analytics,
-      supabaseClient: fakeSupabaseClient(),
-      sentry: MockSentryReporter(),
+      supabaseClient: supabaseClient ?? fakeSupabaseClient(),
+      sentry: mockSentryReporter(),
       logger: MockAppLogger(),
       sharedPreferences: MockSharedPreferences(),
     ),

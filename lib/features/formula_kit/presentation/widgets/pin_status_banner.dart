@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../domain/formula_profile_conflict.dart';
 import '../../domain/pin_decision.dart';
+import 'pin_conflict_label.dart';
 
 /// One row in the expanded banner — represents a phase / sub-phase that had a
 /// [PinDecision] attached during plan generation.
@@ -34,6 +36,8 @@ class PinStatusBanner extends StatefulWidget {
     this.isOnboarding = false,
     this.onExpanded,
     this.onFormulaLibraryTapped,
+    this.conflictForRow,
+    this.onUnpinConflictedRow,
   });
 
   /// All phase rows with a non-null [PinDecision], in display order.
@@ -57,6 +61,18 @@ class PinStatusBanner extends StatefulWidget {
   /// override default navigation; if null, the banner navigates itself
   /// to `/settings/food-preferences/formula-library`.
   final VoidCallback? onFormulaLibraryTapped;
+
+  /// FP-4b (`formula-pin-surface.md`, RATIFIED Xuan 2026-09-03): resolves an
+  /// honored row's conflict with the athlete's profile. When it returns
+  /// non-null for an honored row, that row carries the persistent collapsible
+  /// dragonfruit conflict label. Optional — omitting it keeps the pre-FP
+  /// banner (owners opt in; rows themselves still derive strictly from the
+  /// `pin_decision` wire).
+  final FormulaProfileConflict? Function(PinStatusBannerRow row)?
+  conflictForRow;
+
+  /// "Unpin" from a row's FP-4b label. The banner never mutates pins itself.
+  final void Function(PinStatusBannerRow row)? onUnpinConflictedRow;
 
   @override
   State<PinStatusBanner> createState() => _PinStatusBannerState();
@@ -519,6 +535,8 @@ class _PinStatusBannerState extends State<PinStatusBanner>
 
   Widget _buildRow(PinStatusBannerRow row) {
     final honored = row.decision.usedPin;
+    // FP-4b: honored-but-conflicting rows carry the persistent label.
+    final conflict = honored ? widget.conflictForRow?.call(row) : null;
     final rowColor = honored ? AppColors.electrolyte : AppColors.warning;
     // Non-honored row copy is a three-way:
     //   reason == pinnedTemplateUnrenderable → pin matched scope but a required
@@ -540,35 +558,45 @@ class _PinStatusBannerState extends State<PinStatusBanner>
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
-            honored ? Icons.check_circle_outline : Icons.info_outline,
-            color: rowColor,
-            size: 18,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          SizedBox(
-            width: 72,
-            child: Text(
-              row.label,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                honored ? Icons.check_circle_outline : Icons.info_outline,
+                color: rowColor,
+                size: 18,
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              templateLabel,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: honored
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              const SizedBox(width: AppSpacing.sm),
+              SizedBox(
+                width: 72,
+                child: Text(
+                  row.label,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
+              Expanded(
+                child: Text(
+                  templateLabel,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: honored
+                        ? Theme.of(context).colorScheme.onSurface
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
+          if (conflict != null)
+            PinConflictLabel(
+              conflict: conflict,
+              onUnpin: () => widget.onUnpinConflictedRow?.call(row),
+            ),
         ],
       ),
     );

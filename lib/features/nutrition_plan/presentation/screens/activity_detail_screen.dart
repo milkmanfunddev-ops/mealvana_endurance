@@ -652,6 +652,10 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
           newQuantity,
         );
       },
+      onAnswerHydrationCheck: (answer) =>
+          _getControllerNotifier().answerHydrationCheck(answer),
+      onChangeHydrationAnswer: () =>
+          _getControllerNotifier().clearHydrationCheckAnswer(),
       consumeSwipeHint: _consumeSwipeHint,
       enableSectionHeroes: true,
       heroTagSeed: widget.activityId,

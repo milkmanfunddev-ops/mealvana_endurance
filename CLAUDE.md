@@ -47,16 +47,56 @@ mealvana_endurance/
 - Skills, agents, and commands must not restate these rules or hardcode volatile facts (schema
   versions, table lists, tier limits) — point at CLAUDE.md and `/docs` instead, and read the
   current code for specifics.
+- **Design-bearing components live in the library, and trace to their spec.** Any widget that
+  carries a ratified contract — a state set, a gesture, a meaning-bound color, or has a
+  `docs/ssot/spec/design/components/<name>.md` — is implemented once in
+  `lib/shared/widgets/kyle_design/` under the spec's name, with a header comment citing the spec
+  path and version. Feature folders compose library components; they never redefine one. Tokens
+  have one registry (`lib/theme/kyle_design/`): no second token class, no `Color(0x…)` literal, no
+  Material `Colors.*` for brand semantics outside `lib/theme/`. A port prompt names the library
+  destination before it names the pixels.
 - Keep initialization invariant explicit: `main()` for non-recoverable setup, recoverable init in startup flow.
 - Do not run `flutter build` as assistant execution.
+- Seam tests feed producer-shaped data (server factor + wire rounding), never the local engine's
+  own output; never `assert` on data that crossed a process boundary; every controller write path
+  gets one test through the real notifier. Rationale + fixtures: `docs/test/README.md` §Seam tests.
 - Run codegen after Riverpod/Drift annotation/schema changes.
 - Run `/task-checker` after major changes and before commit.
 - Run `/release-cut` whenever a dev or prod build is cut or pushed — it keeps the Notion cut card an
   honest manifest of what the build carries. A missed cut is what makes the whole board go stale.
 - Run `/sprint-sync` after landing work that maps to a Sprint Task, to keep the swimlane right.
+- Run `/design-sync` (user-invoked; Claude cannot launch it) after any change under `lib/theme/` or
+  `lib/shared/widgets/kyle_design/`, and after a design ratification lands in `docs/ssot/spec/design/`.
+  The Claude Design project is a sink regenerated from this repo — never hand-edit it. Authority map
+  and promotion path: `docs/ssot/spec/design/source-authority.md`.
 - Notion writes are scoped to Lee-owned cards. Never edit a card owned by Xuan; never set Status or
   Branch on the Feature Request / Bug Report boards — those belong to Xuan's worker. See
   `.claude/notion/boards.md`.
+
+## Backend Deploys & Codemagic Cost Discipline
+- Before ANY backend/deploy/schema/edge-function work, read
+  `docs/deployment/supabase-deploy-playbook.md` (generic rules: ordering, `app_config` window,
+  function versioning, standing orders), then the **status header of the current bundle runbook**
+  in `../ops/docs/deploys/` (playbook §10 lists them). Runbook rulings (newest first) beat the
+  playbook; both beat older docs. New bundles start from `docs/deployment/bundle-runbook-template.md`.
+- Prod `app_config` is written only at Xuan's explicit direction, in default (non-auto) permission
+  mode, after a read-only check — see playbook §7.
+- **Codemagic bills real minutes (free tier, ~9¢/min; no Pro plan). Pushing = spending.**
+  Per `codemagic.yaml` (read it for current truth): a push to `develop` auto-cuts the dev iOS
+  TestFlight build (put `[skip ci]` in the commit title for docs-only pushes — there is no changeset filter); a push to any `release/*` branch auto-cuts
+  the release builds. Batch work into few pushes; never push `release/*` until the playbook §8's
+  P1–P3 gates are green; never add or re-arm a Codemagic workflow without asking.
+- **Codemagic never runs integration/Patrol tests** (Lee, 2026-08-20 — one develop-push run billed
+  1h31m ≈ $9). The three `integration-tests*` workflows are trigger-disabled (`events: []`) in
+  `codemagic.yaml`; leave them disabled. Integration tests run locally
+  (`patrol test` / `run-algorithm-tests.sh --e2e`) or free on Lee's M1 mini — the self-hosted
+  GitHub Actions workflow `.github/workflows/tests-selfhosted.yml`, which fires on every push/PR
+  (`gh run list --workflow=tests-selfhosted.yml` to check; runner must be online).
+- If a change doesn't need a cloud build to verify, verify it locally (flutter test, simulator,
+  Deno/vector runners) instead of pushing to find out.
+- `MACRO_DASHBOARD_ENABLED` is pending full removal (Lee, 2026-08-20: delete the flag from app
+  code + the codemagic.yaml force-on). Don't add new hide-flags for dev features — dev is meant
+  to be shipped visible and broken freely.
 
 ## App Initialization Pattern (Explicit)
 - `main()` handles non-recoverable bootstrap (e.g., SDK initialization).

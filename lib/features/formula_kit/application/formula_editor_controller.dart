@@ -10,6 +10,7 @@ import '../domain/formula_macros.dart';
 import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
 import 'coach_insight_controller.dart';
+import 'component_conflict_hydration.dart';
 import 'personal_formulas_controller.dart';
 
 part 'formula_editor_controller.g.dart';
@@ -119,7 +120,13 @@ class FormulaEditorController extends _$FormulaEditorController {
         return FormulaDraft(
           name: existing.name,
           phase: existing.phase,
-          components: _cloneComponents(existing.components),
+          // Refresh kAllergens/kExcludedDiets from the catalog (FP-8):
+          // pre-fix rows carry no keys or stale empty snapshots, and either
+          // would silently defeat the conflict disclosure.
+          components: await hydrateComponentConflictMetadata(
+            ref,
+            existing.components,
+          ),
           notes: existing.notes,
           subPhase: existing.subPhase,
           digestSpeed: existing.digestSpeed,

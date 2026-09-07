@@ -49,7 +49,7 @@ class _EditMacrosDialogWidgetState
         text: widget.macros.postRun.proteinG.round().toString(),
       ),
       'preFluids': TextEditingController(
-        text: widget.macros.preRun.fluidsMl.round().toString(),
+        text: (widget.macros.preRun.fluidsMl ?? 0).round().toString(),
       ),
       'duringFluids': TextEditingController(
         text: widget.macros.duringRun.fluidTotalMl.round().toString(),

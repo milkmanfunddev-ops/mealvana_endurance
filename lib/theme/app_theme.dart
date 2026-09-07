@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'kyle_design/app_colors.dart';
 import 'component_themes/button_themes.dart';
 import 'component_themes/input_themes.dart';
 import 'component_themes/card_themes.dart';
@@ -30,16 +31,18 @@ class AppTheme {
   static const Color baseGrey = Color(0xFF667085);
 
   // Warning
-  static const Color warning500 = Color(0xFFFFC629);
+  static const Color warning500 = AppColors.yolk; // Yolk — legacy alias
 
   // Macro-specific colors for nutrition data visualization
   static const Color proteinColor = Color(0xFFDC2597); // Pink for protein
-  static const Color carbsColor = Color(0xFFFFC629); // Yellow for carbohydrates
+  static const Color carbsColor = AppColors
+      .yolk; // Yolk — legacy alias; meaning contract pending (qa Q-SA2)
   static const Color fatsColor = Color(0xFF3366FF); // Blue for fats
   static const Color caloriesColor = Color(
     0xFF1C0E1B,
   ); // Dark blackberry for calories
-  static const Color sodiumColor = Color(0xFFFFC629); // Yellow for sodium
+  static const Color sodiumColor = AppColors
+      .yolk; // Yolk — legacy alias; meaning contract pending (qa Q-SA2)
   static const Color fluidsColor = Color(0xFF3366FF); // Blue for fluids
 
   // Status colors

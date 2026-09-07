@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../../../shared/domain/activity_type.dart';
 import '../../domain/solver_food.dart';
 import '../../domain/solver_types.dart';
+import 'electrolyte_source_policy.dart';
 
 // ---------------------------------------------------------------------------
 // Category types (mirrors during-utils.ts ProductCategory)
@@ -149,6 +150,42 @@ SolverFood? _pickWeighted(List<SolverFood> foods, {int seed = 0}) {
 }
 
 // ---------------------------------------------------------------------------
+// §6(e) pick-time solvent accounting (food-recommendation, RULED 2026-09-03)
+//
+// TS twin: the solventDeficit / maxServingsBySolvent closures in
+// during-rule-solver.ts (§8 — one rule, both engines). Wired after the
+// 2026-09-03 ceiling-bound finding: the post-selection pairing pass computed
+// the requirement correctly but could not repair a plate whose fluid budget
+// was already spent on a drink that does not dissolve the mix.
+// ---------------------------------------------------------------------------
+
+/// Mirror of `solventRequirementMl` (electrolyte-water-pairing.ts): declared
+/// solvent per serving, else the 250 ml fallback for undeclared dry
+/// requires-water rows.
+double _solventRequirementMl(List<SolverSelection> picks) {
+  // DECLARED rows only (mirrors solventRequirementMl in the pairing twin):
+  // undeclared dry electrolytes keep C2 semantics and never enter the
+  // plain-water lien.
+  var total = 0.0;
+  for (final p in picks) {
+    if (p.quantity <= 0) continue;
+    final declared = p.solventMinMl;
+    if (declared != null && declared > 0) total += declared * p.quantity;
+  }
+  return total;
+}
+
+/// Mirror of `plainWaterMl`: drinkable rows with no carbs and no sodium.
+double _plainWaterMl(List<SolverSelection> picks) {
+  var total = 0.0;
+  for (final p in picks) {
+    if (!(p.isLiquid || p.isDrink) || p.fluidMl <= 15) continue;
+    if (p.carbsG <= 0 && p.sodiumMg <= 0) total += p.fluidMl;
+  }
+  return total;
+}
+
+// ---------------------------------------------------------------------------
 // Serving arithmetic helpers
 // ---------------------------------------------------------------------------
 
@@ -196,6 +233,10 @@ double _cappedServings({
   double carbUpperMultiplier = 1.1,
   double sodiumUpperMultiplier = 1.1,
   double fluidUpperMultiplier = 1.1,
+  // §6(e) lien: plain water still owed to scheduled concentrated products —
+  // subtracted from the fluid headroom for non-plain fluid carriers (TS twin:
+  // reservedFluidUpper in during-rule-solver.ts).
+  double fluidReserveMl = 0,
 }) {
   final gutMax = _maxServingsForGut(food, gutTrainingLevel);
 
@@ -215,7 +256,7 @@ double _cappedServings({
   );
   final byFluidUpper = _maxServingsByMacro(
     perServing: food.fluidMl,
-    assigned: fluidAssigned,
+    assigned: fluidAssigned + fluidReserveMl,
     target: fluidTarget,
     upperMultiplier: fluidUpperMultiplier,
   );
@@ -224,7 +265,19 @@ double _cappedServings({
   if (bySodiumUpper.isFinite) cap = min(cap, bySodiumUpper);
   if (byFluidUpper.isFinite) cap = min(cap, byFluidUpper);
 
-  return _clampServings(food, cap, gutMax);
+  final rounded = _clampServings(food, cap, gutMax);
+  // Rounding rescue (mirrors capServingsByUpperBounds in during-utils.ts):
+  // _clampServings may round UP to the food's increment/minimum, silently
+  // stepping past the macro ceiling (or the §6(e) fluid reserve) the cap
+  // encodes. Floor back to the previous increment instead; an indivisible
+  // food that cannot fit a whole serving contributes nothing.
+  if (rounded > cap + 1e-9) {
+    final increment = food.isIndivisible ? 1.0 : 0.5;
+    final floored = (cap / increment).floorToDouble() * increment;
+    if (floored < (food.isIndivisible ? 1.0 : 0.5)) return 0;
+    return floored.clamp(0.0, min(gutMax, food.maxServings.toDouble()));
+  }
+  return rounded;
 }
 
 // ---------------------------------------------------------------------------
@@ -253,6 +306,13 @@ class _ElecPick {
   });
 }
 
+// RULED food-recommendation §4 (Xuan, 2026-09-03): the picker itself lives in
+// electrolyte_source_policy.dart — the Dart twin of the server's
+// pickBestElectrolyte — so the conformance harness and the solver drive the
+// same code. This adapter only converts the pick shape. The old inline picker
+// (asymmetric baseline, capsulePenalty steer, floor-rescue accepting an
+// in-range score-worsening pick, no min_servings) was the F-22/46/47 half of
+// the divergence the ruling closes.
 _ElecPick? _pickBestElectrolyte(
   List<SolverFood> pool,
   double currentSodium,
@@ -267,93 +327,31 @@ _ElecPick? _pickBestElectrolyte(
   double carbUpper,
   String? gutTrainingLevel,
 ) {
-  final baselineSodiumScore = sodiumTarget > 0
-      ? (max(0.0, sodiumTarget - currentSodium) +
-                max(0.0, currentSodium - sodiumUpper)) /
-            sodiumTarget
-      : 0.0;
-  final baselineFluidPenalty = (fluidTarget > 0 && currentFluid > fluidUpper)
-      ? ((currentFluid - fluidUpper) / fluidTarget) * 3
-      : 0.0;
-  final baselineCarbPenalty = (carbTarget > 0 && currentCarbs > carbUpper)
-      ? ((currentCarbs - carbUpper) / carbTarget) * 2
-      : 0.0;
-  final baselineScore =
-      baselineSodiumScore + baselineFluidPenalty + baselineCarbPenalty;
-
-  _ElecPick? best;
-
-  for (final elec in pool) {
-    if (elec.sodiumMg <= 0) continue;
-    final gutMax = _maxServingsForGut(elec, gutTrainingLevel);
-    // Build candidate serving increments (0.5 steps for divisible, 1 for indivisible)
-    final candidates = <double>[];
-    final isSupp = elec.productType == 'supplement' && !elec.isLiquid;
-    final step = elec.isIndivisible ? 1.0 : 0.5;
-    final start = elec.isIndivisible ? 1.0 : 0.5;
-    // The food's own (gut-adjusted) max servings is the only hard cap — a
-    // synthetic 4-serving supplement ceiling used to stop the top-up below
-    // the range floor even when more capsules were allowed (bug 3abe3fdb).
-    // The capsulePenalty below still steers toward fewer capsules when a
-    // smaller count scores equally.
-    final maxCandidateServings = gutMax;
-    for (double s = start; s <= maxCandidateServings + 1e-9; s += step) {
-      candidates.add(s);
-    }
-
-    for (final servings in candidates) {
-      final sodium = currentSodium + elec.sodiumMg * servings;
-      final fluid = currentFluid + elec.fluidMl * servings;
-      final carbs = currentCarbs + elec.carbsG * servings;
-
-      if (sodium > sodiumUpper + 1e-9) continue;
-      if (fluid > fluidUpper + 1e-9) continue;
-      if (carbs > carbUpper + 1e-9) continue;
-
-      final sodiumPenalty = sodiumTarget > 0
-          ? (max(0.0, sodiumTarget - sodium) +
-                    max(0.0, sodium - sodiumUpper) * 2) /
-                sodiumTarget
-          : 0.0;
-      final fluidPenalty = (fluidTarget > 0 && fluid > fluidUpper)
-          ? ((fluid - fluidUpper) / fluidTarget) * 3
-          : 0.0;
-      final carbPenalty = (carbTarget > 0 && carbs > carbUpper)
-          ? ((carbs - carbUpper) / carbTarget) * 1.5
-          : 0.0;
-      final capsulePenalty = (isSupp && servings > 2)
-          ? 0.05 * (servings - 2)
-          : 0.0;
-      final prefBonus = elec.preferenceScore >= kPrefScoreLiked ? -0.02 : 0.0;
-      final score =
-          sodiumPenalty +
-          fluidPenalty +
-          carbPenalty +
-          capsulePenalty +
-          prefBonus;
-
-      final candidate = _ElecPick(
-        food: elec,
-        servings: servings,
-        sodiumAfter: sodium,
-        fluidAfter: fluid,
-        carbsAfter: carbs,
-        score: score,
-      );
-
-      if (best == null ||
-          score < best.score - 1e-9 ||
-          ((score - best.score).abs() < 1e-9 &&
-              (sodiumTarget - sodium).abs() <
-                  (sodiumTarget - best.sodiumAfter).abs())) {
-        best = candidate;
-      }
-    }
-  }
-
-  if (best == null) return null;
-  if (best.sodiumAfter >= sodiumLower) return best;
-  return best.score < baselineScore ? best : null;
+  final pick = pickBestElectrolyteSource(
+    pool,
+    currentSodium,
+    currentFluid,
+    currentCarbs,
+    ElectrolyteSourceBounds(
+      sodiumTarget: sodiumTarget,
+      sodiumLower: sodiumLower,
+      sodiumUpper: sodiumUpper,
+      fluidTarget: fluidTarget,
+      fluidUpper: fluidUpper,
+      carbTarget: carbTarget,
+      carbUpper: carbUpper,
+      gutLevel: gutTrainingLevel,
+    ),
+  );
+  if (pick == null) return null;
+  return _ElecPick(
+    food: pick.food,
+    servings: pick.servings,
+    sodiumAfter: pick.sodiumAfter,
+    fluidAfter: pick.fluidAfter,
+    carbsAfter: pick.carbsAfter,
+    score: pick.score,
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -435,13 +433,31 @@ class ClientDuringPhaseSolver {
     double sodiumAssigned = 0;
     double fluidAssigned = 0;
 
+    // §6(e) pick-time solvent accounting (see helpers above; TS twin in
+    // during-rule-solver.ts).
+    double solventDeficit() =>
+        max(0.0, _solventRequirementMl(result) - _plainWaterMl(result));
+    double maxServingsBySolvent(SolverFood f) {
+      final perServing = f.solventMinMl ?? 0;
+      if (perServing <= 0) return double.infinity;
+      final headroom = max(0.0, fluidUpper - fluidAssigned);
+      final available =
+          _plainWaterMl(result) + headroom - _solventRequirementMl(result);
+      return max(0.0, available) / perServing;
+    }
+
+    bool solventFeasibleAtMin(SolverFood f) =>
+        maxServingsBySolvent(f) >= f.minServings - 1e-9;
+
     // ---- STEP 1: Primary carb source ----
     // If carb target is < 15g, skip primary carb (even the smallest gel ~25g
     // would overshoot).
     SolverFood? primaryCarb;
 
     if (carbTarget >= 15 && cat.primaryCarb.isNotEmpty) {
-      primaryCarb = _pickWeighted(cat.primaryCarb);
+      // §6(e): a concentrated candidate with no water budget is not pickable.
+      primaryCarb =
+          _pickWeighted(cat.primaryCarb.where(solventFeasibleAtMin).toList());
     }
 
     if (primaryCarb != null) {
@@ -452,7 +468,11 @@ class ClientDuringPhaseSolver {
 
       final primaryCarbTarget = carbTarget * primaryShare;
       final rawServings = primaryCarb.carbsG > 0
-          ? primaryCarbTarget / primaryCarb.carbsG
+          ? min(
+              primaryCarbTarget / primaryCarb.carbsG,
+              // §6(e): a concentrated pick may not exceed its solvent budget.
+              maxServingsBySolvent(primaryCarb),
+            )
           : 0.0;
 
       final servings = _cappedServings(
@@ -502,6 +522,7 @@ class ClientDuringPhaseSolver {
           fluidTarget: fluidTarget,
           gutTrainingLevel: gutTrainingLevel,
           carbUpperMultiplier: carbTarget < 15 ? 10.0 : 1.1,
+          fluidReserveMl: solventDeficit(), // §6(e) lien
         );
 
         // Guard: don't add if rounded serving would overshoot
@@ -529,6 +550,7 @@ class ClientDuringPhaseSolver {
               fluidTarget: fluidTarget,
               gutTrainingLevel: gutTrainingLevel,
               carbUpperMultiplier: 1.1,
+              fluidReserveMl: solventDeficit(), // §6(e) lien
             );
             final sdFullCarbs = sportsDrink.carbsG * sdFullServings;
             if (sdFullServings > 0 &&
@@ -561,9 +583,11 @@ class ClientDuringPhaseSolver {
       final carbDeficit = carbTarget - carbsAssigned;
       if (carbDeficit > carbTarget * 0.2 && cat.primaryCarb.length > 1) {
         // Exclude the already-selected primary carb
-        final alternates = primaryCarb != null
-            ? cat.primaryCarb.where((f) => f.id != primaryCarb!.id).toList()
-            : cat.primaryCarb;
+        final alternates = (primaryCarb != null
+                ? cat.primaryCarb.where((f) => f.id != primaryCarb!.id)
+                : cat.primaryCarb.where((_) => true))
+            .where(solventFeasibleAtMin) // §6(e)
+            .toList();
 
         // Running mixing constraint: if a primary carb was already selected,
         // block other primary-carb types (only allow the same product type).
@@ -576,7 +600,10 @@ class ClientDuringPhaseSolver {
         if (filteredAlternates.isNotEmpty) {
           final secondaryCarb = _pickWeighted(filteredAlternates, seed: 1);
           if (secondaryCarb != null && secondaryCarb.carbsG > 0) {
-            final rawSec = carbDeficit / secondaryCarb.carbsG;
+            final rawSec = min(
+              carbDeficit / secondaryCarb.carbsG,
+              maxServingsBySolvent(secondaryCarb), // §6(e)
+            );
             final secServings = _cappedServings(
               food: secondaryCarb,
               requested: rawSec,
@@ -615,6 +642,7 @@ class ClientDuringPhaseSolver {
             carbsAssigned: carbsAssigned,
             sodiumAssigned: sodiumAssigned,
             fluidAssigned: fluidAssigned,
+            fluidReserveMl: solventDeficit(), // §6(e) lien
             carbTarget: carbTarget,
             sodiumTarget: sodiumTarget,
             fluidTarget: fluidTarget,
@@ -681,12 +709,16 @@ class ClientDuringPhaseSolver {
       final water = _pickWeighted(cat.hydration);
       if (water != null && water.fluidMl > 0) {
         final rawW = remainingFluid / water.fluidMl;
+        // §6(e): plain water pays the solvent lien and keeps the full
+        // ceiling; other beverages size against the reserved one.
+        final isPlainWater = water.carbsG <= 0 && water.sodiumMg <= 0;
         final waterServings = _cappedServings(
           food: water,
           requested: rawW,
           carbsAssigned: carbsAssigned,
           sodiumAssigned: sodiumAssigned,
           fluidAssigned: fluidAssigned,
+          fluidReserveMl: isPlainWater ? 0 : solventDeficit(),
           carbTarget: carbTarget,
           sodiumTarget: sodiumTarget,
           fluidTarget: fluidTarget,
@@ -703,11 +735,16 @@ class ClientDuringPhaseSolver {
     }
 
     // ---- STEP 5: Two-pass electrolyte fill ----
-    if (cat.electrolyte.isNotEmpty && sodiumTarget > 0) {
+    // §6(e): a declared-solvent electrolyte whose dilution water no longer
+    // fits the plain-water budget is not a pickable source; capsules/tablets
+    // (no declared solvent) unaffected.
+    final solventOkElectrolytes =
+        cat.electrolyte.where(solventFeasibleAtMin).toList();
+    if (solventOkElectrolytes.isNotEmpty && sodiumTarget > 0) {
       final remainingSodium = max(0.0, sodiumTarget - sodiumAssigned);
       if (remainingSodium > 0) {
         final firstPick = _pickBestElectrolyte(
-          cat.electrolyte,
+          solventOkElectrolytes,
           sodiumAssigned,
           fluidAssigned,
           carbsAssigned,
@@ -728,7 +765,7 @@ class ClientDuringPhaseSolver {
 
           // Second pass: if sodium is still below target
           if (sodiumAssigned < sodiumTarget) {
-            final secondPool = cat.electrolyte
+            final secondPool = solventOkElectrolytes
                 .where((e) => e.id != firstPick.food.id)
                 .toList();
             final secondPick = _pickBestElectrolyte(
@@ -838,6 +875,7 @@ class ClientDuringPhaseSolver {
       sodiumMg: food.sodiumMg * servings,
       fluidMl: food.fluidMl * servings,
       calories: (food.calories * servings).round(),
+      solventMinMl: food.solventMinMl,
       displayName: food.displayName,
       displayNamePlural: food.displayNamePlural,
       description: food.description,

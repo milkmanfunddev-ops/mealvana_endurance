@@ -124,7 +124,16 @@ class LogMealScreen extends ConsumerStatefulWidget {
 }
 
 class _LogMealScreenState extends ConsumerState<LogMealScreen> {
-  _LogTab _activeTab = _LogTab.recent;
+  /// Describe is the default landing tab (2026-08-27: promoted from Recent —
+  /// it is the most-used entry point). When the remote `describeMealEnabled`
+  /// flag hides that tab, [_effectiveTab] falls back to Recent so the body and
+  /// the highlighted pill never disagree.
+  _LogTab _activeTab = _LogTab.describe;
+
+  _LogTab _effectiveTab(bool describeMealEnabled) =>
+      _activeTab == _LogTab.describe && !describeMealEnabled
+      ? _LogTab.recent
+      : _activeTab;
 
   /// Controller key for the shared [FoodSearchController] instance backing
   /// the unified search bar.
@@ -818,7 +827,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 _TabBar(
-                  activeTab: _activeTab,
+                  activeTab: _effectiveTab(describeMealEnabled),
                   tabs: _LogTab.values
                       .where(
                         (tab) => tab != _LogTab.describe || describeMealEnabled,
@@ -829,7 +838,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     // Clear any in-progress search so the chosen tab actually
                     // shows (search results otherwise stay layered over it).
                     _clearSearch();
-                    if (tab != _activeTab) {
+                    if (tab != _effectiveTab(describeMealEnabled)) {
                       _trackMethodSelected(
                         tab == _LogTab.recipes ? 'recipe' : tab.name,
                       );
@@ -872,15 +881,19 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     onSearchOpenFoodFacts: () {},
                     showOpenFoodFactsButton: false,
                   )
-                : _buildTabBody(context, isDark),
+                : _buildTabBody(
+                    context,
+                    isDark,
+                    _effectiveTab(describeMealEnabled),
+                  ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTabBody(BuildContext context, bool isDark) {
-    switch (_activeTab) {
+  Widget _buildTabBody(BuildContext context, bool isDark, _LogTab tab) {
+    switch (tab) {
       case _LogTab.recent:
         return _RecentAndSavedTab(
           scrollController: _scrollController,

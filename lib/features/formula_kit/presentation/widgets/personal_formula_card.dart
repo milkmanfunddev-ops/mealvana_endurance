@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
+
+import '../../application/athlete_conflict_profile_provider.dart';
+import '../../application/formula_pin_controller.dart';
+import '../../domain/formula_profile_conflict.dart';
+import 'pin_conflict_card_state.dart';
 
 import '../../domain/after_filter_options.dart' show TravelFriendliness;
 import '../../domain/during_filter_options.dart' show DuringDuration;
@@ -11,7 +17,7 @@ import 'pin_toggle.dart';
 /// List card for a user-authored personal formula. Mirrors [BeforeFormulaCard]
 /// — title, component subtitle, macro pill row — with a pin toggle and a
 /// "Yours" provenance pill.
-class PersonalFormulaCard extends StatelessWidget {
+class PersonalFormulaCard extends ConsumerStatefulWidget {
   const PersonalFormulaCard({
     super.key,
     required this.formula,
@@ -20,6 +26,47 @@ class PersonalFormulaCard extends StatelessWidget {
 
   final PersonalFormula formula;
   final VoidCallback onTap;
+
+
+
+
+  @override
+  ConsumerState<PersonalFormulaCard> createState() =>
+      _PersonalFormulaCardState();
+}
+
+/// FP-4a/FP-4b, identical to the library cards. Personal formulas reach a plan
+/// ONLY through the pin set (`pins.ts` resolvePersonalFormulaPins reads
+/// `personal_formulas` for PINNED ids), so the pin gesture is the same decision
+/// moment and gets the same treatment: pre-pin warning with Choose another /
+/// Pin anyway, then the collapsible dragonfruit label with Unpin.
+/// Supersedes the always-on static label, which rested on the premise that
+/// personal formulas are standing auto-includes — they are not
+/// (Xuan, 2026-09-03; intake 2026-09-03-personal-formula-conflict-labeling.md).
+class _PersonalFormulaCardState extends ConsumerState<PersonalFormulaCard>
+    with PinConflictCardState<PersonalFormulaCard> {
+  PersonalFormula get formula => widget.formula;
+
+  @override
+  String get templateId => formula.id;
+
+  @override
+  List<String> get templateAllergens => const [];
+
+  @override
+  List<String> get excludedDiets => const [];
+
+  /// Personal formulas carry conflicts on their COMPONENTS, not on
+  /// formula-level allergen columns — so the mixin's template-level evaluation
+  /// is overridden with the component scan.
+  @override
+  FormulaProfileConflict? get conflict => ref
+      .watch(athleteConflictProfileProvider)
+      .maybeWhen(
+        data: (profile) =>
+            firstComponentConflict(formula.components, profile)?.conflict,
+        orElse: () => null,
+      );
 
   /// The timing/scope badges shown like the system cards do — the before
   /// timing window (e.g. "30-120 min"), one badge per during duration bracket,
@@ -58,6 +105,15 @@ class PersonalFormulaCard extends StatelessWidget {
   }
 
   @override
+  Future<void> completePin() => ref
+      .read(formulaPinControllerProvider.notifier)
+      .togglePersonalFormula(
+        formulaId: formula.id,
+        phase: formula.phase,
+        source: 'card',
+      );
+
+  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final badges = _scopeBadges();
@@ -67,7 +123,7 @@ class PersonalFormulaCard extends StatelessWidget {
         .toList();
     return BaseCard(
       child: InkWell(
-        onTap: onTap,
+        onTap: widget.onTap,
         borderRadius: AppRadius.cardRadius,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -104,9 +160,13 @@ class PersonalFormulaCard extends StatelessWidget {
                     formulaId: formula.id,
                     phase: formula.phase,
                     source: 'card',
+                    conflict: conflict,
+                    onAllergyConflictPinAttempt: showAllergyWarning,
+                    onDietConflictPinned: showDietNote,
                   ),
                 ],
               ),
+              ...conflictFooter(),
               if (componentNames.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(

@@ -10,13 +10,18 @@ import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
+import '../../application/athlete_conflict_profile_provider.dart';
 import '../../application/formula_library_controller.dart';
+import '../../application/formula_pin_controller.dart';
 import '../../application/personal_formulas_controller.dart';
 import '../../domain/formula_macros.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_pin.dart' show TemplateKind;
+import '../../domain/formula_profile_conflict.dart';
 import '../../domain/formula_view.dart';
 import '../../domain/personal_formula.dart';
+import '../widgets/dietary_section.dart';
+import '../widgets/pin_conflict_warning.dart';
 import '../widgets/pin_toggle.dart';
 
 /// Read-only detail view for a system formula (PR 1).
@@ -39,6 +44,90 @@ class FormulaDetailScreen extends ConsumerStatefulWidget {
 
 class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
   bool _trackedView = false;
+
+  /// FP-4a: an allergy-conflicted pin tap from the AppBar toggle mounts the
+  /// inline warning at the top of the body — never a modal.
+  bool _showConflictWarning = false;
+  bool _showDietNote = false;
+
+  /// The current formula's profile conflict (allergy beats diet), or null.
+  FormulaProfileConflict? _conflictFor(FormulaLibraryState state) {
+    final profile = ref
+        .watch(athleteConflictProfileProvider)
+        .maybeWhen(data: (p) => p, orElse: () => null);
+    if (profile == null) return null;
+    final (allergens, diets) = switch (widget.phase) {
+      FormulaPhase.before => _firstMatch(
+        state.beforeFormulas,
+        (BeforeFormulaView f) => f.id == widget.id,
+        (f) => (f.allergens, f.excludedDiets),
+      ),
+      FormulaPhase.during => _firstMatch(
+        state.duringFormulas,
+        (DuringFormulaView f) => f.id == widget.id,
+        (f) => (f.allergens, f.excludedDiets),
+      ),
+      FormulaPhase.after => _firstMatch(
+        state.afterFormulas,
+        (AfterFormulaView f) => f.id == widget.id,
+        (f) => (f.allergens, f.excludedDiets),
+      ),
+    };
+    return evaluateFormulaProfileConflict(
+      templateAllergens: allergens,
+      excludedDiets: diets,
+      profile: profile,
+    );
+  }
+
+  (List<String>, List<String>) _firstMatch<F>(
+    List<F> items,
+    bool Function(F) test,
+    (List<String>, List<String>) Function(F) extract,
+  ) {
+    for (final f in items) {
+      if (test(f)) return extract(f);
+    }
+    return (const [], const []);
+  }
+
+  /// "Pin anyway" from the detail warning: completes the pin through the
+  /// real controller for whichever phase this detail shows.
+  Future<void> _completeConflictedPin() async {
+    setState(() => _showConflictWarning = false);
+    final state = ref.read(formulaLibraryControllerProvider).value;
+    if (state == null) return;
+    final notifier = ref.read(formulaPinControllerProvider.notifier);
+    try {
+      switch (widget.phase) {
+        case FormulaPhase.before:
+          final f = state.beforeFormulas.cast<BeforeFormulaView?>().firstWhere(
+            (f) => f?.id == widget.id,
+            orElse: () => null,
+          );
+          if (f != null)
+            await notifier.toggleBefore(formula: f, source: 'detail');
+        case FormulaPhase.during:
+          final f = state.duringFormulas.cast<DuringFormulaView?>().firstWhere(
+            (f) => f?.id == widget.id,
+            orElse: () => null,
+          );
+          if (f != null)
+            await notifier.toggleDuring(formula: f, source: 'detail');
+        case FormulaPhase.after:
+          final f = state.afterFormulas.cast<AfterFormulaView?>().firstWhere(
+            (f) => f?.id == widget.id,
+            orElse: () => null,
+          );
+          if (f != null)
+            await notifier.toggleAfter(formula: f, source: 'detail');
+      }
+    } catch (e) {
+      if (mounted) {
+        MealvanaSnackbar.showError(context, 'Couldn\'t update pin: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,34 +178,82 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context, asyncState),
       contentWidth: AdaptiveContentWidth.standard,
-      body: asyncState.when(
-        loading: () => const Center(
-          key: ValueKey('formula_kit.detail_loading'),
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-        error: (e, _) => _ErrorView(message: e.toString()),
-        data: (state) {
-          switch (widget.phase) {
-            case FormulaPhase.before:
-              final formula = state.beforeFormulas
-                  .cast<BeforeFormulaView?>()
-                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
-              if (formula == null) return const _NotFoundView();
-              return _BeforeDetailBody(formula: formula);
-            case FormulaPhase.during:
-              final formula = state.duringFormulas
-                  .cast<DuringFormulaView?>()
-                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
-              if (formula == null) return const _NotFoundView();
-              return _DuringDetailBody(formula: formula);
-            case FormulaPhase.after:
-              final formula = state.afterFormulas
-                  .cast<AfterFormulaView?>()
-                  .firstWhere((f) => f?.id == widget.id, orElse: () => null);
-              if (formula == null) return const _NotFoundView();
-              return _AfterDetailBody(formula: formula);
-          }
-        },
+      body: Column(
+        children: [
+          // FP-4a inline warning / diet note for a conflicted pin attempt
+          // from the AppBar toggle — mounted in the page, never a dialog.
+          ...asyncState.maybeWhen(
+            data: (state) {
+              final conflict = _conflictFor(state);
+              if (conflict == null) return const <Widget>[];
+              return <Widget>[
+                if (_showConflictWarning &&
+                    conflict.kind == FormulaConflictKind.allergy)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: PinConflictWarning.allergy(
+                      allergenDisplay: conflict.allergenDisplay,
+                      onChooseAnother: () =>
+                          setState(() => _showConflictWarning = false),
+                      onPinAnyway: _completeConflictedPin,
+                    ),
+                  ),
+                if (_showDietNote && conflict.kind == FormulaConflictKind.diet)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
+                    child: PinConflictWarning.diet(
+                      dietDisplay: conflict.dietDisplay,
+                    ),
+                  ),
+              ];
+            },
+            orElse: () => const <Widget>[],
+          ),
+          Expanded(
+            child: asyncState.when(
+              loading: () => const Center(
+                key: ValueKey('formula_kit.detail_loading'),
+                child: CircularProgressIndicator(color: AppColors.electrolyte),
+              ),
+              error: (e, _) => _ErrorView(message: e.toString()),
+              data: (state) {
+                switch (widget.phase) {
+                  case FormulaPhase.before:
+                    final formula = state.beforeFormulas
+                        .cast<BeforeFormulaView?>()
+                        .firstWhere(
+                          (f) => f?.id == widget.id,
+                          orElse: () => null,
+                        );
+                    if (formula == null) return const _NotFoundView();
+                    return _BeforeDetailBody(formula: formula);
+                  case FormulaPhase.during:
+                    final formula = state.duringFormulas
+                        .cast<DuringFormulaView?>()
+                        .firstWhere(
+                          (f) => f?.id == widget.id,
+                          orElse: () => null,
+                        );
+                    if (formula == null) return const _NotFoundView();
+                    return _DuringDetailBody(formula: formula);
+                  case FormulaPhase.after:
+                    final formula = state.afterFormulas
+                        .cast<AfterFormulaView?>()
+                        .firstWhere(
+                          (f) => f?.id == widget.id,
+                          orElse: () => null,
+                        );
+                    if (formula == null) return const _NotFoundView();
+                    return _AfterDetailBody(formula: formula);
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -149,6 +286,16 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
       }
     });
 
+    // FP-4a/4b: gate a conflicted pin behind the inline warning and put the
+    // conflict dot on the glyph when the conflicted pin is honored.
+    final conflict = asyncState.maybeWhen(
+      data: _conflictFor,
+      orElse: () => null,
+    );
+    void onAllergyConflictPinAttempt() =>
+        setState(() => _showConflictWarning = true);
+    void onDietConflictPinned() => setState(() => _showDietNote = true);
+
     // V1: only food templates are pinnable. Before drink/electrolyte cards
     // hide the toggle; During and After templates are all food by design.
     Widget? pinAction;
@@ -157,18 +304,27 @@ class _FormulaDetailScreenState extends ConsumerState<FormulaDetailScreen> {
         key: ValueKey('formula_kit.detail_pin_${beforeFormula!.id}'),
         formula: beforeFormula!,
         source: 'detail',
+        conflict: conflict,
+        onAllergyConflictPinAttempt: onAllergyConflictPinAttempt,
+        onDietConflictPinned: onDietConflictPinned,
       );
     } else if (duringFormula != null) {
       pinAction = PinToggleDuring(
         key: ValueKey('formula_kit.detail_pin_${duringFormula!.id}'),
         formula: duringFormula!,
         source: 'detail',
+        conflict: conflict,
+        onAllergyConflictPinAttempt: onAllergyConflictPinAttempt,
+        onDietConflictPinned: onDietConflictPinned,
       );
     } else if (afterFormula != null) {
       pinAction = PinToggleAfter(
         key: ValueKey('formula_kit.detail_pin_${afterFormula!.id}'),
         formula: afterFormula!,
         source: 'detail',
+        conflict: conflict,
+        onAllergyConflictPinAttempt: onAllergyConflictPinAttempt,
+        onDietConflictPinned: onDietConflictPinned,
       );
     }
 
@@ -440,7 +596,7 @@ class _BeforeDetailBody extends StatelessWidget {
           if (formula.allergens.isNotEmpty ||
               formula.excludedDiets.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            _DietTags(
+            _ProfileAwareDietarySection(
               allergens: formula.allergens,
               excludedDiets: formula.excludedDiets,
             ),
@@ -593,7 +749,7 @@ class _DuringDetailBody extends StatelessWidget {
           if (formula.allergens.isNotEmpty ||
               formula.excludedDiets.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            _DietTags(
+            _ProfileAwareDietarySection(
               allergens: formula.allergens,
               excludedDiets: formula.excludedDiets,
             ),
@@ -717,7 +873,7 @@ class _AfterDetailBody extends StatelessWidget {
           if (formula.allergens.isNotEmpty ||
               formula.excludedDiets.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            _DietTags(
+            _ProfileAwareDietarySection(
               allergens: formula.allergens,
               excludedDiets: formula.excludedDiets,
             ),
@@ -993,54 +1149,28 @@ class _Macro extends StatelessWidget {
   }
 }
 
-class _DietTags extends StatelessWidget {
-  const _DietTags({required this.allergens, required this.excludedDiets});
+/// FP-7 DIETARY section wrapper: injects the athlete's allergy set from
+/// `athleteConflictProfileProvider` so [DietarySection] stays passive UI.
+/// Emphasis rule S-04: an allergen the athlete HAS renders personalized and
+/// emphasized in dragonfruit; other chips render neutral, in human copy.
+class _ProfileAwareDietarySection extends ConsumerWidget {
+  const _ProfileAwareDietarySection({
+    required this.allergens,
+    required this.excludedDiets,
+  });
 
   final List<String> allergens;
   final List<String> excludedDiets;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SectionLabel(text: 'Dietary'),
-        const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            for (final a in allergens) _Tag(label: 'Contains $a'),
-            for (final d in excludedDiets)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.dragonfruit.withValues(alpha: 0.12),
-                  borderRadius: AppRadius.circularRadius,
-                ),
-                child: Text(
-                  'Not $d',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.dragonfruit,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        if (allergens.isEmpty && excludedDiets.isEmpty)
-          Text(
-            'No restrictions noted.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-      ],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final athleteAllergies = ref
+        .watch(athleteConflictProfileProvider)
+        .maybeWhen(data: (p) => p.allergyDbValues, orElse: () => <String>[]);
+    return DietarySection(
+      allergens: allergens,
+      excludedDiets: excludedDiets,
+      athleteAllergyDbValues: athleteAllergies,
     );
   }
 }

@@ -37,6 +37,7 @@ class EnvironmentSection extends StatelessWidget {
     this.onRequestPermission,
     this.onOpenSettings,
     this.onOpenAppSettings,
+    this.valuesManuallyAdjusted = false,
   });
 
   final bool isExpanded;
@@ -58,6 +59,10 @@ class EnvironmentSection extends StatelessWidget {
   final VoidCallback? onFetchWeather;
   final WeatherSource? weatherSource;
   final bool hasAttemptedWeatherFetch;
+
+  /// CF-7 (RULED 2026-09-03): true once the athlete manually stepped a
+  /// forecast-filled value — the AUTO badge drops until the next refresh.
+  final bool valuesManuallyAdjusted;
   final LocationFailureReason? locationFailureReason;
   final VoidCallback? onRequestPermission;
   final VoidCallback? onOpenSettings;
@@ -123,7 +128,8 @@ class EnvironmentSection extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (isAutoFilled) ...[
+                    // CF-7: manual step drops the badge; refresh restores it.
+                    if (isAutoFilled && !valuesManuallyAdjusted) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -186,7 +192,7 @@ class EnvironmentSection extends StatelessWidget {
                   child: Text(
                     isLoadingWeather
                         ? 'Loading forecast...'
-                        : (isAutoFilled ? 'Refetch Forecast' : 'Get Forecast'),
+                        : 'View Forecast', // CF-5 (RULED 2026-09-03): supersedes 'Get Forecast'
                     style: AppTextStyles.smallLabel.copyWith(
                       color: isLoadingWeather
                           ? AppColors.dragonfruit.withValues(alpha: 0.4)

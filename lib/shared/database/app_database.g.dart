@@ -10367,6 +10367,39 @@ class $ActivitiesTableTable extends ActivitiesTable
     requiredDuringInsert: false,
     defaultValue: const Constant('planned'),
   );
+  static const VerificationMeta _plannedTimeMeta = const VerificationMeta(
+    'plannedTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> plannedTime = GeneratedColumn<DateTime>(
+    'planned_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _actualTimeMeta = const VerificationMeta(
+    'actualTime',
+  );
+  @override
+  late final GeneratedColumn<DateTime> actualTime = GeneratedColumn<DateTime>(
+    'actual_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caloriesBurnedMeta = const VerificationMeta(
+    'caloriesBurned',
+  );
+  @override
+  late final GeneratedColumn<double> caloriesBurned = GeneratedColumn<double>(
+    'calories_burned',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _distanceMilesMeta = const VerificationMeta(
     'distanceMiles',
   );
@@ -10965,6 +10998,9 @@ class $ActivitiesTableTable extends ActivitiesTable
     title,
     scheduledDateTime,
     status,
+    plannedTime,
+    actualTime,
+    caloriesBurned,
     distanceMiles,
     durationMinutes,
     paceTargetMinutesPerMile,
@@ -11075,6 +11111,30 @@ class $ActivitiesTableTable extends ActivitiesTable
       context.handle(
         _statusMeta,
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('planned_time')) {
+      context.handle(
+        _plannedTimeMeta,
+        plannedTime.isAcceptableOrUnknown(
+          data['planned_time']!,
+          _plannedTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('actual_time')) {
+      context.handle(
+        _actualTimeMeta,
+        actualTime.isAcceptableOrUnknown(data['actual_time']!, _actualTimeMeta),
+      );
+    }
+    if (data.containsKey('calories_burned')) {
+      context.handle(
+        _caloriesBurnedMeta,
+        caloriesBurned.isAcceptableOrUnknown(
+          data['calories_burned']!,
+          _caloriesBurnedMeta,
+        ),
       );
     }
     if (data.containsKey('distance_miles')) {
@@ -11561,6 +11621,18 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      plannedTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}planned_time'],
+      ),
+      actualTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}actual_time'],
+      ),
+      caloriesBurned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calories_burned'],
+      ),
       distanceMiles: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}distance_miles'],
@@ -11785,6 +11857,9 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String title;
   final DateTime scheduledDateTime;
   final String status;
+  final DateTime? plannedTime;
+  final DateTime? actualTime;
+  final double? caloriesBurned;
   final double? distanceMiles;
   final int? durationMinutes;
   final double? paceTargetMinutesPerMile;
@@ -11844,6 +11919,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     required this.title,
     required this.scheduledDateTime,
     required this.status,
+    this.plannedTime,
+    this.actualTime,
+    this.caloriesBurned,
     this.distanceMiles,
     this.durationMinutes,
     this.paceTargetMinutesPerMile,
@@ -11906,6 +11984,15 @@ class Activity extends DataClass implements Insertable<Activity> {
     map['title'] = Variable<String>(title);
     map['scheduled_date_time'] = Variable<DateTime>(scheduledDateTime);
     map['status'] = Variable<String>(status);
+    if (!nullToAbsent || plannedTime != null) {
+      map['planned_time'] = Variable<DateTime>(plannedTime);
+    }
+    if (!nullToAbsent || actualTime != null) {
+      map['actual_time'] = Variable<DateTime>(actualTime);
+    }
+    if (!nullToAbsent || caloriesBurned != null) {
+      map['calories_burned'] = Variable<double>(caloriesBurned);
+    }
     if (!nullToAbsent || distanceMiles != null) {
       map['distance_miles'] = Variable<double>(distanceMiles);
     }
@@ -12071,6 +12158,15 @@ class Activity extends DataClass implements Insertable<Activity> {
       title: Value(title),
       scheduledDateTime: Value(scheduledDateTime),
       status: Value(status),
+      plannedTime: plannedTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plannedTime),
+      actualTime: actualTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(actualTime),
+      caloriesBurned: caloriesBurned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caloriesBurned),
       distanceMiles: distanceMiles == null && nullToAbsent
           ? const Value.absent()
           : Value(distanceMiles),
@@ -12231,6 +12327,9 @@ class Activity extends DataClass implements Insertable<Activity> {
         json['scheduledDateTime'],
       ),
       status: serializer.fromJson<String>(json['status']),
+      plannedTime: serializer.fromJson<DateTime?>(json['plannedTime']),
+      actualTime: serializer.fromJson<DateTime?>(json['actualTime']),
+      caloriesBurned: serializer.fromJson<double?>(json['caloriesBurned']),
       distanceMiles: serializer.fromJson<double?>(json['distanceMiles']),
       durationMinutes: serializer.fromJson<int?>(json['durationMinutes']),
       paceTargetMinutesPerMile: serializer.fromJson<double?>(
@@ -12335,6 +12434,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       'title': serializer.toJson<String>(title),
       'scheduledDateTime': serializer.toJson<DateTime>(scheduledDateTime),
       'status': serializer.toJson<String>(status),
+      'plannedTime': serializer.toJson<DateTime?>(plannedTime),
+      'actualTime': serializer.toJson<DateTime?>(actualTime),
+      'caloriesBurned': serializer.toJson<double?>(caloriesBurned),
       'distanceMiles': serializer.toJson<double?>(distanceMiles),
       'durationMinutes': serializer.toJson<int?>(durationMinutes),
       'paceTargetMinutesPerMile': serializer.toJson<double?>(
@@ -12407,6 +12509,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     String? title,
     DateTime? scheduledDateTime,
     String? status,
+    Value<DateTime?> plannedTime = const Value.absent(),
+    Value<DateTime?> actualTime = const Value.absent(),
+    Value<double?> caloriesBurned = const Value.absent(),
     Value<double?> distanceMiles = const Value.absent(),
     Value<int?> durationMinutes = const Value.absent(),
     Value<double?> paceTargetMinutesPerMile = const Value.absent(),
@@ -12466,6 +12571,11 @@ class Activity extends DataClass implements Insertable<Activity> {
     title: title ?? this.title,
     scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
     status: status ?? this.status,
+    plannedTime: plannedTime.present ? plannedTime.value : this.plannedTime,
+    actualTime: actualTime.present ? actualTime.value : this.actualTime,
+    caloriesBurned: caloriesBurned.present
+        ? caloriesBurned.value
+        : this.caloriesBurned,
     distanceMiles: distanceMiles.present
         ? distanceMiles.value
         : this.distanceMiles,
@@ -12607,6 +12717,15 @@ class Activity extends DataClass implements Insertable<Activity> {
           ? data.scheduledDateTime.value
           : this.scheduledDateTime,
       status: data.status.present ? data.status.value : this.status,
+      plannedTime: data.plannedTime.present
+          ? data.plannedTime.value
+          : this.plannedTime,
+      actualTime: data.actualTime.present
+          ? data.actualTime.value
+          : this.actualTime,
+      caloriesBurned: data.caloriesBurned.present
+          ? data.caloriesBurned.value
+          : this.caloriesBurned,
       distanceMiles: data.distanceMiles.present
           ? data.distanceMiles.value
           : this.distanceMiles,
@@ -12761,6 +12880,9 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('title: $title, ')
           ..write('scheduledDateTime: $scheduledDateTime, ')
           ..write('status: $status, ')
+          ..write('plannedTime: $plannedTime, ')
+          ..write('actualTime: $actualTime, ')
+          ..write('caloriesBurned: $caloriesBurned, ')
           ..write('distanceMiles: $distanceMiles, ')
           ..write('durationMinutes: $durationMinutes, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
@@ -12825,6 +12947,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     title,
     scheduledDateTime,
     status,
+    plannedTime,
+    actualTime,
+    caloriesBurned,
     distanceMiles,
     durationMinutes,
     paceTargetMinutesPerMile,
@@ -12888,6 +13013,9 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.title == this.title &&
           other.scheduledDateTime == this.scheduledDateTime &&
           other.status == this.status &&
+          other.plannedTime == this.plannedTime &&
+          other.actualTime == this.actualTime &&
+          other.caloriesBurned == this.caloriesBurned &&
           other.distanceMiles == this.distanceMiles &&
           other.durationMinutes == this.durationMinutes &&
           other.paceTargetMinutesPerMile == this.paceTargetMinutesPerMile &&
@@ -12949,6 +13077,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String> title;
   final Value<DateTime> scheduledDateTime;
   final Value<String> status;
+  final Value<DateTime?> plannedTime;
+  final Value<DateTime?> actualTime;
+  final Value<double?> caloriesBurned;
   final Value<double?> distanceMiles;
   final Value<int?> durationMinutes;
   final Value<double?> paceTargetMinutesPerMile;
@@ -13009,6 +13140,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.title = const Value.absent(),
     this.scheduledDateTime = const Value.absent(),
     this.status = const Value.absent(),
+    this.plannedTime = const Value.absent(),
+    this.actualTime = const Value.absent(),
+    this.caloriesBurned = const Value.absent(),
     this.distanceMiles = const Value.absent(),
     this.durationMinutes = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
@@ -13070,6 +13204,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     required String title,
     required DateTime scheduledDateTime,
     this.status = const Value.absent(),
+    this.plannedTime = const Value.absent(),
+    this.actualTime = const Value.absent(),
+    this.caloriesBurned = const Value.absent(),
     this.distanceMiles = const Value.absent(),
     this.durationMinutes = const Value.absent(),
     this.paceTargetMinutesPerMile = const Value.absent(),
@@ -13136,6 +13273,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? title,
     Expression<DateTime>? scheduledDateTime,
     Expression<String>? status,
+    Expression<DateTime>? plannedTime,
+    Expression<DateTime>? actualTime,
+    Expression<double>? caloriesBurned,
     Expression<double>? distanceMiles,
     Expression<int>? durationMinutes,
     Expression<double>? paceTargetMinutesPerMile,
@@ -13197,6 +13337,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (title != null) 'title': title,
       if (scheduledDateTime != null) 'scheduled_date_time': scheduledDateTime,
       if (status != null) 'status': status,
+      if (plannedTime != null) 'planned_time': plannedTime,
+      if (actualTime != null) 'actual_time': actualTime,
+      if (caloriesBurned != null) 'calories_burned': caloriesBurned,
       if (distanceMiles != null) 'distance_miles': distanceMiles,
       if (durationMinutes != null) 'duration_minutes': durationMinutes,
       if (paceTargetMinutesPerMile != null)
@@ -13276,6 +13419,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String>? title,
     Value<DateTime>? scheduledDateTime,
     Value<String>? status,
+    Value<DateTime?>? plannedTime,
+    Value<DateTime?>? actualTime,
+    Value<double?>? caloriesBurned,
     Value<double?>? distanceMiles,
     Value<int?>? durationMinutes,
     Value<double?>? paceTargetMinutesPerMile,
@@ -13337,6 +13483,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       title: title ?? this.title,
       scheduledDateTime: scheduledDateTime ?? this.scheduledDateTime,
       status: status ?? this.status,
+      plannedTime: plannedTime ?? this.plannedTime,
+      actualTime: actualTime ?? this.actualTime,
+      caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       distanceMiles: distanceMiles ?? this.distanceMiles,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       paceTargetMinutesPerMile:
@@ -13421,6 +13570,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     }
     if (status.present) {
       map['status'] = Variable<String>(status.value);
+    }
+    if (plannedTime.present) {
+      map['planned_time'] = Variable<DateTime>(plannedTime.value);
+    }
+    if (actualTime.present) {
+      map['actual_time'] = Variable<DateTime>(actualTime.value);
+    }
+    if (caloriesBurned.present) {
+      map['calories_burned'] = Variable<double>(caloriesBurned.value);
     }
     if (distanceMiles.present) {
       map['distance_miles'] = Variable<double>(distanceMiles.value);
@@ -13615,6 +13773,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('title: $title, ')
           ..write('scheduledDateTime: $scheduledDateTime, ')
           ..write('status: $status, ')
+          ..write('plannedTime: $plannedTime, ')
+          ..write('actualTime: $actualTime, ')
+          ..write('caloriesBurned: $caloriesBurned, ')
           ..write('distanceMiles: $distanceMiles, ')
           ..write('durationMinutes: $durationMinutes, ')
           ..write('paceTargetMinutesPerMile: $paceTargetMinutesPerMile, ')
@@ -24648,6 +24809,45 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
     requiredDuringInsert: false,
     defaultValue: const Constant(4),
   );
+  static const VerificationMeta _minServingsDuringMeta = const VerificationMeta(
+    'minServingsDuring',
+  );
+  @override
+  late final GeneratedColumn<double> minServingsDuring =
+      GeneratedColumn<double>(
+        'min_servings_during',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(1.0),
+      );
+  static const VerificationMeta _isIndivisibleMeta = const VerificationMeta(
+    'isIndivisible',
+  );
+  @override
+  late final GeneratedColumn<bool> isIndivisible = GeneratedColumn<bool>(
+    'is_indivisible',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_indivisible" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _solventMinMlMeta = const VerificationMeta(
+    'solventMinMl',
+  );
+  @override
+  late final GeneratedColumn<double> solventMinMl = GeneratedColumn<double>(
+    'solvent_min_ml',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _toExcludeFromSolverMeta =
       const VerificationMeta('toExcludeFromSolver');
   @override
@@ -24829,6 +25029,9 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
     maxServingsBefore,
     maxServingsDuring,
     maxServingsAfter,
+    minServingsDuring,
+    isIndivisible,
+    solventMinMl,
     toExcludeFromSolver,
     isEssential,
     showInPreferences,
@@ -25078,6 +25281,33 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
         ),
       );
     }
+    if (data.containsKey('min_servings_during')) {
+      context.handle(
+        _minServingsDuringMeta,
+        minServingsDuring.isAcceptableOrUnknown(
+          data['min_servings_during']!,
+          _minServingsDuringMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_indivisible')) {
+      context.handle(
+        _isIndivisibleMeta,
+        isIndivisible.isAcceptableOrUnknown(
+          data['is_indivisible']!,
+          _isIndivisibleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('solvent_min_ml')) {
+      context.handle(
+        _solventMinMlMeta,
+        solventMinMl.isAcceptableOrUnknown(
+          data['solvent_min_ml']!,
+          _solventMinMlMeta,
+        ),
+      );
+    }
     if (data.containsKey('to_exclude_from_solver')) {
       context.handle(
         _toExcludeFromSolverMeta,
@@ -25302,6 +25532,18 @@ class $TemplateFoodsTableTable extends TemplateFoodsTable
         DriftSqlType.int,
         data['${effectivePrefix}max_servings_after'],
       )!,
+      minServingsDuring: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}min_servings_during'],
+      )!,
+      isIndivisible: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_indivisible'],
+      )!,
+      solventMinMl: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}solvent_min_ml'],
+      ),
       toExcludeFromSolver: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}to_exclude_from_solver'],
@@ -25416,6 +25658,21 @@ class TemplateFoodEntry extends DataClass
   final int maxServingsBefore;
   final int maxServingsDuring;
   final int maxServingsAfter;
+
+  /// Smallest offerable during-phase serving (mirrors Supabase; §4.2 one-cap
+  /// ruling, food-recommendation@v1 twin port — the Dart solver must honour
+  /// the same candidate floor the server does).
+  final double minServingsDuring;
+
+  /// Whole-unit semantics (catalog-conventions C3). Previously approximated
+  /// client-side by a product-type heuristic; the column is authoritative.
+  final bool isIndivisible;
+
+  /// Catalog-conventions v1.1 (food-recommendation §6(e)): label-derived
+  /// minimum solvent water per serving for concentrated products. NULL =
+  /// undeclared → consumers fall back to the flat 250 ml pairing default,
+  /// never to 0.
+  final double? solventMinMl;
   final bool toExcludeFromSolver;
   final bool isEssential;
   final bool showInPreferences;
@@ -25458,6 +25715,9 @@ class TemplateFoodEntry extends DataClass
     required this.maxServingsBefore,
     required this.maxServingsDuring,
     required this.maxServingsAfter,
+    required this.minServingsDuring,
+    required this.isIndivisible,
+    this.solventMinMl,
     required this.toExcludeFromSolver,
     required this.isEssential,
     required this.showInPreferences,
@@ -25515,6 +25775,11 @@ class TemplateFoodEntry extends DataClass
     map['max_servings_before'] = Variable<int>(maxServingsBefore);
     map['max_servings_during'] = Variable<int>(maxServingsDuring);
     map['max_servings_after'] = Variable<int>(maxServingsAfter);
+    map['min_servings_during'] = Variable<double>(minServingsDuring);
+    map['is_indivisible'] = Variable<bool>(isIndivisible);
+    if (!nullToAbsent || solventMinMl != null) {
+      map['solvent_min_ml'] = Variable<double>(solventMinMl);
+    }
     map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver);
     map['is_essential'] = Variable<bool>(isEssential);
     map['show_in_preferences'] = Variable<bool>(showInPreferences);
@@ -25585,6 +25850,11 @@ class TemplateFoodEntry extends DataClass
       maxServingsBefore: Value(maxServingsBefore),
       maxServingsDuring: Value(maxServingsDuring),
       maxServingsAfter: Value(maxServingsAfter),
+      minServingsDuring: Value(minServingsDuring),
+      isIndivisible: Value(isIndivisible),
+      solventMinMl: solventMinMl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(solventMinMl),
       toExcludeFromSolver: Value(toExcludeFromSolver),
       isEssential: Value(isEssential),
       showInPreferences: Value(showInPreferences),
@@ -25649,6 +25919,9 @@ class TemplateFoodEntry extends DataClass
       maxServingsBefore: serializer.fromJson<int>(json['maxServingsBefore']),
       maxServingsDuring: serializer.fromJson<int>(json['maxServingsDuring']),
       maxServingsAfter: serializer.fromJson<int>(json['maxServingsAfter']),
+      minServingsDuring: serializer.fromJson<double>(json['minServingsDuring']),
+      isIndivisible: serializer.fromJson<bool>(json['isIndivisible']),
+      solventMinMl: serializer.fromJson<double?>(json['solventMinMl']),
       toExcludeFromSolver: serializer.fromJson<bool>(
         json['toExcludeFromSolver'],
       ),
@@ -25700,6 +25973,9 @@ class TemplateFoodEntry extends DataClass
       'maxServingsBefore': serializer.toJson<int>(maxServingsBefore),
       'maxServingsDuring': serializer.toJson<int>(maxServingsDuring),
       'maxServingsAfter': serializer.toJson<int>(maxServingsAfter),
+      'minServingsDuring': serializer.toJson<double>(minServingsDuring),
+      'isIndivisible': serializer.toJson<bool>(isIndivisible),
+      'solventMinMl': serializer.toJson<double?>(solventMinMl),
       'toExcludeFromSolver': serializer.toJson<bool>(toExcludeFromSolver),
       'isEssential': serializer.toJson<bool>(isEssential),
       'showInPreferences': serializer.toJson<bool>(showInPreferences),
@@ -25745,6 +26021,9 @@ class TemplateFoodEntry extends DataClass
     int? maxServingsBefore,
     int? maxServingsDuring,
     int? maxServingsAfter,
+    double? minServingsDuring,
+    bool? isIndivisible,
+    Value<double?> solventMinMl = const Value.absent(),
     bool? toExcludeFromSolver,
     bool? isEssential,
     bool? showInPreferences,
@@ -25789,6 +26068,9 @@ class TemplateFoodEntry extends DataClass
     maxServingsBefore: maxServingsBefore ?? this.maxServingsBefore,
     maxServingsDuring: maxServingsDuring ?? this.maxServingsDuring,
     maxServingsAfter: maxServingsAfter ?? this.maxServingsAfter,
+    minServingsDuring: minServingsDuring ?? this.minServingsDuring,
+    isIndivisible: isIndivisible ?? this.isIndivisible,
+    solventMinMl: solventMinMl.present ? solventMinMl.value : this.solventMinMl,
     toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
     isEssential: isEssential ?? this.isEssential,
     showInPreferences: showInPreferences ?? this.showInPreferences,
@@ -25873,6 +26155,15 @@ class TemplateFoodEntry extends DataClass
       maxServingsAfter: data.maxServingsAfter.present
           ? data.maxServingsAfter.value
           : this.maxServingsAfter,
+      minServingsDuring: data.minServingsDuring.present
+          ? data.minServingsDuring.value
+          : this.minServingsDuring,
+      isIndivisible: data.isIndivisible.present
+          ? data.isIndivisible.value
+          : this.isIndivisible,
+      solventMinMl: data.solventMinMl.present
+          ? data.solventMinMl.value
+          : this.solventMinMl,
       toExcludeFromSolver: data.toExcludeFromSolver.present
           ? data.toExcludeFromSolver.value
           : this.toExcludeFromSolver,
@@ -25938,6 +26229,9 @@ class TemplateFoodEntry extends DataClass
           ..write('maxServingsBefore: $maxServingsBefore, ')
           ..write('maxServingsDuring: $maxServingsDuring, ')
           ..write('maxServingsAfter: $maxServingsAfter, ')
+          ..write('minServingsDuring: $minServingsDuring, ')
+          ..write('isIndivisible: $isIndivisible, ')
+          ..write('solventMinMl: $solventMinMl, ')
           ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
           ..write('isEssential: $isEssential, ')
           ..write('showInPreferences: $showInPreferences, ')
@@ -25985,6 +26279,9 @@ class TemplateFoodEntry extends DataClass
     maxServingsBefore,
     maxServingsDuring,
     maxServingsAfter,
+    minServingsDuring,
+    isIndivisible,
+    solventMinMl,
     toExcludeFromSolver,
     isEssential,
     showInPreferences,
@@ -26031,6 +26328,9 @@ class TemplateFoodEntry extends DataClass
           other.maxServingsBefore == this.maxServingsBefore &&
           other.maxServingsDuring == this.maxServingsDuring &&
           other.maxServingsAfter == this.maxServingsAfter &&
+          other.minServingsDuring == this.minServingsDuring &&
+          other.isIndivisible == this.isIndivisible &&
+          other.solventMinMl == this.solventMinMl &&
           other.toExcludeFromSolver == this.toExcludeFromSolver &&
           other.isEssential == this.isEssential &&
           other.showInPreferences == this.showInPreferences &&
@@ -26075,6 +26375,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
   final Value<int> maxServingsBefore;
   final Value<int> maxServingsDuring;
   final Value<int> maxServingsAfter;
+  final Value<double> minServingsDuring;
+  final Value<bool> isIndivisible;
+  final Value<double?> solventMinMl;
   final Value<bool> toExcludeFromSolver;
   final Value<bool> isEssential;
   final Value<bool> showInPreferences;
@@ -26118,6 +26421,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     this.maxServingsBefore = const Value.absent(),
     this.maxServingsDuring = const Value.absent(),
     this.maxServingsAfter = const Value.absent(),
+    this.minServingsDuring = const Value.absent(),
+    this.isIndivisible = const Value.absent(),
+    this.solventMinMl = const Value.absent(),
     this.toExcludeFromSolver = const Value.absent(),
     this.isEssential = const Value.absent(),
     this.showInPreferences = const Value.absent(),
@@ -26162,6 +26468,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     this.maxServingsBefore = const Value.absent(),
     this.maxServingsDuring = const Value.absent(),
     this.maxServingsAfter = const Value.absent(),
+    this.minServingsDuring = const Value.absent(),
+    this.isIndivisible = const Value.absent(),
+    this.solventMinMl = const Value.absent(),
     this.toExcludeFromSolver = const Value.absent(),
     this.isEssential = const Value.absent(),
     this.showInPreferences = const Value.absent(),
@@ -26209,6 +26518,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     Expression<int>? maxServingsBefore,
     Expression<int>? maxServingsDuring,
     Expression<int>? maxServingsAfter,
+    Expression<double>? minServingsDuring,
+    Expression<bool>? isIndivisible,
+    Expression<double>? solventMinMl,
     Expression<bool>? toExcludeFromSolver,
     Expression<bool>? isEssential,
     Expression<bool>? showInPreferences,
@@ -26254,6 +26566,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
       if (maxServingsBefore != null) 'max_servings_before': maxServingsBefore,
       if (maxServingsDuring != null) 'max_servings_during': maxServingsDuring,
       if (maxServingsAfter != null) 'max_servings_after': maxServingsAfter,
+      if (minServingsDuring != null) 'min_servings_during': minServingsDuring,
+      if (isIndivisible != null) 'is_indivisible': isIndivisible,
+      if (solventMinMl != null) 'solvent_min_ml': solventMinMl,
       if (toExcludeFromSolver != null)
         'to_exclude_from_solver': toExcludeFromSolver,
       if (isEssential != null) 'is_essential': isEssential,
@@ -26301,6 +26616,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     Value<int>? maxServingsBefore,
     Value<int>? maxServingsDuring,
     Value<int>? maxServingsAfter,
+    Value<double>? minServingsDuring,
+    Value<bool>? isIndivisible,
+    Value<double?>? solventMinMl,
     Value<bool>? toExcludeFromSolver,
     Value<bool>? isEssential,
     Value<bool>? showInPreferences,
@@ -26345,6 +26663,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
       maxServingsBefore: maxServingsBefore ?? this.maxServingsBefore,
       maxServingsDuring: maxServingsDuring ?? this.maxServingsDuring,
       maxServingsAfter: maxServingsAfter ?? this.maxServingsAfter,
+      minServingsDuring: minServingsDuring ?? this.minServingsDuring,
+      isIndivisible: isIndivisible ?? this.isIndivisible,
+      solventMinMl: solventMinMl ?? this.solventMinMl,
       toExcludeFromSolver: toExcludeFromSolver ?? this.toExcludeFromSolver,
       isEssential: isEssential ?? this.isEssential,
       showInPreferences: showInPreferences ?? this.showInPreferences,
@@ -26451,6 +26772,15 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
     if (maxServingsAfter.present) {
       map['max_servings_after'] = Variable<int>(maxServingsAfter.value);
     }
+    if (minServingsDuring.present) {
+      map['min_servings_during'] = Variable<double>(minServingsDuring.value);
+    }
+    if (isIndivisible.present) {
+      map['is_indivisible'] = Variable<bool>(isIndivisible.value);
+    }
+    if (solventMinMl.present) {
+      map['solvent_min_ml'] = Variable<double>(solventMinMl.value);
+    }
     if (toExcludeFromSolver.present) {
       map['to_exclude_from_solver'] = Variable<bool>(toExcludeFromSolver.value);
     }
@@ -26525,6 +26855,9 @@ class TemplateFoodsTableCompanion extends UpdateCompanion<TemplateFoodEntry> {
           ..write('maxServingsBefore: $maxServingsBefore, ')
           ..write('maxServingsDuring: $maxServingsDuring, ')
           ..write('maxServingsAfter: $maxServingsAfter, ')
+          ..write('minServingsDuring: $minServingsDuring, ')
+          ..write('isIndivisible: $isIndivisible, ')
+          ..write('solventMinMl: $solventMinMl, ')
           ..write('toExcludeFromSolver: $toExcludeFromSolver, ')
           ..write('isEssential: $isEssential, ')
           ..write('showInPreferences: $showInPreferences, ')
@@ -46035,6 +46368,9 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       required String title,
       required DateTime scheduledDateTime,
       Value<String> status,
+      Value<DateTime?> plannedTime,
+      Value<DateTime?> actualTime,
+      Value<double?> caloriesBurned,
       Value<double?> distanceMiles,
       Value<int?> durationMinutes,
       Value<double?> paceTargetMinutesPerMile,
@@ -46097,6 +46433,9 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String> title,
       Value<DateTime> scheduledDateTime,
       Value<String> status,
+      Value<DateTime?> plannedTime,
+      Value<DateTime?> actualTime,
+      Value<double?> caloriesBurned,
       Value<double?> distanceMiles,
       Value<int?> durationMinutes,
       Value<double?> paceTargetMinutesPerMile,
@@ -46188,6 +46527,21 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get plannedTime => $composableBuilder(
+    column: $table.plannedTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get actualTime => $composableBuilder(
+    column: $table.actualTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -46491,6 +46845,21 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get plannedTime => $composableBuilder(
+    column: $table.plannedTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get actualTime => $composableBuilder(
+    column: $table.actualTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get distanceMiles => $composableBuilder(
     column: $table.distanceMiles,
     builder: (column) => ColumnOrderings(column),
@@ -46783,6 +47152,21 @@ class $$ActivitiesTableTableAnnotationComposer
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get plannedTime => $composableBuilder(
+    column: $table.plannedTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get actualTime => $composableBuilder(
+    column: $table.actualTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get caloriesBurned => $composableBuilder(
+    column: $table.caloriesBurned,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<double> get distanceMiles => $composableBuilder(
     column: $table.distanceMiles,
     builder: (column) => column,
@@ -47069,6 +47453,9 @@ class $$ActivitiesTableTableTableManager
                 Value<String> title = const Value.absent(),
                 Value<DateTime> scheduledDateTime = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<DateTime?> plannedTime = const Value.absent(),
+                Value<DateTime?> actualTime = const Value.absent(),
+                Value<double?> caloriesBurned = const Value.absent(),
                 Value<double?> distanceMiles = const Value.absent(),
                 Value<int?> durationMinutes = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
@@ -47129,6 +47516,9 @@ class $$ActivitiesTableTableTableManager
                 title: title,
                 scheduledDateTime: scheduledDateTime,
                 status: status,
+                plannedTime: plannedTime,
+                actualTime: actualTime,
+                caloriesBurned: caloriesBurned,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
@@ -47191,6 +47581,9 @@ class $$ActivitiesTableTableTableManager
                 required String title,
                 required DateTime scheduledDateTime,
                 Value<String> status = const Value.absent(),
+                Value<DateTime?> plannedTime = const Value.absent(),
+                Value<DateTime?> actualTime = const Value.absent(),
+                Value<double?> caloriesBurned = const Value.absent(),
                 Value<double?> distanceMiles = const Value.absent(),
                 Value<int?> durationMinutes = const Value.absent(),
                 Value<double?> paceTargetMinutesPerMile = const Value.absent(),
@@ -47251,6 +47644,9 @@ class $$ActivitiesTableTableTableManager
                 title: title,
                 scheduledDateTime: scheduledDateTime,
                 status: status,
+                plannedTime: plannedTime,
+                actualTime: actualTime,
+                caloriesBurned: caloriesBurned,
                 distanceMiles: distanceMiles,
                 durationMinutes: durationMinutes,
                 paceTargetMinutesPerMile: paceTargetMinutesPerMile,
@@ -52274,6 +52670,9 @@ typedef $$TemplateFoodsTableTableCreateCompanionBuilder =
       Value<int> maxServingsBefore,
       Value<int> maxServingsDuring,
       Value<int> maxServingsAfter,
+      Value<double> minServingsDuring,
+      Value<bool> isIndivisible,
+      Value<double?> solventMinMl,
       Value<bool> toExcludeFromSolver,
       Value<bool> isEssential,
       Value<bool> showInPreferences,
@@ -52319,6 +52718,9 @@ typedef $$TemplateFoodsTableTableUpdateCompanionBuilder =
       Value<int> maxServingsBefore,
       Value<int> maxServingsDuring,
       Value<int> maxServingsAfter,
+      Value<double> minServingsDuring,
+      Value<bool> isIndivisible,
+      Value<double?> solventMinMl,
       Value<bool> toExcludeFromSolver,
       Value<bool> isEssential,
       Value<bool> showInPreferences,
@@ -52485,6 +52887,21 @@ class $$TemplateFoodsTableTableFilterComposer
 
   ColumnFilters<int> get maxServingsAfter => $composableBuilder(
     column: $table.maxServingsAfter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get minServingsDuring => $composableBuilder(
+    column: $table.minServingsDuring,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isIndivisible => $composableBuilder(
+    column: $table.isIndivisible,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get solventMinMl => $composableBuilder(
+    column: $table.solventMinMl,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52703,6 +53120,21 @@ class $$TemplateFoodsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get minServingsDuring => $composableBuilder(
+    column: $table.minServingsDuring,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isIndivisible => $composableBuilder(
+    column: $table.isIndivisible,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get solventMinMl => $composableBuilder(
+    column: $table.solventMinMl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get toExcludeFromSolver => $composableBuilder(
     column: $table.toExcludeFromSolver,
     builder: (column) => ColumnOrderings(column),
@@ -52894,6 +53326,21 @@ class $$TemplateFoodsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get minServingsDuring => $composableBuilder(
+    column: $table.minServingsDuring,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isIndivisible => $composableBuilder(
+    column: $table.isIndivisible,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get solventMinMl => $composableBuilder(
+    column: $table.solventMinMl,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get toExcludeFromSolver => $composableBuilder(
     column: $table.toExcludeFromSolver,
     builder: (column) => column,
@@ -53018,6 +53465,9 @@ class $$TemplateFoodsTableTableTableManager
                 Value<int> maxServingsBefore = const Value.absent(),
                 Value<int> maxServingsDuring = const Value.absent(),
                 Value<int> maxServingsAfter = const Value.absent(),
+                Value<double> minServingsDuring = const Value.absent(),
+                Value<bool> isIndivisible = const Value.absent(),
+                Value<double?> solventMinMl = const Value.absent(),
                 Value<bool> toExcludeFromSolver = const Value.absent(),
                 Value<bool> isEssential = const Value.absent(),
                 Value<bool> showInPreferences = const Value.absent(),
@@ -53061,6 +53511,9 @@ class $$TemplateFoodsTableTableTableManager
                 maxServingsBefore: maxServingsBefore,
                 maxServingsDuring: maxServingsDuring,
                 maxServingsAfter: maxServingsAfter,
+                minServingsDuring: minServingsDuring,
+                isIndivisible: isIndivisible,
+                solventMinMl: solventMinMl,
                 toExcludeFromSolver: toExcludeFromSolver,
                 isEssential: isEssential,
                 showInPreferences: showInPreferences,
@@ -53106,6 +53559,9 @@ class $$TemplateFoodsTableTableTableManager
                 Value<int> maxServingsBefore = const Value.absent(),
                 Value<int> maxServingsDuring = const Value.absent(),
                 Value<int> maxServingsAfter = const Value.absent(),
+                Value<double> minServingsDuring = const Value.absent(),
+                Value<bool> isIndivisible = const Value.absent(),
+                Value<double?> solventMinMl = const Value.absent(),
                 Value<bool> toExcludeFromSolver = const Value.absent(),
                 Value<bool> isEssential = const Value.absent(),
                 Value<bool> showInPreferences = const Value.absent(),
@@ -53149,6 +53605,9 @@ class $$TemplateFoodsTableTableTableManager
                 maxServingsBefore: maxServingsBefore,
                 maxServingsDuring: maxServingsDuring,
                 maxServingsAfter: maxServingsAfter,
+                minServingsDuring: minServingsDuring,
+                isIndivisible: isIndivisible,
+                solventMinMl: solventMinMl,
                 toExcludeFromSolver: toExcludeFromSolver,
                 isEssential: isEssential,
                 showInPreferences: showInPreferences,

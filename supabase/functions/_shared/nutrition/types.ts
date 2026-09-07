@@ -36,6 +36,11 @@ export interface Food {
   is_user_food: boolean;
   is_indivisible: boolean;
   product_type?: string;
+  /** Catalog-conventions v1.1 (food-recommendation §6(e)): label-derived
+   * minimum solvent water per serving for concentrated products. null/absent
+   * = undeclared → consumers fall back to DEFAULT_PAIRING_VOLUME_ML (250),
+   * never to 0. */
+  solvent_min_ml?: number | null;
 }
 
 export type TimingCategory = 'sip_throughout' | 'fuel_drink' | 'quick_consume' | 'slow_consume' | 'electrolyte';
@@ -64,6 +69,9 @@ export interface FoodResult {
   timing_category?: TimingCategory;
   product_type?: string;
   is_user_food?: boolean;
+  /** Per-serving solvent minimum carried from the Food row (catalog v1.1) so
+   * post-selection passes can compute the session solvent requirement. */
+  solvent_min_ml?: number | null;
 }
 
 /**

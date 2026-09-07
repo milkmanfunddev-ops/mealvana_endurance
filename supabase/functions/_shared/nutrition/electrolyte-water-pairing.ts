@@ -129,19 +129,105 @@ export function deliversDrinkableFluid(f: FoodResult): boolean {
   return isDrinkable && (f.fluids_ml || 0) > PLAIN_FLUID_EPSILON_ML;
 }
 
-/** Electrolyte items that carry essentially no fluid of their own. */
+/**
+ * C2 (docs/ssot/spec/domain/catalog-conventions.md, RULED Xuan 2026-09-01):
+ * the pairing invariant covers every DRY item that requires water to
+ * consume, not only electrolyte-flagged ones — the C1 zero-fluid set
+ * includes carb drink mixes (nobody chews drink mix). No `requires_water`
+ * column exists; per the handback the derivation is app-side: an
+ * electrolyte item, or any drink-shaped product (`drink_mix`,
+ * `sports_drink`, `beverage`, or a liquid-flagged row) whose consumed state
+ * is dry. Twin: `_requiresWaterWhenDry` in electrolyte_water_pairing.dart.
+ */
+export function requiresWaterWhenDry(f: FoodResult): boolean {
+  if (isElectrolyteItem(f)) return true;
+  if (f.is_liquid === true || f.is_drink === true) return true;
+  return f.product_type === "drink_mix" ||
+    f.product_type === "sports_drink" ||
+    f.product_type === "beverage";
+}
+
+/**
+ * Requires-water items that carry essentially no fluid of their own (C2 —
+ * name kept from the electrolyte-only era; scope is the full dry
+ * requires-water set since catalog-conventions v1).
+ */
 export function unpairedElectrolyteItems(foods: FoodResult[]): FoodResult[] {
   return foods.filter(
-    (f) => isElectrolyteItem(f) && (f.fluids_ml || 0) <= PLAIN_FLUID_EPSILON_ML,
+    (f) =>
+      requiresWaterWhenDry(f) &&
+      (f.fluids_ml || 0) <= PLAIN_FLUID_EPSILON_ML,
   );
+}
+
+/**
+ * Catalog-conventions v1.1 / food-recommendation §6(e) (RULED Xuan,
+ * 2026-09-03): the phase's plain-water requirement from solvent dependencies.
+ * A row with a declared `solvent_min_ml` needs that much water PER SERVING
+ * (label dilution — the per-product minimum supersedes C2's flat constant);
+ * an undeclared dry requires-water row falls back to [fallbackMl] per serving
+ * (250 — never 0, which would silently remove the pairing). Items that carry
+ * their own drinkable fluid (a premixed sports drink) need no solvent.
+ * Dart twin: `solventRequirementMl` in electrolyte_water_pairing.dart.
+ */
+export function solventRequirementMl(
+  foods: FoodResult[],
+): number {
+  // DECLARED rows only: the ruled session total is "plain water >= the sum of
+  // solvent minima of scheduled CONCENTRATED products". Undeclared dry
+  // requires-water items (capsules, tablets) keep C2 semantics — any
+  // drinkable fluid alongside satisfies them, with the 250 ml fallback used
+  // only as the pairing volume when nothing drinkable is present.
+  let total = 0;
+  for (const f of foods) {
+    const qty = f.quantity || 0;
+    if (qty <= 0) continue;
+    const declared = f.solvent_min_ml ?? null;
+    if (declared != null && declared > 0) total += declared * qty;
+  }
+  return total;
+}
+
+/** Plain water already on the plate: fluid-bearing rows with no carbs and no
+ * sodium (the same shape `pickWaterSource` selects). Counts toward the
+ * solvent requirement — solvent water IS hydration water (§6(e): no double
+ * demand). */
+export function plainWaterMl(foods: FoodResult[]): number {
+  let total = 0;
+  for (const f of foods) {
+    if (!deliversDrinkableFluid(f)) continue; // broth/melon water can't dilute
+    const qty = Math.max(f.quantity || 1, 0.0001);
+    const carbsPer = (f.carbs_grams || 0) / qty;
+    const sodiumPer = (f.sodium_mg || 0) / qty;
+    if (carbsPer <= 0 && sodiumPer <= 0) total += f.fluids_ml || 0;
+  }
+  return total;
 }
 
 /**
  * Cheap check so callers can avoid fetching a water pool when nothing is
  * wrong (mirrors the lazy `fluidSodiumDeficits` gate in `pin-backfill.ts`).
+ * True when the legacy C2 gate fires (dry requires-water item, no drink
+ * alongside) OR when declared solvent minima exceed the plain water present.
  */
 export function needsWaterPairing(foods: FoodResult[]): boolean {
-  if (unpairedElectrolyteItems(foods).length === 0) return false;
+  // Declared-solvent half. A sub-MIN_PAIRING shortfall next to plain water
+  // already on the plate is close enough — the spec's own solvent lines are
+  // approximate ("gels chase ~150 ml"), and MIN_PAIRING exists because a
+  // smaller splash is a meaningless recommendation (symmetrically, a smaller
+  // shortfall is a meaningless conflict).
+  const declaredDeficit = solventRequirementMl(foods) - plainWaterMl(foods);
+  if (
+    declaredDeficit > 0 &&
+    (plainWaterMl(foods) <= 0 || declaredDeficit >= MIN_PAIRING_VOLUME_ML)
+  ) {
+    return true;
+  }
+  // Legacy C2 half: an undeclared dry requires-water item with no drinkable
+  // fluid alongside.
+  const undeclaredUnpaired = unpairedElectrolyteItems(foods)
+    .filter((f) => (f.solvent_min_ml ?? 0) <= 0);
+  if (undeclaredUnpaired.length === 0) return false;
   return !foods.some(deliversDrinkableFluid);
 }
 
@@ -251,16 +337,46 @@ export function ensureElectrolyteWaterPairing(
     conflict: null,
   };
 
-  // Nothing dry to pair, or a drink is already on the plate.
-  if (unpaired.length === 0) return noop;
-  if (foods.some(deliversDrinkableFluid)) return noop;
+  // Catalog-conventions v1.1 (§6(e)): rows with a DECLARED solvent_min_ml
+  // demand PLAIN water regardless of other drinks on the plate (a sports
+  // drink does not dilute a 90 g mix); the requirement is the session total
+  // minus plain water already scheduled (solvent water counts toward the
+  // hydration total — no double demand). Undeclared dry requires-water items
+  // keep the legacy C2 semantics: any drinkable fluid alongside satisfies
+  // them; with none, they want the flat pairing fallback per serving.
+  let declaredDeficitMl = Math.max(
+    0,
+    solventRequirementMl(foods) - plainWaterMl(foods),
+  );
+  // Sub-MIN_PAIRING shortfall next to existing plain water: close enough
+  // (see needsWaterPairing) — never a hard conflict over a splash.
+  if (
+    declaredDeficitMl > 0 &&
+    declaredDeficitMl < MIN_PAIRING_VOLUME_ML &&
+    plainWaterMl(foods) > 0
+  ) {
+    declaredDeficitMl = 0;
+  }
+  const undeclaredUnpaired = unpaired.filter(
+    (f) => (f.solvent_min_ml ?? 0) <= 0,
+  );
+  const fallbackMl = options.pairingVolumeMl ?? DEFAULT_PAIRING_VOLUME_ML;
+  const c2WantedMl =
+    undeclaredUnpaired.length > 0 && !foods.some(deliversDrinkableFluid)
+      ? undeclaredUnpaired.reduce(
+        (sum, f) => sum + fallbackMl * (f.quantity || 1),
+        0,
+      )
+      : 0;
+  const deficitMl = declaredDeficitMl + c2WantedMl;
+  if (deficitMl <= 0) return noop;
 
   const { timing, logPrefix } = options;
-  const electrolyteIds = unpaired.map((f) => f.food_id);
-  const wantedMl = Math.max(
-    MIN_PAIRING_VOLUME_ML,
-    options.pairingVolumeMl ?? DEFAULT_PAIRING_VOLUME_ML,
-  );
+  const electrolyteIds = (declaredDeficitMl > 0
+    ? foods.filter((f) => (f.solvent_min_ml ?? 0) > 0 && (f.quantity || 0) > 0)
+    : undeclaredUnpaired)
+    .map((f) => f.food_id);
+  const wantedMl = Math.max(MIN_PAIRING_VOLUME_ML, deficitMl);
   const ceiling =
     options.fluidCeilingMl != null && Number.isFinite(options.fluidCeilingMl) &&
       options.fluidCeilingMl > 0

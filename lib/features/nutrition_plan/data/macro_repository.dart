@@ -28,6 +28,7 @@ abstract class MacroRepository {
     required String gutTraining,
     required int age,
     required String gender,
+    HydrationCheck hydrationCheck = HydrationCheck.unknown,
   });
 
   /// Save macro targets to local storage
@@ -102,6 +103,7 @@ class MacroRepositoryImpl implements MacroRepository {
     required String gutTraining,
     required int age,
     required String gender,
+    HydrationCheck hydrationCheck = HydrationCheck.unknown,
   }) async {
     // Use offline calculation (edge function can be added later)
     return await _generateOfflineMacroTargets(
@@ -117,6 +119,7 @@ class MacroRepositoryImpl implements MacroRepository {
       gutTraining: gutTraining,
       age: age,
       gender: gender,
+      hydrationCheck: hydrationCheck,
     );
   }
 
@@ -143,6 +146,7 @@ class MacroRepositoryImpl implements MacroRepository {
     bool isIndoor = false,
     double? knownSweatRateMlPerHour,
     double? knownSodiumConcMgPerL,
+    HydrationCheck hydrationCheck = HydrationCheck.unknown,
   }) async {
     final offlineResult = OfflineMacroCalculator.calculateMacros(
       weight: weight,
@@ -170,11 +174,12 @@ class MacroRepositoryImpl implements MacroRepository {
         : weight * 0.45359237;
     final durationMin = (targets.metrics.durationMin).toDouble();
 
-    final preHydration = OfflineMacroCalculator.calculatePreWorkoutHydration(
+    final preHydration = preWorkoutHydrationFor(
       bodyWeightKg: weightKg,
       workoutDurationMin: durationMin,
       timeBeforeWorkoutMin: timeBeforeRunMin,
       tempC: tempC,
+      hydrationCheck: hydrationCheck,
     );
 
     final duringHydration =
@@ -203,11 +208,11 @@ class MacroRepositoryImpl implements MacroRepository {
         carbTargetBasis: targets.preRun.carbTargetBasis,
         carbTiers: targets.preRun.carbTiers,
         // Hydration v6 returns null for all three fluid fields on the gate
-        // path. `fluidsMl` is non-nullable, so a gated plan collapses to 0
-        // here — `hydrationRegime` is what tells a consumer that this 0 means
-        // "no target set" rather than "drink nothing". Never read one without
-        // the other; `PreRunMacros.isHydrationGated` does that for you.
-        fluidsMl: preHydration.fluidMl ?? 0,
+        // path, and `null` is carried through as `null` — a gated plan must
+        // render "No fluid target for this session", never "0 oz" (fuel-stat
+        // F-1; the `?? 0` collapse that used to live here was the
+        // coach-complaint class named in the pre-workout-macros@v2 handoff).
+        fluidsMl: preHydration.fluidMl,
         fluidsLowMl: preHydration.fluidLowMl,
         fluidsHighMl: preHydration.fluidHighMl,
         // Sodium v3: Mealvana sets no pre-workout sodium target, so all three
@@ -243,15 +248,49 @@ class MacroRepositoryImpl implements MacroRepository {
     return targets;
   }
 
+  /// The one seam through which every offline pre-workout hydration call
+  /// passes, so the urine check's three values (`pale` · `dark` · `unknown`)
+  /// all reach `OfflineMacroCalculator.calculatePreWorkoutHydration`
+  /// (hydration v6 *The urine check*: "the plan is computed at least twice").
+  /// Pure: same inputs, same outputs — no clock, no call order.
+  static PreWorkoutHydrationResult preWorkoutHydrationFor({
+    required double bodyWeightKg,
+    required double workoutDurationMin,
+    required double timeBeforeWorkoutMin,
+    double? tempC,
+    HydrationCheck hydrationCheck = HydrationCheck.unknown,
+  }) {
+    return OfflineMacroCalculator.calculatePreWorkoutHydration(
+      bodyWeightKg: bodyWeightKg,
+      workoutDurationMin: workoutDurationMin,
+      timeBeforeWorkoutMin: timeBeforeWorkoutMin,
+      tempC: tempC,
+      hydrationCheck: hydrationCheck,
+    );
+  }
+
+  /// The offline map is tolerant-read: a missing key is 0, never a throw.
+  /// (The mapper used to cast `pre_run_protein_g_optional` / `distance_mi`,
+  /// keys the map never emitted — this path threw on every call before the
+  /// pre-workout-macros@v2 work made it the hydrationCheck seam.)
+  static double _numOr0(Map<String, dynamic> m, String key) =>
+      (m[key] as num?)?.toDouble() ?? 0;
+
   MacroTargets _mapApiResponseToMacroTargets(Map<String, dynamic> macros) {
     return MacroTargets(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       activityType: ActivityType.running,
       preRun: PreRunMacros(
-        carbsG: (macros['pre_run_carbs_g'] as num).toDouble(),
-        proteinG: (macros['pre_run_protein_g_optional'] as num).toDouble(),
-        fatCapG: (macros['pre_run_fat_g_cap'] as num).toDouble(),
-        fluidsMl: (macros['pre_run_water_ml'] as num).toDouble(),
+        carbsG: _numOr0(macros, 'pre_run_carbs_g'),
+        // The offline map emits `pre_run_protein_g` / `pre_run_fat_g`; the
+        // `_optional` / `_cap` spellings were never produced by it (this
+        // path threw on every call before the pre-workout-macros@v2 work).
+        proteinG: _numOr0(macros, 'pre_run_protein_g'),
+        fatCapG: _numOr0(macros, 'pre_run_fat_g'),
+        // The legacy map's `pre_run_water_ml` (6.5 / 5.5 ml/kg, 250 ml
+        // flat) is the superseded v1 engine (PW-012); it is overlaid by
+        // hydration v6 below and must never reach the BEFORE card.
+        fluidsMl: (macros['pre_run_water_ml'] as num?)?.toDouble(),
         // Sodium v3: no pre-workout sodium target. `pre_run_sodium_mg` is
         // deliberately not read — it is null from the current engine, and a
         // legacy non-null value is a retired target we must not resurrect.
@@ -259,37 +298,41 @@ class MacroRepositoryImpl implements MacroRepository {
         fluidTargetBasis: macros['pre_run_fluid_target_basis'] as String?,
       ),
       duringRun: DuringRunMacros(
-        carbRateGPerH: (macros['during_rate_g_per_h'] as num).toDouble(),
-        carbTotalG: (macros['during_total_g'] as num).toDouble(),
+        carbRateGPerH: _numOr0(macros, 'during_rate_g_per_h'),
+        carbTotalG: _numOr0(macros, 'during_total_g'),
         fluidRateMlPerH: (macros['during_water_rate_ml_per_h'] as num)
             .toDouble(),
-        fluidTotalMl: (macros['during_water_total_ml'] as num).toDouble(),
+        fluidTotalMl: _numOr0(macros, 'during_water_total_ml'),
         sodiumRateMgPerH: (macros['during_sodium_rate_mg_per_h'] as num)
             .toDouble(),
-        sodiumTotalMg: (macros['during_sodium_total_mg'] as num).toDouble(),
+        sodiumTotalMg: _numOr0(macros, 'during_sodium_total_mg'),
         massNormRateGPerH: (macros['during_mass_norm_rate_g_per_h'] as num)
             .toDouble(),
         absClampRangeGPerH: [
-          (macros['during_abs_clamp_range_g_per_h'][0] as num).toDouble(),
-          (macros['during_abs_clamp_range_g_per_h'][1] as num).toDouble(),
+          ((macros['during_abs_clamp_range_g_per_h'] as List?)?[0] as num?)
+                  ?.toDouble() ??
+              0,
+          ((macros['during_abs_clamp_range_g_per_h'] as List?)?[1] as num?)
+                  ?.toDouble() ??
+              0,
         ],
       ),
       postRun: PostRunMacros(
-        carbsG: (macros['post_run_carbs_g'] as num).toDouble(),
-        proteinG: (macros['post_run_protein_g'] as num).toDouble(),
-        fluidsMl: (macros['post_run_water_ml'] as num).toDouble(),
-        sodiumMg: (macros['post_run_sodium_mg'] as num).toDouble(),
+        carbsG: _numOr0(macros, 'post_run_carbs_g'),
+        proteinG: _numOr0(macros, 'post_run_protein_g'),
+        fluidsMl: _numOr0(macros, 'post_run_water_ml'),
+        sodiumMg: _numOr0(macros, 'post_run_sodium_mg'),
       ),
       metrics: RunMetrics(
-        distanceMi: (macros['distance_mi'] as num).toDouble(),
-        distanceKm: (macros['distance_km'] as num).toDouble(),
-        durationH: (macros['duration_h'] as num).toDouble(),
-        durationMin: (macros['duration_min'] as num).toDouble(),
-        paceMinPerMile: (macros['pace_min_per_mile'] as num).toDouble(),
-        speedMph: (macros['speed_mph'] as num).toDouble(),
-        caloriesGrossKcal: (macros['calories_gross_kcal'] as num).toDouble(),
-        caloriesNetKcal: (macros['calories_net_kcal'] as num).toDouble(),
-        met: (macros['MET'] as num).toDouble(),
+        distanceMi: _numOr0(macros, 'distance_mi'),
+        distanceKm: _numOr0(macros, 'distance_km'),
+        durationH: _numOr0(macros, 'duration_h'),
+        durationMin: _numOr0(macros, 'duration_min'),
+        paceMinPerMile: _numOr0(macros, 'pace_min_per_mile'),
+        speedMph: _numOr0(macros, 'speed_mph'),
+        caloriesGrossKcal: _numOr0(macros, 'calories_gross_kcal'),
+        caloriesNetKcal: _numOr0(macros, 'calories_net_kcal'),
+        met: _numOr0(macros, 'MET'),
       ),
       calculationRule:
           macros['pre_run_carbs_rule'] as String? ?? 'Generated offline',

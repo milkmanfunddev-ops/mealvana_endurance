@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/workout_preset.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
-import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
 
 /// A grid of tappable workout-type chips for the intensity estimate mode.
@@ -28,9 +27,12 @@ class IntensityPresetChips extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Prototype chip geometry (create-activity-plan/v1.html): pill radius
+    // 100, ~11x15 padding, 9px wrap gap — the two-per-row look falls out of
+    // the Wrap at these paddings.
     return Wrap(
-      spacing: AppSpacing.xs,
-      runSpacing: AppSpacing.xs,
+      spacing: 9,
+      runSpacing: 9,
       children: WorkoutPreset.values.map((preset) {
         final isSelected = preset == selectedPreset;
         final label = WorkoutPresetData.labelFor(sportType, preset);
@@ -40,15 +42,12 @@ class IntensityPresetChips extends StatelessWidget {
           onTap: enabled ? () => onSelected(preset) : null,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
             decoration: BoxDecoration(
               color: isSelected
                   ? AppColors.orange.withValues(alpha: 0.15)
                   : Colors.transparent,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(100),
               border: Border.all(
                 color: _borderColor(isSelected, isDark),
                 width: isSelected ? 2 : 1,
@@ -58,7 +57,7 @@ class IntensityPresetChips extends StatelessWidget {
               label,
               style: AppTextStyles.bodySmall.copyWith(
                 color: _textColor(isSelected, isDark),
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
           ),

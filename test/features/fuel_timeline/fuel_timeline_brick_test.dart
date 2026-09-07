@@ -115,9 +115,10 @@ void main() {
     },
   );
 
-  testWidgets('two same-day activities of the SAME sport show no pill', (
+  testWidgets('two same-day activities of the SAME sport show the pill', (
     tester,
   ) async {
+    // Same-sport legs allowed (Lee, 2026-08-26) — shared eligibility rule.
     final result = resultWith([
       activity('run1', ActivityType.running, 8),
       activity('run2', ActivityType.running, 16),
@@ -128,7 +129,7 @@ void main() {
       overrides: overridesFor(result),
     );
 
-    expect(brickPill, findsNothing);
+    expect(brickPill, findsOneWidget);
   });
 
   testWidgets('tapping Brick enters leg-picking mode', (tester) async {

@@ -8,6 +8,8 @@ class MacroSources {
   final String neat;
   final String weight;
   final String bodyFat;
+  final String tomorrow;
+  final String weeklyRatio;
   final List<MacroSessionSources> sessions;
 
   const MacroSources({
@@ -15,6 +17,8 @@ class MacroSources {
     required this.neat,
     required this.weight,
     required this.bodyFat,
+    this.tomorrow = 'MANUAL',
+    this.weeklyRatio = 'MANUAL',
     required this.sessions,
   });
 
@@ -40,6 +44,8 @@ class MacroSources {
       neat: json['neat']?.toString() ?? 'FORMULA',
       weight: json['weight']?.toString() ?? 'MANUAL',
       bodyFat: json['body_fat']?.toString() ?? 'NONE',
+      tomorrow: json['tomorrow']?.toString() ?? 'MANUAL',
+      weeklyRatio: json['weekly_ratio']?.toString() ?? 'MANUAL',
       sessions: sessionsJson
           .whereType<Map>()
           .map((m) => MacroSessionSources.fromJson(m.cast<String, dynamic>()))
@@ -71,6 +77,58 @@ class MacroSessionSources {
       intensityFactor: json['intensity_factor']?.toString() ?? 'ZONE_DIST',
       tss: json['tss']?.toString() ?? 'FORMULA',
       duration: json['duration']?.toString() ?? 'FORMULA',
+    );
+  }
+}
+
+/// Athlete-facing chip for a source tag — the TOTAL display mapping (F-13,
+/// docs/ssot/spec/daily-macros/platform-resolution.md): the seven-tag enum
+/// renders as four chips; a tag with no chip is a conformance failure.
+/// Unknown tags from a newer server degrade to 'estimated' rather than crash.
+String sourceChipLabel(String tag) {
+  switch (tag) {
+    case 'GARMIN':
+      return 'verified · Garmin';
+    case 'TP_ACTUAL':
+      return 'verified · TrainingPeaks';
+    case 'MANUAL':
+      return 'self-reported';
+    case 'TP_PLANNED':
+    case 'TP_CALENDAR':
+      return 'planned (estimate)';
+    case 'FORMULA':
+    case 'ZONE_DIST':
+    default:
+      return 'estimated';
+  }
+}
+
+/// Retrospective-only diff vs the prior prospective plan (F27). Null on
+/// every other path — the server sends an explicit null, distinguishing
+/// "no recalculation happened" from "recalculation happened, nothing moved".
+class MacroDelta {
+  final double carbG;
+  final double protG;
+  final double fatG;
+  final double tdee;
+  final double sessionKcal;
+
+  const MacroDelta({
+    required this.carbG,
+    required this.protG,
+    required this.fatG,
+    required this.tdee,
+    required this.sessionKcal,
+  });
+
+  static MacroDelta? fromJson(Map<String, dynamic>? json) {
+    if (json == null) return null;
+    return MacroDelta(
+      carbG: (json['carb_g'] as num?)?.toDouble() ?? 0,
+      protG: (json['prot_g'] as num?)?.toDouble() ?? 0,
+      fatG: (json['fat_g'] as num?)?.toDouble() ?? 0,
+      tdee: (json['tdee'] as num?)?.toDouble() ?? 0,
+      sessionKcal: (json['session_kcal'] as num?)?.toDouble() ?? 0,
     );
   }
 }
@@ -107,6 +165,16 @@ class DailyMacroTargets {
   /// cached reads. Drives Garmin badges in the macro UI.
   final MacroSources? sources;
 
+  /// "pre_override" when the EA gate raised the plan: tdee/tefKcal then
+  /// describe the PRE-override macros and MUST NOT be presented as
+  /// describing the delivered plan (Q-009); surplus copy is suppressed
+  /// (intraday-display §2). Defaults to "as_computed" for older servers.
+  final String energyBasis;
+
+  /// F27 retrospective delta; null off the recalc path. Populated only on
+  /// fresh calculations — not persisted in cache.
+  final MacroDelta? delta;
+
   const DailyMacroTargets({
     required this.id,
     required this.userId,
@@ -128,6 +196,8 @@ class DailyMacroTargets {
     this.weightKg,
     this.bodyFatPct,
     this.sources,
+    this.energyBasis = 'as_computed',
+    this.delta,
   });
 
   /// Total calories from macros
@@ -175,10 +245,27 @@ class DailyMacroTargets {
       algorithmVersion: json['algorithm_version'] as String? ?? 'v4',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
-      weightKg: (json['weight_kg'] as num?)?.toDouble(),
-      bodyFatPct: (json['body_fat_pct'] as num?)?.toDouble(),
+      // Engine responses carry these flat; Supabase rows carry them nested in
+      // calculation_input (jsonb) — accept either, flat winning (seam pinned
+      // by daily_macro_targets_roundtrip_test; ops bug
+      // 2026-08-20-daily-macro-targets-tojson-drops-calculation-input.md).
+      weightKg:
+          (json['weight_kg'] as num?)?.toDouble() ??
+          ((json['calculation_input'] as Map?)?['weight_kg'] as num?)
+              ?.toDouble(),
+      bodyFatPct:
+          (json['body_fat_pct'] as num?)?.toDouble() ??
+          ((json['calculation_input'] as Map?)?['body_fat_pct'] as num?)
+              ?.toDouble(),
       sources: MacroSources.fromJson(
         (json['sources'] as Map?)?.cast<String, dynamic>(),
+      ),
+      energyBasis:
+          json['energy_basis'] as String? ??
+          (json['calculation_input'] as Map?)?['energy_basis'] as String? ??
+          'as_computed',
+      delta: MacroDelta.fromJson(
+        (json['delta'] as Map?)?.cast<String, dynamic>(),
       ),
     );
   }
@@ -202,6 +289,14 @@ class DailyMacroTargets {
       'ea': ea,
       'ea_status': eaStatus?.dbValue,
       'algorithm_version': algorithmVersion,
+      // Mirror of the LOCAL save path's calculation_input (the remote table
+      // carries the same jsonb column): without it, a future remote→local
+      // hydration would reproduce the field-drop seam behind the 70-kg bug.
+      'calculation_input': {
+        if (weightKg != null) 'weight_kg': weightKg,
+        if (bodyFatPct != null) 'body_fat_pct': bodyFatPct,
+        'energy_basis': energyBasis,
+      },
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

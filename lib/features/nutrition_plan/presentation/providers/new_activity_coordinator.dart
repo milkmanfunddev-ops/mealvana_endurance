@@ -245,10 +245,9 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
           }
 
           final segments = brickController.getSegments();
-          final segmentOrder = brickController.state.sportOrder;
+          final segmentOrder = brickController.state.segmentOrder;
           final selectedDate = brickController.state.selectedDate;
           final selectedTime = brickController.state.selectedTime;
-          final isFasted = brickController.state.isFasted;
           final preActivityMinutes = brickController.state.preActivityMinutes;
           final activityTitle = brickController.state.activityTitleManuallySet
               ? brickController.state.activityTitle
@@ -264,7 +263,6 @@ class NewActivityCoordinator extends _$NewActivityCoordinator {
                 segmentOrder: segmentOrder,
                 scheduledDate: selectedDate,
                 scheduledTime: selectedTime,
-                isFasted: isFasted,
                 preActivityMinutes: preActivityMinutes,
                 activityTitle: activityTitle,
                 activityId: activityId,

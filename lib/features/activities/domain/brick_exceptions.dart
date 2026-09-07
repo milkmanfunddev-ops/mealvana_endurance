@@ -23,7 +23,7 @@ class BrickValidationException extends BrickException {
   /// Factory constructors for common validation errors
   factory BrickValidationException.minimumSports() {
     return const BrickValidationException(
-      'Cannot create brick: need at least 2 different sports',
+      'Cannot create brick: need at least 2 workouts',
       code: 'MINIMUM_SPORTS',
     );
   }

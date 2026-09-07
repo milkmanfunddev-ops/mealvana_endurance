@@ -77,17 +77,22 @@ xcrun simctl launch "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
 sleep 3
 
 # If we're already past auth, there's nothing to do.
-if ! present "Get Started" && ! present "Log In" Button && ! present "Email Address" TextField; then
+if ! present "Get Started" && ! present "Log In" Button && ! present "I already have an account" Button \
+   && ! present "Email Address" TextField; then
   echo "✓ App appears already signed in (no login screen present). Nothing to do."
   exit 0
 fi
 
 # Walk Welcome → Log In → Log in with Email, only as far as needed.
 if ! present "Email Address" TextField; then
-  if present "Log In" Button && ! present "Log in with Email" Button; then
-    tap "Log In" Button                      # Welcome screen → login landing
+  if ! present "Log in with Email"; then
+    # Welcome screen → login landing. The button was "Log In" until the
+    # 2026-09 welcome redesign; it now reads "I already have an account".
+    tap "I already have an account" Button || tap "Log In" Button || true
   fi
-  present "Log in with Email" Button && tap "Log in with Email" Button
+  # No type filter: on the 2026-09 login landing the option rows expose
+  # StaticText semantics, not Button.
+  present "Log in with Email" && tap "Log in with Email"
 fi
 
 present "Email Address" TextField || { echo "✗ Could not reach the email login form."; exit 1; }

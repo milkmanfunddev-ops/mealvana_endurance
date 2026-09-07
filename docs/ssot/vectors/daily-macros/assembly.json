@@ -1,0 +1,247 @@
+{
+  "section": "assembly",
+  "engine": "calculate-daily-macros (assembly)",
+  "specVersion": "v1 (2026-08-14, ratified)",
+  "note": "Pins RATIFIED v1 (Xuan, 2026-08-14). EXPECTED-RED until calculate-daily-macros implements the ruled specs. Expected values follow R1: the UNROUNDED chain, abs tol 1e-3 (display rounding is half-up, pinned by F10's 136.5->137). Source tables that used rounded intermediates (NEAT 378 vs 377.784) drift <=1.5 kcal from these vectors; R1 governs, the vectors are the truth. The integrated v5 pipeline over seven personas + I6/I10. Worked-example v1-lineage tables are formula-level; these pin the ENGINE.",
+  "toleranceKcal": 0.001,
+  "vectors": [
+    {
+      "id": "pipeline-rest",
+      "status": "ratified",
+      "inputs": {
+        "w": 75,
+        "lbm": 64,
+        "age": 34,
+        "rmr": 1908,
+        "tier_v": 0.2,
+        "life": "DESK",
+        "sessions": []
+      },
+      "expected": {
+        "carbG": 322.536,
+        "protG": 115.2,
+        "fatG": 83.378,
+        "tdee": 2501.35,
+        "sessionKcal": 0,
+        "neatKcal": 343.44,
+        "ea": 39.084,
+        "eaStatus": "SOFT_WARNING"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "pipeline-run-90min",
+      "status": "ratified",
+      "inputs": {
+        "w": 75,
+        "lbm": 64,
+        "age": 34,
+        "rmr": 1908,
+        "tier_v": 0.2,
+        "life": "DESK",
+        "sessions": [
+          {
+            "sport": "running",
+            "IF": 0.74,
+            "durationHr": 1.5
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 548.441,
+        "protG": 130.2,
+        "fatG": 129.265,
+        "tdee": 3877.95,
+        "sessionKcal": 1204.72,
+        "neatKcal": 377.784,
+        "ea": 41.769,
+        "eaStatus": "SOFT_WARNING"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "pipeline-bike-4hr",
+      "status": "ratified",
+      "inputs": {
+        "w": 75,
+        "lbm": 64,
+        "age": 34,
+        "rmr": 1908,
+        "tier_v": 0.2,
+        "life": "DESK",
+        "sessions": [
+          {
+            "sport": "cycling",
+            "IF": 0.72,
+            "durationHr": 4.0
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 798.005,
+        "protG": 130.2,
+        "fatG": 176.801,
+        "tdee": 5304.03,
+        "sessionKcal": 2488.32,
+        "neatKcal": 377.784,
+        "ea": 43.995,
+        "eaStatus": "SOFT_WARNING"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "pipeline-strength-hour",
+      "status": "ratified",
+      "inputs": {
+        "w": 75,
+        "lbm": 64,
+        "age": 34,
+        "rmr": 1908,
+        "tier_v": 0.2,
+        "life": "DESK",
+        "sessions": [
+          {
+            "sport": "strength",
+            "IF": 0.7,
+            "durationHr": 1.0
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 374.762,
+        "protG": 137.7,
+        "fatG": 97.612,
+        "tdee": 2928.356,
+        "sessionKcal": 350.0,
+        "neatKcal": 377.784,
+        "ea": 40.287,
+        "eaStatus": "SOFT_WARNING"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "pipeline-double-plus-debt",
+      "status": "ratified",
+      "inputs": {
+        "w": 75,
+        "lbm": 64,
+        "age": 34,
+        "rmr": 1908,
+        "tier_v": 0.2,
+        "life": "DESK",
+        "sessions": [
+          {
+            "sport": "swimming",
+            "IF": 0.7,
+            "durationHr": 0.5
+          },
+          {
+            "sport": "cycling",
+            "IF": 0.8,
+            "durationHr": 2.0
+          }
+        ],
+        "ytss": 208,
+        "yhrs": 20
+      },
+      "expected": {
+        "carbG": 653.981,
+        "protG": 136.867,
+        "fatG": 150.638,
+        "tdee": 4519.129,
+        "sessionKcal": 1764.667,
+        "neatKcal": 394.956,
+        "ea": 43.038,
+        "eaStatus": "SOFT_WARNING"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "pipeline-recreational-female",
+      "status": "ratified",
+      "inputs": {
+        "w": 60,
+        "lbm": 45,
+        "age": 29,
+        "rmr": 1490,
+        "tier_v": 0.3,
+        "life": "MIXED",
+        "sessions": [
+          {
+            "sport": "running",
+            "IF": 0.65,
+            "durationHr": 0.75
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 376.579,
+        "protG": 81.0,
+        "fatG": 87.158,
+        "tdee": 2614.739,
+        "sessionKcal": 371.8,
+        "neatKcal": 491.7,
+        "ea": 49.843,
+        "eaStatus": "OK"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "pipeline-masters-strength",
+      "status": "ratified",
+      "inputs": {
+        "w": 90,
+        "lbm": 70.2,
+        "age": 48,
+        "rmr": 2044,
+        "tier_v": 0.25,
+        "life": "ACTIVE",
+        "sessions": [
+          {
+            "sport": "strength",
+            "IF": 0.7,
+            "durationHr": 1.0
+          }
+        ]
+      },
+      "expected": {
+        "carbG": 432.428,
+        "protG": 172.314,
+        "fatG": 115.189,
+        "tdee": 3455.671,
+        "sessionKcal": 420.0,
+        "neatKcal": 646.415,
+        "ea": 43.243,
+        "eaStatus": "SOFT_WARNING"
+      },
+      "why": "Full v5 pipeline, post-10b (fat capped 30%E, excess->carb). All rulings live: Q-003 strength 27, Q-014 cap, R1 unrounded chain. Fat = 30.0%E on every one of these days (the cap binds universally)."
+    },
+    {
+      "id": "invariant-I6-weight-linearity",
+      "status": "ratified",
+      "inputs": {
+        "note": "session kcal at 60/75/90 kg"
+      },
+      "expected": {
+        "ratios": [
+          0.8,
+          1.0,
+          1.2
+        ],
+        "exact": true
+      },
+      "why": "I6: session cost exactly linear in body weight \u2014 assert ratio 0.800:1.000:1.200 exactly, not within tolerance"
+    },
+    {
+      "id": "invariant-I10-cap-conserves",
+      "status": "ratified",
+      "inputs": {
+        "day": "bike-4hr"
+      },
+      "expected": {
+        "intakeEqualsTdee": true
+      },
+      "why": "I10: 10b conserves energy exactly \u2014 intake == TDEE when fat is between its bounds"
+    }
+  ]
+}

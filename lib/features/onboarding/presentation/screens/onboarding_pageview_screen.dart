@@ -35,7 +35,15 @@ import '../../../settings/presentation/screens/connected_apps_screen.dart';
 /// nudges push the connect screen as a separate revisit page via
 /// [_openConnectRevisit] — they never rewind the PageView.
 class OnboardingPageViewScreen extends ConsumerStatefulWidget {
-  const OnboardingPageViewScreen({super.key});
+  const OnboardingPageViewScreen({super.key, this.startAtLastPage = false});
+
+  /// Open on the final page (daily plan preview) instead of page 0.
+  ///
+  /// Set via `/onboarding?page=last` by the post-onboarding auth screen's
+  /// back fallback: when that screen was reached with a replaced stack there
+  /// is nothing to pop, and rebuilding this flow at page 0 strands the
+  /// athlete nine answered steps behind where they were.
+  final bool startAtLastPage;
 
   @override
   ConsumerState<OnboardingPageViewScreen> createState() =>
@@ -50,7 +58,12 @@ class _OnboardingPageViewScreenState
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: 0);
+    // kOnboardingStepNames.length == page count is pinned by
+    // onboarding_step_alignment_test, so it is safe to derive "last" from it.
+    _currentPageIndex = widget.startAtLastPage
+        ? kOnboardingStepNames.length - 1
+        : 0;
+    _pageController = PageController(initialPage: _currentPageIndex);
   }
 
   @override
@@ -200,10 +213,16 @@ class _OnboardingPageViewScreenState
           curve: Curves.easeInOut,
         );
       } else {
-        // Last page - navigate to post-onboarding auth
+        // Last page - navigate to post-onboarding auth.
+        //
+        // PUSH, not go: the auth screen's back control has to lead back to
+        // the daily-plan preview. With go() there is nothing to pop, and
+        // back fell through to /main — dropping the athlete into the app
+        // with onboarding never saved. Signing up or continuing without an
+        // account both go() to /main from there, which clears this stack.
         _trackOnboardingCompleted(pages.length);
         if (mounted) {
-          context.go('/auth/post-onboarding');
+          context.push('/auth/post-onboarding');
         }
       }
     }

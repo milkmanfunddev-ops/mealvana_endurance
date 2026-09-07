@@ -28,6 +28,10 @@ import {
 } from './during-template-solver.ts';
 import { MACRO_CONSTRAINT_RANGES } from './constants.ts';
 import {
+  plainWaterMl,
+  solventRequirementMl,
+} from './electrolyte-water-pairing.ts';
+import {
   categorizeFoods,
   pickWeighted,
   capServingsByUpperBounds,
@@ -171,6 +175,34 @@ export function generateDuringPhaseRuleBased(
   let sodiumAssigned = 0;
   let fluidAssigned = 0;
 
+  // §6(e) at PICK time (food-recommendation, RULED 2026-09-03; wired here
+  // after the same-day ceiling-bound finding: the post-selection pairing pass
+  // computed the solvent requirement correctly but could not repair a plate
+  // whose fluid budget was already spent — ops intake
+  // 2026-09-03-rule-solver-picks-drink-mix-with-no-solvent-headroom).
+  // Two mechanics, Dart twin in client_during_phase_solver.dart (§8):
+  //  * a DECLARED-solvent candidate (solvent_min_ml — mixes, gels-with-chase)
+  //    is only pickable up to the servings whose solvent water still fits the
+  //    plain-water budget: plainWater(plate) + fluid headroom − requirement.
+  //    Undeclared dry electrolytes keep the C2 pairing/backstop behaviour.
+  //  * the outstanding solvent deficit is a LIEN on the fluid budget: fluid-
+  //    bearing discretionary items (sports drink, liquid extras) size against
+  //    fluidUpper − deficit, so the water the mix needs cannot be spent on a
+  //    drink that does not dissolve it.
+  const solventDeficit = (): number =>
+    Math.max(0, solventRequirementMl(resultFoods) - plainWaterMl(resultFoods));
+  const maxServingsBySolvent = (f: Food): number => {
+    const perServing = f.solvent_min_ml ?? 0;
+    if (perServing <= 0) return Number.POSITIVE_INFINITY;
+    const headroom = Math.max(0, fluidUpper - fluidAssigned);
+    const available = plainWaterMl(resultFoods) + headroom -
+      solventRequirementMl(resultFoods);
+    return Math.max(0, available) / perServing;
+  };
+  const solventFeasibleAtMin = (f: Food): boolean =>
+    maxServingsBySolvent(f) >= (f.min_servings ?? 0.5) - 1e-9;
+  const reservedFluidUpper = (): number => fluidUpper - solventDeficit();
+
   // ---- STEP 1: Select primary carb source ----
   // Running: ONE of gel/chew/drink_mix (mixing constraint)
   // Cycling: can combine freely
@@ -184,7 +216,10 @@ export function generateDuringPhaseRuleBased(
   }
 
   const primaryCarb = carbTarget >= 15
-    ? pickWeighted(gutEligible(categorized.primary_carb), 'Primary carb selection')
+    ? pickWeighted(
+      gutEligible(categorized.primary_carb).filter(solventFeasibleAtMin),
+      'Primary carb selection',
+    )
     : null;
 
   if (primaryCarb && carbTarget > 0) {
@@ -197,6 +232,8 @@ export function generateDuringPhaseRuleBased(
     const primaryCarbTarget = carbTarget * primaryShare;
     let primaryServings = primaryCarbTarget / primaryCarb.per_serving.carbs_g;
     primaryServings = Math.min(primaryServings, gutCap(primaryCarb));
+    // §6(e): a concentrated pick may not exceed its solvent-water budget.
+    primaryServings = Math.min(primaryServings, maxServingsBySolvent(primaryCarb));
     primaryServings = capServingsByUpperBounds(
       primaryCarb,
       primaryServings,
@@ -245,7 +282,9 @@ export function generateDuringPhaseRuleBased(
         fluidAssigned,
         effectiveCarbUpperForSD,
         sodiumUpper,
-        fluidUpper,
+        // §6(e) lien: leave headroom for the plain water scheduled
+        // concentrated products still need.
+        reservedFluidUpper(),
       );
 
       // Guard: after clamping/rounding to min_servings, verify carbs still fit
@@ -297,7 +336,7 @@ export function generateDuringPhaseRuleBased(
             fluidAssigned,
             carbUpper,
             sodiumUpper,
-            fluidUpper,
+            reservedFluidUpper(), // §6(e) lien
           );
           const sdFullCarbsIfAdded = sportsDrink.per_serving.carbs_g * sdFullServings;
           if (sdFullServings > 0 && sdFullCarbsIfAdded >= carbLower - 1e-6 && sdFullCarbsIfAdded <= carbUpper + 1e-6) {
@@ -341,7 +380,7 @@ export function generateDuringPhaseRuleBased(
       // minimum serving overshoots the carb upper band and give up, leaving
       // an avoidable deficit for the electrolyte step to entrench.
       const alternates = gutEligible(categorized.primary_carb).filter(f =>
-        !primaryCarb || f.id !== primaryCarb.id
+        (!primaryCarb || f.id !== primaryCarb.id) && solventFeasibleAtMin(f)
       );
       const remaining = [...alternates];
       while (remaining.length > 0) {
@@ -353,6 +392,7 @@ export function generateDuringPhaseRuleBased(
         let secServings = Math.min(
           deficitNow / secondaryCarb.per_serving.carbs_g,
           gutCap(secondaryCarb),
+          maxServingsBySolvent(secondaryCarb), // §6(e)
         );
         secServings = capServingsByUpperBounds(
           secondaryCarb,
@@ -402,7 +442,7 @@ export function generateDuringPhaseRuleBased(
           fluidAssigned,
           carbUpper,
           sodiumUpper,
-          fluidUpper,
+          reservedFluidUpper(), // §6(e) lien
         );
         // Guard: min-serving rounding must not push carbs above upper bound
         const recoveryCarbsIfAdded = carbsAssigned + anySportsDrink.per_serving.carbs_g * recoveryServings;
@@ -492,6 +532,10 @@ export function generateDuringPhaseRuleBased(
       );
       if (maxAdditional <= 0) continue;
 
+      // §6(e): plain water pays the solvent lien, so it keeps the full
+      // ceiling; any other fluid carrier sizes against the reserved one.
+      const isPlainWater = waterFood.per_serving.carbs_g <= 0 &&
+        waterFood.per_serving.sodium_mg <= 0;
       const waterServings = Math.min(
         maxAdditional,
         capServingsByUpperBounds(
@@ -502,7 +546,7 @@ export function generateDuringPhaseRuleBased(
           fluidAssigned,
           carbUpper,
           sodiumUpper,
-          fluidUpper,
+          isPlainWater ? fluidUpper : reservedFluidUpper(),
         ),
       );
 
@@ -557,9 +601,13 @@ export function generateDuringPhaseRuleBased(
       fluidUpper,
       carbTarget: carbTarget,
       carbUpper,
+      gutLevel: gutTrainingLevel,
     };
     const elecResult = fillElectrolytes(
-      categorized.electrolyte,
+      // §6(e): a declared-solvent electrolyte (drink mix / high-Na stick)
+      // whose dilution water no longer fits the plain-water budget is not a
+      // pickable source; capsules/tablets (no declared solvent) unaffected.
+      categorized.electrolyte.filter(solventFeasibleAtMin),
       resultFoods,
       sodiumAssigned,
       fluidAssigned,

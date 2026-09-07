@@ -464,6 +464,11 @@ class BrickTransitionMacroTarget {
     this.safetyFlags = const [],
     this.isTested = false,
     this.isTestedSodium = false,
+    // T-1 transparency (transition-nutrition.md v1)
+    this.carbsRateGPerH,
+    this.effectiveGapMin,
+    this.transitionMin,
+    this.sportPair,
   });
 
   final String transitionName;
@@ -502,6 +507,20 @@ class BrickTransitionMacroTarget {
   /// Whether sweat sodium concentration was sourced from a personal test.
   final bool isTestedSodium;
 
+  // T-1 transparency (transition-nutrition.md v1 — the drawer renders the
+  // ratified formula from these; TC-4 drawer number == engine number).
+  /// The next leg's during-carb rate that sized the dose (g/h).
+  final double? carbsRateGPerH;
+
+  /// pre_buffer + transition_min + settle(next sport), minutes.
+  final double? effectiveGapMin;
+
+  /// The stop time used (provided, or the ratified default 3 — Q-TN3 open).
+  final double? transitionMin;
+
+  /// Display label only, no identity (brick.md R8), e.g. 'cycling→running'.
+  final String? sportPair;
+
   Map<String, dynamic> toJson() {
     return {
       'transitionName': transitionName,
@@ -524,6 +543,10 @@ class BrickTransitionMacroTarget {
       if (safetyFlags.isNotEmpty) 'safetyFlags': safetyFlags,
       if (isTested) 'isTested': isTested,
       if (isTestedSodium) 'isTestedSodium': isTestedSodium,
+      if (carbsRateGPerH != null) 'carbsRateGPerH': carbsRateGPerH,
+      if (effectiveGapMin != null) 'effectiveGapMin': effectiveGapMin,
+      if (transitionMin != null) 'transitionMin': transitionMin,
+      if (sportPair != null) 'sportPair': sportPair,
     };
   }
 
@@ -549,6 +572,10 @@ class BrickTransitionMacroTarget {
       safetyFlags: List<String>.from(json['safetyFlags'] as List? ?? const []),
       isTested: json['isTested'] as bool? ?? false,
       isTestedSodium: json['isTestedSodium'] as bool? ?? false,
+      carbsRateGPerH: (json['carbsRateGPerH'] as num?)?.toDouble(),
+      effectiveGapMin: (json['effectiveGapMin'] as num?)?.toDouble(),
+      transitionMin: (json['transitionMin'] as num?)?.toDouble(),
+      sportPair: json['sportPair'] as String?,
     );
   }
 
@@ -573,7 +600,11 @@ class BrickTransitionMacroTarget {
         other.ceilingMlPerH == ceilingMlPerH &&
         _listEquals(other.safetyFlags, safetyFlags) &&
         other.isTested == isTested &&
-        other.isTestedSodium == isTestedSodium;
+        other.isTestedSodium == isTestedSodium &&
+        other.carbsRateGPerH == carbsRateGPerH &&
+        other.effectiveGapMin == effectiveGapMin &&
+        other.transitionMin == transitionMin &&
+        other.sportPair == sportPair;
   }
 
   @override
@@ -597,6 +628,7 @@ class BrickTransitionMacroTarget {
       Object.hashAll(safetyFlags),
       isTested,
       isTestedSodium,
+      Object.hash(carbsRateGPerH, effectiveGapMin, transitionMin, sportPair),
     ),
   );
 }
@@ -627,7 +659,10 @@ abstract final class PreRunTargetBasis {
   /// The band is a Mealvana design choice (the ±12.5 % solver tolerance).
   static const String designChoice = 'design_choice';
 
-  /// No target is being made at all (gated fluid / fasted carbohydrate).
+  /// No target is being made at all (gated fluid). Historically also the
+  /// retired fasted carbohydrate path (food-recommendation §7 / D-001,
+  /// Xuan 2026-09-03) — a legacy cached plan may still carry it on
+  /// `carbTargetBasis`, where it is now ignored.
   static const String none = 'none';
 }
 
@@ -729,9 +764,10 @@ class PreRunCarbTier {
 /// Pre-run nutrition targets (up to 4 hours before).
 ///
 /// Implements the consumer side of hydration v6 / carbs v2 / sodium v3 — see
-/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. Three states must never be
-/// rendered alike: a real zero, *no target set* ([isHydrationGated]) and
-/// *no recommendation at all* ([isCarbRecommendationAbsent]).
+/// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md`. Two states must never be
+/// rendered alike: a real zero and *no target set* ([isHydrationGated]).
+/// (The third, fasted "no recommendation at all", was retired with the
+/// fasted product state — food-recommendation §7 / D-001, Xuan 2026-09-03.)
 class PreRunMacros {
   const PreRunMacros({
     required this.carbsG,
@@ -759,11 +795,13 @@ class PreRunMacros {
   final double proteinG;
   final double fatCapG;
 
-  /// Plan-total pre-workout fluid, in ml, **already collapsed to 0 on the
-  /// gate path**. Read [isHydrationGated] before showing it — a gated 0 means
-  /// "we set no target", not "drink nothing". Never render raw: the display
-  /// layer rounds it to the nearest 25 ml.
-  final double fluidsMl;
+  /// Plan-total pre-workout fluid, in ml — **`null` on the hydration gate
+  /// path** (hydration v6: "no statement is made"), never collapsed to 0.
+  /// A consumer that renders `null` as "0 oz" tells the athlete to drink
+  /// nothing, which is the coach-complaint class fuel-stat F-1 forbids; render
+  /// "No fluid target for this session" instead. Display rounding is the
+  /// card's (R-01: whole fl oz).
+  final double? fluidsMl;
 
   /// Delivered/observed pre-workout sodium, or `null` when no figure is
   /// available.
@@ -798,36 +836,31 @@ class PreRunMacros {
   final String? fluidTargetBasis;
 
   /// Provenance of the carbohydrate band — one of [PreRunTargetBasis].
-  /// [PreRunTargetBasis.none] means the athlete is fasted and no
-  /// recommendation is being made.
+  /// [PreRunTargetBasis.none] only appears on legacy cached fasted plans
+  /// (the fasted state is retired) and is not branched on anywhere.
   final String? carbTargetBasis;
 
   /// Per-feeding fluid split, furthest-out first. Empty on the gate path.
   final List<PreRunFluidTier>? fluidTiers;
 
-  /// Per-feeding carbohydrate split, furthest-out first. Empty when fasted.
+  /// Per-feeding carbohydrate split, furthest-out first.
   final List<PreRunCarbTier>? carbTiers;
 
   /// Urine-colour reading actually used — `pale` | `dark` | `unknown`.
   final String? hydrationCheckUsed;
 
-  /// Convert fluids to US units (fl oz)
-  double get fluidsFlOz => fluidsMl * 0.033814;
+  /// Convert fluids to US units (fl oz); null when no target is stated.
+  double? get fluidsFlOz => fluidsMl == null ? null : fluidsMl! * 0.033814;
 
   /// True when the hydration gate fired: short + mild session, so **no fluid
   /// target was set**. Distinct from a target of zero.
   bool get isHydrationGated =>
+      fluidsMl == null ||
       hydrationRegime == PreRunHydrationRegime.gated ||
       fluidTargetBasis == PreRunTargetBasis.none;
 
   /// True when a pre-workout fluid target exists and may be shown.
   bool get hasFluidTarget => !isHydrationGated;
-
-  /// True when no carbohydrate recommendation is being made at all (fasted),
-  /// as opposed to a recommendation of zero grams (no time to eat).
-  bool get isCarbRecommendationAbsent =>
-      carbTargetBasis == PreRunTargetBasis.none ||
-      (carbTiers != null && carbTiers!.isEmpty);
 
   /// Sodium v3: always false for new plans. Only legacy cached plans that
   /// still carry a figure return true.
@@ -915,7 +948,7 @@ class PreRunMacros {
       carbsG: (json['carbsG'] as num).toDouble(),
       proteinG: (json['proteinG'] as num).toDouble(),
       fatCapG: (json['fatCapG'] as num).toDouble(),
-      fluidsMl: (json['fluidsMl'] as num).toDouble(),
+      fluidsMl: (json['fluidsMl'] as num?)?.toDouble(),
       sodiumMg: (json['sodiumMg'] as num?)?.toDouble(),
       carbsLowG: (json['carbsLowG'] as num?)?.toDouble(),
       carbsHighG: (json['carbsHighG'] as num?)?.toDouble(),

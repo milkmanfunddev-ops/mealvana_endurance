@@ -86,7 +86,7 @@ function getTransitionTargets(
   };
 }
 
-function normalizeTransitionName(name?: string | null): string | null {
+export function normalizeTransitionName(name?: string | null): string | null {
   if (!name) return null;
   const trimmed = name.trim();
   if (!trimmed) return null;
@@ -95,7 +95,10 @@ function normalizeTransitionName(name?: string | null): string | null {
   return `T${match[1]}`;
 }
 
-function collectTransitionTargets(
+// Exported for the R8 producer-shaped seam test (transition-seam.test.ts):
+// the generate-macros-v4 payload's transition keys must equal this
+// function's lookup keys — a single-engine vector cannot see that seam.
+export function collectTransitionTargets(
   input: PlanInputV2,
 ): Map<string, MacroTargets> {
   const collected: Array<Record<string, unknown>> = [];
@@ -287,8 +290,13 @@ async function generateTransitionPhase(
 
   // Use LP solver with 'during' phase weights (transition is similar to during)
   const weights = getOptimizationWeights("running", "during");
+  // C4 (docs/ssot/spec/domain/catalog-conventions.md, RULED Xuan
+  // 2026-09-01): max 2 items per transition — the C2 pairing water row is
+  // appended AFTER the LP, giving the ruled "2 items + water". Whole
+  // consumable units ride the catalog's is_indivisible flags (C3) through
+  // the solver's whole-serving rounding.
   const modelOptions = {
-    maxFoodItems: 3,
+    maxFoodItems: 2,
     maxServingsCap: 2,
     selectionPenalty: 0.5,
     enforceWaterMin: true,
@@ -346,6 +354,8 @@ export async function handleBrickPlan(
    * handler 2026-07-21 — previously deferred, which silently ignored a
    * triathlete's pins across every phase. */
   userPins: UserPinSets,
+  /** §10 test-traffic marker (the `x-mealvana-test` request header). */
+  testSource: string | null = null,
 ): Promise<Response> {
   const segments = input.brick_segments ?? [];
   if (segments.length === 0) {
@@ -399,12 +409,25 @@ export async function handleBrickPlan(
 
   // 2. Generate during phase for each segment + transitions between them
   const duringSegments: Record<string, FoodResult[]> = {};
+  // §10 / bench B-2: record each segment's cascade path — during_path alone
+  // ("brick") left brick coverage unmeasurable.
+  const duringSegmentPaths: Record<string, string | null> = {};
   // Segment shortfalls ride as a SIBLING key (additive; old clients ignore it)
   // so brick segments get the same honest-shortfall contract as single-
   // activity during phases instead of silently dropping them. 2026-07-21.
   const duringSegmentShortfalls: Record<
     string,
     NonNullable<LPPhaseResult["shortfalls"]>
+  > = {};
+  // Per-segment pin decisions ride as a SIBLING key like paths/shortfalls
+  // (additive; old clients ignore it). Until 2026-09-04 each segment's
+  // decision was computed and then DROPPED here, so a brick plan carried no
+  // During pin telemetry at all — the activity-detail banner listed only
+  // Snack/Top-Off/After and the user's During pins looked ignored
+  // (bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
+  const duringSegmentPinDecisions: Record<
+    string,
+    NonNullable<LPPhaseResult["pin_decision"]>
   > = {};
   const transitions: Record<string, FoodResult[]> = {};
   const segmentTargetsList: Array<{
@@ -480,6 +503,16 @@ export async function handleBrickPlan(
         { water_high_ml: segmentTargets.water_high_ml }),
     });
 
+    // Pin scope for a brick LEG (ruled by Xuan 2026-09-04): a leg matches its
+    // own discipline's formulas — bare sport AND the tri-equivalent scope.
+    // Passing only `sport` made a "Tri — Bike"-scoped pin unreachable for a
+    // brick's bike leg.
+    const pinScopeActivities = sport === "running"
+      ? ["running", "triathlon_run"]
+      : sport === "cycling"
+      ? ["cycling", "triathlon_bike"]
+      : [sport as string];
+
     // Generate during phase for this segment
     const duringResult = await generateDuringPhase(
       supabase,
@@ -497,10 +530,17 @@ export async function handleBrickPlan(
       pinsActive,
       userPins.personalFormulas,
       emitEphemeralDefault,
+      pinScopeActivities,
     );
 
     // Invariant: electrolyte never ships without water (see
     // `electrolyte-water-pairing.ts`). Each brick segment is its own phase.
+    duringSegmentPaths[String(segmentOrder)] = duringResult.generation_path ??
+      null;
+    if (duringResult.pin_decision) {
+      duringSegmentPinDecisions[String(segmentOrder)] =
+        duringResult.pin_decision;
+    }
     duringSegments[String(segmentOrder)] = await applyElectrolyteWaterPairing(
       duringResult.foods,
       {
@@ -639,6 +679,8 @@ export async function handleBrickPlan(
       during_segments: duringSegments,
       ...(Object.keys(duringSegmentShortfalls).length > 0 &&
         { during_segment_shortfalls: duringSegmentShortfalls }),
+      ...(Object.keys(duringSegmentPinDecisions).length > 0 &&
+        { during_segment_pin_decisions: duringSegmentPinDecisions }),
       transitions: transitions,
       after: afterResult.foods,
       // Additive siblings, same contract as single-activity plans; old
@@ -691,8 +733,15 @@ export async function handleBrickPlan(
         ...(allSegmentShortfalls.length > 0 &&
           { shortfalls: allSegmentShortfalls }),
       },
+      // §10: before/after paths, per-segment during paths, test marker.
+      beforeResult: beforeResult as Record<
+        string,
+        { foods?: FoodResult[]; pin_decision?: Record<string, unknown> }
+      >,
+      duringSegmentPaths,
       afterResult,
       warnings: [],
+      testSource,
     }),
   );
   // deno-lint-ignore no-explicit-any

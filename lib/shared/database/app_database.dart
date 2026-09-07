@@ -270,7 +270,22 @@ class AppDatabase extends _$AppDatabase {
   /// merge time. Supabase app_config.current_schema_version must be bumped to
   /// 17 only when the build carrying this ships (it triggers client
   /// delete-and-resync).
-  int get schemaVersion => 17;
+  ///
+  /// v18 added activities.planned_time + activities.actual_time (the ruled
+  /// two-time model) for the macro-dashboard bundle
+  /// (docs/ssot/bundles/daily-macros-dashboard.yaml). The tombstone half of
+  /// that ruling reuses the existing status column (new 'deleted' value —
+  /// no schema change locally; Supabase's activity_status_enum gains the
+  /// value in migration 20260814120000). Supabase
+  /// app_config.current_schema_version must be bumped to 18 when this ships.
+  ///
+  /// v19 added template_foods.min_servings_during + is_indivisible (mirrors of
+  /// existing Supabase columns the client solvers now read — §4.2 one-cap twin
+  /// port) and template_foods.solvent_min_ml (catalog-conventions v1.1 solvent
+  /// dependency, food-recommendation@v1 §6(e); Supabase migration
+  /// 20260903120000). Supabase app_config.current_schema_version must be
+  /// bumped to 19 when the build carrying this ships.
+  int get schemaVersion => 19;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -522,6 +537,36 @@ class AppDatabase extends _$AppDatabase {
             'REAL NOT NULL DEFAULT 0',
           );
           await addColumn('template_foods', 'food_group', 'TEXT');
+        }
+
+        // v18: the two-time model on activities (macro-dashboard bundle),
+        // plus a local mirror of the measured Garmin session energy (the
+        // Supabase column predates this; Drift never carried it). All
+        // nullable; addColumn is idempotent for web user_version replays.
+        if (from < 18) {
+          await addColumn('activities', 'planned_time', 'INTEGER');
+          await addColumn('activities', 'actual_time', 'INTEGER');
+          await addColumn('activities', 'calories_burned', 'REAL');
+        }
+
+        // v19: food-recommendation@v1 catalog columns on template_foods —
+        // min_servings_during + is_indivisible (Supabase mirrors the client
+        // solvers now read, §4.2 one-cap twin port) and solvent_min_ml
+        // (catalog-conventions v1.1). All defaulted or nullable; addColumn is
+        // idempotent for web user_version replays. Values arrive via the
+        // template_foods full resync (the repository selects *).
+        if (from < 19) {
+          await addColumn(
+            'template_foods',
+            'min_servings_during',
+            'REAL NOT NULL DEFAULT 1.0',
+          );
+          await addColumn(
+            'template_foods',
+            'is_indivisible',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'solvent_min_ml', 'REAL');
         }
       },
 

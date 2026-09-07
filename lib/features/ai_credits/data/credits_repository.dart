@@ -44,6 +44,19 @@ class CreditsRepository {
   /// The signed-in user's id, or null.
   String? get currentUserId => _supabase.auth.currentUser?.id;
 
+  /// The signed-in user's id as a stream — null on sign-out, a new id on
+  /// sign-in or account switch. Distinct, so token refreshes don't chatter.
+  ///
+  /// Exists so [CreditsController] can REBUILD when the identity changes:
+  /// without it the controller computed its wallet once under whatever
+  /// session existed at first build and never looked again — a brand-new
+  /// user saw 0 cookies until restart, and a re-login showed a stale pill
+  /// until a purchase happened to invalidate the provider (ops bug
+  /// 2026-08-21-cookie-balance-stale-on-auth-change.md).
+  Stream<String?> get authUserIdChanges => _supabase.auth.onAuthStateChange
+      .map((s) => s.session?.user.id)
+      .distinct();
+
   /// Provision the wallet and grant this month's free credits, returning the
   /// resulting balance (null on any failure).
   ///

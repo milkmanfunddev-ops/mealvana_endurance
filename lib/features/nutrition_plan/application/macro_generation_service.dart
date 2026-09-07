@@ -24,6 +24,28 @@ import 'package:mealvana_endurance/core/utils/debug_logger.dart';
 /// - Caching macro targets
 /// - Analytics tracking
 
+/// Thrown when an offline plan is requested for an athlete with no body
+/// weight on file. Pre-workout carbs, fluid and the during-workout rates are
+/// all body-weight functions; there is no honest number without one.
+class MissingBodyWeightException implements Exception {
+  const MissingBodyWeightException();
+
+  @override
+  String toString() =>
+      'MissingBodyWeightException: no body weight on the profile — a nutrition '
+      'plan cannot be computed offline without one (no 70-kg stand-in).';
+}
+
+/// Resolve the request's `weight` (kg) or throw [MissingBodyWeightException].
+/// Non-positive and non-numeric values count as absent.
+double requireBodyWeightKg(Object? raw) {
+  final weight = (raw is num) ? raw.toDouble() : null;
+  if (weight == null || weight.isNaN || weight <= 0) {
+    throw const MissingBodyWeightException();
+  }
+  return weight;
+}
+
 class MacroGenerationService {
   MacroGenerationService({
     required this.supabaseClient,
@@ -48,7 +70,6 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
     // Optional treadmill/indoor-run flag. Default 'outdoor' preserves existing
@@ -63,7 +84,6 @@ class MacroGenerationService {
       sweatRateCat: sweatRateCat,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
-      isFasted: isFasted,
       intensity: intensity,
       indoorOutdoor: indoorOutdoor,
     );
@@ -106,7 +126,6 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
@@ -126,7 +145,6 @@ class MacroGenerationService {
       sessionGoal: sessionGoal,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
-      isFasted: isFasted,
       intensity: intensity,
     );
     // device_id is read by the edge function to look up active formula pins
@@ -240,7 +258,6 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
     String indoorOutdoor = 'outdoor',
   }) async {
@@ -282,7 +299,6 @@ class MacroGenerationService {
       'run_distance_unit': 'mi',
       // V3 params
       'hours_before': timeBeforeRunMinutes / 60.0,
-      'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': zoneLow,
         'zone_mid': zoneMid,
@@ -318,7 +334,6 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
-    bool isFasted = false,
     IntensityDistribution? intensity,
   }) async {
     final userProfile = await authService.getCurrentUser();
@@ -355,7 +370,6 @@ class MacroGenerationService {
       'indoor_outdoor': indoorOutdoor,
       // V3 params
       'hours_before': timeBeforeMinutes / 60.0,
-      'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': zoneLow,
         'zone_mid': zoneMid,
@@ -426,7 +440,6 @@ class MacroGenerationService {
       'pool_or_open_water': poolOrOpenWater,
       // V3 params
       'hours_before': timeBeforeMinutes / 60.0,
-      'is_fasted': false, // Swimming doesn't support fasted
       'intensity_distribution': {
         'zone_low': zoneLow,
         'zone_mid': zoneMid,
@@ -649,10 +662,97 @@ class MacroGenerationService {
     Map<String, dynamic> requestData,
     ActivityType activityType,
   ) {
-    final weightKg = (requestData['weight'] as num?)?.toDouble() ?? 70.0;
+    final legacy = _computeLegacyOfflineMacros(requestData, activityType);
+    // PW-012 / handoff §5.9 rule 3: the legacy map's `pre_run_water_ml`
+    // (6.5 / 5.5 ml/kg, 250 ml flat) and `pre_run_sodium_mg` are the
+    // superseded v1 engine and must never reach the BEFORE card. Overlay
+    // hydration v6 / sodium v3 (and the carbs v2 tier structure the map does
+    // not emit) so an offline-fallback plan carries the same fields a server
+    // plan does.
+    return overlayPreWorkoutSpecs(
+      legacy,
+      weightKg: requireBodyWeightKg(requestData['weight']),
+      hoursBefore: (requestData['hours_before'] as num?)?.toDouble() ?? 2.0,
+      tempC: (requestData['temp_c'] as num?)?.toDouble(),
+    );
+  }
+
+  /// Overlay the ratified pre-workout slices onto an offline macros map.
+  ///
+  /// Hydration v6 replaces the legacy water fields outright (`null` on the
+  /// gate path — never 0); sodium v3 nulls the retired sodium target; carbs
+  /// v2's `tiers[]` / `targetBasis` are added only when the map lacks them
+  /// (the legacy map's carb figures are left as they are — no engine number
+  /// moves here). Pure; the same seam the offline plan path and the
+  /// hydration-check recompute share.
+  static Map<String, dynamic> overlayPreWorkoutSpecs(
+    Map<String, dynamic> macros, {
+    required double weightKg,
+    required double hoursBefore,
+    double? tempC,
+    HydrationCheck hydrationCheck = HydrationCheck.unknown,
+  }) {
+    final durationMin = (macros['duration_min'] as num?)?.toDouble() ?? 0;
+    final timeBeforeMin = hoursBefore * 60;
+    final hydration = MacroRepositoryImpl.preWorkoutHydrationFor(
+      bodyWeightKg: weightKg,
+      workoutDurationMin: durationMin,
+      timeBeforeWorkoutMin: timeBeforeMin,
+      tempC: tempC,
+      hydrationCheck: hydrationCheck,
+    );
+    final overlaid = <String, dynamic>{
+      ...macros,
+      'pre_run_water_ml': hydration.fluidMl,
+      'pre_run_water_low_ml': hydration.fluidLowMl,
+      'pre_run_water_high_ml': hydration.fluidHighMl,
+      'pre_run_hydration_regime': hydration.regime,
+      'pre_run_fluid_target_basis': hydration.targetBasis,
+      'pre_run_fluid_tiers': hydration.tiers
+          .map((t) => {'tier': t.tier, 'fluid_ml': t.fluidMl})
+          .toList(),
+      'pre_run_hydration_check_used': hydration.hydrationCheckUsed,
+      // Sodium v3: no pre-workout sodium target — null, never a number.
+      'pre_run_sodium_mg': null,
+      'pre_run_sodium_low_mg': null,
+      'pre_run_sodium_high_mg': null,
+    };
+    if (overlaid['pre_run_carb_tiers'] == null ||
+        overlaid['pre_run_carb_target_basis'] == null) {
+      final carbs = OfflineMacroCalculator.calculatePreWorkoutCarbs(
+        bodyWeightKg: weightKg,
+        timeBeforeWorkoutMin: timeBeforeMin,
+        workoutDurationMin: durationMin,
+        );
+      overlaid['pre_run_carb_tiers'] ??= carbs.tiers
+          .map(
+            (t) => {
+              'tier': t.tier,
+              'carbs_g': t.carbsG,
+              'range_low_g': t.rangeLowG,
+              'range_high_g': t.rangeHighG,
+              'composition': t.composition,
+            },
+          )
+          .toList();
+      overlaid['pre_run_carb_target_basis'] ??= carbs.targetBasis;
+    }
+    return overlaid;
+  }
+
+  Map<String, dynamic> _computeLegacyOfflineMacros(
+    Map<String, dynamic> requestData,
+    ActivityType activityType,
+  ) {
+    // Absent weight ⇒ absent numbers, loudly. Every pre-workout figure is
+    // linear in body weight, so a silent stand-in (the old `?? 70.0`) made
+    // every offline plan for a weight-less athlete a 70-kg plan — the same
+    // defect class the macro dashboard fixed on 2026-08-20
+    // (dashboard_assembler: "we do NOT invent a number"). Throwing here lets
+    // the caller surface "add your weight" instead of a wrong plan.
+    final weightKg = requireBodyWeightKg(requestData['weight']);
     final hoursBefore =
         (requestData['hours_before'] as num?)?.toDouble() ?? 2.0;
-    final isFasted = requestData['is_fasted'] as bool? ?? false;
     final gutTraining = requestData['gut_training'] as String? ?? 'moderate';
     final sweatRateCategory =
         requestData['sweat_rate_category'] as String? ?? 'medium';
@@ -676,8 +776,7 @@ class MacroGenerationService {
           distanceMiles: distanceMiles,
           paceMinPerMile: paceMinPerMile,
           hoursBefore: hoursBefore,
-          isFasted: isFasted,
-          gutTraining: gutTraining,
+              gutTraining: gutTraining,
           sweatRateCategory: sweatRateCategory,
           sweatSodiumCat: sweatSodiumCat,
           tempC: tempC,
@@ -698,8 +797,7 @@ class MacroGenerationService {
           speedMph: speedMph,
           terrain: terrain,
           hoursBefore: hoursBefore,
-          isFasted: isFasted,
-          gutTraining: gutTraining,
+              gutTraining: gutTraining,
           sweatRateCategory: sweatRateCategory,
           sweatSodiumCat: sweatSodiumCat,
           tempC: tempC,
@@ -738,8 +836,7 @@ class MacroGenerationService {
           distanceMiles: 0,
           paceMinPerMile: 10,
           hoursBefore: hoursBefore,
-          isFasted: isFasted,
-          gutTraining: gutTraining,
+              gutTraining: gutTraining,
         );
     }
   }
@@ -758,7 +855,9 @@ class MacroGenerationService {
           'pre_run_protein_g',
         ),
         fatCapG: _toDouble(macrosData['pre_run_fat_g'], 'pre_run_fat_g'),
-        fluidsMl: _toDouble(macrosData['pre_run_water_ml'], 'pre_run_water_ml'),
+        // Hydration v6: `null` on the gate path is carried through as `null`
+        // ("no statement is made") — never collapsed to 0.
+        fluidsMl: _toDoubleOrNull(macrosData['pre_run_water_ml']),
         // Sodium v3: no pre-workout sodium target exists. A current server
         // sends null; an older server still sends the retired 450/150 mg
         // target, which we drop on the floor rather than resurrect.

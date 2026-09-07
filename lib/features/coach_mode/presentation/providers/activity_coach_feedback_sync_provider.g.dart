@@ -82,7 +82,7 @@ final class ActivityCoachFeedbackSyncProvider
 }
 
 String _$activityCoachFeedbackSyncHash() =>
-    r'c71575f5d9c96877128fe7d9e1e73d0e18b3dd2d';
+    r'18d8de51e5e858e9a07344f718880d15ce4c088c';
 
 /// Provider that syncs coach messages for a specific activity from Supabase
 /// AND subscribes to Supabase Realtime for instant updates.

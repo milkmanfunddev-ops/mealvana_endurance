@@ -237,6 +237,10 @@ class ClientFoodPoolService {
       maxServingsBefore: (json['max_servings_before'] as num?)?.toInt() ?? 4,
       maxServingsDuring: (json['max_servings_during'] as num?)?.toInt() ?? 4,
       maxServingsAfter: (json['max_servings_after'] as num?)?.toInt() ?? 4,
+      minServingsDuring:
+          (json['min_servings_during'] as num?)?.toDouble() ?? 1.0,
+      isIndivisible: json['is_indivisible'] as bool? ?? false,
+      solventMinMl: (json['solvent_min_ml'] as num?)?.toDouble(),
       toExcludeFromSolver: json['to_exclude_from_solver'] as bool? ?? false,
       isEssential: json['is_essential'] as bool? ?? false,
       showInPreferences: json['show_in_preferences'] as bool? ?? true,

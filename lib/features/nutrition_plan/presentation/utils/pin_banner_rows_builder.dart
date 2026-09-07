@@ -75,7 +75,14 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
   bool isPinnableSubPhase(String type) =>
       type == 'meal' || type == 'snack' || type == 'top_up';
 
-  bool isDuringSection(String id) => id == 'during_run' || id == 'during';
+  // Brick plans carry one During section PER LEG (`during_segment_1` …); each
+  // is independently pinnable (leg sport × duration bracket), so each gets
+  // its own row. Until 2026-09-04 these ids were unrecognized and a brick's
+  // banner silently omitted every During row — the user's honored/skipped
+  // During pins had no on-screen trace at all
+  // (bug 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
+  bool isDuringSection(String id) =>
+      id == 'during_run' || id == 'during' || id.startsWith('during_segment_');
 
   // Formula Kit PR 3 substep 9 — After is pinnable now that post-workout
   // recovery templates support pins (post_system kind).
@@ -136,18 +143,23 @@ PinBannerData collectPinBannerRows(List<PlanSection> sections) {
       }
     }
     // During / After sections carry their decision at the section level.
+    // A brick's per-leg sections label with their own title ("During Run",
+    // "During Bike") so two legs' rows stay distinguishable.
+    final label = section.id.startsWith('during_segment_')
+        ? section.title
+        : sectionLabel(section.id);
     final sectionDecision = realDecision(section.pinDecision);
     if (sectionDecision != null) {
       rows.add(
         PinStatusBannerRow(
-          label: sectionLabel(section.id),
+          label: label,
           decision: sectionDecision,
         ),
       );
     } else if (isDuringSection(section.id) || isAfterSection(section.id)) {
       rows.add(
         PinStatusBannerRow(
-          label: sectionLabel(section.id),
+          label: label,
           decision: syntheticNoPin,
         ),
       );

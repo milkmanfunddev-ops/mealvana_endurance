@@ -19,7 +19,26 @@ class ActivitiesTable extends Table {
       .withDefault(const Constant('planned'))
       .named(
         'status',
-      )(); // 'draft', 'planned', 'in_progress', 'completed', 'skipped'
+      )(); // 'draft', 'planned', 'in_progress', 'completed', 'skipped',
+  // 'deleted' (tombstone — the row persists so the sync matcher can
+  // recognize a deleted workout and not re-import it; see
+  // docs/ssot/spec/daily-macros/platform-resolution.md)
+
+  // The two-time model (ruled 2026-08-14, platform-resolution.md): the two
+  // are never conflated. planned_time is set at scheduling and NEVER written
+  // by any gesture; actual_time is written by Garmin sync (activity start)
+  // or mark-done (= now), cleared by mark-undone. Display shows
+  // actual_time ?? planned_time. Unlike scheduled_date_time (which Garmin
+  // completion historically overwrote in place), planned_time survives
+  // completion, so planned-vs-actual stays recoverable.
+  DateTimeColumn get plannedTime =>
+      dateTime().nullable().named('planned_time')();
+  DateTimeColumn get actualTime => dateTime().nullable().named('actual_time')();
+
+  // Measured session energy (Garmin ActiveKilocalories), mirrored from the
+  // Supabase column so the dashboard's F22 kcal ladder can prefer the
+  // measured value over the formula estimate offline.
+  RealColumn get caloriesBurned => real().nullable().named('calories_burned')();
 
   // Activity parameters (nullable)
   RealColumn get distanceMiles => real().nullable().named('distance_miles')();

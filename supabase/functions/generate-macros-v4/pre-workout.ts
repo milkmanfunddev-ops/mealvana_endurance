@@ -35,6 +35,8 @@ import {
   logFormulaCascade,
 } from '../_shared/nutrition/formula-decision.ts';
 
+import { mealTierCandidateCheck } from '../_shared/nutrition/practicality.ts';
+
 import {
   ADDON_GAP_THRESHOLD,
   STACK_THRESHOLD,
@@ -287,8 +289,16 @@ export function calculatePreWorkoutCarbs(
   tiers.push(makeCarbTier('top_off', topOff));
 
   const inWindow = t >= 60 && t <= WINDOW_MAX && workoutDurationMin >= 60;
-  const carbsLow = inWindow ? 1.0 * BW : total * (1 - TIER_TOL);
-  const carbsHigh = inWindow ? 4.0 * BW : total * (1 + TIER_TOL);
+  // RULED (Xuan, 2026-09-04) — IMPLEMENTED PENDING RATIFICATION
+  // (qa/intake/2026-09-04-pre-workout-carb-band-ruling.md): the plan band is
+  // target ± 12.5 % in ALL cases. The old in-window band published Thomas's
+  // full 1.0–4.0 g/kg evidence RANGE as the athlete's plan band — a ~50 kg
+  // athlete saw "50g–200g" around a 50 g target, a 150 g-wide slider that
+  // dwarfs any actual plan. The evidence window still gates `target_basis`
+  // (it describes the TARGET's derivation); only the band collapses.
+  // Twin: offline_macro_calculator.dart (same ruling, same commit).
+  const carbsLow = total * (1 - TIER_TOL);
+  const carbsHigh = total * (1 + TIER_TOL);
 
   return {
     carbs_g: total,
@@ -1401,6 +1411,23 @@ export function selectPreWorkoutFoods(
           );
         });
         if (deduped.length > 0) candidates = deduped;
+      }
+
+      // §6(a) practicality (RULED 2026-09-03), selection paths only — pins
+      // bypass above: the MEAL tier prefers composed templates. A single-item
+      // candidate is out when hitting the tier's carb target would scale it
+      // past 2×, and otherwise needs the single_food_sufficient flag. If this
+      // empties the pool the phase takes the honest-shortfall path below —
+      // never a single food scaled past 2× to fake a meal (W8).
+      if (phase === 'meal') {
+        candidates = candidates.filter((t) =>
+          mealTierCandidateCheck({
+            componentCount: (t.component_food_names ?? []).length,
+            singleFoodSufficient: t.single_food_sufficient ?? false,
+            carbsPerServingG: t.carbs_per_serving,
+            carbTargetG: carbTarget,
+          }).allowed
+        );
       }
     }
 

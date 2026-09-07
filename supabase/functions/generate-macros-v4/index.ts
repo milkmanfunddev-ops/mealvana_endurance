@@ -80,9 +80,10 @@ serve(withSentry(async (req: Request) => {
     if (!input.hours_before && input.hours_before !== 0) {
       return validationError("Missing required field: hours_before");
     }
-    if (input.is_fasted === undefined) {
-      return validationError("Missing required field: is_fasted");
-    }
+    // is_fasted: RETIRED (food-recommendation §7, D-001, RULED 2026-09-03).
+    // Tolerate-and-ignore: installed builds still send the field, so it is
+    // accepted and DROPPED — never validated, never read. The fasted product
+    // state no longer exists.
 
     const activityType = input.activity_type || "running";
 
@@ -171,7 +172,7 @@ serve(withSentry(async (req: Request) => {
       const preTargetsLegacy = calculatePreWorkoutTargets(
         weightKg,
         input.hours_before,
-        input.is_fasted,
+        false, // is_fasted retired (§7) — tolerated on the wire, ignored
         input.sweat_sodium ?? "average",
         envLabel,
         totalDurationMin,
@@ -192,10 +193,10 @@ serve(withSentry(async (req: Request) => {
         bodyWeightKg: weightKg,
         timeBeforeWorkoutMin: input.hours_before * 60,
         workoutDurationMin: totalDurationMin,
-        isFasted: input.is_fasted,
+        // is_fasted retired (§7) — tolerated on the wire, ignored.
       });
 
-      // Apply hydration overlay regardless of is_fasted — fasted only affects
+      // Apply hydration overlay — (historical note: fasted only affected
       // carbs/protein/fat, not fluid/sodium. Spec's pre-workout gate is
       // duration-/temp-based, not fasted status.
       const preTargets = applyPreWorkoutHydrationOverlay(

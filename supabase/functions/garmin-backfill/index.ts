@@ -51,6 +51,16 @@ const GARMIN_BACKFILL_PATH: Record<string, string> = {
   dailies: 'dailies',
   sleeps: 'sleeps',
   stress: 'stressDetails',
+  // Added 2026-08-24 for the missing-swim investigation. Garmin's Activity
+  // webhook is push-only and fires once, at upload — so an activity that never
+  // arrived (or arrived and was dropped) cannot be re-requested any other way.
+  // Backfilling `activities` makes Garmin re-push a historical window through
+  // garmin-push, where the inbound-payload log records each one BEFORE any gate
+  // can discard it. Deliberately NOT in DEFAULT_SUMMARY_TYPES: this is a
+  // diagnostic, and re-pushing months of activities is not something a routine
+  // "refresh my weight" call should do.
+  // ops/data/bug-reports/2026-08-24-final-surge-completed-workouts-import-as-planned.md
+  activities: 'activities',
 };
 
 const DEFAULT_SUMMARY_TYPES = ['body_composition', 'user_metrics'];

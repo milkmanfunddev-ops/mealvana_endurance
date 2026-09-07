@@ -24,6 +24,8 @@ class SolverFood {
     required this.calories,
     required this.maxServings,
     required this.preferenceScore,
+    this.minServings = 0.5,
+    this.solventMinMl,
     this.isElectrolyte = false,
     this.isLiquid = false,
     this.isEssential = false,
@@ -53,6 +55,15 @@ class SolverFood {
   // Solver metadata
   final int maxServings;
   final int preferenceScore;
+
+  /// Smallest offerable serving for the phase (during: the catalog row's
+  /// `min_servings_during`; other phases keep the historical 0.5 floor).
+  final double minServings;
+
+  /// Catalog-conventions v1.1 solvent dependency (§6(e)): minimum plain-water
+  /// solvent per serving for concentrated products. Null = undeclared —
+  /// consumers fall back to the 250 ml pairing default, never to 0.
+  final double? solventMinMl;
   final bool isElectrolyte;
   final bool isLiquid;
   final bool isEssential;
@@ -94,10 +105,15 @@ class SolverFood {
       calories: e.calories,
       maxServings: maxServ,
       preferenceScore: e.isEssential ? kPrefScoreEssential : preferenceScore,
+      minServings: phase == 'during' ? e.minServingsDuring : 0.5,
+      solventMinMl: e.solventMinMl,
       isElectrolyte: e.isElectrolyte,
       isLiquid: e.isLiquid,
       isEssential: e.isEssential,
-      isIndivisible: _isIndivisibleProduct(e.productType),
+      // The catalog column is authoritative (C3). The old product-type
+      // heuristic mislabelled divisible supplements (electrolyte_drink_mix)
+      // and is kept only for the UserFood path below.
+      isIndivisible: e.isIndivisible,
       productType: e.productType,
       categories: _parseJsonList(e.categories),
     );
@@ -173,6 +189,8 @@ class SolverFood {
       isDrink: isLiquid,
       isIndivisible: isIndivisible,
       timingCategory: timingCat,
+      numericQuantity: quantity,
+      solventMinMlPerServing: solventMinMl,
     );
   }
 

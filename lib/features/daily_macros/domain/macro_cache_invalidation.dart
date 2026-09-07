@@ -87,6 +87,14 @@ Set<DateTime> daysAffectedByActivityOn(DateTime date) {
 ///     [Activity.swimmingPacePer100mSeconds] — the `duration_hr` derivation
 ///   * [Activity.intensityDistribution] — `pct_conversational/tempo/allout`
 ///   * [Activity.intensityLevel]        — drives `is_race`
+///   * [Activity.brickMetadata]         — a brick expands into per-leg
+///     sessions (`_sessionsFromActivityRow`, 2026-09-04), so editing a leg's
+///     sport or duration moves the day's session inputs
+///   * whether [Activity.status] is `skipped` — every input query filters
+///     `status != 'skipped'` (v2 unified-skip model), so a Skip/Unskip moves
+///     the day's inputs; other status transitions (planned → completed via
+///     mark-done) change nothing the prospective calculation reads and MUST
+///     NOT invalidate, or every swipe becomes an edge-function round trip
 ///
 /// KNOWN GAP: the edge-function input also carries each session's `tss`, which
 /// `_loadSessionsForDate` reads straight off the DB row. `Activity` has no `tss`
@@ -101,6 +109,8 @@ Set<DateTime> daysAffectedByActivityOn(DateTime date) {
 /// stale. `macro_cache_invalidation_test.dart` pins the current set.
 bool _macroInputsDiffer(Activity a, Activity b) {
   return a.scheduledDateTime != b.scheduledDateTime ||
+      (a.status == ActivityStatus.skipped) !=
+          (b.status == ActivityStatus.skipped) ||
       a.deletedAt != b.deletedAt ||
       a.activityType != b.activityType ||
       a.durationMinutes != b.durationMinutes ||
@@ -109,7 +119,8 @@ bool _macroInputsDiffer(Activity a, Activity b) {
       a.cyclingSpeedMph != b.cyclingSpeedMph ||
       a.swimmingPacePer100mSeconds != b.swimmingPacePer100mSeconds ||
       a.intensityDistribution != b.intensityDistribution ||
-      a.intensityLevel != b.intensityLevel;
+      a.intensityLevel != b.intensityLevel ||
+      a.brickMetadata != b.brickMetadata;
 }
 
 /// The days on which activities were added, removed, or modified between

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/intensity_composite_bar.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 
 void main() {
   group('IntensityCompositeBar', () {
@@ -153,24 +154,16 @@ void main() {
       // Verify we have 3 segments
       expect(expandedWidgets.length, 3);
 
-      // Verify colors (green, yellow, red)
+      // Verify the brand zone tokens (electrolyte / orange / dragonfruit —
+      // ruled reference rendering, no raw literals).
       final conversationalContainer = expandedWidgets[0].child as Container;
-      expect(
-        conversationalContainer.color,
-        const Color(0xFF4ADE80), // Green
-      );
+      expect(conversationalContainer.color, AppColors.electrolyte);
 
       final tempoContainer = expandedWidgets[1].child as Container;
-      expect(
-        tempoContainer.color,
-        const Color(0xFFFBBF24), // Yellow
-      );
+      expect(tempoContainer.color, AppColors.orange);
 
       final allOutContainer = expandedWidgets[2].child as Container;
-      expect(
-        allOutContainer.color,
-        const Color(0xFFEF4444), // Red
-      );
+      expect(allOutContainer.color, AppColors.dragonfruit);
     });
 
     testWidgets('has rounded corners', (WidgetTester tester) async {

@@ -1,7 +1,7 @@
 # Pre-Workout — Ratification Register
 
 Everything left open after the three pre-workout SSOTs were ratified on **2026-08-03**
-(carbs v2, hydration v6, sodium v3 — Xuan). **20 rows**; PW-007 is answered, PW-020 corrected in place.
+(carbs v2, hydration v6, sodium v3 — Xuan). **22 rows**; PW-007 is answered, PW-020 corrected in place and then partly superseded by PW-021 (2026-08-26).
 
 Companion to [`pre-workout.notes.md`](./pre-workout.notes.md), which holds the reasoning. **This
 file holds only status and ownership** — where a row needs an argument, it links to the notes
@@ -40,6 +40,7 @@ deviation number carry it.
 | [PW-010](#pw-010) | Prior-intake state: the tiers are the state machine, unbuilt | **B** | medium | no |
 | [PW-019](#pw-019) | Thomas Table 2 reads `> 60 min`; the algorithm tests `>= 60` | **B** | low | **yes** — vectors must assert one |
 | [PW-020](#pw-020) | The urine check had no early bound — offered during the meal window | **B** | medium | **yes** |
+| [PW-021](#pw-021) | Live clock retired; the urine check is athlete-timed (stays in the snack card) | **B → RULED** | medium | **yes** — supersedes PW-020's `currentLeadMin` vectors |
 | [PW-011](#pw-011) | D-016 — the app's 480-minute fueling-window stepper | **C** | **high** | **yes** |
 | [PW-012](#pw-012) | Sodium: the app emits a number; the SSOT says `null` | **C** | **high** | **yes** |
 | [PW-013](#pw-013) | The `tier` integer and the coordinated release | **C** | **high** | **yes** |
@@ -48,6 +49,7 @@ deviation number carry it.
 | [PW-016](#pw-016) | Drawer: two band semantics, and the pinned marker | **C** | medium | no |
 | [PW-017](#pw-017) | All vectors are obsolete across all three specs | **D** | **high** | **is** the vectors |
 | [PW-018](#pw-018) | Explanation ⇄ engine conformance for the new output shape | **D** | medium | after PW-017 |
+| [PW-022](#pw-022) | `targetBasis` now names only the TARGET's derivation, not the band | **B** | low | no — vectors unchanged by it |
 
 **Six rows gate the vector work** — PW-011, PW-012, PW-013 as code changes the vectors assert
 against, PW-019 as a boundary they must pin one way or the other, and PW-017/PW-018 as the work
@@ -226,6 +228,45 @@ erratum on v6.
 **Class of defect worth remembering:** a stated intent with a half-implemented predicate reads as
 deliberate to every later reader, because the words look like they cover the case.
 
+### PW-021
+#### Live clock retired — the urine check is athlete-timed — RULED 2026-08-26
+**Ruled by Xuan, 2026-08-26**, while reviewing the pre-workout redesign v3 (Claude Design session;
+findings register `docs/design-reconciliation/pre-workout-v2-vs-pre-workout.md`, F-02).
+
+**The ruling.** Two parts, one amendment:
+
+1. **No live window.** The athlete's planned start time is a guess; a "which feeding is live now"
+   indicator is wrong more often than right and is not practical to follow. The BEFORE surface
+   shows which feedings **exist** (set by `timeBeforeWorkoutMin` at plan creation) and never which
+   one is **current**. `currentLeadMin` is **not** read from the clock by any consumer.
+2. **The check is athlete-timed; it stays in the snack-window card.** Because there is no clock,
+   hydration v6's `offerCheck` predicate (as corrected by PW-020) cannot be evaluated and is
+   **retired**. The check is available for the life of any plan with `timeBeforeWorkoutMin >= T_REF`;
+   the "not before you have drunk the dose / too late for the correction to land" edges move from a
+   predicate into **copy** beside the question — *"Do this about two hours before you start, once
+   you've finished your pre-run meal."* Its home is unchanged from v6 / notes §6 — **inside the
+   snack-window feeding card** (a fluid-stat placement was tried the same day and reverted) — with
+   the row labelled as a fluid instrument (*"adjusts your fluid target"*) so it is not read as food.
+3. **No cue on the surface below 2 h** (Xuan, same day). Sub-2 h plans show the fluid figure and its
+   band with nothing beneath; the pale-yellow cue for that region lives in the fine print (notes
+   §7, paragraph 4 — *"if you're already hydrated, you may not need any of it"*), reachable from the
+   surface's `?`. This narrows v6's *"any surface showing `fluidMl` MUST show the cue with it"* to:
+   the cue is one tap away, not inline, below `T_REF`.
+
+**What does not change.** The engine contract: `hydrationCheck` still only affects output at
+`t >= T_REF`, the dark path still adds `TOPUP_ML_KG · BW` to the snack-window fluid, the band is
+still check-independent (inv. 8b), and only `fluidMl` moves on the recompute.
+
+**Supersedes** the two-clock half of PW-020: the edge vectors it asked for (`currentLead = 120.001 /
+120 / 29.999 / 30`) are no longer meaningful and are withdrawn. The PW-020 defect it corrected (an
+answer accepted before the dose is drunk) is now mitigated by copy, not enforced — a deliberate
+trade for a rule athletes can follow.
+
+**Amends** `pre-workout-hydration.md` v6 *The urine check — contractual* (the `offerCheck` block and
+its two bullets). `pre-workout.notes.md` §6's placement ("inside the snack-window fluid card") stands. Folded as a
+dated post-ratification addition; whether it earns a v7 stamp is decided with PW-020's open
+question, not separately.
+
 ### PW-008
 #### `K` is a plain-water constant; a CE drink is now the recommended item
 Notes [§2.8](./pre-workout.notes.md), [§5.6](./pre-workout.notes.md),
@@ -263,6 +304,42 @@ the first part of the run"*) and nothing nets it against `during-workout-carbs.m
 should be settled alongside PW-001, since both are cross-spec arithmetic.
 
 ---
+
+### PW-022
+#### Is `targetBasis` still the right NAME after the band amendment? — DEFERRED (QA, 2026-09-04)
+
+**Raised by** the plan-band amendment (Xuan, 2026-09-04; intake
+`intake/2026-09-04-pre-workout-carb-band-ruling.md`). Xuan's ruling text left it explicitly to the
+ratifier: *"whether that label should be renamed is left to the ratifier."*
+
+**The question.** Before the amendment, `targetBasis: "evidenced_band"` did double duty — it named
+how the TARGET was derived *and* predicted the band's shape (`[1·BW, 4·BW]`). The amendment cuts
+the second meaning: the band is now `target ± 12.5 %` in every regime, so the value `evidenced_band`
+names a property the band no longer has. A reader who sees `evidenced_band` and expects an
+evidence-width band is now wrong.
+
+**Why this is DEFERRED and not ruled here.** Renaming it is a **contract change, not an amendment**:
+`targetBasis` is a published output field on both engines' wire responses and is consumed
+app-side. Changing the field name or its value set breaks consumers and must travel in a bundle
+with a migration, per the impact-class (c) rule — an `apply-ruling` pass may not make that change,
+and inventing the new name would be ruling, which this desk does not do.
+
+**What the amendment did instead** — the cheap, non-breaking half: `pre-workout-carbs.md` now states
+in the algorithm block and in the amendment section that `targetBasis` describes the **target's**
+derivation and never the band. The misleading-name risk is documented at the point of use.
+
+**Options when it is ruled.**
+
+| | Option | Cost |
+|---|---|---|
+| 1 | **Keep the name.** It is accurate for what it now means (was the target derived inside Thomas's cited box?). Documented; zero migration. | A reader must read the doc to avoid the old inference. |
+| 2 | **Rename** to something band-neutral (`targetDerivation`, `targetProvenance`) keeping the same value set. | Wire-contract change on two engines + every consumer + all vectors; needs a bundle. |
+| 3 | **Keep the name, rename the VALUES** (`evidenced_band` → `evidenced`). | Same breakage class as 2, smaller diff. |
+
+**QA's recommendation: option 1.** The field's meaning is unchanged and now documented; a rename
+buys clarity at the price of a twin-engine wire migration, and nothing is currently mis-computed.
+
+**Owner:** Xuan. **Does not block** the amendment, the vectors, or any suite.
 
 ## C · Code must catch up to the ratified SSOTs
 

@@ -1,9 +1,10 @@
-tag: pre-workout-food-composition@v1
-commit: fe31443b0edef302267bdc1fa661c7e3bf4b5b9b
-branch: qa/pre-workout-drawers (contains all of QA main)
+tag: (none — qa main sync; latest bundle tag food-recommendation@v1.1 @ 9723fa3 is an ancestor)
+commit: d264895 ("apply-ruling: pre-workout plan band is target ±12.5% in all cases (Xuan 2026-09-04)", qa main)
+branch: main
 source: git@github.com:milkmanfunddev-ops/mealvana_endurance_qa.git
-synced: 2026-08-07
+sync-scope: WHOLE-TREE rsync --delete of spec/ vectors/ conformance/ bundles/ intake/ runs/ profiles/ scripts/ docs/ + DEVIATIONS.md + PLAN.md — 80 paths caught up (the pin had sat at brick-transition e7b1cfe while food-recommendation-era files were hand-mirrored piecemeal; this sync ends the drift). Carries the carb-band post-ratification amendment (spec/fueling/pre-workout-carbs.md invariants 11 amended + 12 new, re-baked pre-workout-carbs vectors) per intake/2026-09-04-handback-carb-band.md STEP 0.
+synced: 2026-09-04 (qa main d264895, whole tree); previously 2026-09-01 (brick-transition@v1 @ e7b1cfe); 2026-08-26 (pre-workout-macros@v2); 2026-08-18 (daily-macros)
 policy: VERBATIM MIRROR of the QA repo (Lee, 2026-08-07) — no app-side edits to QA-tracked files, ever.
   The QA repo is authoritative; conflicts between its documents are resolved by ITS
   spec/source-authority.md precedence rules, and recorded in ITS DEVIATIONS.md — never by
-  editing this mirror.
+  editing this mirror. PRE-WORKOUT-BUNDLE-DIGEST.md is app-authored (not QA-tracked).

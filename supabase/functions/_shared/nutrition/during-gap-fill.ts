@@ -19,6 +19,10 @@ import {
   type MacroTargets,
   shouldPrioritizeMacroTarget,
 } from "./types.ts";
+import {
+  plainWaterMl,
+  solventRequirementMl,
+} from "./electrolyte-water-pairing.ts";
 import { calculateTotals } from "./food-utils.ts";
 import { MACRO_CONSTRAINT_RANGES } from "./constants.ts";
 import { categorizeFood } from "./during-utils.ts";
@@ -106,9 +110,26 @@ export function gapFillDuringCarbs(
   // electrolyte categories are excluded — their incidental carbs are exactly
   // the "couple of salt tabs = 8g" failure this pass exists to prevent from
   // being the plan's only carbs.
+  // §6(e) at pick time (mirrors the rule solver): a declared-solvent
+  // candidate is only addable while its dilution water still fits the
+  // plain-water budget (plain water on the plate + fluid headroom − the
+  // requirement already scheduled).
+  const solventBudgetServings = (f: FoodWithConstraints): number => {
+    const perServing = f.solvent_min_ml ?? 0;
+    if (perServing <= 0) return Number.POSITIVE_INFINITY;
+    const t = calculateTotals(foods);
+    const headroom = Math.max(0, fluidUpper - t.water_ml);
+    const available = plainWaterMl(foods) + headroom -
+      solventRequirementMl(foods);
+    return Math.max(0, available) / perServing;
+  };
+
   const carbSources = pool
     .filter((f) => {
       if (f.per_serving.carbs_g <= 0) return false;
+      if (solventBudgetServings(f) < (f.min_servings ?? 0.5) - 1e-9) {
+        return false; // §6(e): no water budget to dissolve it
+      }
       const category = categorizeFood(f);
       return category !== "electrolyte" && category !== "hydration";
     })
@@ -164,6 +185,9 @@ export function gapFillDuringCarbs(
         (fluidUpper - totals.water_ml) / food.per_serving.water_ml,
       );
     }
+    // §6(e): re-checked per iteration — an earlier addition may have consumed
+    // the plain-water budget this candidate's dilution needs.
+    maxAdditional = Math.min(maxAdditional, solventBudgetServings(food));
     if (maxAdditional <= 0) continue;
 
     // Aim for the FULL target (not just the 90% trigger line), rounded to

@@ -16,7 +16,7 @@ Reorganized 2026-07-29; `CLAUDE.md` at the repo root is the routing guide.
 | `business_logic/` | Nutrition systems and algorithm documentation |
 | `database/` | Schema docs, Drift + Supabase migrations, load-bearing SQL (`apply_all.sql`, `meal_logging_jade_schema.sql`) |
 | `test/` | Testing strategy + coverage status (`coverage-status-2026-07.md` = READ FIRST) |
-| `deployment/` | Supabase + Vercel deploy hub (project refs, commands) |
+| `deployment/` | Supabase + Vercel deploy hub (project refs, commands) · `supabase-deploy-playbook.md` (ordering rules, `app_config` window, function versioning) · `bundle-runbook-template.md` (per-bundle runbooks live in `../ops/docs/deploys/`) |
 | `ci-cd/` | Codemagic + GitHub Actions docs (`codemagic.yaml` points here) |
 | `release/` | Release process, App Store screenshots, and **`prod-readiness-outstanding.md`** — the verified list of everything still blocking a production release |
 | `integration/` | Training integrations: `api-exploration/` (Garmin/TP/FS/VDOT API reference), plus per-provider docs (`training_peaks/`, `final_surge/`, `tp_write/`, `vdot/`, `strava/` and Garmin brand assets) |

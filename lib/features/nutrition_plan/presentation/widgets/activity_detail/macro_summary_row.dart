@@ -3,9 +3,23 @@ import '../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../domain/food_item_data.dart';
 import '../../../domain/macro_targets.dart';
 import '../../../domain/nutrition_plan.dart';
-import '../../../domain/pre_workout_display_rounding.dart';
 import '../../utils/activity_detail_helpers.dart';
 import 'macro_range_indicator.dart';
+
+// Retained ONLY for the DURING / AFTER summary rows (this widget is no longer
+// composed by the BEFORE surface — `pre_workout_before_card.dart` renders the
+// ratified fuel-stat family, whole oz / whole g per R-01 / M-5). The 25-ml /
+// 5-g grid below is the digest-§5 rule the old BEFORE row used; it stays here
+// privately so the untouched DURING / AFTER surfaces do not change (S-G1).
+double round25(double ml) => (ml / 25).round() * 25.0;
+double floor25(double ml) => (ml / 25).floorToDouble() * 25.0;
+double ceil25(double ml) => (ml / 25).ceilToDouble() * 25.0;
+double round5(double grams) => (grams / 5).round() * 5.0;
+({double low, double high})? roundCarbBand(double? lowG, double? highG) {
+  if (lowG == null || highG == null) return null;
+  if (lowG == 0 && highG == 0) return null;
+  return (low: round5(lowG), high: round5(highG));
+}
 
 /// Reusable macro summary row for nutrition plan sections
 /// Shows actual/target for carbs, fluids/protein (phase-dependent), and sodium
@@ -61,9 +75,9 @@ class MacroSummaryRow extends StatelessWidget {
   /// The pre-workout targets, when this row is rendering a BEFORE section.
   ///
   /// Supplies the *absence* information the section alone can't carry: the
-  /// hydration gate (no fluid target set) and the fasted flag (no carbohydrate
-  /// recommendation at all). Without it the BEFORE row still suppresses the
-  /// sodium band — that follows from the phase, not from the data.
+  /// hydration gate (no fluid target set). Without it the BEFORE row still
+  /// suppresses the sodium band — that follows from the phase, not from the
+  /// data.
   final PreRunMacros? preRun;
 
   @override
@@ -102,22 +116,29 @@ class MacroSummaryRow extends StatelessWidget {
     final categoryLower = category.toLowerCase();
     final isDuringSection = categoryLower.contains('during');
     final isBeforeSection = categoryLower.contains('before');
-    final showFluids = isBeforeSection || isDuringSection;
+    // Transition card — SSOT: docs/ssot/spec/design/components/transition-card.md
+    // TC-2 (RATIFIED Xuan 2026-09-01): stat trio is CARBS · FLUIDS · SODIUM.
+    // CARBS is the only stat with a target (delivered/target + band [0,30],
+    // T-1); FLUIDS and SODIUM are plain tallies — no transition-specific
+    // target exists in any position stand (T-5). PROTEIN is dropped (it
+    // rendered a permanently-0 stat with no basis).
+    final isTransitionSection = categoryLower.contains('transition');
+    final showFluids =
+        isBeforeSection || isDuringSection || isTransitionSection;
 
     // BEFORE-phase absences (docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md §3 and §5).
     //
     // Sodium: Mealvana sets no pre-workout sodium target at all, so the figure
     // is reported as delivered — no band, no marker, no in-range state. This
     // follows from the phase itself, so it holds even for a legacy cached plan
-    // that still carries the retired sodium band.
-    final sodiumHasNoTarget = isBeforeSection;
+    // that still carries the retired sodium band. Transitions likewise (TC-2:
+    // the as-built 265/248mg pair drops its target half).
+    final sodiumHasNoTarget = isBeforeSection || isTransitionSection;
     // Fluid: the hydration gate fired — a short, mild session gets no target.
+    // On a transition the fluid figure is a tally by design (T-5).
     final fluidsHasNoTarget =
-        isBeforeSection && (preRun?.isHydrationGated ?? false);
-    // Carbohydrate: the athlete is fasted — no recommendation is being made.
-    // Distinct from `carbsG == 0` at t−0, which *is* a recommendation.
-    final carbsHasNoTarget =
-        isBeforeSection && (preRun?.isCarbRecommendationAbsent ?? false);
+        isTransitionSection ||
+        (isBeforeSection && (preRun?.isHydrationGated ?? false));
 
     // Display rounding belongs here, not in the engine: fluid to the nearest
     // 25 (target) with the band widened to [floor25, ceil25], carbs to 5 g.
@@ -150,11 +171,10 @@ class MacroSummaryRow extends StatelessWidget {
                 : carbsHigh,
             isOverridden: carbsOverridden,
             overrideLabel: carbsOverrideLabel,
-            hasNoTarget: carbsHasNoTarget,
-            noTargetNote: carbsHasNoTarget
-                ? 'training fasted — no recommendation'
-                : null,
             prominent: isBeforeSection,
+            // TC-2: the transition carb stat reads delivered/target above its
+            // [0,30] band rail.
+            showTargetInValue: isTransitionSection,
           ),
         ),
         if (showFluids)
@@ -179,7 +199,9 @@ class MacroSummaryRow extends StatelessWidget {
               isOverridden: fluidsOverridden,
               overrideLabel: fluidsOverrideLabel,
               hasNoTarget: fluidsHasNoTarget,
-              noTargetNote: fluidsHasNoTarget
+              // A transition fluid tally carries no note — the drawer
+              // explains that the continuous schedule owns fluids (TC-4).
+              noTargetNote: fluidsHasNoTarget && !isTransitionSection
                   ? 'no target for this session'
                   : null,
               prominent: isBeforeSection,
@@ -258,6 +280,7 @@ class MacroSummaryItem extends StatelessWidget {
     this.hasNoTarget = false,
     this.noTargetNote,
     this.prominent = false,
+    this.showTargetInValue = false,
   });
 
   final int actual;
@@ -278,15 +301,19 @@ class MacroSummaryItem extends StatelessWidget {
   final String? overrideLabel;
 
   /// No target exists for this quantity — render what the food delivers and
-  /// nothing else. Three states must never look alike (see
-  /// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §5): a real zero, *no target
-  /// set* (the hydration gate), and *no recommendation at all* (fasted). The
-  /// first keeps its ratio; the other two set this flag and differ by
-  /// [noTargetNote].
+  /// nothing else. Two states must never look alike (see
+  /// `docs/ssot/PRE-WORKOUT-BUNDLE-DIGEST.md` §5 as narrowed by the fasted
+  /// retirement, food-recommendation §7): a real zero, which keeps its
+  /// ratio, and *no target set* (the hydration gate), which sets this flag.
   final bool hasNoTarget;
 
   /// One-line reason shown beneath the label when [hasNoTarget] is set.
   final String? noTargetNote;
+
+  /// Render the value line as `delivered/target` even in range mode —
+  /// transition-card TC-2: the carb stat pairs delivered with its T-1 target
+  /// above the [0,30] band rail.
+  final bool showTargetInValue;
 
   bool get _hasRange =>
       !hasNoTarget && low != null && high != null && (low! > 0 || high! > 0);
@@ -403,16 +430,34 @@ class MacroSummaryItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '$actual$unit',
-                style: prominent
-                    ? _valueStyle(actualColor)
-                    : AppTextStyles.dataNumber.copyWith(
-                        color: actualColor,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+              if (showTargetInValue)
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '$actual',
+                        style: _valueStyle(actualColor),
                       ),
-              ),
+                      TextSpan(
+                        text: '/$target$unit',
+                        style: _valueStyle(
+                          Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Text(
+                  '$actual$unit',
+                  style: prominent
+                      ? _valueStyle(actualColor)
+                      : AppTextStyles.dataNumber.copyWith(
+                          color: actualColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                ),
               if (isOverridden) _buildOverrideIcon(context),
             ],
           ),

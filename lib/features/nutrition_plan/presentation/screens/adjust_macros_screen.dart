@@ -6,11 +6,12 @@ import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dar
 import '../widgets/adjust_macros/edit_macros_dialog_widget.dart';
 import '../widgets/adjust_macros/help_bottom_sheet_widget.dart';
 import '../utils/macro_helpers.dart';
+import '../utils/post_create_navigation.dart';
 import '../../../../shared/widgets/generating_plan_overlay.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../providers/macro_targets_controller.dart';
-import '../providers/brick_input_controller.dart';
+import '../../../activities/domain/brick_metadata.dart';
 import '../../domain/macro_targets.dart' as domain;
 import '../../../../core/utils/debug_logger.dart';
 import '../../../../shared/domain/activity_type.dart';
@@ -203,20 +204,17 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     WidgetRef ref,
     domain.MacroTargets macros,
   ) {
-    final brickFormState = ref.watch(brickInputControllerProvider);
-    final segmentInputs = brickFormState.segmentInputs;
-    final sportOrder = brickFormState.sportOrder;
+    // The ordered legs the engine priced — one card per leg, in brick order
+    // (a Run → Bike → Run brick shows three). Read from the macros rather
+    // than the keepAlive form controller so a saved plan renders correctly.
+    final segments = List<BrickSegment>.from(macros.brickSegments ?? const [])
+      ..sort((a, b) => a.order.compareTo(b.order));
     final useMetric =
         (ref.watch(unitSystemProvider).value ?? UnitSystem.imperial) ==
         UnitSystem.metric;
 
-    // Filter to only selected sports in order
-    final orderedSelectedSports = sportOrder
-        .where((sport) => brickFormState.selectedSports.contains(sport))
-        .toList();
-
     // If no segments, show total burn only
-    if (orderedSelectedSports.isEmpty) {
+    if (segments.isEmpty) {
       final totalBurn = '${macros.metrics.caloriesNetKcal.round()} kcal';
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 17),
@@ -235,17 +233,11 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: orderedSelectedSports.map((sport) {
-          final input = segmentInputs[sport];
-          if (input == null) {
-            return const SizedBox.shrink();
-          }
-
+        children: segments.map((input) {
           // Format pace based on sport type
           String pace;
           String sportLabel;
-
-          switch (sport) {
+          switch (input.sport) {
             case 'swimming':
               final paceSec = input.pacePer100mSeconds ?? 120;
               final minutes = paceSec ~/ 60;
@@ -268,11 +260,9 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
               break;
             default:
               pace = '--';
-              sportLabel = sport.toUpperCase();
+              sportLabel = input.sport.toUpperCase();
           }
-
-          // Calculate segment duration for display
-          final duration = input.effectiveDurationMinutes;
+          final duration = input.durationMinutes;
 
           return Expanded(
             child: _BrickSegmentPaceCard(
@@ -304,9 +294,14 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
     final useMetric = state.unitSystem == UnitSystem.metric;
 
     // Calculate fluid values based on unit preference
-    final preFluids = useMetric
-        ? macros.preRun.fluidsMl.round()
-        : (macros.preRun.fluidsMl * UnitFormatter.kFlOzPerMl).round();
+    // Gate path (`fluidsMl == null`): no fluid target is stated — the table
+    // renders an em dash (as it does for sodium), never 0oz.
+    final preFluidMl = macros.preRun.fluidsMl;
+    final int? preFluids = preFluidMl == null
+        ? null
+        : useMetric
+        ? preFluidMl.round()
+        : (preFluidMl * UnitFormatter.kFlOzPerMl).round();
 
     final duringFluids = useMetric
         ? macros.duringRun.fluidTotalMl.round()
@@ -372,7 +367,10 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           preProtein: macros.preRun.proteinG.round(),
           duringProtein: 0,
           postProtein: macros.postRun.proteinG.round(),
-          preFluids: fluids(macros.preRun.fluidsMl),
+          // Gate path → null → em dash (never 0oz).
+          preFluids: macros.preRun.fluidsMl == null
+              ? null
+              : fluids(macros.preRun.fluidsMl!),
           duringFluids: fluids(macros.duringRun.fluidTotalMl),
           postFluids: fluids(macros.postRun.fluidsMl),
           // Sodium v3: no pre-workout sodium target. Null renders as an
@@ -648,10 +646,11 @@ class _AdjustMacrosScreenState extends ConsumerState<AdjustMacrosScreen> {
           extra: {'activityId': activityId, 'isCoachView': true},
         );
       } else {
-        context.push(
-          '/current-plan',
-          extra: {'activityId': activityId, 'isNewActivity': true},
-        );
+        // Unwind the spent creation flow (new-activity form + this screen)
+        // instead of pushing on top of it: backing out of the plan must land
+        // on the dashboard, never on a still-armed Generate form that can
+        // insert a duplicate activity.
+        showPlanAfterSuccessfulCreate(context, activityId: activityId);
       }
     } else if (activityId == null) {
       DebugLogger.error(

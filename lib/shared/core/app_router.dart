@@ -283,11 +283,16 @@ class AppRouter {
           builder: (context, state) => const WelcomeScreen(),
         ),
 
-        // Onboarding Flow (PageView-based with swipe navigation)
+        // Onboarding Flow (PageView-based with swipe navigation).
+        // `?page=last` opens on the final page — used by the post-onboarding
+        // auth screen's back fallback so a stack-replaced arrival doesn't
+        // rewind the athlete to the first question.
         GoRoute(
           path: '/onboarding',
           name: 'onboarding',
-          builder: (context, state) => const OnboardingPageViewScreen(),
+          builder: (context, state) => OnboardingPageViewScreen(
+            startAtLastPage: state.uri.queryParameters['page'] == 'last',
+          ),
         ),
 
         // Authentication Flow (Post-Onboarding)

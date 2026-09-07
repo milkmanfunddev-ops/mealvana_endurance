@@ -223,6 +223,11 @@ class TemplateFoodsRepository with SyncableRepository {
         maxServingsAfter: Value(
           (json['max_servings_after'] as num?)?.toInt() ?? 4,
         ),
+        minServingsDuring: Value(
+          (json['min_servings_during'] as num?)?.toDouble() ?? 1.0,
+        ),
+        isIndivisible: Value(json['is_indivisible'] as bool? ?? false),
+        solventMinMl: Value((json['solvent_min_ml'] as num?)?.toDouble()),
         toExcludeFromSolver: Value(
           json['to_exclude_from_solver'] as bool? ?? false,
         ),

@@ -612,8 +612,6 @@ class ActivitiesService {
     // Shared parameters
     String? intensityTarget,
     int? timeBeforeMinutes,
-    // Fasted state the nutrition plan was generated with
-    bool isFasted = false,
     // Nutrition plan data (embedded JSON)
     Map<String, dynamic>? nutritionPlanData,
     // Brick-specific parameters
@@ -678,7 +676,6 @@ class ActivitiesService {
         // Shared fields
         intensityTarget: intensityTarget,
         timeBeforeMinutes: timeBeforeMinutes,
-        isFasted: isFasted,
         // Nutrition plan data (embedded JSON)
         nutritionPlanData: nutritionPlanData,
         // Brick-specific fields
@@ -980,5 +977,28 @@ class ActivitiesService {
       );
       rethrow;
     }
+  }
+
+  /// Mark a workout done (dashboard G1): actual_time = now, status
+  /// completed. planned_time is never touched by any gesture.
+  Future<void> markWorkoutDone({required String activityId}) async {
+    await _activitiesRepository.markWorkoutDone(activityId: activityId);
+  }
+
+  /// Mark a workout not-done (dashboard G2): actual_time cleared to null,
+  /// status back to planned.
+  Future<void> markWorkoutUndone({required String activityId}) async {
+    await _activitiesRepository.markWorkoutUndone(activityId: activityId);
+  }
+
+  /// Skip a workout (dashboard G5, v2): status = 'skipped', actual_time
+  /// cleared, planned_time untouched. Never a delete.
+  Future<void> skipWorkout({required String activityId}) async {
+    await _activitiesRepository.skipWorkout(activityId: activityId);
+  }
+
+  /// Unskip a workout (dashboard G5, v2): status back to planned.
+  Future<void> unskipWorkout({required String activityId}) async {
+    await _activitiesRepository.unskipWorkout(activityId: activityId);
   }
 }

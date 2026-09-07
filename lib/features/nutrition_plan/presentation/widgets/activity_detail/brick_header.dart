@@ -39,7 +39,8 @@ class BrickHeader extends ConsumerWidget {
 
   /// Build hero image with geometric pattern and side-by-side sport images
   Widget _buildHeroImageWithIcons(BuildContext context) {
-    // Build set of selected sports from metadata segments
+    // The hero composite paints one image per DISTINCT sport (its contract
+    // takes a Set); leg order and repeats are stated in _getBrickTypeName.
     final selectedSports = metadata.segments.map((s) => s.sport).toSet();
 
     return Container(

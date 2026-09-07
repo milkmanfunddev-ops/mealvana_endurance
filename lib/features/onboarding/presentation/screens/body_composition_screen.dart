@@ -59,7 +59,18 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
 
   /// Once the user touches the weight wheel, integration autofill backs off.
   bool _userAdjustedWeight = false;
-  bool _weightFromGarmin = false;
+
+  /// Integration weight autofill is a one-shot (see the listener below).
+  bool _weightAutofillApplied = false;
+
+  /// Last observed value of the controller's disconnect counter.
+  int _lastClearedTick = 0;
+
+  /// Display name of the platform the autofilled weight came from, or null
+  /// when the athlete set it themselves. Garmin gets its required
+  /// attribution message; anyone else gets a plain note — claiming
+  /// "from Garmin" for a TrainingPeaks profile figure would be a lie.
+  String? _weightSource;
 
   /// Bumped on *external* value changes (unit toggle, integration autofill)
   /// to rebuild the wheels at their new positions via value-bearing keys.
@@ -95,16 +106,47 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
 
     // Integration weight autofill — fireImmediately so an already-resolved
     // (keepAlive) provider value still lands.
-    ref.listenManual(onboardingIntegrationWeightLbsProvider, (previous, next) {
-      final lbs = next.value;
-      if (lbs == null || _userAdjustedWeight || !mounted) return;
+    ref.listenManual(onboardingIntegrationProfileProvider, (previous, next) {
+      final lbs = next.value?.weightLbs;
+      // One-shot: applying writes back into the draft, which notifies
+      // controller listeners.
+      if (lbs == null ||
+          _userAdjustedWeight ||
+          !mounted ||
+          _weightAutofillApplied) {
+        return;
+      }
+      _weightAutofillApplied = true;
+      _controller.recordIntegrationAutofill(const {'weightPounds'});
       setState(() {
         _weightPounds = lbs;
-        _weightFromGarmin = true;
+        _weightSource = next.value?.weightSource;
         _wheelEpoch++;
       });
       _pushToDraft();
     }, fireImmediately: true);
+
+    // A disconnect clears the weight this platform supplied. This screen
+    // stays alive in the PageView, so without this the wheel would keep
+    // showing a value the draft no longer holds.
+    _lastClearedTick = _controller.autofillClearedTick;
+    ref.listenManual(onboardingControllerProvider, (previous, next) {
+      if (!mounted) return;
+      final tick = _controller.autofillClearedTick;
+      if (tick == _lastClearedTick) return;
+      _lastClearedTick = tick;
+      if (_userAdjustedWeight) return;
+      setState(() {
+        _weightPounds = _defaultWeightPounds;
+        _weightSource = null;
+        _weightAutofillApplied = false;
+        _wheelEpoch++;
+      });
+      // The wheels always carry a value, so re-seed the default.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _pushToDraft();
+      });
+    });
 
     ref
         .read(appExternalDepsProvider)
@@ -271,12 +313,25 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text('Weight', style: _specFieldLabelStyle),
-        if (_weightFromGarmin) ...[
+        if (_weightSource != null) ...[
           const SizedBox(height: 8),
-          const Center(
-            key: ValueKey('body_comp.garmin_badge'),
-            child: GarminAttributionMessage(subject: 'Weight', compact: true),
-          ),
+          if (_weightSource == 'Garmin Connect')
+            const Center(
+              key: ValueKey('body_comp.garmin_badge'),
+              child: GarminAttributionMessage(subject: 'Weight', compact: true),
+            )
+          else
+            Center(
+              key: const ValueKey('body_comp.weight_source_note'),
+              child: Text(
+                'Weight filled in from $_weightSource — check and adjust.',
+                style: TextStyle(
+                  fontFamily: OnbTokens.fontBody,
+                  fontSize: 11.5,
+                  color: OnbTokens.creamA(0.5),
+                ),
+              ),
+            ),
         ],
         const SizedBox(height: 4),
         if (_useMetric)
@@ -292,7 +347,8 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
               setState(() {
                 _weightPounds = UnitFormatter.kgToPounds(kg.toDouble());
                 _userAdjustedWeight = true;
-                _weightFromGarmin = false;
+                _weightSource = null;
+                _controller.releaseIntegrationAutofill('weightPounds');
               });
               _pushToDraft();
             },
@@ -309,7 +365,8 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
               setState(() {
                 _weightPounds = lb.toDouble();
                 _userAdjustedWeight = true;
-                _weightFromGarmin = false;
+                _weightSource = null;
+                _controller.releaseIntegrationAutofill('weightPounds');
               });
               _pushToDraft();
             },

@@ -217,4 +217,110 @@ void main() {
       expect(items.length, 2);
     });
   });
+
+  // C2 scope extension — docs/ssot/spec/domain/catalog-conventions.md
+  // (RULED Xuan 2026-09-01): every DRY requires-water item is covered, not
+  // only electrolyte-flagged ones. With the C1 catalog zeros a carb drink
+  // mix row is dry — nobody chews drink mix. Twin of the TS C2 tests.
+  group('C2 — dry requires-water scope', () {
+    test('a dry carb drink mix (no electrolyte flags) gets water', () {
+      final dryMix = item(
+        id: 'carb-mix',
+        name: 'Carb Drink Mix',
+        carbs: 45,
+        fluids: 0, // C1: dry as catalogued
+        category: TimingCategory.fuelDrink,
+      );
+      expect(needsWaterPairing([dryMix]), isTrue);
+      final res = ensureElectrolyteWaterPairing([dryMix], pool);
+      expect(res.changed, isTrue);
+      expect(res.items.any(deliversDrinkableFluid), isTrue);
+    });
+
+    test('a hydrated sports drink is self-satisfying (no double count)', () {
+      final mixed = item(
+        id: 'sports-drink',
+        name: 'Sports Drink',
+        carbs: 30,
+        fluids: 500,
+        isDrink: true,
+        category: TimingCategory.fuelDrink,
+      );
+      expect(ensureElectrolyteWaterPairing([mixed], pool).changed, isFalse);
+    });
+
+    test('a plain solid food stays outside the pairing scope', () {
+      final banana = item(
+        id: 'banana',
+        name: 'Banana',
+        carbs: 27,
+        fluids: 0,
+        category: TimingCategory.slowConsume,
+      );
+      expect(unpairedElectrolyteItems([banana]), isEmpty);
+      expect(needsWaterPairing([banana]), isFalse);
+    });
+  });
+
+  group('catalog-conventions v1.1 — per-product solvent minima (§6(e))', () {
+    FoodItemData mix({double qty = 2, double solventMin = 600}) => FoodItemData(
+      id: 'high-carb-mix',
+      name: 'High-Carb Drink Mix',
+      quantity: qty.toStringAsFixed(0),
+      nutritionalInfo: NutritionalInfo(
+        calories: (240 * qty).round(),
+        carbs: (90 * qty).round(),
+        sodium: 0,
+        fluids: 0, // C1: dry as consumed
+      ),
+      isDrink: true,
+      timingCategory: TimingCategory.fuelDrink,
+      numericQuantity: qty,
+      solventMinMlPerServing: solventMin,
+    );
+
+    test('declared solvent_min supersedes the flat constant (W7: 2x600=1200)',
+        () {
+      final items = [mix()];
+      expect(solventRequirementMl(items), 1200);
+      expect(needsWaterPairing(items), isTrue);
+
+      final res = ensureElectrolyteWaterPairing(items, pool);
+      expect(res.changed, isTrue);
+      expect(res.conflict, isNull);
+      expect(plainWaterMl(res.items), greaterThanOrEqualTo(1200));
+    });
+
+    test('a drink on the plate does not satisfy a declared solvent need', () {
+      final sportsDrink = item(
+        id: 'sports-drink',
+        name: 'Sports Drink',
+        carbs: 15,
+        fluids: 240,
+        isDrink: true,
+        category: TimingCategory.fuelDrink,
+      );
+      final res =
+          ensureElectrolyteWaterPairing([mix(qty: 1), sportsDrink], pool);
+      expect(res.changed, isTrue);
+      expect(plainWaterMl(res.items), greaterThanOrEqualTo(600));
+    });
+
+    test('existing plain water counts toward the total (no double demand)',
+        () {
+      final water = FoodItemData(
+        id: 'water',
+        name: 'Water',
+        quantity: '3',
+        nutritionalInfo:
+            const NutritionalInfo(calories: 0, carbs: 0, sodium: 0, fluids: 720),
+        isDrink: true,
+        timingCategory: TimingCategory.sipThroughout,
+        numericQuantity: 3,
+      );
+      final res = ensureElectrolyteWaterPairing([mix(qty: 1), water], pool);
+      expect(res.changed, isFalse);
+      expect(res.conflict, isNull);
+    });
+  });
 }

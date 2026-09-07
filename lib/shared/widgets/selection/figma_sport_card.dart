@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
 /// Sport selection card matching Figma onboarding design
 ///
@@ -35,7 +36,7 @@ class FigmaSportCard extends StatelessWidget {
           color: isSelected
               ? AppColors.electrolyte.withValues(alpha: 0.28)
               : AppColors.textDark.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
             color: isSelected
                 ? AppColors.electrolyte.withValues(alpha: 0.2)

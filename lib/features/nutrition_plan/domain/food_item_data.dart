@@ -73,6 +73,9 @@ class FoodItemData {
     this.templateId,
     this.scaleMultiplier,
     this.timingCategory,
+    this.origin,
+    this.numericQuantity,
+    this.solventMinMlPerServing,
   });
 
   final String id;
@@ -104,6 +107,22 @@ class FoodItemData {
   /// Timing category for by-hour placement. Derived from template_foods fields.
   /// Nullable for backward compat with old saved plans (falls back to isDrink heuristic).
   final TimingCategory? timingCategory;
+
+  /// Who put this row on the plan, when it was not the athlete or the
+  /// generator: `hydration_check` tags the water row the hydration check adds
+  /// (feeding-card FC-6) so the card can label it and Change answer can find
+  /// it. Null for every ordinary row.
+  final String? origin;
+
+  /// Numeric serving count, when the row came from the client solver (the
+  /// display [quantity] string is not reliably parseable). Used by the
+  /// solvent-water pass. Null on wire-parsed rows.
+  final double? numericQuantity;
+
+  /// Catalog-conventions v1.1 (food-recommendation §6(e)): per-serving
+  /// solvent-water minimum carried from the catalog row. Null = undeclared →
+  /// 250 ml pairing fallback, never 0.
+  final double? solventMinMlPerServing;
 
   /// Build a complete display string for this food at the given [qtyStr].
   ///
@@ -180,6 +199,7 @@ class FoodItemData {
       timingCategory: _timingCategoryFromJson(
         json['timingCategory'] as String?,
       ),
+      origin: json['origin'] as String?,
     );
   }
 
@@ -335,6 +355,7 @@ class FoodItemData {
       'templateId': templateId,
       'scaleMultiplier': scaleMultiplier,
       if (timingCategory != null) 'timingCategory': timingCategory!.name,
+      if (origin != null) 'origin': origin,
     };
   }
 

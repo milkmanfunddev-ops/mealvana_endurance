@@ -15,6 +15,10 @@ import {
   ensureElectrolyteWaterPairing,
   isElectrolyteItem,
   needsWaterPairing,
+  plainWaterMl,
+  requiresWaterWhenDry,
+  solventRequirementMl,
+  unpairedElectrolyteItems,
 } from "./electrolyte-water-pairing.ts";
 import type { Food, FoodResult } from "./types.ts";
 
@@ -307,4 +311,135 @@ Deno.test("input array is never mutated", () => {
   const before = foods.length;
   ensureElectrolyteWaterPairing(foods, WATER_POOL, OPTS);
   assertEquals(foods.length, before);
+});
+
+// ---------------------------------------------------------------------------
+// C2 scope extension — docs/ssot/spec/domain/catalog-conventions.md (RULED
+// Xuan 2026-09-01): every DRY requires-water item is covered, not only
+// electrolyte-flagged ones. With the C1 catalog zeros in place a carb drink
+// mix row is dry — nobody chews drink mix.
+// ---------------------------------------------------------------------------
+
+Deno.test("C2: a dry carb drink mix (no electrolyte flags) gets water", () => {
+  const dryMix = item({
+    food_id: "carb-mix",
+    display_name: "Carb Drink Mix",
+    carbs_grams: 45,
+    sodium_mg: 0,
+    fluids_ml: 0, // C1: dry as catalogued
+    product_type: "drink_mix",
+  });
+  assert(requiresWaterWhenDry(dryMix), "drink_mix is drink-shaped");
+  assert(needsWaterPairing([dryMix]));
+
+  const result = ensureElectrolyteWaterPairing([dryMix], WATER_POOL, OPTS);
+  assert(result.changed, "water appended for the dry mix");
+  assert(
+    result.foods.some((f) => deliversDrinkableFluid(f)),
+    "invariant satisfied",
+  );
+});
+
+Deno.test("C2: a hydrated sports drink is self-satisfying (no double count)", () => {
+  const mixed = item({
+    food_id: "sports-drink",
+    display_name: "Sports Drink",
+    carbs_grams: 30,
+    fluids_ml: 500,
+    is_drink: true,
+    product_type: "sports_drink",
+  });
+  const result = ensureElectrolyteWaterPairing([mixed], WATER_POOL, OPTS);
+  assertEquals(result.changed, false, "already delivers its own fluid");
+});
+
+Deno.test("C2: a plain solid food stays outside the pairing scope", () => {
+  const banana = item({
+    food_id: "banana",
+    display_name: "Banana",
+    carbs_grams: 27,
+    fluids_ml: 0,
+    product_type: "real_food",
+  });
+  assertEquals(requiresWaterWhenDry(banana), false);
+  assertEquals(unpairedElectrolyteItems([banana]).length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Catalog-conventions v1.1 — per-product solvent minima (food-recommendation
+// §6(e), RULED Xuan 2026-09-03). The declared column supersedes the flat
+// 250 ml constant; 250 stays the undeclared-row fallback (asserted above by
+// "electrolyte alone gets water added").
+// ---------------------------------------------------------------------------
+
+Deno.test("declared solvent_min_ml supersedes the flat pairing constant (W7)", () => {
+  // High-carb mix x2 with a 600 ml/serving label -> plain water >= 1200 ml.
+  const mix = item({
+    food_id: "high-carb-mix",
+    display_name: "High-Carb Drink Mix",
+    carbs_grams: 180, // 90 g x2
+    quantity: 2,
+    fluids_ml: 0, // C1: dry as consumed
+    is_liquid: true,
+    product_type: "drink_mix",
+    solvent_min_ml: 600,
+  });
+  const foods = [mix];
+  assertEquals(solventRequirementMl(foods), 1200);
+  assert(needsWaterPairing(foods));
+
+  const res = ensureElectrolyteWaterPairing(foods, WATER_POOL, OPTS);
+  assert(res.changed);
+  assertEquals(res.conflict, null);
+  assert(plainWaterMl(res.foods) >= 1200);
+});
+
+Deno.test("a drink on the plate does not satisfy a declared solvent need", () => {
+  // Legacy C2 no-ops when any drink is present; a declared solvent row still
+  // demands its dilution water.
+  const mix = item({
+    food_id: "high-carb-mix",
+    carbs_grams: 90,
+    quantity: 1,
+    fluids_ml: 0,
+    is_liquid: true,
+    product_type: "drink_mix",
+    solvent_min_ml: 600,
+  });
+  const sportsDrink = item({
+    food_id: "sports-drink",
+    carbs_grams: 15,
+    quantity: 1,
+    fluids_ml: 240,
+    is_drink: true,
+    product_type: "sports_drink",
+  });
+  const foods = [mix, sportsDrink];
+  const res = ensureElectrolyteWaterPairing(foods, WATER_POOL, OPTS);
+  assert(res.changed);
+  assert(plainWaterMl(res.foods) >= 600);
+});
+
+Deno.test("existing plain water counts toward the solvent total (no double demand)", () => {
+  const mix = item({
+    food_id: "high-carb-mix",
+    carbs_grams: 90,
+    quantity: 1,
+    fluids_ml: 0,
+    is_liquid: true,
+    product_type: "drink_mix",
+    solvent_min_ml: 600,
+  });
+  const water = item({
+    food_id: "water",
+    carbs_grams: 0,
+    sodium_mg: 0,
+    quantity: 3,
+    fluids_ml: 720,
+    is_drink: true,
+    product_type: "beverage",
+  });
+  const res = ensureElectrolyteWaterPairing([mix, water], WATER_POOL, OPTS);
+  assertEquals(res.changed, false);
+  assertEquals(res.conflict, null);
 });

@@ -47,6 +47,7 @@ class ChangeDetectionService {
     final updatedActivities = <ActivityChange>[];
     final deletedActivityIds = <String>[];
     int unchangedCount = 0;
+    int tombstoneDropped = 0;
 
     // Create lookup map for local activities by provider_workout_id
     final localByProviderId = <String, Activity>{};
@@ -127,6 +128,18 @@ class ChangeDetectionService {
         if (kDebugMode) {
           debugPrint(
             '   📥 NEW: ${remoteWorkout.title} (provider_id: $providerId)',
+          );
+        }
+      } else if (localActivity.status == ActivityStatus.deleted) {
+        // TOMBSTONE HIT (soft-delete ruling): the athlete deleted this
+        // workout; the row persists precisely so this sync recognizes it.
+        // The incoming provider workout is DROPPED — never re-imported,
+        // never updated, and deletion is not un-doable by sync.
+        tombstoneDropped++;
+        if (kDebugMode) {
+          debugPrint(
+            '   🪦 TOMBSTONE: ${remoteWorkout.title} '
+            '(provider_id: $providerId) — dropped, not re-imported',
           );
         }
       } else {
@@ -212,6 +225,10 @@ class ChangeDetectionService {
       // provider account). The soft-delete is meant to be idempotent.
       if (localActivity.providerDeletedAt != null) continue;
 
+      // User-deleted tombstones are already gone from every surface; never
+      // re-flag them for provider soft-deletion.
+      if (localActivity.status == ActivityStatus.deleted) continue;
+
       // DELETED: Workout exists in local but not in remote
       if (!remoteProviderIds.contains(providerId)) {
         deletedActivityIds.add(localActivity.id);
@@ -223,6 +240,7 @@ class ChangeDetectionService {
       updatedActivities: updatedActivities,
       deletedActivityIds: deletedActivityIds,
       unchangedCount: unchangedCount,
+      tombstoneDroppedCount: tombstoneDropped,
     );
   }
 

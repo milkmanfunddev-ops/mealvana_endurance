@@ -206,30 +206,120 @@ final class OnboardingPlanPreviewProvider
 String _$onboardingPlanPreviewHash() =>
     r'b760d3a2b670a42b8335a2395a9a5b4ee51dcc77';
 
-/// Weight (lbs) reported by an integration connected during onboarding, for
-/// pre-filling the body-composition weight wheel. Lifted from the old
-/// user_profile_screen autofill: prefer Garmin (scale data) over the
-/// TrainingPeaks/FinalSurge athlete profile. Best-effort — any failure
-/// resolves to null (no autofill), never an error.
+/// Athlete details from the platforms connected during onboarding, used to
+/// pre-fill the personal-info and body-composition steps.
+///
+/// Per-field precedence, and the reason for it:
+///
+///  - **weight**: Garmin first (it is scale data, and the freshest), then
+///    TrainingPeaks' profile figure.
+///  - **birth year / gender**: TrainingPeaks only — it is the sole provider
+///    that returns them.
+///  - **name / email**: TrainingPeaks, then Final Surge. Deliberately NOT
+///    Garmin or V.O2: those store the literal strings 'Garmin Connect' and
+///    'V.O2' in `providerAthleteName`, so trusting them would write
+///    "Garmin"/"Connect" into someone's name fields.
+///
+/// No provider reports height, so the height wheels keep their defaults.
+///
+/// Best-effort throughout: any failure resolves to an empty profile (no
+/// autofill), never an error — a convenience must not block onboarding.
+
+@ProviderFor(onboardingIntegrationProfile)
+const onboardingIntegrationProfileProvider =
+    OnboardingIntegrationProfileProvider._();
+
+/// Athlete details from the platforms connected during onboarding, used to
+/// pre-fill the personal-info and body-composition steps.
+///
+/// Per-field precedence, and the reason for it:
+///
+///  - **weight**: Garmin first (it is scale data, and the freshest), then
+///    TrainingPeaks' profile figure.
+///  - **birth year / gender**: TrainingPeaks only — it is the sole provider
+///    that returns them.
+///  - **name / email**: TrainingPeaks, then Final Surge. Deliberately NOT
+///    Garmin or V.O2: those store the literal strings 'Garmin Connect' and
+///    'V.O2' in `providerAthleteName`, so trusting them would write
+///    "Garmin"/"Connect" into someone's name fields.
+///
+/// No provider reports height, so the height wheels keep their defaults.
+///
+/// Best-effort throughout: any failure resolves to an empty profile (no
+/// autofill), never an error — a convenience must not block onboarding.
+
+final class OnboardingIntegrationProfileProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<OnboardingIntegrationProfile>,
+          OnboardingIntegrationProfile,
+          FutureOr<OnboardingIntegrationProfile>
+        >
+    with
+        $FutureModifier<OnboardingIntegrationProfile>,
+        $FutureProvider<OnboardingIntegrationProfile> {
+  /// Athlete details from the platforms connected during onboarding, used to
+  /// pre-fill the personal-info and body-composition steps.
+  ///
+  /// Per-field precedence, and the reason for it:
+  ///
+  ///  - **weight**: Garmin first (it is scale data, and the freshest), then
+  ///    TrainingPeaks' profile figure.
+  ///  - **birth year / gender**: TrainingPeaks only — it is the sole provider
+  ///    that returns them.
+  ///  - **name / email**: TrainingPeaks, then Final Surge. Deliberately NOT
+  ///    Garmin or V.O2: those store the literal strings 'Garmin Connect' and
+  ///    'V.O2' in `providerAthleteName`, so trusting them would write
+  ///    "Garmin"/"Connect" into someone's name fields.
+  ///
+  /// No provider reports height, so the height wheels keep their defaults.
+  ///
+  /// Best-effort throughout: any failure resolves to an empty profile (no
+  /// autofill), never an error — a convenience must not block onboarding.
+  const OnboardingIntegrationProfileProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'onboardingIntegrationProfileProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$onboardingIntegrationProfileHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<OnboardingIntegrationProfile> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<OnboardingIntegrationProfile> create(Ref ref) {
+    return onboardingIntegrationProfile(ref);
+  }
+}
+
+String _$onboardingIntegrationProfileHash() =>
+    r'a148528f3dd73ac6b442bbb47d5cd37088d48749';
+
+/// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
+/// provider so the body-composition wheel can listen to just that value.
 
 @ProviderFor(onboardingIntegrationWeightLbs)
 const onboardingIntegrationWeightLbsProvider =
     OnboardingIntegrationWeightLbsProvider._();
 
-/// Weight (lbs) reported by an integration connected during onboarding, for
-/// pre-filling the body-composition weight wheel. Lifted from the old
-/// user_profile_screen autofill: prefer Garmin (scale data) over the
-/// TrainingPeaks/FinalSurge athlete profile. Best-effort — any failure
-/// resolves to null (no autofill), never an error.
+/// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
+/// provider so the body-composition wheel can listen to just that value.
 
 final class OnboardingIntegrationWeightLbsProvider
     extends $FunctionalProvider<AsyncValue<double?>, double?, FutureOr<double?>>
     with $FutureModifier<double?>, $FutureProvider<double?> {
-  /// Weight (lbs) reported by an integration connected during onboarding, for
-  /// pre-filling the body-composition weight wheel. Lifted from the old
-  /// user_profile_screen autofill: prefer Garmin (scale data) over the
-  /// TrainingPeaks/FinalSurge athlete profile. Best-effort — any failure
-  /// resolves to null (no autofill), never an error.
+  /// Weight (lbs) from [onboardingIntegrationProfile], kept as its own
+  /// provider so the body-composition wheel can listen to just that value.
   const OnboardingIntegrationWeightLbsProvider._()
     : super(
         from: null,
@@ -256,4 +346,4 @@ final class OnboardingIntegrationWeightLbsProvider
 }
 
 String _$onboardingIntegrationWeightLbsHash() =>
-    r'b711401b62f165403ea7fcd660ae260f17ce307b';
+    r'9836e59aa94b2fafef5042fdcf30578c66896a4c';

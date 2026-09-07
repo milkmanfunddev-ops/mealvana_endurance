@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/macro_targets.dart';
 import '../domain/nutrition_target_overrides.dart';
+import '../domain/transition_identity.dart';
 import '../data/macro_repository.dart';
 import '../../auth/application/auth_service.dart';
 import '../../auth/domain/user_preferences.dart';
@@ -53,7 +54,6 @@ class BrickMacroService {
     required String deviceId,
     required List<BrickSegment> segments,
     required List<String> segmentOrder,
-    required bool isFasted,
     required int preActivityMinutes,
     NutritionTargetOverrides? overrides,
   }) async {
@@ -71,7 +71,6 @@ class BrickMacroService {
       final requestData = await _buildBrickRequestData(
         segments: segments,
         segmentOrder: segmentOrder,
-        isFasted: isFasted,
         preActivityMinutes: preActivityMinutes,
         overrides: overrides,
       );
@@ -377,7 +376,6 @@ class BrickMacroService {
   Future<Map<String, dynamic>> _buildBrickRequestData({
     required List<BrickSegment> segments,
     required List<String> segmentOrder,
-    required bool isFasted,
     required int preActivityMinutes,
     NutritionTargetOverrides? overrides,
   }) async {
@@ -452,7 +450,6 @@ class BrickMacroService {
       if (knownSodiumConcMgL != null)
         'known_sodium_concentration_mg_l': knownSodiumConcMgL,
       'hours_before': preActivityMinutes / 60.0,
-      'is_fasted': isFasted,
       'intensity_distribution': {
         'zone_low': 0.7,
         'zone_mid': 0.2,
@@ -780,10 +777,14 @@ class BrickMacroService {
 
         parsedTransitions.add(
           BrickTransitionMacroTarget(
+            // Positional identity per brick.md R8; normalize legacy
+            // spellings, fall back to list position.
             transitionName:
-                transitionData['transition_name'] as String? ??
-                transitionData['transition_id'] as String? ??
-                'T${parsedTransitions.length + 1}',
+                normalizeTransitionName(
+                  transitionData['transition_name'] as String? ??
+                      transitionData['transition_id'] as String?,
+                ) ??
+                transitionKeyForIndex(parsedTransitions.length),
             carbsG: _toDouble(transitionData['carbs_g'], 'transition.carbs_g'),
             carbsLowG: _toDoubleOrNull(transitionData['carbs_low_g']),
             carbsHighG: _toDoubleOrNull(transitionData['carbs_high_g']),
@@ -819,6 +820,15 @@ class BrickMacroService {
             isTested: transitionData['is_tested'] as bool? ?? false,
             isTestedSodium:
                 transitionData['is_tested_sodium'] as bool? ?? false,
+            // T-1 transparency (transition-nutrition.md v1)
+            carbsRateGPerH: _toDoubleOrNull(
+              transitionData['carbs_rate_g_per_h'],
+            ),
+            effectiveGapMin: _toDoubleOrNull(
+              transitionData['effective_gap_min'],
+            ),
+            transitionMin: _toDoubleOrNull(transitionData['transition_min']),
+            sportPair: transitionData['sport_pair'] as String?,
           ),
         );
       }

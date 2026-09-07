@@ -100,9 +100,10 @@ class BrickSelectionController extends _$BrickSelectionController {
   void toggleActivity(Activity activity) {
     final currentState = state;
 
-    // Only swim / bike / run can join a brick. The UI already refuses to make
-    // ineligible rows selectable, but guard here too so no caller can build an
-    // invalid selection (Notion 3a7e3fdb).
+    // Only eligible legs can join a brick (brick.md R3/R5: swim/bike/run,
+    // not already a brick, not skipped). The UI already refuses to make
+    // ineligible rows selectable, but guard here too so no caller can build
+    // an invalid selection.
     if (!activity.isBrickEligible) return;
 
     final selectedIds = List<String>.from(currentState.selectedActivityIds);
@@ -133,10 +134,10 @@ class BrickSelectionController extends _$BrickSelectionController {
 
   /// Reverse the leg order of the current selection.
   ///
-  /// Brick redesign (Notion 3a7e3fdb, step 2 — "Pick legs, set order"):
-  /// "Swap reverses leg order." The selection order defines the brick's
-  /// segment order, so reversing the list is the whole operation; the 1/2/3
-  /// badges and the rail preview follow from it.
+  /// brick.md R6 (ratified Xuan 2026-08-31): leg order = pick order; "Swap
+  /// reverses it." The selection order defines the brick's segment order, so
+  /// reversing the list is the whole operation; the 1/2/3 badges and the rail
+  /// preview follow from it.
   void swapOrder() {
     final current = state;
     if (current.selectedActivityIds.length < 2) return;
@@ -148,11 +149,10 @@ class BrickSelectionController extends _$BrickSelectionController {
 
   /// Check if brick can be created from current selection
   ///
-  /// Requirements (from /docs/brick/ui-flow.md):
-  /// 1. Minimum 2 activities selected
-  /// 2. Maximum 3 activities selected
-  /// 3. Activities must be different sports
-  /// 4. Activities must be on same calendar day
+  /// Requirements (docs/ssot/spec/domain/brick.md, RATIFIED v1):
+  /// 1. R4 — minimum 2, maximum 3 legs (the max-3 cap stands — ruled)
+  /// 2. R3/R5 — every leg eligible (swim/bike/run, not a brick, not skipped)
+  /// 3. Activities must be on the same calendar day
   ///
   /// Returns true if all requirements are met
   bool canCreateBrick() {
@@ -168,12 +168,6 @@ class BrickSelectionController extends _$BrickSelectionController {
     // Only the three triathlon disciplines are groupable.
     if (activities.any((a) => !a.isBrickEligible)) {
       return false;
-    }
-
-    // Check that all sports are different
-    final sportTypes = activities.map((a) => a.activityType).toSet();
-    if (sportTypes.length != activities.length) {
-      return false; // Duplicate sport found
     }
 
     // Check that all activities are on same calendar day
@@ -242,7 +236,6 @@ class BrickSelectionController extends _$BrickSelectionController {
   /// Throws:
   /// - BrickValidationException.minimumSports() if less than 2 activities selected
   /// - BrickValidationException.maximumActivities() if more than 3 activities selected
-  /// - BrickValidationException.duplicateSports() if activities have duplicate sports
   /// - BrickValidationException.sameDayRequired() if activities are on different days
   void validateSelection() {
     final currentState = state;
@@ -258,16 +251,13 @@ class BrickSelectionController extends _$BrickSelectionController {
       throw BrickValidationException.maximumActivities();
     }
 
-    // Only the three triathlon disciplines are groupable.
+    // brick.md R3/R5: every leg must be eligible (sport set, not a brick,
+    // not skipped — the skipped case is D-007, fixed by R5).
     if (activities.any((a) => !a.isBrickEligible)) {
       throw BrickValidationException.ineligibleSport();
     }
 
-    // Check that all sports are different
-    final sportTypes = activities.map((a) => a.activityType).toSet();
-    if (sportTypes.length != activities.length) {
-      throw BrickValidationException.duplicateSports();
-    }
+    // Same-sport legs are allowed (run + run + ride) — brick.md R2.
 
     // Check that all activities are on same calendar day
     if (activities.isNotEmpty) {
@@ -299,18 +289,12 @@ class BrickSelectionController extends _$BrickSelectionController {
 
     // Check minimum count
     if (activities.length < 2) {
-      return 'Select at least 2 activities from different sports';
+      return 'Select at least 2 workouts';
     }
 
     // Check maximum count
     if (activities.length > 3) {
       return 'Maximum 3 activities allowed per brick';
-    }
-
-    // Check that all sports are different
-    final sportTypes = activities.map((a) => a.activityType).toSet();
-    if (sportTypes.length != activities.length) {
-      return 'All activities must be different sports';
     }
 
     // Check that all activities are on same calendar day

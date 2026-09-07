@@ -110,6 +110,85 @@ class OfflineMacroCalculator {
     };
   }
 
+  // ===========================================================================
+  // TRANSITION CARBS — SSOT: docs/ssot/spec/fueling/transition-nutrition.md v1
+  // (RATIFIED Xuan 2026-09-01). Conformance vectors:
+  // docs/ssot/vectors/fueling/transition-nutrition.json.
+  // Twin: calculateTransitionCarbDose in
+  // supabase/functions/generate-macros-v4/brick-workout.ts — change both or
+  // neither.
+  // ===========================================================================
+
+  /// T-1 constants (spec §Constants — Mealvana design choices, notes L2/L3/L5).
+  static const double transitionPreBufferMin = 15.0;
+  static const Map<String, double> transitionSettleMin = {
+    'cycling': 10.0,
+    'running': 15.0,
+    // Oracle convention: the rate into a swim is 0, so the gap never matters.
+    'swimming': 0.0,
+  };
+
+  /// Flat by ratified default (Q-TN4 open: gut-scaled clamp).
+  static const int transitionClampG = 30;
+
+  /// Silent default when no stop time arrives (Q-TN3 open: form input).
+  static const double transitionMinDefault = 3.0;
+
+  /// The transition carb dose for the gap after segment [transitionIndex].
+  ///
+  /// T-1: `dose_g = clamp(round(rate_gph × effective_gap_min / 60), 0, 30)`;
+  /// band `[0, 30]` on every transition; 0 is a legitimate value.
+  ///
+  /// T-2 (rate source — no new rate math): the during-carbs core for the
+  /// NEXT segment — band keyed by cumulative event time THROUGH that
+  /// segment, gut multiplier, midpoint, next sport's ceiling. The brick
+  /// ×0.8 penalty and personal overrides do NOT apply here.
+  ///
+  /// T-3: a zero-intake previous leg (swim: ceiling 0) contributes its whole
+  /// duration to the gap INSTEAD OF the 15-min pre-buffer.
+  ///
+  /// T-4: whole grams (half-away-from-zero — Dart's `round()`).
+  static TransitionCarbDoseResult calculateTransitionCarbDose({
+    required List<TransitionDoseSegment> segments,
+    required int transitionIndex,
+    String gutTraining = 'moderate',
+    double? transitionMin,
+  }) {
+    final prev = segments[transitionIndex];
+    final next = segments[transitionIndex + 1];
+    final tMin = transitionMin ?? transitionMinDefault;
+
+    double cumThroughNextMin = 0.0;
+    for (int i = 0; i <= transitionIndex + 1; i++) {
+      cumThroughNextMin += segments[i].durationMin;
+    }
+    final band = getDurationCarbBand(cumThroughNextMin);
+    final gutMult = getGutTrainingMultiplier(gutTraining);
+    final midpoint = ((band[0] * gutMult) + (band[1] * gutMult)) / 2.0;
+    final nextSport = next.sport.toLowerCase();
+    final rate = math.min(midpoint, getSportCarbCeiling(nextSport).toDouble());
+
+    final prevSport = prev.sport.toLowerCase();
+    final leadInMin = getSportCarbCeiling(prevSport) == 0
+        ? prev.durationMin
+        : transitionPreBufferMin;
+    final settleMin =
+        transitionSettleMin[nextSport] ?? transitionSettleMin['running']!;
+    final effectiveGapMin = leadInMin + tMin + settleMin;
+
+    final rawDose = rate * effectiveGapMin / 60.0;
+    final dose = rawDose.round().clamp(0, transitionClampG);
+
+    return TransitionCarbDoseResult(
+      doseG: dose,
+      bandLowG: 0,
+      bandHighG: transitionClampG,
+      rateGPerH: rate,
+      effectiveGapMin: effectiveGapMin,
+      transitionMin: tMin,
+    );
+  }
+
   // ============================================================================
   // PRE-WORKOUT CARBOHYDRATE — SSOT: docs/ssot/spec/fueling/pre-workout-carbs.md v2
   // ============================================================================
@@ -186,6 +265,9 @@ class OfflineMacroCalculator {
     required double bodyWeightKg,
     required double timeBeforeWorkoutMin,
     required double workoutDurationMin,
+    // Retained solely because pre-workout-carbs@v2's ratified vectors pin
+    // D-001's zero path (vector fasted-180-65 + invariant 8); production
+    // never passes true (fasted retired, food-recommendation §7).
     bool isFasted = false,
   }) {
     assert(_crossSpecPinHolds, _crossSpecPinMessage);
@@ -243,18 +325,16 @@ class OfflineMacroCalculator {
         t <= windowMax &&
         workoutDurationMin >= citedMinWorkoutMin;
 
-    final double carbsLowG;
-    final double carbsHighG;
-    final String targetBasis;
-    if (inWindow) {
-      carbsLowG = carbBandLowGPerKg * bw;
-      carbsHighG = carbBandHighGPerKg * bw;
-      targetBasis = 'evidenced_band';
-    } else {
-      carbsLowG = total * (1.0 - tierTol);
-      carbsHighG = total * (1.0 + tierTol);
-      targetBasis = 'design_choice';
-    }
+    // RULED (Xuan, 2026-09-04) — IMPLEMENTED PENDING RATIFICATION
+    // (qa/intake/2026-09-04-pre-workout-carb-band-ruling.md): the plan band
+    // is target ± 12.5 % in ALL cases — publishing Thomas's full 1.0–4.0 g/kg
+    // evidence RANGE as the plan band gave a ~50 kg athlete a "50g–200g"
+    // slider around a 50 g target. `target_basis` still reports the evidence
+    // window (it describes the TARGET derivation); only the band collapses.
+    // Twin: generate-macros-v4/pre-workout.ts (same ruling, same commit).
+    final carbsLowG = total * (1.0 - tierTol);
+    final carbsHighG = total * (1.0 + tierTol);
+    final targetBasis = inWindow ? 'evidenced_band' : 'design_choice';
 
     return PreWorkoutCarbResult(
       carbsG: total,
@@ -316,7 +396,10 @@ class OfflineMacroCalculator {
   static Map<String, dynamic> calculatePreWorkoutTargets({
     required double weightKg,
     required double hoursBefore,
-    required bool isFasted,
+    // Retained solely because pre-workout-carbs@v2's ratified vectors pin
+    // D-001's zero path; production never passes true (fasted retired,
+    // food-recommendation §7).
+    bool isFasted = false,
     String sweatSodiumCat = 'average',
     String envLabel = 'normal',
     double? workoutDurationMin,
@@ -454,21 +537,24 @@ class OfflineMacroCalculator {
   // ============================================================================
 
   /// Post-workout carbs (mirrors calculatePostWorkoutCarbs).
+  ///
+  /// The fasted 1.2x boost is gone with the fasted product state
+  /// (food-recommendation §7 / D-001, Xuan 2026-09-03).
   static int calculatePostWorkoutCarbs({
     required double weightKg,
     required double durationH,
-    required bool isFasted,
   }) {
     final durationMultiplier = durationH > 2 ? 1.2 : 1.0;
-    final fastedMultiplier = isFasted ? 1.2 : 1.0;
-    return (weightKg * durationMultiplier * fastedMultiplier).round();
+    return (weightKg * durationMultiplier).round();
   }
 
   /// Post-workout protein (mirrors calculatePostWorkoutProtein).
+  ///
+  /// The fasted +0.05 g/kg bump is gone with the fasted product state
+  /// (food-recommendation §7 / D-001, Xuan 2026-09-03).
   static int calculatePostWorkoutProtein({
     required double weightKg,
     required double durationH,
-    required bool isFasted,
   }) {
     double proteinPerKg;
     if (durationH <= 0.75) {
@@ -480,7 +566,6 @@ class OfflineMacroCalculator {
     } else {
       proteinPerKg = 0.40;
     }
-    if (isFasted) proteinPerKg += 0.05;
     return math.min(40, math.max(20, (weightKg * proteinPerKg).round()));
   }
 
@@ -638,7 +723,6 @@ class OfflineMacroCalculator {
     required String gutTraining,
     required int age, // kept for API compatibility (unused)
     required String gender, // kept for API compatibility (unused)
-    bool isFasted = false,
   }) {
     final weightKg = weightUnit.toLowerCase() == 'kg'
         ? weight
@@ -652,7 +736,6 @@ class OfflineMacroCalculator {
       distanceMiles: distanceMiles,
       paceMinPerMile: paceMinPerMile,
       hoursBefore: timeBeforeRunMin / 60.0,
-      isFasted: isFasted,
       gutTraining: gutTraining,
     );
     return {'success': true, 'macros': macros};
@@ -682,7 +765,6 @@ class OfflineMacroCalculator {
     required double distanceMiles,
     required double paceMinPerMile,
     required double hoursBefore,
-    required bool isFasted,
     required String gutTraining,
     String sweatRateCategory = 'medium',
     String sweatSodiumCat = 'average',
@@ -708,7 +790,6 @@ class OfflineMacroCalculator {
       met: met,
       speedKph: speedKph,
       hoursBefore: hoursBefore,
-      isFasted: isFasted,
       gutTraining: gutTraining,
       sweatRateCategory: sweatRateCategory,
       sweatSodiumCat: sweatSodiumCat,
@@ -727,7 +808,6 @@ class OfflineMacroCalculator {
     required double speedMph,
     required String terrain,
     required double hoursBefore,
-    required bool isFasted,
     required String gutTraining,
     String sweatRateCategory = 'medium',
     String sweatSodiumCat = 'average',
@@ -753,7 +833,6 @@ class OfflineMacroCalculator {
       met: met,
       speedKph: speedKph,
       hoursBefore: hoursBefore,
-      isFasted: isFasted,
       gutTraining: gutTraining,
       sweatRateCategory: sweatRateCategory,
       sweatSodiumCat: sweatSodiumCat,
@@ -798,9 +877,7 @@ class OfflineMacroCalculator {
       durationH: durationH,
       met: met,
       speedKph: null,
-      // Swimming doesn't support fasted in the service, always false
       hoursBefore: hoursBefore,
-      isFasted: false,
       gutTraining: 'moderate',
       sweatRateCategory: sweatRateCategory,
       sweatSodiumCat: sweatSodiumCat,
@@ -825,7 +902,6 @@ class OfflineMacroCalculator {
     required double met,
     required double? speedKph,
     required double hoursBefore,
-    required bool isFasted,
     required String gutTraining,
     required String sweatRateCategory,
     required String sweatSodiumCat,
@@ -839,7 +915,6 @@ class OfflineMacroCalculator {
     final pre = calculatePreWorkoutTargets(
       weightKg: weightKg,
       hoursBefore: hoursBefore,
-      isFasted: isFasted,
       sweatSodiumCat: sweatSodiumCat,
       // Lets the carbohydrate plan band claim Thomas 2016's cited [1,4] g/kg
       // when the session is >= 60 min. SSOT: pre-workout-carbs.md v2.
@@ -873,12 +948,10 @@ class OfflineMacroCalculator {
     final postCarbs = calculatePostWorkoutCarbs(
       weightKg: weightKg,
       durationH: durationH,
-      isFasted: isFasted,
     );
     final postProtein = calculatePostWorkoutProtein(
       weightKg: weightKg,
       durationH: durationH,
-      isFasted: isFasted,
     );
     final postFat = calculatePostWorkoutFat(weightKg);
     final postHydration = calculatePostWorkoutHydration(
@@ -1602,25 +1675,18 @@ class OfflineMacroCalculator {
       }
     }
 
-    // Detect transitions
+    // Detect transitions — identity is POSITIONAL `T{i+1}` per brick.md R8
+    // (fixes D-008: the sport-pair naming collided on repeat legs and made a
+    // plain bike→run brick emit T2); the sport pair survives as a display
+    // label only.
     final transitions = <_BrickTransitionRaw>[];
     for (int i = 0; i < segments.length - 1; i++) {
-      final afterSport = segments[i].sport.toLowerCase();
-      final beforeSport = segments[i + 1].sport.toLowerCase();
-      String transitionName;
-      if (afterSport == 'swimming' && beforeSport == 'cycling') {
-        transitionName = 'T1';
-      } else if (afterSport == 'cycling' && beforeSport == 'running') {
-        transitionName = 'T2';
-      } else {
-        transitionName = 'T${i + 1}';
-      }
       transitions.add(
         _BrickTransitionRaw(
           index: i,
-          name: transitionName,
-          afterSport: afterSport,
-          beforeSport: beforeSport,
+          name: 'T${i + 1}',
+          afterSport: segments[i].sport.toLowerCase(),
+          beforeSport: segments[i + 1].sport.toLowerCase(),
         ),
       );
     }
@@ -1791,6 +1857,7 @@ class OfflineMacroCalculator {
           .round();
       return BrickHydrationTransitionResult(
         transitionName: t.name,
+        sportPair: '${t.afterSport}→${t.beforeSport}',
         afterSport: t.afterSport,
         beforeSport: t.beforeSport,
         waterMl: _transitionFluidMl,
@@ -2066,17 +2133,52 @@ class BrickHydrationSegmentResult {
   final double effectiveSweatRateLph;
 }
 
+/// Segment descriptor for [OfflineMacroCalculator.calculateTransitionCarbDose].
+class TransitionDoseSegment {
+  const TransitionDoseSegment({required this.sport, required this.durationMin});
+
+  /// 'running' | 'cycling' | 'swimming'.
+  final String sport;
+  final double durationMin;
+}
+
+/// Result of [OfflineMacroCalculator.calculateTransitionCarbDose] —
+/// transition-nutrition.md T-1. [doseG] is whole grams (T-4); the band is
+/// `[0, 30]` on every transition.
+class TransitionCarbDoseResult {
+  const TransitionCarbDoseResult({
+    required this.doseG,
+    required this.bandLowG,
+    required this.bandHighG,
+    required this.rateGPerH,
+    required this.effectiveGapMin,
+    required this.transitionMin,
+  });
+
+  final int doseG;
+  final int bandLowG;
+  final int bandHighG;
+  final double rateGPerH;
+  final double effectiveGapMin;
+  final double transitionMin;
+}
+
 /// Per-transition output from [OfflineMacroCalculator.calculateBrickHydration].
 class BrickHydrationTransitionResult {
   const BrickHydrationTransitionResult({
     required this.transitionName,
+    required this.sportPair,
     required this.afterSport,
     required this.beforeSport,
     required this.waterMl,
     required this.sodiumMg,
   });
 
+  /// Positional identity `T{i+1}` — brick.md R8 (fixes D-008).
   final String transitionName;
+
+  /// Display label only, no identity (brick.md R8), e.g. 'cycling→running'.
+  final String sportPair;
   final String afterSport;
   final String beforeSport;
   final int waterMl;

@@ -37,6 +37,8 @@ import 'package:mealvana_endurance/shared/services/preferences_service.dart';
 import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 import '../helpers/widget_test_harness.dart';
+import 'package:mealvana_endurance/features/formula_kit/application/athlete_conflict_profile_provider.dart';
+import 'package:mealvana_endurance/features/formula_kit/domain/formula_profile_conflict.dart';
 
 // ─── Sample view models ────────────────────────────────────────────────────
 
@@ -218,6 +220,10 @@ Future<void> _pumpWithRouter(
     ProviderScope(
       overrides: [
         mockAppExternalDeps(),
+        // FP: stub the athlete conflict profile (the cards watch it).
+        athleteConflictProfileProvider.overrideWith(
+          (ref) async => const AthleteConflictProfile(),
+        ),
         appConfigProvider.overrideWithValue(
           appConfig ?? AppConfig.forTesting(),
         ),

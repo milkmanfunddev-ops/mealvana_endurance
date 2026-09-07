@@ -8,6 +8,19 @@ part of 'macro_explanation_service.dart';
 // the transparency card (which only knows the `unit` suffix) displays the
 // right magnitude. See audit doc `docs/features/sodium_hydration/2026-04-22_audit.md`
 // U1 for the bug this fixes (e.g. `1688mL` rendering as `1688oz`).
+// Digest §5 display rounding for the DRAWERS (25-ml grid). Kept private to
+// the explanation layer: the BEFORE card itself displays whole fl oz per R-01
+// (`pre_workout_display_units.dart`); notes §6 is not folded this iteration
+// (deferred-ledger P5), so the drawer copy stays on its own grid until the
+// fine-print / explanation SSOT lands.
+double round25(double ml) => (ml / 25).round() * 25.0;
+double floor25(double ml) => (ml / 25).floorToDouble() * 25.0;
+double ceil25(double ml) => (ml / 25).ceilToDouble() * 25.0;
+({double low, double high})? roundFluidBand(double? lowMl, double? highMl) {
+  if (lowMl == null || highMl == null) return null;
+  return (low: floor25(lowMl), high: ceil25(highMl));
+}
+
 double _mlToDisplay(double ml, bool useImperial) =>
     useImperial ? (ml * 0.033814).roundToDouble() : ml;
 
@@ -67,7 +80,7 @@ extension _$FluidExt on MacroExplanationService {
     // Display rounding lives here, never in the engine — the engine's 487.5 ml
     // is exact, and printing it raw reads as though it were measured.
     // Digest §5: target `round25`, band `[floor25(low), ceil25(high)]`.
-    final fluidsMl = round25(pre.fluidsMl).round();
+    final fluidsMl = round25(pre.fluidsMl ?? 0).round();
     final roundedBand = roundFluidBand(pre.fluidsLowMl, pre.fluidsHighMl);
     final rangeLowMl =
         roundedBand?.low.round() ?? floor25(fluidsMl * 0.8).round();
@@ -170,7 +183,9 @@ extension _$FluidExt on MacroExplanationService {
       // not from a constant restated here — a restated constant is how the
       // card ended up quoting a 5–7 ml/kg band the engine had stopped using.
       // Hydration v6's cited regime is 7.5 ml/kg with a [5, 12] ml/kg band.
-      final rawPerKg = bodyWeightKg > 0 ? pre.fluidsMl / bodyWeightKg : 7.5;
+      final rawPerKg = bodyWeightKg > 0
+          ? (pre.fluidsMl ?? 0) / bodyWeightKg
+          : 7.5;
       final mlPerKg = _trimZero(rawPerKg);
       // Band ends come from the engine and are rounded outward for display.
       final floorMl = rangeLowMl;
@@ -1345,6 +1360,13 @@ extension _$FluidExt on MacroExplanationService {
   // TRANSITION FLUID
   // ---------------------------------------------------------------------------
 
+  // SSOT: transition-card.md TC-4 + transition-nutrition.md T-5 (RATIFIED
+  // Xuan 2026-09-01): fluid is a TALLY, never a target \u2014 no position stand
+  // or practitioner source suggests a fixed transition fluid amount; the
+  // continuous during schedule owns hydration and a drink taken here is
+  // *placement* of that schedule. No formula line may imply a target. Copy
+  // is sport-aware or neutral (TC-5 \u2014 the hardwired swim/wetsuit wording was
+  // the F-D defect).
   NutrientTransparencyData _transitionFluidTransparency({
     required ExplanationPhase phase,
     required MacroTargets macroTargets,
@@ -1352,14 +1374,18 @@ extension _$FluidExt on MacroExplanationService {
   }) {
     final isT1 = phase == ExplanationPhase.transition1;
     final transitionName = isT1 ? 'T1' : 'T2';
+    final tIdx = isT1 ? 0 : 1;
 
     final transitions = macroTargets.brickPhaseTargets?.transitions;
-    final tIdx = isT1 ? 0 : 1;
     final transition = (transitions != null && tIdx < transitions.length)
         ? transitions[tIdx]
         : null;
-    final waterMl = transition?.waterMl.round() ?? 300;
     final isTested = transition?.isTested ?? false;
+
+    final pair = transitionSportPair(macroTargets, tIdx);
+    final nextLegClause = pair == null
+        ? 'the next leg'
+        : 'the ${pair.to} leg';
 
     return NutrientTransparencyData(
       nutrientLabel: 'Fluids',
@@ -1368,42 +1394,28 @@ extension _$FluidExt on MacroExplanationService {
       phase: 'transition',
       isTested: isTested,
       tldrBody:
-          'Transitions are brief, fixed hydration windows \u2014 not a '
-          'calculated segment. The ${_fmtMlAmount(waterMl, useImperial)} target '
-          "isn't derived from your sweat rate; it's a conservative bolus sized "
-          'for what you can comfortably take in during a 2\u20135 minute stop. '
-          '**$transitionName** '
-          '${isT1 ? "bridges the swim gap and offsets wetsuit heat." : "is your last easy opportunity before running GI tolerance drops."}',
-      tldrLines: [
-        FormulaLine([
-          fAccent('$transitionName '),
-          fOp('= '),
-          fAccent('fixed ${_fmtMlAmount(waterMl, useImperial)} '),
-          fOp('\u2192 '),
-          fResult(_fmtMlAmount(waterMl, useImperial)),
-        ]),
-      ],
-      calculationSections: _buildTransitionFluidCalculationSections(
-        waterMl: waterMl,
-        isT1: isT1,
-        useImperial: useImperial,
-      ),
+          'There is no transition-specific fluid target \u2014 the figure on the '
+          'card is a tally of what your planned foods deliver here. Your '
+          'continuous hydration schedule owns fluids; a drink taken in '
+          '$transitionName is placement of that schedule before '
+          '$nextLegClause, not an extra requirement.',
+      tldrLines: const [],
+      calculationSections: const [],
       storySections: [
         StorySection(
-          question: 'Why is the transition fluid fixed at 300 mL?',
+          question: 'Why is there no transition fluid target?',
           answer:
-              'Transition windows are too short to calculate a precise sweat-rate-based '
-              'target. 300 mL is a conservative bolus sized to what most athletes can '
-              'comfortably consume and absorb during a 2\u20135 minute stop without '
-              'causing GI distress when movement resumes.',
-          citation:
-              'Consensus recommendation \u2014 USA Triathlon / ITU nutrition guidelines',
-          dataChips: ['T1/T2 fixed \u00b7 300 mL', 'Confidence \u00b7 LOW'],
+              'No position stand or practitioner source suggests a fixed '
+              'transition fluid amount \u2014 the closest is the "gel with a sip '
+              'of water" cue, which is placement guidance, not a quantity. '
+              'Your per-leg hydration rates already cover the event; '
+              'whatever you drink here simply counts toward them.',
+          dataChips: const ['No target \u00b7 tally only (T-5)'],
         ),
       ],
-      targetGrams: _mlToDisplay(waterMl.toDouble(), useImperial),
-      rangeLow: _mlToDisplayOrNull(transition?.waterLowMl, useImperial),
-      rangeHigh: _mlToDisplayOrNull(transition?.waterHighMl, useImperial),
+      targetGrams: null,
+      rangeLow: null,
+      rangeHigh: null,
       sportLabel: transitionName,
     );
   }

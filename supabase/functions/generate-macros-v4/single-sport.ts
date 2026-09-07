@@ -587,7 +587,9 @@ export interface MacroInputV4 {
   age?: number;
   gender?: string;
   hours_before: number;
-  is_fasted: boolean;
+  /** RETIRED (food-recommendation §7, D-001, 2026-09-03). Tolerated on the
+   * wire for installed builds; never read. */
+  is_fasted?: boolean;
   diet?: string;
   intensity_distribution?: {
     zone_low?: number;
@@ -624,6 +626,10 @@ export interface MacroInputV4 {
     pace_minutes_per_mile?: number;
   }>;
   segment_order?: string[];
+  /** Measured/planned stop time per transition, minutes. The creation form
+   * collects none today (Q-TN3 open) — absent ⇒ the engine's ratified
+   * default 3 (transition-nutrition.md §Constants). A provided value wins. */
+  transition_minutes?: number;
   gut_training: string;
   sweat_rate_category: string;
   sweat_sodium: string; // 'low' | 'average' | 'high' (or legacy 'medium' = alias for 'average')
@@ -768,7 +774,7 @@ export async function calculateMacrosV4(
   const preTargetsLegacy = calculatePreWorkoutTargets(
     weightKg,
     input.hours_before,
-    input.is_fasted,
+    false, // is_fasted retired (§7) — tolerated on the wire, ignored
     input.sweat_sodium ?? "average",
     envLabel,
     durationMin,
@@ -799,7 +805,7 @@ export async function calculateMacrosV4(
     bodyWeightKg: weightKg,
     timeBeforeWorkoutMin: input.hours_before * 60,
     workoutDurationMin: durationMin,
-    isFasted: input.is_fasted,
+    // is_fasted retired (§7) — tolerated on the wire, ignored.
   });
 
   const preSelections = selectPreWorkoutFoods(
@@ -841,12 +847,12 @@ export async function calculateMacrosV4(
   const postCarbs = calculatePostWorkoutCarbs(
     weightKg,
     durationH,
-    input.is_fasted,
+    false, // is_fasted retired (§7) — tolerated on the wire, ignored
   );
   const postProtein = calculatePostWorkoutProtein(
     weightKg,
     durationH,
-    input.is_fasted,
+    false, // is_fasted retired (§7) — tolerated on the wire, ignored
   );
   const postFat = calculatePostWorkoutFat(weightKg);
   const postHydration = calculatePostWorkoutHydration(

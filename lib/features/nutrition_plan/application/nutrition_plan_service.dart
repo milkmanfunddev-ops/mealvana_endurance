@@ -138,7 +138,8 @@ class NutritionPlanService {
           proteinG: macroTargets.preRun.proteinG,
           fatG: macroTargets.preRun.fatCapG,
           sodiumMg: macroTargets.preRun.sodiumMg,
-          waterMl: macroTargets.preRun.fluidsMl,
+          // Gate path: no fluid target → no water to explode into foods.
+          waterMl: macroTargets.preRun.fluidsMl ?? 0,
           carbsLowG: macroTargets.preRun.carbsLowG,
           carbsHighG: macroTargets.preRun.carbsHighG,
           proteinLowG: macroTargets.preRun.proteinLowG,
@@ -564,11 +565,11 @@ class NutritionPlanService {
           sodiumMg: pre.sodiumMg ?? 0,
           timing: 'Finish eating before the activity',
         ),
-      if (pre.fluidsMl > 0)
+      if ((pre.fluidsMl ?? 0) > 0)
         _waterItem(
           id: 'fallback-before-water',
           name: 'Water',
-          ml: pre.fluidsMl,
+          ml: pre.fluidsMl!,
           timing: 'Sip before the activity',
         ),
     ];
@@ -695,7 +696,8 @@ class NutritionPlanService {
         (pre.sodiumMg?.round() ?? 0) +
         during.sodiumTotalMg.round() +
         post.sodiumMg.round();
-    final totalFluidsMl = pre.fluidsMl + during.fluidTotalMl + post.fluidsMl;
+    final totalFluidsMl =
+        (pre.fluidsMl ?? 0) + during.fluidTotalMl + post.fluidsMl;
 
     return NutritionPlan(
       id: 'local-fallback-${const Uuid().v4()}',

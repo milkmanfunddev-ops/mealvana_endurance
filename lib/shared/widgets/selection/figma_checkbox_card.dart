@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../theme/kyle_design/app_colors.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
 /// Checkbox card widget matching Figma onboarding design
 ///
@@ -60,7 +61,7 @@ class FigmaCheckboxCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected ? selectedBackground : unselectedBackground,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: borderColor, width: isSelected ? 2 : 1),
         ),
         child: Row(

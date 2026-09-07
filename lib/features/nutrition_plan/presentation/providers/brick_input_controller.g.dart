@@ -11,9 +11,9 @@ part of 'brick_input_controller.dart';
 /// Brick Input Controller
 ///
 /// Manages brick workout form state including:
-/// - Sport selection (which sports are included)
-/// - Segment order (drag to reorder)
-/// - Form inputs for each sport segment
+/// - The ordered list of legs (add / remove / drag to reorder; a sport may
+///   repeat)
+/// - Form inputs for each leg
 ///
 /// FOA COMPLIANT: Contains form state management only, business logic
 /// delegated to services.
@@ -24,9 +24,9 @@ const brickInputControllerProvider = BrickInputControllerProvider._();
 /// Brick Input Controller
 ///
 /// Manages brick workout form state including:
-/// - Sport selection (which sports are included)
-/// - Segment order (drag to reorder)
-/// - Form inputs for each sport segment
+/// - The ordered list of legs (add / remove / drag to reorder; a sport may
+///   repeat)
+/// - Form inputs for each leg
 ///
 /// FOA COMPLIANT: Contains form state management only, business logic
 /// delegated to services.
@@ -35,9 +35,9 @@ final class BrickInputControllerProvider
   /// Brick Input Controller
   ///
   /// Manages brick workout form state including:
-  /// - Sport selection (which sports are included)
-  /// - Segment order (drag to reorder)
-  /// - Form inputs for each sport segment
+  /// - The ordered list of legs (add / remove / drag to reorder; a sport may
+  ///   repeat)
+  /// - Form inputs for each leg
   ///
   /// FOA COMPLIANT: Contains form state management only, business logic
   /// delegated to services.
@@ -69,14 +69,14 @@ final class BrickInputControllerProvider
 }
 
 String _$brickInputControllerHash() =>
-    r'61717f0966e4d82d5de183ea05b4b571d6a45efc';
+    r'08dd0734ab0a749608be6c33e7e0d509801cde87';
 
 /// Brick Input Controller
 ///
 /// Manages brick workout form state including:
-/// - Sport selection (which sports are included)
-/// - Segment order (drag to reorder)
-/// - Form inputs for each sport segment
+/// - The ordered list of legs (add / remove / drag to reorder; a sport may
+///   repeat)
+/// - Form inputs for each leg
 ///
 /// FOA COMPLIANT: Contains form state management only, business logic
 /// delegated to services.

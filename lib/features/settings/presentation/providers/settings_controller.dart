@@ -8,6 +8,8 @@ import '../../../auth/application/supabase_auth_service.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../../content/application/content_service.dart';
+import '../../../daily_macros/application/daily_macro_service.dart';
+import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../../nutrition_plan/domain/nutrition_target_overrides.dart';
@@ -646,6 +648,19 @@ class SettingsController extends _$SettingsController {
       // Guard against the notifier being disposed during the async gap above.
       if (ref.mounted) {
         ref.invalidate(currentUserProvider);
+
+        // Q-016: sex / birthday / height / weight are engine inputs — a
+        // MANUAL write to any of them invalidates today + future cached
+        // daily plans (never past) and refreshes the visible day.
+        if (DailyMacroService.engineInputsDiffer(
+          existingProfile,
+          updatedProfile,
+        )) {
+          await ref
+              .read(dailyMacroServiceProvider)
+              .invalidateForManualInputChange(updatedProfile.id);
+          if (ref.mounted) ref.invalidate(dailyMacrosControllerProvider);
+        }
       }
 
       return currentState.copyWith(

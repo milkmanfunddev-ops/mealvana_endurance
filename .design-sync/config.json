@@ -1,0 +1,182 @@
+{
+  "projectId": "c4ad6c0d-189d-4886-888d-d30addf0dfcf",
+  "shape": "package",
+  "pkg": "@mealvana/endurance-ds",
+  "globalName": "MealvanaDS",
+  "buildCmd": "cd design/ds && npm run build",
+  "srcDir": "src",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": "dist/styles.css",
+  "extraFonts": [
+    "fonts.css"
+  ],
+  "docsDir": "docs",
+  "overrides": {
+    "ActivityRow": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "Card": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "Dropdown": {
+      "cardMode": "column"
+    },
+    "FoodRow": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "Icon": {
+      "cardMode": "column"
+    },
+    "IconChip": {
+      "cardMode": "column"
+    },
+    "InputField": {
+      "cardMode": "column"
+    },
+    "MacroRing": {
+      "cardMode": "column"
+    },
+    "NutritionalTargetsCard": {
+      "cardMode": "column"
+    },
+    "PrimaryButton": {
+      "cardMode": "column"
+    },
+    "ScreenHeader": {
+      "cardMode": "column"
+    },
+    "SecondaryButton": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "SegmentedControl": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "SelectionButton": {
+      "cardMode": "column"
+    },
+    "Snackbar": {
+      "cardMode": "column"
+    },
+    "Stepper": {
+      "cardMode": "column"
+    },
+    "Switch": {
+      "cardMode": "column"
+    },
+    "TertiaryButton": {
+      "cardMode": "column"
+    },
+    "TripleAction": {
+      "cardMode": "column"
+    },
+    "NetBalanceCard": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "StatusPill": {
+      "cardMode": "column"
+    },
+    "TabBar": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "Timeline": {
+      "cardMode": "column",
+      "viewport": "520x2200"
+    },
+    "ViewTabs": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "WeekStrip": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "WorkoutCard": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "BreakdownTable": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "EnergyRow": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "EquationCard": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "HeroNumber": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "InfoIcon": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "MacroDonut": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "PagerDots": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "SheetHeader": {
+      "cardMode": "column",
+      "viewport": "520x2400"
+    },
+    "SourceDot": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "StackedBar": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "SourceLegend": {
+      "cardMode": "column",
+      "viewport": "520x600"
+    },
+    "Banner": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "DetailHeader": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "FuelItem": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "FuelStep": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "HeroImageCard": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "MacroStat": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    },
+    "PhaseCard": {
+      "cardMode": "column",
+      "viewport": "520x2600"
+    },
+    "ScheduleBlock": {
+      "cardMode": "column",
+      "viewport": "520x1000"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
