@@ -2,22 +2,23 @@
 ///
 /// Spec: `docs/ssot/spec/design/components/date-header.md` **v1** (RATIFIED
 /// Xuan 2026-09-06, ruling-desk block; ships as `home-shell@v1`). Material:
-/// `docs/ssot/spec/design/tokens.md` §Materials — the COMPACT row carries
-/// NO material of its own; only its circular buttons take the `glass`
-/// recipe (RULED Xuan 2026-09-06 #2, on-device review — reverses the
-/// same-day row-takes-glass ruling; the export's blur-14 fade stays
-/// superseded, and no band replaces it). Companion artifact: the archived
-/// home-shell export — illustrates; the spec governs.
+/// `docs/ssot/spec/design/tokens.md` §Materials — the COMPACT zone renders
+/// the progressive blackberry dissolve ([GlassTopFade], the export's drawn
+/// treatment) with only the circular buttons taking the `glass` recipe as
+/// floating chrome (RULED Xuan 2026-09-06 #3, Bevel-reference review; #2
+/// had removed the glass band, #3 reinstates the export's fade as the
+/// blend). Companion artifact: the archived home-shell export —
+/// illustrates; the spec governs.
 ///
 /// Contracts held here:
 /// * **Q1 states** — `REST`: one Sansita page-title line, tappable, gear
 ///   right. Title copy: "Today, {Month D} ˅" on the current day,
 ///   "{Weekday}, {Month D} ˅" otherwise (weekday variant pinned
 ///   2026-09-06 — the weekday replaces "Today", nothing else changes).
-///   `COMPACT`: sticky bandless row — floating glass calendar button left,
-///   centred short date ("Aug 31, 2026"), floating glass gear right;
-///   content scrolls under the buttons and the date directly. Scroll
-///   thresholds are the composing screen's, pinned by
+///   `COMPACT`: sticky dissolve zone — floating glass calendar button left,
+///   centred short date ("Aug 31, 2026"), floating glass gear right, over
+///   the progressive fade; content blurs + dims gradually as it scrolls
+///   beneath. Scroll thresholds are the composing screen's, pinned by
 ///   `home-shell.gestures.yaml` (dh3), never prose.
 /// * **Summon parity (RULED)** — the REST title tap and the COMPACT
 ///   calendar button summon the SAME calendar sheet: both paths call the
@@ -232,12 +233,27 @@ class KyleDateHeader extends StatelessWidget {
 
   // ---- COMPACT ----
   Widget _compactRow(BuildContext context) {
-    // RULED (Xuan, 2026-09-06 #2, on-device review — reverses the same-day
-    // row-takes-glass ruling): the compact row carries NO material of its
-    // own; only its circular buttons take the glass recipe. No band, no
-    // fade — content scrolls under the floating buttons and the date.
+    // RULED (Xuan, 2026-09-06 #3, Bevel-reference review): the compact zone
+    // renders the export's drawn treatment — a progressive blackberry
+    // dissolve ([GlassTopFade]: content blurs and dims gradually, no band,
+    // no edge) with the floating glass buttons and the date on top. (#2
+    // removed the glass band; #3 adds the dissolve back — the fade the
+    // export always drew.)
     return SizedBox(
       key: const ValueKey('kyle_date_header.compact'),
+      height: compactRowHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Positioned(top: 0, left: 0, right: 0, child: GlassTopFade()),
+          _compactControls(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _compactControls(BuildContext context) {
+    return SizedBox(
       height: compactRowHeight,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),

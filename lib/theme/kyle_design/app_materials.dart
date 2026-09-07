@@ -101,6 +101,26 @@ class AppMaterials {
   /// displacement, easing the distortion back to identity at the lens edge.
   static const double lensFalloffPx = 8.0;
 
+  // ---- top-fade dissolve (compact header zone; RULED Xuan 2026-09-06 #3,
+  // Bevel-reference review — reinstates the export's drawn treatment) ----
+  /// Total height of the dissolve zone (export-exact: 104 px over the 64 px
+  /// row). Content blurs and dims progressively as it scrolls beneath —
+  /// no band, no edge.
+  static const double topFadeHeight = 104.0;
+
+  /// Peak blur at the very top of the dissolve (export: blur 14), easing to
+  /// zero down the zone via stacked strips.
+  static const double topFadeBlurSigma = 14.0;
+
+  /// The dim gradient: `blackberry` 85% → 55% at half → transparent
+  /// (export-exact stops).
+  static final List<Color> topFadeGradient = [
+    AppColors.blackberry.withValues(alpha: 0.85),
+    AppColors.blackberry.withValues(alpha: 0.55),
+    AppColors.blackberry.withValues(alpha: 0.0),
+  ];
+  static const List<double> topFadeGradientStops = [0.0, 0.5, 1.0];
+
   // ---- calendar-sheet cell channels (calendar-sheet.md Q1/Q2) ----
   /// Tint slot, BINARY v1: the warm glow of a day with ≥ 1 athlete food log.
   /// Export-exact values (the ratified walk's "warm glow, not a stain" — a

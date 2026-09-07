@@ -62,10 +62,7 @@ class GlassSurface extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppMaterials.glassFillTop,
-              AppMaterials.glassFillBottom,
-            ],
+            colors: [AppMaterials.glassFillTop, AppMaterials.glassFillBottom],
           ),
         ),
         child: child,
@@ -98,8 +95,8 @@ class GlassSheetSurface extends StatelessWidget {
   final Widget? child;
 
   static BorderRadius get topRadius => const BorderRadius.vertical(
-        top: Radius.circular(AppMaterials.sheetTopRadius),
-      );
+    top: Radius.circular(AppMaterials.sheetTopRadius),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -143,9 +140,7 @@ class GlassRimPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
     // Inset by half the stroke so the 1 px rim reads as an inner highlight.
-    final rrect = borderRadius
-        .toRRect(rect)
-        .deflate(AppMaterials.rimWidth / 2);
+    final rrect = borderRadius.toRRect(rect).deflate(AppMaterials.rimWidth / 2);
 
     final rim = Paint()
       ..style = PaintingStyle.stroke
@@ -169,12 +164,14 @@ class GlassRimPainter extends CustomPainter {
       ..color = AppMaterials.rimShadowBottom
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
     canvas.save();
-    canvas.clipRect(Rect.fromLTRB(
-      rect.left,
-      rect.bottom - rrect.blRadiusY - 2,
-      rect.right,
-      rect.bottom,
-    ));
+    canvas.clipRect(
+      Rect.fromLTRB(
+        rect.left,
+        rect.bottom - rrect.blRadiusY - 2,
+        rect.right,
+        rect.bottom,
+      ),
+    );
     canvas.drawRRect(rrect.shift(const Offset(0, -1)), shadow);
     canvas.restore();
   }
@@ -182,6 +179,63 @@ class GlassRimPainter extends CustomPainter {
   @override
   bool shouldRepaint(GlassRimPainter oldDelegate) =>
       oldDelegate.borderRadius != borderRadius;
+}
+
+/// The top-of-page dissolve zone (RULED Xuan 2026-09-06 #3 — the export's
+/// drawn compact-header treatment, the Bevel-style progressive fade):
+/// content scrolling beneath blurs and dims GRADUALLY toward the top — no
+/// band, no edge. Floating glass chrome sits on top of it.
+///
+/// Progressive blur is approximated with stacked backdrop strips of
+/// decreasing sigma (Flutter has no gradient-masked backdrop filter); the
+/// dim gradient rides over them and hides the strip seams.
+class GlassTopFade extends StatelessWidget {
+  const GlassTopFade({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const h = AppMaterials.topFadeHeight;
+    // (top offset, height, sigma) strips — strongest blur at the top.
+    const strips = [
+      (0.0, 40.0, AppMaterials.topFadeBlurSigma),
+      (40.0, 24.0, 8.0),
+      (64.0, 20.0, 4.0),
+      (84.0, 20.0, 1.5),
+    ];
+    return IgnorePointer(
+      child: SizedBox(
+        height: h,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            for (final (top, height, sigma) in strips)
+              Positioned(
+                top: top,
+                left: 0,
+                right: 0,
+                height: height,
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: AppMaterials.topFadeGradient,
+                  stops: AppMaterials.topFadeGradientStops,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// The lensing displacement of a traveling glass highlight (tokens
@@ -231,8 +285,10 @@ class GlassLens extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.all(
                     Radius.circular(
-                      (borderRadius.topLeft.y - falloff)
-                          .clamp(0, double.infinity),
+                      (borderRadius.topLeft.y - falloff).clamp(
+                        0,
+                        double.infinity,
+                      ),
                     ),
                   ),
                   child: BackdropFilter(

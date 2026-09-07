@@ -43,10 +43,8 @@ numbers below are **the contract** (DOM-verified against the home-shell design e
 app's own goldens (Flutter: `BackdropFilter` + painted rim), never a pixel match to any HTML or
 to iOS.
 
-**`glass`** — floating chrome: pills and circular buttons. *(The compact header row carries NO
-material of its own — RULED Xuan 2026-09-06 **#2**, on-device review, reversing the same-day
-row-takes-glass ruling; the export's blur-14 fade stays superseded and no band replaces it. Only
-the row's floating buttons take this recipe.)*:
+**`glass`** — floating chrome: pills and circular buttons. *(The compact header row itself takes
+the `top-fade` dissolve below, not this recipe — ruling chain Xuan 2026-09-06 #1→#2→#3.)*:
 - backdrop: blur 4 px · saturate 1.8 · brightness 1.12 (content behind stays recognizable, gets
   more vivid and slightly BRIGHTER — never darker)
 - fill: vertical gradient, `cream` 7 % → 2 % alpha
@@ -54,6 +52,12 @@ the row's floating buttons take this recipe.)*:
   `cream` 8 % at the sides; bottom inner shadow inset 0 −1 px 1 px black 25 %
 - outer lift under floating pills only: 0 8 px 24 px black 25 %
 - shapes: capsules and circles; highlights are `cream`-based — never `#fff` at full opacity
+
+**`top-fade`** — the top-of-page dissolve (RULED Xuan 2026-09-06 **#3**, Bevel-reference
+review — reinstates the export's drawn compact-header treatment): content scrolling beneath
+blurs and dims progressively toward the top; no band, no hard edge; floating `glass` chrome
+sits on top. Export-exact values: zone height 104 px; blur 14 at the top easing to 0 down the
+zone; dim gradient `blackberry` 85% → 55% at half → transparent.
 
 **`glass-sheet`** — summoned surfaces (the calendar sheet):
 - the same backdrop chain; top radius 24; specular line under the grabber; fill `cream` 4 % → 1 %

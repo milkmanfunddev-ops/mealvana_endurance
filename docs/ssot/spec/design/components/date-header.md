@@ -7,11 +7,13 @@ adjacent-day affordance. It replaces the persistent `ViewTabs` + `WeekStrip` blo
 surface — that recomposition is the surface's business
 ([`../surfaces/macro-dashboard.md`](../surfaces/macro-dashboard.md), home-shell recomposition,
 2026-09-06).
-**Tokens / material:** [`../tokens.md`](../tokens.md) §Materials — the compact row carries **NO
-material of its own**; only its circular buttons take the `glass` recipe (RULED Xuan 2026-09-06
-**#2**, on-device review of the first Rad build — reverses the same-day row-takes-glass ruling.
-The export's blur-14 blackberry fade stays superseded, and no band replaces it: a full-width
-backdrop region reads as a slab, not glass).
+**Tokens / material:** [`../tokens.md`](../tokens.md) §Materials — the compact zone renders the
+**progressive blackberry dissolve** (§Materials `top-fade`: the export's drawn treatment —
+content blurs and dims gradually toward the top, no band, no edge), with only the circular
+buttons taking the `glass` recipe as floating chrome (RULED Xuan 2026-09-06 **#3**,
+Bevel-reference review. The ruling chain: #1 replaced the export's fade with a glass band; #2
+removed the band after the first Rad build read it as a slab; #3 reinstates the export's fade
+as the blend — the fade was never the defect, the band was).
 **Companion artifact:** `New Homepage with updated navbar calendar and chat.html` (walked live
 2026-09-06) — illustrates; this file governs.
 **Ruling source:** [`../../../intake/2026-09-06-date-header-component.md`](../../../intake/2026-09-06-date-header-component.md) (RESOLVED).
@@ -21,7 +23,7 @@ backdrop region reads as a slab, not glass).
 | State | Contract |
 |---|---|
 | `REST` | One Sansita page-title line, tappable, with the settings gear right. Title copy: **"Today, {Month D} ˅"** when the shown date is the current day; **"{Weekday}, {Month D} ˅"** otherwise (pinned 2026-09-06 — observed in the export as "Wednesday, August 12 ˅"; the weekday replaces "Today", nothing else changes) |
-| `COMPACT` | Sticky bandless row on scroll: floating `glass` calendar button left · short centred date ("Aug 31, 2026") · floating `glass` gear right. Content scrolls under the buttons and the date directly — the row paints NO material (see Tokens note above) |
+| `COMPACT` | Sticky dissolve zone on scroll: floating `glass` calendar button left · short centred date ("Aug 31, 2026") · floating `glass` gear right, over the progressive `top-fade` dissolve. Content blurs + dims gradually as it scrolls beneath (see Tokens note above) |
 
 **Summon parity (RULED):** the REST title tap and the COMPACT calendar button summon **the same
 calendar sheet** ([`calendar-sheet.md`](calendar-sheet.md)). Two entry points, one component,
@@ -49,7 +51,8 @@ section.
 ## Conformance (design vectors)
 
 - **Goldens (L1):** REST (today copy), REST (non-today weekday copy), COMPACT — at
-  token-resolved colors, the compact row BANDLESS with floating `glass` buttons (ruling #2).
+  token-resolved colors, the compact zone rendering the `top-fade` dissolve with floating
+  `glass` buttons (ruling #3).
 - **Gesture manifest (L2):** title tap → sheet summoned; compact calendar button → the same
   sheet; chevron taps → adjacent-day navigation (date changes, no sheet); scroll transition
   REST ⇄ COMPACT (thresholds pinned in the manifest); **negative test:** a horizontal drag over
