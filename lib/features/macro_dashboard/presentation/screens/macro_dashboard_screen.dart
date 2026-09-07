@@ -127,47 +127,55 @@ class MacroDashboardScreen extends ConsumerWidget {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
-          child: Column(
-            children: [
-              // §5: tracking-off hides every derived quantity; the card is
-              // one of them. (The EA gate itself still ran server-side.)
-              if (view.trackingOn && data.energy != null)
-                EnergySummaryCard(
-                  key: const ValueKey('macro_dashboard.energy_card'),
-                  face: view.filter,
-                  expanded: view.dashOpen,
-                  data: data.energy!,
-                  onToggleExpanded: notifier.toggleDash,
-                  // E2: opens the face's sheet — the Breakdown Pager at the
-                  // face's page (reference mapping: All → Today's Energy,
-                  // Workout → Active Energy, Meals → Today's Fuel).
-                  onFullBreakdown: () => showBreakdownPager(
-                    context,
-                    initialIndex: switch (view.filter) {
-                      DashboardFilter.all => 0,
-                      DashboardFilter.workout => 1,
-                      DashboardFilter.meals => 2,
-                    },
-                  ),
-                ),
-              const SizedBox(height: 16),
-              DashboardFilterRow(
-                filter: view.filter,
-                trackingOn: view.trackingOn,
-                timelineOpen: view.timelineOpen,
-                onFilter: notifier.setFilter,
-                onToggleTracking: notifier.toggleTracking,
-                onToggleTimeline: notifier.toggleTimeline,
-              ),
-            ],
-          ),
-        ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 90),
             children: [
+              // The energy card + filter row scroll WITH the page (home-shell
+              // switchover follow-up, Xuan 2026-09-06): the export draws the
+              // whole home scrolling under the glass chrome, and the compact
+              // header's material only reads as glass with content passing
+              // beneath it. Expansion state still persists across scrolls
+              // (S-4 — it lives in the view provider, not the widget).
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 6, 0, 12),
+                child: Column(
+                  children: [
+                    // §5: tracking-off hides every derived quantity; the card
+                    // is one of them. (The EA gate itself still ran
+                    // server-side.)
+                    if (view.trackingOn && data.energy != null)
+                      EnergySummaryCard(
+                        key: const ValueKey('macro_dashboard.energy_card'),
+                        face: view.filter,
+                        expanded: view.dashOpen,
+                        data: data.energy!,
+                        onToggleExpanded: notifier.toggleDash,
+                        // E2: opens the face's sheet — the Breakdown Pager at
+                        // the face's page (reference mapping: All → Today's
+                        // Energy, Workout → Active Energy, Meals → Today's
+                        // Fuel).
+                        onFullBreakdown: () => showBreakdownPager(
+                          context,
+                          initialIndex: switch (view.filter) {
+                            DashboardFilter.all => 0,
+                            DashboardFilter.workout => 1,
+                            DashboardFilter.meals => 2,
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    DashboardFilterRow(
+                      filter: view.filter,
+                      trackingOn: view.trackingOn,
+                      timelineOpen: view.timelineOpen,
+                      onFilter: notifier.setFilter,
+                      onToggleTracking: notifier.toggleTracking,
+                      onToggleTimeline: notifier.toggleTimeline,
+                    ),
+                  ],
+                ),
+              ),
               _addRow(context, ref, view, dayWorkouts, picking),
               for (final node in nodes)
                 _railRow(context, ref, view, node, dayWorkouts, picking),
