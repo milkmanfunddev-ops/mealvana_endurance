@@ -78,7 +78,9 @@ class KyleDateHeader extends StatelessWidget {
         date.month == today.month &&
         date.day == today.day;
     final monthDay = DateFormat('MMMM d').format(date);
-    return isToday ? 'Today, $monthDay' : '${DateFormat('EEEE').format(date)}, $monthDay';
+    return isToday
+        ? 'Today, $monthDay'
+        : '${DateFormat('EEEE').format(date)}, $monthDay';
   }
 
   /// COMPACT centred short date — "Aug 31, 2026".
@@ -114,60 +116,68 @@ class KyleDateHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 10, 18, 2),
       child: Row(
         children: [
-          _chevron(
-            key: const ValueKey('kyle_date_header.prev_day'),
-            icon: Icons.chevron_left,
-            label: 'Previous day',
-            onTap: onPreviousDay,
-          ),
-          Flexible(
-            child: Semantics(
-              button: true,
-              label: '$title ˅',
-              excludeSemantics: true,
-              child: GestureDetector(
-                key: const ValueKey('kyle_date_header.title'),
-                behavior: HitTestBehavior.opaque,
-                onTap: onSummonCalendar,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.fade,
-                        softWrap: false,
-                        style: const TextStyle(
-                          fontFamily: AppTextStyles.sansita,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 22,
-                          height: 1.15,
-                          color: AppColors.cream,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Icon(
-                        Icons.expand_more,
-                        size: 16,
-                        color: AppColors.cream.withValues(alpha: 0.6),
-                      ),
-                    ),
-                  ],
+          // The title cluster owns all space up to the gear, so the title
+          // only ever truncates when genuinely out of room.
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _chevron(
+                  key: const ValueKey('kyle_date_header.prev_day'),
+                  icon: Icons.chevron_left,
+                  label: 'Previous day',
+                  onTap: onPreviousDay,
                 ),
-              ),
+                Flexible(
+                  child: Semantics(
+                    button: true,
+                    label: '$title ˅',
+                    excludeSemantics: true,
+                    child: GestureDetector(
+                      key: const ValueKey('kyle_date_header.title'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: onSummonCalendar,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.fade,
+                              softWrap: false,
+                              style: const TextStyle(
+                                fontFamily: AppTextStyles.sansita,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 22,
+                                height: 1.15,
+                                color: AppColors.cream,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Icon(
+                              Icons.expand_more,
+                              size: 16,
+                              color: AppColors.cream.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                _chevron(
+                  key: const ValueKey('kyle_date_header.next_day'),
+                  icon: Icons.chevron_right,
+                  label: 'Next day',
+                  onTap: onNextDay,
+                ),
+              ],
             ),
           ),
-          _chevron(
-            key: const ValueKey('kyle_date_header.next_day'),
-            icon: Icons.chevron_right,
-            label: 'Next day',
-            onTap: onNextDay,
-          ),
-          const Spacer(),
           Semantics(
             button: true,
             label: 'Settings',

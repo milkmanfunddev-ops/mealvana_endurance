@@ -65,6 +65,14 @@ class _HomeShellCalendarHostState extends ConsumerState<HomeShellCalendarHost> {
   Widget build(BuildContext context) {
     final selected = ref.watch(calendarSelectedDateProvider);
     final daysAsync = ref.watch(homeShellCalendarMonthProvider(_month));
+    // Never render silently empty channels: a failed derivation logs loudly
+    // (no assert — seam rule: tolerate + log, the invariant lives in tests).
+    if (daysAsync is AsyncError) {
+      debugPrint(
+        'home_shell: calendar month derivation failed for $_month: '
+        '${(daysAsync as AsyncError).error}',
+      );
+    }
     return KyleCalendarSheet(
       month: _month,
       today: _today,
