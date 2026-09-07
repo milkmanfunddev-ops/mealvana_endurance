@@ -91,7 +91,7 @@ void main() {
     // ---- 0. Surface present ----------------------------------------------
     // Tab 0 always renders MacroDashboardScreen (flag deleted 2026-08-21);
     // a missing filter row means the build is broken, not gated.
-    await $(const ValueKey('bottom_nav.timeline_tab'))
+    await $(const ValueKey('kyle_tab_bar.item.timeline'))
         .tap(settlePolicy: SettlePolicy.noSettle);
     var dashboardFound = false;
     for (var i = 0; i < 40; i++) {

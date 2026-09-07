@@ -30,7 +30,7 @@ import 'package:mealvana_endurance/features/calendar/presentation/providers/cale
 import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targets.dart';
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/home_shell/application/home_shell_calendar_assembler.dart';
-import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_screen.dart';
+import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
 import 'package:mealvana_endurance/features/home_shell/presentation/providers/home_shell_providers.dart';
 import 'package:mealvana_endurance/features/home_shell/presentation/widgets/home_shell_calendar_host.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
@@ -181,6 +181,40 @@ List<Override> _shellOverrides() => [
   ),
 ];
 
+/// The switched-over `/main` composition: [HomeShellChrome] around the home
+/// tab's content, exactly as [TabsScreen] mounts it (tab switching drives a
+/// real active-id state the way the IndexedStack index does).
+class _ShellHost extends StatefulWidget {
+  const _ShellHost();
+
+  @override
+  State<_ShellHost> createState() => _ShellHostState();
+}
+
+class _ShellHostState extends State<_ShellHost> {
+  String _active = 'timeline';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.blackberry,
+      body: HomeShellChrome(
+        destinations: _destinations(3),
+        activeTabId: _active,
+        onSelectTab: (id) => setState(() => _active = id),
+        showDateHeader: _active == 'timeline',
+        body: Container(
+          color: AppColors.blackberry,
+          padding: const EdgeInsets.only(
+            top: HomeShellChrome.headerClearancePx,
+          ),
+          child: const MacroDashboardBody(),
+        ),
+      ),
+    );
+  }
+}
+
 Future<void> _pumpShell(WidgetTester tester) async {
   // The root design size (root_app_widget.dart: 393×852) — ScreenUtil scale
   // exactly 1.0, and the shipped add-row pills fit without overflow.
@@ -189,7 +223,7 @@ Future<void> _pumpShell(WidgetTester tester) async {
   addTearDown(tester.view.reset);
   await pumpSeeded(
     tester,
-    const HomeShellScreen(),
+    const _ShellHost(),
     overrides: _shellOverrides(),
     settle: true,
   );
@@ -300,7 +334,7 @@ void main() {
     expect(viewport.bottom, greaterThanOrEqualTo(barRect.top),
         reason: 'timeline must extend under the bar');
 
-    await _scrollTo(tester, HomeShellScreen.tabBarCollapseThresholdPx + 20);
+    await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 20);
     expect(_collapsedButton(), findsOneWidget);
     // Bottom-LEFT anchor.
     final rect = tester.getRect(_collapsedButton());
@@ -332,17 +366,17 @@ void main() {
     // Expanded at rest; entering the band from below must NOT collapse.
     await _scrollTo(
       tester,
-      HomeShellScreen.tabBarExpandThresholdPx + 12, // 76: inside the band
+      HomeShellChrome.tabBarExpandThresholdPx + 12, // 76: inside the band
     );
     expect(_collapsedButton(), findsNothing,
         reason: 'inside the hysteresis band the expanded state holds');
 
     // Past the collapse threshold -> collapsed.
-    await _scrollTo(tester, HomeShellScreen.tabBarCollapseThresholdPx + 30);
+    await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 30);
     expect(_collapsedButton(), findsOneWidget);
 
     // Back into the band from above must NOT re-expand.
-    await _scrollTo(tester, HomeShellScreen.tabBarExpandThresholdPx + 12);
+    await _scrollTo(tester, HomeShellChrome.tabBarExpandThresholdPx + 12);
     expect(_collapsedButton(), findsOneWidget,
         reason: 'inside the hysteresis band the collapsed state holds');
 
@@ -537,7 +571,7 @@ void main() {
     }
 
     expectSlotEmpty('expanded');
-    await _scrollTo(tester, HomeShellScreen.tabBarCollapseThresholdPx + 30);
+    await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 30);
     expect(_collapsedButton(), findsOneWidget);
     expect(tester.getRect(_collapsedButton()).left, lessThan(60),
         reason: 'collapse morph targets the LEFT corner');
@@ -575,7 +609,7 @@ void main() {
     expect(find.byType(KyleCalendarSheet), findsNothing);
 
     // Path B: COMPACT calendar button.
-    await _scrollTo(tester, HomeShellScreen.headerCompactThresholdPx + 20);
+    await _scrollTo(tester, HomeShellChrome.headerCompactThresholdPx + 20);
     await tester.tap(
       find.byKey(const ValueKey('kyle_date_header.calendar_button')),
     );
@@ -599,7 +633,7 @@ void main() {
     expect(find.byKey(const ValueKey('kyle_date_header.rest')), findsOneWidget);
     expect(find.byKey(const ValueKey('kyle_date_header.compact')), findsNothing);
 
-    await _scrollTo(tester, HomeShellScreen.headerCompactThresholdPx + 20);
+    await _scrollTo(tester, HomeShellChrome.headerCompactThresholdPx + 20);
     expect(
       find.byKey(const ValueKey('kyle_date_header.compact')),
       findsOneWidget,
@@ -628,7 +662,7 @@ void main() {
   testWidgets('dh4_chevrons_navigate_adjacent_day: chevrons move one day, '
       'no sheet is summoned', (tester) async {
     await _pumpShell(tester);
-    final el = tester.element(find.byType(HomeShellScreen));
+    final el = tester.element(find.byType(HomeShellChrome));
     final container = ProviderScope.containerOf(el, listen: false);
     expect(container.read(calendarSelectedDateProvider), _day);
 
@@ -659,7 +693,7 @@ void main() {
       'the timeline changes no day and translates nothing; the workout card '
       'under the finger still gets its G-set', (tester) async {
     await _pumpShell(tester);
-    final el = tester.element(find.byType(HomeShellScreen));
+    final el = tester.element(find.byType(HomeShellChrome));
     final container = ProviderScope.containerOf(el, listen: false);
     final before = container.read(calendarSelectedDateProvider);
 
@@ -807,7 +841,7 @@ void main() {
       'sheet gone, in one test', (tester) async {
     await _pumpShell(tester);
     await summonSheet(tester);
-    final el = tester.element(find.byType(HomeShellScreen));
+    final el = tester.element(find.byType(HomeShellChrome));
     final container = ProviderScope.containerOf(el, listen: false);
 
     await tester.tap(
@@ -848,7 +882,7 @@ void main() {
       (tester) async {
     await _pumpShell(tester);
     await summonSheet(tester);
-    final el = tester.element(find.byType(HomeShellScreen));
+    final el = tester.element(find.byType(HomeShellChrome));
     final container = ProviderScope.containerOf(el, listen: false);
     expect(container.read(calendarSelectedDateProvider), _day);
 

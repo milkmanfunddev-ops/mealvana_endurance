@@ -8,7 +8,7 @@
 ///
 /// Flow:
 ///   launchApp → ensureAuthenticated (reuse session, else email login)
-///     → Fuel Timeline → settings gear (fuel_timeline.settings)
+///     → Fuel Timeline → settings gear (kyle_date_header.settings)
 ///     → for each row that exists:
 ///         Profile & Preferences   → profile_edit.back_button
 ///         Diet/Allergies/Formulas → food_prefs.title
@@ -125,10 +125,10 @@ void main() {
 
       // ---- 1. Fuel Timeline → settings gear ------------------------------
       await $(
-        const ValueKey('fuel_timeline.settings'),
+        const ValueKey('kyle_date_header.settings'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(
-        const ValueKey('fuel_timeline.settings'),
+        const ValueKey('kyle_date_header.settings'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
 

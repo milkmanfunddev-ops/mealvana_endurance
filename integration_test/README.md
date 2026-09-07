@@ -114,7 +114,7 @@ Two workflows in `codemagic.yaml` run these on Apple-silicon Mac runners:
 Helpers live in `helpers/` (`flow_launcher.dart`, `test_config.dart`,
 `test_helpers.dart`, `onboarding_helper.dart`, `database_verification.dart`).
 `flow_launcher.dart` owns `launchApp()` / `ensureAuthenticated()` and the shared
-`authSentinel` (`bottom_nav.timeline_tab`) — prefer it over per-file auth walks.
+`authSentinel` (`kyle_tab_bar.item.timeline`) — prefer it over per-file auth walks.
 
 ## Per-test timeouts: size them to the healthy run, not to fear
 

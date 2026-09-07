@@ -118,7 +118,7 @@ void main() {
       // from whichever flow ran before this one in the same app session — so
       // neither the entry point nor the end-of-test assertion can assume them.
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await ensureTimelineOnToday($);
 
@@ -421,7 +421,7 @@ void main() {
 
 /// Unwind the create-flow stack until the timeline tab is showing again.
 Future<void> _returnToTimeline(PatrolIntegrationTester $) async {
-  const sentinel = ValueKey('bottom_nav.timeline_tab');
+  const sentinel = ValueKey('kyle_tab_bar.item.timeline');
   const backButtons = [
     ValueKey('plan_detail.back_button'),
     ValueKey('adjust_macros.back_button'),

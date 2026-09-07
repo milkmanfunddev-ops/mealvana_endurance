@@ -57,7 +57,7 @@ String _windowLabel(PatrolIntegrationTester $) {
 /// Timeline → add activity → RUNNING tab, ready for the window stepper.
 Future<void> _openRunningCreateForm(PatrolIntegrationTester $) async {
   await $(
-    const ValueKey('bottom_nav.timeline_tab'),
+    const ValueKey('kyle_tab_bar.item.timeline'),
   ).tap(settlePolicy: SettlePolicy.noSettle);
   await $(
     const ValueKey('macro_dashboard.add_activity'),
@@ -83,7 +83,7 @@ void main() {
 
       if (!await ensureAuthenticated(
         $,
-        sentinel: const ValueKey('fuel_timeline.settings'),
+        sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
         markTestSkipped(noAuthSkipMessage());
         return;

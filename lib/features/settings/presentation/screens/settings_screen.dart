@@ -12,7 +12,6 @@ import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
-import '../../../home_shell/presentation/home_shell_screen.dart';
 import '../providers/settings_controller.dart';
 import 'debug_screen.dart';
 
@@ -401,25 +400,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             _buildDeviceIdRow(context),
-            const SizedBox(height: AppSpacing.sm),
-            // home-shell@v1: the NEW dev-visible home shell (glass tab bar +
-            // date header + calendar sheet). Lives here because the tester
-            // section has a WORKING reveal (7-tap version label /
-            // auto-reveal on internal devices) — the Profile-row triple-tap
-            // to DebugScreen is dead in practice: the row's InkWell claims
-            // every tap before _handleProfileTap can count them.
-            _buildQuickLink(
-              context: context,
-              rowKey: const ValueKey('settings.home_shell_v2_row'),
-              icon: FontAwesomeIcons.house.data,
-              title: 'Home Shell v2',
-              subtitle: 'home-shell@v1 — the new glass home (dev preview)',
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const HomeShellScreen(),
-                ),
-              ),
-            ),
           ],
         ),
       ),

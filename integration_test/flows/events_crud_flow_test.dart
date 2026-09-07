@@ -64,7 +64,7 @@ void main() {
       final editedName = 'Patrol CRUD $stamp EDITED';
 
       // ---- 1. Calendar → Events tab → New Event -------------------------
-      await $(const ValueKey('bottom_nav.events_tab')).tap();
+      await $(const ValueKey('kyle_tab_bar.item.events')).tap();
       await $(const ValueKey('my_events.new_event_button')).tap();
 
       // ---- 2. CREATE -----------------------------------------------------

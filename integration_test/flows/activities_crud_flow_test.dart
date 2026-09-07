@@ -81,7 +81,7 @@ void main() {
       // There is no calendar FAB: the app's entry point to /distancepacegut is
       // the Fuel Timeline's add-activity button, so hop to that tab first.
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('macro_dashboard.add_activity'),
@@ -273,7 +273,7 @@ void main() {
 /// Unwind the create-flow stack back to the calendar by tapping whichever
 /// screen's back button is currently present, until the calendar FAB shows.
 Future<void> _returnToCalendar(PatrolIntegrationTester $) async {
-  const fab = ValueKey('bottom_nav.timeline_tab');
+  const fab = ValueKey('kyle_tab_bar.item.timeline');
   const backButtons = [
     ValueKey('plan_detail.back_button'),
     ValueKey('adjust_macros.back_button'),

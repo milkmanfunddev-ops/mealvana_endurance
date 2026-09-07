@@ -7,7 +7,7 @@
 ///   - `login_options.email_button` → routes to the email-login form.
 ///   - `login.email_field` / `login.password_field` accept input.
 ///   - `login.log_in_button` → submits and ultimately lands on the tabs
-///     shell (`bottom_nav.timeline_tab`).
+///     shell (`kyle_tab_bar.item.timeline`).
 ///
 /// Unlike every other flow, this test does NOT call the shared
 /// ensureAuthenticated() — the manual login walk IS the thing under test.

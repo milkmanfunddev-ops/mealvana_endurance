@@ -65,7 +65,7 @@ void main() {
 
       // ---- 1. Fuel Timeline → + Add Food -----------------------------------
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('fuel_timeline.add_food'),

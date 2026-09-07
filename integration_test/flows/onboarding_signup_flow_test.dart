@@ -112,10 +112,10 @@ void main() {
       // user-visible facts instead: navigation happened, and the
       // "Failed to save your preferences" MealvanaSnackbar did not.)
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).waitUntilVisible(timeout: const Duration(seconds: 40));
       expect(
-        $(const ValueKey('bottom_nav.timeline_tab')),
+        $(const ValueKey('kyle_tab_bar.item.timeline')),
         findsOneWidget,
         reason:
             'Expected the tabs shell after skipping account creation. If this '
@@ -231,10 +231,10 @@ void main() {
 
       // ---- Landed on the tabs shell with the plan saved -----------------
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).waitUntilVisible(timeout: const Duration(seconds: 40));
       expect(
-        $(const ValueKey('bottom_nav.timeline_tab')),
+        $(const ValueKey('kyle_tab_bar.item.timeline')),
         findsOneWidget,
         reason:
             'Expected the tabs shell after signup. If this fails, the signup '
@@ -358,13 +358,13 @@ Future<bool> _onWelcomeScreen(PatrolIntegrationTester $) async {
 /// is reached. Never throws — a failed recovery becomes a test skip.
 Future<bool> _recoverToWelcome(PatrolIntegrationTester $) async {
   try {
-    if (!$(const ValueKey('bottom_nav.timeline_tab')).exists) return false;
+    if (!$(const ValueKey('kyle_tab_bar.item.timeline')).exists) return false;
 
     await $(
-      const ValueKey('fuel_timeline.settings'),
+      const ValueKey('kyle_date_header.settings'),
     ).waitUntilVisible(timeout: const Duration(seconds: 20));
     await $(
-      const ValueKey('fuel_timeline.settings'),
+      const ValueKey('kyle_date_header.settings'),
     ).tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 600));
 

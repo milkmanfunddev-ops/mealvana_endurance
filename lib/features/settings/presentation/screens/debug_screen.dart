@@ -8,7 +8,6 @@ import '../../../../shared/services/debug_log_storage.dart';
 import '../../../../shared/services/sync/data_sync_service.dart';
 import '../../../../shared/database/database_provider.dart';
 import '../../../auth/data/user_repository.dart';
-import '../../../home_shell/presentation/home_shell_screen.dart';
 
 /// Secret debug screen accessible via triple-tap on Profile in Settings
 /// Shows logs and provides manual sync functionality
@@ -181,30 +180,6 @@ class _DebugScreenState extends ConsumerState<DebugScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                ),
-                SizedBox(height: 8.h),
-                // home-shell@v1: the NEW dev-visible home shell (glass tab
-                // bar + date header + calendar sheet). Registered-nowhere
-                // imperative push, same pattern as this screen itself; the
-                // shipped home stays untouched until switchover.
-                ElevatedButton(
-                  key: const ValueKey('debug.home_shell_v2'),
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const HomeShellScreen(),
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary600,
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                  ),
-                  child: Text(
-                    '🏠 Home Shell v2 (home-shell@v1)',
-                    style: AppTheme.textStyle.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
                 ),
                 if (_syncResult != null) ...[
                   SizedBox(height: 12.h),

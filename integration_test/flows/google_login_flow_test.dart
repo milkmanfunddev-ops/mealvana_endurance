@@ -58,11 +58,11 @@ void main() {
 
       // If already authed (calendar present), nothing to do.
       if (find
-          .byKey(const ValueKey('bottom_nav.timeline_tab'))
+          .byKey(const ValueKey('kyle_tab_bar.item.timeline'))
           .evaluate()
           .isNotEmpty) {
         expect(
-          find.byKey(const ValueKey('bottom_nav.timeline_tab')),
+          find.byKey(const ValueKey('kyle_tab_bar.item.timeline')),
           findsOneWidget,
         );
         return;
@@ -104,7 +104,7 @@ void main() {
       await tester.pumpAndSettle(const Duration(seconds: 30));
 
       final landed = await tester.waitForWidget(
-        find.byKey(const ValueKey('bottom_nav.timeline_tab')),
+        find.byKey(const ValueKey('kyle_tab_bar.item.timeline')),
         timeout: const Duration(seconds: 20),
       );
       expect(

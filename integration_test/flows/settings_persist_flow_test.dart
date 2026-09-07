@@ -11,7 +11,7 @@
 ///
 /// Flow:
 ///   ensureAuthenticated
-///     → fuel_timeline.settings → settings screen
+///     → kyle_date_header.settings → settings screen
 ///     → settings.body_composition_row → Body Composition screen
 ///     → read current weight from body_composition.weight_field
 ///     → set a sentinel weight (e.g. current + 1 lb, clamped 100–350)
@@ -55,7 +55,7 @@ void main() {
       // rather than the default nav-bar sentinel.
       if (!await ensureAuthenticated(
         $,
-        sentinel: const ValueKey('fuel_timeline.settings'),
+        sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
         markTestSkipped(noAuthSkipMessage());
         return;
@@ -63,10 +63,10 @@ void main() {
 
       // ---- 1. Open Settings -------------------------------------------------
       await $(
-        const ValueKey('fuel_timeline.settings'),
+        const ValueKey('kyle_date_header.settings'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(
-        const ValueKey('fuel_timeline.settings'),
+        const ValueKey('kyle_date_header.settings'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 300));
 

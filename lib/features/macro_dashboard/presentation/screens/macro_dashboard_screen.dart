@@ -16,7 +16,6 @@ import '../../../activities/presentation/providers/brick_selection_controller.da
 import '../../../activities/presentation/widgets/brick_ungroup_dialog.dart';
 import '../../../activities/presentation/widgets/brick_validation_error_dialog.dart';
 import '../../../calendar/presentation/providers/calendar_selected_date_provider.dart';
-import '../../../fuel_timeline/presentation/widgets/fuel_timeline_day_header.dart';
 import '../../../fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../../meal_logging/presentation/screens/log_meal_screen.dart';
@@ -66,13 +65,17 @@ class MacroDashboardScreen extends ConsumerWidget {
     final view = ref.watch(macroDashboardViewProvider);
     final dayAsync = ref.watch(macroDashboardDayProvider);
 
+    // home-shell@v1 switchover (Xuan, 2026-09-06): the ViewTabs + WeekStrip
+    // block left this surface with fuel_timeline_day_header.dart's deletion;
+    // the shell's DateHeader + CalendarSheet own day navigation now
+    // (macro-dashboard.md §home-shell recomposition). This screen remains
+    // the day content's implementation, composed via [MacroDashboardBody].
     return Container(
       color: MeTokens.blackberry,
       child: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            const FuelTimelineDayHeader(),
             Expanded(
               child: dayAsync.when(
                 // A recompute (activities swipe, macro refresh) must repaint

@@ -8,7 +8,7 @@
 ///
 /// Flow:
 ///   launchApp → ensureAuthenticated (reuse session, else email login)
-///     → Learn tab (bottom_nav.learn_tab)
+///     → Learn tab (kyle_tab_bar.item.learn)
 ///     → 'Learn' title renders (learn.title) — the education controller
 ///       finished loading (its spinner precedes the whole scroll view)
 ///     → free-lessons list renders (learn.lesson_card_0) — else skip
@@ -50,7 +50,7 @@ void main() {
 
       // ---- 1. Learn tab ----------------------------------------------------
       await $(
-        const ValueKey('bottom_nav.learn_tab'),
+        const ValueKey('kyle_tab_bar.item.learn'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
 
@@ -107,7 +107,7 @@ void main() {
 
       // ---- 5. Leave the app on the timeline tab -----------------------------
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 400));
     },

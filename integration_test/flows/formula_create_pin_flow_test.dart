@@ -85,11 +85,11 @@ void main() {
 
     // ---- 0. Authenticated on the Fuel Timeline ----------------------------
     // Subsequent steps drive the Fuel Timeline's settings gear
-    // (fuel_timeline.settings), so use it as the sentinel — see the note on
+    // (kyle_date_header.settings), so use it as the sentinel — see the note on
     // step 1 below for why the default nav-bar sentinel is not used here.
     if (!await ensureAuthenticated(
       $,
-      sentinel: const ValueKey('fuel_timeline.settings'),
+      sentinel: const ValueKey('kyle_date_header.settings'),
     )) {
       markTestSkipped(noAuthSkipMessage());
       return;
@@ -100,14 +100,14 @@ void main() {
 
     // ---- 1. Settings → Diet/Allergies/Formulas hub → Formula Library -----
     // The app starts on the FuelTimeline tab (index 0). On that tab, the
-    // settings gear has key 'fuel_timeline.settings' (rendered by the
+    // settings gear has key 'kyle_date_header.settings' (rendered by the
     // FuelTimeline header). The generic 'calendar.settings_button' is only
     // shown on non-zero tabs. Use the FuelTimeline-specific key here.
     await $(
-      const ValueKey('fuel_timeline.settings'),
+      const ValueKey('kyle_date_header.settings'),
     ).waitUntilVisible(timeout: const Duration(seconds: 20));
     await $(
-      const ValueKey('fuel_timeline.settings'),
+      const ValueKey('kyle_date_header.settings'),
     ).tap(settlePolicy: SettlePolicy.noSettle);
     await $.pump(const Duration(milliseconds: 300));
 

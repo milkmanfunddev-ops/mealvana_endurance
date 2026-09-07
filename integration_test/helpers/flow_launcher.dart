@@ -63,7 +63,7 @@ void restoreTestErrorHandler() {
 /// lands on. (`calendar.create_activity_fab` is gone — Activities + Nutrition
 /// merged into the Fuel Timeline; `calendar.settings_button` is hidden on
 /// tab 0.)
-const ValueKey<String> authSentinel = ValueKey('bottom_nav.timeline_tab');
+const ValueKey<String> authSentinel = ValueKey('kyle_tab_bar.item.timeline');
 
 /// Ensures the app is signed in and the tabs shell is visible.
 ///

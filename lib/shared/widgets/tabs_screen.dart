@@ -3,16 +3,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
-import '../services/app_config.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
+import '../../features/home_shell/presentation/home_shell_chrome.dart';
+import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
 import '../core/guarded_navigation.dart';
 import '../utils/responsive_breakpoints.dart';
-import 'kyle_design/navigation/floating_action_buttons_bar.dart';
+import 'kyle_design/navigation/kyle_tab_bar.dart';
 import 'sync_status_indicator.dart';
 
+/// The `/main` shell — home-shell@v1, SWITCHED OVER (Xuan, 2026-09-06).
+///
+/// Tab 0 is the recomposed home surface: [MacroDashboardBody] under
+/// [HomeShellChrome]'s glass date header + [KyleTabBar]. The old
+/// FloatingActionButtonsBar and the ViewTabs + WeekStrip day-header block
+/// are DELETED (macro-dashboard.md §home-shell recomposition; the BY MONTH
+/// view is superseded by the calendar sheet).
+///
+/// Q4 (tab-bar.md): the Fuel Timeline destination carries the HOUSE glyph,
+/// and no destination icon is a calendar glyph while the date header
+/// renders one — the rail mirrors the same set.
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key, this.initialTabIndex = 0});
 
@@ -41,6 +52,46 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     setState(() => _currentIndex = index);
   }
 
+  /// The shell's destination set (Q3: 3 on device, 4 with the web coach).
+  List<KyleTabBarDestination> get _destinations => [
+    KyleTabBarDestination(
+      id: 'timeline',
+      icon: FontAwesomeIcons.house.data,
+      label: 'Timeline',
+    ),
+    if (kIsWeb)
+      KyleTabBarDestination(
+        id: 'coach',
+        icon: FontAwesomeIcons.userTie.data,
+        label: 'Coach',
+      ),
+    KyleTabBarDestination(
+      id: 'events',
+      icon: FontAwesomeIcons.trophy.data,
+      label: 'Events',
+    ),
+    KyleTabBarDestination(
+      id: 'learn',
+      icon: FontAwesomeIcons.graduationCap.data,
+      label: 'Learn',
+    ),
+  ];
+
+  String get _activeTabId => _currentIndex == 0
+      ? 'timeline'
+      : kIsWeb && _currentIndex == _coachTabIndex
+      ? 'coach'
+      : _currentIndex == _eventsTabIndex
+      ? 'events'
+      : 'learn';
+
+  void _onSelectTabId(String id) => _onTabSelected(switch (id) {
+    'timeline' => 0,
+    'coach' => _coachTabIndex,
+    'events' => _eventsTabIndex,
+    _ => _learnTabIndex,
+  });
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -59,17 +110,20 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       });
     }
 
-    // Build the list of screens dynamically. Activities + Nutrition are
-    // merged into the single dashboard tab. The macro dashboard (bundle
-    // daily-macros-dashboard@v3) IS the surface — the MACRO_DASHBOARD_ENABLED
-    // flag was deleted per Lee's 2026-08-20 ruling ("no more hide-flags for
-    // dev features"); the legacy FuelTimelineScreen is retired from this tab.
+    // Tab 0 is the recomposed home: the dashboard's day content with the
+    // shell's header clearance above it (the chrome overlays the header).
     final screens = [
-      const MacroDashboardScreen(), // 0: macro dashboard
+      Container(
+        color: isDark ? AppColors.blackberry : AppColors.cream,
+        padding: const EdgeInsets.only(
+          top: HomeShellChrome.headerClearancePx,
+        ),
+        child: const MacroDashboardBody(),
+      ),
       if (showCoachTab)
-        const SizedBox.shrink(), // 1: placeholder (coach portal rendered above)
-      const EventsListScreen(), // 1 or 2: Events
-      const EducationScreen(), // 2 or 3: Learn
+        const SizedBox.shrink(), // placeholder (coach portal rendered above)
+      const EventsListScreen(),
+      const EducationScreen(),
     ];
 
     // Adjust current index if it's out of bounds (safety check)
@@ -81,9 +135,33 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       children: [
         const SyncStatusIndicator(),
         Expanded(
-          child: IndexedStack(index: _currentIndex, children: screens),
+          child: HomeShellChrome(
+            body: IndexedStack(index: _currentIndex, children: screens),
+            destinations: _destinations,
+            activeTabId: _activeTabId,
+            onSelectTab: _onSelectTabId,
+            showDateHeader: _currentIndex == 0,
+            showTabBar: !useRail,
+          ),
         ),
       ],
+    );
+
+    final settingsGear = Positioned(
+      top: MediaQuery.of(context).padding.top,
+      right: 4,
+      child: IconButton(
+        key: const ValueKey('calendar.settings_button'),
+        onPressed: () => context.pushOnce('/settings'),
+        tooltip: 'Settings',
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+        icon: FaIcon(
+          FontAwesomeIcons.gear,
+          size: 22,
+          color: isDark ? AppColors.cream : AppColors.blackberry,
+        ),
+      ),
     );
 
     if (useRail) {
@@ -101,28 +179,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               child: Stack(
                 children: [
                   body,
-                  if (_currentIndex != 0)
-                    Positioned(
-                      top: MediaQuery.of(context).padding.top,
-                      right: 4,
-                      child: IconButton(
-                        key: const ValueKey('calendar.settings_button'),
-                        onPressed: () => context.pushOnce('/settings'),
-                        tooltip: 'Settings',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(
-                          minWidth: 48,
-                          minHeight: 48,
-                        ),
-                        icon: FaIcon(
-                          FontAwesomeIcons.gear,
-                          size: 22,
-                          color: isDark
-                              ? AppColors.cream
-                              : AppColors.blackberry,
-                        ),
-                      ),
-                    ),
+                  // The home tab's gear lives in the shell's date header.
+                  if (_currentIndex != 0) settingsGear,
                 ],
               ),
             ),
@@ -131,7 +189,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       );
     }
 
-    // Mobile layout — floating pill navigation
+    // Mobile layout — the shell's floating glass tab bar
     return Scaffold(
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
       extendBodyBehindAppBar: true,
@@ -139,33 +197,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       body: Stack(
         children: [
           body,
-          // Settings gear — top-right. The Fuel Timeline tab (0) draws its own
-          // gear in its header, so skip it there to avoid a duplicate.
-          if (_currentIndex != 0)
-            Positioned(
-              top: MediaQuery.of(context).padding.top,
-              right: 4,
-              child: IconButton(
-                key: const ValueKey('calendar.settings_button'),
-                onPressed: () => context.pushOnce('/settings'),
-                tooltip: 'Settings',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                icon: FaIcon(
-                  FontAwesomeIcons.gear,
-                  size: 22,
-                  color: isDark ? AppColors.cream : AppColors.blackberry,
-                ),
-              ),
-            ),
-          FloatingActionButtonsBar(
-            activeButton: _currentIndex,
-            showCoachTab: showCoachTab,
-            onTimelineTap: () => _onTabSelected(0),
-            onCoachTap: () => _onTabSelected(_coachTabIndex),
-            onEventsTap: () => _onTabSelected(_eventsTabIndex),
-            onLearnTap: () => _onTabSelected(_learnTabIndex),
-          ),
+          if (_currentIndex != 0) settingsGear,
         ],
       ),
     );
@@ -174,8 +206,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
 /// NavigationRail sidebar for wide screens.
 ///
-/// Shows the same destinations as [FloatingActionButtonsBar] with
-/// an orange FAB at the bottom for adding new activities.
+/// Mirrors the [KyleTabBar] destination set (tab-bar.md Q4: house glyph on
+/// the home item; no calendar glyphs on the shell).
 class _NavigationRailSection extends StatelessWidget {
   const _NavigationRailSection({
     required this.currentIndex,
@@ -195,9 +227,9 @@ class _NavigationRailSection extends StatelessWidget {
     // Build destinations list — same order as tab indices.
     final destinations = <NavigationRailDestination>[
       const NavigationRailDestination(
-        icon: FaIcon(FontAwesomeIcons.calendar),
-        selectedIcon: FaIcon(FontAwesomeIcons.solidCalendar),
-        label: Text('Today'),
+        icon: FaIcon(FontAwesomeIcons.house),
+        selectedIcon: FaIcon(FontAwesomeIcons.house),
+        label: Text('Timeline'),
       ),
       if (showCoachTab)
         const NavigationRailDestination(
@@ -206,8 +238,8 @@ class _NavigationRailSection extends StatelessWidget {
           label: Text('Coach'),
         ),
       const NavigationRailDestination(
-        icon: FaIcon(FontAwesomeIcons.calendarCheck),
-        selectedIcon: FaIcon(FontAwesomeIcons.solidCalendarCheck),
+        icon: FaIcon(FontAwesomeIcons.trophy),
+        selectedIcon: FaIcon(FontAwesomeIcons.trophy),
         label: Text('Events'),
       ),
       const NavigationRailDestination(

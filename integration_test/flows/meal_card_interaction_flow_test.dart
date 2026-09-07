@@ -53,7 +53,7 @@ void main() {
       // settings gear rather than the default nav-bar sentinel.
       if (!await ensureAuthenticated(
         $,
-        sentinel: const ValueKey('fuel_timeline.settings'),
+        sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
         markTestSkipped(noAuthSkipMessage());
         return;
@@ -66,7 +66,7 @@ void main() {
 
       // ---- 1. Fuel Timeline → + Add Food → Manual tab --------------------
       await $(
-        const ValueKey('bottom_nav.timeline_tab'),
+        const ValueKey('kyle_tab_bar.item.timeline'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('fuel_timeline.add_food'),

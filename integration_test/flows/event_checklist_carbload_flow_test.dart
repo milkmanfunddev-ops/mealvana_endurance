@@ -58,7 +58,7 @@ void main() {
 
       // ---- 1. Events tab → New Event → CREATE ------------------------------
       await $(
-        const ValueKey('bottom_nav.events_tab'),
+        const ValueKey('kyle_tab_bar.item.events'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $(
         const ValueKey('my_events.new_event_button'),
@@ -195,7 +195,7 @@ void main() {
           'post-delete redirect race) — falling back to the events tab.',
         );
         await $(
-          const ValueKey('bottom_nav.events_tab'),
+          const ValueKey('kyle_tab_bar.item.events'),
         ).tap(settlePolicy: SettlePolicy.noSettle);
         await $(myEvents).waitUntilExists(timeout: const Duration(seconds: 30));
       }

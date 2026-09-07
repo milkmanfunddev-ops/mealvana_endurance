@@ -119,7 +119,7 @@ void main() {
 
       if (!await ensureAuthenticated(
         $,
-        sentinel: const ValueKey('fuel_timeline.settings'),
+        sentinel: const ValueKey('kyle_date_header.settings'),
       )) {
         markTestSkipped(noAuthSkipMessage());
         return;
@@ -127,10 +127,10 @@ void main() {
 
       // ---- 1. Settings → Diet/Allergies/Formulas hub → Formula Library --
       await $(
-        const ValueKey('fuel_timeline.settings'),
+        const ValueKey('kyle_date_header.settings'),
       ).waitUntilVisible(timeout: const Duration(seconds: 20));
       await $(
-        const ValueKey('fuel_timeline.settings'),
+        const ValueKey('kyle_date_header.settings'),
       ).tap(settlePolicy: SettlePolicy.noSettle);
       await $.pump(const Duration(milliseconds: 300));
       await $(
