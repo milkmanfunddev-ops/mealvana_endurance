@@ -4,8 +4,10 @@
   dev-visible screen (shipped home untouched until switchover). Excluded per bundle: AI elements,
   ride-fuel-plan editor, utility-slot occupant, tint intensity scaling, light-surface glass,
   the events-calendar feature.
-- **Status:** PINNED (2026-09-06 — implemented against the `home-shell@v1` tag; all manifest
-  rows landed as pinned tests in one pass)
+- **Status:** PINNED + SWITCHED OVER (2026-09-06 — implemented against the `home-shell@v1`
+  tag; all manifest rows landed as pinned tests in one pass. Same-day ruling
+  `intake/2026-09-06-home-shell-switchover-ruling.md`: `/main` composes the shell, old chrome
+  deleted; the gesture suite pumps the switched-over `HomeShellChrome` composition)
 - **Source documents:** `spec/design/components/{tab-bar,date-header,calendar-sheet}.md` (v1,
   RATIFIED 2026-09-06) · `spec/design/tokens.md` §Materials ·
   `spec/design/surfaces/macro-dashboard.md` §home-shell recomposition · manifests:
@@ -31,6 +33,7 @@ displacement, 8.0 px half-displacement falloff band; header compact 56 px; sheet
 | Contract | Gap |
 |---|---|
 | tb1/tb2 on-device scroll feel | widget-test only; no Patrol flow yet (`EXPECTED_PATROL_TESTS` unchanged at 24). `/sim-explore` charter `charter-home-shell.md` covers the first dev build |
+| Patrol selector migration (`bottom_nav.*` → `kyle_tab_bar.item.*`, `fuel_timeline.settings` → `kyle_date_header.settings`) | mechanical, UNVALIDATED on device — the M1 runner was offline at switchover; first Patrol run must be watched |
 | tb6 refraction on Impeller hardware | the widget test pins filter activation and goldens pin the software-rendered look; real-device GPU appearance is charter territory |
 | dh2 summon parity after process death | freeplay only |
 | Calendar month paging at year boundaries | pinned in the assembler seam only for in-month keys; December→January chevron paging is exercised, not asserted per-cell |

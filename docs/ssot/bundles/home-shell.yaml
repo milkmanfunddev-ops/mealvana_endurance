@@ -57,3 +57,10 @@ conformance:
 
 deviations: []   # nothing shipped-but-unratified inside scope; the shipped un-specced tab bar is
                  # superseded by tab-bar.md v1 on the new screen, not carried as a deviation
+
+# POST-RATIFICATION RULING (Xuan, 2026-09-06 — intake/2026-09-06-home-shell-switchover-ruling.md,
+# RESOLVED): switchover ships WITH this bundle. The "NEW screen (dev-visible), shipped home
+# untouched until switchover" staging above is lifted — /main composes the shell and the
+# superseded chrome (floating_action_buttons_bar, the ViewTabs+WeekStrip day-header block, the
+# retired FuelTimelineScreen) is DELETED app-side. The engine notes on the component slices read
+# accordingly (the tab bar REPLACES floating_action_buttons_bar.dart rather than updating it).
