@@ -240,7 +240,36 @@ class MacroDashboardScreen extends ConsumerWidget {
         child: buttons,
       );
     }
+    // The rail terminus (hollow "now" marker + line) is TIMELINE furniture,
+    // not chrome: it scrolls with the list (_railTerminus) so the rail is
+    // one continuous stroke — the pinned row keeps only the pills, at the
+    // same gutter indent (ruling #4 follow-up: the rail-disconnection fix).
     return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(width: 54),
+          const SizedBox(width: 10),
+          const SizedBox(width: 16),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: buttons,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// The timeline's top terminus — the hollow "now" marker the rail runs up
+  /// to (the reference rendering's top-of-timeline treatment). Lives in the
+  /// SCROLLING list so the rail below it is one continuous stroke that
+  /// dissolves under the pinned block with the rest of the timeline.
+  Widget _railTerminus() {
+    return SizedBox(
+      height: 26,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -252,12 +281,12 @@ class MacroDashboardScreen extends ConsumerWidget {
               alignment: Alignment.topCenter,
               children: [
                 Positioned(
-                  top: 0,
+                  top: 8,
                   bottom: 0,
                   child: Container(width: 2, color: MeTokens.creamAlpha(0.12)),
                 ),
                 Padding(
-                  padding: const EdgeInsets.only(top: 11),
+                  padding: const EdgeInsets.only(top: 2),
                   child: Container(
                     width: 9,
                     height: 9,
@@ -272,13 +301,6 @@ class MacroDashboardScreen extends ConsumerWidget {
                   ),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: buttons,
             ),
           ),
         ],
@@ -1299,6 +1321,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
           child: ListView(
             padding: EdgeInsets.fromLTRB(18, _blockHeight + 8, 18, 90),
             children: [
+              if (view.timelineOpen) screen._railTerminus(),
               for (final node in nodes)
                 screen._railRow(context, ref, view, node, dayWorkouts, picking),
             ],
