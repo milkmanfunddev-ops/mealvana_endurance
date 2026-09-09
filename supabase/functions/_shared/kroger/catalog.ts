@@ -13,6 +13,10 @@ export class KrogerError extends Error {
     super(code);
   }
 }
+// Kroger's `filter.fulfillment` code for a Modality: delivery-to-home, or
+// curbside pickup.
+export const fulfillmentFilter = (mode: Modality) =>
+  mode === "DELIVERY" ? "dth" : "csp";
 export function modality(value: unknown): Modality {
   if (value !== "PICKUP" && value !== "DELIVERY") {
     throw new KrogerError("invalid_modality");
@@ -25,15 +29,18 @@ export function textInput(value: unknown, max = 100): string {
   }
   return value.trim();
 }
-export function productFromApi(raw: any, mode: Modality): Product | null {
+// Reads a product Kroger returned for an already-filtered request.
+//
+// Availability is that filter's answer, never the per-item `fulfillment`
+// booleans: a Spoke reports `curbside: true` on items the curbside filter
+// returns nothing for. The product being in the response is the only
+// Location-truthful evidence that it can be had that way. So the caller owes
+// this function a `filter.fulfillment` on the request.
+export function productFromApi(raw: any): Product | null {
   if (!raw || typeof raw.upc !== "string" || !/^\d{8,14}$/.test(raw.upc)) {
     return null;
   }
-  const items = (raw.items ?? []).flat();
-  const item =
-    items.find((i: any) =>
-      i.fulfillment?.[mode === "PICKUP" ? "curbside" : "delivery"]
-    ) ?? items[0];
+  const item = (raw.items ?? []).flat()[0];
   if (!item) return null;
   const price = item.price?.promo > 0 ? item.price.promo : item.price?.regular;
   const image = (raw.images ?? []).find((i: any) => i.featured) ??
@@ -46,10 +53,7 @@ export function productFromApi(raw: any, mode: Modality): Product | null {
     brand: raw.brand ?? "",
     size: item.size ?? "",
     price: typeof price === "number" && Number.isFinite(price) ? price : null,
-    available:
-      item.fulfillment?.[mode === "PICKUP" ? "curbside" : "delivery"] ===
-        true &&
-      item.inventory?.stockLevel !== "TEMPORARILY_OUT_OF_STOCK",
+    available: item.inventory?.stockLevel !== "TEMPORARILY_OUT_OF_STOCK",
     image: typeof imageUrl === "string" && imageUrl.startsWith("https://")
       ? imageUrl
       : null,

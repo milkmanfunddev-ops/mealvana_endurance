@@ -83,11 +83,11 @@ void main() {
       remote.onSave = (_) => pending.future;
       final first = repo.ensureSynced('a', 'plan');
       final second = repo.ensureSynced('a', 'plan');
-      await repo.saveLocal('a', draft.copyWith(modality: 'DELIVERY'));
+      await repo.saveLocal('a', draft.copyWith(modality: 'PICKUP'));
       pending.complete(1);
       await Future.wait([first, second]);
       expect(remote.saves, 1);
-      expect(repo.load('a', 'plan').modality, 'DELIVERY');
+      expect(repo.load('a', 'plan').modality, 'PICKUP');
       expect(repo.load('a', 'plan').dirty, true);
       expect(repo.load('a', 'plan').revision, 1);
     },
@@ -96,9 +96,9 @@ void main() {
     final pending = Completer<Map<String, dynamic>?>();
     remote.onLoad = (_) => pending.future;
     final sync = repo.ensureSynced('a', 'plan');
-    await repo.saveLocal('a', draft.copyWith(modality: 'DELIVERY'));
+    await repo.saveLocal('a', draft.copyWith(modality: 'PICKUP'));
     pending.complete({'revision': 2, 'draft': draft.toJson()});
-    expect((await sync).modality, 'DELIVERY');
+    expect((await sync).modality, 'PICKUP');
     expect(repo.load('a', 'plan').dirty, true);
   });
   test('CAS conflict does not discard local draft', () async {

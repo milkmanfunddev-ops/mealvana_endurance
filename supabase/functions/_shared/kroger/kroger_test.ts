@@ -60,21 +60,93 @@ Deno.test("cart validation preserves UPC zeros and aggregates repeated products"
     assertThrows(() => cartLines(bad, "PICKUP"), KrogerError);
   }
 });
-Deno.test("catalog safely flattens items and checks requested fulfillment", () => {
+const fixture = (name: string) =>
+  JSON.parse(
+    Deno.readTextFileSync(new URL(`./fixtures/${name}.json`, import.meta.url)),
+  );
+const spoke = fixture("spoke_product").data[0],
+  storeItem = fixture("store_product").data[0];
+
+Deno.test("catalog safely flattens items and reads the promotional price", () => {
   const raw = {
     upc: product.upc,
     description: "Milk",
-    items: [[{
-      size: "1 l",
-      price: { regular: 4, promo: 3 },
-      fulfillment: { curbside: true, delivery: false },
-    }]],
+    items: [[{ size: "1 l", price: { regular: 4, promo: 3 } }]],
   };
-  assertEquals(productFromApi(raw, "PICKUP")?.price, 3);
-  assertEquals(productFromApi(raw, "DELIVERY")?.available, false);
-  assertEquals(productFromApi(null, "PICKUP"), null);
+  assertEquals(productFromApi(raw)?.price, 3);
+  assertEquals(productFromApi(null), null);
   raw.items[0][0].price.promo = 0;
-  assertEquals(productFromApi(raw, "PICKUP")?.price, 4);
+  assertEquals(productFromApi(raw)?.price, 4);
+});
+Deno.test("a Spoke's fulfillment booleans never decide availability", () => {
+  // The Spoke says curbside: true for an item the curbside filter will not
+  // return. Availability is the filter's answer: this product came back, so
+  // it is available for the modality that was asked for.
+  assertEquals(spoke.items[0].fulfillment.curbside, true);
+  assertEquals(productFromApi(spoke)?.available, true);
+  const outOfStock = structuredClone(spoke);
+  outOfStock.items[0].inventory.stockLevel = "TEMPORARILY_OUT_OF_STOCK";
+  assertEquals(productFromApi(outOfStock)?.available, false);
+});
+Deno.test("a Spoke product has no price, and never a zero one", () => {
+  assertEquals("price" in spoke.items[0], false);
+  assertEquals(productFromApi(spoke)?.price, null);
+  assertEquals(productFromApi(spoke)?.size, "1 ct");
+  // The same item id at a Store: price is a fact about the Location.
+  assertEquals(productFromApi(storeItem)?.upc, productFromApi(spoke)?.upc);
+  assertEquals(productFromApi(storeItem)?.price, 2.19);
+  assertEquals(productFromApi(storeItem)?.size, "1 lb");
+});
+Deno.test("modality picks Kroger's fulfillment filter for search and lookup", async () => {
+  const asked: string[] = [];
+  const client = (body: unknown) =>
+    new KrogerClient(cfg, (input) => {
+      asked.push(String(input));
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+  const db = new MemoryDb();
+  const spokeBody = fixture("spoke_product");
+  await new KrogerService(db as unknown as Db, user, client(spokeBody)).run(
+    "search",
+    { query: "broccoli", store: "70100108", modality: "DELIVERY" },
+  );
+  await new KrogerService(db as unknown as Db, user, client(spokeBody)).run(
+    "search",
+    { query: "broccoli", store: "01400943", modality: "PICKUP" },
+  );
+  await client({ data: spokeBody.data[0] }).product(
+    spoke.upc,
+    "70100108",
+    "DELIVERY",
+    "test-token",
+  );
+  assertEquals(asked[0].includes("filter.fulfillment=dth"), true);
+  assertEquals(asked[1].includes("filter.fulfillment=csp"), true);
+  assertEquals(asked[2].includes("filter.fulfillment=dth"), true);
+});
+Deno.test("a search finds nothing when the filter excludes everything", async () => {
+  // What a Spoke actually does under the curbside filter: an empty list, not
+  // an error and not a silent success with products in it.
+  const service = new KrogerService(
+    new MemoryDb() as unknown as Db,
+    user,
+    new KrogerClient(cfg, () =>
+      Promise.resolve(
+        new Response(JSON.stringify({ data: [] }), {
+          headers: { "Content-Type": "application/json" },
+        }),
+      )),
+  );
+  const result = await service.run("search", {
+    query: "broccoli",
+    store: "70100108",
+    modality: "PICKUP",
+  });
+  assertEquals((result.products as unknown[]).length, 0);
 });
 Deno.test("ranking favors matching form and available products", () => {
   const fresh = { ...product, name: "Blueberries" };
@@ -227,11 +299,14 @@ class TestClient extends KrogerClient {
   exchanges = 0;
   changed = false;
   timeout = false;
+  missing = false;
   constructor() {
     super(cfg);
   }
   override product() {
-    return Promise.resolve({ ...product, price: this.changed ? 4 : 3 });
+    return this.missing
+      ? Promise.reject(new KrogerError("product_unavailable"))
+      : Promise.resolve({ ...product, price: this.changed ? 4 : 3 });
   }
   override token() {
     this.exchanges++;
@@ -257,6 +332,14 @@ Deno.test("preflight price changes require review and do not touch cart", async 
   client.changed = true;
   const result = await service.run("export", payload());
   assertEquals((result.changed as any[]).length, 1);
+  assertEquals(client.adds, 0);
+  assertEquals(db.tables.kroger_exports.length, 0);
+});
+Deno.test("a line the fulfillment filter drops is reviewed, not an error", async () => {
+  const { db, client, service } = setup();
+  client.missing = true;
+  const result = await service.run("export", payload());
+  assertEquals((result.changed as any[])[0].available, false);
   assertEquals(client.adds, 0);
   assertEquals(db.tables.kroger_exports.length, 0);
 });

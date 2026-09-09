@@ -39,37 +39,59 @@ class KrogerState {
   const KrogerState({
     required this.draft,
     this.busy = false,
-    this.available = false,
     this.connected = false,
     this.environment = 'certification',
     this.message,
+    this.unavailableReason,
     this.stores = const [],
     this.products = const [],
     this.searchLineId,
   });
   final KrogerDraft draft;
-  final bool busy, available, connected;
+  final bool busy, connected;
   final String environment;
-  final String? message, searchLineId;
+
+  /// What just happened — the outcome of one action, or of the initial load.
+  final String? message;
+
+  /// Why the service is unavailable, or null when it is. A standing fact
+  /// about this session rather than an action's outcome, so an action that
+  /// fails cannot overwrite it.
+  final String? unavailableReason;
+
+  /// Derived, so availability and its reason cannot disagree.
+  bool get available => unavailableReason == null;
+  final String? searchLineId;
   final List<KrogerStore> stores;
   final List<KrogerProduct> products;
+
+  /// [message] carries like every other field: omitting it keeps what is
+  /// already on the state, and [clearMessage] is how a caller drops it.
+  ///
+  /// It used to be dropped by every copy, which is why a first-load failure —
+  /// Pro required, rate limited, reconnect required — reached the screen with
+  /// nothing to say and rendered as "Kroger shopping is being set up".
   KrogerState copyWith({
     KrogerDraft? draft,
     bool? busy,
-    bool? available,
     bool? connected,
     String? environment,
     String? message,
+    bool clearMessage = false,
+    String? unavailableReason,
+    bool clearUnavailableReason = false,
     List<KrogerStore>? stores,
     List<KrogerProduct>? products,
     String? searchLineId,
   }) => KrogerState(
     draft: draft ?? this.draft,
     busy: busy ?? this.busy,
-    available: available ?? this.available,
     connected: connected ?? this.connected,
     environment: environment ?? this.environment,
-    message: message,
+    message: clearMessage ? null : message ?? this.message,
+    unavailableReason: clearUnavailableReason
+        ? null
+        : unavailableReason ?? this.unavailableReason,
     stores: stores ?? this.stores,
     products: products ?? this.products,
     searchLineId: searchLineId ?? this.searchLineId,
@@ -129,7 +151,7 @@ class KrogerController extends _$KrogerController {
           draft: draft,
           connected: status['connected'] == true,
           environment: status['environment'] as String? ?? draft.environment,
-          message: status['reason'] as String? ?? 'not_configured',
+          unavailableReason: status['reason'] as String? ?? 'not_configured',
         );
       }
       draft = _reconcile(
@@ -145,7 +167,6 @@ class KrogerController extends _$KrogerController {
       draft = await _repo.saveLocal(_user!, draft);
       return KrogerState(
         draft: draft,
-        available: true,
         connected: status['connected'] == true,
         environment: status['environment'] as String? ?? 'certification',
       );
@@ -154,8 +175,15 @@ class KrogerController extends _$KrogerController {
     if (remote.hasError || remote.value?.available != true) {
       draft = await _repo.saveLocal(_user!, draft);
     }
-    return remote.value?.copyWith(draft: draft) ??
-        KrogerState(draft: draft, message: _error(remote.error));
+    if (remote.value case final loaded?) return loaded.copyWith(draft: draft);
+    // The load failed outright: the same code is both what happened and why
+    // the service is unavailable.
+    final failure = _error(remote.error);
+    return KrogerState(
+      draft: draft,
+      message: failure,
+      unavailableReason: failure,
+    );
   }
 
   String _error(Object? error) =>
@@ -189,16 +217,16 @@ class KrogerController extends _$KrogerController {
   Future<void> _persist(KrogerDraft draft) async {
     final saved = await _repo.saveLocal(_user!, draft);
     if (ref.mounted) {
-      _publish(
-        state.value!.copyWith(draft: saved, message: state.value?.message),
-      );
+      _publish(state.value!.copyWith(draft: saved));
     }
   }
 
   Future<void> _run(Future<void> Function() work) async {
     final current = state.value;
     if (current == null || current.busy) return;
-    _publish(current.copyWith(busy: true));
+    // Each action reports its own outcome: the previous one's message goes.
+    // `unavailableReason` deliberately does not, being a standing fact.
+    _publish(current.copyWith(busy: true, clearMessage: true));
     final scope = _scope;
     final result = await runZoned(
       () => AsyncValue.guard(() async {
@@ -210,11 +238,11 @@ class KrogerController extends _$KrogerController {
       zoneValues: {#krogerScope: scope},
     );
     if (!ref.mounted || !identical(scope, _scope)) return;
+    final settled = (state.value ?? current).copyWith(busy: false);
     _publish(
-      (state.value ?? current).copyWith(
-        busy: false,
-        message: result.hasError ? _error(result.error) : state.value?.message,
-      ),
+      result.hasError
+          ? settled.copyWith(message: _error(result.error))
+          : settled,
     );
   }
 
@@ -236,12 +264,10 @@ class KrogerController extends _$KrogerController {
     await _persist(draft);
     _publish(
       state.value!.copyWith(
-        available: status['available'] == true,
         connected: status['connected'] == true,
         environment: status['environment'] as String?,
-        message: status['available'] == true
-            ? null
-            : status['reason'] as String? ?? 'not_configured',
+        clearUnavailableReason: status['available'] == true,
+        unavailableReason: status['reason'] as String? ?? 'not_configured',
       ),
     );
   });
@@ -272,7 +298,9 @@ class KrogerController extends _$KrogerController {
       'code': result.queryParameters['code'],
       'state': start['state'],
     });
-    _publish(state.value!.copyWith(connected: true, available: true));
+    _publish(
+      state.value!.copyWith(connected: true, clearUnavailableReason: true),
+    );
   });
   Future<void> disconnect() => _run(() async {
     await _repo.remote.call('disconnect');
@@ -335,16 +363,27 @@ class KrogerController extends _$KrogerController {
       state.value!.copyWith(
         products: products,
         searchLineId: lineId,
+        // A found result needs no message: `_run` already cleared the one
+        // this action started with.
         message: products.isEmpty ? 'no_products' : null,
       ),
     );
   });
+
+  /// Matches every line the shopper has neither ticked off nor excluded, and
+  /// says what actually happened: a run that matched nothing, and a run that
+  /// had nothing to match, are different outcomes and read differently.
   Future<void> matchAll() => _run(() async {
     await _persist(_reconcile(state.value!.draft));
-    for (final line
-        in state.value!.draft.lines
-            .where((l) => !l.excluded && !l.approved)
-            .toList()) {
+    if (state.value!.draft.included.isEmpty) {
+      _publish(state.value!.copyWith(message: 'all_skipped'));
+      return;
+    }
+    final pending = state.value!.draft.included
+        .where((l) => !l.approved)
+        .toList();
+    var matched = 0;
+    for (final line in pending) {
       final products = await _search(line.name);
       if (!ref.mounted) return;
       if (products.isEmpty) continue;
@@ -363,6 +402,7 @@ class KrogerController extends _$KrogerController {
               .firstOrNull ??
           products.where((p) => p.available).firstOrNull;
       if (product != null) {
+        matched++;
         // Suggestions always need review, including remembered products.
         await _updateLine(
           line.id,
@@ -376,7 +416,13 @@ class KrogerController extends _$KrogerController {
         );
       }
     }
-    _publish(state.value!.copyWith(message: 'review_matches'));
+    _publish(
+      state.value!.copyWith(
+        message: pending.isNotEmpty && matched == 0
+            ? 'no_products'
+            : 'review_matches',
+      ),
+    );
   });
   Future<void> _updateLine(
     String id,

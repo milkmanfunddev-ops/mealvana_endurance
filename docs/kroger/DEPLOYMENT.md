@@ -12,7 +12,8 @@ Date: 2026-09-08. User explicitly authorized dev deployment after local verifica
 | Server flag | `KROGER_ENABLED=true` after disabled-state smoke check | Not enabled |
 | Flutter source | Implemented; entry visible in dev configuration | Release flag defaults off |
 | Mobile build | No build cut/push performed | No build cut/push performed |
-| Customer OAuth/cart | Requires hands-on Kroger Production customer test | Not tested/available |
+| Customer OAuth | Completed on iOS dev against Kroger Production (2026-09-09): a device session showed a connected account and a resolved Location, both of which need a customer token. Android needs its dev redirect URI registered with Kroger first. | Done on iOS |
+| Cart write | Never exercised. No item has reached a real Kroger cart from this app. | Not tested |
 
 Dev project: `vlmtsdzpnjnavdgytcmi`. No production database, function, secret,
 `app_config` or release branch was modified by this task.

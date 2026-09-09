@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "locationId": "70100108",
+      "storeNumber": "00108",
+      "divisionNumber": "701",
+      "chain": "KROGER",
+      "address": {
+        "addressLine1": "300 Delivery Way",
+        "city": "Birmingham",
+        "county": "JEFFERSON",
+        "state": "AL",
+        "zipCode": "35209"
+      },
+      "geolocation": { "latitude": 33.4573, "longitude": -86.8104 },
+      "name": "Kroger - - Birmingham Spoke",
+      "hours": {},
+      "phone": "",
+      "departments": []
+    }
+  ],
+  "meta": { "pagination": { "start": 0, "limit": 10, "total": 1 } }
+}

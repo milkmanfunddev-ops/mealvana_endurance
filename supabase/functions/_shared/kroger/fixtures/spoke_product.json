@@ -1,0 +1,45 @@
+{
+  "data": [
+    {
+      "productId": "0000000004060",
+      "upc": "0000000004060",
+      "aisleLocations": [],
+      "brand": "Kroger",
+      "categories": ["Produce"],
+      "countryOrigin": "UNITED STATES",
+      "description": "Broccoli Crowns",
+      "images": [
+        {
+          "id": "b3b8b5c0-0000-0000-0000-000000000001",
+          "perspective": "front",
+          "featured": true,
+          "sizes": [
+            {
+              "id": "c1c1c1c1-0000-0000-0000-000000000001",
+              "size": "medium",
+              "url": "https://www.kroger.com/product/images/medium/front/0000000004060"
+            }
+          ]
+        }
+      ],
+      "items": [
+        {
+          "itemId": "0000000004060",
+          "favorite": false,
+          "fulfillment": {
+            "curbside": true,
+            "delivery": true,
+            "inStore": false,
+            "shipToHome": false
+          },
+          "size": "1 ct",
+          "soldBy": "UNIT",
+          "inventory": { "stockLevel": "HIGH" }
+        }
+      ],
+      "itemInformation": {},
+      "temperature": { "indicator": "Refrigerated", "heatSensitive": false }
+    }
+  ],
+  "meta": { "pagination": { "start": 0, "limit": 15, "total": 5 } }
+}

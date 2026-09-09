@@ -585,7 +585,11 @@ class ContentKeys {
   static const String krogerContinue = 'kroger.continue';
   static const String krogerZip = 'kroger.zip';
   static const String krogerInvalidZip = 'kroger.invalid_zip';
+
+  /// The refusal, and the button. A control says what it does; only the
+  /// message explains why an action was not possible.
   static const String krogerChooseStore = 'kroger.choose_store';
+  static const String krogerChooseStoreAction = 'kroger.choose_store_action';
   static const String krogerPickup = 'kroger.pickup';
   static const String krogerDelivery = 'kroger.delivery';
   static const String krogerChangeStore = 'kroger.change_store';
@@ -628,8 +632,8 @@ class ContentKeys {
   static const String krogerAfterExport = 'kroger.after_export';
   static const String krogerSavedLocal = 'kroger.saved_local';
 
-  /// Kept ahead of its use: the honest empty-run message that ticket 02 of
-  /// the delivery-first work reports when every list line was already ticked.
+  /// A matching run where every list line was already ticked off. Distinct
+  /// from [krogerNoProducts], which is a run that searched and found nothing.
   static const String krogerAllSkipped = 'kroger.all_skipped';
   static const String krogerRateLimited = 'kroger.rate_limited';
 

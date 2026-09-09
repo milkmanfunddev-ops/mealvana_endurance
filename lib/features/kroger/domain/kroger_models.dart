@@ -119,10 +119,14 @@ class KrogerLine {
 }
 
 class KrogerDraft {
+  /// Delivery is the shopper's intent and the Location follows from it. A
+  /// delivery-only market has no curbside catalog, so a pickup default makes
+  /// every search there return nothing.
+  static const String defaultModality = 'DELIVERY';
   const KrogerDraft({
     required this.planId,
     this.store,
-    this.modality = 'PICKUP',
+    this.modality = defaultModality,
     this.environment = 'certification',
     this.lines = const [],
     this.revision = 0,
@@ -169,7 +173,7 @@ class KrogerDraft {
     store: j['store'] is Map
         ? KrogerStore.fromJson(Map<String, dynamic>.from(j['store'] as Map))
         : null,
-    modality: j['modality'] as String? ?? 'PICKUP',
+    modality: j['modality'] as String? ?? defaultModality,
     environment: j['environment'] as String? ?? 'certification',
     lines: [
       for (final l in j['lines'] as List? ?? [])

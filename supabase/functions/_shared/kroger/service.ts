@@ -3,8 +3,10 @@ import { KrogerClient } from "./client.ts";
 import {
   cartLines,
   fingerprint,
+  fulfillmentFilter,
   KrogerError,
   modality,
+  type Product,
   productFromApi,
   rankProducts,
   textInput,
@@ -17,6 +19,18 @@ const uuid = (v: unknown) => {
   }
   return s;
 };
+// All Kroger will say about a product its filter no longer returns: the UPC
+// asked for, and that it cannot be had. The ingredient's own name is on the
+// shopper's line, not here.
+const unavailableProduct = (upc: string): Product => ({
+  upc,
+  name: "",
+  brand: "",
+  size: "",
+  price: null,
+  available: false,
+  image: null,
+});
 const checked = (result: any) => {
   if (result.error) throw new KrogerError("storage_unavailable", 503);
   return result.data;
@@ -189,14 +203,14 @@ export class KrogerService {
       const params = new URLSearchParams({
         "filter.term": query,
         "filter.locationId": store,
-        "filter.fulfillment": mode === "PICKUP" ? "csp" : "dth",
+        "filter.fulfillment": fulfillmentFilter(mode),
         "filter.limit": "15",
       });
       const raw = await this.client.get(
         `/products?${params}`,
         await this.customerToken(),
       );
-      const products = (raw.data ?? []).map((p: any) => productFromApi(p, mode))
+      const products = (raw.data ?? []).map((p: any) => productFromApi(p))
         .filter(Boolean);
       return { products: rankProducts(query, products) };
     }
@@ -239,7 +253,14 @@ export class KrogerService {
     for (let offset = 0; offset < lines.length; offset += 5) {
       const products = await Promise.all(
         lines.slice(offset, offset + 5).map((line) =>
-          this.client.product(line.upc, store, mode, token)
+          // A product the filter no longer returns is a line to review, not a
+          // failed export: it joins `changed` so the shopper sees which one.
+          this.client.product(line.upc, store, mode, token).catch((e) => {
+            if (e instanceof KrogerError && e.code === "product_unavailable") {
+              return unavailableProduct(line.upc);
+            }
+            throw e;
+          })
         ),
       );
       for (const product of products) {

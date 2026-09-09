@@ -23,9 +23,12 @@ class KrogerScreen extends ConsumerWidget {
     final result = ref.watch(provider);
     ref.listen(provider, (previous, next) {
       final message = next.value?.message;
+      // Suppressed only when the body is already showing these exact words:
+      // gating on availability instead would silence every later failure —
+      // a rate limit, an expired authorization — for an unavailable session.
       if (message != null &&
           previous?.value?.message != message &&
-          message != 'not_configured') {
+          message != next.value?.unavailableReason) {
         MealvanaSnackbar.showInfo(
           context,
           krogerText(
@@ -76,12 +79,15 @@ class KrogerScreen extends ConsumerWidget {
                         ),
                       ),
                     if (!s.available)
+                      // Pro required, rate limited, reconnect required and
+                      // genuinely not configured are four different facts.
                       Text(
                         krogerText(
                           ref,
-                          s.message == 'pro_required'
-                              ? ContentKeys.krogerProRequired
-                              : ContentKeys.krogerNotConfigured,
+                          krogerMessageKey(
+                                s.unavailableReason ?? 'not_configured',
+                              ) ??
+                              ContentKeys.krogerNotConfigured,
                         ),
                       ),
                     if (s.message == 'draft_conflict') ...[
@@ -131,7 +137,10 @@ class KrogerScreen extends ConsumerWidget {
                         OutlinedButton(
                           onPressed: () => _stores(context, ref, controller),
                           child: Text(
-                            krogerText(ref, ContentKeys.krogerChooseStore),
+                            krogerText(
+                              ref,
+                              ContentKeys.krogerChooseStoreAction,
+                            ),
                           ),
                         ),
                     ],
@@ -194,20 +203,21 @@ class KrogerScreen extends ConsumerWidget {
                     if (s.draft.dirty)
                       Text(krogerText(ref, ContentKeys.krogerSavedLocal)),
                     const SizedBox(height: AppSpacing.md),
-                    if (!s.draft.exported)
+                    // Rendered only when it can send. A permanently greyed
+                    // button is a control the shopper cannot learn anything
+                    // from by tapping.
+                    if (!s.draft.exported && s.connected && s.draft.ready)
                       FilledButton(
                         key: const ValueKey('kroger.export'),
-                        onPressed: s.connected && s.draft.ready
-                            ? () async {
-                                if (await _confirm(
-                                  context,
-                                  ref,
-                                  ContentKeys.krogerSendConfirm,
-                                )) {
-                                  await controller.export();
-                                }
-                              }
-                            : null,
+                        onPressed: () async {
+                          if (await _confirm(
+                            context,
+                            ref,
+                            ContentKeys.krogerSendConfirm,
+                          )) {
+                            await controller.export();
+                          }
+                        },
                         child: Text(krogerText(ref, ContentKeys.krogerSend)),
                       ),
                   ],
@@ -320,36 +330,32 @@ class _LineCard extends ConsumerWidget {
                   ],
                 ),
               ],
+              if (line.approved)
+                Text(krogerText(ref, ContentKeys.krogerApproved)),
               if (editable)
                 Wrap(
                   spacing: AppSpacing.sm,
                   children: [
-                    OutlinedButton(
-                      onPressed: state.connected && state.draft.store != null
-                          ? () => _products(context, ref, controller, line)
-                          : null,
-                      child: Text(
-                        krogerText(
-                          ref,
-                          product == null
-                              ? ContentKeys.krogerChoose
-                              : ContentKeys.krogerChange,
-                        ),
-                      ),
-                    ),
-                    if (product != null)
-                      FilledButton.tonal(
-                        onPressed: product.available && !line.approved
-                            ? () => controller.approve(line.id)
-                            : null,
+                    // Searching needs a Location and a connection; approving
+                    // needs a product that can actually be had. Without those
+                    // there is nothing to tap, so there is no button.
+                    if (state.connected && state.draft.store != null)
+                      OutlinedButton(
+                        onPressed: () =>
+                            _products(context, ref, controller, line),
                         child: Text(
                           krogerText(
                             ref,
-                            line.approved
-                                ? ContentKeys.krogerApproved
-                                : ContentKeys.krogerApprove,
+                            product == null
+                                ? ContentKeys.krogerChoose
+                                : ContentKeys.krogerChange,
                           ),
                         ),
+                      ),
+                    if (product != null && product.available && !line.approved)
+                      FilledButton.tonal(
+                        onPressed: () => controller.approve(line.id),
+                        child: Text(krogerText(ref, ContentKeys.krogerApprove)),
                       ),
                   ],
                 ),
@@ -461,7 +467,7 @@ Future<void> _stores(
           .value
           ?.draft
           .modality ??
-      'PICKUP';
+      KrogerDraft.defaultModality;
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,

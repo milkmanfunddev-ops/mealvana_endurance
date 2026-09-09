@@ -1,4 +1,5 @@
 import {
+  fulfillmentFilter,
   KrogerError,
   type Modality,
   type Product,
@@ -87,13 +88,17 @@ export class KrogerClient {
     mode: Modality,
     token: string,
   ): Promise<Product> {
+    // Filtered by fulfillment like the search was: an item the Location cannot
+    // serve this way is absent from the response, which is the answer.
+    const params = new URLSearchParams({
+      "filter.locationId": store,
+      "filter.fulfillment": fulfillmentFilter(mode),
+    });
     const raw = await this.get(
-      `/products/${encodeURIComponent(upc)}?filter.locationId=${
-        encodeURIComponent(store)
-      }`,
+      `/products/${encodeURIComponent(upc)}?${params}`,
       token,
     );
-    const product = productFromApi(raw.data, mode);
+    const product = productFromApi(raw.data);
     if (!product || product.upc !== upc) {
       throw new KrogerError("product_unavailable");
     }

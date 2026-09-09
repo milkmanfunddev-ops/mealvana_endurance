@@ -14,32 +14,39 @@ import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.d
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/shopping_tab.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/shopping_list.dart';
 import '../meal_planning/presentation/helpers/test_content.dart';
+import 'kroger_fixtures.dart';
 import 'kroger_repository_test.dart' show FakeRemote;
 
 const plan = '11111111-1111-4111-8111-111111111111';
-const product = KrogerProduct(
-  upc: '0001111040101',
-  name: 'Kroger Milk',
-  size: '1 l',
-  price: 3,
-  available: true,
-);
-const store = KrogerStore(
-  id: '01400943',
-  name: 'Test store',
-  address: 'Test address',
-);
+
+/// Broccoli at the Birmingham Spoke: no price, sold by the count, and a
+/// Location that only delivers. See `kroger_fixtures.dart`.
+final product = spokeProduct;
+final store = spokeStore;
 
 class TestShopping extends ShoppingListController {
   @override
   Future<ShoppingListState> build() async => const ShoppingListState(
     planId: plan,
-    items: [ShoppingItem(aisle: 'Dairy', name: 'Milk', qty: '2 l')],
+    items: [ShoppingItem(aisle: 'Produce', name: 'Broccoli', qty: '2 ct')],
   );
   void changeQuantity() => state = const AsyncData(
     ShoppingListState(
       planId: plan,
-      items: [ShoppingItem(aisle: 'Dairy', name: 'Milk', qty: '3 l')],
+      items: [ShoppingItem(aisle: 'Produce', name: 'Broccoli', qty: '3 ct')],
+    ),
+  );
+  void tickEverythingOff() => state = const AsyncData(
+    ShoppingListState(
+      planId: plan,
+      items: [
+        ShoppingItem(
+          aisle: 'Produce',
+          name: 'Broccoli',
+          qty: '2 ct',
+          checked: true,
+        ),
+      ],
     ),
   );
 }
@@ -53,19 +60,28 @@ void main() {
   var ambiguous = false;
   var browserCallback = '';
   var account = 'user-a';
+  var found = true;
+  Map<String, dynamic>? status;
+  String? loadFailure;
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     exports = 0;
     ambiguous = false;
     browserCallback = '';
     account = 'user-a';
+    found = true;
+    status = null;
+    loadFailure = null;
     remote = FakeRemote();
     remote.onCall = (action, data) async {
       switch (action) {
         case 'search':
           return {
-            'products': [product.toJson()],
+            'products': [if (found) product.toJson()],
           };
+        case 'export_status':
+          if (loadFailure != null) throw KrogerException(loadFailure!);
+          return {'receipt': null};
         case 'export':
           exports++;
           if (ambiguous) throw const KrogerException('unavailable');
@@ -73,12 +89,13 @@ void main() {
             'receipt': {'id': 'receipt', 'status': 'sent'},
           };
         default:
-          return {
-            'available': true,
-            'connected': true,
-            'environment': 'certification',
-            'receipt': null,
-          };
+          return status ??
+              {
+                'available': true,
+                'connected': true,
+                'environment': 'certification',
+                'receipt': null,
+              };
       }
     };
     repo = KrogerRepository(await SharedPreferences.getInstance(), remote);
@@ -103,16 +120,102 @@ void main() {
   tearDown(() => container.dispose());
   KrogerState current() =>
       container.read(krogerControllerProvider(plan)).requireValue;
+  Future<void> restart() async {
+    container.invalidate(krogerControllerProvider(plan));
+    await container.read(krogerControllerProvider(plan).future);
+  }
+
+  /// Pumps the screen on a surface tall enough to build the whole list. A
+  /// `ListView` does not build its off-screen children, so on a phone-sized
+  /// surface `findsNothing` cannot tell "not rendered" from "not scrolled to".
+  Future<void> showScreen(WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 6000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: KrogerScreen(planId: plan)),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
   Future<void> reviewed() async {
-    await controller.selectStore(store, 'PICKUP');
+    await controller.selectStore(store, 'DELIVERY');
     await controller.matchAll();
     await controller.approve(current().draft.lines.single.id);
   }
 
+  test('a new draft is for delivery', () async {
+    // There is no Kroger in Birmingham, only a Spoke, and a Spoke only
+    // delivers. Defaulting to pickup is what made the feature inert there.
+    expect(current().draft.modality, 'DELIVERY');
+  });
+  test('a run that matched nothing says it matched nothing', () async {
+    found = false;
+    await controller.selectStore(store, 'DELIVERY');
+    await controller.matchAll();
+    expect(current().draft.lines.single.product, null);
+    expect(current().message, 'no_products');
+  });
+  test('a run with nothing to match says nothing was selected', () async {
+    await controller.selectStore(store, 'DELIVERY');
+    (container.read(shoppingListControllerProvider.notifier) as TestShopping)
+        .tickEverythingOff();
+    await container.pump();
+    await Future<void>.delayed(Duration.zero);
+    await controller.matchAll();
+    expect(current().message, 'all_skipped');
+  });
+  test('a Spoke product carries no price, never a zero one', () async {
+    await controller.selectStore(store, 'DELIVERY');
+    await controller.matchAll();
+    expect(current().draft.lines.single.product?.price, null);
+    expect(current().draft.estimate, 0);
+    expect(current().draft.unknownPrices, 1);
+  });
+  group('a failure reason survives the initial load', () {
+    test('an unavailable service reports its own reason', () async {
+      for (final reason in const ['pro_required', 'not_configured']) {
+        status = {
+          'available': false,
+          'connected': true,
+          'environment': 'certification',
+          'reason': reason,
+        };
+        await restart();
+        expect(current().unavailableReason, reason, reason: reason);
+        expect(current().available, false, reason: reason);
+      }
+    });
+    test('and is not degraded by the next action', () async {
+      status = {
+        'available': false,
+        'connected': true,
+        'environment': 'certification',
+        'reason': 'pro_required',
+      };
+      await restart();
+      // matchAll fails on its own terms; that must not rewrite why the
+      // service is unavailable in the first place.
+      await controller.matchAll();
+      expect(current().message, 'choose_store');
+      expect(current().unavailableReason, 'pro_required');
+    });
+    test('a failing call reports its own code', () async {
+      for (final code in const ['rate_limited', 'reconnect_required']) {
+        loadFailure = code;
+        await restart();
+        expect(current().message, code, reason: code);
+        expect(current().unavailableReason, code, reason: code);
+      }
+    });
+  });
   test(
     'matching suggests package count but requires shopper approval',
     () async {
-      await controller.selectStore(store, 'PICKUP');
+      await controller.selectStore(store, 'DELIVERY');
       await controller.matchAll();
       expect(current().draft.lines.single.quantity, 2);
       expect(current().draft.ready, false);
@@ -125,7 +228,7 @@ void main() {
   );
   test('store or modality change clears previous matches', () async {
     await reviewed();
-    await controller.selectStore(store, 'DELIVERY');
+    await controller.selectStore(store, 'PICKUP');
     expect(current().draft.lines.single.product, null);
     expect(current().draft.ready, false);
   });
@@ -137,14 +240,14 @@ void main() {
           .changeQuantity();
       await container.pump();
       await Future<void>.delayed(Duration.zero);
-      expect(current().draft.lines.single.requiredQty, '3 l');
+      expect(current().draft.lines.single.requiredQty, '3 ct');
       expect(current().draft.lines.single.quantity, 3);
       expect(current().draft.lines.single.product?.upc, product.upc);
       expect(current().draft.ready, false);
     },
   );
   test('a late lookup cannot mutate the next account draft', () async {
-    await controller.selectStore(store, 'PICKUP');
+    await controller.selectStore(store, 'DELIVERY');
     final pending = Completer<Map<String, dynamic>>();
     remote.onCall = (action, data) async => action == 'search'
         ? await pending.future
@@ -211,6 +314,99 @@ void main() {
     expect(current().message, 'invalid_oauth_state');
     expect(exchanged, false);
   });
+  testWidgets('each failure cause says its own thing', (tester) async {
+    // Every one of these used to render as "Kroger shopping is being set up",
+    // which is a lie in three cases out of four.
+    final copy = loadDefaultContent();
+    for (final (cause, key) in const [
+      ('pro_required', 'kroger.pro_required'),
+      ('not_configured', 'kroger.not_configured'),
+      ('rate_limited', 'kroger.rate_limited'),
+      ('reconnect_required', 'kroger.reconnect_required'),
+    ]) {
+      if (cause == 'rate_limited' || cause == 'reconnect_required') {
+        loadFailure = cause;
+      } else {
+        status = {
+          'available': false,
+          'connected': true,
+          'environment': 'certification',
+          'reason': cause,
+        };
+      }
+      await tester.runAsync(restart);
+      await showScreen(tester);
+      expect(find.text(copy[key]!), findsWidgets, reason: cause);
+      if (key != 'kroger.not_configured') {
+        expect(
+          find.text(copy['kroger.not_configured']!),
+          findsNothing,
+          reason: cause,
+        );
+      }
+      loadFailure = null;
+      status = null;
+    }
+  });
+  testWidgets('a later failure is still reported to an unavailable session', (
+    tester,
+  ) async {
+    // The body shows why the service is unavailable. It must not also swallow
+    // what happens next: a rate limit while in that state has to be visible.
+    final copy = loadDefaultContent();
+    status = {
+      'available': false,
+      'connected': true,
+      'environment': 'certification',
+      'reason': 'pro_required',
+    };
+    await tester.runAsync(restart);
+    await showScreen(tester);
+    remote.onCall = (action, data) async =>
+        throw const KrogerException('rate_limited');
+    await tester.runAsync(controller.refresh);
+    await tester.pumpAndSettle();
+    expect(find.text(copy['kroger.rate_limited']!), findsWidgets);
+  });
+  testWidgets('no control is labelled with an error message', (tester) async {
+    // "Choose a store first." explains a refusal. A button says what it does.
+    final copy = loadDefaultContent();
+    await showScreen(tester);
+    for (final button in tester.widgetList<ButtonStyleButton>(
+      find.byWidgetPredicate((w) => w is ButtonStyleButton),
+    )) {
+      final label = button.child;
+      if (label is Text) {
+        expect(
+          const [
+            'kroger.choose_store',
+            'kroger.product_unavailable',
+            'kroger.no_products',
+            'kroger.review_required',
+          ].map((k) => copy[k]),
+          isNot(contains(label.data)),
+        );
+      }
+    }
+  });
+  testWidgets('a control that cannot act is not rendered', (tester) async {
+    await showScreen(tester);
+    final copy = loadDefaultContent();
+    // Nothing is matched or approved yet, and no store is chosen.
+    expect(find.byKey(const ValueKey('kroger.export')), findsNothing);
+    expect(find.text(copy['kroger.choose']!), findsNothing);
+    for (final button in tester.widgetList<ButtonStyleButton>(
+      find.byWidgetPredicate((w) => w is ButtonStyleButton),
+    )) {
+      final label = button.child;
+      expect(button.enabled, true, reason: label is Text ? label.data : '?');
+    }
+    await tester.runAsync(reviewed);
+    await tester.pumpAndSettle();
+    expect(current().message, isNull);
+    expect(current().draft.ready, true);
+    expect(find.byKey(const ValueKey('kroger.export')), findsOneWidget);
+  });
   testWidgets('review screen renders editable items and manual additions', (
     tester,
   ) async {
@@ -221,7 +417,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Milk'), findsOneWidget);
+    expect(find.text('Broccoli'), findsOneWidget);
     final copy = loadDefaultContent();
     await tester.ensureVisible(find.text(copy['kroger.add_item']!));
     await tester.tap(find.text(copy['kroger.add_item']!));

@@ -30,6 +30,7 @@
     "zip": "ZIP code",
     "invalid_zip": "Enter a five-digit ZIP code.",
     "choose_store": "Choose a store first.",
+    "choose_store_action": "Choose a store",
     "pickup": "Pickup",
     "delivery": "Delivery",
     "change_store": "Change store",
