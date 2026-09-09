@@ -98,10 +98,18 @@ async function handle(ing) {
       if (cands.length >= 30 || strong()) break;
     }
   };
+  // Stock search is literal, and a bare ingredient word is ambiguous in ways
+  // the archives are not: "chicken" returns a live bird, "salt" a beach,
+  // "ginger" a can of ginger ale, "cinnamon" cinnamon-sugar cookies. Ask for
+  // the food first and fall back to the bare word only if that finds nothing.
+  // (Ranking still scores candidate titles against the bare `q`.)
   const stock = async () => {
-    if (hasPexels) await add('pexels', PROVIDERS.pexels, q);
-    if (hasUnsplash && ing.rank <= UNSPLASH_TOP && !strong()) {
-      await add('unsplash', PROVIDERS.unsplash, q);
+    for (const variant of [`${q} food ingredient`, `${q} food`, q]) {
+      if (hasPexels) await add('pexels', PROVIDERS.pexels, variant);
+      if (hasUnsplash && ing.rank <= UNSPLASH_TOP && !strong()) {
+        await add('unsplash', PROVIDERS.unsplash, variant);
+      }
+      if (cands.length >= 30 || strong()) break;
     }
   };
 
