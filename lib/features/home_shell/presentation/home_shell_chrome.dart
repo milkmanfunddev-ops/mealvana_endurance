@@ -73,6 +73,23 @@ class HomeShellChrome extends ConsumerStatefulWidget {
   /// home tab's body applies it (see [TabsScreen]).
   static const double headerClearancePx = 56.0;
 
+  /// The floating tab bar's own bottom margin (Q2 geometry: left-anchored,
+  /// floating over the content, outside the bottom safe area).
+  static const double tabBarBottomMarginPx = 28.0;
+
+  /// Vertical space the shell's bottom chrome occupies — what a body's
+  /// docked content and scroll padding must clear. Published here (like
+  /// [headerClearancePx]) so bodies never encode a guess about the shell:
+  /// the brick panel's hardcoded 71 went stale the moment the home-shell
+  /// switchover replaced the old FAB bar with this taller glass bar, and
+  /// the bar then clipped it (found on device 2026-09-09).
+  ///
+  /// Always the EXPANDED height, never the live one — the bar collapses to
+  /// a home button on scroll, and sizing docked chrome to the current
+  /// height would slide it up and down under the user's thumb mid-gesture.
+  static const double bottomChromeClearancePx =
+      tabBarBottomMarginPx + KyleTabBar.expandedHeight;
+
   @override
   ConsumerState<HomeShellChrome> createState() => _HomeShellChromeState();
 }
@@ -151,7 +168,7 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
           // stays EMPTY in v1 (nothing composes there, deliberately).
           Positioned(
             left: 14,
-            bottom: 28,
+            bottom: HomeShellChrome.tabBarBottomMarginPx,
             child: Offstage(
               offstage: !widget.showTabBar,
               child: KyleTabBar(
