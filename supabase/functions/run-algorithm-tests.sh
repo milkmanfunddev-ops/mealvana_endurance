@@ -24,7 +24,7 @@
 #   tests like ai-coach/index.test.ts mention that path in comments.)
 #
 # Permissions: local tests all run with one safe superset —
-#   --allow-read --allow-write --allow-env --node-modules-dir=none
+#   --allow-read --allow-write --allow-env --allow-sys --node-modules-dir=none
 # No local test currently needs --allow-net (the AI-function tests stub
 # globalThis.fetch). If one ever genuinely does, add it to NET_ALLOWED below
 # with a comment saying why.
@@ -53,7 +53,9 @@ QUARANTINE=(
 NET_ALLOWED=(
 )
 
-LOCAL_FLAGS=(--allow-read --allow-write --allow-env --node-modules-dir=none)
+# --allow-sys: the Vana seam tests import the shared modules, whose AI-SDK dependency reads
+# os.hostname() at import time. No local test uses it for anything else.
+LOCAL_FLAGS=(--allow-read --allow-write --allow-env --allow-sys --node-modules-dir=none)
 E2E_FLAGS=(--allow-net --allow-env --allow-read --node-modules-dir=none)
 
 # Colors

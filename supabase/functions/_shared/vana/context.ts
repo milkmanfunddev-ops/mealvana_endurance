@@ -10,11 +10,21 @@ import { getPlan } from './plan.ts';
 import { ensureWeekTargets } from './macros.ts';
 import { holidaysInRange } from './holidays.ts';
 
+/** The three collaborators that leave the process: the macro engine, the weather API, and the
+ *  embedding call behind vector recall. Injecting them is what lets a test build the block from
+ *  fixture rows alone. Production always takes the defaults. */
+export interface ContextDeps {
+  ensureWeekTargets: (v: VanaCtx, anchorDate: string) => Promise<void>;
+  weatherLine: (place: string | null, dateIso: string) => Promise<string | null>;
+  recallMemories: (v: VanaCtx, text: string, limit: number) => Promise<Memory[]>;
+}
+export const defaultContextDeps: ContextDeps = { ensureWeekTargets, weatherLine, recallMemories };
+
 /** `anchorDate` = the day the user is looking at (client-local, passed by the function from `anchor_date`/`timezone`).
  *  Defaults to UTC today — the two differ around midnight and on weekend boundaries. */
-export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, anchorDate?: string): Promise<AthleteContext> {
+export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, anchorDate?: string, deps: ContextDeps = defaultContextDeps): Promise<AthleteContext> {
   const t = anchorDate ?? today();
-  await ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
+  await deps.ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
   const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }] = await Promise.all([
     d.from('users').select('first_name, dietary_preference, allergies, gut_training_level').eq('id', v.userId).maybeSingle(),
@@ -50,8 +60,8 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
   let raceWeekCarbsG: number | null = null;
   // deno-lint-ignore no-explicit-any
   if (race) { const pre = (macros ?? []).filter((m: any) => m.target_date < race.date && m.target_date >= addDays(race.date, -3)); raceWeekCarbsG = pre.length ? Math.max(...pre.map((m: any) => Number(m.carb_g ?? 0))) : null; }
-  const [wToday, wRace] = await Promise.all([weatherLine(race?.location ?? null, t), race ? weatherLine(race.location, race.date) : Promise.resolve(null)]);
-  let memories: Memory[] = latestUserText ? await recallMemories(v, latestUserText, 6) : [];
+  const [wToday, wRace] = await Promise.all([deps.weatherLine(race?.location ?? null, t), race ? deps.weatherLine(race.location, race.date) : Promise.resolve(null)]);
+  let memories: Memory[] = latestUserText ? await deps.recallMemories(v, latestUserText, 6) : [];
   const recent = await listMemories(v, 10);
   for (const m of recent) if (!memories.some((x) => x.id === m.id)) memories.push(m);
   memories = memories.slice(0, 10);
