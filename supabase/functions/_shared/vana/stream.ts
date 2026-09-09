@@ -42,6 +42,8 @@ export interface NdjsonOpts {
   onUiPart?: (part: unknown) => void;
   /** Log prefix, e.g. '[vana-chat]'. */
   tag?: string;
+  /** Server-authored UI parts appended after the model's output, before `done` (the first conversation's feedback prompt). */
+  trailingParts?: unknown[];
 }
 
 /**
@@ -64,7 +66,7 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
           else if (part.type === 'tool-input-start') push({ type: 'status', tool: part.toolName });
           else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
           else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push({ type: 'error', message: errorMessage(part.error) }); }
-          else if (part.type === 'finish') { push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null } }); done = true; }
+          else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null } }); done = true; }
           // step-start / step-finish / tool-call / tool-input-delta carry nothing user-visible.
         }
       } catch (e) {

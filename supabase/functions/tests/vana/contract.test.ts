@@ -3,7 +3,7 @@
  *  Dart `fromJson` tests make; if a fixture stops parsing here, the contract moved and three places need the change
  *  (prototype TS, _shared/vana/, lib/features/meal_planning/domain/). Regenerate fixtures in the prototype (`pnpm test`). */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { ActionResultZ, BatchPartZ, ChoicesPartZ, DayGuidancePartZ, PantryPartZ, WeekPartZ, DebriefPartZ, HomePayloadZ, MealDetailZ, MealPickerPartZ, NdjsonExchangeZ, RecentMealZ, ShoppingListPartZ, StaplesPartZ, VanaPartZ } from '../../_shared/vana/schemas.ts';
+import { ActionResultZ, BatchPartZ, ChoicesPartZ, DayGuidancePartZ, PantryPartZ, WeekPartZ, DebriefPartZ, FeedbackSavedPartZ, FeedbackPromptPartZ, HomePayloadZ, MealDetailZ, MealPickerPartZ, NdjsonExchangeZ, RecentMealZ, ShoppingListPartZ, StaplesPartZ, VanaPartZ } from '../../_shared/vana/schemas.ts';
 import { z } from 'npm:zod@3';
 
 const dir = new URL('./fixtures/', import.meta.url);
@@ -27,6 +27,20 @@ Deno.test('contract: general_turn.json is a general NDJSON exchange ending in do
   const ex = parse(NdjsonExchangeZ, fixture('general_turn'), 'general_turn.json');
   assertEquals(ex.headers['x-vana-kind'], 'general');
   assertEquals(ex.lines.at(-1)?.type, 'done');
+});
+
+Deno.test('contract: feedback_saved.json — typed-into-Vana feedback landed in user_feedback (2026-09-09)', () => {
+  const fs = parse(FeedbackSavedPartZ, fixture('feedback_saved'), 'feedback_saved.json');
+  assertEquals(fs.about, 'vana');
+  parse(VanaPartZ, fixture('feedback_saved'), 'feedback_saved.json via VanaPartZ');
+  assert(!FeedbackSavedPartZ.safeParse({ kind: 'feedback_saved', message: '', sentiment: 'neutral', about: 'app' }).success, 'message is required');
+  assert(!FeedbackSavedPartZ.safeParse({ kind: 'feedback_saved', message: 'x', sentiment: 'meh', about: 'app' }).success, 'sentiment enum');
+});
+
+Deno.test('contract: feedback_prompt.json — server-appended first-conversation prompt (2026-09-09)', () => {
+  parse(FeedbackPromptPartZ, fixture('feedback_prompt'), 'feedback_prompt.json');
+  parse(VanaPartZ, fixture('feedback_prompt'), 'feedback_prompt.json via VanaPartZ');
+  assert(!FeedbackPromptPartZ.safeParse({ kind: 'feedback_prompt', text: 'x' }).success, 'no payload — copy is content-managed on the client (plain text, no link)');
 });
 
 Deno.test('contract: single VanaPart fixtures', () => {

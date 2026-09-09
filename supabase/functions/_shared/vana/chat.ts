@@ -58,6 +58,13 @@ export async function listConversations(v: VanaCtx, limit = 30, kind?: Conversat
   // deno-lint-ignore no-explicit-any
   return (data ?? []).map((r: any) => ({ id: r.id, kind: r.kind === 'general' ? 'general' : 'meal_planning', title: r.title, summary: r.summary, lastMessageAt: r.last_message_at, createdAt: r.created_at }));
 }
+/** Conversations this user had before `exceptId` (which is the one being opened). Counts deleted ones too — a deleted chat
+ *  was still a conversation, and the shake tip is a first-ever thing. Any error reads as "not first" (never re-tip on a hiccup). */
+export async function priorConversationCount(v: VanaCtx, exceptId: string): Promise<number> {
+  const { count, error } = await v.db.from('vana_conversations').select('id', { count: 'exact', head: true }).eq('user_id', v.userId).neq('id', exceptId);
+  if (error) { console.error('[vana] priorConversationCount:', error.message); return 1; }
+  return count ?? 1;
+}
 export async function createConversation(v: VanaCtx, kind: ConversationKind = 'meal_planning'): Promise<string> {
   const { data, error } = await v.db.from('vana_conversations').insert({ user_id: v.userId, title: null, kind, last_message_at: new Date().toISOString() }).select('id').single();
   if (error) throw new Error(error.message); return data.id as string;
@@ -159,6 +166,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
   let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] = 'plan'; let extraContext = '';
+  // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
+  // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
+  // never sees or writes it, so it cannot be paraphrased away.
+  const firstConversation = opener && persist && (await priorConversationCount(v, convId)) === 0;
+  const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
   if (convKind === 'meal_planning') {
     const openerInput = await loadOpenerInput(v, anchorDate);
     // The opener's synthetic user message is never stored, so later turns need the pending debrief restated in the context.
@@ -186,6 +198,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
         try {
           if (persist) {
             const { parts, ui } = partsFromSteps(text, steps as unknown[], general ? null : RUNAWAY_SENTENCES);
+            for (const t of trailingParts) { ui.push(t); parts.push({ type: 'tool-feedbackPrompt', toolCallId: `server-${Date.now()}`, state: 'output-available', input: {}, output: t }); }
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
             const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text ?? clampSentences(text), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
@@ -202,5 +215,5 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     },
   });
   const headers = ndjsonHeaders({ 'x-conversation-id': convId, 'x-vana-kind': convKind });
-  return { ok: true, response: new Response(ndjsonFromFullStream(result.fullStream, { tag }), { status: 200, headers }) };
+  return { ok: true, response: new Response(ndjsonFromFullStream(result.fullStream, { tag, trailingParts }), { status: 200, headers }) };
 }

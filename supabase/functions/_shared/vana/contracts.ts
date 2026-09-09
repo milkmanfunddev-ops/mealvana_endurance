@@ -97,9 +97,9 @@ export type VanaPart =
   | { kind: 'pantry'; title: string; items: { name: string; selected: boolean }[]; allowCustom: boolean; origin: 'suggested' | 'photo' }   // askPantry / pantry_photo — what's in the house; nothing is used until the athlete taps "Use these"
   | { kind: 'week'; days: { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }[] }                              // planWeek — the confirmed collection laid across the week (Phase 8)
   | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] }                 // recordDebrief — end-of-week debrief captured (Phase 3)
-  // ---- additive 2026-09-08 (feedback loop)
-  | { kind: 'report_problem'; summary: string; about: 'app' | 'answer' }                                                                   // reportProblem — Vana heard a complaint; the app offers "Send to the team" (Wiredash)
-  | { kind: 'feedback_prompt' };                                                                                                            // server-appended to the FIRST conversation's opener (never model-driven): "Give feedback for me here" → the app's own feedback sheet                                                                  // reportProblem — Vana heard a complaint; the app offers "Send to the team" (Wiredash)
+  // ---- additive 2026-09-09 (feedback loop) — typing feedback INTO Vana is the feedback system
+  | { kind: 'feedback_saved'; message: string; sentiment: 'positive' | 'negative' | 'neutral'; about: 'vana' | 'app' | 'suggestion' } // saveFeedback — the athlete's words landed in user_feedback
+  | { kind: 'feedback_prompt' };                                                                                                            // server-appended after the FIRST conversation's opener: "Have feedback for me? Just type it here." (plain text)
 
 // ---- What the UI sends back (chip taps are plain user messages; structured edits go through these)
 export interface UiAction {
