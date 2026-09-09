@@ -29,6 +29,7 @@ import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targ
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
+import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart'
@@ -119,6 +120,27 @@ Future<void> _pump(WidgetTester tester, List<Activity> activities) async {
   await pumpSeeded(
     tester,
     const Scaffold(body: MacroDashboardScreen()),
+    overrides: _overrides(),
+    settle: true,
+  );
+}
+
+/// The body as the SHELL composes it — with a real bottom-chrome clearance
+/// rather than the bare screen's 0. Some docked-layout arithmetic only goes
+/// wrong when that inset is non-zero, so a bare-screen pump cannot see it.
+Future<void> _pumpUnderShell(
+  WidgetTester tester,
+  List<Activity> activities,
+) async {
+  _SeededActivitiesController.seed = activities;
+  await pumpSeeded(
+    tester,
+    const Scaffold(
+      body: MacroDashboardBody(
+        topInset: HomeShellChrome.headerClearancePx,
+        bottomInset: HomeShellChrome.bottomChromeClearancePx,
+      ),
+    ),
     overrides: _overrides(),
     settle: true,
   );
@@ -451,7 +473,7 @@ void main() {
       tester.view.physicalSize = const Size(800, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
-      await _pump(tester, [
+      await _pumpUnderShell(tester, [
         _activity('run1', ActivityType.running, 8),
         _activity('ride1', ActivityType.cycling, 12),
         for (var h = 13; h < 20; h++)
@@ -476,12 +498,24 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(last, findsOneWidget);
+      final lastBottom = tester.getRect(last).bottom;
       expect(
-        tester.getRect(last).bottom,
+        lastBottom,
         lessThanOrEqualTo(panelTop),
         reason:
             'the list must reserve the docked panel height, or the last '
             'card is permanently trapped under it and cannot be picked',
+      );
+      // ...and it must clear the panel by a real gap rather than landing
+      // flush against its top edge, without overshooting: reserving the
+      // shell clearance on TOP of the measured panel (which already carries
+      // its own margin) double-counts it and overscrolls ~100px past.
+      expect(
+        panelTop - lastBottom,
+        inInclusiveRange(4, 40),
+        reason:
+            'the last card should come to rest just above the panel — a '
+            'visible gap, not flush, and not a screenful of dead space',
       );
     });
   });

@@ -1286,6 +1286,12 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
   /// height — otherwise the last cards can never be scrolled out from under
   /// it and become unpickable (the exact state the leg-order widget tests
   /// worked around with a 1600 px viewport instead of catching).
+  ///
+  /// This INCLUDES the panel's own bottom margin (its shell clearance + gap),
+  /// because [_BlockMeasure] measures the panel's Container including margin.
+  /// The list therefore adds only one further gap on top of it — adding the
+  /// clearance again would double-count it and overscroll the timeline by
+  /// ~100 px past the panel.
   double _dockHeight = 0;
 
   void _onDockHeight(double h) {
@@ -1348,13 +1354,14 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
               18,
               _blockHeight,
               18,
-              // The shell's bottom chrome, plus the docked brick panel's
-              // measured height while picking. Gated on `picking` so the
-              // last measurement doesn't leave phantom padding behind once
-              // the panel unmounts.
-              widget.bottomInset +
-                  MacroDashboardScreen._dockGap(context) +
-                  (picking ? _dockHeight : 0),
+              // Whatever occupies the bottom edge, plus one gap above it,
+              // so the LAST card scrolls fully clear of it rather than
+              // landing flush against it. While picking that occupant is
+              // the docked panel (already measured with its own clearance);
+              // otherwise it is the shell's bottom chrome. Gated on
+              // `picking` so no phantom padding survives the unmount.
+              (picking ? _dockHeight : widget.bottomInset) +
+                  MacroDashboardScreen._dockGap(context),
             ),
             children: [
               for (final node in nodes)
