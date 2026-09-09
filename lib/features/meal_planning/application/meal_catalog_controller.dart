@@ -30,6 +30,8 @@ class MealCatalogState {
     this.recipes = const [],
     this.results = const [],
     this.isSearching = false,
+    this.isLoadingMore = false,
+    this.hasMore = false,
     this.railsFromServer = false,
     this.searchError,
   });
@@ -51,6 +53,14 @@ class MealCatalogState {
   /// Flat results while a query or a filter is active.
   final List<MealRef> results;
   final bool isSearching;
+
+  /// A further page of [results] is in flight.
+  final bool isLoadingMore;
+
+  /// The last page came back full, so there is probably more to fetch. The
+  /// library is ~1,900 meals; without paging the flat list stopped at one page
+  /// and there was no way to reach the rest.
+  final bool hasMore;
 
   /// True once the online rails (assemblies/recipes, server recents) loaded.
   final bool railsFromServer;
@@ -74,6 +84,8 @@ class MealCatalogState {
     List<MealRef>? recipes,
     List<MealRef>? results,
     bool? isSearching,
+    bool? isLoadingMore,
+    bool? hasMore,
     bool? railsFromServer,
     Object? searchError,
     bool clearSearchError = false,
@@ -87,6 +99,8 @@ class MealCatalogState {
     recipes: recipes ?? this.recipes,
     results: results ?? this.results,
     isSearching: isSearching ?? this.isSearching,
+    isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    hasMore: hasMore ?? this.hasMore,
     railsFromServer: railsFromServer ?? this.railsFromServer,
     searchError: clearSearchError ? null : (searchError ?? this.searchError),
   );
@@ -102,8 +116,11 @@ class MealCatalogState {
 @riverpod
 class MealCatalogController extends _$MealCatalogController {
   static const debounce = Duration(milliseconds: 350);
-  static const railLimit = 12;
-  static const searchLimit = 30;
+  static const railLimit = 24;
+
+  /// One page of the flat filtered list. `loadMore` fetches the next page by
+  /// offset; `search_meals` orders by (score, id) so pages never overlap.
+  static const searchLimit = 40;
   static const recentsLimit = 20;
 
   MealLibraryRemoteDataSource get _remote =>
@@ -199,8 +216,21 @@ class MealCatalogController extends _$MealCatalogController {
     if (!await ref.read(connectivityCheckerProvider).isOnline()) return;
     try {
       final results = await Future.wait([
-        _remote.searchMeals(kind: MealKind.assembly, limit: railLimit),
-        _remote.searchMeals(kind: MealKind.recipe, limit: railLimit),
+        // includeSaved: false — saved meals score 0.65 against a library row's
+        // ~0.5, so with a dozen saved meals they filled both kind rails and no
+        // library meal appeared at all. My Foods is their rail.
+        _remote.searchMeals(
+          kind: MealKind.assembly,
+          limit: railLimit,
+          includeSaved: false,
+          includeDisliked: true,
+        ),
+        _remote.searchMeals(
+          kind: MealKind.recipe,
+          limit: railLimit,
+          includeSaved: false,
+          includeDisliked: true,
+        ),
         _remote.recentMeals(limit: recentsLimit),
       ]);
       if (!ref.mounted) return;
@@ -326,7 +356,11 @@ class MealCatalogController extends _$MealCatalogController {
       );
       if (!ref.mounted || seq != _searchSeq) return;
       state = AsyncData(
-        state.value!.copyWith(results: results, isSearching: false),
+        state.value!.copyWith(
+          results: results,
+          isSearching: false,
+          hasMore: results.length >= searchLimit,
+        ),
       );
     } catch (e, st) {
       if (!ref.mounted || seq != _searchSeq) return;
@@ -338,6 +372,53 @@ class MealCatalogController extends _$MealCatalogController {
       );
       state = AsyncData(
         state.value!.copyWith(isSearching: false, searchError: e),
+      );
+    }
+  }
+
+  /// Fetch the next page of the flat filtered list. No-op unless a filter is
+  /// active, a page is already in flight, or the last page was short.
+  Future<void> loadMore() async {
+    final current = state.value;
+    if (current == null ||
+        !current.isFiltering ||
+        current.isSearching ||
+        current.isLoadingMore ||
+        !current.hasMore) {
+      return;
+    }
+    final seq = _searchSeq;
+    final offset = current.results.length;
+    state = AsyncData(current.copyWith(isLoadingMore: true));
+    try {
+      final page = await _remote.searchMeals(
+        query: current.query,
+        mealType: current.mealType,
+        kind: current.kind,
+        includeDisliked: true,
+        limit: searchLimit,
+        offset: offset,
+      );
+      // A filter change while this page was in flight makes it stale.
+      if (!ref.mounted || seq != _searchSeq) return;
+      final latest = state.value!;
+      state = AsyncData(
+        latest.copyWith(
+          results: [...latest.results, ...page],
+          isLoadingMore: false,
+          hasMore: page.length >= searchLimit,
+        ),
+      );
+    } catch (e, st) {
+      if (!ref.mounted || seq != _searchSeq) return;
+      _logger.warning(
+        'Catalog page load failed',
+        context: 'MEAL_CATALOG_CONTROLLER',
+        error: e,
+        stackTrace: st,
+      );
+      state = AsyncData(
+        state.value!.copyWith(isLoadingMore: false, hasMore: false),
       );
     }
   }

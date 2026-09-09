@@ -6,6 +6,7 @@ import '../../../shared/services/logging_service.dart';
 import '../domain/meal_context.dart';
 import '../domain/meal_detail.dart';
 import '../domain/meal_icon_classifier.dart';
+import '../domain/meal_image.dart';
 import '../domain/meal_ref.dart';
 import '../domain/meal_source.dart';
 import '../domain/meal_type.dart';
@@ -86,6 +87,7 @@ class MealLibraryRemoteDataSource {
     MealKind? kind,
     bool includeDisliked = false,
     Set<String> excludeIds = const {},
+    int offset = 0,
   }) async {
     final params = <String, dynamic>{
       'p_user_id': _userId,
@@ -105,6 +107,7 @@ class MealLibraryRemoteDataSource {
       'p_require_diet': requireDiet,
       'p_kind': kind?.wire,
       'p_include_disliked': includeDisliked,
+      'p_offset': offset,
     };
 
     final rows = await _supabase.rpc('search_meals', params: params);
@@ -202,6 +205,20 @@ class MealLibraryRemoteDataSource {
         readString(r, 'attribution') ?? readString(r, 'source_text') ?? '';
     final ingredients = readString(r, 'ingredients') ?? '';
     final pattern = readString(r, 'pattern');
+    // `search_meals` returns the same image columns the Vana edge function maps
+    // in `_shared/vana/meals.ts`. Without this, every meal reaching the Meals
+    // tab defaulted to MealImageMode.none and rendered its icon — the mosaics
+    // only ever appeared on the agent path.
+    final imageUrl = readString(r, 'image_url');
+    final tiles = <MealImageTile>[];
+    final rawTiles = r['image_tiles'];
+    if (rawTiles is List) {
+      for (final entry in rawTiles) {
+        final tile = asJsonMap(entry);
+        if (tile == null || readString(tile, 'url') == null) continue;
+        tiles.add(MealImageTile.fromJson(tile));
+      }
+    }
     return MealRef(
       source: source,
       id: id,
@@ -236,6 +253,11 @@ class MealLibraryRemoteDataSource {
         pattern: pattern,
       ),
       myVote: readInt(r, 'my_vote') ?? 0,
+      imageMode: MealImageMode.fromWire(readString(r, 'image_mode')),
+      imageTiles: tiles,
+      image: imageUrl == null
+          ? null
+          : MealImage(url: imageUrl, credit: readString(r, 'image_credit')),
     );
   }
 

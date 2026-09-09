@@ -21,7 +21,14 @@ import '../helpers/container.dart';
 import '../helpers/fakes.dart';
 
 class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
+  _FakeRemote({this.pool});
+
   final List<Map<String, Object?>> searches = [];
+
+  /// When set, the fake behaves like a library of this many meals and honours
+  /// limit/offset, so paging can be exercised. Null keeps the one-row default
+  /// the older tests assert against.
+  final int? pool;
 
   @override
   Future<List<MealRef>> searchMeals({
@@ -36,13 +43,29 @@ class _FakeRemote extends Fake implements MealLibraryRemoteDataSource {
     MealKind? kind,
     bool includeDisliked = false,
     Set<String> excludeIds = const {},
+    int offset = 0,
   }) async {
     searches.add({
       'query': query,
       'mealType': mealType,
       'kind': kind,
       'includeDisliked': includeDisliked,
+      'includeSaved': includeSaved,
+      'limit': limit,
+      'offset': offset,
     });
+    if (pool != null) {
+      final end = (offset + limit).clamp(0, pool!);
+      return [
+        for (var i = offset; i < end; i++)
+          MealRef(
+            source: MealSource.library,
+            id: 'L-$i',
+            name: 'Library meal $i',
+            mealType: mealType ?? MealType.dinner,
+          ),
+      ];
+    }
     return [
       MealRef(
         source: MealSource.library,
@@ -258,5 +281,74 @@ void main() {
     c.setQuery('');
     await settle(const Duration(milliseconds: 450));
     expect(remote.searches, isEmpty);
+  });
+
+  // ── The Meals tab showed ~20 of ~1,900 meals ───────────────────────────────
+
+  test('kind rails exclude saved meals, which used to crowd them out', () async {
+    final c = make(online: true);
+    await c.future;
+    await settle();
+
+    final railCalls = remote.searches
+        .where((s) => s['kind'] != null && s['query'] == null)
+        .toList();
+    expect(railCalls, hasLength(2));
+    for (final call in railCalls) {
+      // Saved meals score 0.65 against a library row's ~0.5; left in, twelve of
+      // them filled both rails and no library meal appeared.
+      expect(call['includeSaved'], isFalse);
+      expect(call['limit'], MealCatalogController.railLimit);
+    }
+    expect(
+      railCalls.map((s) => s['kind']),
+      containsAll(<MealKind>[MealKind.assembly, MealKind.recipe]),
+    );
+  });
+
+  test(
+    'loadMore pages the flat list by offset until the library runs out',
+    () async {
+      remote = _FakeRemote(pool: 95);
+      final c = make();
+      await c.future;
+
+      c.setKind(MealKind.assembly);
+      await settle();
+
+      const page = MealCatalogController.searchLimit;
+      expect(c.state.value!.results, hasLength(page));
+      expect(c.state.value!.hasMore, isTrue);
+
+      await c.loadMore();
+      expect(c.state.value!.results, hasLength(page * 2));
+      expect(remote.searches.last['offset'], page);
+      expect(c.state.value!.hasMore, isTrue);
+
+      // 95 meals: the third page is short, so paging stops.
+      await c.loadMore();
+      expect(c.state.value!.results, hasLength(95));
+      expect(c.state.value!.hasMore, isFalse);
+
+      // Every meal is distinct — the RPC's (score, id) ordering is what makes
+      // offset paging safe; ties alone would repeat rows across pages.
+      final ids = c.state.value!.results.map((m) => m.id).toSet();
+      expect(ids, hasLength(95));
+
+      // Exhausted: further calls are no-ops.
+      final before = remote.searches.length;
+      await c.loadMore();
+      expect(remote.searches, hasLength(before));
+    },
+  );
+
+  test('loadMore is a no-op while no filter is active', () async {
+    remote = _FakeRemote(pool: 95);
+    final c = make();
+    await c.future;
+
+    await c.loadMore();
+    expect(remote.searches, isEmpty);
+    expect(c.state.value!.results, isEmpty);
   });
 }

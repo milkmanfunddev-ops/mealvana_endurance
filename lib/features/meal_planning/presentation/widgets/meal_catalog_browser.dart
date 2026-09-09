@@ -172,15 +172,40 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(AppSpacing.md),
-                        itemCount: catalog.results.length,
-                        itemBuilder: (context, i) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: MealCard(
-                            meal: catalog.results[i],
-                            onTap: () => widget.onOpenMeal(catalog.results[i]),
-                            trailing: _addButton(content, catalog.results[i]),
-                          ),
-                        ),
+                        itemCount:
+                            catalog.results.length + (catalog.hasMore ? 1 : 0),
+                        itemBuilder: (context, i) {
+                          if (i >= catalog.results.length) {
+                            // Reaching the tail asks for the next page.
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              ref
+                                  .read(mealCatalogControllerProvider.notifier)
+                                  .loadMore();
+                            });
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 24),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.electrolyte,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: MealCard(
+                              meal: catalog.results[i],
+                              onTap: () =>
+                                  widget.onOpenMeal(catalog.results[i]),
+                              trailing: _addButton(content, catalog.results[i]),
+                            ),
+                          );
+                        },
                       )
               : ListView(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -199,14 +224,25 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                       catalog.myFoods,
                     ),
                     const SizedBox(height: AppSpacing.md),
+                    // See all flips the browser into its filtered flat list,
+                    // which pages. Without it these rails were terminal: the
+                    // 25th assembly was unreachable in a ~1,900 meal library.
                     rail(
                       content.getValue(ContentKeys.mpRailAssemblies),
                       catalog.assemblies,
+                      seeAllLabel: content.getValue(ContentKeys.mpSeeAll),
+                      onSeeAll: () => ref
+                          .read(mealCatalogControllerProvider.notifier)
+                          .setKind(MealKind.assembly),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     rail(
                       content.getValue(ContentKeys.mpRailRecipes),
                       catalog.recipes,
+                      seeAllLabel: content.getValue(ContentKeys.mpSeeAll),
+                      onSeeAll: () => ref
+                          .read(mealCatalogControllerProvider.notifier)
+                          .setKind(MealKind.recipe),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                   ],
