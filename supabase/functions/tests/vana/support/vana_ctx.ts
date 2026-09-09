@@ -8,6 +8,14 @@ import type { Memory } from '../../../_shared/vana/contracts.ts';
 
 export const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
 
+/** Column defaults the Vana tables declare in SQL. A test can override them per call. */
+export const VANA_COLUMN_DEFAULTS: Record<string, Record<string, unknown>> = {
+  user_memories: { is_deleted: false, confidence: 0.8, key: null, value: null, source: 'conversation', last_confirmed_at: new Date().toISOString() },
+  vana_conversations: { is_deleted: false, title: null, summary: null },
+  meal_plans: { is_deleted: false, status: 'draft', batch_cooking: true },
+  meal_logs: { is_deleted: false },
+};
+
 export interface TestCtx extends VanaCtx {
   fake: FakeDb;
 }
@@ -15,7 +23,7 @@ export interface TestCtx extends VanaCtx {
 /** The caller's client and the service-role client are the same fake — RLS is not what these
  *  tests are about, and a test that wants them apart can build two. */
 export function testCtx(tables: Tables = {}, opts: FakeDbOptions = {}, userId = TEST_USER_ID): TestCtx {
-  const fake = fakeDb(tables, opts);
+  const fake = fakeDb(tables, { ...opts, defaults: { ...VANA_COLUMN_DEFAULTS, ...(opts.defaults ?? {}) } });
   // deno-lint-ignore no-explicit-any
   const db = fake as any;
   return { db, admin: db, userId, token: 'test-token', fake };

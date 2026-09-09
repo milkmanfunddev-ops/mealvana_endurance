@@ -3,6 +3,15 @@ import type { Memory } from './contracts.ts';
 import type { VanaCtx } from './env.ts';
 import { embedText, vec } from './embeddings.ts';
 
+/** Cosine similarity above which a new sentence is the same margin note as one already on file.
+ *  text-embedding-3-small puts a genuine paraphrase around 0.85–0.92 and a restatement above 0.95,
+ *  so this rejects restatements and lets a real second thought through. Tunable without a deploy. */
+export const MEMORY_DUPLICATE_SIMILARITY = Number(Deno.env.get('VANA_MEMORY_DUPE_THRESHOLD') ?? 0.95);
+/** The embedding call is the one thing in this module that leaves the process; injecting it is what
+ *  lets a test drive the dedupe from fixture vectors. Production takes the default. */
+export interface MemoryDeps { embed: (v: VanaCtx, text: string) => Promise<number[]> }
+export const defaultMemoryDeps: MemoryDeps = { embed: embedText };
+
 // deno-lint-ignore no-explicit-any
 const toMemory = (r: any): Memory => ({ id: r.id, kind: r.kind, key: r.key ?? null, fact: r.fact, value: r.value ?? null, confidence: Number(r.confidence ?? 0.8), lastConfirmedAt: r.last_confirmed_at, source: r.source ?? null });
 
@@ -17,8 +26,47 @@ export async function recallMemories(v: VanaCtx, text: string, limit = 8): Promi
     return (data ?? []).map(toMemory);
   } catch { return listMemories(v, limit); }
 }
-export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }): Promise<Memory> {
-  let embedding: string | null = null; try { embedding = vec(await embedText(v, m.fact)); } catch { /* optional */ }
+/** The athlete's closest existing Memory to `embedding`, when it is close enough to be the same
+ *  note. Uses recall_memories, which already scores cosine similarity server-side; a row with no
+ *  embedding scores 0.3 there and can never be mistaken for a duplicate. */
+// deno-lint-ignore no-explicit-any
+async function nearIdentical(v: VanaCtx, embedding: number[]): Promise<any | null> {
+  try {
+    const { data, error } = await v.db.rpc('recall_memories', { p_user_id: v.userId, p_embedding: vec(embedding), p_limit: 5 });
+    if (error) return null;
+    // deno-lint-ignore no-explicit-any
+    const hit = ((data ?? []) as any[]).filter((r) => r.kind !== 'setting' && r.kind !== 'episode').find((r) => Number(r.score ?? 0) >= MEMORY_DUPLICATE_SIMILARITY);
+    return hit ?? null;
+  } catch { return null; }   // no embedding service, no dedupe — a duplicate is better than a lost note
+}
+
+/**
+ * Writes one margin note, or refreshes the one already on file that says the same thing.
+ *
+ * Three kinds of write land here. A `setting` is keyed and has exactly one row per key. An
+ * `episode` is keyed by conversation and has exactly one row per conversation. Everything else is
+ * a sentence, and a sentence near-identical by embedding to one this athlete already has is not
+ * written twice: the existing row's confirmed date is refreshed instead, so recency still moves.
+ * Conflicting notes both stay — each carries its date in the prompt and the model weighs them.
+ */
+export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps = defaultMemoryDeps): Promise<Memory> {
+  let raw: number[] | null = null;
+  try { raw = await deps.embed(v, m.fact); } catch { /* optional — a write without an embedding is still a write */ }
+  const embedding: string | null = raw ? vec(raw) : null;
+  // Keyed kinds own their uniqueness: one row per setting key, one episode per conversation.
+  if (m.kind === 'episode' && m.key) {
+    const { data: existing } = await v.db.from('user_memories').select('id').eq('user_id', v.userId).eq('kind', 'episode').eq('key', m.key).eq('is_deleted', false).maybeSingle();
+    if (existing) {
+      const { data } = await v.db.from('user_memories').update({ fact: m.fact, confidence: m.confidence ?? 0.8, source: m.source ?? 'conversation', last_confirmed_at: new Date().toISOString(), embedding }).eq('id', existing.id).select('*').single();
+      return toMemory(data);
+    }
+  } else if (m.kind !== 'setting' && raw) {
+    const dupe = await nearIdentical(v, raw);
+    if (dupe) {
+      const { data } = await v.db.from('user_memories').update({ last_confirmed_at: new Date().toISOString(), confidence: Math.max(Number(dupe.confidence ?? 0.8), m.confidence ?? 0.8) }).eq('id', dupe.id).eq('user_id', v.userId).select('*').single();
+      return toMemory(data ?? dupe);
+    }
+  }
   if (m.kind === 'setting' && m.key) {
     // one row per setting key (partial unique index user_memories_setting_key — select-then-update, never upsert on it)
     const { data: existing } = await v.db.from('user_memories').select('id').eq('user_id', v.userId).eq('kind', 'setting').eq('key', m.key).eq('is_deleted', false).maybeSingle();

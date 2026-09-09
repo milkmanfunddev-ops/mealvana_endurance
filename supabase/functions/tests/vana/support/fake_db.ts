@@ -34,6 +34,9 @@ export interface FakeDbOptions {
   rpc?: Record<string, (args: any) => unknown>;
   /** Force an error from one table, to exercise a module's failure path. */
   errors?: Record<string, string>;
+  /** Column defaults per table, applied to inserted rows the way Postgres would. Without these a
+   *  freshly inserted row is missing `is_deleted`, and the next `eq('is_deleted', false)` misses it. */
+  defaults?: Record<string, Row>;
 }
 
 type Filter = (r: Row) => boolean;
@@ -61,6 +64,10 @@ export class FakeDb {
   constructor(tables: Tables = {}, opts: FakeDbOptions = {}) {
     this.tables = clone(tables);
     this.opts = opts;
+  }
+
+  defaultsFor(table: string): Row {
+    return this.opts.defaults?.[table] ?? {};
   }
 
   rows(table: string): Row[] {
@@ -180,7 +187,7 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
       case 'select':
         return { data: this.shape(this.matching()), error: null };
       case 'insert': {
-        const vs: Row[] = (Array.isArray(this.payload) ? this.payload : [this.payload]).map((r: Row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...clone(r) }));
+        const vs: Row[] = (Array.isArray(this.payload) ? this.payload : [this.payload]).map((r: Row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...this.db.defaultsFor(this.table), ...clone(r) }));
         store.push(...vs);
         this.db.writes.push({ op: 'insert', table: this.table, values: clone(this.payload), rows: clone(vs) });
         return { data: clone(vs), error: null };
@@ -192,7 +199,7 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
         for (const v of vs) {
           const i = store.findIndex((r) => keys.every((k) => String(r[k]) === String(v[k])));
           if (i >= 0) { store[i] = { ...store[i], ...v }; out.push(store[i]); }
-          else { const row = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...v }; store.push(row); out.push(row); }
+          else { const row = { id: crypto.randomUUID(), created_at: new Date().toISOString(), ...this.db.defaultsFor(this.table), ...v }; store.push(row); out.push(row); }
         }
         this.db.writes.push({ op: 'upsert', table: this.table, values: clone(this.payload), rows: clone(out) });
         return { data: clone(out), error: null };
