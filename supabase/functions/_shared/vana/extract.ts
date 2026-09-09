@@ -98,7 +98,9 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
   if (!claimed) return { conversationId, memories: 0, episode: null, skipped: 'already-read' };
   try {
     const lines = await transcriptOf(v, conversationId);
-    if (lines.length < MIN_LINES) return { conversationId, memories: 0, episode: null, skipped: 'too-short' };
+    // Release it: a conversation opened and abandoned after the opener is one stored line, and if
+    // the athlete comes back to it later it must still be readable.
+    if (lines.length < MIN_LINES) { await release(v, conversationId); return { conversationId, memories: 0, episode: null, skipped: 'too-short' }; }
 
     const rl = await checkRateLimit(v.admin, v.userId, 'vana.extract');
     if (!rl.allowed) { await release(v, conversationId); return { conversationId, memories: 0, episode: null, skipped: 'rate-limited' }; }

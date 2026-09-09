@@ -184,10 +184,13 @@ export class KrogerService {
       // A zip when the athlete typed one; otherwise where they live. Home location is a Fact on
       // the user record (the Voodoo Doll spec, ticket 07), so shopping keys off their own town
       // rather than whatever venue their next race is at.
-      const zip = textInput(body.zip, 5);
+      // A zip the athlete typed must be a real one — a typo is an error, never a
+      // silent search somewhere else. Only an ABSENT zip falls back to home.
+      const rawZip = typeof body.zip === "string" ? body.zip.trim() : "";
       let filter: string;
-      if (/^\d{5}$/.test(zip)) {
-        filter = `filter.zipCode.near=${zip}`;
+      if (rawZip) {
+        if (!/^\d{5}$/.test(rawZip)) throw new KrogerError("invalid_zip");
+        filter = `filter.zipCode.near=${rawZip}`;
       } else {
         const { data: u } = await this.admin.from("users").select(
           "home_lat, home_lon",

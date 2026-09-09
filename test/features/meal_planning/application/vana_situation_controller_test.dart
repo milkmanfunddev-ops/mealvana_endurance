@@ -194,6 +194,62 @@ void main() {
       expect(c.read(vanaSituationControllerProvider), isNull);
     });
 
+    testWidgets('an offscreen tab does not speak for the athlete', (
+      tester,
+    ) async {
+      // An IndexedStack builds every child. Without the visibility marker the
+      // last tab to build wins, and the athlete on tab 0 is reported as being
+      // on tab 2.
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+
+      Widget tab(int i, VanaSituation s, int current) =>
+          VanaSituationVisibility(
+            visible: i == current,
+            child: VanaSituationScope(
+              situation: s,
+              child: const SizedBox.shrink(),
+            ),
+          );
+
+      Future<void> pumpAt(int current) => tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: MaterialApp(
+            home: IndexedStack(
+              index: current,
+              children: [
+                tab(
+                  0,
+                  VanaSituation.screen(VanaScreen.main, date: saturday),
+                  current,
+                ),
+                tab(
+                  1,
+                  VanaSituation.screen(VanaScreen.planTab, entityId: 'plan-1'),
+                  current,
+                ),
+                tab(2, VanaSituation.screen(VanaScreen.events), current),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      await pumpAt(0);
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.route, '/main');
+
+      // Switching tabs hands over to the newly visible one.
+      await pumpAt(1);
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.route, '/food');
+
+      await pumpAt(2);
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.route, '/events');
+    });
+
     testWidgets('a screen that changes what it shows reports again', (
       tester,
     ) async {

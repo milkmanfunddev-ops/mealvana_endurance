@@ -200,6 +200,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
+  // KNOWN GAP (2026-09-09): the episode prepend cannot fire yet. An episode is written by lazy
+  // extraction, which only ever reads a conversation the athlete is NOT in, so a conversation still
+  // in progress never has one. Past the cap the front is simply dropped. Closing it means writing an
+  // episode for a long, still-open conversation — see .scratch/mealplanning/issues/03.
   const replayed = opener ? messages : capHistory(messages, messages.length > HISTORY_CAP && convId ? await episodeFor(v, convId) : null);
   const modelMessages = opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed);
   const general = convKind === 'general';

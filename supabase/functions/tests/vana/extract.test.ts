@@ -103,12 +103,20 @@ Deno.test('at most three Memories are written, however many come back', async ()
   assertEquals((await listMemories(v)).filter((m) => m.kind !== 'episode').length, 3);
 });
 
-Deno.test('a transcript too short to be worth reading is claimed and skipped, not charged', async () => {
+Deno.test('a transcript too short to read is skipped without charge, and stays readable later', async () => {
   const v = testCtx(world({ vana_messages: [TRANSCRIPT[0]] }));
   const m = fixedModel(TWO_FACTS);
   const out = await extractConversation(v, CONV, m.deps);
   assertEquals(out.skipped, 'too-short');
   assertEquals(m.calls.length, 0);
+  // A conversation opened and abandoned after the opener is exactly one stored line. It must not be
+  // marked read, or coming back to it tomorrow and talking would never be extracted.
+  assertEquals(v.fake.rows('vana_conversations')[0].read_back_at, null);
+
+  // The athlete comes back and talks; now it reads back.
+  v.fake.tables.vana_messages = TRANSCRIPT;
+  const second = await extractConversation(v, CONV, fixedModel(TWO_FACTS).deps);
+  assertEquals(second.memories, 2);
 });
 
 Deno.test('a failed model call releases the claim, so the conversation can be read back later', async () => {

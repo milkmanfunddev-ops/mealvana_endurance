@@ -27,18 +27,20 @@ export interface Situation {
 /** Which kind of thing the route's `entityId` points at. */
 export type EntityKind = 'plan' | 'meal' | 'activity' | 'event' | null;
 
-/** The screen table, verbatim from the spec. Longest prefix wins. */
-const SCREENS: { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean }[] = [
+/** The screen table, verbatim from the spec. Longest prefix wins.
+ *  `exact` rows match only themselves: `/food` is the Plan tab, but `/food/meals/recents` and
+ *  `/food/swap/:planMealId` are not, and must not inherit its entity. */
+const SCREENS: { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean; exact?: boolean }[] = [
   // The meal-planning Plan tab is /food?tab=plan; /plan and /current-plan are both the activity
   // detail screen (one session's fuel plan), which is why they resolve to an activity, not a plan.
-  { route: '/food', entity: 'plan', wantsDate: true },
+  { route: '/food', entity: 'plan', wantsDate: true, exact: true },
   { route: '/food/meals/:id', entity: 'meal', wantsDate: false },
   { route: '/food/cook/:id', entity: 'meal', wantsDate: false },
   { route: '/fuel-log', entity: 'activity', wantsDate: true },
   { route: '/plan', entity: 'activity', wantsDate: true },
   { route: '/current-plan', entity: 'activity', wantsDate: true },
   { route: '/events/:eventId/checklist', entity: 'event', wantsDate: false },
-  { route: '/events', entity: 'event', wantsDate: false },
+  { route: '/events', entity: 'event', wantsDate: false, exact: true },
   { route: '/meal-log', entity: null, wantsDate: true, wantsSlot: true },
   { route: '/main', entity: null, wantsDate: true },
 ];
@@ -47,8 +49,15 @@ const SCREENS: { route: string; entity: EntityKind; wantsDate: boolean; wantsSlo
 export function screenFor(route: string): { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean } | null {
   const r = (route ?? '').trim();
   if (!r) return null;
-  return SCREENS.filter((s) => r === s.route || r.startsWith(`${s.route}/`)).sort((a, b) => b.route.length - a.route.length)[0] ?? null;
+  return SCREENS.filter((s) => (s.exact ? r === s.route : r === s.route || r.startsWith(`${s.route}/`))).sort((a, b) => b.route.length - a.route.length)[0] ?? null;
 }
+
+/** A slot is one of the app's meal slots or nothing — never free text. */
+const SLOTS = new Set(['breakfast', 'lunch', 'dinner', 'snack']);
+/** Route-shaped: a leading slash, then path segments of the app's own alphabet — no spaces, no
+ *  punctuation, bounded length. The client sends a route, not prose, and this is what stops a
+ *  string the athlete typed from reaching the system prompt through this field. */
+const ROUTE_SHAPE = /^\/[A-Za-z0-9\-_:/]{0,80}$/;
 
 const on = (date?: string | null) => (date ? ` on ${dayName(date)} ${date}` : '');
 
@@ -57,24 +66,28 @@ const on = (date?: string | null) => (date ? ` on ${dayName(date)} ${date}` : ''
  * A missing or unreadable entity is not an error: the sentence falls back to the screen and the day.
  */
 export async function resolveSituation(v: VanaCtx, s: Situation | null | undefined): Promise<string | null> {
-  if (!s?.route) return null;
-  const screen = screenFor(s.route);
-  if (!screen) return `on the ${s.route} screen`;
+  const route = typeof s?.route === 'string' ? s.route.trim() : '';
+  if (!route) return null;
+  // A route this server does not know is described, never quoted — an unrecognised string is not
+  // allowed to reach the system prompt as itself.
+  if (!ROUTE_SHAPE.test(route)) return 'on a screen this server does not recognise';
+  const screen = screenFor(route);
+  if (!screen) return `on the ${route} screen`;
 
-  const id = s.entityId?.trim() || null;
+  const id = s!.entityId?.trim() || null;
   switch (screen.entity) {
     case 'meal': {
-      const cooking = s.route.startsWith('/food/cook');
+      const cooking = route.startsWith('/food/cook');
       const name = id ? await mealName(v, id) : null;
       if (!name) return cooking ? 'cooking a meal from the library' : 'looking at a meal in the library';
       return cooking ? `cooking "${name}" right now` : `looking at the meal "${name}"`;
     }
     case 'activity': {
       const a = id ? await activityRow(v, id) : null;
-      const where = s.route === '/fuel-log' ? 'the fuel log' : 'the fuel plan';
-      if (!a) return `looking at ${where}${on(s.date)}`;
+      const where = route === '/fuel-log' ? 'the fuel log' : 'the fuel plan';
+      if (!a) return `looking at ${where}${on(s!.date)}`;
       const bits = [a.activity_type, a.duration_minutes ? `${a.duration_minutes} min` : null].filter(Boolean).join(', ');
-      return `looking at ${where} for ${a.title ?? a.activity_type ?? 'a session'}${on(String(a.scheduled_date_time ?? '').slice(0, 10) || s.date)}${bits ? ` (${bits})` : ''}`;
+      return `looking at ${where} for ${a.title ?? a.activity_type ?? 'a session'}${on(String(a.scheduled_date_time ?? '').slice(0, 10) || s!.date)}${bits ? ` (${bits})` : ''}`;
     }
     case 'event': {
       const e = id ? await eventRow(v, id) : null;
@@ -82,12 +95,13 @@ export async function resolveSituation(v: VanaCtx, s: Situation | null | undefin
     }
     case 'plan': {
       const p = id ? await planRow(v, id) : null;
-      const day = `the Plan tab${on(s.date)}`;
+      const day = `the Plan tab${on(s!.date)}`;
       return p ? `looking at ${day}; the week of ${p.week_start} is ${p.status}` : `looking at ${day}`;
     }
     default: {
-      if (screen.wantsSlot) return `logging ${s.slot ? `a ${s.slot}` : 'a meal'}${on(s.date)}`;
-      return `in the app${on(s.date)}`;
+      const slot = s!.slot && SLOTS.has(String(s!.slot).toLowerCase()) ? String(s!.slot).toLowerCase() : null;
+      if (screen.wantsSlot) return `logging ${slot ? `a ${slot}` : 'a meal'}${on(s!.date)}`;
+      return `in the app${on(s!.date)}`;
     }
   }
 }

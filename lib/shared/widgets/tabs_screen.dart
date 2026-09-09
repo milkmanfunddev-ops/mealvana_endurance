@@ -218,12 +218,30 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       _currentIndex = 0;
     }
 
+    // The shell speaks for the tab that has no screen of its own (the Fuel
+    // Timeline). Every other tab reports for itself from inside the stack, so
+    // the shell says nothing and does not overwrite it.
+    final shellSituation = _currentIndex == 0
+        ? VanaSituation.screen(VanaScreen.main, date: DateTime.now())
+        : null;
+
     final body = Column(
       children: [
         const SyncStatusIndicator(),
         Expanded(
           child: HomeShellChrome(
-            body: IndexedStack(index: _currentIndex, children: screens),
+            body: IndexedStack(
+              index: _currentIndex,
+              // Every tab is built; only one is on screen. Without this each
+              // offscreen tab reports its Situation too, and the last one wins.
+              children: [
+                for (final (i, screen) in screens.indexed)
+                  VanaSituationVisibility(
+                    visible: i == _currentIndex,
+                    child: screen,
+                  ),
+              ],
+            ),
             destinations: _destinations,
             activeTabId: _activeTabId,
             onSelectTab: _onSelectTabId,
@@ -252,34 +270,37 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     );
 
     if (useRail) {
-      return Scaffold(
-        backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        body: Row(
-          children: [
-            _NavigationRailSection(
-              currentIndex: _currentIndex,
-              showCoachTab: showCoachTab,
-              showFoodTab: showFoodTab,
-              onTabSelected: _onTabSelected,
-            ),
-            const VerticalDivider(width: 1, thickness: 1),
-            Expanded(
-              child: Stack(
-                children: [
-                  body,
-                  // The home tab's gear lives in the shell's date header.
-                  if (_currentIndex != 0) settingsGear,
-                ],
+      return VanaSituationScope(
+        situation: shellSituation,
+        child: Scaffold(
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          body: Row(
+            children: [
+              _NavigationRailSection(
+                currentIndex: _currentIndex,
+                showCoachTab: showCoachTab,
+                showFoodTab: showFoodTab,
+                onTabSelected: _onTabSelected,
               ),
-            ),
-          ],
+              const VerticalDivider(width: 1, thickness: 1),
+              Expanded(
+                child: Stack(
+                  children: [
+                    body,
+                    // The home tab's gear lives in the shell's date header.
+                    if (_currentIndex != 0) settingsGear,
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
 
     // Mobile layout — the shell's floating glass tab bar
     return VanaSituationScope(
-      situation: VanaSituation.screen(VanaScreen.main, date: DateTime.now()),
+      situation: shellSituation,
       child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
         extendBodyBehindAppBar: true,

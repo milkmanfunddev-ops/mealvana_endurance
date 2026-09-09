@@ -32,7 +32,9 @@ export async function recallMemories(v: VanaCtx, text: string, limit = 8): Promi
 // deno-lint-ignore no-explicit-any
 async function nearIdentical(v: VanaCtx, embedding: number[]): Promise<any | null> {
   try {
-    const { data, error } = await v.db.rpc('recall_memories', { p_user_id: v.userId, p_embedding: vec(embedding), p_limit: 5 });
+    // Ask for more rows than we need: settings and episodes carry embeddings and compete on score,
+    // so filtering AFTER a tight limit lets them crowd the real duplicate out of the window.
+    const { data, error } = await v.db.rpc('recall_memories', { p_user_id: v.userId, p_embedding: vec(embedding), p_limit: 25 });
     if (error) return null;
     // deno-lint-ignore no-explicit-any
     const hit = ((data ?? []) as any[]).filter((r) => r.kind !== 'setting' && r.kind !== 'episode').find((r) => Number(r.score ?? 0) >= MEMORY_DUPLICATE_SIMILARITY);
