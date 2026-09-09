@@ -1,15 +1,15 @@
 /** Open-Meteo (no key). Cached per (date, lat, lon) in-isolate. */
 type Cached = { at: number; summary: string };
 const cache = new Map<string, Cached>();
-const geo = new Map<string, { lat: number; lon: number; name: string } | null>();
+const geo = new Map<string, { lat: number; lon: number; name: string; timezone: string | null } | null>();
 
 export async function geocode(place: string) {
   if (geo.has(place)) return geo.get(place)!;
   try {
     const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(place)}&count=1&language=en&format=json`, { signal: AbortSignal.timeout(5_000) });
-    const j = (await r.json()) as { results?: { latitude: number; longitude: number; name: string; admin1?: string }[] };
+    const j = (await r.json()) as { results?: { latitude: number; longitude: number; name: string; admin1?: string; timezone?: string }[] };
     const hit = j.results?.[0];
-    const out = hit ? { lat: hit.latitude, lon: hit.longitude, name: [hit.name, hit.admin1].filter(Boolean).join(', ') } : null;
+    const out = hit ? { lat: hit.latitude, lon: hit.longitude, name: [hit.name, hit.admin1].filter(Boolean).join(', '), timezone: hit.timezone ?? null } : null;
     geo.set(place, out); return out;
   } catch { geo.set(place, null); return null; }
 }

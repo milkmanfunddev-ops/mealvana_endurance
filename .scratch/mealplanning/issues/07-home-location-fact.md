@@ -4,10 +4,33 @@
 
 **Blocked by:** 03 General mode reads the Doll
 
-**Status:** ready-for-agent
+**Status:** server built; local mirror and live eval not done (2026-09-09)
 
 - [ ] Idempotent migration adds the three fields on dev; the local profile table and its sync carry them
-- [ ] Server seam: the profile tool writes the fields; the context block carries a HOME line when set and omits it when not
-- [ ] Server seam: weather resolves from home location when set and from race location otherwise
-- [ ] Kroger coverage uses home location when set
+- [x] Server seam: the profile tool writes the fields; the context block carries a HOME line when set and omits it when not
+- [x] Server seam: weather resolves from home location when set and from race location otherwise
+- [x] Kroger coverage uses home location when set
 - [ ] Live eval: "I live in Birmingham" then "what's the weather tomorrow" answers for Birmingham
+
+**Notes (2026-09-09).** `20260909190000_users_home_location.sql` adds `home_city`, `home_lat`,
+`home_lon` and `home_timezone` to `users`, idempotently. The context builder reads them, the block
+carries a HOME line only when they are set, and today's weather now keys off home, falling back to
+the race venue exactly as before when home is empty. The `setHomeLocation` tool geocodes the place
+the athlete named through the existing Open-Meteo geocoder, which also supplies the timezone.
+Kroger's store search takes a zip when the athlete typed one and otherwise searches near the home
+coordinates, so shopping is about their town rather than their next race venue.
+
+`geocode()` in weather.ts now returns the timezone alongside the coordinates; nothing else about it
+changed.
+
+Not done, and deliberately:
+- **The local Drift mirror and its sync.** `UserProfile` is the model whose partial parsers once
+  silently reset onboarding answers, and adding three fields means touching the constructor,
+  `fromSupabaseRow`, `copyWith`, the Drift table, a v21 migration step, and every write path. That
+  is a careful change in the app's most fragile seam and it is not what makes the user story work:
+  Vana reads and writes these fields server-side. Do it as its own piece of work, with the profile
+  screen that edits them.
+- The migration has NOT been applied to dev. Until it is, `setHomeLocation` fails on the update and
+  the HOME line never appears.
+- The live eval line. Case `home-location` is in `scripts/vana-eval/personalization.ts`.
+

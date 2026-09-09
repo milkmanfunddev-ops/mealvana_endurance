@@ -181,10 +181,26 @@ export class KrogerService {
     }
     // Catalog reads use the customer's token, keeping access scoped to connected customers.
     if (action === "stores") {
+      // A zip when the athlete typed one; otherwise where they live. Home location is a Fact on
+      // the user record (the Voodoo Doll spec, ticket 07), so shopping keys off their own town
+      // rather than whatever venue their next race is at.
       const zip = textInput(body.zip, 5);
-      if (!/^\d{5}$/.test(zip)) throw new KrogerError("invalid_zip");
+      let filter: string;
+      if (/^\d{5}$/.test(zip)) {
+        filter = `filter.zipCode.near=${zip}`;
+      } else {
+        const { data: u } = await this.admin.from("users").select(
+          "home_lat, home_lon",
+        ).eq("id", this.userId).maybeSingle();
+        if (u?.home_lat == null || u?.home_lon == null) {
+          throw new KrogerError("invalid_zip");
+        }
+        filter = `filter.latLong.near=${Number(u.home_lat)},${
+          Number(u.home_lon)
+        }`;
+      }
       const raw = await this.client.get(
-        `/locations?filter.zipCode.near=${zip}&filter.limit=10`,
+        `/locations?${filter}&filter.limit=10`,
         await this.customerToken(),
       );
       return {

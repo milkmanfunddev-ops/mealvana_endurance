@@ -44,7 +44,7 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
   await deps.ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
   const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }, likes, { data: survey }] = await Promise.all([
-    d.from('users').select('first_name, dietary_preference, allergies, gut_training_level').eq('id', v.userId).maybeSingle(),
+    d.from('users').select('first_name, dietary_preference, allergies, gut_training_level, home_city, home_lat, home_lon, home_timezone').eq('id', v.userId).maybeSingle(),
     d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, distance_miles, distance_meters, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', t).lt('scheduled_date_time', addDays(end, 1)).order('scheduled_date_time'),
     d.from('daily_macro_targets').select('target_date, carb_g, prot_g, fat_g, tdee, session_kcal, mode').eq('user_id', v.userId).gte('target_date', t).lte('target_date', addDays(t, 21)).order('target_date'),
     d.from('events').select('event_name, event_date, location, event_type').eq('user_id', v.userId).gte('event_date', t).lte('event_date', addDays(t, 21)).order('event_date').limit(1),
@@ -80,7 +80,9 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
   let raceWeekCarbsG: number | null = null;
   // deno-lint-ignore no-explicit-any
   if (race) { const pre = (macros ?? []).filter((m: any) => m.target_date < race.date && m.target_date >= addDays(race.date, -3)); raceWeekCarbsG = pre.length ? Math.max(...pre.map((m: any) => Number(m.carb_g ?? 0))) : null; }
-  const [wToday, wRace] = await Promise.all([deps.weatherLine(race?.location ?? null, t), race ? deps.weatherLine(race.location, race.date) : Promise.resolve(null)]);
+  // Today's weather is where they live, when we know it — the race venue only stands in when we do not.
+  const home = user?.home_city ? { city: String(user.home_city), lat: user.home_lat == null ? null : Number(user.home_lat), lon: user.home_lon == null ? null : Number(user.home_lon), timezone: user.home_timezone ? String(user.home_timezone) : null } : null;
+  const [wToday, wRace] = await Promise.all([deps.weatherLine(home?.city ?? race?.location ?? null, t), race ? deps.weatherLine(race.location, race.date) : Promise.resolve(null)]);
   let memories: Memory[] = latestUserText ? await deps.recallMemories(v, latestUserText, 6) : [];
   const recent = await listMemories(v, 10);
   for (const m of recent) if (!memories.some((x) => x.id === m.id)) memories.push(m);
@@ -99,7 +101,7 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
     plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true, batchKnown: batchSetting != null, coverageScope },  // only the setting memory records an explicit choice — a plan row defaults batch_cooking:true at insert, so it cannot distinguish chosen from default
     memories,
     recentSession, season: seasonalProduce(t), grocery: { weeklyUsd: budgetSetting != null ? Number(budgetSetting) : null }, lastWeek,
-    likes, goals: ((survey?.goals ?? []) as unknown[]).map(String).filter(Boolean),
+    likes, goals: ((survey?.goals ?? []) as unknown[]).map(String).filter(Boolean), home,
   };
 }
 
@@ -122,6 +124,8 @@ export function contextBlock(c: AthleteContext): string {
     `MEMORIES ${c.memories.slice(0, 8).map((m) => `${m.fact}${m.source ? ` (${m.source} · ${String(m.lastConfirmedAt).slice(0, 10)})` : ''}`).join(' | ') || 'none'}`,
     `LIKES ${(c.likes ?? []).length ? (c.likes ?? []).map((l) => `${l.stance === 'up' ? '\u{1F44D}' : '\u{1F44E}'} ${l.name}`).join(' | ') : 'none'}`,
     `GOALS ${(c.goals ?? []).join(', ') || 'none'}`,
+    // Only when they have told us. No HOME line is the signal to ask rather than assume the race venue.
+    ...(c.home?.city ? [`HOME ${c.home.city}${c.home.timezone ? ` (${c.home.timezone})` : ''}`] : []),
     // Only when the client sent one. No situation means no screen context, not an empty one.
     ...(c.situation ? [`SITUATION right now they are ${c.situation}`] : []),
   ].join('\n');
