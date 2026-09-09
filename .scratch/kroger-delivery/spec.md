@@ -326,6 +326,15 @@ returns none.
 while its sibling documents are staged. Whether it belongs in the repository is a decision someone
 should make deliberately.
 
+**Found during ticket 01, not yet ticketed.** `_run` returns silently when the controller is
+busy, and the ZIP and product-search dialogs are routes pushed above the screen's `AbsorbPointer`
+— so busy can turn on while a dialog is open. Submitting then no-ops the server call, and the
+sheet that follows is built from the *previous* query's results: a store from the wrong area, or a
+product matched to a different line, with nothing shown to say so. `searchLineId` is set on the
+state and read nowhere, which looks like the guard this was meant to have. Ticket 04 removes the
+store half of this path entirely; the product half survives into ticket 05 and should be fixed
+there.
+
 **Vocabulary** for this work is defined in `CONTEXT.md`: Location, Spoke, Store, Modality,
 Hand-off, Coverage, Match. The conflation of Spoke with Store is what produced this bug, and the
 spec uses these words precisely.
