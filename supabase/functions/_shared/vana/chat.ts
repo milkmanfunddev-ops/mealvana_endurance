@@ -12,6 +12,7 @@ import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { episodeFor } from './memory.ts';
+import { readBackPrevious } from './extract.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
@@ -184,6 +185,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
   const firstConversation = opener && persist && (await priorConversationCount(v, convId)) === 0;
+  // Lazy extraction: opening a conversation is what reads the previous one back. It runs in the background of
+  // this request and never delays the reply; nothing it writes is announced to the athlete.
+  if (opener && persist && convId) waitUntil(readBackPrevious(v, convId));
   const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
   if (convKind === 'meal_planning') {
     const openerInput = await loadOpenerInput(v, anchorDate);
