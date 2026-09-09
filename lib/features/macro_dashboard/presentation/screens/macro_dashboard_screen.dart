@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/core/guarded_navigation.dart';
+import '../../../../shared/widgets/adaptive/adaptive_spacing.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/widgets/kyle_design/materials/glass.dart';
@@ -674,24 +675,53 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  static const double _dockedBottomInset = 71;
+  /// Breathing room between docked content and the shell's bottom chrome,
+  /// on top of the shell's own published clearance. Scaled by height class
+  /// (docs/technical/responsiveness.md): on a `short` phone the docked
+  /// panel already eats a large share of the viewport, so it takes the
+  /// smaller step. Never a fixed number — see
+  /// `HomeShellChrome.bottomChromeClearancePx`.
+  static double _dockGap(BuildContext context) =>
+      AdaptiveSpacing.byHeightClass(context, short: 12, regular: 16);
+
+  /// Docked chrome grounds. Both panels float over the SCROLLING timeline,
+  /// so their fills must be opaque: an alpha fill composites against whatever
+  /// happens to be behind it, which for docked chrome is moving content, not
+  /// the page ground. (Shipped 1.26.0 with the alpha fills applied directly —
+  /// the timeline read straight through the panel and through the transparent
+  /// `Create Brick` outline button inside it.) These are the same intended
+  /// colours, resolved against the ground once instead of per-frame against
+  /// the timeline. Ruling request: `qa/intake/2026-09-09-overlay-material-boundary.md`.
+  static final Color _dockedPanelFill = Color.alphaBlend(
+    MeTokens.orangeAlpha(0.08),
+    MeTokens.blackberry,
+  );
+  static final Color _dockedHintFill = Color.alphaBlend(
+    MeTokens.creamAlpha(0.05),
+    MeTokens.blackberry,
+  );
 
   /// The docked LEG ORDER panel (step 2 → step 3): the chosen legs as ordered
   /// chips with a Swap affordance, over a full-width `Create Brick (n)` that
   /// commits directly — no confirm modal (Notion 3a7e3fdb, step 3). Below
   /// two legs the slot holds the instruction instead.
-  Widget _brickActionBar(BuildContext context, WidgetRef ref) {
+  Widget _brickActionBar(
+    BuildContext context,
+    WidgetRef ref,
+    double bottomInset,
+  ) {
     final selection = ref.watch(brickSelectionControllerProvider);
     final notifier = ref.read(brickSelectionControllerProvider.notifier);
     final legs = selection.selectedActivities;
-    if (legs.length < 2) return _brickPickHint(ref);
+    final dock = bottomInset + _dockGap(context);
+    if (legs.length < 2) return _brickPickHint(ref, dock);
 
     final canSwap = legs.length >= 2;
     return Container(
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
+      margin: EdgeInsets.fromLTRB(18, 0, 18, dock),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
-        color: MeTokens.orangeAlpha(0.08),
+        color: _dockedPanelFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MeTokens.orangeAlpha(0.35)),
       ),
@@ -774,13 +804,13 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _brickPickHint(WidgetRef ref) {
+  Widget _brickPickHint(WidgetRef ref, double dock) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
+      margin: EdgeInsets.fromLTRB(18, 0, 18, dock),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
-        color: MeTokens.creamAlpha(0.05),
+        color: _dockedHintFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MeTokens.creamAlpha(0.12)),
       ),
@@ -1220,11 +1250,21 @@ class _DashedPillPainter extends CustomPainter {
 /// [GlassTopFade] backdrop, Bevel-style).
 ///
 /// [topInset] is the shell chrome's header clearance — the block includes
-/// it so the dissolve spans from the very top of the surface.
+/// it so the dissolve spans from the very top of the surface. [bottomInset]
+/// is its counterpart, the shell's bottom-chrome clearance
+/// (`HomeShellChrome.bottomChromeClearancePx`): the timeline's scroll
+/// padding and the docked brick panel both sit above it. Both default to 0
+/// so the body composes correctly with no shell at all — a rail layout with
+/// no bottom bar passes 0 and the panels dock to the surface edge.
 class MacroDashboardBody extends ConsumerStatefulWidget {
-  const MacroDashboardBody({super.key, this.topInset = 0});
+  const MacroDashboardBody({
+    super.key,
+    this.topInset = 0,
+    this.bottomInset = 0,
+  });
 
   final double topInset;
+  final double bottomInset;
 
   @override
   ConsumerState<MacroDashboardBody> createState() => _MacroDashboardBodyState();
@@ -1238,6 +1278,25 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
   void _onBlockHeight(double h) {
     if ((h - _blockHeight).abs() > 0.5) {
       setState(() => _blockHeight = h);
+    }
+  }
+
+  /// Measured height of the docked brick panel, 0 when not picking. The
+  /// panel is opaque chrome over the timeline, so the list must reserve its
+  /// height — otherwise the last cards can never be scrolled out from under
+  /// it and become unpickable (the exact state the leg-order widget tests
+  /// worked around with a 1600 px viewport instead of catching).
+  ///
+  /// This INCLUDES the panel's own bottom margin (its shell clearance + gap),
+  /// because [_BlockMeasure] measures the panel's Container including margin.
+  /// The list therefore adds only one further gap on top of it — adding the
+  /// clearance again would double-count it and overscroll the timeline by
+  /// ~100 px past the panel.
+  double _dockHeight = 0;
+
+  void _onDockHeight(double h) {
+    if ((h - _dockHeight).abs() > 0.5) {
+      setState(() => _dockHeight = h);
     }
   }
 
@@ -1291,7 +1350,19 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
         // under its backdrop as it scrolls up.
         Positioned.fill(
           child: ListView(
-            padding: EdgeInsets.fromLTRB(18, _blockHeight, 18, 90),
+            padding: EdgeInsets.fromLTRB(
+              18,
+              _blockHeight,
+              18,
+              // Whatever occupies the bottom edge, plus one gap above it,
+              // so the LAST card scrolls fully clear of it rather than
+              // landing flush against it. While picking that occupant is
+              // the docked panel (already measured with its own clearance);
+              // otherwise it is the shell's bottom chrome. Gated on
+              // `picking` so no phantom padding survives the unmount.
+              (picking ? _dockHeight : widget.bottomInset) +
+                  MacroDashboardScreen._dockGap(context),
+            ),
             children: [
               for (final node in nodes)
                 screen._railRow(context, ref, view, node, dayWorkouts, picking),
@@ -1333,7 +1404,11 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: screen._brickActionBar(context, ref),
+            child: _BlockMeasure(
+              key: const ValueKey('macro_dashboard.brick_dock'),
+              onHeight: _onDockHeight,
+              child: screen._brickActionBar(context, ref, widget.bottomInset),
+            ),
           ),
       ],
     );
@@ -1343,7 +1418,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
 /// Reports its child's laid-out height after each frame (the pinned block
 /// varies with energy-card expansion, tracking, and leg-picking).
 class _BlockMeasure extends StatefulWidget {
-  const _BlockMeasure({required this.onHeight, required this.child});
+  const _BlockMeasure({super.key, required this.onHeight, required this.child});
 
   final ValueChanged<double> onHeight;
   final Widget child;

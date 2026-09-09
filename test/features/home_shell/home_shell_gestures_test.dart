@@ -208,6 +208,7 @@ class _ShellHostState extends State<_ShellHost> {
           color: AppColors.blackberry,
           child: const MacroDashboardBody(
             topInset: HomeShellChrome.headerClearancePx,
+            bottomInset: HomeShellChrome.bottomChromeClearancePx,
           ),
         ),
       ),
@@ -693,6 +694,38 @@ void main() {
     expect(tester.getRect(_collapsedButton()).left, lessThan(60),
         reason: 'collapse morph targets the LEFT corner');
     expectSlotEmpty('collapsed');
+  });
+
+  // The shell's bottom chrome vs a body's docked content. Found on device
+  // 2026-09-09: the dashboard's brick panel hardcoded a 71 px inset — tuned
+  // against the FloatingActionButtonsBar the home-shell switchover DELETED —
+  // and the taller glass bar (28 margin + 60 expanded = 88) clipped the
+  // panel's `Create Brick` button. A body must read the shell's published
+  // clearance, never guess it.
+  testWidgets('the shell publishes a bottom clearance that actually clears '
+      'the tab bar, in both bar states', (tester) async {
+    await _pumpShell(tester);
+    final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+
+    // The published constant must reach the bar's real top edge, expanded.
+    final barTop = tester.getRect(find.byType(KyleTabBar)).top;
+    expect(
+      size.height - HomeShellChrome.bottomChromeClearancePx,
+      lessThanOrEqualTo(barTop),
+      reason:
+          'content docked at bottomChromeClearancePx would otherwise sit '
+          'UNDER the expanded tab bar',
+    );
+
+    // And it must still clear after the bar collapses — the clearance is
+    // deliberately the EXPANDED height, so docked chrome does not slide
+    // down under the user's thumb when the bar shrinks mid-scroll.
+    await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 30);
+    final collapsedTop = tester.getRect(_collapsedButton()).top;
+    expect(
+      size.height - HomeShellChrome.bottomChromeClearancePx,
+      lessThanOrEqualTo(collapsedTop),
+    );
   });
 
   // =========================================================================

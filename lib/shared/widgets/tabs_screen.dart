@@ -160,6 +160,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         color: isDark ? AppColors.blackberry : AppColors.cream,
         child: const MacroDashboardBody(
           topInset: HomeShellChrome.headerClearancePx,
+          bottomInset: HomeShellChrome.bottomChromeClearancePx,
         ),
       ),
       if (showFoodTab) const FoodScreen(), // 1: Food (Pro)

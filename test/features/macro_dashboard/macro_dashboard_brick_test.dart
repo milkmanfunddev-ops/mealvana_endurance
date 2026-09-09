@@ -29,6 +29,7 @@ import 'package:mealvana_endurance/features/daily_macros/domain/daily_macro_targ
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/fuel_timeline/presentation/widgets/timeline_brick_tile.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/providers/macro_dashboard_providers.dart';
+import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
 import 'package:mealvana_endurance/features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/consumed_totals.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart'
@@ -119,6 +120,27 @@ Future<void> _pump(WidgetTester tester, List<Activity> activities) async {
   await pumpSeeded(
     tester,
     const Scaffold(body: MacroDashboardScreen()),
+    overrides: _overrides(),
+    settle: true,
+  );
+}
+
+/// The body as the SHELL composes it — with a real bottom-chrome clearance
+/// rather than the bare screen's 0. Some docked-layout arithmetic only goes
+/// wrong when that inset is non-zero, so a bare-screen pump cannot see it.
+Future<void> _pumpUnderShell(
+  WidgetTester tester,
+  List<Activity> activities,
+) async {
+  _SeededActivitiesController.seed = activities;
+  await pumpSeeded(
+    tester,
+    const Scaffold(
+      body: MacroDashboardBody(
+        topInset: HomeShellChrome.headerClearancePx,
+        bottomInset: HomeShellChrome.bottomChromeClearancePx,
+      ),
+    ),
     overrides: _overrides(),
     settle: true,
   );
@@ -373,5 +395,128 @@ void main() {
         expect(find.byType(LogMealScreen), findsOneWidget);
       },
     );
+  });
+
+  // Docked-chrome regression (bug found on device 2026-09-09, shipped in
+  // 1.26.0): both brick panels float over the SCROLLING timeline, so their
+  // fills composite against moving content, not against the page ground.
+  // At orange 8% / cream 5% the timeline read straight through the panel —
+  // and through the transparent `Create Brick` outline button inside it.
+  // Ruling request: qa/intake/2026-09-09-overlay-material-boundary.md.
+  group('the docked brick panels are opaque chrome', () {
+    /// The docked panel's own fill: the nearest Container ancestor of
+    /// [inside] that actually paints a colour.
+    Color panelFill(WidgetTester tester, Finder inside) {
+      final painted = tester
+          .widgetList<Container>(
+            find.ancestor(of: inside, matching: find.byType(Container)),
+          )
+          .map((c) => (c.decoration as BoxDecoration?)?.color)
+          .whereType<Color>();
+      expect(painted, isNotEmpty, reason: 'the panel paints a fill');
+      return painted.first;
+    }
+
+    testWidgets('the hint panel (<2 legs) has a fully opaque fill', (
+      tester,
+    ) async {
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 16),
+      ]);
+      await tester.tap(brickPill);
+      await tester.pumpAndSettle();
+
+      final fill = panelFill(
+        tester,
+        find.byKey(const ValueKey('macro_dashboard.brick_hint_cancel')),
+      );
+      expect(
+        fill.a,
+        1.0,
+        reason:
+            'docked chrome over the scrolling timeline must not composite '
+            'against whatever card happens to be behind it',
+      );
+    });
+
+    testWidgets('the LEG ORDER panel (2+ legs) has a fully opaque fill', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 16),
+      ]);
+      await tester.tap(brickPill);
+      await tester.pumpAndSettle();
+      for (final id in ['run1', 'ride1']) {
+        await tester.tap(find.byKey(ValueKey('macro_dashboard.brick_pick_$id')));
+        await tester.pumpAndSettle();
+      }
+
+      final fill = panelFill(
+        tester,
+        find.byKey(const ValueKey('macro_dashboard.brick_panel_cancel')),
+      );
+      expect(fill.a, 1.0);
+    });
+
+    testWidgets('the timeline can scroll clear of the docked panel', (
+      tester,
+    ) async {
+      // A phone-height viewport — the state the 1600 px test viewports in
+      // this file hid: with only the shell's flat 90 px reserved, the last
+      // card stayed pinned under the panel and could never be picked.
+      tester.view.physicalSize = const Size(800, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pumpUnderShell(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 12),
+        for (var h = 13; h < 20; h++)
+          _activity('run$h', ActivityType.running, h),
+        _activity('run2', ActivityType.running, 20),
+      ]);
+      await tester.tap(brickPill);
+      await tester.pumpAndSettle();
+      // Two legs picked ⇒ the tall LEG ORDER panel is docked.
+      for (final id in ['run1', 'ride1']) {
+        await tester.tap(find.byKey(ValueKey('macro_dashboard.brick_pick_$id')));
+        await tester.pumpAndSettle();
+      }
+
+      final panelTop = tester
+          .getRect(find.byKey(const ValueKey('macro_dashboard.brick_dock')))
+          .top;
+
+      // Scroll the list to its end and check the last card clears the panel.
+      final last = find.byKey(const ValueKey('macro_dashboard.brick_pick_run2'));
+      await tester.drag(find.byType(ListView), const Offset(0, -2000));
+      await tester.pumpAndSettle();
+
+      expect(last, findsOneWidget);
+      final lastBottom = tester.getRect(last).bottom;
+      expect(
+        lastBottom,
+        lessThanOrEqualTo(panelTop),
+        reason:
+            'the list must reserve the docked panel height, or the last '
+            'card is permanently trapped under it and cannot be picked',
+      );
+      // ...and it must clear the panel by a real gap rather than landing
+      // flush against its top edge, without overshooting: reserving the
+      // shell clearance on TOP of the measured panel (which already carries
+      // its own margin) double-counts it and overscrolls ~100px past.
+      expect(
+        panelTop - lastBottom,
+        inInclusiveRange(4, 40),
+        reason:
+            'the last card should come to rest just above the panel — a '
+            'visible gap, not flush, and not a screenful of dead space',
+      );
+    });
   });
 }
