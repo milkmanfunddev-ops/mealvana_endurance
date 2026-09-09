@@ -31,6 +31,13 @@ export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: 
   if (error) throw new Error(error.message);
   return toMemory(data);
 }
+/** The episode sentence a lazy extraction wrote for one conversation, or null. Keyed by conversation
+ *  id so there is exactly one per conversation and re-extraction cannot pile them up. */
+export async function episodeFor(v: VanaCtx, conversationId: string): Promise<string | null> {
+  if (!conversationId) return null;
+  const { data } = await v.db.from('user_memories').select('fact').eq('user_id', v.userId).eq('kind', 'episode').eq('key', conversationId).eq('is_deleted', false).maybeSingle();
+  return data?.fact ? String(data.fact) : null;
+}
 export async function forgetMemory(v: VanaCtx, id: string) {
   await v.db.from('user_memories').update({ is_deleted: true }).eq('id', id).eq('user_id', v.userId);
 }

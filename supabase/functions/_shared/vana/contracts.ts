@@ -133,6 +133,9 @@ export interface AthleteContext {
   season?: string[];                                                                   // in-season produce this month (season.ts)
   grocery?: { weeklyUsd: number | null };                                              // weekly_budget_usd setting, if the athlete ever set one
   lastWeek?: { completed: number; planned: number; skipReason: string | null; weekStart: string } | null;   // the most recent debrief (plan_debriefs) — learnings feed forward
+  // ---- additive 2026-09-09 (the Voodoo Doll: both conversation kinds read the same block)
+  likes?: { name: string; stance: 'up' | 'down' }[];   // meal_feedback thumbs, newest first — read where they already live, never copied
+  goals?: string[];                                    // onboarding_surveys.goals — what the athlete said they were training for
 }
 
 // ---- Conversations (vana_conversations / vana_messages)

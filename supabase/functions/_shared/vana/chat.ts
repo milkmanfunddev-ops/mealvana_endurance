@@ -11,6 +11,7 @@ import { buildAthleteContext, contextBlock } from './context.ts';
 import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
+import { episodeFor } from './memory.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
@@ -42,6 +43,18 @@ async function loadOpenerInput(v: VanaCtx, t: string) {
   const [current, previous] = await Promise.all([getPlan(v, ws), getPlan(v, addDays(ws, -7))]);
   const stamp = async (p: MealPlan | null) => { if (!p) return null; const { data } = await v.db.from('meal_plans').select('checkin_done_at, debrief_done_at').eq('id', p.id).maybeSingle(); return { ...p, checkinDoneAt: data?.checkin_done_at ?? null, debriefDoneAt: data?.debrief_done_at ?? null }; };
   return { today: t, current: await stamp(current), previous: await stamp(previous) };
+}
+
+/** Each turn replays at most this many messages. A long conversation stays coherent and stops
+ *  growing the bill; what fell off the front survives as the episode sentence, if one exists. */
+export const HISTORY_CAP = 20;
+/** The messages a turn replays: the last HISTORY_CAP, with the conversation's episode sentence
+ *  prepended once when the cap actually bites. Under the cap, nothing is added or removed. */
+export function capHistory(messages: UIMessage[], episode: string | null): UIMessage[] {
+  if (messages.length <= HISTORY_CAP) return messages;
+  const kept = messages.slice(-HISTORY_CAP);
+  if (!episode?.trim()) return kept;
+  return [{ id: 'episode', role: 'user', parts: [{ type: 'text', text: `Earlier in this conversation: ${episode.trim()}` }] } as UIMessage, ...kept];
 }
 
 /** Keeps the first `n` sentences of a text block. Planning turns use it only as the RUNAWAY_SENTENCES guard. */
@@ -116,10 +129,11 @@ function partsFromSteps(text: string, steps: any[], maxSentences: number | null 
   if (!anyText && text.trim()) parts.unshift({ type: 'text', text: clamp(text) });
   return { parts, ui };
 }
-/** Planning gets the full athlete context block; general gets only name + date and fetches everything else through tools. */
-const system = (kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '') => kind === 'general'
-  ? `${promptFor(kind)}\n--- today ${todayIso} · athlete: ${ctx.profile.firstName ?? 'the athlete'} ---`
-  : `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}) ---\n${contextBlock(ctx)}${extra}`;
+/** Both kinds get the same block (the Voodoo Doll, 2026-09-09). Only the prompt above it differs.
+ *  Before this, general mode carried a first name and a date, and everything else had to be fetched
+ *  by a tool call the model might not make. */
+export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '') =>
+  `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}) ---\n${contextBlock(ctx)}${extra}`;
 
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
@@ -179,14 +193,15 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
-  const modelMessages = opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(messages);
+  const replayed = opener ? messages : capHistory(messages, messages.length > HISTORY_CAP && convId ? await episodeFor(v, convId) : null);
+  const modelMessages = opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}` : ''} model=${CHAT_MODEL}`);
 
   const result = streamText({
     model: CHAT_MODEL,
-    system: system(convKind, ctx, anchorDate, extraContext),
+    system: systemPrompt(convKind, ctx, anchorDate, extraContext),
     messages: modelMessages,
     tools,
     maxOutputTokens: MAX_OUTPUT_TOKENS,

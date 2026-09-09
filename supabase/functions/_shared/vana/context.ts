@@ -20,13 +20,30 @@ export interface ContextDeps {
 }
 export const defaultContextDeps: ContextDeps = { ensureWeekTargets, weatherLine, recallMemories };
 
+/** Thumbs from `meal_feedback`, newest first, resolved to names. Two follow-up reads rather than a
+ *  PostgREST embed: the ids point at two different tables, and an embed would hide which. */
+async function likedMeals(v: VanaCtx, limit = 12): Promise<{ name: string; stance: 'up' | 'down' }[]> {
+  const { data } = await v.db.from('meal_feedback').select('library_meal_id, saved_meal_id, vote, updated_at').eq('user_id', v.userId).order('updated_at', { ascending: false }).limit(limit);
+  const rows = (data ?? []) as { library_meal_id: string | null; saved_meal_id: string | null; vote: number }[];
+  if (!rows.length) return [];
+  const libIds = rows.map((r) => r.library_meal_id).filter(Boolean) as string[];
+  const savedIds = rows.map((r) => r.saved_meal_id).filter(Boolean) as string[];
+  const [lib, saved] = await Promise.all([
+    libIds.length ? v.db.from('meal_library').select('id, name').in('id', libIds) : Promise.resolve({ data: [] }),
+    savedIds.length ? v.db.from('saved_meals').select('id, name').in('id', savedIds) : Promise.resolve({ data: [] }),
+  ]);
+  const names = new Map<string, string>();
+  for (const r of [...((lib.data ?? []) as { id: string; name: string }[]), ...((saved.data ?? []) as { id: string; name: string }[])]) names.set(String(r.id), r.name);
+  return rows.map((r) => ({ name: names.get(String(r.library_meal_id ?? r.saved_meal_id)) ?? '', stance: (r.vote < 0 ? 'down' : 'up') as 'up' | 'down' })).filter((x) => x.name);
+}
+
 /** `anchorDate` = the day the user is looking at (client-local, passed by the function from `anchor_date`/`timezone`).
  *  Defaults to UTC today — the two differ around midnight and on weekend boundaries. */
 export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, anchorDate?: string, deps: ContextDeps = defaultContextDeps): Promise<AthleteContext> {
   const t = anchorDate ?? today();
   await deps.ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
-  const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }] = await Promise.all([
+  const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }, likes, { data: survey }] = await Promise.all([
     d.from('users').select('first_name, dietary_preference, allergies, gut_training_level').eq('id', v.userId).maybeSingle(),
     d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, distance_miles, distance_meters, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', t).lt('scheduled_date_time', addDays(end, 1)).order('scheduled_date_time'),
     d.from('daily_macro_targets').select('target_date, carb_g, prot_g, fat_g, tdee, session_kcal, mode').eq('user_id', v.userId).gte('target_date', t).lte('target_date', addDays(t, 21)).order('target_date'),
@@ -40,6 +57,9 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
     getSetting<number>(v, 'weekly_budget_usd'),
     // Phase 3.4 — the latest debrief, so the first proposal can react to last week.
     d.from('plan_debriefs').select('completed, planned, skip_reason, created_at, meal_plans:plan_id(week_start)').eq('user_id', v.userId).order('created_at', { ascending: false }).limit(1),
+    // The Voodoo Doll's LIKES and GOALS: read where they already live, never copied into a preferences table.
+    likedMeals(v),
+    d.from('onboarding_surveys').select('goals').eq('user_id', v.userId).maybeSingle(),
   ]);
   // deno-lint-ignore no-explicit-any
   const notable = (recentActs ?? []).filter((a: any) => !/cancel|skip|missed/i.test(String(a.status ?? ''))).find((a: any) => (a.duration_minutes ?? 0) >= 75 || /high|race|hard|threshold/i.test(String(a.intensity_level ?? '')));
@@ -79,6 +99,7 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
     plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true, batchKnown: batchSetting != null, coverageScope },  // only the setting memory records an explicit choice — a plan row defaults batch_cooking:true at insert, so it cannot distinguish chosen from default
     memories,
     recentSession, season: seasonalProduce(t), grocery: { weeklyUsd: budgetSetting != null ? Number(budgetSetting) : null }, lastWeek,
+    likes, goals: ((survey?.goals ?? []) as unknown[]).map(String).filter(Boolean),
   };
 }
 
@@ -99,5 +120,7 @@ export function contextBlock(c: AthleteContext): string {
     `SEASON in season now: ${(c.season ?? []).join(', ') || 'n/a'}${c.grocery?.weeklyUsd ? ` · BUDGET about $${Math.round(c.grocery.weeklyUsd)}/week` : ''}`,
     `LAST WEEK ${c.lastWeek ? `${c.lastWeek.completed} of ${c.lastWeek.planned} planned meals happened${c.lastWeek.skipReason ? ` (skipped: ${c.lastWeek.skipReason})` : ''}` : 'no debrief yet'}`,
     `MEMORIES ${c.memories.slice(0, 8).map((m) => `${m.fact}${m.source ? ` (${m.source} · ${String(m.lastConfirmedAt).slice(0, 10)})` : ''}`).join(' | ') || 'none'}`,
+    `LIKES ${(c.likes ?? []).length ? (c.likes ?? []).map((l) => `${l.stance === 'up' ? '\u{1F44D}' : '\u{1F44E}'} ${l.name}`).join(' | ') : 'none'}`,
+    `GOALS ${(c.goals ?? []).join(', ') || 'none'}`,
   ].join('\n');
 }
