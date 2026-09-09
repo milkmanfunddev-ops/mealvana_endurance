@@ -676,6 +676,23 @@ class MacroDashboardScreen extends ConsumerWidget {
 
   static const double _dockedBottomInset = 71;
 
+  /// Docked chrome grounds. Both panels float over the SCROLLING timeline,
+  /// so their fills must be opaque: an alpha fill composites against whatever
+  /// happens to be behind it, which for docked chrome is moving content, not
+  /// the page ground. (Shipped 1.26.0 with the alpha fills applied directly —
+  /// the timeline read straight through the panel and through the transparent
+  /// `Create Brick` outline button inside it.) These are the same intended
+  /// colours, resolved against the ground once instead of per-frame against
+  /// the timeline. Ruling request: `qa/intake/2026-09-09-overlay-material-boundary.md`.
+  static final Color _dockedPanelFill = Color.alphaBlend(
+    MeTokens.orangeAlpha(0.08),
+    MeTokens.blackberry,
+  );
+  static final Color _dockedHintFill = Color.alphaBlend(
+    MeTokens.creamAlpha(0.05),
+    MeTokens.blackberry,
+  );
+
   /// The docked LEG ORDER panel (step 2 → step 3): the chosen legs as ordered
   /// chips with a Swap affordance, over a full-width `Create Brick (n)` that
   /// commits directly — no confirm modal (Notion 3a7e3fdb, step 3). Below
@@ -691,7 +708,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
-        color: MeTokens.orangeAlpha(0.08),
+        color: _dockedPanelFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MeTokens.orangeAlpha(0.35)),
       ),
@@ -780,7 +797,7 @@ class MacroDashboardScreen extends ConsumerWidget {
       margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
-        color: MeTokens.creamAlpha(0.05),
+        color: _dockedHintFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: MeTokens.creamAlpha(0.12)),
       ),
@@ -1241,6 +1258,19 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
     }
   }
 
+  /// Measured height of the docked brick panel, 0 when not picking. The
+  /// panel is opaque chrome over the timeline, so the list must reserve its
+  /// height — otherwise the last cards can never be scrolled out from under
+  /// it and become unpickable (the exact state the leg-order widget tests
+  /// worked around with a 1600 px viewport instead of catching).
+  double _dockHeight = 0;
+
+  void _onDockHeight(double h) {
+    if ((h - _dockHeight).abs() > 0.5) {
+      setState(() => _dockHeight = h);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final view = ref.watch(macroDashboardViewProvider);
@@ -1291,7 +1321,16 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
         // under its backdrop as it scrolls up.
         Positioned.fill(
           child: ListView(
-            padding: EdgeInsets.fromLTRB(18, _blockHeight, 18, 90),
+            padding: EdgeInsets.fromLTRB(
+              18,
+              _blockHeight,
+              18,
+              // 90 = the shell's own bottom clearance; the docked brick
+              // panel adds its measured height on top while picking. Gated
+              // on `picking` so the last measurement doesn't leave phantom
+              // padding behind once the panel unmounts.
+              90 + (picking ? _dockHeight : 0),
+            ),
             children: [
               for (final node in nodes)
                 screen._railRow(context, ref, view, node, dayWorkouts, picking),
@@ -1333,7 +1372,11 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
             left: 0,
             right: 0,
             bottom: 0,
-            child: screen._brickActionBar(context, ref),
+            child: _BlockMeasure(
+              key: const ValueKey('macro_dashboard.brick_dock'),
+              onHeight: _onDockHeight,
+              child: screen._brickActionBar(context, ref),
+            ),
           ),
       ],
     );
@@ -1343,7 +1386,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
 /// Reports its child's laid-out height after each frame (the pinned block
 /// varies with energy-card expansion, tracking, and leg-picking).
 class _BlockMeasure extends StatefulWidget {
-  const _BlockMeasure({required this.onHeight, required this.child});
+  const _BlockMeasure({super.key, required this.onHeight, required this.child});
 
   final ValueChanged<double> onHeight;
   final Widget child;

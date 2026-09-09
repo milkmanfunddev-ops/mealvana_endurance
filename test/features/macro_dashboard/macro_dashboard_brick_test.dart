@@ -374,4 +374,115 @@ void main() {
       },
     );
   });
+
+  // Docked-chrome regression (bug found on device 2026-09-09, shipped in
+  // 1.26.0): both brick panels float over the SCROLLING timeline, so their
+  // fills composite against moving content, not against the page ground.
+  // At orange 8% / cream 5% the timeline read straight through the panel —
+  // and through the transparent `Create Brick` outline button inside it.
+  // Ruling request: qa/intake/2026-09-09-overlay-material-boundary.md.
+  group('the docked brick panels are opaque chrome', () {
+    /// The docked panel's own fill: the nearest Container ancestor of
+    /// [inside] that actually paints a colour.
+    Color panelFill(WidgetTester tester, Finder inside) {
+      final painted = tester
+          .widgetList<Container>(
+            find.ancestor(of: inside, matching: find.byType(Container)),
+          )
+          .map((c) => (c.decoration as BoxDecoration?)?.color)
+          .whereType<Color>();
+      expect(painted, isNotEmpty, reason: 'the panel paints a fill');
+      return painted.first;
+    }
+
+    testWidgets('the hint panel (<2 legs) has a fully opaque fill', (
+      tester,
+    ) async {
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 16),
+      ]);
+      await tester.tap(brickPill);
+      await tester.pumpAndSettle();
+
+      final fill = panelFill(
+        tester,
+        find.byKey(const ValueKey('macro_dashboard.brick_hint_cancel')),
+      );
+      expect(
+        fill.a,
+        1.0,
+        reason:
+            'docked chrome over the scrolling timeline must not composite '
+            'against whatever card happens to be behind it',
+      );
+    });
+
+    testWidgets('the LEG ORDER panel (2+ legs) has a fully opaque fill', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 16),
+      ]);
+      await tester.tap(brickPill);
+      await tester.pumpAndSettle();
+      for (final id in ['run1', 'ride1']) {
+        await tester.tap(find.byKey(ValueKey('macro_dashboard.brick_pick_$id')));
+        await tester.pumpAndSettle();
+      }
+
+      final fill = panelFill(
+        tester,
+        find.byKey(const ValueKey('macro_dashboard.brick_panel_cancel')),
+      );
+      expect(fill.a, 1.0);
+    });
+
+    testWidgets('the timeline can scroll clear of the docked panel', (
+      tester,
+    ) async {
+      // A phone-height viewport — the state the 1600 px test viewports in
+      // this file hid: with only the shell's flat 90 px reserved, the last
+      // card stayed pinned under the panel and could never be picked.
+      tester.view.physicalSize = const Size(800, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await _pump(tester, [
+        _activity('run1', ActivityType.running, 8),
+        _activity('ride1', ActivityType.cycling, 12),
+        for (var h = 13; h < 20; h++)
+          _activity('run$h', ActivityType.running, h),
+        _activity('run2', ActivityType.running, 20),
+      ]);
+      await tester.tap(brickPill);
+      await tester.pumpAndSettle();
+      // Two legs picked ⇒ the tall LEG ORDER panel is docked.
+      for (final id in ['run1', 'ride1']) {
+        await tester.tap(find.byKey(ValueKey('macro_dashboard.brick_pick_$id')));
+        await tester.pumpAndSettle();
+      }
+
+      final panelTop = tester
+          .getRect(find.byKey(const ValueKey('macro_dashboard.brick_dock')))
+          .top;
+
+      // Scroll the list to its end and check the last card clears the panel.
+      final last = find.byKey(const ValueKey('macro_dashboard.brick_pick_run2'));
+      await tester.drag(find.byType(ListView), const Offset(0, -2000));
+      await tester.pumpAndSettle();
+
+      expect(last, findsOneWidget);
+      expect(
+        tester.getRect(last).bottom,
+        lessThanOrEqualTo(panelTop),
+        reason:
+            'the list must reserve the docked panel height, or the last '
+            'card is permanently trapped under it and cannot be picked',
+      );
+    });
+  });
 }
