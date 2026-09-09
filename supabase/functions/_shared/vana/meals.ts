@@ -27,6 +27,7 @@ export function rowToMealRef(r: any): MealRef {
     pattern: r.pattern ?? null, frequency: r.frequency ?? null,
     icon: resolveMealIcon(r.icon, { name: r.name, ingredients: r.ingredients ?? null, pattern: r.pattern ?? null }),
     myVote: (r.my_vote ?? 0) as -1 | 0 | 1,
+    imageMode: imageModeOf(r), image: imageOf(r), imageTiles: imageTilesOf(r),
   };
 }
 
@@ -88,6 +89,18 @@ const isUuid = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
 const directionsOf = (r: any): MealDetail['directions'] => ({ origin: (r?.directions_origin ?? null) as MealDetail['directions']['origin'], sourceUrl: r?.directions_source_url ?? null, sourceName: r?.directions_source_name ?? null, verbatim: !!r?.directions_verbatim });
 // deno-lint-ignore no-explicit-any
 const imageOf = (r: any): MealDetail['image'] => (r?.image_url ? { url: r.image_url, license: r.image_license ?? null, creator: r.image_creator ?? null, credit: r.image_credit ?? null, sourceUrl: r.image_source_url ?? null } : null);
+// deno-lint-ignore no-explicit-any
+const imageModeOf = (r: any): MealDetail['imageMode'] => {
+  const m = r?.image_mode;
+  return m === 'dish' || m === 'mosaic' || m === 'tile' ? m : (r?.image_url ? 'dish' : 'none');
+};
+// deno-lint-ignore no-explicit-any
+const imageTilesOf = (r: any): MealDetail['imageTiles'] =>
+  // Tiles are only meaningful when there is no real dish photo to show.
+  (r?.image_url ? [] : (r?.image_tiles ?? [])).map((t: any) => ({
+    url: String(t.url), name: t.name ?? null, license: t.license ?? null,
+    creator: t.creator ?? null, sourceUrl: t.sourceUrl ?? null, provider: t.provider ?? null,
+  }));
 const splitSwaps = (s: unknown) => String(s ?? '').split(';').map((x) => x.trim()).filter(Boolean);
 /** The user's thumb on a meal (0 = none). */
 export async function myVote(v: VanaCtx, target: { libraryMealId?: string | null; savedMealId?: string | null }): Promise<-1 | 0 | 1> {
@@ -102,7 +115,7 @@ export async function getMealDetail(v: VanaCtx, id: string): Promise<MealDetail 
   if (!isUuid(id)) {
     const { data: r } = await v.db.from('meal_library').select('*').eq('id', id).maybeSingle();
     if (!r) return null;
-    return { meal: rowToMealRef({ ...r, source: 'library', attribution: r.source, score: 1, library_meal_id: r.id }), ingredients: (r.ingredients_json ?? []) as MealIngredient[], methodSteps: (r.method_steps ?? []) as string[], directions: directionsOf(r), image: imageOf(r), sourceUrl: r.source_url ?? null, source: r.source ?? '', swaps: splitSwaps(r.swaps), prep: r.prep ?? null, servings: r.servings ?? 1, notes: null, vote: await myVote(v, { libraryMealId: r.id }) };
+    return { meal: rowToMealRef({ ...r, source: 'library', attribution: r.source, score: 1, library_meal_id: r.id }), ingredients: (r.ingredients_json ?? []) as MealIngredient[], methodSteps: (r.method_steps ?? []) as string[], directions: directionsOf(r), image: imageOf(r), imageMode: imageModeOf(r), imageTiles: imageTilesOf(r), sourceUrl: r.source_url ?? null, source: r.source ?? '', swaps: splitSwaps(r.swaps), prep: r.prep ?? null, servings: r.servings ?? 1, notes: null, vote: await myVote(v, { libraryMealId: r.id }) };
   }
   const { data: s } = await v.db.from('saved_meals').select('*').eq('id', id).eq('user_id', v.userId).eq('is_deleted', false).maybeSingle();
   if (!s) return null;
@@ -111,7 +124,7 @@ export async function getMealDetail(v: VanaCtx, id: string): Promise<MealDetail 
   return {
     meal: rowToMealRef({ source: 'saved', id: s.id, name: s.name, meal_type: s.meal_types?.[0] ?? r?.meal_type ?? 'dinner', contexts: r?.contexts ?? [], batch: s.batch ?? r?.batch ?? false, prep_minutes: r?.prep_minutes ?? null, kcal: s.calories, carbs_g: s.carbs_g, protein_g: s.protein_g, fat_g: s.fat_g, allergens: r?.allergens ?? [], diets_ok: r?.diets_ok ?? [], swaps: r?.swaps ?? null, why: r?.why ?? 'one of your saved meals', attribution: 'your saved meal', ingredients: items.map((i) => i.name ?? i.food_name ?? '').filter(Boolean).join(', '), library_meal_id: s.library_meal_id, score: 1, kind: r?.kind, pattern: r?.pattern, icon: s.icon }),
     ingredients: items.map((i) => ({ name: i.name ?? i.food_name ?? '', qty: i.quantity ?? i.serving ?? i.portion ?? '', role: i.role ?? null })),
-    methodSteps: (r?.method_steps ?? []) as string[], directions: directionsOf(r), image: imageOf(r), sourceUrl: r?.source_url ?? null, source: '',
+    methodSteps: (r?.method_steps ?? []) as string[], directions: directionsOf(r), image: imageOf(r), imageMode: imageModeOf(r), imageTiles: imageTilesOf(r), sourceUrl: r?.source_url ?? null, source: '',
     swaps: splitSwaps(r?.swaps), prep: r?.prep ?? null, servings: r?.servings ?? 1, notes: (s.notes ?? null) as string | null, vote: await myVote(v, { savedMealId: s.id }),
   };
 }

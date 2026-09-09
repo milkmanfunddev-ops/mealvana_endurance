@@ -8,6 +8,8 @@ import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
+import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
+    show MealImageMosaic, KyleMealImageMode, KyleMealImageTile;
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
@@ -17,6 +19,7 @@ import '../../application/meal_plan_controller.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/directions_origin.dart';
 import '../../domain/meal_detail.dart';
+import '../../domain/meal_image.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/choice_chip_button.dart';
@@ -81,20 +84,20 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
       backgroundColor: bg,
       body: SafeArea(
         child: detailAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
+          ),
+          error: (e, _) => _LoadError(
+            onRetry: () =>
+                ref.invalidate(mealDetailControllerProvider(widget.id)),
+          ),
+          data: (detail) => _DetailBody(
+            detail: detail,
+            swapPlanMealId: widget.swapPlanMealId,
+            pickConversationId: widget.pickConversationId,
+            notesController: _notesController,
+          ),
         ),
-        error: (e, _) => _LoadError(
-          onRetry: () =>
-              ref.invalidate(mealDetailControllerProvider(widget.id)),
-        ),
-        data: (detail) => _DetailBody(
-          detail: detail,
-          swapPlanMealId: widget.swapPlanMealId,
-          pickConversationId: widget.pickConversationId,
-          notesController: _notesController,
-        ),
-      ),
       ),
     );
   }
@@ -142,16 +145,15 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
     final meal = detail.meal;
     final isSaved = meal.source == MealSource.saved;
 
-    String cap(String v) =>
-        v.isEmpty ? v : v[0].toUpperCase() + v.substring(1);
+    String cap(String v) => v.isEmpty ? v : v[0].toUpperCase() + v.substring(1);
 
     // Prep falls back to prepMinutes — the library's `prep` string is
     // nullable and many rows only carry the number.
     final prep = detail.prep?.isNotEmpty == true
         ? detail.prep!
         : meal.prepMinutes != null
-              ? '${meal.prepMinutes} min'
-              : null;
+        ? '${meal.prepMinutes} min'
+        : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -171,26 +173,53 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         ),
         const SizedBox(height: AppSpacing.sm),
 
-        if (detail.image?.url != null) ...[
-          ClipRRect(
+        if (detail.imageMode != MealImageMode.none) ...[
+          MealImageMosaic(
+            mode: switch (detail.imageMode) {
+              MealImageMode.dish => KyleMealImageMode.dish,
+              MealImageMode.mosaic => KyleMealImageMode.mosaic,
+              MealImageMode.tile => KyleMealImageMode.tile,
+              MealImageMode.none => KyleMealImageMode.none,
+            },
+            tiles: [
+              for (final t in detail.displayTiles)
+                KyleMealImageTile(
+                  url: t.url,
+                  name: t.name,
+                  license: t.license,
+                  creator: t.creator,
+                  sourceUrl: t.sourceUrl,
+                  provider: t.provider,
+                ),
+            ],
+            aspectRatio: 16 / 10,
             borderRadius: BorderRadius.circular(14),
-            child: AspectRatio(
-              aspectRatio: 16 / 10,
-              child: Image.network(
-                detail.image!.url,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            ),
           ),
-          if (detail.image!.credit != null &&
-              detail.image!.credit!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Photo: ${detail.image!.credit}',
-              style: AppTextStyles.bodySmall.copyWith(color: secondary),
-            ),
-          ],
+          // MIM-6 — credit every distinct photograph shown, not just the first.
+          Builder(
+            builder: (context) {
+              final credits = <String>{
+                if (detail.imageMode == MealImageMode.dish &&
+                    (detail.image?.credit?.isNotEmpty ?? false))
+                  detail.image!.credit!,
+                for (final t in detail.displayTiles)
+                  ?KyleMealImageTile(
+                    url: t.url,
+                    creator: t.creator,
+                    license: t.license,
+                    provider: t.provider,
+                  ).attribution,
+              };
+              if (credits.isEmpty) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Photos: ${credits.join(' · ')}',
+                  style: AppTextStyles.bodySmall.copyWith(color: secondary),
+                ),
+              );
+            },
+          ),
           const SizedBox(height: AppSpacing.sm),
         ],
 
@@ -392,9 +421,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         // ── Your directions (saved meals) ─────────────────────────────────
         if (isSaved) ...[
           const SizedBox(height: AppSpacing.md),
-          _SectionLabel(
-            content.getValue(ContentKeys.mpDetailYourDirections),
-          ),
+          _SectionLabel(content.getValue(ContentKeys.mpDetailYourDirections)),
           const SizedBox(height: AppSpacing.xs),
           _YourDirections(
             editing: _editingNotes,
@@ -650,7 +677,8 @@ class _OriginalRecipeLink extends StatelessWidget {
     final host = Uri.tryParse(url)?.host.replaceFirst('www.', '') ?? '';
 
     return GestureDetector(
-      onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+      onTap: () =>
+          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
       child: Row(
         children: [
           FaIcon(
@@ -699,8 +727,9 @@ class _SwapsToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
-    final muted = (isDark ? AppColors.cream : AppColors.blackberry)
-        .withValues(alpha: 0.6);
+    final muted = (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+      alpha: 0.6,
+    );
 
     return Tooltip(
       message: tooltip,
@@ -736,8 +765,9 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: AppTextStyles.overline.copyWith(
-        color: (isDark ? AppColors.cream : AppColors.blackberry)
-            .withValues(alpha: 0.6),
+        color: (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+          alpha: 0.6,
+        ),
       ),
     );
   }

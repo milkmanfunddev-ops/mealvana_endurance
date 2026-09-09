@@ -19,6 +19,9 @@ export const MealRefZ = z.object({
   ingredients: z.string(), libraryMealId: z.string().nullable(), score: z.number(),
   kind: z.enum(['assembly', 'recipe']).optional(), pattern: z.string().nullable().optional(), frequency: z.string().nullable().optional(),
   icon: MealIconKeyZ.nullable().optional(), myVote: VoteZ.optional(),
+  imageMode: z.enum(['dish', 'mosaic', 'tile', 'none']).optional(),
+  image: z.object({ url: z.string(), license: z.string().nullable(), creator: z.string().nullable(), credit: z.string().nullable(), sourceUrl: z.string().nullable() }).strict().nullable().optional(),
+  imageTiles: z.array(z.object({ url: z.string(), name: z.string().nullable(), license: z.string().nullable(), creator: z.string().nullable(), sourceUrl: z.string().nullable(), provider: z.string().nullable() }).strict()).optional(),
 }).strict();
 
 export const PlanMealZ = z.object({
@@ -47,6 +50,8 @@ export const MealDetailZ = z.object({
   methodSteps: z.array(z.string()),
   directions: z.object({ origin: z.enum(['source', 'alt_source', 'ai_generated', 'assembly_simple']).nullable(), sourceUrl: z.string().nullable(), sourceName: z.string().nullable(), verbatim: z.boolean() }).strict(),
   image: z.object({ url: z.string(), license: z.string().nullable(), creator: z.string().nullable(), credit: z.string().nullable(), sourceUrl: z.string().nullable() }).strict().nullable(),
+  imageMode: z.enum(['dish', 'mosaic', 'tile', 'none']),
+  imageTiles: z.array(z.object({ url: z.string(), name: z.string().nullable(), license: z.string().nullable(), creator: z.string().nullable(), sourceUrl: z.string().nullable(), provider: z.string().nullable() }).strict()),
   sourceUrl: z.string().nullable(), source: z.string(), swaps: z.array(z.string()), prep: z.string().nullable(), servings: z.number(), notes: z.string().nullable(), vote: VoteZ,
 }).strict();
 
@@ -65,8 +70,10 @@ export const LoggedPartZ = z.object({ kind: z.literal('logged'), planMealId: z.s
 export const DayPartZ = z.object({ kind: z.literal('day'), date: z.string(), label: z.string(), slots: DayPlanZ, filled: z.array(MealTypeZ) }).strict();
 export const PantryPartZ = z.object({ kind: z.literal('pantry'), title: z.string(), items: z.array(z.object({ name: z.string(), selected: z.boolean() }).strict()), allowCustom: z.boolean(), origin: z.enum(['suggested', 'photo']) }).strict();
 export const WeekPartZ = z.object({ kind: z.literal('week'), days: z.array(DayPartZ) }).strict();
+export const ReportProblemPartZ = z.object({ kind: z.literal('report_problem'), summary: z.string().min(1).max(200), about: z.enum(['app', 'answer']) }).strict();
+export const FeedbackPromptPartZ = z.object({ kind: z.literal('feedback_prompt') }).strict();
 export const DebriefPartZ = z.object({ kind: z.literal('debrief'), planId: z.string(), completed: z.number(), planned: z.number(), skipReason: z.string().nullable(), memories: z.array(MemoryZ) }).strict();
-export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ, PantryPartZ, WeekPartZ, DebriefPartZ]);
+export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ, PantryPartZ, WeekPartZ, DebriefPartZ, ReportProblemPartZ, FeedbackPromptPartZ]);
 
 // ---- wire
 export const NdjsonLineZ = z.discriminatedUnion('type', [

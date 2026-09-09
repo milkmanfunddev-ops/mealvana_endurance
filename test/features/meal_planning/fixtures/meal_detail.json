@@ -91,6 +91,8 @@
     "prep": "batch — 45 min, 6 servings, freezes well",
     "servings": 6,
     "notes": null,
-    "vote": 0
+    "vote": 0,
+    "imageMode": "none",
+    "imageTiles": []
   }
 }

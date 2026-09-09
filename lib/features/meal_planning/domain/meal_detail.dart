@@ -1,4 +1,5 @@
 import 'directions_origin.dart';
+import 'meal_image.dart';
 import 'meal_ref.dart';
 import 'wire_record.dart';
 
@@ -19,6 +20,8 @@ class MealDetail extends WireRecord {
     required this.servings,
     this.notes,
     this.vote = 0,
+    this.imageMode = MealImageMode.none,
+    this.imageTiles = const <MealImageTile>[],
   });
 
   final MealRef meal;
@@ -32,6 +35,13 @@ class MealDetail extends WireRecord {
   /// Provenance of [methodSteps].
   final MealDirections directions;
   final MealImage? image;
+
+  /// Which rung of the image fallback ladder this meal reached — see
+  /// `docs/meal-images/README.md` and the Meal Image Mosaic component spec.
+  final MealImageMode imageMode;
+
+  /// Ingredient tiles used when no real dish photo exists; empty otherwise.
+  final List<MealImageTile> imageTiles;
 
   /// "See the original recipe".
   final String? sourceUrl;
@@ -70,6 +80,8 @@ class MealDetail extends WireRecord {
     servings: readInt(json, 'servings') ?? 1,
     notes: readString(json, 'notes'),
     vote: readInt(json, 'vote') ?? 0,
+    imageMode: MealImageMode.fromWire(readString(json, 'imageMode')),
+    imageTiles: readRecordList(json, 'imageTiles', MealImageTile.fromJson),
   );
 
   @override
@@ -86,6 +98,8 @@ class MealDetail extends WireRecord {
     'servings': servings,
     'notes': notes,
     'vote': vote,
+    'imageMode': imageMode.name,
+    'imageTiles': imageTiles.map((t) => t.toJson()).toList(),
   };
 
   MealDetail copyWith({
@@ -101,6 +115,8 @@ class MealDetail extends WireRecord {
     int? servings,
     String? notes,
     int? vote,
+    MealImageMode? imageMode,
+    List<MealImageTile>? imageTiles,
   }) => MealDetail(
     meal: meal ?? this.meal,
     ingredients: ingredients ?? this.ingredients,
@@ -114,7 +130,27 @@ class MealDetail extends WireRecord {
     servings: servings ?? this.servings,
     notes: notes ?? this.notes,
     vote: vote ?? this.vote,
+    imageMode: imageMode ?? this.imageMode,
+    imageTiles: imageTiles ?? this.imageTiles,
   );
+
+  /// The tiles to render, honouring the ladder: a real dish photo outranks
+  /// every ingredient tile.
+  List<MealImageTile> get displayTiles => switch (imageMode) {
+    MealImageMode.dish || MealImageMode.tile => [
+      if (image != null)
+        MealImageTile(
+          url: image!.url,
+          license: image!.license,
+          creator: image!.creator,
+          sourceUrl: image!.sourceUrl,
+        )
+      else
+        ...imageTiles.take(1),
+    ],
+    MealImageMode.mosaic => imageTiles,
+    MealImageMode.none => const <MealImageTile>[],
+  };
 }
 
 /// `MealIngredient {name, qty, role?}`.
@@ -191,53 +227,5 @@ class MealDirections extends WireRecord {
     sourceUrl: sourceUrl ?? this.sourceUrl,
     sourceName: sourceName ?? this.sourceName,
     verbatim: verbatim ?? this.verbatim,
-  );
-}
-
-/// `MealDetail.image` — hero image with licensing attribution.
-class MealImage extends WireRecord {
-  const MealImage({
-    required this.url,
-    this.license,
-    this.creator,
-    this.credit,
-    this.sourceUrl,
-  });
-
-  final String url;
-  final String? license;
-  final String? creator;
-  final String? credit;
-  final String? sourceUrl;
-
-  factory MealImage.fromJson(Map<String, dynamic> json) => MealImage(
-    url: requireString(json, 'url'),
-    license: readString(json, 'license'),
-    creator: readString(json, 'creator'),
-    credit: readString(json, 'credit'),
-    sourceUrl: readString(json, 'sourceUrl'),
-  );
-
-  @override
-  Map<String, dynamic> toJson() => {
-    'url': url,
-    'license': license,
-    'creator': creator,
-    'credit': credit,
-    'sourceUrl': sourceUrl,
-  };
-
-  MealImage copyWith({
-    String? url,
-    String? license,
-    String? creator,
-    String? credit,
-    String? sourceUrl,
-  }) => MealImage(
-    url: url ?? this.url,
-    license: license ?? this.license,
-    creator: creator ?? this.creator,
-    credit: credit ?? this.credit,
-    sourceUrl: sourceUrl ?? this.sourceUrl,
   );
 }

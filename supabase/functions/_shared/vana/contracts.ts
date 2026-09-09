@@ -26,6 +26,9 @@ export interface MealRef {                 // one row from search_meals()
   frequency?: string | null;               // staple / common / occasional
   icon?: string | null;                    // MealIconKey (meal_library.icon / saved_meals.icon), classified when missing
   myVote?: -1 | 0 | 1;                     // this user's thumb: -1 down, 1 up, 0 none. A -1 is filtered out of suggestions by search_meals.
+  imageMode?: 'dish' | 'mosaic' | 'tile' | 'none';   // which rung of the image ladder — docs/meal-images/README.md
+  image?: { url: string; license: string | null; creator: string | null; credit: string | null; sourceUrl: string | null } | null;
+  imageTiles?: { url: string; name: string | null; license: string | null; creator: string | null; sourceUrl: string | null; provider: string | null }[];
 }
 
 export interface PlanMeal {
@@ -63,6 +66,10 @@ export interface MealDetail {
   methodSteps: string[];                     // meal_library.method_steps (a saved meal inherits its linked recipe's)
   directions: { origin: DirectionsOrigin | null; sourceUrl: string | null; sourceName: string | null; verbatim: boolean };   // provenance of methodSteps
   image: { url: string; license: string | null; creator: string | null; credit: string | null; sourceUrl: string | null } | null;
+  /** Which rung of the image fallback ladder this meal reached (docs/meal-images/README.md). */
+  imageMode: 'dish' | 'mosaic' | 'tile' | 'none';
+  /** Ingredient tiles when no real dish photo exists; empty for `dish`/`none`. */
+  imageTiles: { url: string; name: string | null; license: string | null; creator: string | null; sourceUrl: string | null; provider: string | null }[];
   sourceUrl: string | null;                  // "see the original recipe"
   source: string;                            // full attribution line (library) — '' for saved
   swaps: string[];                           // "water→milk (+10g protein)" strings, one per swap
@@ -89,7 +96,10 @@ export type VanaPart =
   // ---- additive 2026-09-03 (plan Phases 3, 7, 8)
   | { kind: 'pantry'; title: string; items: { name: string; selected: boolean }[]; allowCustom: boolean; origin: 'suggested' | 'photo' }   // askPantry / pantry_photo — what's in the house; nothing is used until the athlete taps "Use these"
   | { kind: 'week'; days: { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }[] }                              // planWeek — the confirmed collection laid across the week (Phase 8)
-  | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] };                // recordDebrief — end-of-week debrief captured (Phase 3)
+  | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] }                 // recordDebrief — end-of-week debrief captured (Phase 3)
+  // ---- additive 2026-09-08 (feedback loop)
+  | { kind: 'report_problem'; summary: string; about: 'app' | 'answer' }                                                                   // reportProblem — Vana heard a complaint; the app offers "Send to the team" (Wiredash)
+  | { kind: 'feedback_prompt' };                                                                                                            // server-appended to the FIRST conversation's opener (never model-driven): "Give feedback for me here" → the app's own feedback sheet                                                                  // reportProblem — Vana heard a complaint; the app offers "Send to the team" (Wiredash)
 
 // ---- What the UI sends back (chip taps are plain user messages; structured edits go through these)
 export interface UiAction {

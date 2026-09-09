@@ -73,7 +73,10 @@ void main() {
     await pumpScreen(tester);
 
     // Title + attribution link (host from the source URL).
-    expect(find.text('Salmon, quinoa, asparagus & spinach salad'), findsOneWidget);
+    expect(
+      find.text('Salmon, quinoa, asparagus & spinach salad'),
+      findsOneWidget,
+    );
     expect(
       find.text(content['meal_planning.detail_see_original']!),
       findsOneWidget,
@@ -124,10 +127,16 @@ void main() {
     expect(find.text('Fish'), findsNothing);
     expect(find.text('Batch 2'), findsNothing);
     expect(find.text('Everyday'), findsNothing);
-    expect(find.text('Dinner: salmon, tofu or steak with some quinoa.'), findsNothing);
+    expect(
+      find.text('Dinner: salmon, tofu or steak with some quinoa.'),
+      findsNothing,
+    );
     expect(find.text('Jennifer Sygo'), findsNothing);
     expect(find.text('Jennifer Sygo, runningmagazine.ca'), findsNothing);
-    expect(find.text('Fits: mediterranean, omnivore, pescatarian'), findsNothing);
+    expect(
+      find.text('Fits: mediterranean, omnivore, pescatarian'),
+      findsNothing,
+    );
     // Old labels — literals here because their content keys were removed.
     expect(find.text('I like this'), findsNothing);
     expect(find.text('Not for me'), findsNothing);
@@ -157,10 +166,8 @@ void main() {
             routes: [
               GoRoute(
                 path: 'detail',
-                builder: (_, __) => MealDetailScreen(
-                  id: 'D-100',
-                  pickConversationId: pick,
-                ),
+                builder: (_, __) =>
+                    MealDetailScreen(id: 'D-100', pickConversationId: pick),
               ),
             ],
           ),

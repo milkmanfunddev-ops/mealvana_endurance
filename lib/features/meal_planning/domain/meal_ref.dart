@@ -1,4 +1,5 @@
 import 'meal_context.dart';
+import 'meal_image.dart';
 import 'meal_icon.dart';
 import 'meal_source.dart';
 import 'meal_type.dart';
@@ -6,7 +7,8 @@ import 'wire_record.dart';
 
 /// One `search_meals()` row — `MealRef` in `contracts.ts`.
 ///
-/// Optional fields (`kind pattern frequency icon myVote`) are emitted only
+/// Optional fields (`kind pattern frequency icon myVote imageMode imageTiles
+/// image`) are emitted only
 /// when set, matching the TS `?:` members; nullable required fields
 /// (`prepMinutes kcal … swaps libraryMealId`) are always emitted.
 class MealRef extends WireRecord {
@@ -36,6 +38,9 @@ class MealRef extends WireRecord {
     this.frequency,
     this.icon,
     this.myVote,
+    this.imageMode = MealImageMode.none,
+    this.imageTiles = const <MealImageTile>[],
+    this.image,
   });
 
   final MealSource source;
@@ -89,6 +94,33 @@ class MealRef extends WireRecord {
   /// This user's thumb: -1 down, 1 up, 0 none.
   final int? myVote;
 
+  /// Which rung of the image fallback ladder this meal reached — see
+  /// `docs/meal-images/README.md`. Cards render it as a Meal Image Mosaic.
+  final MealImageMode imageMode;
+
+  /// Ingredient tiles when there is no real dish photo.
+  final List<MealImageTile> imageTiles;
+
+  /// The real dish photograph, when [imageMode] is `dish`.
+  final MealImage? image;
+
+  /// The tiles a surface should actually draw, honouring the ladder.
+  List<MealImageTile> get displayTiles => switch (imageMode) {
+    MealImageMode.dish || MealImageMode.tile => [
+      if (image != null)
+        MealImageTile(
+          url: image!.url,
+          license: image!.license,
+          creator: image!.creator,
+          sourceUrl: image!.sourceUrl,
+        )
+      else
+        ...imageTiles.take(1),
+    ],
+    MealImageMode.mosaic => imageTiles,
+    MealImageMode.none => const <MealImageTile>[],
+  };
+
   factory MealRef.fromJson(Map<String, dynamic> json) {
     return MealRef(
       source: MealSource.requireWire(readString(json, 'source')),
@@ -116,6 +148,12 @@ class MealRef extends WireRecord {
       frequency: readString(json, 'frequency'),
       icon: MealIcon.fromWire(readString(json, 'icon')),
       myVote: readInt(json, 'myVote'),
+      imageMode: MealImageMode.fromWire(readString(json, 'imageMode')),
+      imageTiles: readRecordList(json, 'imageTiles', MealImageTile.fromJson),
+      image: switch (asJsonMap(json['image'])) {
+        final map? => MealImage.fromJson(map),
+        null => null,
+      },
     );
   }
 
@@ -146,6 +184,10 @@ class MealRef extends WireRecord {
     if (frequency != null) 'frequency': frequency,
     if (icon != null) 'icon': icon!.wire,
     if (myVote != null) 'myVote': myVote,
+    if (imageMode != MealImageMode.none) 'imageMode': imageMode.name,
+    if (imageTiles.isNotEmpty)
+      'imageTiles': imageTiles.map((t) => t.toJson()).toList(),
+    if (image != null) 'image': image!.toJson(),
   };
 
   MealRef copyWith({
@@ -174,6 +216,9 @@ class MealRef extends WireRecord {
     String? frequency,
     MealIcon? icon,
     int? myVote,
+    MealImageMode? imageMode,
+    List<MealImageTile>? imageTiles,
+    MealImage? image,
   }) {
     return MealRef(
       source: source ?? this.source,
@@ -201,6 +246,9 @@ class MealRef extends WireRecord {
       frequency: frequency ?? this.frequency,
       icon: icon ?? this.icon,
       myVote: myVote ?? this.myVote,
+      imageMode: imageMode ?? this.imageMode,
+      imageTiles: imageTiles ?? this.imageTiles,
+      image: image ?? this.image,
     );
   }
 }

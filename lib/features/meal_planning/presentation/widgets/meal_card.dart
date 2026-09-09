@@ -9,6 +9,9 @@ import '../../domain/meal_ref.dart';
 import '../../domain/meal_source.dart';
 import 'card_overflow_menu.dart';
 import 'meal_icon_glyphs.dart';
+import '../../domain/meal_image.dart';
+import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
+    show MealImageMosaic, KyleMealImageMode, KyleMealImageTile;
 import 'vana_tag.dart';
 
 /// A [MealRef] presented as a tappable row: icon tile, name, the why-line,
@@ -57,9 +60,7 @@ class MealCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final surface = isDark
-        ? AppColors.blackberryLight
-        : AppColors.surfaceLight;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
     // kcal sits in the tag strip only when the pill row is not showing it
     // (never twice — macro-pill-row MP-L3).
@@ -95,10 +96,39 @@ class MealCard extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MealIconTile(
-                  icon: meal.effectiveIcon,
-                  size: compact ? 32 : 36,
-                ),
+                // The meal's picture when it has one, else the icon glyph.
+                // `none` deliberately keeps the icon so the row never loses its
+                // leading element and go ragged (docs/meal-images/README.md).
+                if (meal.imageMode != MealImageMode.none)
+                  SizedBox(
+                    width: compact ? 32 : 36,
+                    height: compact ? 32 : 36,
+                    child: MealImageMosaic(
+                      mode: switch (meal.imageMode) {
+                        MealImageMode.dish => KyleMealImageMode.dish,
+                        MealImageMode.mosaic => KyleMealImageMode.mosaic,
+                        MealImageMode.tile => KyleMealImageMode.tile,
+                        MealImageMode.none => KyleMealImageMode.none,
+                      },
+                      tiles: [
+                        for (final t in meal.displayTiles)
+                          KyleMealImageTile(
+                            url: t.url,
+                            name: t.name,
+                            license: t.license,
+                            creator: t.creator,
+                            sourceUrl: t.sourceUrl,
+                            provider: t.provider,
+                          ),
+                      ],
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                  )
+                else
+                  MealIconTile(
+                    icon: meal.effectiveIcon,
+                    size: compact ? 32 : 36,
+                  ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -158,10 +188,7 @@ class MealCard extends ConsumerWidget {
                 ),
                 if (trailing != null) ...[
                   const SizedBox(width: 12),
-                  Align(
-                    alignment: Alignment.center,
-                    child: trailing!,
-                  ),
+                  Align(alignment: Alignment.center, child: trailing!),
                 ],
                 if (onSwap != null || onRemove != null) ...[
                   const SizedBox(width: 4),
