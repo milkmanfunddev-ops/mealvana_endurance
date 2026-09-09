@@ -347,8 +347,7 @@ class ContentKeys {
   static const String mpAttachUseWhatIHave =
       'meal_planning.attach_use_what_i_have';
   static const String mpAttachPhotoFailed = 'meal_planning.attach_photo_failed';
-  static const String mpAttachBrowseMeals =
-      'meal_planning.attach_browse_meals';
+  static const String mpAttachBrowseMeals = 'meal_planning.attach_browse_meals';
   static const String mpChipBrowseMeals = 'meal_planning.chip_browse_meals';
   static const String mpBrowseTitle = 'meal_planning.browse_title';
   static const String mpBrowseDone = 'meal_planning.browse_done';
@@ -463,6 +462,10 @@ class ContentKeys {
   static const String mpShoppingEmptyTitle =
       'meal_planning.shopping_empty_title';
   static const String mpShoppingEmptyBody = 'meal_planning.shopping_empty_body';
+  static const String mpShoppingFromOne = 'meal_planning.shopping_from_one';
+  static const String mpShoppingFromMany = 'meal_planning.shopping_from_many';
+  static const String mpShoppingSourcesHint =
+      'meal_planning.shopping_sources_hint';
   static const String mpSettingsVanaTitle = 'meal_planning.settings_vana_title';
   static const String mpSettingsBatch = 'meal_planning.settings_batch';
   static const String mpSettingsBatchSub = 'meal_planning.settings_batch_sub';
@@ -513,6 +516,8 @@ class ContentKeys {
   static const String mpServingsLeftShort = 'meal_planning.servings_left_short';
   static const String mpLoggedRow = 'meal_planning.logged_row';
   static const String mpMemorySavedRow = 'meal_planning.memory_saved_row';
+  static const String mpFeedbackPrompt = 'meal_planning.feedback_prompt';
+  static const String mpFeedbackSavedRow = 'meal_planning.feedback_saved_row';
   static const String mpLoggedDoneToast = 'meal_planning.logged_done_toast';
   static const String mpAteIt = 'meal_planning.ate_it';
   static const String mpGeneralExample1 = 'meal_planning.general_example_1';
@@ -530,6 +535,103 @@ class ContentKeys {
       'meal_planning.meal_type_dinner_short';
   static const String mpMealTypeSnackShort =
       'meal_planning.meal_type_snack_short';
+
+  // What's new sheet — lib/shared/widgets/whats_new_sheet.dart. `version`
+  // gates the sheet (shows once per value, on installs/updates at or above
+  // it); empty disables.
+  static const String whatsNewVersion = 'whats_new.version';
+  static const String whatsNewEyebrow = 'whats_new.eyebrow';
+  static const String whatsNewTitle = 'whats_new.title';
+  static const String whatsNewBody = 'whats_new.body';
+  static const String whatsNewCta = 'whats_new.cta';
+
+  // Shake to report — lib/shared/widgets/shake_to_report.dart
+  static const String shakeReportTitle = 'shake_report.title';
+  static const String shakeReportBody = 'shake_report.body';
+  static const String shakeReportConfirm = 'shake_report.confirm';
+  static const String shakeReportDismiss = 'shake_report.dismiss';
+
+  // Shop with Kroger — lib/features/kroger. Codes the edge function and
+  // KrogerException raise are mapped to these keys by
+  // `krogerMessageKey` (lib/features/kroger/domain/kroger_messages.dart);
+  // a code with no key of its own falls back to [krogerUnavailable].
+  static const String krogerTitle = 'kroger.title';
+  static const String krogerIntro = 'kroger.intro';
+  static const String krogerConnect = 'kroger.connect';
+  static const String krogerDisconnect = 'kroger.disconnect';
+  static const String krogerRefresh = 'kroger.refresh';
+  static const String krogerNotConfigured = 'kroger.not_configured';
+  static const String krogerCertification = 'kroger.certification';
+  static const String krogerMobileOnly = 'kroger.mobile_only';
+  static const String krogerRedirectMismatch = 'kroger.redirect_mismatch';
+  static const String krogerStoreNote = 'kroger.store_note';
+  static const String krogerAuthorizationCancelled =
+      'kroger.authorization_cancelled';
+  static const String krogerInvalidOauthState = 'kroger.invalid_oauth_state';
+  static const String krogerReconnectRequired = 'kroger.reconnect_required';
+  static const String krogerSessionChanged = 'kroger.session_changed';
+  static const String krogerPlanNotFound = 'kroger.plan_not_found';
+  static const String krogerInvalidItems = 'kroger.invalid_items';
+  static const String krogerProRequired = 'kroger.pro_required';
+  static const String krogerConnectionBusy = 'kroger.connection_busy';
+  static const String krogerUnavailable = 'kroger.unavailable';
+  static const String krogerUpstreamUnavailable = 'kroger.kroger_unavailable';
+  static const String krogerStorageUnavailable = 'kroger.storage_unavailable';
+  static const String krogerLocalSaveFailed = 'kroger.local_save_failed';
+  static const String krogerDraftConflict = 'kroger.draft_conflict';
+  static const String krogerLoadCloud = 'kroger.load_cloud';
+  static const String krogerLoadCloudConfirm = 'kroger.load_cloud_confirm';
+  static const String krogerCancel = 'kroger.cancel';
+  static const String krogerContinue = 'kroger.continue';
+  static const String krogerZip = 'kroger.zip';
+  static const String krogerInvalidZip = 'kroger.invalid_zip';
+  static const String krogerChooseStore = 'kroger.choose_store';
+  static const String krogerPickup = 'kroger.pickup';
+  static const String krogerDelivery = 'kroger.delivery';
+  static const String krogerChangeStore = 'kroger.change_store';
+  static const String krogerMatchAll = 'kroger.match_all';
+  static const String krogerReviewMatches = 'kroger.review_matches';
+  static const String krogerReviewRequired = 'kroger.review_required';
+  static const String krogerProductsChanged = 'kroger.products_changed';
+  static const String krogerNoProducts = 'kroger.no_products';
+  static const String krogerSearch = 'kroger.search';
+  static const String krogerSearchHint = 'kroger.search_hint';
+  static const String krogerAddItem = 'kroger.add_item';
+  static const String krogerItemName = 'kroger.item_name';
+  static const String krogerAdd = 'kroger.add';
+  static const String krogerNeeded = 'kroger.needed';
+  static const String krogerPackage = 'kroger.package';
+  static const String krogerUnknownSize = 'kroger.unknown_size';
+  static const String krogerQuantity = 'kroger.quantity';
+  static const String krogerQuantityDecrease = 'kroger.quantity_decrease';
+  static const String krogerQuantityIncrease = 'kroger.quantity_increase';
+  static const String krogerQuantityReview = 'kroger.quantity_review';
+  static const String krogerChoose = 'kroger.choose';
+  static const String krogerChange = 'kroger.change';
+  static const String krogerApprove = 'kroger.approve';
+  static const String krogerApproved = 'kroger.approved';
+  static const String krogerSkip = 'kroger.skip';
+  static const String krogerInclude = 'kroger.include';
+  static const String krogerUnmatched = 'kroger.unmatched';
+  static const String krogerUnavailableProduct = 'kroger.unavailable_product';
+  static const String krogerProductUnavailable = 'kroger.product_unavailable';
+  static const String krogerPrice = 'kroger.price';
+  static const String krogerEstimate = 'kroger.estimate';
+  static const String krogerUnknownPrices = 'kroger.unknown_prices';
+  static const String krogerEstimateNote = 'kroger.estimate_note';
+  static const String krogerSend = 'kroger.send';
+  static const String krogerSendConfirm = 'kroger.send_confirm';
+  static const String krogerSent = 'kroger.sent';
+  static const String krogerUnknown = 'kroger.unknown';
+  static const String krogerSending = 'kroger.sending';
+  static const String krogerOpenCart = 'kroger.open_cart';
+  static const String krogerAfterExport = 'kroger.after_export';
+  static const String krogerSavedLocal = 'kroger.saved_local';
+
+  /// Kept ahead of its use: the honest empty-run message that ticket 02 of
+  /// the delivery-first work reports when every list line was already ticked.
+  static const String krogerAllSkipped = 'kroger.all_skipped';
+  static const String krogerRateLimited = 'kroger.rate_limited';
 
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.
