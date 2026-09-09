@@ -10,6 +10,7 @@ import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
 import '../domain/vana_message.dart';
 import '../domain/vana_part.dart';
+import '../domain/vana_situation.dart';
 import '../domain/vana_stream_event.dart';
 import '../domain/wire_record.dart';
 import 'vana_exceptions.dart';
@@ -100,6 +101,9 @@ class VanaChatRepository {
   ///
   /// [anchorDate] (`YYYY-MM-DD`) pins the week the planning persona builds.
   ///
+  /// [situation] says which screen the athlete is on and what is in view, so
+  /// "what should I eat before this" means the session in front of them.
+  ///
   /// Throws [VanaUnauthenticatedException], [ProRequiredException],
   /// [VanaRateLimitedException], [VanaOfflineException],
   /// [VanaServerException] (and `InsufficientCreditsException` on
@@ -111,6 +115,7 @@ class VanaChatRepository {
     bool opener = false,
     String? anchorDate,
     String? timezone,
+    VanaSituation? situation,
   }) async {
     final body = <String, dynamic>{
       'kind': kind.wire,
@@ -119,6 +124,8 @@ class VanaChatRepository {
         'conversation_id': conversationId,
       if (opener) 'opener': true,
       if (anchorDate != null) 'anchor_date': anchorDate,
+      // Ids only — the server resolves them into one sentence and stores nothing.
+      if (situation != null) 'situation': situation.toJson(),
       'timezone': timezone ?? resolveTimezone(),
     };
 

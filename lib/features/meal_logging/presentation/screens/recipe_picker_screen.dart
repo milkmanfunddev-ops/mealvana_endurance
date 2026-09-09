@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
@@ -257,83 +259,88 @@ class _RecipePickerScreenState extends ConsumerState<RecipePickerScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
+    return VanaSituationScope(
+      situation: VanaSituation(route: VanaScreen.mealLog.route, date: _logDate),
+      child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Choose a Recipe'),
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Type filter chips
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: 6,
+        appBar: AppBar(
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          title: const Text('Choose a Recipe'),
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            // Type filter chips
+            SizedBox(
+              height: 48,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: 6,
+                ),
+                children: [
+                  _TypeChip(
+                    label: 'All',
+                    selected: _selectedType == null,
+                    onTap: () => _applyTypeFilter(null),
+                  ),
+                  const SizedBox(width: 8),
+                  ..._chipOrder.map(
+                    (t) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _TypeChip(
+                        label: t.displayLabel,
+                        selected: _selectedType == t,
+                        onTap: () => _applyTypeFilter(t),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              children: [
-                _TypeChip(
-                  label: 'All',
-                  selected: _selectedType == null,
-                  onTap: () => _applyTypeFilter(null),
-                ),
-                const SizedBox(width: 8),
-                ..._chipOrder.map(
-                  (t) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: _TypeChip(
-                      label: t.displayLabel,
-                      selected: _selectedType == t,
-                      onTap: () => _applyTypeFilter(t),
-                    ),
-                  ),
-                ),
-              ],
             ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filtered.isEmpty
-                ? const Center(child: Text('No recipes found.'))
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                      vertical: AppSpacing.sm,
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filtered.isEmpty
+                  ? const Center(child: Text('No recipes found.'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm,
+                      ),
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) {
+                        final recipe = _filtered[i];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            leading: _RecipePickerThumbnail(
+                              imageUrl: recipe.imageUrl,
+                              type: recipe.type,
+                            ),
+                            title: Text(
+                              recipe.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${recipe.nutrition.calories.round()} kcal/serving  ·  '
+                              'C ${recipe.nutrition.carbohydratesGrams.toStringAsFixed(0)}g  '
+                              'P ${recipe.nutrition.proteinGrams.toStringAsFixed(0)}g  '
+                              'F ${recipe.nutrition.fatGrams.toStringAsFixed(0)}g',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => _showLogSheet(recipe),
+                          ),
+                        );
+                      },
                     ),
-                    itemCount: _filtered.length,
-                    itemBuilder: (_, i) {
-                      final recipe = _filtered[i];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          leading: _RecipePickerThumbnail(
-                            imageUrl: recipe.imageUrl,
-                            type: recipe.type,
-                          ),
-                          title: Text(
-                            recipe.name,
-                            style: const TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                          subtitle: Text(
-                            '${recipe.nutrition.calories.round()} kcal/serving  ·  '
-                            'C ${recipe.nutrition.carbohydratesGrams.toStringAsFixed(0)}g  '
-                            'P ${recipe.nutrition.proteinGrams.toStringAsFixed(0)}g  '
-                            'F ${recipe.nutrition.fatGrams.toStringAsFixed(0)}g',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => _showLogSheet(recipe),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_analysis_result.dart';
@@ -150,9 +152,15 @@ class _MealReviewScreenState extends ConsumerState<MealReviewScreen> {
     final isLoading = controllerState is AsyncLoading;
 
     if (_result == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Review Meal')),
-        body: const Center(child: Text('Missing analysis result.')),
+      return VanaSituationScope(
+        situation: VanaSituation(
+          route: VanaScreen.mealLog.route,
+          date: _logDate,
+        ),
+        child: Scaffold(
+          appBar: AppBar(title: const Text('Review Meal')),
+          body: const Center(child: Text('Missing analysis result.')),
+        ),
       );
     }
 

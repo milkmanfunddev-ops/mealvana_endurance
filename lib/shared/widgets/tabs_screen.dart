@@ -4,10 +4,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/meal_planning/presentation/screens/food_screen.dart';
+import '../../features/meal_planning/domain/vana_situation.dart';
+import '../../features/meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../features/subscription/application/pro_gate.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
+import '../../features/content/application/content_service.dart';
+import '../../features/content/domain/content_keys.dart';
 import '../../features/home_shell/presentation/home_shell_chrome.dart';
+import '../../features/integrations/presentation/providers/integrations_providers.dart';
+import '../services/preferences_service.dart';
+import '../services/whats_new_gate.dart';
+import 'whats_new_sheet.dart';
 import '../../features/macro_dashboard/presentation/screens/macro_dashboard_screen.dart';
 import '../../theme/kyle_design/app_colors.dart';
 import '../core/guarded_navigation.dart';
@@ -27,7 +35,12 @@ import 'sync_status_indicator.dart';
 /// and no destination icon is a calendar glyph while the date header
 /// renders one — the rail mirrors the same set.
 class TabsScreen extends ConsumerStatefulWidget {
-  const TabsScreen({super.key, this.initialTabIndex = 0, this.initialTabName});
+  const TabsScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    this.initialTabName,
+    this.initialFoodTab = FoodTab.plan,
+  });
 
   final int initialTabIndex;
 
@@ -35,6 +48,9 @@ class TabsScreen extends ConsumerStatefulWidget {
   /// tab list, so it survives the Food tab appearing/disappearing with the
   /// Pro status. Wins over [initialTabIndex].
   final String? initialTabName;
+
+  /// Which segment the Food tab opens on (`/main?tab=food&food=shopping`).
+  final FoodTab initialFoodTab;
 
   @override
   ConsumerState<TabsScreen> createState() => _TabsScreenState();
@@ -47,6 +63,31 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
+    if (!kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowWhatsNew());
+    }
+  }
+
+  /// Once per announcement version (content `whats_new.version`), on the
+  /// first launch after an install or update: the glass "What's new" sheet.
+  /// Shake-to-report is what it announces today; the copy is content-managed.
+  Future<void> _maybeShowWhatsNew() async {
+    final announced = ref
+        .read(contentServiceProvider)
+        .getValue(ContentKeys.whatsNewVersion, defaultValue: '');
+    final prefs = ref.read(preferencesServiceProvider);
+    final info = await ref.read(packageInfoProvider.future);
+    if (!mounted) return;
+    final show = shouldShowWhatsNew(
+      appVersion: info.version,
+      announcementVersion: announced,
+      lastShownVersion: prefs.whatsNewShownVersion,
+    );
+    if (!show) return;
+    // Record first so a crash mid-sheet never turns it into a nag.
+    await prefs.markWhatsNewShown(announced);
+    if (!mounted) return;
+    await showWhatsNewSheet(context);
   }
 
   @override
@@ -74,8 +115,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   bool get _showFoodTab => ref.watch(proUnlockedProvider);
   int get _foodTabIndex => 1;
   int get _coachTabIndex => _showFoodTab ? 2 : 1; // Only on web
-  int get _eventsTabIndex => kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
-  int get _learnTabIndex => kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
+  int get _eventsTabIndex =>
+      kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
+  int get _learnTabIndex =>
+      kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
@@ -162,7 +205,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           topInset: HomeShellChrome.headerClearancePx,
         ),
       ),
-      if (showFoodTab) const FoodScreen(), // 1: Food (Pro)
+      if (showFoodTab)
+        FoodScreen(initialTab: widget.initialFoodTab), // 1: Food (Pro)
       if (showCoachTab)
         const SizedBox.shrink(), // placeholder (coach portal rendered above)
       const EventsListScreen(),
@@ -234,15 +278,13 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     }
 
     // Mobile layout — the shell's floating glass tab bar
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      extendBodyBehindAppBar: true,
-      appBar: PreferredSize(preferredSize: Size.zero, child: Container()),
-      body: Stack(
-        children: [
-          body,
-          if (_currentIndex != 0) settingsGear,
-        ],
+    return VanaSituationScope(
+      situation: VanaSituation.screen(VanaScreen.main, date: DateTime.now()),
+      child: Scaffold(
+        backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+        extendBodyBehindAppBar: true,
+        appBar: PreferredSize(preferredSize: Size.zero, child: Container()),
+        body: Stack(children: [body, if (_currentIndex != 0) settingsGear]),
       ),
     );
   }

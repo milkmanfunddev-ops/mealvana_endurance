@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../widgets/manual_log_form.dart';
 
 /// Manual meal entry screen.
@@ -42,22 +44,25 @@ class _ManualLogScreenState extends ConsumerState<ManualLogScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
+    return VanaSituationScope(
+      situation: VanaSituation(route: VanaScreen.mealLog.route, date: _logDate),
+      child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Log a Meal'),
-        elevation: 0,
-      ),
-      body: ManualLogForm(
-        logDate: _logDate ?? _todayDateString(),
-        onLogged: () {
-          MealvanaSnackbar.showSuccess(context, 'Meal logged!');
-          context.pop();
-        },
-        onLogError: () => MealvanaSnackbar.showError(
-          context,
-          'Failed to log meal. Please try again.',
+        appBar: AppBar(
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          title: const Text('Log a Meal'),
+          elevation: 0,
+        ),
+        body: ManualLogForm(
+          logDate: _logDate ?? _todayDateString(),
+          onLogged: () {
+            MealvanaSnackbar.showSuccess(context, 'Meal logged!');
+            context.pop();
+          },
+          onLogError: () => MealvanaSnackbar.showError(
+            context,
+            'Failed to log meal. Please try again.',
+          ),
         ),
       ),
     );

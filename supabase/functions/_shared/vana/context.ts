@@ -122,5 +122,7 @@ export function contextBlock(c: AthleteContext): string {
     `MEMORIES ${c.memories.slice(0, 8).map((m) => `${m.fact}${m.source ? ` (${m.source} · ${String(m.lastConfirmedAt).slice(0, 10)})` : ''}`).join(' | ') || 'none'}`,
     `LIKES ${(c.likes ?? []).length ? (c.likes ?? []).map((l) => `${l.stance === 'up' ? '\u{1F44D}' : '\u{1F44E}'} ${l.name}`).join(' | ') : 'none'}`,
     `GOALS ${(c.goals ?? []).join(', ') || 'none'}`,
+    // Only when the client sent one. No situation means no screen context, not an empty one.
+    ...(c.situation ? [`SITUATION right now they are ${c.situation}`] : []),
   ].join('\n');
 }

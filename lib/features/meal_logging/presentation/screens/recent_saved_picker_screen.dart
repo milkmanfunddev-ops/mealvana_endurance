@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../domain/log_date_time.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
@@ -167,72 +169,75 @@ class _RecentSavedPickerScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
+    return VanaSituationScope(
+      situation: VanaSituation(route: VanaScreen.mealLog.route, date: _logDate),
+      child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: Text(
-          _multiSelect ? '${_selected.length} selected' : 'Recent & Saved',
-        ),
-        elevation: 0,
-        actions: [
-          // Multi-select toggle — only relevant on the Saved tab.
-          IconButton(
-            tooltip: _multiSelect ? 'Cancel selection' : 'Select multiple',
-            icon: Icon(_multiSelect ? Icons.close : Icons.checklist_rounded),
-            onPressed: _toggleMultiSelect,
+        appBar: AppBar(
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          title: Text(
+            _multiSelect ? '${_selected.length} selected' : 'Recent & Saved',
           ),
-        ],
-        bottom: TabBar(
+          elevation: 0,
+          actions: [
+            // Multi-select toggle — only relevant on the Saved tab.
+            IconButton(
+              tooltip: _multiSelect ? 'Cancel selection' : 'Select multiple',
+              icon: Icon(_multiSelect ? Icons.close : Icons.checklist_rounded),
+              onPressed: _toggleMultiSelect,
+            ),
+          ],
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [
+              Tab(text: 'Saved'),
+              Tab(text: 'Recent'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Saved'),
-            Tab(text: 'Recent'),
+          children: [
+            _SavedTab(
+              multiSelect: _multiSelect,
+              selectedIds: _selected.keys.toSet(),
+              onTap: (meal) => _multiSelect
+                  ? _toggleSelected(meal)
+                  : _showSlotPicker(
+                      onSelected: (slot) => _logSavedMeal(meal, slot),
+                    ),
+              onDelete: (mealId) => ref
+                  .read(mealLogControllerProvider.notifier)
+                  .deleteSavedMeal(mealId),
+            ),
+            _RecentTab(
+              onTap: (log) => _showSlotPicker(
+                onSelected: (slot) => _logRecentMeal(log, slot),
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _SavedTab(
-            multiSelect: _multiSelect,
-            selectedIds: _selected.keys.toSet(),
-            onTap: (meal) => _multiSelect
-                ? _toggleSelected(meal)
-                : _showSlotPicker(
-                    onSelected: (slot) => _logSavedMeal(meal, slot),
+        bottomNavigationBar: (_multiSelect && _selected.isNotEmpty)
+            ? SafeArea(
+                minimum: const EdgeInsets.all(AppSpacing.md),
+                child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.electrolyte,
+                    foregroundColor: AppColors.blackberry,
+                    minimumSize: const Size.fromHeight(52),
                   ),
-            onDelete: (mealId) => ref
-                .read(mealLogControllerProvider.notifier)
-                .deleteSavedMeal(mealId),
-          ),
-          _RecentTab(
-            onTap: (log) => _showSlotPicker(
-              onSelected: (slot) => _logRecentMeal(log, slot),
-            ),
-          ),
-        ],
+                  icon: const Icon(Icons.add_task),
+                  label: Text(
+                    _selected.length == 1
+                        ? 'Log 1 meal'
+                        : 'Log ${_selected.length} meals',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  onPressed: () => _showSlotPicker(onSelected: _logSelected),
+                ),
+              )
+            : null,
       ),
-      bottomNavigationBar: (_multiSelect && _selected.isNotEmpty)
-          ? SafeArea(
-              minimum: const EdgeInsets.all(AppSpacing.md),
-              child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.electrolyte,
-                  foregroundColor: AppColors.blackberry,
-                  minimumSize: const Size.fromHeight(52),
-                ),
-                icon: const Icon(Icons.add_task),
-                label: Text(
-                  _selected.length == 1
-                      ? 'Log 1 meal'
-                      : 'Log ${_selected.length} meals',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                onPressed: () => _showSlotPicker(onSelected: _logSelected),
-              ),
-            )
-          : null,
     );
   }
 }

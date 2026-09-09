@@ -21,6 +21,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
 
@@ -47,12 +48,14 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     bool opener = false,
     String? anchorDate,
     String? timezone,
+    VanaSituation? situation,
   }) async {
     calls.add({
       'message': message,
       'conversationId': conversationId,
       'opener': opener,
       'anchorDate': anchorDate,
+      'situation': situation?.toJson(),
     });
     if (throwOnStream != null) throw throwOnStream!;
     return VanaChatResponse(
@@ -359,35 +362,38 @@ void main() {
     });
 
     // ---- refreshDraft: writes made on another screen (Browse meals)
-    test('refreshDraft re-asks get_plan and mirrors the returned draft', () async {
-      repo.history = history();
-      final (:notifier, seen: _) = make(conversationId: 'conv-1');
-      final before = await notifier.future;
-      expect(actions.draftLoads, hasLength(1));
+    test(
+      'refreshDraft re-asks get_plan and mirrors the returned draft',
+      () async {
+        repo.history = history();
+        final (:notifier, seen: _) = make(conversationId: 'conv-1');
+        final before = await notifier.future;
+        expect(actions.draftLoads, hasLength(1));
 
-      // The browse screen picked into the draft while the chat was covered
-      // — a plan the transcript's batch part has never seen.
-      final draft = VanaBatchPart(
-        plan: MealPlan.fromJson({
-          ...batchPart().plan.toJson(),
-          'id': 'plan-after-browse',
-        }),
-      );
-      actions.byType['get_plan'] = VanaActionResult(
-        parts: [draft],
-        extras: const {},
-      );
-      await notifier.refreshDraft();
+        // The browse screen picked into the draft while the chat was covered
+        // — a plan the transcript's batch part has never seen.
+        final draft = VanaBatchPart(
+          plan: MealPlan.fromJson({
+            ...batchPart().plan.toJson(),
+            'id': 'plan-after-browse',
+          }),
+        );
+        actions.byType['get_plan'] = VanaActionResult(
+          parts: [draft],
+          extras: const {},
+        );
+        await notifier.refreshDraft();
 
-      expect(actions.draftLoads, hasLength(2));
-      expect(actions.draftLoads.last.conversationId, 'conv-1');
-      final after = notifier.state.value!;
-      expect(after.draftPlan?.id, draft.plan.id);
-      expect(after.draftPlan?.id, isNot(before.draftPlan?.id));
-      // The transcript is untouched — only the draft moved.
-      expect(after.messages, before.messages);
-      expect(planController.applied, isEmpty, reason: 'mirror only');
-    });
+        expect(actions.draftLoads, hasLength(2));
+        expect(actions.draftLoads.last.conversationId, 'conv-1');
+        final after = notifier.state.value!;
+        expect(after.draftPlan?.id, draft.plan.id);
+        expect(after.draftPlan?.id, isNot(before.draftPlan?.id));
+        // The transcript is untouched — only the draft moved.
+        expect(after.messages, before.messages);
+        expect(planController.applied, isEmpty, reason: 'mirror only');
+      },
+    );
 
     test('refreshDraft keeps the current draft when the server has none or '
         'is unreachable', () async {

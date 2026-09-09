@@ -20,6 +20,7 @@ import '../domain/vana_part.dart';
 import '../domain/vana_stream_event.dart';
 import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
+import 'vana_situation_controller.dart';
 
 part 'vana_chat_controller.g.dart';
 
@@ -472,6 +473,8 @@ class VanaChatController extends _$VanaChatController {
         opener: opener,
         anchorDate:
             anchorDate ?? (opener && before.isPlanning ? todayIso() : null),
+        // Whatever screen is underneath — read at send time, never stored.
+        situation: ref.read(vanaSituationControllerProvider.notifier).current(),
       );
       final resolvedId = response.conversationId.isNotEmpty
           ? response.conversationId

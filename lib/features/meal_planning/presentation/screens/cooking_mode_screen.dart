@@ -12,6 +12,8 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/cooking_session_controller.dart';
 import '../../application/meal_detail_controller.dart';
+import '../../domain/vana_situation.dart';
+import '../widgets/vana_situation_scope.dart';
 import '../widgets/choice_chip_button.dart';
 import '../widgets/step_progress_dots.dart';
 import '../widgets/timer_chip.dart';
@@ -68,9 +70,9 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
     try {
       await FlutterLocalNotificationsPlugin().show(
         timer.timer.hashCode & 0x7fffffff,
-        ref.read(contentServiceProvider).getValue(
-          ContentKeys.mpCookTimerNotification,
-        ),
+        ref
+            .read(contentServiceProvider)
+            .getValue(ContentKeys.mpCookTimerNotification),
         timer.timer.label,
         const NotificationDetails(
           iOS: DarwinNotificationDetails(),
@@ -89,108 +91,116 @@ class _CookingModeScreenState extends ConsumerState<CookingModeScreen> {
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
-    final stateAsync = ref.watch(cookingSessionControllerProvider(widget.mealId));
+    final stateAsync = ref.watch(
+      cookingSessionControllerProvider(widget.mealId),
+    );
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
 
-    return Scaffold(
-      key: ValueKey('meal_planning.cook_${widget.mealId}'),
-      backgroundColor: bg,
-      body: stateAsync.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-        error: (e, _) => Center(
-          child: TextButton(
-            onPressed: () => ref.invalidate(
-              cookingSessionControllerProvider(widget.mealId),
-            ),
-            child: Text(content.getValue(ContentKeys.mpRetry)),
+    return VanaSituationScope(
+      situation: VanaSituation.screen(
+        VanaScreen.cookingMode,
+        entityId: widget.mealId,
+      ),
+      child: Scaffold(
+        key: ValueKey('meal_planning.cook_${widget.mealId}'),
+        backgroundColor: bg,
+        body: stateAsync.when(
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
           ),
-        ),
-        data: (state) {
-          // Wake lock intent follows the controller's phase (05 deviations).
-          WakelockPlus.toggle(enable: state.wakeLockWanted);
-          _onRinging(state);
-
-          if (!state.hasSteps) return _NoSteps(onExit: () => context.pop());
-
-          final controller = ref.read(
-            cookingSessionControllerProvider(widget.mealId).notifier,
-          );
-
-          return SafeArea(
-            child: Column(
-              children: [
-                // The bar is the same in every phase: close · meal · the
-                // ingredients toggle, with the step counter appearing while
-                // cooking (prototype's top bar).
-                _CookBar(
-                  name: state.detail.meal.name,
-                  stepLabel: state.phase == CookingPhase.cooking
-                      ? ContentKeys.format(
-                          content.getValue(ContentKeys.mpCookStepOf),
-                          {
-                            'n': state.stepIndex + 1,
-                            'total': state.stepCount,
-                          },
-                        )
-                      : null,
-                  drawerOpen: _drawerOpen,
-                  onToggleDrawer: () =>
-                      setState(() => _drawerOpen = !_drawerOpen),
-                  onClose: () => context.pop(),
-                ),
-                if (state.phase == CookingPhase.cooking)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.md,
-                      0,
-                      AppSpacing.md,
-                      AppSpacing.xs,
-                    ),
-                    child: StepProgressDots(
-                      count: state.stepCount,
-                      current: state.stepIndex,
-                    ),
-                  ),
-                if (_drawerOpen)
-                  _IngredientsDrawer(
-                    state: state,
-                    onIngredient: controller.toggleIngredient,
-                  ),
-                Expanded(
-                  child: switch (state.phase) {
-                    CookingPhase.cooking => _CookingPhase(
-                      state: state,
-                      onTimerToggle: (timer, running) {
-                        final timerIndex = state.currentTimers.indexOf(timer);
-                        if (running) {
-                          controller.pauseTimer(state.stepIndex, timerIndex);
-                        } else {
-                          controller.startTimer(state.stepIndex, timerIndex);
-                        }
-                      },
-                      onTimerReset: (timer) => controller.resetTimer(
-                        state.stepIndex,
-                        state.currentTimers.indexOf(timer),
-                      ),
-                      onBack: controller.back,
-                      onNext: controller.next,
-                      onDone: controller.finish,
-                    ),
-                    CookingPhase.done => _DonePhase(
-                      state: state,
-                      mealId: widget.mealId,
-                      onStartOver: controller.startOver,
-                      onExit: () => context.pop(),
-                    ),
-                  },
-                ),
-              ],
+          error: (e, _) => Center(
+            child: TextButton(
+              onPressed: () => ref.invalidate(
+                cookingSessionControllerProvider(widget.mealId),
+              ),
+              child: Text(content.getValue(ContentKeys.mpRetry)),
             ),
-          );
-        },
+          ),
+          data: (state) {
+            // Wake lock intent follows the controller's phase (05 deviations).
+            WakelockPlus.toggle(enable: state.wakeLockWanted);
+            _onRinging(state);
+
+            if (!state.hasSteps) return _NoSteps(onExit: () => context.pop());
+
+            final controller = ref.read(
+              cookingSessionControllerProvider(widget.mealId).notifier,
+            );
+
+            return SafeArea(
+              child: Column(
+                children: [
+                  // The bar is the same in every phase: close · meal · the
+                  // ingredients toggle, with the step counter appearing while
+                  // cooking (prototype's top bar).
+                  _CookBar(
+                    name: state.detail.meal.name,
+                    stepLabel: state.phase == CookingPhase.cooking
+                        ? ContentKeys.format(
+                            content.getValue(ContentKeys.mpCookStepOf),
+                            {
+                              'n': state.stepIndex + 1,
+                              'total': state.stepCount,
+                            },
+                          )
+                        : null,
+                    drawerOpen: _drawerOpen,
+                    onToggleDrawer: () =>
+                        setState(() => _drawerOpen = !_drawerOpen),
+                    onClose: () => context.pop(),
+                  ),
+                  if (state.phase == CookingPhase.cooking)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                        AppSpacing.xs,
+                      ),
+                      child: StepProgressDots(
+                        count: state.stepCount,
+                        current: state.stepIndex,
+                      ),
+                    ),
+                  if (_drawerOpen)
+                    _IngredientsDrawer(
+                      state: state,
+                      onIngredient: controller.toggleIngredient,
+                    ),
+                  Expanded(
+                    child: switch (state.phase) {
+                      CookingPhase.cooking => _CookingPhase(
+                        state: state,
+                        onTimerToggle: (timer, running) {
+                          final timerIndex = state.currentTimers.indexOf(timer);
+                          if (running) {
+                            controller.pauseTimer(state.stepIndex, timerIndex);
+                          } else {
+                            controller.startTimer(state.stepIndex, timerIndex);
+                          }
+                        },
+                        onTimerReset: (timer) => controller.resetTimer(
+                          state.stepIndex,
+                          state.currentTimers.indexOf(timer),
+                        ),
+                        onBack: controller.back,
+                        onNext: controller.next,
+                        onDone: controller.finish,
+                      ),
+                      CookingPhase.done => _DonePhase(
+                        state: state,
+                        mealId: widget.mealId,
+                        onStartOver: controller.startOver,
+                        onExit: () => context.pop(),
+                      ),
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -300,9 +310,7 @@ class _IngredientsDrawer extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.blackberryLight
-                : AppColors.surfaceLight,
+            color: isDark ? AppColors.blackberryLight : AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(15),
           ),
           child: ListView(
@@ -325,11 +333,7 @@ class _IngredientsDrawer extends StatelessWidget {
                               border: Border.all(color: accent, width: 1.5),
                             ),
                             child: state.checkedIngredients.contains(i)
-                                ? Icon(
-                                    Icons.check,
-                                    size: 12,
-                                    color: accent,
-                                  )
+                                ? Icon(Icons.check, size: 12, color: accent)
                                 : null,
                           ),
                           const SizedBox(width: 10),
@@ -338,8 +342,7 @@ class _IngredientsDrawer extends StatelessWidget {
                               ingredient.name,
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: textColor,
-                                decoration:
-                                    state.checkedIngredients.contains(i)
+                                decoration: state.checkedIngredients.contains(i)
                                     ? TextDecoration.lineThrough
                                     : null,
                               ),

@@ -8,6 +8,8 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/navigation/kyle_tab_pill.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../domain/vana_situation.dart';
+import '../widgets/vana_situation_scope.dart';
 import '../widgets/shopping_share_button.dart';
 import 'meals_tab.dart';
 import 'plan_tab.dart';
@@ -47,68 +49,74 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
+    // What Vana is told this screen has in view: the Plan tab, today, and the
+    // week's plan. Ids only — the server resolves them.
+    final plan = ref.watch(mealPlanControllerProvider).value;
 
-    return Scaffold(
-      key: const ValueKey('meal_planning.food_screen'),
-      backgroundColor: bg,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Centred page title. The settings gear is drawn by TabsScreen
-            // over every tab (right edge, 4pt inset); on the Shopping tab the
-            // share button slots in beside it at the same height.
-            SizedBox(
-              height: 48,
-              width: double.infinity,
-              child: Stack(
-                children: [
-                  Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                      ),
-                      child: Text(
-                        content.getValue(ContentKeys.mpFoodTitle),
-                        key: const ValueKey('meal_planning.food_title'),
-                        style: AppTextStyles.pageTitle.copyWith(
-                          color: textColor,
+    return VanaSituationScope(
+      situation: VanaSituation.screen(
+        VanaScreen.planTab,
+        entityId: plan?.id,
+        date: DateTime.now(),
+      ),
+      child: Scaffold(
+        key: const ValueKey('meal_planning.food_screen'),
+        backgroundColor: bg,
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Centred page title. The settings gear is drawn by TabsScreen
+              // over every tab (right edge, 4pt inset); on the Shopping tab the
+              // share button slots in beside it at the same height.
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        child: Text(
+                          content.getValue(ContentKeys.mpFoodTitle),
+                          key: const ValueKey('meal_planning.food_title'),
+                          style: AppTextStyles.pageTitle.copyWith(
+                            color: textColor,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (_tab == FoodTab.shopping)
-                    const Positioned(
-                      top: 0,
-                      right: 52,
-                      child: ShoppingShareButton(),
-                    ),
-                ],
+                    if (_tab == FoodTab.shopping)
+                      const Positioned(
+                        top: 0,
+                        right: 52,
+                        child: ShoppingShareButton(),
+                      ),
+                  ],
+                ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.sm,
-                AppSpacing.md,
-                AppSpacing.sm,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: _TabSelector(
+                  selected: _tab,
+                  onChanged: (tab) => setState(() => _tab = tab),
+                ),
               ),
-              child: _TabSelector(
-                selected: _tab,
-                onChanged: (tab) => setState(() => _tab = tab),
+              Expanded(
+                child: IndexedStack(
+                  index: FoodTab.values.indexOf(_tab),
+                  children: const [PlanTab(), MealsTab(), ShoppingTab()],
+                ),
               ),
-            ),
-            Expanded(
-              child: IndexedStack(
-                index: FoodTab.values.indexOf(_tab),
-                children: const [
-                  PlanTab(),
-                  MealsTab(),
-                  ShoppingTab(),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

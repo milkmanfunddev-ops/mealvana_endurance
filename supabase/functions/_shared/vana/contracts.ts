@@ -136,6 +136,7 @@ export interface AthleteContext {
   // ---- additive 2026-09-09 (the Voodoo Doll: both conversation kinds read the same block)
   likes?: { name: string; stance: 'up' | 'down' }[];   // meal_feedback thumbs, newest first — read where they already live, never copied
   goals?: string[];                                    // onboarding_surveys.goals — what the athlete said they were training for
+  situation?: string | null;                           // which screen they are on and what is in view, resolved from ids; never stored
 }
 
 // ---- Conversations (vana_conversations / vana_messages)

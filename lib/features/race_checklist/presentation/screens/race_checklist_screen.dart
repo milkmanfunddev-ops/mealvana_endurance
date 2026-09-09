@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/swipe_action_background.dart';
@@ -28,31 +30,38 @@ class RaceChecklistScreen extends ConsumerWidget {
     final checklistAsync = ref.watch(checklistControllerProvider(eventId));
     final progress = ref.watch(checklistProgressProvider(eventId));
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: const CustomAppBarBackButton(
-          key: ValueKey('checklist.back_button'),
-        ),
-        title: Text(
-          key: const ValueKey('checklist.title'),
-          'Race Day Checklist',
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
+    return VanaSituationScope(
+      situation: VanaSituation.screen(
+        VanaScreen.eventChecklist,
+        entityId: eventId,
       ),
-      body: ContentArea.wide(
-        child: checklistAsync.when(
-          data: (items) =>
-              _buildChecklistContent(context, ref, items, progress),
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.electrolyte),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: const CustomAppBarBackButton(
+            key: ValueKey('checklist.back_button'),
           ),
-          error: (error, stack) => _buildErrorState(context, error.toString()),
+          title: Text(
+            key: const ValueKey('checklist.title'),
+            'Race Day Checklist',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
+        body: ContentArea.wide(
+          child: checklistAsync.when(
+            data: (items) =>
+                _buildChecklistContent(context, ref, items, progress),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.electrolyte),
+            ),
+            error: (error, stack) =>
+                _buildErrorState(context, error.toString()),
+          ),
         ),
       ),
     );

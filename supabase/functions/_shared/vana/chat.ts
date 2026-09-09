@@ -13,6 +13,7 @@ import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener 
 import { checkRateLimit } from './rate-limit.ts';
 import { episodeFor } from './memory.ts';
 import { readBackPrevious } from './extract.ts';
+import { resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
@@ -138,7 +139,7 @@ export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayI
 
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
-export interface ChatBody { message?: string; conversation_id?: string | null; kind?: ConversationKind | string; timezone?: string; opener?: boolean; anchor_date?: string }
+export interface ChatBody { message?: string; conversation_id?: string | null; kind?: ConversationKind | string; timezone?: string; opener?: boolean; anchor_date?: string; situation?: Situation | null }
 export interface ChatRunOpts {
   /** `ai_usage.function_name` / log tag: 'vana-chat' | 'jade-chat'. */
   functionName: string;
@@ -177,6 +178,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // Planning writes land on this conversation's own draft; the context's PLAN line describes that draft, not the Plan tab's plan.
   const scope = convKind === 'meal_planning' && convId ? { conversationId: convId } : null;
   if (scope) { const draft = await getConversationPlan(v, convId, false); ctx.plan = { exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? ctx.plan.batchCooking }; }
+  // The Situation travels with the message and is resolved here from ids; it is never written anywhere.
+  ctx.situation = await resolveSituation(v, body.situation);
   const tools = makeVanaTools(v, ctx, convKind, { scope, shownIds: shownMealIds(messages) });
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }

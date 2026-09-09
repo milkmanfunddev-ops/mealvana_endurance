@@ -6,6 +6,8 @@ import '../widgets/activity_detail/activity_detail_app_bar.dart';
 import '../widgets/activity_detail/activity_detail_action_buttons.dart';
 import '../widgets/activity_detail/nutrition_sections_builder.dart';
 import '../widgets/activity_detail/no_nutrition_plan_state.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../widgets/activity_detail/single_sport_hero_image.dart';
 import '../widgets/activity_detail/activity_schedule_info.dart';
 import '../widgets/activity_detail/brick_header.dart';
@@ -186,46 +188,52 @@ class _ActivityDetailScreenState extends ConsumerState<ActivityDetailScreen>
         ) ??
         false;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: ActivityDetailAppBar(
-        activityId: widget.activityId,
-        isNewActivity: widget.isNewActivity,
-        isCoachView: widget.isCoachView,
-        onSaveTemplate: () => _showSaveTemplateDialog(context),
-        onEdit: () => _navigateToEditActivity(context),
-        onDelete: () => _showDeleteConfirmationDialog(context),
-        onEditFuelLog: () => _enterFuelLogMode(),
-        isFuelLogMode: isFuelLogMode,
-        onDoneFuelLog: () => _completeFuelLog(context),
-        onBackFromFuelLog: () => _exitFuelLogMode(),
+    return VanaSituationScope(
+      situation: VanaSituation.screen(
+        VanaScreen.activityPlan,
+        entityId: widget.activityId,
       ),
-      body: ContentArea(
-        child: activityDetailAsync.when(
-          data: (data) {
-            final ActivityDetailState state;
-            if (data is ActivityDetailState) {
-              state = data;
-            } else {
-              final dynamic d = data;
-              state = ActivityDetailState(
-                activity: d.activity,
-                nutritionPlan: d.nutritionPlan,
-                completion: d.completion,
-                scheduledDateTime: d.scheduledDateTime,
-                isNewActivity: widget.isNewActivity,
-                isSaving: d.isSaving ?? false,
-                isCompleting: d.isCompleting ?? false,
-                hasUnsavedChanges: d.hasUnsavedChanges ?? false,
-                error: d.error,
-                fuelLogViewMode: d.fuelLogViewMode ?? FuelLogViewMode.planned,
-                fuelLogData: d.fuelLogData,
-              );
-            }
-            return _buildContent(context, state);
-          },
-          loading: () => _buildLoadingState(context),
-          error: (error, stack) => _buildErrorState(context, error),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: ActivityDetailAppBar(
+          activityId: widget.activityId,
+          isNewActivity: widget.isNewActivity,
+          isCoachView: widget.isCoachView,
+          onSaveTemplate: () => _showSaveTemplateDialog(context),
+          onEdit: () => _navigateToEditActivity(context),
+          onDelete: () => _showDeleteConfirmationDialog(context),
+          onEditFuelLog: () => _enterFuelLogMode(),
+          isFuelLogMode: isFuelLogMode,
+          onDoneFuelLog: () => _completeFuelLog(context),
+          onBackFromFuelLog: () => _exitFuelLogMode(),
+        ),
+        body: ContentArea(
+          child: activityDetailAsync.when(
+            data: (data) {
+              final ActivityDetailState state;
+              if (data is ActivityDetailState) {
+                state = data;
+              } else {
+                final dynamic d = data;
+                state = ActivityDetailState(
+                  activity: d.activity,
+                  nutritionPlan: d.nutritionPlan,
+                  completion: d.completion,
+                  scheduledDateTime: d.scheduledDateTime,
+                  isNewActivity: widget.isNewActivity,
+                  isSaving: d.isSaving ?? false,
+                  isCompleting: d.isCompleting ?? false,
+                  hasUnsavedChanges: d.hasUnsavedChanges ?? false,
+                  error: d.error,
+                  fuelLogViewMode: d.fuelLogViewMode ?? FuelLogViewMode.planned,
+                  fuelLogData: d.fuelLogData,
+                );
+              }
+              return _buildContent(context, state);
+            },
+            loading: () => _buildLoadingState(context),
+            error: (error, stack) => _buildErrorState(context, error),
+          ),
         ),
       ),
     );

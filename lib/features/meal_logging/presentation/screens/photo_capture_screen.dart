@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
@@ -178,61 +180,64 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
+    return VanaSituationScope(
+      situation: VanaSituation(route: VanaScreen.mealLog.route, date: _logDate),
+      child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Photo'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Take or choose a photo of your meal.',
-              style: AppTextStyles.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              'Mealvana AI will identify the food and estimate macros.',
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark
-                    ? AppColors.cream.withValues(alpha: 0.55)
-                    : AppColors.blackberry.withValues(alpha: 0.55),
+        appBar: AppBar(
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          title: const Text('Photo'),
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'Take or choose a photo of your meal.',
+                style: AppTextStyles.bodyLarge,
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-
-            // While Mealvana AI works, the pickers give way to the shape of the
-            // answer rather than being covered by a scrim.
-            if (_isAnalyzing)
-              const MealAnalysisSkeleton(phases: AiThinkingStatus.photoPhases)
-            else ...[
-              // Camera option (mobile only)
-              if (!kIsWeb) ...[
-                _OptionCard(
-                  icon: Icons.camera_alt_outlined,
-                  title: 'Take a Photo',
-                  subtitle: 'Use your camera',
-                  onTap: () => _pickAndAnalyze(ImageSource.camera),
+              Text(
+                'Mealvana AI will identify the food and estimate macros.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark
+                      ? AppColors.cream.withValues(alpha: 0.55)
+                      : AppColors.blackberry.withValues(alpha: 0.55),
                 ),
-                const SizedBox(height: AppSpacing.md),
-              ],
-
-              // Gallery option
-              _OptionCard(
-                icon: Icons.photo_library_outlined,
-                title: 'Choose from Library',
-                subtitle: 'Select an existing photo',
-                onTap: () => _pickAndAnalyze(ImageSource.gallery),
+                textAlign: TextAlign.center,
               ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // While Mealvana AI works, the pickers give way to the shape of the
+              // answer rather than being covered by a scrim.
+              if (_isAnalyzing)
+                const MealAnalysisSkeleton(phases: AiThinkingStatus.photoPhases)
+              else ...[
+                // Camera option (mobile only)
+                if (!kIsWeb) ...[
+                  _OptionCard(
+                    icon: Icons.camera_alt_outlined,
+                    title: 'Take a Photo',
+                    subtitle: 'Use your camera',
+                    onTap: () => _pickAndAnalyze(ImageSource.camera),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
+
+                // Gallery option
+                _OptionCard(
+                  icon: Icons.photo_library_outlined,
+                  title: 'Choose from Library',
+                  subtitle: 'Select an existing photo',
+                  onTap: () => _pickAndAnalyze(ImageSource.gallery),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
             ],
-            const SizedBox(height: AppSpacing.xl),
-          ],
+          ),
         ),
       ),
     );

@@ -19,6 +19,8 @@ import '../../application/meal_plan_controller.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/directions_origin.dart';
 import '../../domain/meal_detail.dart';
+import '../../domain/vana_situation.dart';
+import '../widgets/vana_situation_scope.dart';
 import '../../domain/meal_image.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
@@ -79,23 +81,29 @@ class _MealDetailScreenState extends ConsumerState<MealDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
 
-    return Scaffold(
-      key: ValueKey('meal_planning.detail_${widget.id}'),
-      backgroundColor: bg,
-      body: SafeArea(
-        child: detailAsync.when(
-          loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.electrolyte),
-          ),
-          error: (e, _) => _LoadError(
-            onRetry: () =>
-                ref.invalidate(mealDetailControllerProvider(widget.id)),
-          ),
-          data: (detail) => _DetailBody(
-            detail: detail,
-            swapPlanMealId: widget.swapPlanMealId,
-            pickConversationId: widget.pickConversationId,
-            notesController: _notesController,
+    return VanaSituationScope(
+      situation: VanaSituation.screen(
+        VanaScreen.mealDetail,
+        entityId: widget.id,
+      ),
+      child: Scaffold(
+        key: ValueKey('meal_planning.detail_${widget.id}'),
+        backgroundColor: bg,
+        body: SafeArea(
+          child: detailAsync.when(
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.electrolyte),
+            ),
+            error: (e, _) => _LoadError(
+              onRetry: () =>
+                  ref.invalidate(mealDetailControllerProvider(widget.id)),
+            ),
+            data: (detail) => _DetailBody(
+              detail: detail,
+              swapPlanMealId: widget.swapPlanMealId,
+              pickConversationId: widget.pickConversationId,
+              notesController: _notesController,
+            ),
           ),
         ),
       ),

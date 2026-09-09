@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../shared/domain/activity_type.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
@@ -73,72 +75,78 @@ class _FuelLogScreenState extends ConsumerState<FuelLogScreen> {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Theme.of(
-          context,
-        ).scaffoldBackgroundColor.withValues(alpha: 0.95),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        leading: IconButton(
-          onPressed: _closeWithoutSaving,
-          icon: Icon(
-            Icons.close,
-            color: Theme.of(context).colorScheme.onSurface,
+    return VanaSituationScope(
+      situation: VanaSituation.screen(
+        VanaScreen.fuelLog,
+        entityId: widget.activityId,
+      ),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Theme.of(
+            context,
+          ).scaffoldBackgroundColor.withValues(alpha: 0.95),
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            onPressed: _closeWithoutSaving,
+            icon: Icon(
+              Icons.close,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
           ),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Log Workout Fuel',
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Log Workout Fuel',
+                style: AppTextStyles.sectionTitle.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              'Adjust what you consumed',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          // Done is meaningful only when there's a plan to save against.
-          // The no-plan empty state surfaces its own close affordance.
-          if (asyncState.value?.nutritionPlan != null)
-            TextButton(
-              onPressed: asyncState.isLoading
-                  ? null
-                  : () async {
-                      final state = asyncState.value;
-                      if (state != null) {
-                        await _completeFuelLog();
-                      }
-                    },
-              child: Text(
-                'Done',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.orange,
-                  fontWeight: FontWeight.w700,
+              Text(
+                'Adjust what you consumed',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
-            ),
-          const SizedBox(width: AppSpacing.xs),
-        ],
-      ),
-      body: ContentArea(
-        child: asyncState.when(
-          loading: _buildLoadingState,
-          error: (error, _) => _buildErrorState(context, error),
-          data: (state) {
-            _initializeFuelLogIfReady(state);
-            return _buildContent(context, state);
-          },
+            ],
+          ),
+          actions: [
+            // Done is meaningful only when there's a plan to save against.
+            // The no-plan empty state surfaces its own close affordance.
+            if (asyncState.value?.nutritionPlan != null)
+              TextButton(
+                onPressed: asyncState.isLoading
+                    ? null
+                    : () async {
+                        final state = asyncState.value;
+                        if (state != null) {
+                          await _completeFuelLog();
+                        }
+                      },
+                child: Text(
+                  'Done',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.orange,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            const SizedBox(width: AppSpacing.xs),
+          ],
+        ),
+        body: ContentArea(
+          child: asyncState.when(
+            loading: _buildLoadingState,
+            error: (error, _) => _buildErrorState(context, error),
+            data: (state) {
+              _initializeFuelLogIfReady(state);
+              return _buildContent(context, state);
+            },
+          ),
         ),
       ),
     );

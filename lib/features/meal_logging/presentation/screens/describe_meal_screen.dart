@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
 import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
@@ -144,80 +146,83 @@ class _DescribeMealScreenState extends ConsumerState<DescribeMealScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      appBar: AppBar(
+    return VanaSituationScope(
+      situation: VanaSituation(route: VanaScreen.mealLog.route, date: _logDate),
+      child: Scaffold(
         backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-        title: const Text('Describe to Mealvana'),
-        elevation: 0,
-      ),
-      // While Mealvana AI works the page does not get covered — the editor collapses
-      // to a quiet echo of what was typed and the answer's skeleton takes the
-      // space the button had, so the wait happens where the result will land.
-      body: SingleChildScrollView(
-        padding: AppSpacing.screenPaddingHorizontal,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: AppSpacing.md),
-              // Prompt on the left, token balance on the right — the cost
-              // of the action sits next to the description of it.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Describe what you ate and Mealvana AI will estimate the '
-                      'macros.',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark
-                            ? AppColors.cream.withValues(alpha: 0.65)
-                            : AppColors.blackberry.withValues(alpha: 0.65),
+        appBar: AppBar(
+          backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
+          title: const Text('Describe to Mealvana'),
+          elevation: 0,
+        ),
+        // While Mealvana AI works the page does not get covered — the editor collapses
+        // to a quiet echo of what was typed and the answer's skeleton takes the
+        // space the button had, so the wait happens where the result will land.
+        body: SingleChildScrollView(
+          padding: AppSpacing.screenPaddingHorizontal,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: AppSpacing.md),
+                // Prompt on the left, token balance on the right — the cost
+                // of the action sits next to the description of it.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Describe what you ate and Mealvana AI will estimate the '
+                        'macros.',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.cream.withValues(alpha: 0.65)
+                              : AppColors.blackberry.withValues(alpha: 0.65),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  const TokenPill(),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              if (_isAnalyzing)
-                _DescriptionEcho(text: _descriptionCtrl.text.trim())
-              else
-                TextFormField(
-                  controller: _descriptionCtrl,
-                  maxLines: 6,
-                  minLines: 4,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'What did you eat?',
-                    hintText:
-                        'e.g. A bowl of oatmeal with blueberries and a tablespoon of honey, plus a large coffee with oat milk.',
-                    border: OutlineInputBorder(),
-                    alignLabelWithHint: true,
-                  ),
-                  validator: (v) => (v == null || v.trim().length < 5)
-                      ? 'Please describe your meal'
-                      : null,
+                    const SizedBox(width: AppSpacing.md),
+                    const TokenPill(),
+                  ],
                 ),
-              const SizedBox(height: AppSpacing.xl),
-              if (_isAnalyzing)
-                const MealAnalysisSkeleton(
-                  phases: AiThinkingStatus.describePhases,
-                )
-              else
-                // The Analyze button carries its own price: "Analyze 🍪 1".
-                // The chip is laid out after the label rather than stacked
-                // over it, so it can't collide at any text scale.
-                KylePrimaryButton(
-                  text: 'Analyze',
-                  onPressed: _analyze,
-                  trailing: const TokenCostChip(),
-                ),
-              const SizedBox(height: AppSpacing.xl),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                if (_isAnalyzing)
+                  _DescriptionEcho(text: _descriptionCtrl.text.trim())
+                else
+                  TextFormField(
+                    controller: _descriptionCtrl,
+                    maxLines: 6,
+                    minLines: 4,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      labelText: 'What did you eat?',
+                      hintText:
+                          'e.g. A bowl of oatmeal with blueberries and a tablespoon of honey, plus a large coffee with oat milk.',
+                      border: OutlineInputBorder(),
+                      alignLabelWithHint: true,
+                    ),
+                    validator: (v) => (v == null || v.trim().length < 5)
+                        ? 'Please describe your meal'
+                        : null,
+                  ),
+                const SizedBox(height: AppSpacing.xl),
+                if (_isAnalyzing)
+                  const MealAnalysisSkeleton(
+                    phases: AiThinkingStatus.describePhases,
+                  )
+                else
+                  // The Analyze button carries its own price: "Analyze 🍪 1".
+                  // The chip is laid out after the label rather than stacked
+                  // over it, so it can't collide at any text scale.
+                  KylePrimaryButton(
+                    text: 'Analyze',
+                    onPressed: _analyze,
+                    trailing: const TokenCostChip(),
+                  ),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+            ),
           ),
         ),
       ),

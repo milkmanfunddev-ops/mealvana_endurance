@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../activities/domain/activity.dart';
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../domain/event.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../providers/events_controller.dart';
@@ -43,228 +45,235 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
     final eventsState = ref.watch(eventsControllerProvider);
     final activitiesState = ref.watch(activitiesControllerProvider);
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        // leading: IconButton(
-        //   icon: Icon(
-        //     FontAwesomeIcons.chevronLeft.data,
-        //     size: AppIconSizes.sm,
-        //     color: Theme.of(context).colorScheme.onSurface,
-        //   ),
-        //   onPressed: () => Navigator.of(context).pop(),
-        // ),
-        title: Text(
-          key: const ValueKey('my_events.title'),
-          'My Events',
-          style: AppTextStyles.sectionTitle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        actions: [
-          //   IconButton(
-          //     icon: Icon(
-          //       FontAwesomeIcons.house.data,
-          //       size: AppIconSizes.sm,
-          //       color: Theme.of(context).colorScheme.onSurface,
-          //     ),
-          //     tooltip: 'Home',
-          //     onPressed: () => context.go('/main'),
+    return VanaSituationScope(
+      situation: VanaSituation.screen(VanaScreen.events),
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          // leading: IconButton(
+          //   icon: Icon(
+          //     FontAwesomeIcons.chevronLeft.data,
+          //     size: AppIconSizes.sm,
+          //     color: Theme.of(context).colorScheme.onSurface,
           //   ),
-        ],
-      ),
-      body: eventsState.when(
-        data: (events) {
-          // Filter out dismissed events for optimistic UI
-          final visibleEvents = events
-              .where((e) => !_dismissedEventIds.contains(e.id))
-              .toList();
+          //   onPressed: () => Navigator.of(context).pop(),
+          // ),
+          title: Text(
+            key: const ValueKey('my_events.title'),
+            'My Events',
+            style: AppTextStyles.sectionTitle.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          actions: [
+            //   IconButton(
+            //     icon: Icon(
+            //       FontAwesomeIcons.house.data,
+            //       size: AppIconSizes.sm,
+            //       color: Theme.of(context).colorScheme.onSurface,
+            //     ),
+            //     tooltip: 'Home',
+            //     onPressed: () => context.go('/main'),
+            //   ),
+          ],
+        ),
+        body: eventsState.when(
+          data: (events) {
+            // Filter out dismissed events for optimistic UI
+            final visibleEvents = events
+                .where((e) => !_dismissedEventIds.contains(e.id))
+                .toList();
 
-          if (visibleEvents.isEmpty) {
-            return EventsEmptyState(onCreateEvent: _openCreateEvent);
-          }
+            if (visibleEvents.isEmpty) {
+              return EventsEmptyState(onCreateEvent: _openCreateEvent);
+            }
 
-          // Get activities from activities controller
-          final activities = activitiesState.maybeWhen(
-            data: (acts) => acts,
-            orElse: () => <Activity>[],
-          );
+            // Get activities from activities controller
+            final activities = activitiesState.maybeWhen(
+              data: (acts) => acts,
+              orElse: () => <Activity>[],
+            );
 
-          // Separate events into upcoming and past
-          final now = DateTime.now();
-          final today = DateTime(now.year, now.month, now.day);
+            // Separate events into upcoming and past
+            final now = DateTime.now();
+            final today = DateTime(now.year, now.month, now.day);
 
-          final upcomingEvents =
-              <({Event event, Activity? activity, DateTime eventDate})>[];
-          final pastEvents =
-              <({Event event, Activity? activity, DateTime eventDate})>[];
+            final upcomingEvents =
+                <({Event event, Activity? activity, DateTime eventDate})>[];
+            final pastEvents =
+                <({Event event, Activity? activity, DateTime eventDate})>[];
 
-          for (final event in visibleEvents) {
-            // Find corresponding activity if one exists
-            final activity = event.activityId != null
-                ? activities.cast<Activity?>().firstWhere(
-                    (a) => a?.id == event.activityId,
-                    orElse: () => null,
-                  )
-                : null;
+            for (final event in visibleEvents) {
+              // Find corresponding activity if one exists
+              final activity = event.activityId != null
+                  ? activities.cast<Activity?>().firstWhere(
+                      (a) => a?.id == event.activityId,
+                      orElse: () => null,
+                    )
+                  : null;
 
-            // Get event date
-            DateTime? eventDate;
-            if (activity != null) {
-              eventDate = activity.scheduledDateTime;
-            } else if (event.startTime != null) {
-              try {
-                eventDate = DateTime.parse(event.startTime!);
-              } catch (e) {
-                // Skip events without valid dates
+              // Get event date
+              DateTime? eventDate;
+              if (activity != null) {
+                eventDate = activity.scheduledDateTime;
+              } else if (event.startTime != null) {
+                try {
+                  eventDate = DateTime.parse(event.startTime!);
+                } catch (e) {
+                  // Skip events without valid dates
+                  continue;
+                }
+              } else {
+                // Skip events without dates
                 continue;
               }
-            } else {
-              // Skip events without dates
-              continue;
+
+              // Compare dates only (ignore time)
+              final eventDateOnly = DateTime(
+                eventDate.year,
+                eventDate.month,
+                eventDate.day,
+              );
+              if (eventDateOnly.isAfter(today) ||
+                  eventDateOnly.isAtSameMomentAs(today)) {
+                upcomingEvents.add((
+                  event: event,
+                  activity: activity,
+                  eventDate: eventDate,
+                ));
+              } else {
+                pastEvents.add((
+                  event: event,
+                  activity: activity,
+                  eventDate: eventDate,
+                ));
+              }
             }
 
-            // Compare dates only (ignore time)
-            final eventDateOnly = DateTime(
-              eventDate.year,
-              eventDate.month,
-              eventDate.day,
-            );
-            if (eventDateOnly.isAfter(today) ||
-                eventDateOnly.isAtSameMomentAs(today)) {
-              upcomingEvents.add((
-                event: event,
-                activity: activity,
-                eventDate: eventDate,
-              ));
-            } else {
-              pastEvents.add((
-                event: event,
-                activity: activity,
-                eventDate: eventDate,
-              ));
-            }
-          }
+            // Sort events by date
+            upcomingEvents.sort(
+              (a, b) => a.eventDate.compareTo(b.eventDate),
+            ); // Ascending (earliest first)
+            pastEvents.sort(
+              (a, b) => b.eventDate.compareTo(a.eventDate),
+            ); // Descending (most recent first)
 
-          // Sort events by date
-          upcomingEvents.sort(
-            (a, b) => a.eventDate.compareTo(b.eventDate),
-          ); // Ascending (earliest first)
-          pastEvents.sort(
-            (a, b) => b.eventDate.compareTo(a.eventDate),
-          ); // Descending (most recent first)
+            return RefreshIndicator(
+              onRefresh: () async {
+                // Force sync from Supabase to get coach changes
+                await ref
+                    .read(eventsControllerProvider.notifier)
+                    .forceRefresh();
+                ref.invalidate(activitiesControllerProvider);
+              },
+              color: AppColors.electrolyte,
+              child: ListView(
+                padding: AppSpacing.screenPaddingHorizontal,
+                children: [
+                  const SizedBox(height: AppSpacing.lg),
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              // Force sync from Supabase to get coach changes
-              await ref.read(eventsControllerProvider.notifier).forceRefresh();
-              ref.invalidate(activitiesControllerProvider);
-            },
-            color: AppColors.electrolyte,
-            child: ListView(
-              padding: AppSpacing.screenPaddingHorizontal,
-              children: [
-                const SizedBox(height: AppSpacing.lg),
+                  // Upcoming Events Section
+                  if (upcomingEvents.isNotEmpty) ...[
+                    Text(
+                      key: const ValueKey('my_events.upcoming_heading'),
+                      'Upcoming Events',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ...upcomingEvents.map(
+                      (eventData) => EventListCard(
+                        event: eventData.event,
+                        activity: eventData.activity,
+                        eventDate: eventData.eventDate,
+                        onDismissed: () =>
+                            _handleEventDismissed(eventData.event),
+                      ),
+                    ),
+                  ],
 
-                // Upcoming Events Section
-                if (upcomingEvents.isNotEmpty) ...[
-                  Text(
-                    key: const ValueKey('my_events.upcoming_heading'),
-                    'Upcoming Events',
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
+                  // Past Events Section
+                  if (pastEvents.isNotEmpty) ...[
+                    if (upcomingEvents.isNotEmpty)
+                      const SizedBox(height: AppSpacing.xl),
+                    Text(
+                      'Past Events',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ...pastEvents.map(
+                      (eventData) => EventListCard(
+                        event: eventData.event,
+                        activity: eventData.activity,
+                        eventDate: eventData.eventDate,
+                        onDismissed: () =>
+                            _handleEventDismissed(eventData.event),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: AppSpacing.xl),
+                  Center(
+                    child: KylePrimaryButton(
+                      key: const ValueKey('my_events.new_event_button'),
+                      text: 'New Event',
+                      icon: FontAwesomeIcons.plus.data,
+                      isFullWidth: false,
+                      onPressed: _openCreateEvent,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  ...upcomingEvents.map(
-                    (eventData) => EventListCard(
-                      event: eventData.event,
-                      activity: eventData.activity,
-                      eventDate: eventData.eventDate,
-                      onDismissed: () => _handleEventDismissed(eventData.event),
-                    ),
-                  ),
+                  const SizedBox(height: AppSpacing.xxxl),
                 ],
-
-                // Past Events Section
-                if (pastEvents.isNotEmpty) ...[
-                  if (upcomingEvents.isNotEmpty)
-                    const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    'Past Events',
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  ...pastEvents.map(
-                    (eventData) => EventListCard(
-                      event: eventData.event,
-                      activity: eventData.activity,
-                      eventDate: eventData.eventDate,
-                      onDismissed: () => _handleEventDismissed(eventData.event),
-                    ),
-                  ),
-                ],
-
-                const SizedBox(height: AppSpacing.xl),
-                Center(
-                  child: KylePrimaryButton(
-                    key: const ValueKey('my_events.new_event_button'),
-                    text: 'New Event',
-                    icon: FontAwesomeIcons.plus.data,
-                    isFullWidth: false,
-                    onPressed: _openCreateEvent,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxxl),
-              ],
-            ),
-          );
-        },
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.electrolyte),
-        ),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FaIcon(
-                FontAwesomeIcons.circleExclamation,
-                size: AppIconSizes.xl,
-                color: AppColors.dragonfruit,
               ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Error loading events',
-                style: AppTextStyles.subtitle.copyWith(
+            );
+          },
+          loading: () => const Center(
+            child: CircularProgressIndicator(color: AppColors.electrolyte),
+          ),
+          error: (error, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.circleExclamation,
+                  size: AppIconSizes.xl,
                   color: AppColors.dragonfruit,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: AppSpacing.screenPaddingHorizontal,
-                child: Text(
-                  error.toString(),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Error loading events',
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: AppColors.dragonfruit,
                   ),
-                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              KylePrimaryButton(
-                text: 'Retry',
-                isFullWidth: false,
-                onPressed: () {
-                  ref.invalidate(eventsControllerProvider);
-                  ref.invalidate(activitiesControllerProvider);
-                },
-              ),
-            ],
+                const SizedBox(height: AppSpacing.sm),
+                Padding(
+                  padding: AppSpacing.screenPaddingHorizontal,
+                  child: Text(
+                    error.toString(),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                KylePrimaryButton(
+                  text: 'Retry',
+                  isFullWidth: false,
+                  onPressed: () {
+                    ref.invalidate(eventsControllerProvider);
+                    ref.invalidate(activitiesControllerProvider);
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
