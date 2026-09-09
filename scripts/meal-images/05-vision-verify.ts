@@ -29,6 +29,14 @@ const MODEL = Deno.env.get('MEAL_IMAGE_VISION_MODEL') ?? 'anthropic/claude-haiku
 const CONCURRENCY = Number(Deno.env.get('CONCURRENCY') ?? 6);
 const LIMIT = Number(Deno.env.get('LIMIT') ?? 0);
 const RECHECK = Deno.env.get('RECHECK') === '1';
+/**
+ * STRICT=1 demands the ingredient itself as the subject and fails a composed
+ * dish that merely contains it. The looser default was written for a bank
+ * feeding single tiles; it is wrong for mosaics, where a cell showing a
+ * finished dish makes the grid read as four unrelated meals (pass 8 catches
+ * this downstream: "the grid shows crepes with sauce" for an oatmeal).
+ */
+const STRICT = Deno.env.get('STRICT') === '1';
 
 if (!Deno.env.get('AI_GATEWAY_API_KEY')) {
   console.error('AI_GATEWAY_API_KEY missing — set -a; source secrets/ai_gateway.env; set +a');
@@ -79,8 +87,15 @@ async function verify(row: Row) {
             `- an empty scene, a room, equipment or utensils with little visible food ("empty_scene")\n` +
             `- a different food, or a composed dish where the ingredient is not identifiable ("wrong_food")\n` +
             `- anything too dark, blurry or abstract to recognise ("unclear")\n\n` +
-            `A plain photo of the raw or cooked ingredient passes. A tasteful dish in which the ` +
-            `ingredient is plainly the subject also passes.`,
+            (STRICT
+              ? `A plain photo of the raw or cooked ingredient passes, alone or as the clear ` +
+                `subject. A COMPOSED DISH FAILS as "wrong_food" even when the ingredient is in ` +
+                `it — a bowl of porridge is not a photo of oats, avocado toast is not a photo of ` +
+                `bread, a stir-fry is not a photo of broccoli. These tiles sit side by side in a ` +
+                `grid standing in for one meal, so a cell showing a finished dish makes the grid ` +
+                `read as several different meals.`
+              : `A plain photo of the raw or cooked ingredient passes. A tasteful dish in which the ` +
+                `ingredient is plainly the subject also passes.`),
         },
       ],
     }],
