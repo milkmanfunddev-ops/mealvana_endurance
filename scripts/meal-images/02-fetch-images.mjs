@@ -31,7 +31,7 @@ console.log(`providers: wikimedia, openverse${hasPexels ? ', pexels' : ''}`
   + `${hasUnsplash ? ` , unsplash (top ${UNSPLASH_TOP} only)` : ''}`);
 
 let pending = await selectAll('ingredient_images',
-  'select=slug,display_name,rows_using&status=eq.pending&order=rows_using.desc');
+  'select=slug,display_name,rows_using,rejected_urls,attempts&status=eq.pending&order=rows_using.desc');
 pending = pending.map((p, i) => ({ ...p, rank: i + 1 }));
 if (LIMIT) pending = pending.slice(0, LIMIT);
 console.log(`pending ingredients: ${pending.length}\n`);
@@ -112,12 +112,18 @@ async function handle(ing) {
     await archives();                 // unmetered first on the long tail
     if (!topCand()) await stock();    // metered rescue only when nothing was found
   }
-  const legal = cands.filter((c) => licenseOk(c.license));
+  // A candidate already tried and rejected by vision must not be picked again,
+  // or a retry round hands back the same photo of the wrong food.
+  const blocked = new Set(ing.rejected_urls ?? []);
+  const legal = cands.filter((c) => licenseOk(c.license) && !blocked.has(c.url));
   const ranked = rankCandidates(legal, q).filter((c) => c.score >= bar);
 
   const markNone = () => rest(`ingredient_images?slug=eq.${encodeURIComponent(ing.slug)}`, {
     method: 'PATCH', headers: { Prefer: 'return=minimal' },
-    body: JSON.stringify({ status: 'none', match_query: q, fetched_at: new Date().toISOString() }),
+    body: JSON.stringify({
+      status: 'none', match_query: q, attempts: (ing.attempts ?? 0) + 1,
+      fetched_at: new Date().toISOString(),
+    }),
   });
 
   if (!ranked.length) {
@@ -164,7 +170,7 @@ async function handle(ing) {
     body: JSON.stringify({
       status: 'ok', image_url: publicUrl, origin_url: best.url, source_url: best.source_url,
       license: best.license, creator: best.creator, provider: best.provider,
-      match_query: q, width: TILE, height: TILE,
+      match_query: q, width: TILE, height: TILE, attempts: (ing.attempts ?? 0) + 1,
       fetched_at: new Date().toISOString(), updated_at: new Date().toISOString(),
     }),
   });
