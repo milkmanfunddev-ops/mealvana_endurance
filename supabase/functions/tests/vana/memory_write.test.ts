@@ -6,7 +6,9 @@
  * that answers yes or no.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { rememberFact, listMemories, episodeFor, MEMORY_DUPLICATE_SIMILARITY } from '../../_shared/vana/memory.ts';
+import { rememberFact, listMemories, forgetMemory, episodeFor, MEMORY_DUPLICATE_SIMILARITY } from '../../_shared/vana/memory.ts';
+import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
+import { offlineDeps } from './support/vana_ctx.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Row } from './support/fake_db.ts';
 import type { VanaCtx } from '../../_shared/vana/env.ts';
@@ -116,3 +118,23 @@ Deno.test('the threshold is a near-identity threshold, not a topic threshold', (
   assert(cosine(embed('Skips fish on weeknights'), embed('Avoids fish on a school night')) < MEMORY_DUPLICATE_SIMILARITY);
   assertEquals(Math.round(cosine(embed('Skips fish on weeknights'), embed('Skips fish on weeknights')) * 1000) / 1000, 1);
 });
+
+Deno.test('a deleted Memory is absent from the next turn\'s block', async () => {
+  const keep = row({ fact: 'Hates cilantro', source: 'conversation' });
+  const drop = row({ fact: 'Partner is vegetarian', source: 'conversation' });
+  const v = ctxWith([keep, drop]);
+  v.fake.tables.users = [{ id: U, first_name: 'Lee', allergies: [] }];
+
+  const before = contextBlock(await buildAthleteContext(v, undefined, '2026-09-09', offlineDeps()));
+  assert(before.includes('Partner is vegetarian'), 'it was in the block to begin with');
+
+  await forgetMemory(v, drop.id as string);
+
+  const after = contextBlock(await buildAthleteContext(v, undefined, '2026-09-09', offlineDeps()));
+  assert(!after.includes('Partner is vegetarian'), 'the deleted Memory is gone from the block');
+  assert(after.includes('Hates cilantro'), 'the one that was kept is still there');
+  // A tombstone, not a hard delete — the row is still on file, flagged.
+  assertEquals(v.fake.rows('user_memories').length, 2);
+  assertEquals(v.fake.rows('user_memories').find((r) => r.id === drop.id)!.is_deleted, true);
+});
+

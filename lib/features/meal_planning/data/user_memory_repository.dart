@@ -272,14 +272,19 @@ class UserMemoryRepository with SyncableRepository {
   /// rows are excluded unless [includeSettings].
   Stream<List<UserMemory>> watchMemories(
     String userId, {
-    bool includeSettings = false,
+    bool includeEpisodes = false,
   }) {
     final query = _database.select(_database.userMemoriesTable)
       ..where((t) {
         final base = t.userId.equals(userId) & t.isDeleted.equals(false);
-        return includeSettings
+        // Episodes are one conversation's own summary, not a fact about the
+        // athlete; they surface in the conversation list, not in "What Vana
+        // knows". Settings ARE included: a keyed Memory is a sentence like any
+        // other, and the kinds stay in code rather than in the product (the
+        // Voodoo Doll spec, 2026-09-09).
+        return includeEpisodes
             ? base
-            : base & t.kind.equals(MemoryKind.setting.wire).not();
+            : base & t.kind.equals(MemoryKind.episode.wire).not();
       })
       ..orderBy([(t) => OrderingTerm.desc(t.lastConfirmedAt)]);
     return query.watch().map(

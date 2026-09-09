@@ -113,6 +113,36 @@ void main() {
     },
   );
 
+  test(
+    'the list is flat: keyed settings appear as sentences, episodes do not',
+    () async {
+      remote.memories = [
+        _row(id: 'mem-1', fact: 'Hates cilantro'),
+        _row(
+          id: 'mem-2',
+          kind: 'setting',
+          key: 'batch_cooking',
+          fact: 'Cooks in batches (cook once, eat across the week)',
+          value: true,
+        ),
+        _row(
+          id: 'mem-3',
+          kind: 'episode',
+          key: 'conv-1',
+          fact: 'Planned three dinners around Saturday\'s long ride.',
+        ),
+      ];
+      await repo.syncFromRemote(_user);
+
+      final shown = await repo.watchMemories(_user).first;
+      expect(shown.map((m) => m.id), ['mem-1', 'mem-2']);
+      expect(
+        (await repo.watchMemories(_user, includeEpisodes: true).first).length,
+        3,
+      );
+    },
+  );
+
   test('deleteMemory tombstones locally and replays is_deleted', () async {
     remote.memories = [_row(id: 'mem-1')];
     await repo.syncFromRemote(_user);

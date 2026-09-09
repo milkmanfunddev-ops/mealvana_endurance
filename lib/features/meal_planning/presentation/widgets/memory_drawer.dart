@@ -11,12 +11,18 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/vana_settings_controller.dart';
 import '../../domain/user_memory.dart';
 import 'dashed_box.dart';
-import 'vana_tag.dart';
 
-/// "What Vana knows" — the memory list: each row is the memory's kind as a
-/// tag, the fact and when it was last confirmed, and a delete (a local-first
-/// tombstone through [VanaSettingsController]). The section label and body
-/// belong to the settings screen; this is the card.
+/// "What Vana knows" — one flat list of sentences, newest first: the sentence,
+/// where it came from and when it was last confirmed, and a delete (a
+/// local-first tombstone through [VanaSettingsController]).
+///
+/// No kind tag. The kinds stay in code, for the keyed settings mechanism and
+/// the episode summaries; what the athlete sees is a sentence Vana holds about
+/// them, whether it came from a conversation, a debrief, or a setting they
+/// chose once (the Voodoo Doll spec, 2026-09-09). Episodes are left out — they
+/// are a conversation's own summary, not a fact about the person.
+///
+/// The section label and body belong to the settings screen; this is the card.
 class MemoryDrawer extends ConsumerWidget {
   const MemoryDrawer({super.key, this.memories, this.onDelete});
 
@@ -32,9 +38,7 @@ class MemoryDrawer extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final secondary = textColor.withValues(alpha: 0.65);
-    final surface = isDark
-        ? AppColors.blackberryLight
-        : AppColors.surfaceLight;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
     final list =
         memories ??
@@ -77,8 +81,6 @@ class MemoryDrawer extends ConsumerWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      VanaTag(label: memory.kind.wire),
-                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,9 +121,7 @@ class MemoryDrawer extends ConsumerWidget {
                               .deleteMemory(memory.id);
                           MealvanaSnackbar.showInfo(
                             context,
-                            content.getValue(
-                              ContentKeys.mpMemoryDeletedToast,
-                            ),
+                            content.getValue(ContentKeys.mpMemoryDeletedToast),
                           );
                         },
                         icon: const FaIcon(

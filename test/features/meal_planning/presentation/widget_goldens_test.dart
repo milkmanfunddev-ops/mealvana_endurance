@@ -26,10 +26,13 @@ import 'package:mealvana_endurance/features/meal_planning/application/shopping_l
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/memory_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/confirmed_card.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picker_carousel.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/memory_drawer.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/picker_chips.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/plan_bar.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/plan_list.dart';
@@ -320,6 +323,50 @@ void main() {
         onAddBack: (_) {},
       ),
       height: 300,
+    );
+  });
+
+  group('what Vana knows', () {
+    // One flat list of sentences: a conversation note, a debrief learning, and
+    // a keyed setting, all rendered the same way. No kind tags.
+    final memories = [
+      const UserMemory(
+        id: 'mem-1',
+        kind: MemoryKind.preference,
+        fact: 'Hates cilantro',
+        confidence: 0.9,
+        lastConfirmedAt: '2026-09-08T10:00:00Z',
+        source: 'conversation',
+      ),
+      const UserMemory(
+        id: 'mem-2',
+        kind: MemoryKind.pattern,
+        fact: 'Skips fish on weeknights',
+        confidence: 0.7,
+        lastConfirmedAt: '2026-09-05T10:00:00Z',
+        source: 'debrief',
+      ),
+      const UserMemory(
+        id: 'mem-3',
+        kind: MemoryKind.setting,
+        key: 'batch_cooking',
+        fact: 'Cooks in batches (cook once, eat across the week)',
+        value: true,
+        confidence: 1,
+        lastConfirmedAt: '2026-09-03T10:00:00Z',
+        source: 'settings',
+      ),
+    ];
+
+    bothThemes(
+      'memory_list',
+      () => MemoryDrawer(memories: memories, onDelete: (_) {}),
+      height: 400,
+    );
+    bothThemes(
+      'memory_list_empty',
+      () => MemoryDrawer(memories: const [], onDelete: (_) {}),
+      height: 240,
     );
   });
 
