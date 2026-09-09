@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/core/guarded_navigation.dart';
+import '../../../../shared/widgets/adaptive/adaptive_spacing.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../shared/widgets/kyle_design/materials/glass.dart';
@@ -674,7 +675,14 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  static const double _dockedBottomInset = 71;
+  /// Breathing room between docked content and the shell's bottom chrome,
+  /// on top of the shell's own published clearance. Scaled by height class
+  /// (docs/technical/responsiveness.md): on a `short` phone the docked
+  /// panel already eats a large share of the viewport, so it takes the
+  /// smaller step. Never a fixed number — see
+  /// `HomeShellChrome.bottomChromeClearancePx`.
+  static double _dockGap(BuildContext context) =>
+      AdaptiveSpacing.byHeightClass(context, short: 12, regular: 16);
 
   /// Docked chrome grounds. Both panels float over the SCROLLING timeline,
   /// so their fills must be opaque: an alpha fill composites against whatever
@@ -697,15 +705,20 @@ class MacroDashboardScreen extends ConsumerWidget {
   /// chips with a Swap affordance, over a full-width `Create Brick (n)` that
   /// commits directly — no confirm modal (Notion 3a7e3fdb, step 3). Below
   /// two legs the slot holds the instruction instead.
-  Widget _brickActionBar(BuildContext context, WidgetRef ref) {
+  Widget _brickActionBar(
+    BuildContext context,
+    WidgetRef ref,
+    double bottomInset,
+  ) {
     final selection = ref.watch(brickSelectionControllerProvider);
     final notifier = ref.read(brickSelectionControllerProvider.notifier);
     final legs = selection.selectedActivities;
-    if (legs.length < 2) return _brickPickHint(ref);
+    final dock = bottomInset + _dockGap(context);
+    if (legs.length < 2) return _brickPickHint(ref, dock);
 
     final canSwap = legs.length >= 2;
     return Container(
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
+      margin: EdgeInsets.fromLTRB(18, 0, 18, dock),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       decoration: BoxDecoration(
         color: _dockedPanelFill,
@@ -791,10 +804,10 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _brickPickHint(WidgetRef ref) {
+  Widget _brickPickHint(WidgetRef ref, double dock) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, _dockedBottomInset),
+      margin: EdgeInsets.fromLTRB(18, 0, 18, dock),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       decoration: BoxDecoration(
         color: _dockedHintFill,
@@ -1237,11 +1250,21 @@ class _DashedPillPainter extends CustomPainter {
 /// [GlassTopFade] backdrop, Bevel-style).
 ///
 /// [topInset] is the shell chrome's header clearance — the block includes
-/// it so the dissolve spans from the very top of the surface.
+/// it so the dissolve spans from the very top of the surface. [bottomInset]
+/// is its counterpart, the shell's bottom-chrome clearance
+/// (`HomeShellChrome.bottomChromeClearancePx`): the timeline's scroll
+/// padding and the docked brick panel both sit above it. Both default to 0
+/// so the body composes correctly with no shell at all — a rail layout with
+/// no bottom bar passes 0 and the panels dock to the surface edge.
 class MacroDashboardBody extends ConsumerStatefulWidget {
-  const MacroDashboardBody({super.key, this.topInset = 0});
+  const MacroDashboardBody({
+    super.key,
+    this.topInset = 0,
+    this.bottomInset = 0,
+  });
 
   final double topInset;
+  final double bottomInset;
 
   @override
   ConsumerState<MacroDashboardBody> createState() => _MacroDashboardBodyState();
@@ -1325,11 +1348,13 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
               18,
               _blockHeight,
               18,
-              // 90 = the shell's own bottom clearance; the docked brick
-              // panel adds its measured height on top while picking. Gated
-              // on `picking` so the last measurement doesn't leave phantom
-              // padding behind once the panel unmounts.
-              90 + (picking ? _dockHeight : 0),
+              // The shell's bottom chrome, plus the docked brick panel's
+              // measured height while picking. Gated on `picking` so the
+              // last measurement doesn't leave phantom padding behind once
+              // the panel unmounts.
+              widget.bottomInset +
+                  MacroDashboardScreen._dockGap(context) +
+                  (picking ? _dockHeight : 0),
             ),
             children: [
               for (final node in nodes)
@@ -1375,7 +1400,7 @@ class _MacroDashboardBodyState extends ConsumerState<MacroDashboardBody> {
             child: _BlockMeasure(
               key: const ValueKey('macro_dashboard.brick_dock'),
               onHeight: _onDockHeight,
-              child: screen._brickActionBar(context, ref),
+              child: screen._brickActionBar(context, ref, widget.bottomInset),
             ),
           ),
       ],
