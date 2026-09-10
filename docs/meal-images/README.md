@@ -171,13 +171,19 @@ These all cost a run, and the guards for them are in the code:
 
 ## Known issues
 
-- **40 unlicensed hotlinks.** Rows whose `image_url` points at food blogs
-  (`featherstonenutrition.com`, `recipetineats.com`, `teaforturmeric.com`) with
-  `image_credit` set to a bare domain. These are og:image scrapes from the
+- **40 unlicensed hotlinks — FLAGGED, deliberately kept.** 40 meals across 24 food-blog
+  hosts (`featherstonenutrition.com`, `recipetineats.com`, `teaforturmeric.com`)
+  whose `image_credit` is a bare domain. These are og:image scrapes from the
   recipe-directions backfill: unlicensed hotlinks to identifiable small
-  businesses, and they also cost those sites bandwidth. Lee chose to leave them
-  for now (2026-09-08); they should be replaced or nulled before any prod
-  cutover. Find them with `image_url is not null and image_provider is null`.
+  businesses, which also cost those sites bandwidth.
+
+  Lee chose to keep them while the meal library is a prototype (2026-09-08,
+  re-confirmed 2026-09-10) rather than spend the effort now. They carry
+  `meal_library.image_unlicensed = true` so the debt is queryable rather than
+  remembered.
+
+  **Prod gate — this must be zero before any prod cutover:**
+  `select count(*) from meal_library where image_unlicensed;`
 - The 668 Wikimedia images from the 2026-09-01 pass are still hotlinked to
   `upload.wikimedia.org` rather than mirrored. Permitted but discouraged and
   fragile; re-running pass 2 against them would mirror them properly.

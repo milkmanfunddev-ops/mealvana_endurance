@@ -74,3 +74,24 @@ comment on column public.ingredient_images.rejected_urls is
   'Origin URLs already tried and rejected for this slug; pass 2 skips them.';
 comment on column public.ingredient_images.attempts is
   'How many fetch rounds this slug has been through, so a hopeless slug stops.';
+
+-- ------------------------------------------------------------ 3. unlicensed hotlinks
+-- 40 meals across 24 food-blog hosts carry an og:image scraped during the
+-- recipe-directions backfill: hotlinked, no licence recorded, and costing those
+-- sites bandwidth. Kept deliberately while the meal library is a prototype
+-- (Lee, 2026-09-10) — flagged rather than removed so the debt is queryable and
+-- cannot be forgotten.
+--
+-- PROD GATE: this count must be zero before any prod cutover.
+--   select count(*) from meal_library where image_unlicensed;
+alter table public.meal_library
+  add column if not exists image_unlicensed boolean not null default false;
+
+comment on column public.meal_library.image_unlicensed is
+  'Hotlinked from a third-party food blog with no recorded licence. Kept '
+  'deliberately for prototyping (Lee, 2026-09-10). MUST be nulled or replaced '
+  'before any prod cutover.';
+
+update public.meal_library
+set image_unlicensed = true
+where is_active and image_url is not null and image_provider is null;
