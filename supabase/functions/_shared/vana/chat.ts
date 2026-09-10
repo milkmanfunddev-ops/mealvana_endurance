@@ -113,22 +113,41 @@ async function touch(v: VanaCtx, convId: string, firstUserText?: string) {
   if (firstUserText) { const { data } = await v.db.from('vana_conversations').select('title').eq('id', convId).maybeSingle(); if (!data?.title) patch.title = firstUserText.replace(/\s+/g, ' ').slice(0, 60); }
   await v.db.from('vana_conversations').update(patch).eq('id', convId);
 }
+/** The server-authored feedback acknowledgement (ticket 01, 2026-09-10).
+ *
+ * On a turn that files feedback the content-managed `feedback_saved` row IS the reply, and the model's own prose is
+ * dropped. The persona asks for silence and the model does not hold it: three prompt variants ran to 3–5 sentences and
+ * troubleshot, and the explicit "no apology, no promise" list primed the very behaviours it forbade. It gets worse as
+ * the Doll gets better — with the complaint in MEMORIES, Vana reads that she has been corrected before and apologises
+ * for it. The user story is "I am not troubleshot when I was venting"; the harm is the diagnosing and the promising,
+ * and the sentence count was only ever a proxy.
+ *
+ * This is not the clamp that was rejected. A clamp keeps whichever sentence came first, which in the worst run was
+ * "You're right, and I apologize" with the acknowledgement last. This drops the prose entirely and keeps the line the
+ * content system owns — the same precedent as the first-conversation `feedback_prompt`, which is server-authored
+ * precisely so the model cannot paraphrase it away.
+ *
+ * The one thing a question mark buys is an answer. A message that is both a complaint and a question — "why do you
+ * keep suggesting fish?" — still gets its prose; only a pure vent is answered by the row alone. */
+export const silenceAfterFeedback = (userMessage: string) => !userMessage.includes('?');
+
 // deno-lint-ignore no-explicit-any
-function partsFromSteps(text: string, steps: any[], maxSentences: number | null = RUNAWAY_SENTENCES): { parts: unknown[]; ui: VanaPart[] } {
+export function partsFromSteps(text: string, steps: any[], maxSentences: number | null = RUNAWAY_SENTENCES, silenceFeedback = false): { parts: unknown[]; ui: VanaPart[] } {
   const parts: unknown[] = []; const ui: VanaPart[] = [];
   // interleave: each step's text (runaway-guarded) then its UI tool outputs, so the transcript reads in order
   let anyText = false;
+  let filed = false;   // a feedback_saved output has landed; with silenceFeedback, no later text is kept
   const clamp = (t: string) => (maxSentences == null ? t.replace(/\s+/g, ' ').trim() : clampSentences(t, maxSentences));
   for (const s of steps) {
     // Unclamped (general) mode: drop the model's pre-tool narration ("I'll pull up your plan.") — only the step that answers keeps its text.
     const narration = maxSentences == null && (s.toolCalls?.length ?? 0) > 0 && String(s.text ?? '').length < 160;
-    const t = narration ? '' : clamp(String(s.text ?? '')); if (t) { parts.push({ type: 'text', text: t }); anyText = true; }
+    const t = narration || (filed && silenceFeedback) ? '' : clamp(String(s.text ?? '')); if (t) { parts.push({ type: 'text', text: t }); anyText = true; }
     for (const r of s.toolResults ?? []) {
       const out = (r as { output?: unknown; toolName?: string; toolCallId?: string; input?: unknown }).output;
-      if (out && typeof out === 'object' && 'kind' in (out as object)) { ui.push(out as VanaPart); parts.push({ type: `tool-${(r as { toolName: string }).toolName}`, toolCallId: (r as { toolCallId?: string }).toolCallId ?? `${Date.now()}`, state: 'output-available', input: (r as { input?: unknown }).input ?? {}, output: out }); }
+      if (out && typeof out === 'object' && 'kind' in (out as object)) { if ((out as { kind?: string }).kind === 'feedback_saved') filed = true; ui.push(out as VanaPart); parts.push({ type: `tool-${(r as { toolName: string }).toolName}`, toolCallId: (r as { toolCallId?: string }).toolCallId ?? `${Date.now()}`, state: 'output-available', input: (r as { input?: unknown }).input ?? {}, output: out }); }
     }
   }
-  if (!anyText && text.trim()) parts.unshift({ type: 'text', text: clamp(text) });
+  if (!anyText && text.trim() && !(filed && silenceFeedback)) parts.unshift({ type: 'text', text: clamp(text) });
   return { parts, ui };
 }
 /** Both kinds get the same block (the Voodoo Doll, 2026-09-09). Only the prompt above it differs.
@@ -181,6 +200,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The Situation travels with the message and is resolved here from ids; it is never written anywhere.
   ctx.situation = await resolveSituation(v, body.situation);
   const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
+  // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
+  const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
   let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] = 'plan'; let extraContext = '';
@@ -228,11 +249,12 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       const task = (async () => {
         try {
           if (persist) {
-            const { parts, ui } = partsFromSteps(text, steps as unknown[], general ? null : RUNAWAY_SENTENCES);
+            const { parts, ui } = partsFromSteps(text, steps as unknown[], general ? null : RUNAWAY_SENTENCES, silenceFeedback);
             for (const t of trailingParts) { ui.push(t); parts.push({ type: 'tool-feedbackPrompt', toolCallId: `server-${Date.now()}`, state: 'output-available', input: {}, output: t }); }
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
-            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text ?? clampSentences(text), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
+            const firstText = (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text;
+            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: firstText ?? (parts.length ? '' : clampSentences(text)), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }
@@ -246,5 +268,5 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     },
   });
   const headers = ndjsonHeaders({ 'x-conversation-id': convId, 'x-vana-kind': convKind });
-  return { ok: true, response: new Response(ndjsonFromFullStream(result.fullStream, { tag, trailingParts }), { status: 200, headers }) };
+  return { ok: true, response: new Response(ndjsonFromFullStream(result.fullStream, { tag, trailingParts, silenceAfterFeedback: silenceFeedback }), { status: 200, headers }) };
 }

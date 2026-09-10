@@ -51,6 +51,40 @@ if (!SUPABASE_URL || !ANON || !EMAIL || !PASSWORD) { console.error('personalizat
 const DEV_REF = 'vlmtsdzpnjnavdgytcmi';
 if (!SUPABASE_URL.includes(DEV_REF)) { console.error(`personalization: refusing to run against ${SUPABASE_URL} — dev (${DEV_REF}) only`); Deno.exit(2); }
 
+/** The dev service-role key, for the one case that needs a brand-new athlete. Env first, then the
+ *  single copy the repo keeps in `secrets/supabase_service_role_keys.md` (its Dev Project block) —
+ *  never duplicated into a second file. Absent → the case skips itself rather than failing. */
+function devServiceRole(): string | null {
+  const fromEnv = env('SUPABASE_SERVICE_ROLE_KEY'); if (fromEnv) return fromEnv;
+  try {
+    const md = Deno.readTextFileSync(root + 'secrets/supabase_service_role_keys.md');
+    const dev = md.split(/^##\s+/m).find((s) => s.startsWith(`Dev Project (${DEV_REF})`));
+    return dev?.match(/SUPABASE_SERVICE_ROLE_KEY=(\S+)/)?.[1] ?? null;
+  } catch { return null; }
+}
+const SERVICE_ROLE = devServiceRole();
+
+/** A brand-new dev athlete: an auth user plus the minimal `public.users` row the app would have
+ *  after signup (no trigger does it). Returns a `close()` that deletes the user again, so dev does
+ *  not accumulate eval junk and the case can be re-run. */
+async function createThrowawayUser(): Promise<{ session: Session; close: () => Promise<void> }> {
+  if (!SERVICE_ROLE) throw new Error('no dev service-role key (see secrets/supabase_service_role_keys.md)');
+  const email = `vana-eval+first-${crypto.randomUUID().slice(0, 8)}@mealvana.test`;
+  const password = `Eval-${crypto.randomUUID()}`;
+  const admin = (path: string, init: RequestInit) => fetch(`${SUPABASE_URL}${path}`, { ...init, headers: { apikey: SERVICE_ROLE!, authorization: `Bearer ${SERVICE_ROLE}`, 'content-type': 'application/json', ...(init.headers ?? {}) } });
+  const made = await admin('/auth/v1/admin/users', { method: 'POST', body: JSON.stringify({ email, password, email_confirm: true }) });
+  if (!made.ok) throw new Error(`admin create user ${made.status}: ${await made.text()}`);
+  const userId = (await made.json()).id as string;
+  const close = async () => { await admin(`/auth/v1/admin/users/${userId}`, { method: 'DELETE' }).catch(() => {}); };
+  try {
+    const row = await admin('/rest/v1/users', { method: 'POST', headers: { prefer: 'return=minimal' }, body: JSON.stringify({ id: userId, email, device_id: `vana-eval-${userId}`, auth_provider: 'email', is_anonymous: false, is_internal: true }) });
+    if (!row.ok) throw new Error(`users row ${row.status}: ${await row.text()}`);
+    const signed = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: ANON!, 'content-type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    if (!signed.ok) throw new Error(`sign-in ${signed.status}: ${await signed.text()}`);
+    return { session: { jwt: (await signed.json()).access_token as string, userId }, close };
+  } catch (e) { await close(); throw e; }
+}
+
 // ---------------------------------------------------------------- transport
 type Part = { kind: string; [k: string]: unknown };
 export interface Exchange { say?: string; text: string; parts: Part[]; tools: string[]; error?: string; inputTokens: number; outputTokens: number }
@@ -101,6 +135,8 @@ interface CaseCtx {
   /** Says something in a fresh or continuing conversation and returns the turn. */
   say: (text: string, o?: { kind?: 'general' | 'meal_planning'; conversationId?: string | null }) => Promise<{ conversationId: string | null; ex: Exchange }>;
   opener: (kind: 'general' | 'meal_planning') => Promise<{ conversationId: string | null; ex: Exchange }>;
+  /** A turn as somebody other than the eval user — the brand-new athlete of `feedback-prompt-once`. */
+  as: (session: Session, body: Record<string, unknown>) => Promise<{ conversationId: string | null; ex: Exchange }>;
   rows: typeof rows;
   patch: typeof patch;
   /** Records a failure; a case with none passes. */
@@ -109,6 +145,8 @@ interface CaseCtx {
 }
 interface EvalCase { name: string; about: string; ticket: string; run: (c: CaseCtx) => Promise<void> }
 
+/** The `user_feedback` shape every feedback case reads back: sentiment and about live in the metadata jsonb; the column is `rating`. */
+type FeedbackRow = { rating: number | null; message: string; conversation_id: string | null; metadata: { about?: string; sentiment?: string } | null };
 const mentions = (t: string, ...words: string[]) => words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(t));
 const DONT_KNOW = /\b(i (don'?t|do not) (know|have)|no (information|data|record)|can'?t (find|see|tell)|not sure|unable to)\b/i;
 
@@ -253,8 +291,7 @@ const CASES: EvalCase[] = [
       const { conversationId, ex } = await c.say(said, { kind: 'general' });
       if (ex.error) c.fail(`stream error: ${ex.error}`);
       await new Promise((r) => setTimeout(r, 2000));
-      // sentiment and about live in the metadata jsonb; the column is `rating`.
-      const fb = await c.rows<{ rating: number | null; message: string; conversation_id: string | null; metadata: { about?: string; sentiment?: string } | null }>(c.s, 'user_feedback?select=rating,message,conversation_id,metadata,source&order=created_at.desc&limit=5');
+      const fb = await c.rows<FeedbackRow>(c.s, 'user_feedback?select=rating,message,conversation_id,metadata,source&order=created_at.desc&limit=5');
       const hit = fb.find((f) => f.conversation_id === conversationId);
       if (!hit) { c.fail(`no feedback row for conversation ${conversationId}`); return; }
       c.log(`feedback row: rating ${hit.rating} / ${hit.metadata?.sentiment} / ${hit.metadata?.about} / "${hit.message}"`);
@@ -262,9 +299,73 @@ const CASES: EvalCase[] = [
       if (hit.metadata?.about !== 'vana') c.fail(`about is "${hit.metadata?.about}", expected vana`);
       if (hit.rating !== -1) c.fail(`rating is ${hit.rating}, expected -1`);
       if (!hit.message.trim()) c.fail('the feedback row carries no message');
-      const sentences = (ex.text.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) ?? []).filter((x) => x.trim());
-      if (sentences.length > 2) c.fail(`acknowledgement is ${sentences.length} sentences — one was asked for: "${ex.text}"`);
+      // The acknowledgement is server-authored: the `feedback_saved` part IS the reply, drawn by the
+      // client from `meal_planning.feedback_saved_row`. A pure complaint asks nothing, so Vana writes
+      // no text at all — that is what stops the troubleshooting, and the sentence count was only ever
+      // a proxy for it (ticket 01, 2026-09-10).
+      if (!ex.parts.some((p) => p.kind === 'feedback_saved')) c.fail('no feedback_saved part — the athlete is shown nothing');
+      if (ex.text.trim()) c.fail(`Vana wrote about the feedback herself; the app already says it is saved: "${ex.text}"`);
       if (ex.parts.some((p) => p.kind === 'choices')) c.fail('offered chips instead of stopping');
+    },
+  },
+  {
+    name: 'feedback-praise-lands', ticket: '01',
+    about: 'Praise typed at Vana becomes a feedback row with positive sentiment about Vana',
+    async run(c) {
+      const said = 'The way you build my week around my long ride is genuinely the best thing about this app.';
+      const { conversationId, ex } = await c.say(said, { kind: 'general' });
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      await new Promise((r) => setTimeout(r, 2000));
+      const fb = await c.rows<FeedbackRow>(c.s, 'user_feedback?select=rating,message,conversation_id,metadata,source&order=created_at.desc&limit=5');
+      const hit = fb.find((f) => f.conversation_id === conversationId);
+      if (!hit) { c.fail(`no feedback row for conversation ${conversationId}`); return; }
+      c.log(`feedback row: rating ${hit.rating} / ${hit.metadata?.sentiment} / ${hit.metadata?.about} / "${hit.message}"`);
+      if (hit.metadata?.sentiment !== 'positive') c.fail(`sentiment is "${hit.metadata?.sentiment}", expected positive`);
+      if (hit.rating !== 1) c.fail(`rating is ${hit.rating}, expected 1`);
+      // about is logged, not asserted: praise that names "this app" while describing how Vana plans is genuinely
+      // either vana or app, and the ticket asks only that praise land with positive sentiment.
+      if (!hit.message.trim()) c.fail('the feedback row carries no message');
+      if (!ex.parts.some((p) => p.kind === 'feedback_saved')) c.fail('no feedback_saved part — the athlete is shown nothing');
+      if (ex.text.trim()) c.fail(`Vana wrote about the feedback herself: "${ex.text}"`);
+    },
+  },
+  {
+    name: 'feedback-suggestion-lands', ticket: '01',
+    about: 'A wish for something that does not exist is filed as a suggestion, not a complaint',
+    async run(c) {
+      const said = 'I wish I could send the shopping list to my partner instead of only sharing it as text.';
+      const { conversationId, ex } = await c.say(said, { kind: 'general' });
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      await new Promise((r) => setTimeout(r, 2000));
+      const fb = await c.rows<FeedbackRow>(c.s, 'user_feedback?select=rating,message,conversation_id,metadata,source&order=created_at.desc&limit=5');
+      const hit = fb.find((f) => f.conversation_id === conversationId);
+      if (!hit) { c.fail(`no feedback row for conversation ${conversationId}`); return; }
+      c.log(`feedback row: rating ${hit.rating} / ${hit.metadata?.sentiment} / ${hit.metadata?.about} / "${hit.message}"`);
+      if (hit.metadata?.about !== 'suggestion') c.fail(`about is "${hit.metadata?.about}", expected suggestion`);
+      if (!hit.message.trim()) c.fail('the feedback row carries no message');
+      if (!ex.parts.some((p) => p.kind === 'feedback_saved')) c.fail('no feedback_saved part — the athlete is shown nothing');
+    },
+  },
+  {
+    name: 'feedback-prompt-once', ticket: '01',
+    about: "A brand-new athlete's FIRST conversation carries the feedback prompt; their second does not",
+    async run(c) {
+      // The eval user has hundreds of conversations, so this path can only be exercised by a
+      // brand-new athlete. The user is created and deleted here; nothing is left behind on dev.
+      let made: { session: Session; close: () => Promise<void> };
+      try { made = await createThrowawayUser(); } catch (e) { c.fail(`could not mint a brand-new athlete: ${(e as Error).message}`); return; }
+      c.log(`brand-new athlete ${made.session.userId}`);
+      try {
+        const first = await c.as(made.session, { opener: true, kind: 'general' });
+        if (first.ex.error) c.fail(`stream error on the first conversation: ${first.ex.error}`);
+        if (!first.ex.parts.some((p) => p.kind === 'feedback_prompt')) c.fail(`the first conversation carries no feedback_prompt part (parts: ${first.ex.parts.map((p) => p.kind).join(', ') || 'none'})`);
+        // A second conversation: no conversation_id, so the server opens a fresh one — and this
+        // athlete now has a prior conversation, so the prompt must not come back.
+        const second = await c.as(made.session, { opener: true, kind: 'general' });
+        if (second.ex.error) c.fail(`stream error on the second conversation: ${second.ex.error}`);
+        if (second.conversationId && second.conversationId === first.conversationId) c.fail('the second opener reused the first conversation — the once-only rule was never tested');
+        if (second.ex.parts.some((p) => p.kind === 'feedback_prompt')) c.fail('the second conversation showed the feedback prompt again');
+      } finally { await made.close(); c.log('brand-new athlete deleted'); }
     },
   },
   {
@@ -319,6 +420,7 @@ for (const kase of todo) {
     log: (l) => { log.push(l); if (verbose) console.log(`    · ${l}`); },
     say: async (text, o) => { const r = await chat(s, { message: text, kind: o?.kind ?? 'general', conversation_id: o?.conversationId ?? null }); account(r.ex); return r; },
     opener: async (kind) => { const r = await chat(s, { opener: true, kind }); account(r.ex); return r; },
+    as: async (session, body) => { const r = await chat(session, body); account(r.ex); return r; },
   };
   console.log(`▶ ${kase.name} — ${kase.about}`);
   try { await kase.run(ctx); } catch (e) { failures.push(`threw: ${(e as Error).message}`); }

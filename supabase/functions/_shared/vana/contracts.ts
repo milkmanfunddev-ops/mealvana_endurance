@@ -98,7 +98,7 @@ export type VanaPart =
   | { kind: 'week'; days: { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }[] }                              // planWeek — the confirmed collection laid across the week (Phase 8)
   | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] }                 // recordDebrief — end-of-week debrief captured (Phase 3)
   // ---- additive 2026-09-09 (feedback loop) — typing feedback INTO Vana is the feedback system
-  | { kind: 'feedback_saved'; message: string; sentiment: 'positive' | 'negative' | 'neutral'; about: 'vana' | 'app' | 'suggestion' } // saveFeedback — the athlete's words landed in user_feedback
+  | { kind: 'feedback_saved'; message: string; sentiment: 'positive' | 'negative' | 'neutral'; about: 'vana' | 'app' | 'suggestion' } // saveFeedback — the athlete's words landed in user_feedback; the client draws the whole acknowledgement from it (the model writes nothing)
   | { kind: 'feedback_prompt' };                                                                                                            // server-appended after the FIRST conversation's opener: "Have feedback for me? Just type it here." (plain text)
 
 // ---- What the UI sends back (chip taps are plain user messages; structured edits go through these)

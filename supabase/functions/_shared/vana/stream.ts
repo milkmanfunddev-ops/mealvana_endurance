@@ -44,6 +44,9 @@ export interface NdjsonOpts {
   tag?: string;
   /** Server-authored UI parts appended after the model's output, before `done` (the first conversation's feedback prompt). */
   trailingParts?: unknown[];
+  /** Drop every text delta that follows a `feedback_saved` part: on a feedback turn the content-managed row IS the
+   *  acknowledgement and the model was asked to write nothing. Prompt-only silence does not hold — see chat.ts. */
+  silenceAfterFeedback?: boolean;
 }
 
 /**
@@ -58,13 +61,15 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
     async start(controller) {
       let textBlocks = 0;   // each step's text is its own block in the transcript; a newline keeps them apart when the client concatenates deltas
       let done = false;
+      let filed = false;    // a feedback_saved part has gone out; with silenceAfterFeedback, nothing else may be said
       const push = (l: NdjsonLine) => { try { controller.enqueue(ndjsonLine(l)); } catch { /* closed */ } };
       try {
         for await (const part of fullStream) {
-          if (part.type === 'text-start') { if (textBlocks++ > 0) push({ type: 'text', delta: '\n' }); }
-          else if (part.type === 'text-delta') push({ type: 'text', delta: part.text ?? part.textDelta ?? '' });
+          const silenced = filed && opts.silenceAfterFeedback === true;
+          if (part.type === 'text-start') { if (!silenced && textBlocks++ > 0) push({ type: 'text', delta: '\n' }); }
+          else if (part.type === 'text-delta') { if (!silenced) push({ type: 'text', delta: part.text ?? part.textDelta ?? '' }); }
           else if (part.type === 'tool-input-start') push({ type: 'status', tool: part.toolName });
-          else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
+          else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { if ((out as { kind?: string }).kind === 'feedback_saved') filed = true; opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
           else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push({ type: 'error', message: errorMessage(part.error) }); }
           else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null } }); done = true; }
           // step-start / step-finish / tool-call / tool-input-delta carry nothing user-visible.

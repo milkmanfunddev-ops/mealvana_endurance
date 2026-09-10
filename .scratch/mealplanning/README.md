@@ -11,9 +11,7 @@ Every ticket carries the same three lines at the top: **Status**, **Blocked by**
 ## Run them in order
 
 ```
-git push                                    # 18 commits are only on this laptop
-/clear
-/mattpocock-skills:implement 01             # finish the feedback loop
+git push                                    # the commits are only on this laptop
 /clear
 /mattpocock-skills:implement 02             # home location on the device
 /clear
@@ -28,7 +26,7 @@ are not urgent, but 06 cannot start without them.
 
 | # | Ticket | Status |
 |---|---|---|
-| 01 | Finish the feedback loop | ready-for-agent |
+| 01 | Finish the feedback loop | **done** |
 | 02 | Home location on the device | ready-for-agent |
 | 03 | An episode for a still-open conversation | ready-for-agent |
 | 04 | Reconcile the design SSOT mirror | ready-for-human |
@@ -48,8 +46,8 @@ are not urgent, but 06 cannot start without them.
    second: fuelling windows plus the plan beats, because `pickOpener` already decides the plan half
    server-side and is already tested.
 
-A fourth, smaller one lives *inside* ticket 01 rather than blocking it: how the feedback
-acknowledgement is kept short. The recommendation is a server-authored line.
+The fourth, which lived *inside* ticket 01, is settled: the feedback acknowledgement is
+server-authored, and 01 is done.
 
 ## What is already done
 
@@ -64,14 +62,16 @@ Six tickets of the original set, all committed and — except where noted — ve
 - Lazy extraction: opening a conversation reads the previous one back.
 - Home location as a Fact, server side.
 - What Vana knows: one flat list of sentences with delete.
+- The feedback loop: all three kinds file a row, the acknowledgement is server-authored, and a
+  brand-new athlete's first conversation carries the prompt exactly once (verified live).
 
 ## State of the world, 2026-09-10
 
 - **Dev is current.** Both migrations applied; `vana-chat`, `jade-chat`, `vana-action`,
   `vana-day-notes` and `kroger` deployed.
-- **The personalization eval passes 9 of 10** (`deno run -A scripts/vana-eval/personalization.ts`,
-  dev only, `--list` to see the cases). The tenth is the acknowledgement length, inside ticket 01.
-- **Tests are green**: 97/97 edge-function, and the Flutter suites over every touched area.
+- **The personalization eval passes 13 of 13** (`deno run -A scripts/vana-eval/personalization.ts`,
+  dev only, `--list` to see the cases) — three new feedback cases, and the acknowledgement settled.
+- **Tests are green**: 135/135 edge-function, and the Flutter suites over every touched area.
   `test/shared/ci_config_contract_test.dart` fails and has failed since before this work.
 - **Nothing is pushed.** Only `develop` and `release/*` trigger Codemagic, so pushing this branch
   costs nothing.
