@@ -48,6 +48,33 @@ class TestShopping extends ShoppingListController {
       items: [ShoppingItem(aisle: 'Produce', name: 'Broccoli', qty: '3 ct')],
     ),
   );
+
+  /// Two things to buy, one of which Kroger will not match.
+  void twoItems() => state = const AsyncData(
+    ShoppingListState(
+      planId: plan,
+      items: [
+        ShoppingItem(aisle: 'Produce', name: 'Broccoli', qty: '2 ct'),
+        ShoppingItem(aisle: 'Bakery', name: 'Bread', qty: '1 ct'),
+      ],
+    ),
+  );
+
+  /// One item already in the cupboard, one still to buy.
+  void tickOneOff() => state = const AsyncData(
+    ShoppingListState(
+      planId: plan,
+      items: [
+        ShoppingItem(
+          aisle: 'Produce',
+          name: 'Broccoli',
+          qty: '2 ct',
+          checked: true,
+        ),
+        ShoppingItem(aisle: 'Bakery', name: 'Bread', qty: '1 ct'),
+      ],
+    ),
+  );
   void tickEverythingOff() => state = const AsyncData(
     ShoppingListState(
       planId: plan,
@@ -74,6 +101,11 @@ void main() {
   var browserCallback = '';
   var account = 'user-a';
   var found = true;
+  late Map<String, KrogerProduct> catalog;
+  late Set<String> unmatchable;
+  late List<String> searches;
+  Map<String, dynamic>? sent;
+  Map<String, dynamic>? receipt;
   String? deviceArea;
   var serves = true;
   Object? covered;
@@ -99,6 +131,13 @@ void main() {
     browserCallback = '';
     account = 'user-a';
     found = true;
+    // Each Location has its own catalogue. The Spoke's Broccoli has no price
+    // and comes by the count; the Store's has a price and comes by weight.
+    catalog = {locations['35242']!: storeProduct};
+    unmatchable = {};
+    searches = [];
+    sent = null;
+    receipt = null;
     deviceArea = '35209';
     serves = true;
     covered = true;
@@ -118,18 +157,23 @@ void main() {
                 : null,
           };
         case 'search':
+          searches.add(data['query'] as String);
           return {
-            'products': [if (found) product.toJson()],
+            'products': [
+              if (found && !unmatchable.contains(data['query']))
+                (catalog[data['store'] as String] ?? product).toJson(),
+            ],
           };
         case 'export_status':
           if (loadFailure != null) throw KrogerException(loadFailure!);
-          return {'receipt': null};
+          // A sent draft stays sent across a reload, as the server's does.
+          return {'receipt': receipt};
         case 'export':
           exports++;
+          sent = data;
           if (ambiguous) throw const KrogerException('unavailable');
-          return {
-            'receipt': {'id': 'receipt', 'status': 'sent'},
-          };
+          receipt = {'id': 'receipt', 'status': 'sent'};
+          return {'receipt': receipt};
         default:
           return status ??
               {
@@ -166,6 +210,14 @@ void main() {
     await areaSettled();
   });
   tearDown(() => container.dispose());
+
+  /// Lets a change to the shopping list reach the draft: the controller
+  /// listens for it and reconciles off the listener, not the call.
+  Future<void> sourceChanged() async {
+    await container.pump();
+    await Future<void>.delayed(Duration.zero);
+  }
+
   Future<void> restart() async {
     container.invalidate(krogerControllerProvider(plan));
     await container.read(krogerControllerProvider(plan).future);
@@ -279,16 +331,13 @@ void main() {
   test('a run with nothing to match says nothing was selected', () async {
     (container.read(shoppingListControllerProvider.notifier) as TestShopping)
         .tickEverythingOff();
-    await container.pump();
-    await Future<void>.delayed(Duration.zero);
+    await sourceChanged();
     await controller.matchAll();
     expect(current().message, 'all_skipped');
   });
   test('a Spoke product carries no price, never a zero one', () async {
     await controller.matchAll();
     expect(current().draft.lines.single.product?.price, null);
-    expect(current().draft.estimate, 0);
-    expect(current().draft.unknownPrices, 1);
   });
   group('a failure reason survives the initial load', () {
     test('an unavailable service reports its own reason', () async {
@@ -357,8 +406,7 @@ void main() {
       await reviewed();
       (container.read(shoppingListControllerProvider.notifier) as TestShopping)
           .changeQuantity();
-      await container.pump();
-      await Future<void>.delayed(Duration.zero);
+      await sourceChanged();
       expect(current().draft.lines.single.requiredQty, '3 ct');
       expect(current().draft.lines.single.quantity, 3);
       expect(current().draft.lines.single.product?.upc, product.upc);
@@ -534,16 +582,9 @@ void main() {
   testWidgets('review screen renders editable items and manual additions', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(home: KrogerScreen(planId: plan)),
-      ),
-    );
-    await tester.pumpAndSettle();
+    await showScreen(tester);
     expect(find.text('Broccoli'), findsOneWidget);
     final copy = loadDefaultContent();
-    await tester.ensureVisible(find.text(copy['kroger.add_item']!));
     await tester.tap(find.text(copy['kroger.add_item']!));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'Coffee');
@@ -706,6 +747,180 @@ void main() {
       await showScreen(tester);
       expect(find.text(copy['kroger.area_unknown']!), findsOneWidget);
       expect(find.text(copy['kroger.set_area']!), findsOneWidget);
+    });
+  });
+
+  group('the shopper sees the match before anything is sent', () {
+    /// A list where one line matches and one cannot, which is the ordinary
+    /// case: a Spoke's catalogue does not cover a whole week's shopping.
+    Future<void> twoLines() async {
+      unmatchable = {'Bread'};
+      (container.read(shoppingListControllerProvider.notifier) as TestShopping)
+          .twoItems();
+      await sourceChanged();
+    }
+
+    String lineId(String name) =>
+        current().draft.lines.firstWhere((l) => l.name == name).id;
+    final matched = find.byKey(const ValueKey('kroger.matched'));
+    final unmatched = find.byKey(const ValueKey('kroger.unmatched'));
+
+    testWidgets('a matched line carries Kroger\'s product name and pack size', (
+      tester,
+    ) async {
+      // Exactly as Kroger returned it. Kroger's terms forbid altering the
+      // data, and a shopper approving "Broccoli" cannot tell which broccoli
+      // is coming.
+      await tester.runAsync(controller.matchAll);
+      await showScreen(tester);
+      final copy = loadDefaultContent();
+      // The literal is Kroger's own `description` from the captured payload,
+      // so a trim, a titlecase or an appended brand on the way to the screen
+      // fails here.
+      expect(product.name, 'Broccoli Crowns');
+      expect(
+        find.descendant(of: matched, matching: find.text(product.name)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: matched,
+          matching: find.text(
+            ContentKeys.format(copy['kroger.package']!, {'size': '1 ct'}),
+          ),
+        ),
+        findsOneWidget,
+      );
+    });
+    testWidgets('what did not match is listed plainly and on its own', (
+      tester,
+    ) async {
+      await tester.runAsync(twoLines);
+      await tester.runAsync(controller.matchAll);
+      await showScreen(tester);
+      expect(
+        find.descendant(of: unmatched, matching: find.text('Bread')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: matched, matching: find.text('Bread')),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: matched, matching: find.text('Broccoli')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: unmatched, matching: find.text('Broccoli')),
+        findsNothing,
+      );
+    });
+    testWidgets('the unmatched list is still there after the Hand-off', (
+      tester,
+    ) async {
+      // The shopper is on Kroger's site adding these by hand. Switching back
+      // to a screen that has forgotten them would be the app losing the one
+      // piece of work it left them.
+      await tester.runAsync(() async {
+        await twoLines();
+        await controller.matchAll();
+        await controller.approve(lineId('Broccoli'));
+        await controller.export();
+        await restart();
+      });
+      expect(current().draft.exported, true);
+      await showScreen(tester);
+      expect(
+        find.descendant(of: unmatched, matching: find.text('Bread')),
+        findsOneWidget,
+      );
+    });
+    testWidgets('no price and no cost estimate appears anywhere', (
+      tester,
+    ) async {
+      // Deliberately at the Location whose catalogue *does* carry a price:
+      // a Spoke's priceless one would let a leftover price widget pass.
+      // Kroger's terms forbid comparative pricing, and a delivery Location
+      // publishes none, so no price is shown at all.
+      final copy = loadDefaultContent();
+      await tester.runAsync(() async {
+        await controller.setArea('35242');
+        await controller.matchAll();
+      });
+      expect(current().draft.lines.single.product?.price, 2.19);
+      await showScreen(tester);
+      expect(find.textContaining('2.19'), findsNothing);
+      expect(find.textContaining(r'$'), findsNothing);
+      expect(find.textContaining('stimate'), findsNothing);
+      // Including in the product picker, which listed a price of its own.
+      await tester.tap(find.text(copy['kroger.change']!));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(copy['kroger.continue']!));
+      await tester.pumpAndSettle();
+      expect(find.text(storeProduct.name), findsWidgets);
+      expect(find.textContaining('2.19'), findsNothing);
+      expect(find.textContaining(r'$'), findsNothing);
+    });
+    testWidgets('one match can still be corrected, skipped and restored', (
+      tester,
+    ) async {
+      // Per-line correction is no longer the path the shopper is expected to
+      // take, but it is still there — and a line taken out of the order has
+      // to be findable, or taking it out is a one-way door.
+      final copy = loadDefaultContent();
+      await tester.runAsync(controller.matchAll);
+      await showScreen(tester);
+      await tester.tap(
+        find.descendant(of: matched, matching: find.byIcon(Icons.add)),
+      );
+      await tester.pumpAndSettle();
+      expect(current().draft.lines.single.quantity, 3);
+      await tester.tap(find.text(copy['kroger.skip']!));
+      await tester.pumpAndSettle();
+      expect(matched, findsNothing);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('kroger.skipped')),
+          matching: find.text('Broccoli'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.text(copy['kroger.include']!));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(of: matched, matching: find.text('Broccoli')),
+        findsOneWidget,
+      );
+    });
+    test('a price is never carried over from another Location', () async {
+      // Kroger forbids substituting one Location's price for another's, and
+      // an approved choice is remembered per Location. What comes back from
+      // the Spoke is the Spoke's product, priceless and sold by the count.
+      await controller.setArea('35242');
+      await controller.matchAll();
+      expect(current().draft.lines.single.product?.price, 2.19);
+      await controller.approve(current().draft.lines.single.id);
+      await controller.setArea('35209');
+      await controller.matchAll();
+      expect(current().draft.lines.single.product?.price, isNull);
+      expect(current().draft.lines.single.product?.size, '1 ct');
+    });
+    test('a line already ticked off is never searched for', () async {
+      (container.read(shoppingListControllerProvider.notifier) as TestShopping)
+          .tickOneOff();
+      await sourceChanged();
+      searches.clear();
+      await controller.matchAll();
+      expect(searches, ['Bread']);
+    });
+    test('sending sends what matched, and only that', () async {
+      await twoLines();
+      await controller.matchAll();
+      await controller.approve(lineId('Broccoli'));
+      expect(current().draft.ready, true);
+      await controller.export();
+      expect(current().draft.receiptStatus, 'sent');
+      expect((sent!['items'] as List).single['upc'], product.upc);
     });
   });
 }

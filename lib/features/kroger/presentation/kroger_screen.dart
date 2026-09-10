@@ -183,8 +183,58 @@ class KrogerScreen extends ConsumerWidget {
                           krogerText(ref, ContentKeys.krogerMatchAll),
                         ),
                       ),
-                    for (final line in s.draft.lines)
-                      _LineCard(line: line, state: s, controller: controller),
+                    // The review, in three parts. A line is going to Kroger,
+                    // is the shopper's own to add there, or is not being
+                    // ordered — and it says which without being read closely.
+                    if (s.draft.matched.isNotEmpty)
+                      _Section(
+                        key: const ValueKey('kroger.matched'),
+                        title: krogerText(
+                          ref,
+                          ContentKeys.krogerMatchedHeading,
+                        ),
+                        children: [
+                          for (final line in s.draft.matched)
+                            _MatchedLine(
+                              line: line,
+                              state: s,
+                              controller: controller,
+                            ),
+                        ],
+                      ),
+                    if (s.draft.unmatched.isNotEmpty)
+                      _Section(
+                        key: const ValueKey('kroger.unmatched'),
+                        title: krogerText(
+                          ref,
+                          ContentKeys.krogerUnmatchedHeading,
+                        ),
+                        note: krogerText(ref, ContentKeys.krogerUnmatchedNote),
+                        children: [
+                          for (final line in s.draft.unmatched)
+                            _UnmatchedLine(
+                              line: line,
+                              state: s,
+                              controller: controller,
+                            ),
+                        ],
+                      ),
+                    if (s.draft.skipped.isNotEmpty)
+                      _Section(
+                        key: const ValueKey('kroger.skipped'),
+                        title: krogerText(
+                          ref,
+                          ContentKeys.krogerSkippedHeading,
+                        ),
+                        children: [
+                          for (final line in s.draft.skipped)
+                            _SkippedLine(
+                              line: line,
+                              state: s,
+                              controller: controller,
+                            ),
+                        ],
+                      ),
                     if (!s.draft.exported)
                       TextButton.icon(
                         icon: const Icon(Icons.add),
@@ -198,18 +248,7 @@ class KrogerScreen extends ConsumerWidget {
                           if (name != null) await controller.addManual(name);
                         },
                       ),
-                    Text(
-                      _format(ref, ContentKeys.krogerEstimate, {
-                        'price': s.draft.estimate.toStringAsFixed(2),
-                      }),
-                    ),
-                    Text(
-                      s.draft.unknownPrices > 0
-                          ? _format(ref, ContentKeys.krogerUnknownPrices, {
-                              'count': '${s.draft.unknownPrices}',
-                            })
-                          : krogerText(ref, ContentKeys.krogerEstimateNote),
-                    ),
+                    Text(krogerText(ref, ContentKeys.krogerPriceNote)),
                     if (s.draft.dirty)
                       Text(krogerText(ref, ContentKeys.krogerSavedLocal)),
                     const SizedBox(height: AppSpacing.md),
@@ -241,8 +280,35 @@ class KrogerScreen extends ConsumerWidget {
   }
 }
 
-class _LineCard extends ConsumerWidget {
-  const _LineCard({
+/// One part of the review, with its heading. Rendered only when it has lines
+/// in it: an empty "You add these on Kroger" reads as a failure.
+class _Section extends StatelessWidget {
+  const _Section({
+    super.key,
+    required this.title,
+    required this.children,
+    this.note,
+  });
+  final String title;
+  final String? note;
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: AppSpacing.md),
+      Text(title, style: Theme.of(context).textTheme.titleMedium),
+      if (note case final note?) Text(note),
+      ...children,
+    ],
+  );
+}
+
+/// The ingredient beside the product Kroger will actually send, named and
+/// sized exactly as Kroger returned it. No price: a delivery Location
+/// publishes none, and Kroger's terms forbid borrowing another's.
+class _MatchedLine extends ConsumerWidget {
+  const _MatchedLine({
     required this.line,
     required this.state,
     required this.controller,
@@ -252,7 +318,7 @@ class _LineCard extends ConsumerWidget {
   final KrogerController controller;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final product = line.product;
+    final product = line.product!;
     final editable = !state.draft.exported;
     return Card(
       child: Padding(
@@ -260,121 +326,159 @@ class _LineCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _ShopperLine(line: line, state: state, controller: controller),
+            Text(product.name),
+            Text(
+              _format(ref, ContentKeys.krogerPackage, {
+                'size': product.size.isEmpty
+                    ? krogerText(ref, ContentKeys.krogerUnknownSize)
+                    : product.size,
+              }),
+            ),
+            if (!product.available)
+              Text(krogerText(ref, ContentKeys.krogerUnavailableProduct)),
+            if (controller.needsQuantityReview(line))
+              Text(krogerText(ref, ContentKeys.krogerQuantityReview)),
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    line.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                Text(krogerText(ref, ContentKeys.krogerQuantity)),
+                IconButton(
+                  tooltip: krogerText(ref, ContentKeys.krogerQuantityDecrease),
+                  onPressed: editable && line.quantity > 1
+                      ? () => controller.quantity(line.id, line.quantity - 1)
+                      : null,
+                  icon: const Icon(Icons.remove),
                 ),
-                if (editable)
-                  TextButton(
-                    onPressed: () =>
-                        controller.exclude(line.id, !line.excluded),
-                    child: Text(
-                      krogerText(
-                        ref,
-                        line.excluded
-                            ? ContentKeys.krogerInclude
-                            : ContentKeys.krogerSkip,
-                      ),
-                    ),
-                  ),
+                Text('${line.quantity}'),
+                IconButton(
+                  tooltip: krogerText(ref, ContentKeys.krogerQuantityIncrease),
+                  onPressed: editable && line.quantity < 99
+                      ? () => controller.quantity(line.id, line.quantity + 1)
+                      : null,
+                  icon: const Icon(Icons.add),
+                ),
               ],
             ),
-            if (line.requiredQty.isNotEmpty)
-              Text(
-                _format(ref, ContentKeys.krogerNeeded, {
-                  'quantity': line.requiredQty,
-                }),
+            if (line.approved)
+              Text(krogerText(ref, ContentKeys.krogerApproved)),
+            if (editable)
+              Wrap(
+                spacing: AppSpacing.sm,
+                children: [
+                  // Correcting one match is still here; it is simply no
+                  // longer the way the shopper is expected to work.
+                  if (state.canChooseProduct)
+                    OutlinedButton(
+                      onPressed: () =>
+                          _products(context, ref, controller, line),
+                      child: Text(krogerText(ref, ContentKeys.krogerChange)),
+                    ),
+                  if (product.available && !line.approved)
+                    FilledButton.tonal(
+                      onPressed: () => controller.approve(line.id),
+                      child: Text(krogerText(ref, ContentKeys.krogerApprove)),
+                    ),
+                ],
               ),
-            if (!line.excluded) ...[
-              if (product == null)
-                Text(krogerText(ref, ContentKeys.krogerUnmatched))
-              else ...[
-                Text(product.name),
-                Text(
-                  _format(ref, ContentKeys.krogerPackage, {
-                    'size': product.size.isEmpty
-                        ? krogerText(ref, ContentKeys.krogerUnknownSize)
-                        : product.size,
-                  }),
-                ),
-                if (product.price != null)
-                  Text(
-                    _format(ref, ContentKeys.krogerPrice, {
-                      'price': product.price!.toStringAsFixed(2),
-                    }),
-                  ),
-                if (!product.available)
-                  Text(krogerText(ref, ContentKeys.krogerUnavailableProduct)),
-                if (controller.needsQuantityReview(line))
-                  Text(krogerText(ref, ContentKeys.krogerQuantityReview)),
-                Row(
-                  children: [
-                    Text(krogerText(ref, ContentKeys.krogerQuantity)),
-                    IconButton(
-                      tooltip: krogerText(
-                        ref,
-                        ContentKeys.krogerQuantityDecrease,
-                      ),
-                      onPressed: editable && line.quantity > 1
-                          ? () =>
-                                controller.quantity(line.id, line.quantity - 1)
-                          : null,
-                      icon: const Icon(Icons.remove),
-                    ),
-                    Text('${line.quantity}'),
-                    IconButton(
-                      tooltip: krogerText(
-                        ref,
-                        ContentKeys.krogerQuantityIncrease,
-                      ),
-                      onPressed: editable && line.quantity < 99
-                          ? () =>
-                                controller.quantity(line.id, line.quantity + 1)
-                          : null,
-                      icon: const Icon(Icons.add),
-                    ),
-                  ],
-                ),
-              ],
-              if (line.approved)
-                Text(krogerText(ref, ContentKeys.krogerApproved)),
-              if (editable)
-                Wrap(
-                  spacing: AppSpacing.sm,
-                  children: [
-                    // Searching needs a Location and a connection; approving
-                    // needs a product that can actually be had. Without those
-                    // there is nothing to tap, so there is no button.
-                    if (state.connected && state.draft.store != null)
-                      OutlinedButton(
-                        onPressed: () =>
-                            _products(context, ref, controller, line),
-                        child: Text(
-                          krogerText(
-                            ref,
-                            product == null
-                                ? ContentKeys.krogerChoose
-                                : ContentKeys.krogerChange,
-                          ),
-                        ),
-                      ),
-                    if (product != null && product.available && !line.approved)
-                      FilledButton.tonal(
-                        onPressed: () => controller.approve(line.id),
-                        child: Text(krogerText(ref, ContentKeys.krogerApprove)),
-                      ),
-                  ],
-                ),
-            ],
           ],
         ),
       ),
     );
   }
+}
+
+/// An ingredient Kroger's delivery catalogue had nothing for. Listed plainly,
+/// because the shopper is going to add it themselves on Kroger's site — and
+/// listed still after the Hand-off, for exactly the same reason.
+class _UnmatchedLine extends ConsumerWidget {
+  const _UnmatchedLine({
+    required this.line,
+    required this.state,
+    required this.controller,
+  });
+  final KrogerLine line;
+  final KrogerState state;
+  final KrogerController controller;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _ShopperLine(line: line, state: state, controller: controller),
+        if (state.canChooseProduct)
+          OutlinedButton(
+            onPressed: () => _products(context, ref, controller, line),
+            child: Text(krogerText(ref, ContentKeys.krogerChoose)),
+          ),
+      ],
+    ),
+  );
+}
+
+/// A line the shopper has taken out, or one their list already has ticked
+/// off. Kept on the screen so that taking something out is reversible.
+class _SkippedLine extends ConsumerWidget {
+  const _SkippedLine({
+    required this.line,
+    required this.state,
+    required this.controller,
+  });
+  final KrogerLine line;
+  final KrogerState state;
+  final KrogerController controller;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Row(
+    children: [
+      Expanded(child: Text(line.name)),
+      if (!state.draft.exported)
+        TextButton(
+          onPressed: () => controller.exclude(line.id, false),
+          child: Text(krogerText(ref, ContentKeys.krogerInclude)),
+        ),
+    ],
+  );
+}
+
+/// The ingredient as the shopper's own list has it: their words, their
+/// amount, and the control that takes it out of the order. It opens both a
+/// matched line and an unmatched one.
+class _ShopperLine extends ConsumerWidget {
+  const _ShopperLine({
+    required this.line,
+    required this.state,
+    required this.controller,
+  });
+  final KrogerLine line;
+  final KrogerState state;
+  final KrogerController controller;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Expanded(
+            child: Text(
+              line.name,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          if (!state.draft.exported)
+            TextButton(
+              onPressed: () => controller.exclude(line.id, true),
+              child: Text(krogerText(ref, ContentKeys.krogerSkip)),
+            ),
+        ],
+      ),
+      if (line.requiredQty.isNotEmpty)
+        Text(
+          _format(ref, ContentKeys.krogerNeeded, {
+            'quantity': line.requiredQty,
+          }),
+        ),
+    ],
+  );
 }
 
 Future<bool> _confirm(BuildContext context, WidgetRef ref, String key) async =>
@@ -501,13 +605,9 @@ Future<void> _products(
             ListTile(
               title: Text(p.name),
               subtitle: Text(
-                [
-                  p.size,
-                  if (p.price != null)
-                    _format(ref, ContentKeys.krogerPrice, {
-                      'price': p.price!.toStringAsFixed(2),
-                    }),
-                ].join(' · '),
+                p.size.isEmpty
+                    ? krogerText(ref, ContentKeys.krogerUnknownSize)
+                    : p.size,
               ),
               enabled: p.available,
               onTap: () {

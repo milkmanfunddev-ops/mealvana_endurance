@@ -143,21 +143,31 @@ class KrogerDraft {
   final String? receiptStatus;
   bool get exported => receiptStatus != null;
   List<KrogerLine> get included => lines.where((l) => !l.excluded).toList();
+
+  /// The three parts of the review, which every line belongs to exactly one
+  /// of. What matched is what Kroger will be sent; what did not is the
+  /// shopper's own to add on Kroger's site, and is listed rather than sent;
+  /// what is skipped is out of the order but not off the screen.
+  List<KrogerLine> get matched =>
+      included.where((l) => l.product != null).toList();
+  List<KrogerLine> get unmatched =>
+      included.where((l) => l.product == null).toList();
+  List<KrogerLine> get skipped => lines.where((l) => l.excluded).toList();
+
+  /// An unmatched line does not hold the order back. A delivery catalogue
+  /// will not cover a whole week's shopping, and refusing to send anything
+  /// until it does would make the feature inert in the market it is for.
   bool get ready =>
       !exported &&
       store != null &&
-      included.isNotEmpty &&
-      included.every(
+      matched.isNotEmpty &&
+      matched.every(
         (l) =>
             l.approved &&
             l.product?.available == true &&
             l.quantity >= 1 &&
             l.quantity <= 99,
       );
-  double get estimate =>
-      included.fold(0, (sum, l) => sum + (l.product?.price ?? 0) * l.quantity);
-  int get unknownPrices =>
-      included.where((l) => l.product?.price == null).length;
   Map<String, dynamic> toJson() => {
     'planId': planId,
     'store': store?.toJson(),

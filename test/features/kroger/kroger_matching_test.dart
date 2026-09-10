@@ -129,7 +129,6 @@ void main() {
         lines: [draft.lines.single.copyWith(approved: true, quantity: 2)],
       );
       expect(approved.ready, true);
-      expect(approved.estimate, 6);
       expect(
         approved
             .copyWith(lines: [approved.lines.single.copyWith(excluded: true)])
@@ -142,4 +141,42 @@ void main() {
       );
     },
   );
+
+  group('a review separates what matched from what did not', () {
+    const store = KrogerStore(id: '1', name: 'Store', address: '');
+    KrogerDraft draft(List<KrogerLine> lines) =>
+        KrogerDraft(planId: plan, store: store, lines: lines);
+    const approved = KrogerLine(
+      id: '1',
+      name: 'Milk',
+      requiredQty: '2 l',
+      product: milk,
+      approved: true,
+      quantity: 2,
+    );
+    const unmatched = KrogerLine(id: '2', name: 'Saffron', requiredQty: '1 g');
+    test('a line with no product is listed apart from one with a product', () {
+      final subject = draft([approved, unmatched]);
+      expect(subject.matched.map((l) => l.id), ['1']);
+      expect(subject.unmatched.map((l) => l.id), ['2']);
+    });
+    test('an unmatched line does not stop the matched ones being sent', () {
+      // The shopper adds what Mealvana could not match on Kroger's own site.
+      // Holding the whole order back for it would make the feature useless in
+      // exactly the market it was built for.
+      expect(draft([approved, unmatched]).ready, true);
+    });
+    test('a run with nothing matched has nothing to send', () {
+      expect(draft([unmatched]).ready, false);
+    });
+    test('an excluded line appears in neither list', () {
+      final subject = draft([
+        approved,
+        unmatched.copyWith(excluded: true),
+        approved.copyWith(excluded: true),
+      ]);
+      expect(subject.matched.map((l) => l.id), ['1']);
+      expect(subject.unmatched, isEmpty);
+    });
+  });
 }

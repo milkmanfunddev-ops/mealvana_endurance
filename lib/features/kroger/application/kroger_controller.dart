@@ -96,6 +96,12 @@ class KrogerState {
   /// resolved for it. Claiming delivery to somewhere nothing serves would be
   /// the screen lying about its own state again.
   String? get confirmedArea => draft.store == null ? null : area;
+
+  /// Whether a product can be chosen for a line at all. Searching takes a
+  /// Location to search and a customer to search as, and a sent draft is a
+  /// historical record rather than something still being edited.
+  bool get canChooseProduct =>
+      connected && draft.store != null && !draft.exported;
   final String? searchLineId;
   final List<KrogerProduct> products;
 
@@ -589,8 +595,10 @@ class KrogerController extends _$KrogerController {
       'planId': planId,
       'store': draft.store!.id,
       'modality': draft.modality,
+      // Only what matched. An unmatched line has nothing to send and is the
+      // shopper's own to add on Kroger's site.
       'items': [
-        for (final l in draft.included)
+        for (final l in draft.matched)
           {
             'upc': l.product!.upc,
             'quantity': l.quantity,

@@ -622,13 +622,21 @@ class ContentKeys {
   static const String krogerApproved = 'kroger.approved';
   static const String krogerSkip = 'kroger.skip';
   static const String krogerInclude = 'kroger.include';
-  static const String krogerUnmatched = 'kroger.unmatched';
   static const String krogerUnavailableProduct = 'kroger.unavailable_product';
   static const String krogerProductUnavailable = 'kroger.product_unavailable';
-  static const String krogerPrice = 'kroger.price';
-  static const String krogerEstimate = 'kroger.estimate';
-  static const String krogerUnknownPrices = 'kroger.unknown_prices';
-  static const String krogerEstimateNote = 'kroger.estimate_note';
+
+  /// The three parts of the review: what Kroger will be sent, what the
+  /// shopper has to add themselves, and what they have taken out of the
+  /// order. A line belongs to exactly one of them.
+  static const String krogerMatchedHeading = 'kroger.matched_heading';
+  static const String krogerUnmatchedHeading = 'kroger.unmatched_heading';
+  static const String krogerUnmatchedNote = 'kroger.unmatched_note';
+  static const String krogerSkippedHeading = 'kroger.skipped_heading';
+
+  /// Why there are no prices. A delivery-only Location returns none for any
+  /// product, so an estimate there is a column of blanks totalling zero;
+  /// Kroger's terms forbid filling it from another Location's catalogue.
+  static const String krogerPriceNote = 'kroger.price_note';
   static const String krogerSend = 'kroger.send';
   static const String krogerSendConfirm = 'kroger.send_confirm';
   static const String krogerSent = 'kroger.sent';
