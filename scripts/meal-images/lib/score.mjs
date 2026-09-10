@@ -45,6 +45,19 @@ const COMPOSED = [
   /breakfast|lunch|dinner|\bmeal\b|\bdish\b|cuisine|restaurant/,
 ];
 
+/**
+ * How much a provider is worth, before anything about the picture is known.
+ *
+ * Stock food photography is shot to be used; the archives hold documentation of
+ * food. That is true of an ingredient tile and of a dish photo alike, so
+ * `dish-score.mjs` shares it rather than keeping a second copy that can drift.
+ */
+export const PROVIDER_BONUS = { unsplash: 26, pexels: 22, wikimedia: 6, openverse: 0 };
+
+/** Shapes that crop badly into a square, whatever is in them. */
+export const PANORAMA = 2.4;
+export const COLUMN = 0.42;
+
 const clean = (s) => String(s || '').toLowerCase().replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
 
 /**
@@ -76,12 +89,11 @@ export function scoreCandidate(cand, ingredient) {
   if (w && h) {
     if (w < 320 || h < 320) score -= 40;              // too small to crop
     const ar = w / h;
-    if (ar > 2.4 || ar < 0.42) score -= 35;           // panorama / column crops badly
+    if (ar > PANORAMA || ar < COLUMN) score -= 35;    // panorama / column crops badly
     if (ar > 0.75 && ar < 1.4) score += 12;           // near-square tiles best
   }
 
-  // Stylistic consistency: stock food photography beats archival Commons shots.
-  score += { unsplash: 26, pexels: 22, wikimedia: 6, openverse: 0 }[cand.provider] ?? 0;
+  score += PROVIDER_BONUS[cand.provider] ?? 0;
 
   // A shorter title naming the subject is usually a cleaner subject shot.
   if (title.split(' ').length <= 5) score += 8;

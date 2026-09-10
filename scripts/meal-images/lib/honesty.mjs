@@ -222,9 +222,25 @@ export function renderReport({ summary: s, wrong = [], geometryVersion, at, wron
   return l.join('\n');
 }
 
-/** One row of the spend ledger pass 8 appends to. */
-export function renderRunRow({ at, model, geometryVersion, judged, skipped, inputTokens, outputTokens, spendUsd }) {
-  return `| ${at.slice(0, 16).replace('T', ' ')} | \`${model}\` | v${geometryVersion} | ` +
+/**
+ * One row of the spend ledger.
+ *
+ * Two passes append to it and they are buying different things: pass 8 buys a
+ * verdict on what a meal already shows, pass 10 buys verdicts on candidates
+ * most of which it then refuses. Same model, same question, very different
+ * calls-per-meal — so the row says which pass spent it.
+ *
+ * `pass` is the pass NUMBER, and has no default: a shared ledger that assumes
+ * one caller's identity mislabels the other's spend silently.
+ *
+ * `geometryVersion` is the grid the verdicts describe, and is absent for a pass
+ * that only ever judges single photographs.
+ */
+export function renderRunRow(
+  { at, model, pass, geometryVersion = null, judged, skipped, inputTokens, outputTokens, spendUsd },
+) {
+  return `| ${at.slice(0, 16).replace('T', ' ')} | ${pass} | \`${model}\` | ` +
+    `${geometryVersion ? `v${geometryVersion}` : '—'} | ` +
     `${judged} | ${skipped} | ${inputTokens.toLocaleString('en-US')} | ` +
     `${outputTokens.toLocaleString('en-US')} | ${usd(spendUsd)} |`;
 }

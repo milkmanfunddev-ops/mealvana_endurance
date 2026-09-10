@@ -35,16 +35,20 @@
  * sample, REVERIFY=1 to redo, MODE=mosaic to judge one rung only, DRY=1 to
  * print without writing, KEEP=1 to leave the composites on disk for eyeballing.
  */
-import { generateObject } from 'npm:ai@6';
-import { z } from 'npm:zod@3';
 import { selectAll, updateMany } from './lib/db.mjs';
 import { estimateSpend, renderRunRow } from './lib/honesty.mjs';
 import { appendRun } from './lib/report-doc.mjs';
 import { pinnedGeometry } from './lib/mosaic-geometry.mjs';
 import { CANVAS, composeMosaic } from './lib/compose-mosaic.mjs';
 import { createTileFetcher } from './lib/fetch-tile.mjs';
+import {
+  DEFAULT_JUDGE_MODEL,
+  type ImageMode,
+  judgeMealImage,
+  type Verdict,
+} from './lib/meal-image-judge.ts';
 
-const MODEL = Deno.env.get('MEAL_IMAGE_JUDGE_MODEL') ?? 'anthropic/claude-sonnet-5';
+const MODEL = DEFAULT_JUDGE_MODEL;
 const CONCURRENCY = Number(Deno.env.get('CONCURRENCY') ?? 4);
 const LIMIT = Number(Deno.env.get('LIMIT') ?? 0);
 const REVERIFY = Deno.env.get('REVERIFY') === '1';
@@ -58,17 +62,13 @@ if (!Deno.env.get('AI_GATEWAY_API_KEY')) {
   Deno.exit(1);
 }
 
-const Verdict = z.object({
-  verdict: z.enum(['ok', 'weak', 'wrong']),
-  reason: z.string().describe('one short sentence saying what the picture actually shows'),
-});
-
 type Tile = { url: string; name?: string };
 type Row = {
   id: string;
   name: string;
   ingredients: string | null;
-  image_mode: string;
+  // Only the rungs that show a picture reach here: the query excludes `none`.
+  image_mode: ImageMode;
   image_url: string | null;
   image_tiles: Tile[] | null;
   separability: string | null;
@@ -132,51 +132,22 @@ async function render(row: Row): Promise<Uint8Array | null> {
   return bytes;
 }
 
+/**
+ * The question itself lives in `lib/meal-image-judge.ts`, because pass 10 asks
+ * it too — of a candidate photograph, before storing it. Two prompts would mean
+ * pass 10 buying acceptances this pass then rates `wrong`.
+ */
 async function judge(row: Row, bytes: Uint8Array) {
-  let bin = '';
-  for (const b of bytes) bin += String.fromCharCode(b);
-
-  const what = row.image_mode === 'dish'
-    ? 'a single photograph chosen to show the finished meal'
-    : row.image_mode === 'tile'
-    ? 'a single ingredient photograph standing in for the whole meal'
-    : 'a grid of ingredient photographs, one cell per ingredient, standing in for the meal';
-
-  const { object, usage: used } = await generateObject({
+  const { verdict, usage: used } = await judgeMealImage({
+    meal: row,
+    mode: row.image_mode,
+    bytes,
     model: MODEL,
-    schema: Verdict,
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image', image: btoa(bin), mediaType: 'image/jpeg' },
-        {
-          type: 'text',
-          text:
-            `In a meal-planning app this picture is shown beside the meal:\n\n` +
-            `  "${row.name}"\n` +
-            `  ingredients: ${(row.ingredients ?? '(not listed)').slice(0, 240)}\n\n` +
-            `The picture is ${what}.\n\n` +
-            `Judge whether it represents that meal honestly.\n\n` +
-            `"ok" — someone seeing this beside the name would recognise the meal. For an ` +
-            `ingredient grid, that means the ingredients shown really are the things you would ` +
-            `see in the finished meal.\n` +
-            `"weak" — not misleading, but thin: one component standing for a meal of many parts, ` +
-            `or so generic it says almost nothing.\n` +
-            `"wrong" — actively misleading: a different food, packaging or branding as the ` +
-            `subject, people as the subject, or ingredients that are NOT visible in the finished ` +
-            `meal because they were blended, baked or churned into it. A grid of a cherry and a ` +
-            `tub of ice cream for "cherry ice cream" is wrong: the real thing is pink ice cream ` +
-            `and neither cell shows it.\n\n` +
-            `Judge only what the picture shows against what the meal is. Ignore styling, ` +
-            `lighting and photographic quality.`,
-        },
-      ],
-    }],
   });
   // Accumulated so the run can say what it cost rather than what it guessed.
-  usage.inputTokens += used?.inputTokens ?? 0;
-  usage.outputTokens += used?.outputTokens ?? 0;
-  return object;
+  usage.inputTokens += used.inputTokens;
+  usage.outputTokens += used.outputTokens;
+  return verdict;
 }
 
 const tally: Record<string, number> = { ok: 0, weak: 0, wrong: 0 };
@@ -193,7 +164,7 @@ let done = 0, skipped = 0, judged = 0, written = 0, unwritten = 0;
  * and kept none of them. A PATCH per meal costs a round trip against a spend
  * that dwarfs it, and turns a killed run into lost time rather than lost work.
  */
-async function record(row: Row, v: z.infer<typeof Verdict>) {
+async function record(row: Row, v: Verdict) {
   if (DRY) return;
   await updateMany('meal_library', [{
     id: row.id,
@@ -208,7 +179,7 @@ const queue = [...rows];
 await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
   while (queue.length) {
     const row = queue.shift()!;
-    let v: z.infer<typeof Verdict> | null = null;
+    let v: Verdict | null = null;
     for (let attempt = 1; attempt <= 3 && !v; attempt++) {
       try {
         const bytes = await render(row);
@@ -268,7 +239,7 @@ console.log(
 if (DRY) { console.log('\nDRY=1 — nothing written'); Deno.exit(0); }
 
 const runRow = renderRunRow({
-  at, model: MODEL, geometryVersion: GEOMETRY.version,
+  at, model: MODEL, pass: '8', geometryVersion: GEOMETRY.version,
   judged, skipped, ...usage, spendUsd,
 });
 if (await appendRun(runRow)) console.log('spend appended to docs/meal-images/honesty.md');

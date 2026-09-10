@@ -2,16 +2,11 @@
 // the best-scoring properly-licensed photo, square it to a 512px tile with
 // sips, mirror it into Supabase Storage and record full attribution.
 // Idempotent: only rows with status='pending' are touched.
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { selectAll, rest, uploadImage } from './lib/db.mjs';
+import { squareImage } from './lib/square-image.mjs';
 import { PROVIDERS, licenseOk, queryVariants, MAY_MIRROR, isTripped } from './lib/providers.mjs';
 import { rankCandidates, MIN_SCORE, TAIL_MIN_SCORE } from './lib/score.mjs';
 
-const run = promisify(execFile);
 const TILE = 512;
 const LIMIT = Number(process.env.LIMIT ?? 0);
 const CONCURRENCY = Number(process.env.CONCURRENCY ?? 5);
@@ -36,7 +31,8 @@ pending = pending.map((p, i) => ({ ...p, rank: i + 1 }));
 if (LIMIT) pending = pending.slice(0, LIMIT);
 console.log(`pending ingredients: ${pending.length}\n`);
 
-/** Download, centre-crop to a square TILE, re-encode as JPEG via macOS sips. */
+/** Download and centre-crop to a square TILE. The crop itself is shared with
+ *  pass 10, which mirrors dish photographs the same way (`lib/square-image.mjs`). */
 async function makeTile(url) {
   // Flickr (via Openverse) and some Commons mirrors reject bare requests, so
   // send a browser-shaped header set.
@@ -49,25 +45,7 @@ async function makeTile(url) {
     signal: AbortSignal.timeout(25_000),
   });
   if (!res.ok) throw new Error(`download ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length < 2000) throw new Error('file too small');
-
-  const dir = mkdtempSync(join(tmpdir(), 'mvtile-'));
-  const src = join(dir, 'src'), out = join(dir, 'out.jpg');
-  try {
-    writeFileSync(src, buf);
-    const { stdout } = await run('sips', ['-g', 'pixelWidth', '-g', 'pixelHeight', src]);
-    const w = +(stdout.match(/pixelWidth:\s*(\d+)/)?.[1] ?? 0);
-    const h = +(stdout.match(/pixelHeight:\s*(\d+)/)?.[1] ?? 0);
-    if (!w || !h) throw new Error('undecodable');
-    if (Math.min(w, h) < 300) throw new Error(`too small ${w}x${h}`);
-    // Scale the SHORT side to TILE so the centre crop is never padded.
-    const arg = w < h ? ['--resampleWidth', String(TILE)] : ['--resampleHeight', String(TILE)];
-    await run('sips', [...arg, src, '--out', out]);
-    await run('sips', ['-c', String(TILE), String(TILE), out]);
-    await run('sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '82', out]);
-    return readFileSync(out);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+  return squareImage(Buffer.from(await res.arrayBuffer()), TILE);
 }
 
 async function handle(ing) {

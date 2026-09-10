@@ -115,11 +115,12 @@ node scripts/meal-images/lib/compose-mosaic.mjs --out /tmp/grid.png a.jpg b.jpg 
 07-classify-separability.ts  can this meal be told by its parts at all?
 03-assign-tiles.mjs    bank + ingredients -> image_tiles/image_mode/image_blocked
 08-verify-meal-image.ts  compose what the athlete sees -> image_verdict  ($, hours)
+10-source-dish-photos.ts search stock by DISH NAME -> judge -> image_url  ($, hours)
 09-image-report.mjs    count it all -> docs/meal-images/honesty.md
 04-contact-sheet.mjs   (review) render the whole bank as a few PNGs
 ```
 
-Run order is 01 -> 02 -> 05 -> 07 -> 03 -> 08 -> 09; pass 5 must precede pass 3,
+Run order is 01 -> 02 -> 05 -> 07 -> 03 -> 08 -> 10 -> 09; pass 5 must precede pass 3,
 because pass 3 only reads `status='ok'`, and pass 7 must precede it because a
 transformed meal may not wear tiles. Pass 8 judges what pass 3 assigned, so it
 comes after, and pass 9 only counts what 3 and 8 wrote.
@@ -127,8 +128,9 @@ comes after, and pass 9 only counts what 3 and 8 wrote.
 All are idempotent, and all resume. Pass 2 only touches `status='pending'`,
 pass 5 only tiles without a verdict, and pass 8 only meals without one — and
 pass 8 writes each verdict as it reaches it rather than batching to the end, so
-a run killed an hour in keeps every verdict it paid for. Passes 3 and 9
-recompute from scratch every time.
+a run killed an hour in keeps every verdict it paid for. Pass 10 remembers every
+candidate the judge refused, so a re-run never pays for the same refusal twice.
+Passes 3 and 9 recompute from scratch every time.
 
 **Pass 8 spends real money** — one frontier-model vision call per meal showing a
 picture, about $5 for the library, several hours at `CONCURRENCY=5`. What each
@@ -143,6 +145,8 @@ deno run --allow-net --allow-read --allow-env --allow-sys \
 node scripts/meal-images/03-assign-tiles.mjs
 deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
   scripts/meal-images/08-verify-meal-image.ts    # LIMIT= to sample, DRY=1 to price it
+deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
+  scripts/meal-images/10-source-dish-photos.ts   # QUEUE=transformed|blocked|wrong|all
 node scripts/meal-images/09-image-report.mjs --write
 node scripts/meal-images/04-contact-sheet.mjs
 ```
@@ -185,6 +189,65 @@ a `vision_reason`, keeping `image_url` for audit.
 ingredients used by fewer than 8 meals, against `MIN_SCORE` (55) for the rest —
 a wrong photo is worse than no photo, and the tail is where the archives return
 something that merely shares a word.
+
+## Pass 10 — where the judge sits
+
+Pass 2 and the 2026-09-01 Wikimedia pass both accepted a picture on a text
+score and let something else find out later. Pass 8's first measurement is what
+that produces: of the 708 meals carrying a real photograph, **539 were of the
+wrong food** — a carton of raw eggs for "Eggs & turkey bacon on toast", a
+food-court interior for "Congee with pickled vegetables". Every one of them
+scored well on the words, because a title is a weak description of a picture.
+
+So pass 10 moves the judge from the end of the pipeline to the middle of it. A
+candidate is searched for by **dish name**, fetched, composed exactly as the
+athlete would see it, and shown to the same judge pass 8 grades the library
+with. Only `ok` is stored, and it is stored together with the verdict that
+accepted it — so a sourced picture arrives already measured and pass 8 has
+nothing to re-judge.
+
+| | |
+|---|---|
+| what to search for | `lib/dish-query.mjs` — a name cleaned down to the dish, then shortened until a search answers |
+| which candidate to look at first | `lib/dish-score.mjs` — `score.mjs` turned around: a plated dish is the point, "isolated on white" is the mistake |
+| the question | `lib/meal-image-judge.ts` — one prompt, shared with pass 8 |
+
+Both new files are pure and tested without a network, a database or a model:
+
+```bash
+node --test scripts/meal-images/lib/dish-query.test.mjs scripts/meal-images/lib/dish-score.test.mjs
+```
+
+**Ranking decides the spend, not the outcome.** A better ranking is fewer paid
+calls before an `ok`; the judge decides what is kept. That division is why the
+scorer is allowed to be crude.
+
+A refusal is a verdict that was paid for, so the URL goes into
+`meal_library.image_rejected_urls` and no later run shows the judge that picture
+again.
+
+**A meal gets one round, and a re-run does nothing by default.** This is not the
+retry loop the ingredient bank has, and the difference is real: pass 2 stops at
+the first candidate that downloads, so its second round genuinely reaches a
+different picture. A pass 10 round already walks `MAX_JUDGED` candidates, and
+the next one re-runs the same queries against the same libraries for the same
+answers — every one of them already refused. It would spend hours of provider
+budget re-learning what the first round learned. So a second round is bought
+only when *the pass itself* has changed — a better query builder, another
+provider — with `MAX_ATTEMPTS=2`, deliberately.
+
+When a meal runs out of rounds still wearing a picture rated `wrong`, that
+picture is retired and the meal goes back to its icon. A wrong picture is worse
+than no picture, and an icon is a state rather than an absence.
+
+```bash
+QUEUE=transformed  meals a Mosaic can never serve (the default)
+QUEUE=blocked      every meal the ladder found nothing for
+QUEUE=wrong        meals whose current picture was judged `wrong`
+QUEUE=all          both of the above
+SEPARABILITY=transformed   narrow any queue to one separability
+MAX_ATTEMPTS=2     give meals already attempted one more round
+```
 
 ## Licensing — read before changing anything
 

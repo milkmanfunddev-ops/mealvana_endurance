@@ -84,3 +84,19 @@ client-side in Flutter, never pre-rendered.
 **Image mode**:
 Which of the above a Meal is currently showing — `dish`, `mosaic`, `tile`, or `none`. It records
 what the Meal fell back to, so the size of the substitute population is always countable.
+
+**Separable / Transformed**:
+Whether a Meal's named components stay individually recognisable in the finished food. A
+Separable Meal may wear a Mosaic; a Transformed one — blended, baked, churned, stewed — may not,
+because its parts no longer look like themselves. Cuts across Recipe and Assembly: a smoothie is
+an Assembly and is Transformed, a grain bowl may be a Recipe and stays Separable.
+
+**Verdict**:
+Whether the picture a Meal is showing represents that Meal — `ok`, `weak`, or `wrong` — judged
+against the composed image the athlete actually sees, not against each Tile. Honesty is counted
+from Verdicts; coverage is not a measure of anything.
+_Avoid_: Score, rating (those are the text ranking, which decides nothing)
+
+**Judge**:
+The model call that reaches a Verdict. It is a gate, not an audit: no picture is stored for a
+Meal unless the Judge has already rated it `ok` for that Meal.
