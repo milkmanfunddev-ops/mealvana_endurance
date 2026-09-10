@@ -10,9 +10,8 @@
  *
  * So the judge has to see what the user sees. Mosaics are composed client-side
  * in Flutter and no composite file exists anywhere, so this pass renders its
- * own, laying the tiles out exactly as `KyleMealImageMosaic` does — 2 tiles
- * side by side, 3 as a full-height left column with two stacked on the right,
- * 4 as a 2x2 — and judges that.
+ * own, from the same description of the grid the widget is asserted against
+ * (`lib/mosaic-geometry.json`), and judges that.
  *
  * Verdicts:
  *   ok     someone seeing this beside the meal's name would recognise the meal
@@ -35,6 +34,8 @@
 import { generateObject } from 'npm:ai@6';
 import { z } from 'npm:zod@3';
 import { selectAll, updateMany } from './lib/db.mjs';
+import { pinnedGeometry } from './lib/mosaic-geometry.mjs';
+import { CANVAS, composeMosaic } from './lib/compose-mosaic.mjs';
 
 const MODEL = Deno.env.get('MEAL_IMAGE_JUDGE_MODEL') ?? 'anthropic/claude-sonnet-5';
 const CONCURRENCY = Number(Deno.env.get('CONCURRENCY') ?? 4);
@@ -43,7 +44,7 @@ const REVERIFY = Deno.env.get('REVERIFY') === '1';
 const DRY = Deno.env.get('DRY') === '1';
 const KEEP = Deno.env.get('KEEP') === '1';
 const MODE = Deno.env.get('MODE') ?? '';
-const CANVAS = 768;
+const GEOMETRY = pinnedGeometry();
 
 if (!Deno.env.get('AI_GATEWAY_API_KEY')) {
   console.error('AI_GATEWAY_API_KEY missing — set -a; source secrets/ai_gateway.env; set +a');
@@ -75,63 +76,29 @@ let rows: Row[] = await selectAll(
 if (LIMIT) rows = rows.slice(0, LIMIT);
 
 console.log(`model: ${MODEL}`);
+// Stamped on every run: a verdict is only meaningful for the grid it was
+// judged on, and this is the version of that grid.
+console.log(`mosaic geometry: v${GEOMETRY.version}`);
 console.log(`meals to judge: ${rows.length}\n`);
 if (!rows.length) Deno.exit(0);
 
 const dir = await Deno.makeTempDir({ prefix: 'mvjudge-' });
-
-/**
- * Lay the tiles out as the app lays them out, so the judge sees the artefact
- * rather than a tidier version of it. Mirrors `_grid()` in
- * `lib/shared/widgets/kyle_design/data/meal_image_mosaic.dart`.
- */
-const COMPOSE = `
-import sys, json
-from PIL import Image
-
-items = json.load(open(sys.argv[1]))
-files, out, S = items['files'], items['out'], ${CANVAS}
-G = 2  # the 1px separator, scaled to this canvas
-
-def fit(path, w, h):
-    im = Image.open(path).convert('RGB')
-    sw, sh = im.size
-    scale = max(w / sw, h / sh)          # BoxFit.cover
-    im = im.resize((max(1, int(sw * scale)), max(1, int(sh * scale))))
-    nw, nh = im.size
-    return im.crop(((nw - w) // 2, (nh - h) // 2, (nw - w) // 2 + w, (nh - h) // 2 + h))
-
-c = Image.new('RGB', (S, S), '#e8e4dc')
-n = len(files)
-if n == 1:
-    c.paste(fit(files[0], S, S), (0, 0))
-elif n == 2:
-    w = (S - G) // 2
-    c.paste(fit(files[0], w, S), (0, 0))
-    c.paste(fit(files[1], S - w - G, S), (w + G, 0))
-elif n == 3:
-    w = (S - G) // 2
-    h = (S - G) // 2
-    c.paste(fit(files[0], w, S), (0, 0))
-    c.paste(fit(files[1], S - w - G, h), (w + G, 0))
-    c.paste(fit(files[2], S - w - G, S - h - G), (w + G, h + G))
-else:
-    w = (S - G) // 2
-    h = (S - G) // 2
-    c.paste(fit(files[0], w, h), (0, 0))
-    c.paste(fit(files[1], S - w - G, h), (w + G, 0))
-    c.paste(fit(files[2], w, S - h - G), (0, h + G))
-    c.paste(fit(files[3], S - w - G, S - h - G), (w + G, h + G))
-c.save(out, 'JPEG', quality=82)
-`;
-const composeScript = `${dir}/compose.py`;
-await Deno.writeTextFile(composeScript, COMPOSE);
 
 function urlsFor(row: Row): string[] {
   if (row.image_mode === 'dish') return row.image_url ? [row.image_url] : [];
   return (row.image_tiles ?? []).map((t) => t.url).filter(Boolean).slice(0, 4);
 }
 
+/**
+ * Lay the tiles out as the app lays them out, so the judge sees the artefact
+ * rather than a tidier version of it.
+ *
+ * No layout happens here. `composeMosaic` draws the grid from the cells in
+ * `lib/mosaic-geometry.json`, which is the same description `MealImageMosaic`
+ * is asserted against, so the composite judged here and the picture the athlete
+ * sees cannot drift apart without a test failing. A change to that description
+ * invalidates every stored verdict — see docs/meal-images/README.md.
+ */
 async function render(row: Row): Promise<Uint8Array | null> {
   const urls = urlsFor(row);
   if (!urls.length) return null;
@@ -149,15 +116,11 @@ async function render(row: Row): Promise<Uint8Array | null> {
   }
 
   const out = `${dir}/${row.id}.jpg`;
-  const manifest = `${dir}/${row.id}.json`;
-  await Deno.writeTextFile(manifest, JSON.stringify({ files, out }));
-  const cmd = new Deno.Command('python3', { args: [composeScript, manifest] });
-  const { code, stderr } = await cmd.output();
-  if (code !== 0) throw new Error(`compose: ${new TextDecoder().decode(stderr).slice(0, 90)}`);
+  await composeMosaic({ files, out, width: CANVAS, height: CANVAS });
 
   const bytes = await Deno.readFile(out);
   if (!KEEP) {
-    for (const f of [...files, out, manifest]) await Deno.remove(f).catch(() => {});
+    for (const f of [...files, out]) await Deno.remove(f).catch(() => {});
   }
   return bytes;
 }

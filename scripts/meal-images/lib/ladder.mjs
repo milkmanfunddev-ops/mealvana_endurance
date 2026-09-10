@@ -29,7 +29,10 @@
 // point of them living here rather than inline in pass 3.
 import { normalizeName, toSlug, isLowValue, roleRank } from './normalize.mjs';
 
-export const MAX_TILES = 4;
+// MIM-3: the grid has room for four cells and no more, so the ladder never
+// offers a fifth. One rule, declared where the grid is described.
+export { MAX_TILES } from './mosaic-geometry.mjs';
+import { MAX_TILES } from './mosaic-geometry.mjs';
 
 /**
  * Why a meal was blocked, and the label pass 3 reports it under, in print order.

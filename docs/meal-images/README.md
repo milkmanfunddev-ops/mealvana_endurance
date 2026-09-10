@@ -46,6 +46,64 @@ node --test scripts/meal-images/lib/ladder.test.mjs
 Every rule in that file was argued for and should break exactly one test when it
 changes.
 
+## Compositor parity — read before touching the grid
+
+The mosaic is drawn twice. `MealImageMosaic` draws it for the athlete, in
+Flutter, and pass 8 draws it again as a file so a model can look at it and
+record a verdict in `meal_library.image_verdict`.
+
+**Every stored verdict is a statement about the picture the compositor drew.**
+If the two drawings stop agreeing, those verdicts describe a picture no athlete
+has ever seen: the sweep still costs real money, still fills the column, and
+measures nothing. It is the one failure in this pipeline that leaves no trace —
+the numbers look fine.
+
+So there is one description of the grid, and neither side computes it:
+
+| | |
+|---|---|
+| the description | `scripts/meal-images/lib/mosaic-geometry.json` — cell rectangles for 1-4 tiles, the hairline's width and colour, the fit |
+| the formula behind it | `scripts/meal-images/lib/mosaic-geometry.mjs` |
+| the file the judge sees | `scripts/meal-images/lib/compose-mosaic.mjs` (pass 8 calls it; also a CLI) |
+| the picture the athlete sees | `lib/shared/widgets/kyle_design/data/meal_image_mosaic.dart` |
+
+Both sides are asserted against the JSON, and the two drawings are compared
+pixel for pixel from the same four source images:
+
+```bash
+node --test scripts/meal-images/lib/mosaic-geometry.test.mjs
+flutter test test/shared/widgets/kyle_design/meal_image_mosaic_geometry_test.dart
+```
+
+Change the grid on one side alone and the other side's test fails: the cell
+rectangles, the tile order within them, the hairline's width and colour, and
+the fit are each asserted from the JSON on both sides. The pixel comparison
+needs node and python3 with Pillow and skips where they are absent, so on a
+machine without them the rectangle assertions are what is holding the line.
+
+**A change to the geometry invalidates every stored verdict.** It is a re-measure,
+not a redeploy: bump `version` in the JSON, then clear and re-run pass 8 —
+
+```sql
+update meal_library set image_verdict = null, image_verdict_reason = null,
+                        image_verdict_at = null
+ where image_mode in ('mosaic', 'tile');
+```
+
+(`dish` rows are a single photograph and are unaffected by the grid.) Pass 8
+prints the geometry version it judged with at the top of every run.
+
+v1 pins what the widget draws, which is not quite what pass 8 drew before it:
+the separator was 2px rather than 1, and the cells were floor-divided rather
+than rounded. No verdict had been written when v1 landed (2026-09-10), so there
+was nothing to clear — the invariant starts clean.
+
+To eyeball what the judge sees for a set of tiles, without spending anything:
+
+```bash
+node scripts/meal-images/lib/compose-mosaic.mjs --out /tmp/grid.png a.jpg b.jpg c.jpg
+```
+
 ## Pipeline
 
 ```

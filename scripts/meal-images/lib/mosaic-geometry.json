@@ -1,0 +1,200 @@
+{
+  "version": 1,
+  "spec": "docs/ssot/spec/design/components/meal-image-mosaic.md v1 (MIM-3, MIM-4, MIM-7)",
+  "note": "One description of the grid. The Flutter component and the judging compositor are both asserted against these numbers; neither computes them independently. A change here invalidates every stored image_verdict \u2014 see docs/meal-images/README.md, 'Compositor parity'.",
+  "maxTiles": 4,
+  "fit": "cover",
+  "separator": {
+    "widthPx": 1,
+    "role": "a surface-coloured hairline, the only divider: no border, no shadow, no inner radius",
+    "light": "#F8F6EB",
+    "dark": "#381633",
+    "source": "AppColors.cream / AppColors.blackberry, lib/theme/kyle_design/app_colors.dart"
+  },
+  "cases": [
+    {
+      "tiles": 1,
+      "width": 768,
+      "height": 768,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 768,
+          "h": 768
+        }
+      ]
+    },
+    {
+      "tiles": 2,
+      "width": 768,
+      "height": 768,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 383.5,
+          "h": 768
+        },
+        {
+          "x": 384.5,
+          "y": 0,
+          "w": 383.5,
+          "h": 768
+        }
+      ]
+    },
+    {
+      "tiles": 3,
+      "width": 768,
+      "height": 768,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 383.5,
+          "h": 768
+        },
+        {
+          "x": 384.5,
+          "y": 0,
+          "w": 383.5,
+          "h": 383.5
+        },
+        {
+          "x": 384.5,
+          "y": 384.5,
+          "w": 383.5,
+          "h": 383.5
+        }
+      ]
+    },
+    {
+      "tiles": 4,
+      "width": 768,
+      "height": 768,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 383.5,
+          "h": 383.5
+        },
+        {
+          "x": 384.5,
+          "y": 0,
+          "w": 383.5,
+          "h": 383.5
+        },
+        {
+          "x": 0,
+          "y": 384.5,
+          "w": 383.5,
+          "h": 383.5
+        },
+        {
+          "x": 384.5,
+          "y": 384.5,
+          "w": 383.5,
+          "h": 383.5
+        }
+      ]
+    },
+    {
+      "tiles": 1,
+      "width": 300,
+      "height": 200,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 300,
+          "h": 200
+        }
+      ]
+    },
+    {
+      "tiles": 2,
+      "width": 300,
+      "height": 200,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 149.5,
+          "h": 200
+        },
+        {
+          "x": 150.5,
+          "y": 0,
+          "w": 149.5,
+          "h": 200
+        }
+      ]
+    },
+    {
+      "tiles": 3,
+      "width": 300,
+      "height": 200,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 149.5,
+          "h": 200
+        },
+        {
+          "x": 150.5,
+          "y": 0,
+          "w": 149.5,
+          "h": 99.5
+        },
+        {
+          "x": 150.5,
+          "y": 100.5,
+          "w": 149.5,
+          "h": 99.5
+        }
+      ]
+    },
+    {
+      "tiles": 4,
+      "width": 300,
+      "height": 200,
+      "gap": 1,
+      "cells": [
+        {
+          "x": 0,
+          "y": 0,
+          "w": 149.5,
+          "h": 99.5
+        },
+        {
+          "x": 150.5,
+          "y": 0,
+          "w": 149.5,
+          "h": 99.5
+        },
+        {
+          "x": 0,
+          "y": 100.5,
+          "w": 149.5,
+          "h": 99.5
+        },
+        {
+          "x": 150.5,
+          "y": 100.5,
+          "w": 149.5,
+          "h": 99.5
+        }
+      ]
+    }
+  ]
+}
