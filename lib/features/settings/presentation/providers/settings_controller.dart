@@ -508,8 +508,8 @@ class SettingsController extends _$SettingsController {
   }
 
   /// Save nutrition target overrides (null clears all overrides).
-  /// Bypasses _saveProfile() to handle the null/clearing case directly,
-  /// since copyWith with `??` would preserve existing values when null is passed.
+  /// Bypasses _saveProfile() so it can say "clear", which the rest of the
+  /// screen's `??`-shaped save cannot express.
   Future<void> saveNutritionTargetOverrides(
     NutritionTargetOverrides? overrides,
   ) async {
@@ -524,49 +524,20 @@ class SettingsController extends _$SettingsController {
         throw Exception('No user profile found to update.');
       }
 
-      // Use a sentinel empty override to distinguish "set to null" from "don't change"
-      // We create the profile with a non-null value first, then null it out manually
-      final updatedProfile = UserProfile(
-        id: existingProfile.id,
-        deviceId: existingProfile.deviceId,
-        authUserId: existingProfile.authUserId,
-        authProvider: existingProfile.authProvider,
-        isAnonymous: existingProfile.isAnonymous,
-        gender: existingProfile.gender,
-        birthday: existingProfile.birthday,
-        heightFeet: existingProfile.heightFeet,
-        heightInches: existingProfile.heightInches,
-        weightPounds: existingProfile.weightPounds,
-        runsWithWaterBottle: existingProfile.runsWithWaterBottle,
-        createdAt: existingProfile.createdAt,
-        updatedAt: DateTime.now(),
-        gutTraining: existingProfile.gutTraining,
-        sweatRate: existingProfile.sweatRate,
-        onboardingCompleted: existingProfile.onboardingCompleted,
-        appVersion: existingProfile.appVersion,
-        swipeHintShown: existingProfile.swipeHintShown,
-        unitSystem: existingProfile.unitSystem,
-        giSensitivity: existingProfile.giSensitivity,
-        ftpWatts: existingProfile.ftpWatts,
-        typicalBikeBottles: existingProfile.typicalBikeBottles,
-        hasAeroBottle: existingProfile.hasAeroBottle,
-        hasBentoBox: existingProfile.hasBentoBox,
-        cssPacePer100mSeconds: existingProfile.cssPacePer100mSeconds,
-        typicalWetsuit: existingProfile.typicalWetsuit,
-        typicalSwimCapType: existingProfile.typicalSwimCapType,
-        defaultRunningPaceMinPerMile:
-            existingProfile.defaultRunningPaceMinPerMile,
-        defaultCyclingSpeedMph: existingProfile.defaultCyclingSpeedMph,
-        defaultSwimmingPacePer100Sec:
-            existingProfile.defaultSwimmingPacePer100Sec,
-        dietaryPreference: existingProfile.dietaryPreference,
-        allergies: existingProfile.allergies,
-        senderName: existingProfile.senderName,
-        firstName: existingProfile.firstName,
-        lastName: existingProfile.lastName,
-        email: existingProfile.email,
-        nutritionTargetOverrides: overrides, // Explicitly set (can be null)
-      );
+      // copyWith owns the "clear" case (`clearNutritionTargetOverrides`),
+      // because `??` cannot distinguish it from "leave them alone". This
+      // used to rebuild UserProfile field by field instead, and that
+      // hand-rolled list silently reset every field it did not mention —
+      // body fat, lifestyle, training phase, the sweat test, home location.
+      final updatedProfile = overrides == null
+          ? existingProfile.copyWith(
+              updatedAt: DateTime.now(),
+              clearNutritionTargetOverrides: true,
+            )
+          : existingProfile.copyWith(
+              updatedAt: DateTime.now(),
+              nutritionTargetOverrides: overrides,
+            );
 
       await userRepository.updateUserProfile(updatedProfile);
 

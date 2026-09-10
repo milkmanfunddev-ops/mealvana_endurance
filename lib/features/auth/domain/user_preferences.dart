@@ -124,6 +124,22 @@ class UserProfile {
   /// function to resolve precedence between user-entered and Garmin values.
   final DateTime? bodyFatPctUpdatedAt;
 
+  // Home location — where the athlete lives, as opposed to where they next
+  // race. Vana sets these from a sentence ("I live in Birmingham") through
+  // setHomeLocation, and weather and Kroger coverage prefer them over the
+  // race venue. Null until they say so; an absent home is never guessed.
+  /// Home city in the athlete's own words, e.g. 'Birmingham, Alabama'.
+  final String? homeCity;
+
+  /// Home latitude, geocoded from [homeCity].
+  final double? homeLat;
+
+  /// Home longitude, geocoded from [homeCity].
+  final double? homeLon;
+
+  /// IANA timezone of [homeCity], e.g. 'America/Chicago'.
+  final String? homeTimezone;
+
   UserProfile({
     required this.id,
     required this.deviceId,
@@ -185,6 +201,11 @@ class UserProfile {
     // Garmin precedence timestamps
     this.weightPoundsUpdatedAt,
     this.bodyFatPctUpdatedAt,
+    // Home location
+    this.homeCity,
+    this.homeLat,
+    this.homeLon,
+    this.homeTimezone,
   });
 
   /// Returns the best available display name for the user.
@@ -391,6 +412,11 @@ class UserProfile {
       bodyFatPctUpdatedAt: row['body_fat_pct_updated_at'] != null
           ? DateTime.tryParse(row['body_fat_pct_updated_at'] as String)
           : null,
+      // Home location (Vana writes these server-side via setHomeLocation)
+      homeCity: row['home_city'] as String?,
+      homeLat: (row['home_lat'] as num?)?.toDouble(),
+      homeLon: (row['home_lon'] as num?)?.toDouble(),
+      homeTimezone: row['home_timezone'] as String?,
     );
   }
 
@@ -485,6 +511,11 @@ class UserProfile {
       bodyFatPctUpdatedAt: json['body_fat_pct_updated_at'] != null
           ? DateTime.tryParse(json['body_fat_pct_updated_at'] as String)
           : null,
+      // Home location
+      homeCity: json['home_city'] as String?,
+      homeLat: (json['home_lat'] as num?)?.toDouble(),
+      homeLon: (json['home_lon'] as num?)?.toDouble(),
+      homeTimezone: json['home_timezone'] as String?,
     );
   }
 
@@ -546,6 +577,11 @@ class UserProfile {
           ?.toUtc()
           .toIso8601String(),
       'body_fat_pct_updated_at': bodyFatPctUpdatedAt?.toUtc().toIso8601String(),
+      // Home location
+      'home_city': homeCity,
+      'home_lat': homeLat,
+      'home_lon': homeLon,
+      'home_timezone': homeTimezone,
       // Note: is_coach is NOT synced to Supabase - coach status lives in coaches table
       // Note: swipe_hint_shown, gi_sensitivity, typical_bike_bottles, has_aero_bottle,
       // has_bento_box, typical_wetsuit, typical_swim_cap_type are Drift-only fields
@@ -614,6 +650,16 @@ class UserProfile {
     // Garmin precedence timestamps
     DateTime? weightPoundsUpdatedAt,
     DateTime? bodyFatPctUpdatedAt,
+    // Home location
+    String? homeCity,
+    double? homeLat,
+    double? homeLon,
+    String? homeTimezone,
+    // Set the overrides back to "use algorithm defaults". `??` cannot say
+    // that — passing null means "leave them alone" — and the settings screen
+    // used to work around it by rebuilding the whole profile field by field,
+    // which silently reset every field that list forgot.
+    bool clearNutritionTargetOverrides = false,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -664,8 +710,9 @@ class UserProfile {
       // Contact information
       email: email ?? this.email,
       // Nutrition target overrides
-      nutritionTargetOverrides:
-          nutritionTargetOverrides ?? this.nutritionTargetOverrides,
+      nutritionTargetOverrides: clearNutritionTargetOverrides
+          ? null
+          : (nutritionTargetOverrides ?? this.nutritionTargetOverrides),
       // Daily macro calculation fields
       bodyFatPct: bodyFatPct ?? this.bodyFatPct,
       lifestyle: lifestyle ?? this.lifestyle,
@@ -685,6 +732,11 @@ class UserProfile {
       weightPoundsUpdatedAt:
           weightPoundsUpdatedAt ?? this.weightPoundsUpdatedAt,
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt ?? this.bodyFatPctUpdatedAt,
+      // Home location
+      homeCity: homeCity ?? this.homeCity,
+      homeLat: homeLat ?? this.homeLat,
+      homeLon: homeLon ?? this.homeLon,
+      homeTimezone: homeTimezone ?? this.homeTimezone,
     );
   }
 }

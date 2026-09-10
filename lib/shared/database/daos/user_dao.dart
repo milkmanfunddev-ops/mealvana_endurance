@@ -188,6 +188,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Garmin precedence timestamps
         weightPoundsUpdatedAt: Value(profile.weightPoundsUpdatedAt),
         bodyFatPctUpdatedAt: Value(profile.bodyFatPctUpdatedAt),
+        // Home location
+        homeCity: Value(profile.homeCity),
+        homeLat: Value(profile.homeLat),
+        homeLon: Value(profile.homeLon),
+        homeTimezone: Value(profile.homeTimezone),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -267,6 +272,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         // Garmin precedence timestamps
         weightPoundsUpdatedAt: Value(profile.weightPoundsUpdatedAt),
         bodyFatPctUpdatedAt: Value(profile.bodyFatPctUpdatedAt),
+        // Home location
+        homeCity: Value(profile.homeCity),
+        homeLat: Value(profile.homeLat),
+        homeLon: Value(profile.homeLon),
+        homeTimezone: Value(profile.homeTimezone),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -419,6 +429,11 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
       // Garmin precedence timestamps
       weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
       bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,
+      // Home location
+      homeCity: dbUser.homeCity,
+      homeLat: dbUser.homeLat,
+      homeLon: dbUser.homeLon,
+      homeTimezone: dbUser.homeTimezone,
     );
   }
 }

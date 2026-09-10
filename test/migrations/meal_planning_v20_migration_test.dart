@@ -61,12 +61,11 @@ Future<void> _rewindToV19(AppDatabase db) async {
 
 void main() {
   group('meal planning (v20)', () {
-    test('schemaVersion is 20', () async {
+    // The head version is pinned by the newest step's test (v21, home
+    // location); this one only needs the v20 step to still be in the ladder.
+    test('schemaVersion is at least 20', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      // 2026-09-06: the schema moved past 20 when develop's v19 fork
-      // (template_foods columns) merged in as v21; the v20 step itself is
-      // unchanged, so this pins a floor rather than an exact version.
       expect(db.schemaVersion, greaterThanOrEqualTo(20));
     });
 

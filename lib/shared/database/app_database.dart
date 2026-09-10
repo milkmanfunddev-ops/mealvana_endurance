@@ -292,31 +292,42 @@ class AppDatabase extends _$AppDatabase {
   ///
   /// v19 forked on 2026-09-06: `develop` used v19 for the template_foods
   /// food-recommendation columns while `mealplanning` used v19 for
-  /// `user_entitlements` (and v20 for the meal-planning tables). Both lines
-  /// shipped dev builds at their own v19, so the merge lands as v21 and the
-  /// ladder below runs every forked step for any device below 21 — each step
-  /// is idempotent (ensureTable / addColumn), so a device that already has one
-  /// side's v19 is unaffected by re-running it.
+  /// `user_entitlements` (and v20 for the meal-planning tables). The merge
+  /// keeps v20 as the head (Lee, 2026-09-07): the v20 step below carries
+  /// everything either fork could be missing, and every step is idempotent
+  /// (ensureTable / addColumn), so a device coming from develop's v19 gets
+  /// the meal-planning tables + entitlements, and one from the mealplanning
+  /// line's v19 gets those plus the template_foods columns. A device already
+  /// AT the mealplanning line's v20 (Lee's simulator only — that branch never
+  /// had a Codemagic build) does not run onUpgrade and lacks the
+  /// template_foods columns; the startup integrity check wipes and resyncs
+  /// it once. Accepted.
   ///
-  /// v19 (mealplanning) added `user_entitlements` — a read-only local mirror of
-  /// the user's Pro subscription rows (docs/implement_mealplanning/04-entitlement.md).
+  /// v19 added `user_entitlements` — a read-only local mirror of the user's
+  /// Pro subscription rows (docs/implement_mealplanning/04-entitlement.md).
   /// Server-side the table is written only by the revenuecat-webhook edge
   /// function; the app caches its own row so the Pro gate can answer offline
   /// and before RevenueCat responds on a cold start.
   ///
-  /// v20 (mealplanning) added the meal-planning user data (Phase 4b of
+  /// v20 added the meal-planning user data (Phase 4b of
   /// docs/implement_mealplanning): `meal_plans`, `plan_meals`, `user_memories`
   /// (all offline-first with `needs_upload`), `meal_logs.plan_meal_id`, and
   /// the `saved_meals` planning columns (`icon notes meal_types batch
-  /// library_meal_id`).
-  ///
-  /// v21 (was develop's v19) added template_foods.min_servings_during +
+  /// library_meal_id`) — plus template_foods.min_servings_during +
   /// is_indivisible (mirrors of existing Supabase columns the client solvers
   /// now read — §4.2 one-cap twin port) and template_foods.solvent_min_ml
   /// (catalog-conventions v1.1 solvent dependency, food-recommendation@v1
   /// §6(e); Supabase migration 20260903120000). Supabase
-  /// app_config.current_schema_version must be bumped to 21 when the build
+  /// app_config.current_schema_version must be bumped to 20 when the build
   /// carrying this ships.
+  ///
+  /// v21 added the four home-location columns to `users` (`home_city`,
+  /// `home_lat`, `home_lon`, `home_timezone`) — the local mirror of Supabase
+  /// migration 20260909190000. Vana already writes them server-side through
+  /// setHomeLocation; without the local columns the value only existed on the
+  /// server and the device could neither show nor edit where the athlete
+  /// lives. Supabase app_config.current_schema_version must be bumped to 21
+  /// when the build carrying this ships.
   int get schemaVersion => 21;
 
   /// Ensure sync tracking columns exist for user-authored tables.
@@ -581,18 +592,23 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'calories_burned', 'REAL');
         }
 
-        // v19 (mealplanning line): user_entitlements — local cache of the Pro
-        // subscription row (Phase 3 of meal planning). ensureTable is
-        // idempotent for web user_version replays; no columns change on
-        // existing tables. Re-run under v21 too — see the fork note there.
+        // v19: user_entitlements — local cache of the Pro subscription row
+        // (Phase 3 of meal planning). ensureTable is idempotent for web
+        // user_version replays; no columns change on existing tables.
         if (from < 19) {
           await ensureTable(userEntitlementsTable);
         }
 
-        // v20: meal-planning user data (Phase 4b). Three new tables plus
-        // additive nullable/defaulted columns on meal_logs and saved_meals.
-        // ensureTable / addColumn are idempotent for web user_version replays.
+        // v20: meal-planning user data (Phase 4b) — three new tables plus
+        // additive nullable/defaulted columns on meal_logs and saved_meals —
+        // and the food-recommendation@v1 catalog columns on template_foods
+        // (develop's former v19; values arrive via the template_foods full
+        // resync, the repository selects *). user_entitlements is ensured
+        // here too: a device coming from develop's own v19 never ran the
+        // step above. Everything is idempotent, so whichever fork a device
+        // came from, re-running is harmless.
         if (from < 20) {
+          await ensureTable(userEntitlementsTable);
           await ensureTable(mealPlansTable);
           await ensureTable(planMealsTable);
           await ensureTable(userMemoriesTable);
@@ -606,21 +622,6 @@ class AppDatabase extends _$AppDatabase {
           );
           await addColumn('saved_meals', 'batch', 'INTEGER');
           await addColumn('saved_meals', 'library_meal_id', 'TEXT');
-        }
-
-        // v21 (develop's former v19): food-recommendation@v1 catalog columns
-        // on template_foods — min_servings_during + is_indivisible (Supabase
-        // mirrors the client solvers now read, §4.2 one-cap twin port) and
-        // solvent_min_ml (catalog-conventions v1.1). All defaulted or
-        // nullable; addColumn is idempotent, so develop devices that already
-        // ran this at 19 are unaffected. Values arrive via the template_foods
-        // full resync (the repository selects *).
-        //
-        // Fork catch-up: a device coming from develop's own v19 never ran the
-        // mealplanning v19 step above (from == 19 skips `from < 19`), so make
-        // sure user_entitlements exists here as well — idempotent.
-        if (from < 21) {
-          await ensureTable(userEntitlementsTable);
           await addColumn(
             'template_foods',
             'min_servings_during',
@@ -632,6 +633,17 @@ class AppDatabase extends _$AppDatabase {
             'INTEGER NOT NULL DEFAULT 0',
           );
           await addColumn('template_foods', 'solvent_min_ml', 'REAL');
+        }
+
+        // v21: Home location on the users row — the local mirror of Supabase
+        // migration 20260909190000. Nullable throughout: an athlete who has
+        // never said where they live has no home, and weather and shopping
+        // fall back to the race venue exactly as before.
+        if (from < 21) {
+          await addColumn('users', 'home_city', 'TEXT');
+          await addColumn('users', 'home_lat', 'REAL');
+          await addColumn('users', 'home_lon', 'REAL');
+          await addColumn('users', 'home_timezone', 'TEXT');
         }
       },
 

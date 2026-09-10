@@ -228,6 +228,23 @@ class UserProfilesTable extends Table {
   DateTimeColumn get bodyFatPctUpdatedAt =>
       dateTime().nullable().named('body_fat_pct_updated_at')();
 
+  // Home location (the Voodoo Doll's home Fact — mirrors Supabase migration
+  // 20260909190000_users_home_location.sql). Vana sets these from a sentence
+  // ("I live in Birmingham") through setHomeLocation; weather and Kroger
+  // coverage prefer them over the next race's venue. All four are null until
+  // the athlete says where they live — an absent home is null, never a guess.
+  /// Where the athlete lives, in their own words ("Birmingham, Alabama")
+  TextColumn get homeCity => text().nullable().named('home_city')();
+
+  /// Home latitude, geocoded from [homeCity]
+  RealColumn get homeLat => real().nullable().named('home_lat')();
+
+  /// Home longitude, geocoded from [homeCity]
+  RealColumn get homeLon => real().nullable().named('home_lon')();
+
+  /// IANA timezone of [homeCity], e.g. 'America/Chicago'
+  TextColumn get homeTimezone => text().nullable().named('home_timezone')();
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   BoolColumn get needsUpload =>

@@ -256,6 +256,12 @@ class AuthMigrationService {
         'typical_swim_cap_type': anonymousProfile.typicalSwimCapType,
         'first_name': anonymousProfile.firstName,
         'last_name': anonymousProfile.lastName,
+        // Where they live carries forward like the rest of the profile — an
+        // athlete who told Vana their home city before signing up keeps it.
+        'home_city': anonymousProfile.homeCity,
+        'home_lat': anonymousProfile.homeLat,
+        'home_lon': anonymousProfile.homeLon,
+        'home_timezone': anonymousProfile.homeTimezone,
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'id');
 

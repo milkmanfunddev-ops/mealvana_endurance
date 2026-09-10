@@ -27,6 +27,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/auth/data/user_repository.dart';
 import 'package:mealvana_endurance/features/auth/domain/user_preferences.dart';
+import 'package:mealvana_endurance/features/daily_macros/domain/enums.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/services/sync/entity_sync/user_sync_handler.dart';
@@ -584,5 +585,181 @@ void main() {
         );
       },
     );
+  });
+
+  group('home location survives every profile parser', () {
+    // Vana writes home_city/home_lat/home_lon/home_timezone server-side
+    // (setHomeLocation). The device only ever sees them if EVERY hop carries
+    // them: the remote-row parser, the domain model's copyWith, the upload
+    // payload, the Drift companion, and the row-to-domain mapping. A hop that
+    // forgets a field is exactly the class of bug that silently reset
+    // onboarding answers in 2026-08 — so this pins the whole chain.
+    const home = {
+      'home_city': 'Birmingham, Alabama',
+      'home_lat': 33.5186,
+      'home_lon': -86.8104,
+      'home_timezone': 'America/Chicago',
+    };
+
+    void expectHome(UserProfile profile) {
+      expect(profile.homeCity, 'Birmingham, Alabama');
+      expect(profile.homeLat, 33.5186);
+      expect(profile.homeLon, -86.8104);
+      expect(profile.homeTimezone, 'America/Chicago');
+    }
+
+    test('fromSupabaseRow reads them and toJson sends them back', () {
+      final profile = UserProfile.fromSupabaseRow({
+        'id': 'u-home',
+        'device_id': 'u-home',
+        ...home,
+      }, fallbackId: 'u-home');
+
+      expectHome(profile);
+
+      final json = profile.toJson();
+      expect(json['home_city'], 'Birmingham, Alabama');
+      expect(json['home_lat'], 33.5186);
+      expect(json['home_lon'], -86.8104);
+      expect(json['home_timezone'], 'America/Chicago');
+    });
+
+    test('fromJson reads them', () {
+      final profile = UserProfile.fromJson({
+        'id': 'u-home',
+        'device_id': 'u-home',
+        'gender': 'female',
+        'birthday': '1992-07-01',
+        'height_feet': 5,
+        'height_inches': 4,
+        'weight_pounds': 143.3,
+        'runs_with_water_bottle': false,
+        'created_at': '2026-09-10T09:00:00.000',
+        'updated_at': '2026-09-10T09:00:00.000',
+        ...home,
+      });
+
+      expectHome(profile);
+    });
+
+    test('an absent home is null, never an invented default', () {
+      final profile = UserProfile.fromSupabaseRow(const {
+        'id': 'u-nohome',
+      }, fallbackId: 'u-nohome');
+
+      expect(profile.homeCity, isNull);
+      expect(profile.homeLat, isNull);
+      expect(profile.homeLon, isNull);
+      expect(profile.homeTimezone, isNull);
+    });
+
+    test('copyWith sets them and carries them forward', () {
+      final base = UserProfile.fromSupabaseRow(const {
+        'id': 'u-home',
+      }, fallbackId: 'u-home');
+
+      final withHome = base.copyWith(
+        homeCity: 'Birmingham, Alabama',
+        homeLat: 33.5186,
+        homeLon: -86.8104,
+        homeTimezone: 'America/Chicago',
+      );
+      expectHome(withHome);
+
+      // An unrelated edit must not drop them.
+      expectHome(withHome.copyWith(firstName: 'Mika'));
+    });
+
+    test('a DAO save round-trips them through Drift', () async {
+      final profile = UserProfile.fromSupabaseRow({
+        'id': '00000000-0000-4000-8000-0000000home1',
+        'device_id': '00000000-0000-4000-8000-0000000home1',
+        ...home,
+      }, fallbackId: '00000000-0000-4000-8000-0000000home1');
+
+      await database.userDao.saveUserProfile(profile);
+
+      final row = await profileRow(profile.id);
+      expect(row.homeCity, 'Birmingham, Alabama');
+      expect(row.homeLat, 33.5186);
+      expect(row.homeLon, -86.8104);
+      expect(row.homeTimezone, 'America/Chicago');
+
+      expectHome(database.userDao.toDomainProfile(row));
+    });
+
+    test('a DAO update round-trips them through Drift', () async {
+      final profile = UserProfile.fromSupabaseRow({
+        'id': '00000000-0000-4000-8000-0000000home2',
+        'device_id': '00000000-0000-4000-8000-0000000home2',
+      }, fallbackId: '00000000-0000-4000-8000-0000000home2');
+
+      await database.userDao.saveUserProfile(profile);
+      await database.userDao.updateUserProfile(
+        profile.copyWith(
+          homeCity: 'Birmingham, Alabama',
+          homeLat: 33.5186,
+          homeLon: -86.8104,
+          homeTimezone: 'America/Chicago',
+        ),
+      );
+
+      expectHome(database.userDao.toDomainProfile(await profileRow(profile.id)));
+    });
+
+    test(
+      'a home Vana set server-side lands on the device on the next sync',
+      () async {
+        const userId = '00000000-0000-4000-8000-0000000home3';
+
+        await handler.saveRemoteUserProfile({
+          'id': userId,
+          'device_id': userId,
+          'gender': 'female',
+          'birthday': '1992-07-01',
+          ...home,
+        }, userId);
+
+        final row = await profileRow(userId);
+        expect(row.homeCity, 'Birmingham, Alabama');
+        expect(row.homeTimezone, 'America/Chicago');
+      },
+    );
+  });
+
+  group('clearing nutrition target overrides', () {
+    // The settings screen has to distinguish "leave the overrides alone" from
+    // "clear them", which copyWith's `??` cannot express. It used to do that
+    // by rebuilding UserProfile field by field — and that hand-rolled list
+    // silently reset every field it did not mention (body fat, training
+    // phase, the sweat test, and now home location). copyWith owns the
+    // clear instead, so nothing can fall off the list again.
+    test('clears only the overrides, keeping every other field', () {
+      final profile = UserProfile.fromSupabaseRow({
+        'id': 'u-clear',
+        'device_id': 'u-clear',
+        'body_fat_pct': 14.5,
+        'training_phase': 'peak',
+        'sweat_sodium': 'high',
+        'home_city': 'Birmingham, Alabama',
+        'home_lat': 33.5186,
+        'home_lon': -86.8104,
+        'home_timezone': 'America/Chicago',
+        'nutrition_target_overrides': {
+          'duringRun': {'carbRateGPerH': 85.0},
+        },
+      }, fallbackId: 'u-clear');
+
+      final cleared = profile.copyWith(clearNutritionTargetOverrides: true);
+
+      expect(cleared.nutritionTargetOverrides, isNull);
+      expect(cleared.bodyFatPct, 14.5);
+      expect(cleared.trainingPhase, TrainingPhase.peak);
+      expect(cleared.sweatSodium, SweatSodiumCat.high);
+      expect(cleared.homeCity, 'Birmingham, Alabama');
+      expect(cleared.homeLat, 33.5186);
+      expect(cleared.homeLon, -86.8104);
+      expect(cleared.homeTimezone, 'America/Chicago');
+    });
   });
 }

@@ -601,29 +601,12 @@ void main() {
       );
       await repository.saveUserProfile(initial);
 
-      // saveNutritionTargetOverrides(null) in the controller explicitly
-      // sets nutritionTargetOverrides: null. Verify the DAO can persist null.
-      // We test by calling updateUserProfile with a profile where
-      // nutritionTargetOverrides is forced to null by constructing directly.
-      final cleared = UserProfile(
-        id: initial.id,
-        deviceId: initial.deviceId,
-        authUserId: initial.authUserId,
-        authProvider: initial.authProvider,
-        isAnonymous: initial.isAnonymous,
-        gender: initial.gender,
-        birthday: initial.birthday,
-        heightFeet: initial.heightFeet,
-        heightInches: initial.heightInches,
-        weightPounds: initial.weightPounds,
-        runsWithWaterBottle: initial.runsWithWaterBottle,
-        createdAt: initial.createdAt,
+      // The controller clears via copyWith(clearNutritionTargetOverrides:
+      // true) — `??` cannot express "clear". Verify the DAO persists the null
+      // that produces.
+      final cleared = initial.copyWith(
         updatedAt: DateTime.now(),
-        gutTraining: initial.gutTraining,
-        sweatRate: initial.sweatRate,
-        onboardingCompleted: initial.onboardingCompleted,
-        appVersion: initial.appVersion,
-        // nutritionTargetOverrides: null (explicitly)
+        clearNutritionTargetOverrides: true,
       );
 
       await repository.updateUserProfile(cleared, needsUpload: true);

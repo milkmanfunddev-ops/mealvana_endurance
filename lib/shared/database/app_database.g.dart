@@ -676,6 +676,50 @@ class $UserProfilesTableTable extends UserProfilesTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _homeCityMeta = const VerificationMeta(
+    'homeCity',
+  );
+  @override
+  late final GeneratedColumn<String> homeCity = GeneratedColumn<String>(
+    'home_city',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _homeLatMeta = const VerificationMeta(
+    'homeLat',
+  );
+  @override
+  late final GeneratedColumn<double> homeLat = GeneratedColumn<double>(
+    'home_lat',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _homeLonMeta = const VerificationMeta(
+    'homeLon',
+  );
+  @override
+  late final GeneratedColumn<double> homeLon = GeneratedColumn<double>(
+    'home_lon',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _homeTimezoneMeta = const VerificationMeta(
+    'homeTimezone',
+  );
+  @override
+  late final GeneratedColumn<String> homeTimezone = GeneratedColumn<String>(
+    'home_timezone',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
   );
@@ -749,6 +793,10 @@ class $UserProfilesTableTable extends UserProfilesTable
     sweatTestSource,
     weightPoundsUpdatedAt,
     bodyFatPctUpdatedAt,
+    homeCity,
+    homeLat,
+    homeLon,
+    homeTimezone,
     needsUpload,
   ];
   @override
@@ -1211,6 +1259,33 @@ class $UserProfilesTableTable extends UserProfilesTable
         ),
       );
     }
+    if (data.containsKey('home_city')) {
+      context.handle(
+        _homeCityMeta,
+        homeCity.isAcceptableOrUnknown(data['home_city']!, _homeCityMeta),
+      );
+    }
+    if (data.containsKey('home_lat')) {
+      context.handle(
+        _homeLatMeta,
+        homeLat.isAcceptableOrUnknown(data['home_lat']!, _homeLatMeta),
+      );
+    }
+    if (data.containsKey('home_lon')) {
+      context.handle(
+        _homeLonMeta,
+        homeLon.isAcceptableOrUnknown(data['home_lon']!, _homeLonMeta),
+      );
+    }
+    if (data.containsKey('home_timezone')) {
+      context.handle(
+        _homeTimezoneMeta,
+        homeTimezone.isAcceptableOrUnknown(
+          data['home_timezone']!,
+          _homeTimezoneMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_upload')) {
       context.handle(
         _needsUploadMeta,
@@ -1456,6 +1531,22 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}body_fat_pct_updated_at'],
       ),
+      homeCity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_city'],
+      ),
+      homeLat: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}home_lat'],
+      ),
+      homeLon: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}home_lon'],
+      ),
+      homeTimezone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}home_timezone'],
+      ),
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
@@ -1626,6 +1717,18 @@ class UserProfileEntry extends DataClass
   /// Timestamp of last body_fat_pct update (for Garmin precedence resolution)
   final DateTime? bodyFatPctUpdatedAt;
 
+  /// Where the athlete lives, in their own words ("Birmingham, Alabama")
+  final String? homeCity;
+
+  /// Home latitude, geocoded from [homeCity]
+  final double? homeLat;
+
+  /// Home longitude, geocoded from [homeCity]
+  final double? homeLon;
+
+  /// IANA timezone of [homeCity], e.g. 'America/Chicago'
+  final String? homeTimezone;
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
@@ -1686,6 +1789,10 @@ class UserProfileEntry extends DataClass
     this.sweatTestSource,
     this.weightPoundsUpdatedAt,
     this.bodyFatPctUpdatedAt,
+    this.homeCity,
+    this.homeLat,
+    this.homeLon,
+    this.homeTimezone,
     required this.needsUpload,
   });
   @override
@@ -1821,6 +1928,18 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || bodyFatPctUpdatedAt != null) {
       map['body_fat_pct_updated_at'] = Variable<DateTime>(bodyFatPctUpdatedAt);
     }
+    if (!nullToAbsent || homeCity != null) {
+      map['home_city'] = Variable<String>(homeCity);
+    }
+    if (!nullToAbsent || homeLat != null) {
+      map['home_lat'] = Variable<double>(homeLat);
+    }
+    if (!nullToAbsent || homeLon != null) {
+      map['home_lon'] = Variable<double>(homeLon);
+    }
+    if (!nullToAbsent || homeTimezone != null) {
+      map['home_timezone'] = Variable<String>(homeTimezone);
+    }
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1938,6 +2057,18 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(bodyFatPctUpdatedAt),
+      homeCity: homeCity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homeCity),
+      homeLat: homeLat == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homeLat),
+      homeLon: homeLon == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homeLon),
+      homeTimezone: homeTimezone == null && nullToAbsent
+          ? const Value.absent()
+          : Value(homeTimezone),
       needsUpload: Value(needsUpload),
     );
   }
@@ -2048,6 +2179,10 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: serializer.fromJson<DateTime?>(
         json['bodyFatPctUpdatedAt'],
       ),
+      homeCity: serializer.fromJson<String?>(json['homeCity']),
+      homeLat: serializer.fromJson<double?>(json['homeLat']),
+      homeLon: serializer.fromJson<double?>(json['homeLon']),
+      homeTimezone: serializer.fromJson<String?>(json['homeTimezone']),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -2129,6 +2264,10 @@ class UserProfileEntry extends DataClass
         weightPoundsUpdatedAt,
       ),
       'bodyFatPctUpdatedAt': serializer.toJson<DateTime?>(bodyFatPctUpdatedAt),
+      'homeCity': serializer.toJson<String?>(homeCity),
+      'homeLat': serializer.toJson<double?>(homeLat),
+      'homeLon': serializer.toJson<double?>(homeLon),
+      'homeTimezone': serializer.toJson<String?>(homeTimezone),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -2190,6 +2329,10 @@ class UserProfileEntry extends DataClass
     Value<String?> sweatTestSource = const Value.absent(),
     Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
     Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+    Value<String?> homeCity = const Value.absent(),
+    Value<double?> homeLat = const Value.absent(),
+    Value<double?> homeLon = const Value.absent(),
+    Value<String?> homeTimezone = const Value.absent(),
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -2274,6 +2417,10 @@ class UserProfileEntry extends DataClass
     bodyFatPctUpdatedAt: bodyFatPctUpdatedAt.present
         ? bodyFatPctUpdatedAt.value
         : this.bodyFatPctUpdatedAt,
+    homeCity: homeCity.present ? homeCity.value : this.homeCity,
+    homeLat: homeLat.present ? homeLat.value : this.homeLat,
+    homeLon: homeLon.present ? homeLon.value : this.homeLon,
+    homeTimezone: homeTimezone.present ? homeTimezone.value : this.homeTimezone,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -2423,6 +2570,12 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: data.bodyFatPctUpdatedAt.present
           ? data.bodyFatPctUpdatedAt.value
           : this.bodyFatPctUpdatedAt,
+      homeCity: data.homeCity.present ? data.homeCity.value : this.homeCity,
+      homeLat: data.homeLat.present ? data.homeLat.value : this.homeLat,
+      homeLon: data.homeLon.present ? data.homeLon.value : this.homeLon,
+      homeTimezone: data.homeTimezone.present
+          ? data.homeTimezone.value
+          : this.homeTimezone,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -2494,6 +2647,10 @@ class UserProfileEntry extends DataClass
           ..write('sweatTestSource: $sweatTestSource, ')
           ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
           ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
+          ..write('homeCity: $homeCity, ')
+          ..write('homeLat: $homeLat, ')
+          ..write('homeLon: $homeLon, ')
+          ..write('homeTimezone: $homeTimezone, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -2557,6 +2714,10 @@ class UserProfileEntry extends DataClass
     sweatTestSource,
     weightPoundsUpdatedAt,
     bodyFatPctUpdatedAt,
+    homeCity,
+    homeLat,
+    homeLon,
+    homeTimezone,
     needsUpload,
   ]);
   @override
@@ -2622,6 +2783,10 @@ class UserProfileEntry extends DataClass
           other.sweatTestSource == this.sweatTestSource &&
           other.weightPoundsUpdatedAt == this.weightPoundsUpdatedAt &&
           other.bodyFatPctUpdatedAt == this.bodyFatPctUpdatedAt &&
+          other.homeCity == this.homeCity &&
+          other.homeLat == this.homeLat &&
+          other.homeLon == this.homeLon &&
+          other.homeTimezone == this.homeTimezone &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -2682,6 +2847,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String?> sweatTestSource;
   final Value<DateTime?> weightPoundsUpdatedAt;
   final Value<DateTime?> bodyFatPctUpdatedAt;
+  final Value<String?> homeCity;
+  final Value<double?> homeLat;
+  final Value<double?> homeLon;
+  final Value<String?> homeTimezone;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -2741,6 +2910,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.sweatTestSource = const Value.absent(),
     this.weightPoundsUpdatedAt = const Value.absent(),
     this.bodyFatPctUpdatedAt = const Value.absent(),
+    this.homeCity = const Value.absent(),
+    this.homeLat = const Value.absent(),
+    this.homeLon = const Value.absent(),
+    this.homeTimezone = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2801,6 +2974,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.sweatTestSource = const Value.absent(),
     this.weightPoundsUpdatedAt = const Value.absent(),
     this.bodyFatPctUpdatedAt = const Value.absent(),
+    this.homeCity = const Value.absent(),
+    this.homeLat = const Value.absent(),
+    this.homeLon = const Value.absent(),
+    this.homeTimezone = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2862,6 +3039,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<String>? sweatTestSource,
     Expression<DateTime>? weightPoundsUpdatedAt,
     Expression<DateTime>? bodyFatPctUpdatedAt,
+    Expression<String>? homeCity,
+    Expression<double>? homeLat,
+    Expression<double>? homeLon,
+    Expression<String>? homeTimezone,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -2944,6 +3125,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         'weight_pounds_updated_at': weightPoundsUpdatedAt,
       if (bodyFatPctUpdatedAt != null)
         'body_fat_pct_updated_at': bodyFatPctUpdatedAt,
+      if (homeCity != null) 'home_city': homeCity,
+      if (homeLat != null) 'home_lat': homeLat,
+      if (homeLon != null) 'home_lon': homeLon,
+      if (homeTimezone != null) 'home_timezone': homeTimezone,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3006,6 +3191,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<String?>? sweatTestSource,
     Value<DateTime?>? weightPoundsUpdatedAt,
     Value<DateTime?>? bodyFatPctUpdatedAt,
+    Value<String?>? homeCity,
+    Value<double?>? homeLat,
+    Value<double?>? homeLon,
+    Value<String?>? homeTimezone,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -3078,6 +3267,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       weightPoundsUpdatedAt:
           weightPoundsUpdatedAt ?? this.weightPoundsUpdatedAt,
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt ?? this.bodyFatPctUpdatedAt,
+      homeCity: homeCity ?? this.homeCity,
+      homeLat: homeLat ?? this.homeLat,
+      homeLon: homeLon ?? this.homeLon,
+      homeTimezone: homeTimezone ?? this.homeTimezone,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -3284,6 +3477,18 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         bodyFatPctUpdatedAt.value,
       );
     }
+    if (homeCity.present) {
+      map['home_city'] = Variable<String>(homeCity.value);
+    }
+    if (homeLat.present) {
+      map['home_lat'] = Variable<double>(homeLat.value);
+    }
+    if (homeLon.present) {
+      map['home_lon'] = Variable<double>(homeLon.value);
+    }
+    if (homeTimezone.present) {
+      map['home_timezone'] = Variable<String>(homeTimezone.value);
+    }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
     }
@@ -3358,6 +3563,10 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('sweatTestSource: $sweatTestSource, ')
           ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
           ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
+          ..write('homeCity: $homeCity, ')
+          ..write('homeLat: $homeLat, ')
+          ..write('homeLon: $homeLon, ')
+          ..write('homeTimezone: $homeTimezone, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -46205,6 +46414,10 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<String?> sweatTestSource,
       Value<DateTime?> weightPoundsUpdatedAt,
       Value<DateTime?> bodyFatPctUpdatedAt,
+      Value<String?> homeCity,
+      Value<double?> homeLat,
+      Value<double?> homeLon,
+      Value<String?> homeTimezone,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -46266,6 +46479,10 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<String?> sweatTestSource,
       Value<DateTime?> weightPoundsUpdatedAt,
       Value<DateTime?> bodyFatPctUpdatedAt,
+      Value<String?> homeCity,
+      Value<double?> homeLat,
+      Value<double?> homeLon,
+      Value<String?> homeTimezone,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -46562,6 +46779,26 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<DateTime> get bodyFatPctUpdatedAt => $composableBuilder(
     column: $table.bodyFatPctUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homeCity => $composableBuilder(
+    column: $table.homeCity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get homeLat => $composableBuilder(
+    column: $table.homeLat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get homeLon => $composableBuilder(
+    column: $table.homeLon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get homeTimezone => $composableBuilder(
+    column: $table.homeTimezone,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -46862,6 +47099,26 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get homeCity => $composableBuilder(
+    column: $table.homeCity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get homeLat => $composableBuilder(
+    column: $table.homeLat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get homeLon => $composableBuilder(
+    column: $table.homeLon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get homeTimezone => $composableBuilder(
+    column: $table.homeTimezone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => ColumnOrderings(column),
@@ -47136,6 +47393,20 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get homeCity =>
+      $composableBuilder(column: $table.homeCity, builder: (column) => column);
+
+  GeneratedColumn<double> get homeLat =>
+      $composableBuilder(column: $table.homeLat, builder: (column) => column);
+
+  GeneratedColumn<double> get homeLon =>
+      $composableBuilder(column: $table.homeLon, builder: (column) => column);
+
+  GeneratedColumn<String> get homeTimezone => $composableBuilder(
+    column: $table.homeTimezone,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => column,
@@ -47241,6 +47512,10 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> sweatTestSource = const Value.absent(),
                 Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
                 Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+                Value<String?> homeCity = const Value.absent(),
+                Value<double?> homeLat = const Value.absent(),
+                Value<double?> homeLon = const Value.absent(),
+                Value<String?> homeTimezone = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -47301,6 +47576,10 @@ class $$UserProfilesTableTableTableManager
                 sweatTestSource: sweatTestSource,
                 weightPoundsUpdatedAt: weightPoundsUpdatedAt,
                 bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
+                homeCity: homeCity,
+                homeLat: homeLat,
+                homeLon: homeLon,
+                homeTimezone: homeTimezone,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -47365,6 +47644,10 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> sweatTestSource = const Value.absent(),
                 Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
                 Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+                Value<String?> homeCity = const Value.absent(),
+                Value<double?> homeLat = const Value.absent(),
+                Value<double?> homeLon = const Value.absent(),
+                Value<String?> homeTimezone = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -47425,6 +47708,10 @@ class $$UserProfilesTableTableTableManager
                 sweatTestSource: sweatTestSource,
                 weightPoundsUpdatedAt: weightPoundsUpdatedAt,
                 bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
+                homeCity: homeCity,
+                homeLat: homeLat,
+                homeLon: homeLon,
+                homeTimezone: homeTimezone,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
