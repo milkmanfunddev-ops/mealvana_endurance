@@ -8,18 +8,18 @@ surgery on a script. No Meal changes what it shows.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A pure function takes a Meal and the Tile bank and returns the resolved Image mode, its Tiles,
+- [x] A pure function takes a Meal and the Tile bank and returns the resolved Image mode, its Tiles,
       the blocked flag and a reason. It performs no network, database or model calls.
-- [ ] Running the assignment pass before and after the change produces byte-identical output for
+- [x] Running the assignment pass before and after the change produces byte-identical output for
       every Meal in the library.
-- [ ] A Dish photo resolves to `dish` even when several Tiles are available.
-- [ ] A Transformed Meal with Tiles available resolves to `none`, blocked, with a reason.
-- [ ] A Meal whose only Tile candidate is a seasoning, oil or liquid resolves to `none`, not to that
+- [x] A Dish photo resolves to `dish` even when several Tiles are available.
+- [x] A Transformed Meal with Tiles available resolves to `none`, blocked, with a reason.
+- [x] A Meal whose only Tile candidate is a seasoning, oil or liquid resolves to `none`, not to that
       Tile.
-- [ ] A one-ingredient Meal with one Tile resolves to `tile`.
-- [ ] A Meal of several ingredients with one Tile resolves to `none`, blocked, and says why.
-- [ ] A Separable Meal with two to four Tiles resolves to `mosaic`, capped at four, in
+- [x] A one-ingredient Meal with one Tile resolves to `tile`.
+- [x] A Meal of several ingredients with one Tile resolves to `none`, blocked, and says why.
+- [x] A Separable Meal with two to four Tiles resolves to `mosaic`, capped at four, in
       principal-ingredient order.
-- [ ] The same inputs produce the same output on a re-run.
+- [x] The same inputs produce the same output on a re-run.

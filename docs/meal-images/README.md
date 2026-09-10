@@ -33,6 +33,19 @@ a handful of shared "grain bowl" stock photos would.
 `none` deliberately does not fall back to an icon glyph. A row can move up the
 ladder later simply by re-running pass 3 after the bank grows.
 
+The rules that pick the rung live in `scripts/meal-images/lib/ladder.mjs` —
+`resolveMealImage(meal, bank)`, a pure function that touches no network, no
+database and no model. Pass 3 is only the part that cannot be pure: it reads the
+bank and the meals, applies the rules and writes the answers. So changing what a
+meal shows is an edit to one function with an assertion beside it:
+
+```bash
+node --test scripts/meal-images/lib/ladder.test.mjs
+```
+
+Every rule in that file was argued for and should break exactly one test when it
+changes.
+
 ## Pipeline
 
 ```
