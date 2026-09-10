@@ -1,8 +1,10 @@
-# 13: The companion that speaks first — DEFERRED
+# 09: The companion that speaks first
 
 **Status:** deferred
 **Blocked by:** A decision from Lee — what makes Vana speak
 **Next:** Nothing to run. The three candidate trigger sets are below for when you want to pick one.
+
+*(Was ticket 13 of the old set; renumbered 2026-09-10.)*
 
 **What the export draws:** Vana speaking unprompted. A traced ring around the launcher for about two
 seconds, then a colour tint — orange when there is something to do, electrolyte when it is only news.
