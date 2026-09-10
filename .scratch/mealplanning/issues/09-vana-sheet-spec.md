@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** spec written; NOT synced (2026-09-09)
+**Status:** spec revised against the export; awaiting confirmation, not synced (2026-09-10)
 
 - [x] Spec written in the QA repo under the design components, versioned, citing the tokens it composes
 - [ ] Synced verbatim into this repo's SSOT mirror; nothing edited app-side
@@ -31,4 +31,21 @@ this repo. Reconcile the two first; then mirror.
 
 `/design-sync` is also not the mirror: it publishes the design-system package to the claude.ai
 design project. That is an outward-facing publish and is Lee's to run.
+
+**Revised 2026-09-10 against `docs/New Homepage with updated navbar calendar and chat.html`**
+(QA repo commit `9ffd92e`). The export answers two of the four questions and adds five contracts the
+first draft did not have.
+
+Answered by the export, needing only confirmation:
+- **Q-VS1 rest height** — three heights, `auto` / 75% / 100%, the grabber dragging between them.
+- **Q-VS2 the launcher's mark** — a speech-bubble outline drawn as a path, not a Font Awesome glyph.
+  That makes it the first branded glyph on the shell, which is worth confirming deliberately rather
+  than by omission.
+
+Still open: **Q-VS3** (does the launcher collapse with the tab bar on scroll — the export only shows
+the bar retracting while Vana *speaks*, which is the deferred proactive behaviour) and **Q-VS4** (does
+the FAB clearance rule extend to the Plan tab's swipe rows).
+
+Added from the export: the sheet condenses back into the launcher rather than sliding away; the status
+chip; the message treatments; the quick replies and how they retire; the composer's send state.
 
