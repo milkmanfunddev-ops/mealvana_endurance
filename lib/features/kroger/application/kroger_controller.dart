@@ -46,6 +46,15 @@ Future<String?> krogerUserId(Ref ref) async {
   return ref.read(appExternalDepsProvider).supabaseClient.auth.currentUser?.id;
 }
 
+/// The Kroger sign-in is shared with the system browser rather than kept in
+/// a session of the OAuth step's own.
+///
+/// An ephemeral session throws the sign-in away when the step ends, so the
+/// Hand-off would land on a Kroger that has never heard of the shopper and
+/// ask them to sign in a second time. Sharing it is the whole reason one
+/// sign-in is enough.
+const krogerAuthOptions = FlutterWebAuth2Options(preferEphemeral: false);
+
 @riverpod
 KrogerBrowser krogerBrowser(Ref ref) => (url, scheme) async {
   if (defaultTargetPlatform == TargetPlatform.android &&
@@ -55,9 +64,16 @@ KrogerBrowser krogerBrowser(Ref ref) => (url, scheme) async {
   return FlutterWebAuth2.authenticate(
     url: url,
     callbackUrlScheme: scheme,
-    options: const FlutterWebAuth2Options(preferEphemeral: true),
+    options: krogerAuthOptions,
   );
 };
+
+/// Opens something outside Mealvana, and says whether anything took it.
+typedef KrogerLauncher = Future<bool> Function(Uri url, LaunchMode mode);
+
+@riverpod
+KrogerLauncher krogerLauncher(Ref ref) =>
+    (url, mode) => launchUrl(url, mode: mode);
 
 class KrogerState {
   const KrogerState({
@@ -85,6 +101,11 @@ class KrogerState {
 
   /// Derived, so availability and its reason cannot disagree.
   bool get available => unavailableReason == null;
+
+  /// Whether this session talks to the Kroger the shopper shops at.
+  /// Certification's cart is not the one at kroger.com, so nothing is ever
+  /// handed off to it.
+  bool get isProduction => environment == 'production';
 
   /// The postcode the shopper's groceries are going to, for this session
   /// only. Kroger's acceptable-use terms for the Locations API forbid storing
@@ -576,10 +597,19 @@ class KrogerController extends _$KrogerController {
       ),
     );
   });
-  Future<void> export() => _run(() async {
+
+  /// Sends what matched to the shopper's Kroger cart, and takes them there.
+  ///
+  /// [resend] is a shopper who has been told what a second send does to an
+  /// add-only cart and asked for one anyway. Nothing else can set it: a
+  /// repeated tap, a retried request and a reloaded screen all arrive
+  /// without it and are refused by the server's own record of the send.
+  Future<void> export({bool resend = false}) => _run(() async {
     final draft = _reconcile(state.value!.draft);
     await _persist(draft);
-    if (!draft.ready) throw const KrogerException('review_required');
+    if (!(resend ? draft.resendable : draft.ready)) {
+      throw const KrogerException('review_required');
+    }
     final synced = await _repo.ensureSynced(_user!, planId);
     if (synced.dirty) throw const KrogerException('review_required');
     // Reconcile again after network work: a plan change invalidates the reviewed quantities.
@@ -595,6 +625,7 @@ class KrogerController extends _$KrogerController {
       'planId': planId,
       'store': draft.store!.id,
       'modality': draft.modality,
+      'resend': resend,
       // Only what matched. An unmatched line has nothing to send and is the
       // shopper's own to add on Kroger's site.
       'items': [
@@ -635,14 +666,38 @@ class KrogerController extends _$KrogerController {
           receiptStatus: (result['receipt'] as Map)['status'] as String,
         ),
       );
+      // The Hand-off. Kroger acknowledged the add, so the items are in the
+      // cart whether or not Kroger opens; a launch that fails is not a send
+      // that failed, and says nothing. The button stays for another try.
+      if (state.value!.draft.sent) await _openKroger();
     }
   });
-  Future<void> openCart() => _run(() async {
-    if (!await launchUrl(
-      Uri.parse('https://www.kroger.com/cart'),
-      mode: LaunchMode.externalApplication,
-    )) {
-      throw const KrogerException('unavailable');
-    }
+
+  /// Kroger's cart, where the shopper picks a delivery slot, adds what
+  /// Mealvana could not match, and pays. Mealvana embeds none of that.
+  static final _cart = Uri.parse('https://www.kroger.com/cart');
+
+  Future<void> handOff() => _run(() async {
+    if (!await _openKroger()) throw const KrogerException('unavailable');
   });
+
+  /// The Kroger app when it is installed, and the system browser — where the
+  /// shopper is already signed in — when it is not. Certification's cart is
+  /// not the one at kroger.com, so that environment hands off nowhere.
+  Future<bool> _openKroger() async {
+    if (!state.value!.isProduction) return false;
+    final launch = ref.read(krogerLauncherProvider);
+    for (final mode in const [
+      LaunchMode.externalNonBrowserApplication,
+      LaunchMode.externalApplication,
+    ]) {
+      try {
+        if (await launch(_cart, mode)) return true;
+      } catch (_) {
+        // Nothing took it. The next mode is the answer, and if neither does,
+        // so is the button the shopper is left looking at.
+      }
+    }
+    return false;
+  }
 }

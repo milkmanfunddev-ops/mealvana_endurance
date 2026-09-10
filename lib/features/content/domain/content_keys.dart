@@ -639,6 +639,13 @@ class ContentKeys {
   static const String krogerPriceNote = 'kroger.price_note';
   static const String krogerSend = 'kroger.send';
   static const String krogerSendConfirm = 'kroger.send_confirm';
+
+  /// The second send, and what it costs. Kroger's cart is add-only: Mealvana
+  /// cannot read it, cannot take anything out of it, and cannot tell whether
+  /// the first send is still in it. The confirmation says so before the
+  /// shopper doubles their groceries.
+  static const String krogerSendAgain = 'kroger.send_again';
+  static const String krogerSendAgainConfirm = 'kroger.send_again_confirm';
   static const String krogerSent = 'kroger.sent';
   static const String krogerUnknown = 'kroger.unknown';
   static const String krogerSending = 'kroger.sending';

@@ -311,6 +311,7 @@ class TestClient extends KrogerClient {
   changed = false;
   timeout = false;
   missing = false;
+  added: unknown[][] = [];
   constructor() {
     super(cfg);
   }
@@ -323,8 +324,9 @@ class TestClient extends KrogerClient {
     this.exchanges++;
     return Promise.resolve({ access_token: "test-token", expires_in: 3600 });
   }
-  override add() {
+  override add(lines: unknown[]) {
     this.adds++;
+    this.added.push(lines);
     return this.timeout
       ? Promise.reject(new Error("timeout"))
       : Promise.resolve();
@@ -362,6 +364,57 @@ Deno.test("replay and concurrent exports add at most once", async () => {
   ]);
   await service.run("export", payload());
   assertEquals(client.adds, 1);
+});
+Deno.test("every line reaches the cart tagged with the draft's Modality", async () => {
+  // The cart is where the Modality finally lands: Kroger's checkout starts
+  // from delivery because the lines said so, not because the shopper picked
+  // it there.
+  const { client, service } = setup();
+  await service.run("export", { ...payload(), modality: "DELIVERY" });
+  assertEquals(client.added[0], [{
+    upc: product.upc,
+    quantity: 2,
+    modality: "DELIVERY",
+  }]);
+});
+Deno.test("a deliberate resend adds again; nothing else does", async () => {
+  // Kroger's cart is add-only, so a second send genuinely doubles what is in
+  // it. That is the shopper's decision to make, and only theirs: it happens
+  // when they have said so, and never on a replayed or repeated request.
+  const { db, client, service } = setup();
+  await service.run("export", payload());
+  await service.run("export", payload());
+  assertEquals(client.adds, 1);
+  await service.run("export", { ...payload(), resend: true });
+  assertEquals(client.adds, 2);
+  assertEquals(db.tables.kroger_exports.length, 1);
+  assertEquals(db.tables.kroger_exports[0].status, "sent");
+});
+Deno.test("an ambiguous or in-flight send is never sent again", async () => {
+  // `unknown` cannot say what reached the cart and `sending` may still be on
+  // its way, so neither can be honestly described to a shopper about to
+  // double it. Their Kroger cart is where those two are settled.
+  for (const status of ["unknown", "sending"]) {
+    const { db, client, service } = setup();
+    await service.run("export", payload());
+    db.tables.kroger_exports[0].status = status;
+    const result = await service.run("export", { ...payload(), resend: true });
+    assertEquals(client.adds, 1);
+    assertEquals((result.receipt as any).status, status);
+    assertEquals(db.tables.kroger_exports.length, 1);
+  }
+});
+Deno.test("a resend takes over the receipt rather than deleting it", async () => {
+  // There is never a moment with no durable row: it is the only thing
+  // standing between an ambiguous send and a replayed one.
+  const { db, service } = setup();
+  await service.run("export", payload());
+  const first = db.tables.kroger_exports[0].id;
+  const next = { ...payload(), resend: true };
+  await service.run("export", next);
+  assertEquals(db.tables.kroger_exports.length, 1);
+  assertEquals(db.tables.kroger_exports[0].id, next.id);
+  assertEquals(db.tables.kroger_exports[0].id === first, false);
 });
 Deno.test("ambiguous add is durably unknown and never replayed", async () => {
   const { db, client, service } = setup();

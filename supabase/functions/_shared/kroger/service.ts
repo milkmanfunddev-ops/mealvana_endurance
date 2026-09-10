@@ -325,7 +325,14 @@ export class KrogerService {
       ).eq("environment", this.client.config.environment).eq("plan_id", planId)
         .maybeSingle(),
     );
-    if (existing) return { receipt: existing }; // Never replay a sent, sending, or unknown batch.
+    // Never replay a sent, sending, or unknown batch. A shopper who has been
+    // told what a second send does to an add-only cart may ask for one, but
+    // only over a send Kroger acknowledged: `sending` may still be in flight,
+    // and after `unknown` nobody knows what reached the cart, so neither can
+    // honestly be described to them before they double it. Their cart, in
+    // Kroger, is where those two are resolved.
+    const resend = body.resend === true && existing?.status === "sent";
+    if (existing && !resend) return { receipt: existing };
     // Fetched before the preflight so a shopper who has to reconnect learns it
     // before the work, not after it — but it pays for nothing except the add.
     const token = await this.customerToken();
@@ -356,7 +363,7 @@ export class KrogerService {
     }
     if (changed.length) return { changed }; // No cart write has happened. Review before trying again.
     const fp = await fingerprint(store, lines);
-    const inserted = await this.admin.from("kroger_exports").insert({
+    const row = {
       id,
       user_id: this.userId,
       plan_id: planId,
@@ -364,9 +371,22 @@ export class KrogerService {
       fingerprint: fp,
       payload: { store, lines },
       status: "sending",
-    });
-    if (inserted.error) {
-      if (inserted.error.code === "23505") {
+    };
+    // A resend takes over the receipt it was allowed past rather than
+    // deleting it: `unique(user_id, plan_id, environment)` allows one per
+    // plan, and there must never be a moment with none — the durable row is
+    // the only thing standing between an ambiguous send and a replayed one.
+    // It is claimed by the id and status that were read, so two resends
+    // racing leave one winner and the loser reads back what the winner
+    // wrote.
+    const claimed = existing
+      ? await this.admin.from("kroger_exports").update(row).eq(
+        "id",
+        existing.id,
+      ).eq("status", "sent").eq("user_id", this.userId).select("id")
+      : await this.admin.from("kroger_exports").insert(row);
+    if (claimed.error || existing && !checked(claimed).length) {
+      if (claimed.error?.code === "23505" || !claimed.error) {
         const receipt = checked(
           await this.admin.from("kroger_exports").select("id,status,created_at")
             .eq("user_id", this.userId).eq(

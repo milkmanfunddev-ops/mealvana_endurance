@@ -142,6 +142,11 @@ class KrogerDraft {
   /// A receipt is historical: it never claims to reflect Kroger's current cart.
   final String? receiptStatus;
   bool get exported => receiptStatus != null;
+
+  /// A send Kroger acknowledged. `sending` may still be in flight and after
+  /// `unknown` nothing here knows what reached the cart, so only this one can
+  /// be described to a shopper deciding whether to send it all again.
+  bool get sent => receiptStatus == 'sent';
   List<KrogerLine> get included => lines.where((l) => !l.excluded).toList();
 
   /// The three parts of the review, which every line belongs to exactly one
@@ -154,11 +159,12 @@ class KrogerDraft {
       included.where((l) => l.product == null).toList();
   List<KrogerLine> get skipped => lines.where((l) => l.excluded).toList();
 
+  /// Whether what the shopper has approved is fit to send.
+  ///
   /// An unmatched line does not hold the order back. A delivery catalogue
   /// will not cover a whole week's shopping, and refusing to send anything
   /// until it does would make the feature inert in the market it is for.
-  bool get ready =>
-      !exported &&
+  bool get reviewed =>
       store != null &&
       matched.isNotEmpty &&
       matched.every(
@@ -168,6 +174,15 @@ class KrogerDraft {
             l.quantity >= 1 &&
             l.quantity <= 99,
       );
+
+  /// Whether it can be sent, which a draft that has been is not.
+  bool get ready => reviewed && !exported;
+
+  /// Whether it can be sent a second time — something the shopper asks for
+  /// outright, having been told what that does to a cart nothing can take
+  /// items out of. Only over a send Kroger acknowledged: what a `sending` or
+  /// `unknown` receipt would be adding to cannot be described to them.
+  bool get resendable => reviewed && sent;
   Map<String, dynamic> toJson() => {
     'planId': planId,
     'store': store?.toJson(),

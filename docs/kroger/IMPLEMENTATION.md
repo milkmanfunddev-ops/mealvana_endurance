@@ -103,6 +103,23 @@ not a claim about current cart contents, and application-side uniqueness cannot
 offer exactly-once semantics inside Kroger. Never delete an ambiguous receipt to
 “fix” a stuck export without reviewing the customer's cart.
 
+A second send is the shopper's own decision, taken through a confirmation that
+says what an add-only cart does with it, and reaches the server as
+`resend: true` on the export body — the only thing that gets past the existing
+receipt, and only over a `sent` one. A `sending` receipt may still be in flight
+and an `unknown` one cannot say what reached the cart, so neither is offered a
+second send: those are settled in the customer's cart, in Kroger. The resend
+takes the `sent` receipt over in place, claimed by the id and status that were
+read, so there is never a moment with no durable row. The items the first send
+added stay in the cart, because Kroger offers no way to take them out.
+
+After a `sent` receipt the shopper is handed off to `kroger.com/cart`: the
+Kroger app when it is installed (`externalNonBrowserApplication`), the system
+browser when it is not. The OAuth step does not ask for an ephemeral browser
+session, so the sign-in the shopper completed there is the one the browser
+already holds and the Hand-off does not ask for a second. A Hand-off that
+cannot open Kroger is not a failed send and is never reported as one.
+
 Certification and production receipts are isolated. Switching API environments
 clears old store/product approvals while preserving ingredient rows for review.
 The feature uses the existing Pro gate, including its documented dev/internal bypass.

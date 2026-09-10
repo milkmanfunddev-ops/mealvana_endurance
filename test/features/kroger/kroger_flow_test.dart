@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/kroger/application/kroger_controller.dart';
@@ -106,6 +108,8 @@ void main() {
   late List<String> searches;
   Map<String, dynamic>? sent;
   Map<String, dynamic>? receipt;
+  late List<(Uri, LaunchMode)> launches;
+  late Set<LaunchMode> installed;
   String? deviceArea;
   var serves = true;
   Object? covered;
@@ -138,6 +142,13 @@ void main() {
     searches = [];
     sent = null;
     receipt = null;
+    launches = [];
+    // Both a Kroger app and a browser to fall back on, until a test says
+    // otherwise.
+    installed = {
+      LaunchMode.externalNonBrowserApplication,
+      LaunchMode.externalApplication,
+    };
     deviceArea = '35209';
     serves = true;
     covered = true;
@@ -201,6 +212,12 @@ void main() {
           (ref) =>
               () async => deviceArea,
         ),
+        krogerLauncherProvider.overrideWith(
+          (ref) => (url, mode) async {
+            launches.add((url, mode));
+            return installed.contains(mode);
+          },
+        ),
       ],
     );
     container.listen(krogerControllerProvider(plan), (_, _) {});
@@ -222,6 +239,17 @@ void main() {
     container.invalidate(krogerControllerProvider(plan));
     await container.read(krogerControllerProvider(plan).future);
     await areaSettled();
+  }
+
+  /// The one environment whose cart is the shopper's own. Certification's is
+  /// not at kroger.com, so nothing is ever handed off to it.
+  Future<void> inProduction() async {
+    status = {
+      'available': true,
+      'connected': true,
+      'environment': 'production',
+    };
+    await restart();
   }
 
   /// A shopper opening this for the first time with a device that will not
@@ -433,6 +461,146 @@ void main() {
     await search;
     expect(current().products, isEmpty);
     expect(repo.load('user-b', plan).lines.single.product, null);
+  });
+  group('sending once, and handing off once', () {
+    test('the sign-in the shopper completed is shared, not thrown away', () {
+      // An ephemeral session keeps the Kroger sign-in inside the OAuth
+      // browser and drops it afterwards, so the Hand-off would land on a
+      // Kroger that has never heard of them and ask them to sign in again.
+      expect(krogerAuthOptions.preferEphemeral, isFalse);
+    });
+    test('a successful send takes the shopper to Kroger', () async {
+      await inProduction();
+      await reviewed();
+      await controller.export();
+      expect(current().draft.receiptStatus, 'sent');
+      expect(launches.first.$1, Uri.parse('https://www.kroger.com/cart'));
+    });
+    test('the Kroger app is opened when it is installed', () async {
+      await inProduction();
+      await reviewed();
+      installed = {LaunchMode.externalNonBrowserApplication};
+      await controller.export();
+      expect(launches.map((l) => l.$2), [
+        LaunchMode.externalNonBrowserApplication,
+      ]);
+    });
+    test('and the system browser when it is not', () async {
+      // Where they are already signed in, because the OAuth step no longer
+      // asks for a session of its own.
+      await inProduction();
+      await reviewed();
+      installed = {LaunchMode.externalApplication};
+      await controller.export();
+      expect(launches.map((l) => l.$2), [
+        LaunchMode.externalNonBrowserApplication,
+        LaunchMode.externalApplication,
+      ]);
+    });
+    test('a Hand-off that cannot open Kroger is not a failed send', () async {
+      // The items are in the cart either way. Reporting the send as broken
+      // because a launch failed would send the shopper back to do it twice.
+      await inProduction();
+      await reviewed();
+      installed = {};
+      await controller.export();
+      expect(current().draft.receiptStatus, 'sent');
+      expect(current().message, isNull);
+    });
+    test('nothing is handed off to a certification cart', () async {
+      await reviewed();
+      await controller.export();
+      expect(current().draft.receiptStatus, 'sent');
+      expect(launches, isEmpty);
+    });
+    test('a sent draft is sent again only when asked outright', () async {
+      await reviewed();
+      await controller.export();
+      await controller.export();
+      expect(exports, 1);
+      await controller.export(resend: true);
+      expect(exports, 2);
+      expect(sent!['resend'], true);
+    });
+    test('an ambiguous send is not offered a second one', () async {
+      // The screen says it cannot tell what reached the cart. Offering to
+      // send it all again under those words would be the app guessing on the
+      // shopper's behalf; Kroger's own cart is where this one is settled.
+      await reviewed();
+      ambiguous = true;
+      await controller.export();
+      expect(current().draft.receiptStatus, 'sending');
+      expect(current().draft.sent, false);
+      await controller.export(resend: true);
+      expect(exports, 1);
+    });
+    testWidgets('and no control to do it with', (tester) async {
+      await tester.runAsync(() async {
+        await reviewed();
+        ambiguous = true;
+        await controller.export();
+      });
+      await showScreen(tester);
+      expect(find.byKey(const ValueKey('kroger.export_again')), findsNothing);
+      expect(find.byKey(const ValueKey('kroger.export')), findsNothing);
+    });
+    testWidgets(
+      'the second send is behind a confirmation that says what it does',
+      (tester) async {
+        final copy = loadDefaultContent();
+        await tester.runAsync(() async {
+          await reviewed();
+          await controller.export();
+        });
+        await showScreen(tester);
+        // The plain send is gone: a sent draft is a record, not something to
+        // tap again by accident.
+        expect(find.byKey(const ValueKey('kroger.export')), findsNothing);
+        await tester.tap(find.byKey(const ValueKey('kroger.export_again')));
+        await tester.pumpAndSettle();
+        expect(find.text(copy['kroger.send_again_confirm']!), findsOneWidget);
+        await tester.tap(find.text(copy['kroger.cancel']!));
+        await tester.pumpAndSettle();
+        expect(exports, 1);
+        await tester.tap(find.byKey(const ValueKey('kroger.export_again')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text(copy['kroger.continue']!));
+        await tester.pumpAndSettle();
+        expect(exports, 2);
+      },
+    );
+    test('Kroger is never embedded, and payment is never handled here', () {
+      // Mealvana takes the shopper to Kroger and stops. Embedding Kroger's
+      // site takes a webview package, and a webview carries a cookie jar of
+      // its own — which is a second sign-in, and Mealvana standing between
+      // the shopper and Kroger's checkout. What the feature imports is the
+      // evidence: nothing can be embedded that was never depended on.
+      final imports = Directory('lib/features/kroger')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'))
+          .expand(
+            (f) => RegExp(
+              r"^import '([^']+)'",
+              multiLine: true,
+            ).allMatches(f.readAsStringSync()).map((m) => m.group(1)!),
+          )
+          .toList();
+      expect(imports, isNotEmpty);
+      for (final package in const [
+        'webview',
+        'inappwebview',
+        'in_app_browser',
+        'pay',
+        'stripe',
+      ]) {
+        expect(
+          imports.where((i) => i.contains(package)),
+          isEmpty,
+          reason: package,
+        );
+      }
+    });
   });
   test(
     'export waits for sync and records receipt; repeat taps cannot resend',

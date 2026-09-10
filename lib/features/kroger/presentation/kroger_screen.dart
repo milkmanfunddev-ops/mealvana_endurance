@@ -161,9 +161,10 @@ class KrogerScreen extends ConsumerWidget {
                               : ContentKeys.krogerUnknown,
                         ),
                       ),
-                      if (s.environment == 'production')
+                      if (s.isProduction)
                         FilledButton(
-                          onPressed: controller.openCart,
+                          key: const ValueKey('kroger.hand_off'),
+                          onPressed: controller.handOff,
                           child: Text(
                             krogerText(ref, ContentKeys.krogerOpenCart),
                           ),
@@ -268,6 +269,30 @@ class KrogerScreen extends ConsumerWidget {
                           }
                         },
                         child: Text(krogerText(ref, ContentKeys.krogerSend)),
+                      ),
+                    // Sending again is a separate thing, asked for outright.
+                    // Kroger's cart takes additions and nothing else, so this
+                    // adds a second copy of everything and Mealvana cannot
+                    // take it back — which is what the confirmation says.
+                    //
+                    // Offered over an acknowledged send and no other: a
+                    // `sending` or `unknown` receipt cannot say what is in the
+                    // cart, and Kroger's own cart is where those are settled.
+                    if (s.draft.resendable && s.connected)
+                      OutlinedButton(
+                        key: const ValueKey('kroger.export_again'),
+                        onPressed: () async {
+                          if (await _confirm(
+                            context,
+                            ref,
+                            ContentKeys.krogerSendAgainConfirm,
+                          )) {
+                            await controller.export(resend: true);
+                          }
+                        },
+                        child: Text(
+                          krogerText(ref, ContentKeys.krogerSendAgain),
+                        ),
                       ),
                   ],
                 ),

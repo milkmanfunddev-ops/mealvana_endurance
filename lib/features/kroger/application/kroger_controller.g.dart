@@ -11,9 +11,10 @@ part of 'kroger_controller.dart';
 /// The delivery area from the device, via the app's shared location service.
 ///
 /// Returns null for every way this can fail to produce an answer — the
-/// permission refused, the services off, the reverse lookup empty — because
-/// they all lead to the same place: the shopper types their postcode instead.
-/// Nothing here is stored; the coordinates do not leave this function.
+/// permission refused, the services off, the reverse lookup empty or thrown —
+/// because they all lead to the same place: the shopper types their postcode
+/// instead. Nothing here is stored; the coordinates do not leave this
+/// function.
 
 @ProviderFor(krogerAreaFinder)
 const krogerAreaFinderProvider = KrogerAreaFinderProvider._();
@@ -21,9 +22,10 @@ const krogerAreaFinderProvider = KrogerAreaFinderProvider._();
 /// The delivery area from the device, via the app's shared location service.
 ///
 /// Returns null for every way this can fail to produce an answer — the
-/// permission refused, the services off, the reverse lookup empty — because
-/// they all lead to the same place: the shopper types their postcode instead.
-/// Nothing here is stored; the coordinates do not leave this function.
+/// permission refused, the services off, the reverse lookup empty or thrown —
+/// because they all lead to the same place: the shopper types their postcode
+/// instead. Nothing here is stored; the coordinates do not leave this
+/// function.
 
 final class KrogerAreaFinderProvider
     extends
@@ -36,9 +38,10 @@ final class KrogerAreaFinderProvider
   /// The delivery area from the device, via the app's shared location service.
   ///
   /// Returns null for every way this can fail to produce an answer — the
-  /// permission refused, the services off, the reverse lookup empty — because
-  /// they all lead to the same place: the shopper types their postcode instead.
-  /// Nothing here is stored; the coordinates do not leave this function.
+  /// permission refused, the services off, the reverse lookup empty or thrown —
+  /// because they all lead to the same place: the shopper types their postcode
+  /// instead. Nothing here is stored; the coordinates do not leave this
+  /// function.
   const KrogerAreaFinderProvider._()
     : super(
         from: null,
@@ -72,7 +75,7 @@ final class KrogerAreaFinderProvider
   }
 }
 
-String _$krogerAreaFinderHash() => r'f7fef59d0ca1caddbce6c86ebd8dec57f6f3575e';
+String _$krogerAreaFinderHash() => r'f2267a1d96d86ee7525805455b73e05657995202';
 
 @ProviderFor(krogerUserId)
 const krogerUserIdProvider = KrogerUserIdProvider._();
@@ -146,7 +149,48 @@ final class KrogerBrowserProvider
   }
 }
 
-String _$krogerBrowserHash() => r'5e539534d7178bdb94ff63df3d59d7415c158d2b';
+String _$krogerBrowserHash() => r'5582d3f7a43f3c2b7a061de65f864157de2a0b5e';
+
+@ProviderFor(krogerLauncher)
+const krogerLauncherProvider = KrogerLauncherProvider._();
+
+final class KrogerLauncherProvider
+    extends $FunctionalProvider<KrogerLauncher, KrogerLauncher, KrogerLauncher>
+    with $Provider<KrogerLauncher> {
+  const KrogerLauncherProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'krogerLauncherProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$krogerLauncherHash();
+
+  @$internal
+  @override
+  $ProviderElement<KrogerLauncher> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  KrogerLauncher create(Ref ref) {
+    return krogerLauncher(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(KrogerLauncher value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<KrogerLauncher>(value),
+    );
+  }
+}
+
+String _$krogerLauncherHash() => r'cf464c8ac54901269082d3242d3971f949bc4594';
 
 @ProviderFor(KrogerController)
 const krogerControllerProvider = KrogerControllerFamily._();
@@ -189,7 +233,7 @@ final class KrogerControllerProvider
   }
 }
 
-String _$krogerControllerHash() => r'4f31063456bff68fe14aa317f614e6bac4168e69';
+String _$krogerControllerHash() => r'895f4a7479d9dcb96edd77ea00445803d53198e7';
 
 final class KrogerControllerFamily extends $Family
     with
