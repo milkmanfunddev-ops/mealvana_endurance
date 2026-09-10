@@ -5,6 +5,7 @@ import {
   fingerprint,
   fulfillmentFilter,
   KrogerError,
+  type Modality,
   modality,
   type Product,
   productFromApi,
@@ -12,6 +13,10 @@ import {
   textInput,
 } from "./catalog.ts";
 
+// A probe costs one Products call per candidate, so resolving an area has to
+// be bounded work rather than a walk down however many Locations Kroger names.
+// Three is enough to get past a Location that cannot serve the Modality.
+const PROBE_LIMIT = 3;
 const uuid = (v: unknown) => {
   const s = textInput(v, 36);
   if (!/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(s)) {
@@ -127,6 +132,27 @@ export class KrogerService {
         .filter(Boolean).join(", "),
     }));
   }
+  // Whether a Location will serve this Modality at all.
+  //
+  // Kroger's Locations endpoint has no fulfillment filter, and a Location's
+  // own booleans are not Location-truthful, so the only honest answer is
+  // whether a filtered product search there returns anything. Milk is the
+  // probe because every Location that sells groceries has it: at the
+  // Birmingham Spoke on 2026-09-08 it returned 5 results under the delivery
+  // filter and 0 under curbside, which is exactly the distinction being made.
+  private async serves(store: string, mode: Modality): Promise<boolean> {
+    const params = new URLSearchParams({
+      "filter.term": "milk",
+      "filter.locationId": store,
+      "filter.fulfillment": fulfillmentFilter(mode),
+      "filter.limit": "1",
+    });
+    const raw = await this.client.get(
+      `/products?${params}`,
+      await this.client.applicationToken(),
+    );
+    return (raw.data ?? []).length > 0;
+  }
   async run(action: string, body: any): Promise<Record<string, unknown>> {
     const { base, clientId, redirect, environment } = this.client.config;
     if (action === "status") {
@@ -219,7 +245,9 @@ export class KrogerService {
     // Catalog reads are paid for by the application token: Locations needs no
     // scope, Products needs only `product.compact`, and neither needs to know
     // who the shopper is. Only the cart write does.
-    if (action === "stores") return { stores: await this.locations(body) };
+    //
+    // There is no action that hands a shopper a list of Locations to pick
+    // from. They say where their groceries are going; the Location follows.
     // Coverage: whether Kroger serves this area at all, answerable before the
     // shopper has authorized anything. An area with no Location is one where
     // the feature is never offered.
@@ -231,6 +259,20 @@ export class KrogerService {
     if (action === "coverage") {
       const stores = await this.locations(body);
       return { covered: stores.length > 0, stores };
+    }
+    // The Location for a delivery area, which the shopper never chooses and
+    // never sees. Modality comes first and decides which Location can serve
+    // them; the area only says where to look.
+    if (action === "location") {
+      const mode = modality(body.modality);
+      const candidates = await this.locations(body);
+      for (const location of candidates.slice(0, PROBE_LIMIT)) {
+        if (await this.serves(location.id, mode)) return { location };
+      }
+      // Better none than the nearest one: a Location that cannot serve this
+      // Modality returns nothing for every search made against it, which is
+      // the feature reporting success and doing nothing.
+      return { location: null };
     }
     if (action === "search") {
       const query = textInput(body.query),

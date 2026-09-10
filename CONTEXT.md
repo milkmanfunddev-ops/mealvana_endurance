@@ -34,6 +34,13 @@ choose a slot and pay. Mealvana never places an order, sees an order, or knows w
 happened, and never handles payment.
 _Avoid_: Checkout, purchase, order placement
 
+**Delivery area**:
+Where the shopper wants their groceries delivered, as a postcode. It is the only thing about a
+shopper's whereabouts this feature shows, sends, or holds, and it is never stored: Kroger's
+acceptable-use terms for the Locations API forbid keeping data about a customer's location. The
+Location it resolves to is persisted; the area itself is asked for again.
+_Avoid_: Address, store area, zone
+
 **Coverage**:
 Whether any Location can serve a given area at a given Modality. Answerable without a shopper
 account, and therefore knowable before anything is asked of them.

@@ -67,8 +67,6 @@ class KrogerScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(AppSpacing.md),
                   children: [
                     Text(krogerText(ref, ContentKeys.krogerIntro)),
-                    if (s.draft.store != null)
-                      Text(krogerText(ref, ContentKeys.krogerStoreNote)),
                     if (s.environment == 'certification' && s.available)
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -119,30 +117,38 @@ class KrogerScreen extends ConsumerWidget {
                           krogerText(ref, ContentKeys.krogerDisconnect),
                         ),
                       ),
-                    if (s.connected && s.available) ...[
-                      if (s.draft.store case final store?)
+                    // Where the groceries are going, and nothing about the
+                    // facility they come from: a shopper does not think in
+                    // Locations, and a Spoke is not somewhere to be sent.
+                    if (s.available) ...[
+                      if (s.confirmedArea case final area?) ...[
                         ListTile(
-                          title: Text(store.name),
+                          key: const ValueKey('kroger.area'),
+                          title: Text(
+                            _format(ref, ContentKeys.krogerDeliveryTo, {
+                              'area': area,
+                            }),
+                          ),
                           subtitle: Text(
-                            '${store.address}\n${krogerText(ref, s.draft.modality == 'PICKUP' ? ContentKeys.krogerPickup : ContentKeys.krogerDelivery)}',
+                            krogerText(ref, ContentKeys.krogerDeliveryNote),
                           ),
                           trailing: TextButton(
-                            onPressed: () => _stores(context, ref, controller),
+                            onPressed: () => _area(context, ref, controller),
                             child: Text(
-                              krogerText(ref, ContentKeys.krogerChangeStore),
-                            ),
-                          ),
-                        )
-                      else
-                        OutlinedButton(
-                          onPressed: () => _stores(context, ref, controller),
-                          child: Text(
-                            krogerText(
-                              ref,
-                              ContentKeys.krogerChooseStoreAction,
+                              krogerText(ref, ContentKeys.krogerChangeArea),
                             ),
                           ),
                         ),
+                      ] else ...[
+                        Text(krogerText(ref, ContentKeys.krogerAreaUnknown)),
+                        OutlinedButton(
+                          key: const ValueKey('kroger.set_area'),
+                          onPressed: () => _area(context, ref, controller),
+                          child: Text(
+                            krogerText(ref, ContentKeys.krogerSetArea),
+                          ),
+                        ),
+                      ],
                     ],
                     if (s.draft.exported) ...[
                       Text(
@@ -164,6 +170,10 @@ class KrogerScreen extends ConsumerWidget {
                         ),
                       Text(krogerText(ref, ContentKeys.krogerAfterExport)),
                     ],
+                    // A Location, not an area: the Location is persisted and
+                    // the area is not, so a shopper coming back to a resolved
+                    // draft can still match even before saying where they are
+                    // again.
                     if (s.connected &&
                         s.draft.store != null &&
                         !s.draft.exported)
@@ -450,70 +460,17 @@ class _InputDialogState extends State<_InputDialog> {
   );
 }
 
-Future<void> _stores(
+/// The one place the shopper says anything about where they are: a postcode,
+/// typed once. There is no Location list here and there is not one anywhere
+/// else either — the Location follows from the area and the Modality.
+Future<void> _area(
   BuildContext context,
   WidgetRef ref,
   KrogerController controller,
 ) async {
-  final zip = await _input(context, ref, ContentKeys.krogerZip, numeric: true);
-  if (zip == null || !context.mounted) return;
-  await controller.findStores(zip);
-  if (!context.mounted) return;
-  final stores =
-      ref.read(krogerControllerProvider(controller.planId)).value?.stores ?? [];
-  var mode =
-      ref
-          .read(krogerControllerProvider(controller.planId))
-          .value
-          ?.draft
-          .modality ??
-      KrogerDraft.defaultModality;
-  await showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SegmentedButton<String>(
-                segments: [
-                  ButtonSegment(
-                    value: 'PICKUP',
-                    label: Text(krogerText(ref, ContentKeys.krogerPickup)),
-                  ),
-                  ButtonSegment(
-                    value: 'DELIVERY',
-                    label: Text(krogerText(ref, ContentKeys.krogerDelivery)),
-                  ),
-                ],
-                selected: {mode},
-                onSelectionChanged: (v) => setState(() => mode = v.first),
-              ),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    for (final store in stores)
-                      ListTile(
-                        title: Text(store.name),
-                        subtitle: Text(store.address),
-                        onTap: () {
-                          Navigator.pop(context);
-                          controller.selectStore(store, mode);
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
+  final area = await _input(context, ref, ContentKeys.krogerZip, numeric: true);
+  if (area == null) return;
+  await controller.setArea(area);
 }
 
 Future<void> _products(

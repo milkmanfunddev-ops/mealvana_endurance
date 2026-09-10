@@ -8,6 +8,71 @@ part of 'kroger_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The delivery area from the device, via the app's shared location service.
+///
+/// Returns null for every way this can fail to produce an answer — the
+/// permission refused, the services off, the reverse lookup empty — because
+/// they all lead to the same place: the shopper types their postcode instead.
+/// Nothing here is stored; the coordinates do not leave this function.
+
+@ProviderFor(krogerAreaFinder)
+const krogerAreaFinderProvider = KrogerAreaFinderProvider._();
+
+/// The delivery area from the device, via the app's shared location service.
+///
+/// Returns null for every way this can fail to produce an answer — the
+/// permission refused, the services off, the reverse lookup empty — because
+/// they all lead to the same place: the shopper types their postcode instead.
+/// Nothing here is stored; the coordinates do not leave this function.
+
+final class KrogerAreaFinderProvider
+    extends
+        $FunctionalProvider<
+          KrogerAreaFinder,
+          KrogerAreaFinder,
+          KrogerAreaFinder
+        >
+    with $Provider<KrogerAreaFinder> {
+  /// The delivery area from the device, via the app's shared location service.
+  ///
+  /// Returns null for every way this can fail to produce an answer — the
+  /// permission refused, the services off, the reverse lookup empty — because
+  /// they all lead to the same place: the shopper types their postcode instead.
+  /// Nothing here is stored; the coordinates do not leave this function.
+  const KrogerAreaFinderProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'krogerAreaFinderProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$krogerAreaFinderHash();
+
+  @$internal
+  @override
+  $ProviderElement<KrogerAreaFinder> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  KrogerAreaFinder create(Ref ref) {
+    return krogerAreaFinder(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(KrogerAreaFinder value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<KrogerAreaFinder>(value),
+    );
+  }
+}
+
+String _$krogerAreaFinderHash() => r'f7fef59d0ca1caddbce6c86ebd8dec57f6f3575e';
 
 @ProviderFor(krogerUserId)
 const krogerUserIdProvider = KrogerUserIdProvider._();
@@ -124,7 +189,7 @@ final class KrogerControllerProvider
   }
 }
 
-String _$krogerControllerHash() => r'5200a4c2c77db0dc78780a80a4a9201a3a4ffbf2';
+String _$krogerControllerHash() => r'4f31063456bff68fe14aa317f614e6bac4168e69';
 
 final class KrogerControllerFamily extends $Family
     with

@@ -205,6 +205,14 @@ class KrogerDraft {
   );
 }
 
+/// The delivery area a string names, or null when it names none.
+///
+/// One rule, because both callers arrive with something looser than Kroger's
+/// Locations filter accepts: the device's reverse lookup can return ZIP+4,
+/// and the shopper types whatever they like.
+String? krogerArea(String? raw) =>
+    RegExp(r'^(\d{5})(?:-?\d{4})?$').firstMatch(raw?.trim() ?? '')?.group(1);
+
 class KrogerException implements Exception {
   const KrogerException(this.code);
   final String code;

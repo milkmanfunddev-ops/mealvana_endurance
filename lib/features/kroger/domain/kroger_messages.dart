@@ -21,6 +21,7 @@ const Map<String, String> _messageKeys = {
   'kroger_unavailable': ContentKeys.krogerUpstreamUnavailable,
   'local_save_failed': ContentKeys.krogerLocalSaveFailed,
   'mobile_only': ContentKeys.krogerMobileOnly,
+  'no_delivery_area': ContentKeys.krogerNoDeliveryArea,
   'no_products': ContentKeys.krogerNoProducts,
   'not_configured': ContentKeys.krogerNotConfigured,
   'plan_not_found': ContentKeys.krogerPlanNotFound,

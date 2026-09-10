@@ -564,7 +564,6 @@ class ContentKeys {
   static const String krogerCertification = 'kroger.certification';
   static const String krogerMobileOnly = 'kroger.mobile_only';
   static const String krogerRedirectMismatch = 'kroger.redirect_mismatch';
-  static const String krogerStoreNote = 'kroger.store_note';
   static const String krogerAuthorizationCancelled =
       'kroger.authorization_cancelled';
   static const String krogerInvalidOauthState = 'kroger.invalid_oauth_state';
@@ -586,13 +585,20 @@ class ContentKeys {
   static const String krogerZip = 'kroger.zip';
   static const String krogerInvalidZip = 'kroger.invalid_zip';
 
-  /// The refusal, and the button. A control says what it does; only the
-  /// message explains why an action was not possible.
+  /// The delivery area, which is all the shopper is ever shown about where
+  /// their groceries come from. The Location behind it is an API parameter
+  /// with a name and an address, and neither reaches the screen.
+  static const String krogerDeliveryTo = 'kroger.delivery_to';
+  static const String krogerDeliveryNote = 'kroger.delivery_note';
+  static const String krogerSetArea = 'kroger.set_area';
+  static const String krogerChangeArea = 'kroger.change_area';
+  static const String krogerAreaUnknown = 'kroger.area_unknown';
+  static const String krogerNoDeliveryArea = 'kroger.no_delivery_area';
+
+  /// The refusal when an action needs a Location and the area has not
+  /// resolved one yet. A control says what it does; only the message
+  /// explains why an action was not possible.
   static const String krogerChooseStore = 'kroger.choose_store';
-  static const String krogerChooseStoreAction = 'kroger.choose_store_action';
-  static const String krogerPickup = 'kroger.pickup';
-  static const String krogerDelivery = 'kroger.delivery';
-  static const String krogerChangeStore = 'kroger.change_store';
   static const String krogerMatchAll = 'kroger.match_all';
   static const String krogerReviewMatches = 'kroger.review_matches';
   static const String krogerReviewRequired = 'kroger.review_required';

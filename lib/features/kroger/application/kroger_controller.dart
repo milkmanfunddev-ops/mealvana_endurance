@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
+import '../../../shared/services/location_service.dart';
 import '../../meal_planning/application/shopping_list_controller.dart';
 import '../data/kroger_repository.dart';
 import '../domain/kroger_models.dart';
@@ -16,6 +17,29 @@ import 'kroger_matching.dart';
 part 'kroger_controller.g.dart';
 
 typedef KrogerBrowser = Future<String> Function(String url, String scheme);
+
+/// Where the shopper's groceries are going, as a postcode — the only thing
+/// this feature ever shows or sends about where they are.
+typedef KrogerAreaFinder = Future<String?> Function();
+
+/// The delivery area from the device, via the app's shared location service.
+///
+/// Returns null for every way this can fail to produce an answer — the
+/// permission refused, the services off, the reverse lookup empty or thrown —
+/// because they all lead to the same place: the shopper types their postcode
+/// instead. Nothing here is stored; the coordinates do not leave this
+/// function.
+@riverpod
+KrogerAreaFinder krogerAreaFinder(Ref ref) => () async {
+  final service = ref.read(locationServiceProvider);
+  final position = await service.getCurrentLocation();
+  if (position == null) return null;
+  final place = await service.reverseGeocodeCoordinates(
+    latitude: position.latitude,
+    longitude: position.longitude,
+  );
+  return krogerArea(place?.address.postcode);
+};
 @riverpod
 Future<String?> krogerUserId(Ref ref) async {
   await ref.watch(userIdProvider.future);
@@ -43,7 +67,7 @@ class KrogerState {
     this.environment = 'certification',
     this.message,
     this.unavailableReason,
-    this.stores = const [],
+    this.area,
     this.products = const [],
     this.searchLineId,
   });
@@ -61,8 +85,18 @@ class KrogerState {
 
   /// Derived, so availability and its reason cannot disagree.
   bool get available => unavailableReason == null;
+
+  /// The postcode the shopper's groceries are going to, for this session
+  /// only. Kroger's acceptable-use terms for the Locations API forbid storing
+  /// data about a customer's location, so it never reaches the draft: the
+  /// Location it resolved is persisted, and the area is asked for again.
+  final String? area;
+
+  /// The area to show: the area, but only once a Location has actually been
+  /// resolved for it. Claiming delivery to somewhere nothing serves would be
+  /// the screen lying about its own state again.
+  String? get confirmedArea => draft.store == null ? null : area;
   final String? searchLineId;
-  final List<KrogerStore> stores;
   final List<KrogerProduct> products;
 
   /// [message] carries like every other field: omitting it keeps what is
@@ -80,7 +114,7 @@ class KrogerState {
     bool clearMessage = false,
     String? unavailableReason,
     bool clearUnavailableReason = false,
-    List<KrogerStore>? stores,
+    String? area,
     List<KrogerProduct>? products,
     String? searchLineId,
   }) => KrogerState(
@@ -92,7 +126,7 @@ class KrogerState {
     unavailableReason: clearUnavailableReason
         ? null
         : unavailableReason ?? this.unavailableReason,
-    stores: stores ?? this.stores,
+    area: area ?? this.area,
     products: products ?? this.products,
     searchLineId: searchLineId ?? this.searchLineId,
   );
@@ -125,13 +159,97 @@ class KrogerController extends _$KrogerController {
   @override
   Future<KrogerState> build(String planId) async {
     final scope = _scope = Object();
+    // A rebuild is a fresh load of this screen, and the device is asked again.
+    _deviceAsked = false;
     final user = await ref.watch(krogerUserIdProvider.future);
     if (!ref.mounted || !identical(scope, _scope)) {
       throw const KrogerException('session_changed');
     }
     _user = user;
     if (_user == null) throw const KrogerException('reconnect_required');
-    return runZoned(_loadDraft, zoneValues: {#krogerScope: scope});
+    final loaded = await runZoned(
+      _loadDraft,
+      zoneValues: {#krogerScope: scope},
+    );
+    // Scheduled rather than awaited: the delivery area costs a device fix and
+    // a reverse lookup, and the screen must not wait behind either of them.
+    // By the time it runs this notifier may already be gone.
+    if (loaded.available) {
+      unawaited(
+        Future(() async {
+          if (ref.mounted && identical(scope, _scope)) {
+            await _run(_resolveArea);
+          }
+        }),
+      );
+    }
+    return loaded;
+  }
+
+  /// Whether the device has already been asked where the shopper is. It is
+  /// asked once per load: a refusal is an answer, and asking again for every
+  /// action would be nagging.
+  bool _deviceAsked = false;
+
+  /// Resolves the delivery area, and the Location from that area and the
+  /// Modality together. The shopper chooses neither.
+  Future<void> _resolveArea() async {
+    final current = state.value!;
+    if (current.area != null && current.draft.store != null) return;
+    final area = current.area ?? (_deviceAsked ? null : await _askDevice());
+    // No area: the typed path takes over, and the screen asks for a postcode.
+    if (area != null) await _applyArea(area);
+  }
+
+  /// Never throws: a device that cannot say where the shopper is, for any
+  /// reason at all, hands them the typed path rather than an error.
+  Future<String?> _askDevice() async {
+    _deviceAsked = true;
+    final area = await AsyncValue.guard(ref.read(krogerAreaFinderProvider));
+    _assertScope();
+    return area.value;
+  }
+
+  /// The delivery area the shopper typed, which is also how they correct it
+  /// having moved or travelled.
+  Future<void> setArea(String area) => _run(() => _applyArea(area));
+
+  Future<void> _applyArea(String raw) async {
+    final area = krogerArea(raw);
+    if (area == null) throw const KrogerException('invalid_zip');
+    final draft = state.value!.draft;
+    final result = await _repo.remote.call('location', {
+      'zip': area,
+      'modality': draft.modality,
+    });
+    // A Location that cannot serve this Modality is not a Location this
+    // shopper has: the server returns none rather than the nearest one.
+    if (result['location'] == null) {
+      throw const KrogerException('no_delivery_area');
+    }
+    final store = KrogerStore.fromJson(
+      Map<String, dynamic>.from(result['location'] as Map),
+    );
+    // Products, prices and availability are all per-Location, so a different
+    // Location invalidates every match made against the last one.
+    final moved = draft.store?.id != store.id;
+    await _persist(
+      draft.copyWith(
+        store: store,
+        lines: moved
+            ? draft.lines
+                  .map(
+                    (l) => l.copyWith(
+                      clearProduct: true,
+                      approved: false,
+                      quantityEdited: false,
+                    ),
+                  )
+                  .toList()
+            : draft.lines,
+      ),
+    );
+    _publish(state.value!.copyWith(area: area, products: []));
   }
 
   Future<KrogerState> _loadDraft() async {
@@ -306,42 +424,6 @@ class KrogerController extends _$KrogerController {
     await _repo.remote.call('disconnect');
     _publish(state.value!.copyWith(connected: false));
   });
-  Future<void> findStores(String zip) => _run(() async {
-    _publish(state.value!.copyWith(stores: []));
-    final result = await _repo.remote.call('stores', {'zip': zip});
-    _publish(
-      state.value!.copyWith(
-        stores: [
-          for (final s in result['stores'] as List)
-            KrogerStore.fromJson(Map<String, dynamic>.from(s as Map)),
-        ],
-      ),
-    );
-  });
-  Future<void> selectStore(KrogerStore store, String modality) => _run(
-    () async {
-      final draft = state.value!.draft;
-      final changed = draft.store?.id != store.id || draft.modality != modality;
-      await _persist(
-        draft.copyWith(
-          store: store,
-          modality: modality,
-          lines: changed
-              ? draft.lines
-                    .map(
-                      (l) => l.copyWith(
-                        clearProduct: true,
-                        approved: false,
-                        quantityEdited: false,
-                      ),
-                    )
-                    .toList()
-              : draft.lines,
-        ),
-      );
-      _publish(state.value!.copyWith(stores: [], products: []));
-    },
-  );
   Future<List<KrogerProduct>> _search(String query) async {
     final draft = state.value!.draft;
     if (draft.store == null) throw const KrogerException('choose_store');

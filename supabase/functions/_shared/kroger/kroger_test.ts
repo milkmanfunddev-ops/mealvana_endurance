@@ -494,7 +494,7 @@ Deno.test("catalog reads are paid for by the application, not the shopper", asyn
     store: "70100108",
     modality: "DELIVERY",
   });
-  await new KrogerService(db, user, client).run("stores", { zip: "35209" });
+  await new KrogerService(db, user, client).run("coverage", { zip: "35209" });
   assertEquals(bearerFor(seen, "/products"), "client_credentials-token");
   assertEquals(bearerFor(seen, "/locations"), "client_credentials-token");
   // The shopper's token is in the database and stays there.
@@ -547,6 +547,59 @@ Deno.test("a market with no Location is not covered", async () => {
   );
   assertEquals(result.covered, false);
   assertEquals((result.stores as unknown[]).length, 0);
+});
+
+Deno.test("a delivery area resolves one Location, filtered by Modality", async () => {
+  const { seen, client } = recording();
+  const db = new MemoryDb();
+  db.tables.kroger_connections = [];
+  const result = await new KrogerService(db as unknown as Db, user, client).run(
+    "location",
+    { zip: "35209", modality: "DELIVERY" },
+  );
+  assertEquals((result.location as { id: string }).id, "70100108");
+  // The probe that decided it is a delivery-filtered search, paid for by the
+  // application: no shopper has authorized anything at this point.
+  const probe = seen.find((r) => r.path.includes("/products"));
+  assertEquals(probe?.bearer, "client_credentials-token");
+  assertEquals(bearerFor(seen, "/locations"), "client_credentials-token");
+});
+
+Deno.test("a Location that cannot serve the Modality is never selected", async () => {
+  // What the Birmingham Spoke does under the curbside filter: an empty list.
+  // Handing the shopper that Location anyway is the bug this feature had —
+  // every search returns nothing and every run reports success.
+  const client = new KrogerClient(cfg, (input) => {
+    const url = new URL(String(input));
+    const body = url.pathname.endsWith("/connect/oauth2/token")
+      ? { access_token: "client_credentials-token", expires_in: 1800 }
+      : url.pathname.includes("/locations")
+      ? fixture("locations_delivery_only")
+      : { data: [] };
+    return Promise.resolve(
+      new Response(JSON.stringify(body), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  }, new Map());
+  const db = new MemoryDb();
+  db.tables.kroger_connections = [];
+  const result = await new KrogerService(db as unknown as Db, user, client).run(
+    "location",
+    { zip: "35209", modality: "PICKUP" },
+  );
+  assertEquals(result.location, null);
+});
+
+Deno.test("an area with no Location at all resolves none", async () => {
+  const { client } = recording("locations_empty");
+  const db = new MemoryDb();
+  db.tables.kroger_connections = [];
+  const result = await new KrogerService(db as unknown as Db, user, client).run(
+    "location",
+    { zip: "99999", modality: "DELIVERY" },
+  );
+  assertEquals(result.location, null);
 });
 
 Deno.test("a refused application credential is a configuration fault, not a reconnect", async () => {

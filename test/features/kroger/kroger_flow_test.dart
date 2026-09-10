@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/kroger/application/kroger_controller.dart';
 import 'package:mealvana_endurance/features/kroger/application/kroger_availability.dart';
 import 'package:mealvana_endurance/features/kroger/data/kroger_repository.dart';
@@ -18,6 +20,16 @@ import 'kroger_fixtures.dart';
 import 'kroger_repository_test.dart' show FakeRemote;
 
 const plan = '11111111-1111-4111-8111-111111111111';
+
+/// The Location the server resolves for each delivery area, so a test can
+/// tell one area's Location from another's. Real Kroger `locationId` shapes,
+/// and deliberately not built out of the postcode: what is persisted must be
+/// assertable as carrying no trace of it.
+const locations = {
+  '35209': '70100108',
+  '35242': '70100109',
+  '30301': '01400943',
+};
 
 /// Broccoli at the Birmingham Spoke: no price, sold by the count, and a
 /// Location that only delivers. See `kroger_fixtures.dart`.
@@ -54,6 +66,7 @@ class TestShopping extends ShoppingListController {
 void main() {
   late ProviderContainer container;
   late KrogerRepository repo;
+  late SharedPreferences prefs;
   late FakeRemote remote;
   late KrogerController controller;
   var exports = 0;
@@ -61,10 +74,24 @@ void main() {
   var browserCallback = '';
   var account = 'user-a';
   var found = true;
+  String? deviceArea;
+  var serves = true;
   Object? covered;
   String? coverageFailure;
   Map<String, dynamic>? status;
   String? loadFailure;
+  KrogerState current() =>
+      container.read(krogerControllerProvider(plan)).requireValue;
+
+  /// Lets the delivery-area resolution `build` schedules run to completion.
+  /// It is deliberately not part of the build future: the screen must not
+  /// wait behind a twenty-second device-location timeout to appear.
+  Future<void> areaSettled() async {
+    for (var turn = 0; turn < 12; turn++) {
+      await Future<void>.delayed(Duration.zero);
+    }
+  }
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     exports = 0;
@@ -72,6 +99,8 @@ void main() {
     browserCallback = '';
     account = 'user-a';
     found = true;
+    deviceArea = '35209';
+    serves = true;
     covered = true;
     coverageFailure = null;
     status = null;
@@ -82,6 +111,12 @@ void main() {
         case 'coverage':
           if (coverageFailure != null) throw KrogerException(coverageFailure!);
           return {'covered': covered};
+        case 'location':
+          return {
+            'location': serves
+                ? {...store.toJson(), 'id': locations[data['zip']]}
+                : null,
+          };
         case 'search':
           return {
             'products': [if (found) product.toJson()],
@@ -105,7 +140,8 @@ void main() {
               };
       }
     };
-    repo = KrogerRepository(await SharedPreferences.getInstance(), remote);
+    prefs = await SharedPreferences.getInstance();
+    repo = KrogerRepository(prefs, remote);
     container = ProviderContainer(
       overrides: [
         krogerRepositoryProvider.overrideWith((ref) => repo),
@@ -117,19 +153,31 @@ void main() {
           (ref) =>
               (url, scheme) async => browserCallback,
         ),
+        krogerAreaFinderProvider.overrideWith(
+          (ref) =>
+              () async => deviceArea,
+        ),
       ],
     );
     container.listen(krogerControllerProvider(plan), (_, _) {});
     await container.read(shoppingListControllerProvider.future);
     await container.read(krogerControllerProvider(plan).future);
     controller = container.read(krogerControllerProvider(plan).notifier);
+    await areaSettled();
   });
   tearDown(() => container.dispose());
-  KrogerState current() =>
-      container.read(krogerControllerProvider(plan)).requireValue;
   Future<void> restart() async {
     container.invalidate(krogerControllerProvider(plan));
     await container.read(krogerControllerProvider(plan).future);
+    await areaSettled();
+  }
+
+  /// A shopper opening this for the first time with a device that will not
+  /// say where they are: nothing resolved, nothing saved.
+  Future<void> firstUse() async {
+    deviceArea = null;
+    await prefs.remove('kroger.draft.$account.$plan');
+    await restart();
   }
 
   /// Pumps the screen on a surface tall enough to build the whole list. A
@@ -149,11 +197,74 @@ void main() {
   }
 
   Future<void> reviewed() async {
-    await controller.selectStore(store, 'DELIVERY');
     await controller.matchAll();
     await controller.approve(current().draft.lines.single.id);
   }
 
+  group('the shopper is never asked to choose a Location', () {
+    test('the area comes from the device, and the Location from the area', () {
+      // Nothing was chosen and nothing was typed: the device said 35209 and
+      // the Location follows from that and DELIVERY together.
+      expect(current().area, '35209');
+      expect(current().draft.store?.id, locations['35209']);
+      expect(current().draft.modality, 'DELIVERY');
+    });
+    test('declining the permission leaves a typed postcode path', () async {
+      await firstUse();
+      expect(current().area, isNull);
+      expect(current().draft.store, isNull);
+      await controller.setArea('35209');
+      expect(current().area, '35209');
+      expect(current().draft.store?.id, locations['35209']);
+    });
+    test('a typed postcode must be a postcode', () async {
+      await firstUse();
+      await controller.setArea('nope');
+      expect(current().message, 'invalid_zip');
+      expect(current().draft.store, isNull);
+    });
+    test('an area no Location can serve at DELIVERY selects none', () async {
+      // Coverage answers presence; only the filtered search knows whether a
+      // Location will actually deliver. A Location that will not is no
+      // Location at all, and is never quietly written to the draft.
+      serves = false;
+      await prefs.remove('kroger.draft.$account.$plan');
+      await restart();
+      expect(current().draft.store, isNull);
+      expect(current().message, 'no_delivery_area');
+    });
+    test('neither the coordinates nor the postcode are persisted', () async {
+      // Kroger's acceptable-use terms for Locations forbid storing data about
+      // a customer's location. The resolved Location is ours to keep; where
+      // the shopper is standing is not.
+      deviceArea = '35242';
+      await restart();
+      expect(current().area, '35242');
+      expect(
+        jsonEncode(repo.load('user-a', plan).toJson()),
+        isNot(contains('35242')),
+      );
+      // The Location survives a restart; the area it was resolved from does
+      // not, and is asked for again rather than remembered.
+      deviceArea = null;
+      await restart();
+      expect(current().area, isNull);
+      expect(current().draft.store?.id, locations['35242']);
+    });
+    test(
+      'a persisted Location still works when the area is not known',
+      () async {
+        // Persisting the Location has to buy the shopper something. Coming back
+        // to a resolved draft with a device that says nothing, they can still
+        // match against it without saying where they are all over again.
+        deviceArea = null;
+        await restart();
+        expect(current().area, isNull);
+        await controller.matchAll();
+        expect(current().draft.lines.single.product?.upc, product.upc);
+      },
+    );
+  });
   test('a new draft is for delivery', () async {
     // There is no Kroger in Birmingham, only a Spoke, and a Spoke only
     // delivers. Defaulting to pickup is what made the feature inert there.
@@ -161,13 +272,11 @@ void main() {
   });
   test('a run that matched nothing says it matched nothing', () async {
     found = false;
-    await controller.selectStore(store, 'DELIVERY');
     await controller.matchAll();
     expect(current().draft.lines.single.product, null);
     expect(current().message, 'no_products');
   });
   test('a run with nothing to match says nothing was selected', () async {
-    await controller.selectStore(store, 'DELIVERY');
     (container.read(shoppingListControllerProvider.notifier) as TestShopping)
         .tickEverythingOff();
     await container.pump();
@@ -176,7 +285,6 @@ void main() {
     expect(current().message, 'all_skipped');
   });
   test('a Spoke product carries no price, never a zero one', () async {
-    await controller.selectStore(store, 'DELIVERY');
     await controller.matchAll();
     expect(current().draft.lines.single.product?.price, null);
     expect(current().draft.estimate, 0);
@@ -203,6 +311,7 @@ void main() {
         'environment': 'certification',
         'reason': 'pro_required',
       };
+      await prefs.remove('kroger.draft.$account.$plan');
       await restart();
       // matchAll fails on its own terms; that must not rewrite why the
       // service is unavailable in the first place.
@@ -222,7 +331,6 @@ void main() {
   test(
     'matching suggests package count but requires shopper approval',
     () async {
-      await controller.selectStore(store, 'DELIVERY');
       await controller.matchAll();
       expect(current().draft.lines.single.quantity, 2);
       expect(current().draft.ready, false);
@@ -233,9 +341,13 @@ void main() {
       expect(repo.load('user-a', plan).lines.single.quantity, 4);
     },
   );
-  test('store or modality change clears previous matches', () async {
+  test('a new delivery area clears the matches the old one made', () async {
+    // Products are per-Location. Carrying a Spoke's matches into another
+    // market would send the shopper things that market cannot supply.
     await reviewed();
-    await controller.selectStore(store, 'PICKUP');
+    await controller.setArea('30301');
+    expect(current().area, '30301');
+    expect(current().draft.store?.id, locations['30301']);
     expect(current().draft.lines.single.product, null);
     expect(current().draft.ready, false);
   });
@@ -254,7 +366,6 @@ void main() {
     },
   );
   test('a late lookup cannot mutate the next account draft', () async {
-    await controller.selectStore(store, 'DELIVERY');
     final pending = Completer<Map<String, dynamic>>();
     remote.onCall = (action, data) async => action == 'search'
         ? await pending.future
@@ -397,18 +508,24 @@ void main() {
     }
   });
   testWidgets('a control that cannot act is not rendered', (tester) async {
+    // No delivery area resolved, so there is no Location to search and
+    // nothing to match against.
+    await tester.runAsync(firstUse);
     await showScreen(tester);
     final copy = loadDefaultContent();
-    // Nothing is matched or approved yet, and no store is chosen.
     expect(find.byKey(const ValueKey('kroger.export')), findsNothing);
     expect(find.text(copy['kroger.choose']!), findsNothing);
+    expect(find.text(copy['kroger.match_all']!), findsNothing);
     for (final button in tester.widgetList<ButtonStyleButton>(
       find.byWidgetPredicate((w) => w is ButtonStyleButton),
     )) {
       final label = button.child;
       expect(button.enabled, true, reason: label is Text ? label.data : '?');
     }
-    await tester.runAsync(reviewed);
+    await tester.runAsync(() async {
+      await controller.setArea('35209');
+      await reviewed();
+    });
     await tester.pumpAndSettle();
     expect(current().message, isNull);
     expect(current().draft.ready, true);
@@ -438,13 +555,12 @@ void main() {
     );
     expect(tester.takeException(), null);
   });
+
   /// Pumps the Shopping tab with Coverage already answered. The entry point is
   /// withheld until it is: a shopper Kroger cannot serve must never see the
   /// feature appear and then vanish.
   Future<void> showShopping(WidgetTester tester) async {
-    await tester.runAsync(
-      () => container.read(krogerCoverageProvider.future),
-    );
+    await tester.runAsync(() => container.read(krogerCoverageProvider.future));
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -536,4 +652,60 @@ void main() {
       expect(tester.takeException(), null);
     },
   );
+
+  group('the screen says where the groceries go, not which facility', () {
+    testWidgets('it presents the delivery area', (tester) async {
+      final copy = loadDefaultContent();
+      await showScreen(tester);
+      expect(
+        find.text(
+          ContentKeys.format(copy['kroger.delivery_to']!, {'area': '35209'}),
+        ),
+        findsOneWidget,
+      );
+      // "Kroger - - Birmingham Spoke", at 300 Delivery Way, is exactly what a
+      // shopper must never be handed and told to drive to.
+      expect(find.textContaining(store.name), findsNothing);
+      expect(find.textContaining('300 Delivery Way'), findsNothing);
+    });
+    testWidgets('correcting the area asks for a postcode, not a Location', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await showScreen(tester);
+      await tester.tap(find.text(copy['kroger.change_area']!));
+      await tester.pumpAndSettle();
+      expect(find.text(copy['kroger.zip']!), findsOneWidget);
+      expect(find.textContaining(store.name), findsNothing);
+      await tester.enterText(find.byType(TextField), '30301');
+      await tester.tap(find.text(copy['kroger.continue']!));
+      await tester.pumpAndSettle();
+      expect(current().draft.store?.id, locations['30301']);
+      expect(
+        find.text(
+          ContentKeys.format(copy['kroger.delivery_to']!, {'area': '30301'}),
+        ),
+        findsOneWidget,
+      );
+    });
+    testWidgets('a known Location without a known area still offers matching', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      deviceArea = null;
+      await tester.runAsync(restart);
+      await showScreen(tester);
+      expect(find.text(copy['kroger.area_unknown']!), findsOneWidget);
+      expect(find.text(copy['kroger.match_all']!), findsOneWidget);
+    });
+    testWidgets('a shopper with no resolved area is asked for one', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await tester.runAsync(firstUse);
+      await showScreen(tester);
+      expect(find.text(copy['kroger.area_unknown']!), findsOneWidget);
+      expect(find.text(copy['kroger.set_area']!), findsOneWidget);
+    });
+  });
 }
