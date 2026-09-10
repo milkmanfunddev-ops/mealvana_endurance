@@ -92,6 +92,41 @@ export class KrogerService {
       throw e;
     }
   }
+  // A zip when the athlete typed one; otherwise where they live. Home location is a Fact on
+  // the user record (the Voodoo Doll spec, ticket 07), so shopping keys off their own town
+  // rather than whatever venue their next race is at.
+  // A zip the athlete typed must be a real one — a typo is an error, never a
+  // silent search somewhere else. Only an ABSENT zip falls back to home.
+  private async locations(
+    body: Record<string, unknown>,
+  ): Promise<Record<string, string>[]> {
+    const rawZip = typeof body.zip === "string" ? body.zip.trim() : "";
+    let filter: string;
+    if (rawZip) {
+      if (!/^\d{5}$/.test(rawZip)) throw new KrogerError("invalid_zip");
+      filter = `filter.zipCode.near=${rawZip}`;
+    } else {
+      const { data: u } = await this.admin.from("users").select(
+        "home_lat, home_lon",
+      ).eq("id", this.userId).maybeSingle();
+      if (u?.home_lat == null || u?.home_lon == null) {
+        throw new KrogerError("invalid_zip");
+      }
+      filter = `filter.latLong.near=${Number(u.home_lat)},${
+        Number(u.home_lon)
+      }`;
+    }
+    const raw = await this.client.get(
+      `/locations?${filter}&filter.limit=10`,
+      await this.client.applicationToken(),
+    );
+    return (raw.data ?? []).map((s: any) => ({
+      id: s.locationId,
+      name: s.name,
+      address: [s.address?.addressLine1, s.address?.city, s.address?.state]
+        .filter(Boolean).join(", "),
+    }));
+  }
   async run(action: string, body: any): Promise<Record<string, unknown>> {
     const { base, clientId, redirect, environment } = this.client.config;
     if (action === "status") {
@@ -127,7 +162,9 @@ export class KrogerService {
         client_id: clientId,
         redirect_uri: redirect,
         response_type: "code",
-        scope: "cart.basic:write profile.compact product.compact",
+        // The shopper authorizes the cart write and nothing more: product
+        // reads are paid for by the application token now.
+        scope: "cart.basic:write profile.compact",
         state,
       }).toString();
       return { url: url.toString(), state, redirect };
@@ -179,41 +216,21 @@ export class KrogerService {
       );
       return { connected: false };
     }
-    // Catalog reads use the customer's token, keeping access scoped to connected customers.
-    if (action === "stores") {
-      // A zip when the athlete typed one; otherwise where they live. Home location is a Fact on
-      // the user record (the Voodoo Doll spec, ticket 07), so shopping keys off their own town
-      // rather than whatever venue their next race is at.
-      // A zip the athlete typed must be a real one — a typo is an error, never a
-      // silent search somewhere else. Only an ABSENT zip falls back to home.
-      const rawZip = typeof body.zip === "string" ? body.zip.trim() : "";
-      let filter: string;
-      if (rawZip) {
-        if (!/^\d{5}$/.test(rawZip)) throw new KrogerError("invalid_zip");
-        filter = `filter.zipCode.near=${rawZip}`;
-      } else {
-        const { data: u } = await this.admin.from("users").select(
-          "home_lat, home_lon",
-        ).eq("id", this.userId).maybeSingle();
-        if (u?.home_lat == null || u?.home_lon == null) {
-          throw new KrogerError("invalid_zip");
-        }
-        filter = `filter.latLong.near=${Number(u.home_lat)},${
-          Number(u.home_lon)
-        }`;
-      }
-      const raw = await this.client.get(
-        `/locations?${filter}&filter.limit=10`,
-        await this.customerToken(),
-      );
-      return {
-        stores: (raw.data ?? []).map((s: any) => ({
-          id: s.locationId,
-          name: s.name,
-          address: [s.address?.addressLine1, s.address?.city, s.address?.state]
-            .filter(Boolean).join(", "),
-        })),
-      };
+    // Catalog reads are paid for by the application token: Locations needs no
+    // scope, Products needs only `product.compact`, and neither needs to know
+    // who the shopper is. Only the cart write does.
+    if (action === "stores") return { stores: await this.locations(body) };
+    // Coverage: whether Kroger serves this area at all, answerable before the
+    // shopper has authorized anything. An area with no Location is one where
+    // the feature is never offered.
+    //
+    // Presence is as far as Locations goes: it has no fulfillment filter, and a
+    // Location's own booleans are not Location-truthful. Whether that Location
+    // will actually deliver a given product is the filtered product search's
+    // answer, and belongs to the matching run.
+    if (action === "coverage") {
+      const stores = await this.locations(body);
+      return { covered: stores.length > 0, stores };
     }
     if (action === "search") {
       const query = textInput(body.query),
@@ -227,7 +244,7 @@ export class KrogerService {
       });
       const raw = await this.client.get(
         `/products?${params}`,
-        await this.customerToken(),
+        await this.client.applicationToken(),
       );
       const products = (raw.data ?? []).map((p: any) => productFromApi(p))
         .filter(Boolean);
@@ -267,14 +284,17 @@ export class KrogerService {
         .maybeSingle(),
     );
     if (existing) return { receipt: existing }; // Never replay a sent, sending, or unknown batch.
+    // Fetched before the preflight so a shopper who has to reconnect learns it
+    // before the work, not after it — but it pays for nothing except the add.
     const token = await this.customerToken();
+    const catalog = await this.client.applicationToken();
     const changed = [];
     for (let offset = 0; offset < lines.length; offset += 5) {
       const products = await Promise.all(
         lines.slice(offset, offset + 5).map((line) =>
           // A product the filter no longer returns is a line to review, not a
           // failed export: it joins `changed` so the shopper sees which one.
-          this.client.product(line.upc, store, mode, token).catch((e) => {
+          this.client.product(line.upc, store, mode, catalog).catch((e) => {
             if (e instanceof KrogerError && e.code === "product_unavailable") {
               return unavailableProduct(line.upc);
             }

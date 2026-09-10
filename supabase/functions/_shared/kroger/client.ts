@@ -34,8 +34,48 @@ export function config(): Config {
       "com.milkman.mealvanaendurance://callback",
   };
 }
+// A `client_credentials` token, kept for as long as Kroger says it lives.
+// Locations needs no scope and Products needs only `product.compact`, so one
+// application token serves every catalog read the feature makes.
+interface CachedToken {
+  token: string;
+  expires: number;
+}
+// Shared across warm invocations of the same isolate: the token endpoint has a
+// daily limit like every other Kroger endpoint, and re-minting per request
+// spends it for nothing. Tests pass their own cache instead.
+const applicationTokens = new Map<string, CachedToken>();
+
 export class KrogerClient {
-  constructor(readonly config: Config, private request: typeof fetch = fetch) {}
+  constructor(
+    readonly config: Config,
+    private request: typeof fetch = fetch,
+    private cache: Map<string, CachedToken> = applicationTokens,
+  ) {}
+  // Pays for Locations and Products. The shopper's own token pays for the
+  // cart write and for nothing else, which is what lets Coverage be answered
+  // before anyone has authorized Mealvana with Kroger.
+  async applicationToken(): Promise<string> {
+    const key = `${this.config.base}:${this.config.clientId}`;
+    const cached = this.cache.get(key);
+    if (cached && cached.expires > Date.now() + 60000) return cached.token;
+    const body = await this.token({
+      grant_type: "client_credentials",
+      scope: "product.compact",
+    }).catch((e) => {
+      // A refused application credential is Mealvana's problem, not the
+      // shopper's: they have nothing to reconnect.
+      if (e instanceof KrogerError && e.code === "reconnect_required") {
+        throw new KrogerError("not_configured", 503);
+      }
+      throw e;
+    });
+    this.cache.set(key, {
+      token: body.access_token,
+      expires: Date.now() + Number(body.expires_in) * 1000,
+    });
+    return body.access_token;
+  }
   async token(fields: Record<string, string>): Promise<any> {
     const response = await this.request(
       `${this.config.base}/connect/oauth2/token`,

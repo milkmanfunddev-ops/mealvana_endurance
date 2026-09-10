@@ -61,6 +61,8 @@ void main() {
   var browserCallback = '';
   var account = 'user-a';
   var found = true;
+  Object? covered;
+  String? coverageFailure;
   Map<String, dynamic>? status;
   String? loadFailure;
   setUp(() async {
@@ -70,11 +72,16 @@ void main() {
     browserCallback = '';
     account = 'user-a';
     found = true;
+    covered = true;
+    coverageFailure = null;
     status = null;
     loadFailure = null;
     remote = FakeRemote();
     remote.onCall = (action, data) async {
       switch (action) {
+        case 'coverage':
+          if (coverageFailure != null) throw KrogerException(coverageFailure!);
+          return {'covered': covered};
         case 'search':
           return {
             'products': [if (found) product.toJson()],
@@ -431,9 +438,13 @@ void main() {
     );
     expect(tester.takeException(), null);
   });
-  testWidgets('Kroger icon action is above groceries and opens review', (
-    tester,
-  ) async {
+  /// Pumps the Shopping tab with Coverage already answered. The entry point is
+  /// withheld until it is: a shopper Kroger cannot serve must never see the
+  /// feature appear and then vanish.
+  Future<void> showShopping(WidgetTester tester) async {
+    await tester.runAsync(
+      () => container.read(krogerCoverageProvider.future),
+    );
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -441,6 +452,52 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+  }
+
+  group('a market Kroger does not serve is never offered the feature', () {
+    testWidgets('an empty Coverage hides the entry point', (tester) async {
+      covered = false;
+      await showShopping(tester);
+      expect(find.byKey(const ValueKey('meal_planning.kroger')), findsNothing);
+    });
+    testWidgets('Coverage is answered without a Kroger account', (
+      tester,
+    ) async {
+      // Nothing here is connected: the check is paid for by the application
+      // token, so a shopper who has never authorized Kroger still gets an
+      // answer — and, being served, still gets the feature.
+      status = {
+        'available': true,
+        'connected': false,
+        'environment': 'certification',
+      };
+      await tester.runAsync(restart);
+      await showShopping(tester);
+      expect(current().connected, false);
+      expect(container.read(krogerCoverageProvider).value, true);
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger')),
+        findsOneWidget,
+      );
+    });
+    testWidgets('an unanswerable Coverage check keeps the entry point', (
+      tester,
+    ) async {
+      // Unknown is not "no". Losing the feature because a check failed would
+      // be worse than offering it and reporting the failure on the screen.
+      coverageFailure = 'rate_limited';
+      await showShopping(tester);
+      expect(container.read(krogerCoverageProvider).value, isNull);
+      expect(
+        find.byKey(const ValueKey('meal_planning.kroger')),
+        findsOneWidget,
+      );
+    });
+  });
+  testWidgets('Kroger icon action is above groceries and opens review', (
+    tester,
+  ) async {
+    await showShopping(tester);
     final entry = find.byKey(const ValueKey('meal_planning.kroger'));
     expect(entry.hitTestable(), findsOneWidget);
     expect(

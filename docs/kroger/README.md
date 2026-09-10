@@ -99,11 +99,11 @@ filters. Web OAuth needs a separately registered HTTPS callback and is not enabl
 | Profile (Public) - Certification | `profile.compact` |
 | Products (Public) - Certification | `product.compact` |
 
-The combined configured scope string is:
-
-```text
-cart.basic:write profile.compact product.compact
-```
+Those are the scopes granted to the registered credential. They are not all
+asked of the shopper: the customer authorization requests
+`cart.basic:write profile.compact`, and `product.compact` is used with the
+application `client_credentials` token instead. See
+[IMPLEMENTATION.md](IMPLEMENTATION.md) for which token pays for what.
 
 Do not invent a Locations scope; none was shown in the registration result.
 

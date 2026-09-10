@@ -101,13 +101,19 @@ Deno.test("modality picks Kroger's fulfillment filter for search and lookup", as
   const asked: string[] = [];
   const client = (body: unknown) =>
     new KrogerClient(cfg, (input) => {
-      asked.push(String(input));
+      const url = String(input);
+      if (!url.endsWith("/token")) asked.push(url);
       return Promise.resolve(
-        new Response(JSON.stringify(body), {
-          headers: { "Content-Type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify(
+            url.endsWith("/token")
+              ? { access_token: "app-token", expires_in: 1800 }
+              : body,
+          ),
+          { headers: { "Content-Type": "application/json" } },
+        ),
       );
-    });
+    }, new Map());
   const db = new MemoryDb();
   const spokeBody = fixture("spoke_product");
   await new KrogerService(db as unknown as Db, user, client(spokeBody)).run(
@@ -134,12 +140,17 @@ Deno.test("a search finds nothing when the filter excludes everything", async ()
   const service = new KrogerService(
     new MemoryDb() as unknown as Db,
     user,
-    new KrogerClient(cfg, () =>
+    new KrogerClient(cfg, (input) =>
       Promise.resolve(
-        new Response(JSON.stringify({ data: [] }), {
-          headers: { "Content-Type": "application/json" },
-        }),
-      )),
+        new Response(
+          JSON.stringify(
+            String(input).endsWith("/token")
+              ? { access_token: "app-token", expires_in: 1800 }
+              : { data: [] },
+          ),
+          { headers: { "Content-Type": "application/json" } },
+        ),
+      ), new Map()),
   );
   const result = await service.run("search", {
     query: "broccoli",
@@ -428,4 +439,126 @@ Deno.test("concurrent refreshes claim only one lease and persist the new expiry"
     Date.parse(db.tables.kroger_connections[0].expires_at) > Date.now(),
     true,
   );
+});
+
+// A fetch double that answers every Kroger endpoint this feature touches and
+// records the bearer each request carried, so "which token paid for this read"
+// is an assertion rather than a reading of the source.
+function recording(locations = "locations_delivery_only") {
+  const seen: { path: string; bearer: string | null; grant?: string }[] = [];
+  const client = new KrogerClient(cfg, async (input, init) => {
+    const url = new URL(String(input));
+    const headers = new Headers((init as RequestInit)?.headers);
+    const entry: { path: string; bearer: string | null; grant?: string } = {
+      path: url.pathname,
+      bearer: headers.get("Authorization")?.replace("Bearer ", "") ?? null,
+    };
+    seen.push(entry);
+    if (url.pathname.endsWith("/connect/oauth2/token")) {
+      const form = new URLSearchParams(
+        await new Response((init as RequestInit)?.body).text(),
+      );
+      entry.grant = form.get("grant_type") ?? undefined;
+      return new Response(
+        JSON.stringify({
+          access_token: `${form.get("grant_type")}-token`,
+          expires_in: 1800,
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      );
+    }
+    if (url.pathname.endsWith("/cart/add")) {
+      return new Response(null, { status: 204 });
+    }
+    const body = url.pathname.includes("/locations")
+      ? fixture(locations)
+      : url.pathname.includes("/products/")
+      ? { data: fixture("spoke_product").data[0] }
+      : fixture("spoke_product");
+    return new Response(JSON.stringify(body), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }, new Map());
+  return { seen, client };
+}
+const bearerFor = (
+  seen: { path: string; bearer: string | null }[],
+  fragment: string,
+) => seen.find((r) => r.path.includes(fragment))?.bearer;
+
+Deno.test("catalog reads are paid for by the application, not the shopper", async () => {
+  const { seen, client } = recording();
+  const db = new MemoryDb() as unknown as Db;
+  await new KrogerService(db, user, client).run("search", {
+    query: "broccoli",
+    store: "70100108",
+    modality: "DELIVERY",
+  });
+  await new KrogerService(db, user, client).run("stores", { zip: "35209" });
+  assertEquals(bearerFor(seen, "/products"), "client_credentials-token");
+  assertEquals(bearerFor(seen, "/locations"), "client_credentials-token");
+  // The shopper's token is in the database and stays there.
+  assertEquals(seen.some((r) => r.bearer === "test-token"), false);
+  // And it is fetched once for both reads, not once per request.
+  assertEquals(seen.filter((r) => r.path.endsWith("/token")).length, 1);
+});
+
+Deno.test("the cart write is the only read the shopper's token pays for", async () => {
+  const { seen, client } = recording();
+  const db = new MemoryDb() as unknown as Db;
+  await new KrogerService(db, user, client).run("export", {
+    ...payload(),
+    modality: "DELIVERY",
+    store: "70100108",
+    items: [{ upc: spoke.upc, quantity: 1, price: null, size: "1 ct" }],
+  });
+  assertEquals(bearerFor(seen, "/cart/add"), "test-token");
+  assertEquals(bearerFor(seen, "/products/"), "client_credentials-token");
+});
+
+Deno.test("the shopper is never asked to authorize a catalog read", async () => {
+  const { service } = setup();
+  const start = await service.run("connect", {});
+  const scope = new URL(start.url as string).searchParams.get("scope");
+  assertEquals(scope?.includes("cart.basic:write"), true);
+  assertEquals(scope?.includes("product.compact"), false);
+});
+
+Deno.test("coverage is answerable with no shopper account connected", async () => {
+  const { seen, client } = recording();
+  const db = new MemoryDb();
+  db.tables.kroger_connections = [];
+  const result = await new KrogerService(db as unknown as Db, user, client).run(
+    "coverage",
+    { zip: "35209", modality: "DELIVERY" },
+  );
+  assertEquals(result.covered, true);
+  assertEquals((result.stores as unknown[]).length, 1);
+  assertEquals(bearerFor(seen, "/locations"), "client_credentials-token");
+});
+
+Deno.test("a market with no Location is not covered", async () => {
+  const { client } = recording("locations_empty");
+  const db = new MemoryDb();
+  db.tables.kroger_connections = [];
+  const result = await new KrogerService(db as unknown as Db, user, client).run(
+    "coverage",
+    { zip: "99999", modality: "DELIVERY" },
+  );
+  assertEquals(result.covered, false);
+  assertEquals((result.stores as unknown[]).length, 0);
+});
+
+Deno.test("a refused application credential is a configuration fault, not a reconnect", async () => {
+  // Nothing the shopper can do about it: they never authorized this token.
+  const client = new KrogerClient(
+    cfg,
+    () => Promise.resolve(new Response("no", { status: 401 })),
+    new Map(),
+  );
+  const error = await assertRejects(
+    () => client.applicationToken(),
+    KrogerError,
+  );
+  assertEquals(error.code, "not_configured");
 });

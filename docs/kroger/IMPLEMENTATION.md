@@ -79,6 +79,17 @@ the cloud version. Preferred-product hints are currently device-local; draft
 selections themselves sync. Signing out does not expose another account's draft
 keys, and in-flight controller work is invalidated on account changes.
 
+Two tokens, and they buy different things. Locations and Products are read with
+an application `client_credentials` token — Locations needs no scope, Products
+needs only `product.compact`, and neither needs to know who is asking. The
+shopper's own token pays for the cart write and for nothing else, which is what
+lets Coverage ("does Kroger serve this area at all?") be answered before anyone
+has authorized Mealvana, and what keeps the catalog path testable: Kroger's
+certification environment is unreachable from outside their network, so anything
+needing a shopper can only ever be exercised against production. The customer
+authorization request therefore asks for `cart.basic:write profile.compact`;
+`product.compact` is registered for the application credential, not the shopper.
+
 `kroger_connections` and `kroger_oauth_sessions` have no authenticated/anon grants.
 Only the server can read tokens, exchange OAuth codes, refresh, or reserve receipts.
 Token refresh uses a conditional expiring lease to prevent concurrent refreshes.

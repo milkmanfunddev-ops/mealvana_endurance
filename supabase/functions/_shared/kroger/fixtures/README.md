@@ -25,4 +25,5 @@ The point of each file:
   never about a product.
 - `locations_delivery_only.json` — one Location, zero departments: a market
   Kroger serves by delivery only.
-- `locations_empty.json` — a market Kroger does not serve at all.
+- `locations_empty.json` — a market Kroger does not serve at all. Coverage
+  reads this as "no", and the entry point into Shop with Kroger is not shown.

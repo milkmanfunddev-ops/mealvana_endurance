@@ -72,6 +72,13 @@ serve(async (req: Request) => {
         reason: pro.ok ? null : pro.reason,
       });
     }
+    // Coverage stays behind Pro with everything else. It is answerable without
+    // a Kroger sign-in, which is what the feature needs; letting it past the
+    // entitlement as well would put Kroger's application-wide daily Locations
+    // budget — a resource every paying shopper shares — behind nothing but
+    // `claim_kroger_request`, which is a 60-per-minute burst guard and not a
+    // daily cap. A non-entitled shopper is told Pro is required instead, and
+    // an unanswered Coverage check leaves the entry point in place.
     if (!pro.ok) return jsonResponse({ error: pro.reason }, 403);
     const limit = await auth.v.admin.rpc("claim_kroger_request", {
       p_user: auth.v.userId,

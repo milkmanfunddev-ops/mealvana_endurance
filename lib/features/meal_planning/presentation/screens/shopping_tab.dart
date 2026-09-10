@@ -54,7 +54,7 @@ class ShoppingTab extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               if (state.planId != null &&
-                  ref.watch(krogerShoppingEnabledProvider)) ...[
+                  ref.watch(krogerEntryVisibleProvider)) ...[
                 Align(
                   alignment: Alignment.centerRight,
                   child: OutlinedButton.icon(
