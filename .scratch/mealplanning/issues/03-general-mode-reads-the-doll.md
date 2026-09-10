@@ -4,15 +4,15 @@
 
 **Blocked by:** 02 Vana test harness
 
-**Status:** built, live evals not run (2026-09-09)
+**Status:** built, live evals green; episode prepend still has no writer (2026-09-10)
 
 - [x] General and planning kinds produce the same context block for the same fixture rows, proven at the server seam
 - [x] LIKES line lists thumbed Meals by name and stance; absent thumbs reads "none"
 - [x] GOALS line carries the onboarding survey's goals; absent survey reads "none"
 - [x] History cap: 21 messages in, 20 replayed; 10 messages in, nothing prepended. **The episode prepend is built and tested but cannot fire yet — see below.**
 - [x] Personalization eval runner exists, refuses to run against anything but dev, records input and output tokens per case
-- [ ] Live eval: "what's my workout tomorrow" and "what did I log today" answer correctly in general mode for the eval user
-- [ ] Live eval: a fresh user with an empty Doll still gets a sensible opener
+- [x] Live eval: "what's my workout tomorrow" and "what did I log today" answer correctly in general mode for the eval user
+- [x] Live eval: a fresh user with an empty Doll still gets a sensible opener
 
 **Notes (2026-09-09).** `systemPrompt` in chat.ts now builds one block for both kinds; only the
 persona above it differs. `buildAthleteContext` reads `meal_feedback` (resolved to names through

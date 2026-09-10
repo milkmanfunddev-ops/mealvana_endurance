@@ -180,7 +180,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   if (scope) { const draft = await getConversationPlan(v, convId, false); ctx.plan = { exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? ctx.plan.batchCooking }; }
   // The Situation travels with the message and is resolved here from ids; it is never written anywhere.
   ctx.situation = await resolveSituation(v, body.situation);
-  const tools = makeVanaTools(v, ctx, convKind, { scope, shownIds: shownMealIds(messages) });
+  const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
   let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] = 'plan'; let extraContext = '';
@@ -190,7 +190,12 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const firstConversation = opener && persist && (await priorConversationCount(v, convId)) === 0;
   // Lazy extraction: opening a conversation is what reads the previous one back. It runs in the background of
   // this request and never delays the reply; nothing it writes is announced to the athlete.
-  if (opener && persist && convId) waitUntil(readBackPrevious(v, convId));
+  //
+  // "Opening" is the conversation's FIRST TURN, not the scripted opener. A general conversation usually starts
+  // with the athlete typing, which leaves `opener` false — gating on that alone meant a typed-first conversation
+  // never read anything back (found in the 2026-09-10 dev eval, where only the scripted openers extracted).
+  const firstTurn = opener || messages.length <= 1;
+  if (firstTurn && persist && convId) waitUntil(readBackPrevious(v, convId));
   const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
   if (convKind === 'meal_planning') {
     const openerInput = await loadOpenerInput(v, anchorDate);

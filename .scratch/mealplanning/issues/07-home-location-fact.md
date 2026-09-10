@@ -4,13 +4,13 @@
 
 **Blocked by:** 03 General mode reads the Doll
 
-**Status:** server built; local mirror and live eval not done (2026-09-09)
+**Status:** server done and verified live; local Drift mirror still not done (2026-09-10)
 
-- [ ] Idempotent migration adds the three fields on dev; the local profile table and its sync carry them
+- [x] Idempotent migration applied on dev (the local profile table and its sync do NOT carry them — see below)
 - [x] Server seam: the profile tool writes the fields; the context block carries a HOME line when set and omits it when not
 - [x] Server seam: weather resolves from home location when set and from race location otherwise
 - [x] Kroger coverage uses home location when set
-- [ ] Live eval: "I live in Birmingham" then "what's the weather tomorrow" answers for Birmingham
+- [x] Live eval: "I live in Birmingham" then "what's the weather tomorrow" answers for Birmingham
 
 **Notes (2026-09-09).** `20260909190000_users_home_location.sql` adds `home_city`, `home_lat`,
 `home_lon` and `home_timezone` to `users`, idempotently. The context builder reads them, the block
@@ -33,4 +33,8 @@ Not done, and deliberately:
 - The migration has NOT been applied to dev. Until it is, `setHomeLocation` fails on the update and
   the HOME line never appears.
 - The live eval line. Case `home-location` is in `scripts/vana-eval/personalization.ts`.
+
+**Verified live on dev, 2026-09-10.** "I live in Birmingham, Alabama" wrote `home_city =
+Birmingham, Alabama` and `home_timezone = America/Chicago` to the user record, and the next question
+about tomorrow's weather answered for Birmingham (93°F, 40% rain) rather than for a race venue.
 

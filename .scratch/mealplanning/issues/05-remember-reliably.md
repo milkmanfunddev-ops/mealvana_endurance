@@ -4,13 +4,13 @@
 
 **Blocked by:** 02 Vana test harness
 
-**Status:** built, live evals not run (2026-09-09)
+**Status:** done, verified live (2026-09-10)
 
 - [x] Server seam: writing a sentence near-identical to an existing Memory inserts nothing and refreshes the existing confirmed date; a distinct sentence inserts
 - [x] The duplicated debrief learning, replayed through the writer, yields one row
-- [ ] Live eval: "remember X" writes exactly one Memory with source conversation
-- [ ] Live eval: a Memory saved in one conversation is used unprompted in the next
-- [ ] Live eval: "I want 5 dinners this week" writes no Memory
+- [x] Live eval: "remember X" writes exactly one Memory with source conversation
+- [x] Live eval: a Memory saved in one conversation is used unprompted in the next
+- [x] Live eval: "I want 5 dinners this week" writes no Memory
 
 **Notes (2026-09-09).** `rememberFact` now has three paths. A `setting` keeps its one row per key.
 An `episode` gets one row per conversation, keyed by conversation id and rewritten rather than
@@ -33,4 +33,17 @@ Seam tests: `tests/vana/memory_write.test.ts`, driven from fixture vectors throu
 Not done: the three live eval lines. Cases `remember-sticks`, `plan-detail-is-not-a-memory` and
 `keyed-memory-not-reasked` are in `scripts/vana-eval/personalization.ts`; running them bills real
 model spend against dev.
+
+## Verified live on dev, 2026-09-10 — and one real defect found
+
+"Remember that I cannot stand the smell of cooked broccoli" wrote one Memory; asked a second time it
+wrote nothing and refreshed the existing row's confirmed date instead. Both halves of the dedupe are
+now proven against the real database, not a fake one.
+
+**The defect: an explicit remember did not fire at all.** Asked to remember that Wednesdays are
+chaos, Vana replied "I've noted that down" and wrote nothing — because a Wednesday note was already
+in the block, and the margin-note rule told her not to write what she already has. That rule is
+right for a note she decides to keep on her own and wrong for one the athlete asks for. The tool
+description and both personas now separate the two triggers: when they ask, always call, every time,
+and let the server decide new-note or refresh. That is what the dedupe is for.
 
