@@ -46,10 +46,18 @@ Both scorers are pure and tested without a network, a database or a model (23 ne
 assertions). Migration `20260910180000_meal_dish_photo_sourcing.sql` adds
 `image_rejected_urls` and `image_attempts`, dev-applied.
 
-**Result: honesty 27.3% → 29.4%.** 48 of 211 Transformed meals served, 279
-candidates refused, $1.26. Every Transformed meal now shows an `ok` photograph
-(65) or its icon (155 blocked with a reason) — none wears a Mosaic, none shows a
+**Result: honesty 27.3% → 29.4%.** 53 of 211 Transformed meals served, 301
+candidates refused, $1.32. Every Transformed meal now shows an `ok` photograph
+(61) or its icon (159 blocked with a reason) — none wears a Mosaic, none shows a
 picture rated `wrong`.
+
+**Verifying on the real artifact found a defect the row counts hid.** The rows
+were right and the pictures served, but `search_meals` — the RPC the app calls —
+showed four different smoothies wearing one photograph. Stock search is narrow
+enough that four green-smoothie meals are offered the same top-ranked picture,
+so the pass was manufacturing exactly what user story 7 asks us to avoid. It now
+reads the photographs already in use and skips them, and the four were
+re-sourced. The 128 duplicates from earlier passes are left to ticket 07.
 
 ## What this run learned, for ticket 05
 

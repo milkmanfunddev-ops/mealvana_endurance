@@ -36,12 +36,14 @@
  *      =all          both of the above
  * LIMIT=n to sample, DRY=1 to search and judge without writing, CONCURRENCY=n,
  * MAX_JUDGED=n candidates shown to the judge per meal, MAX_ATTEMPTS=n rounds
- * before a meal is left alone, SEPARABILITY=transformed|separable to narrow a
- * queue, USE_UNSPLASH=1 to add Unsplash as a last resort (slow — see
+ * before a meal is left alone, SEPARABILITY=transformed|separable or
+ * IDS=a,b,c to narrow a queue, USE_UNSPLASH=1 to add Unsplash as a last resort (slow — see
  * `candidatesFor`).
  *
  * Idempotent: a meal that ends with an `ok` photograph leaves every queue, and a
  * re-run retries only the failures — skipping the candidates already refused.
+ *
+ * No two meals are given the same photograph: see `taken` below.
  */
 import { rest, selectAll, uploadImage } from './lib/db.mjs';
 import { licenseOk, MAY_MIRROR, PROVIDERS } from './lib/providers.mjs';
@@ -119,12 +121,20 @@ type Row = {
  */
 const ONLY = Deno.env.get('SEPARABILITY') ?? '';
 
+/**
+ * Or to a named handful. `MAX_ATTEMPTS` is a blunt instrument for repair work:
+ * raising it to give five known meals another round hands one to every meal
+ * that has had one, and re-buys a hundred refusals to fix five rows.
+ */
+const IDS = (Deno.env.get('IDS') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
 let rows: Row[] = await selectAll(
   'meal_library',
   'select=id,name,ingredients,ingredients_json,separability,image_url,image_verdict,' +
     'image_rejected_urls,image_attempts' +
     `&is_active=eq.true&${FILTERS[QUEUE]}&image_attempts=lt.${MAX_ATTEMPTS}` +
-    `${ONLY ? `&separability=eq.${ONLY}` : ''}&order=id`,
+    `${ONLY ? `&separability=eq.${ONLY}` : ''}` +
+    `${IDS.length ? `&id=in.(${IDS.map(encodeURIComponent).join(',')})` : ''}&order=id`,
 );
 if (LIMIT) rows = rows.slice(0, LIMIT);
 
@@ -161,6 +171,31 @@ const bank = new Map<string, BankTile>(
     { key: 'slug' },
   )).map((r: BankTile) => [r.slug, r]),
 );
+
+/**
+ * Every photograph the library is already showing, so no two meals get the same one.
+ *
+ * Stock search is narrow: ask three green-smoothie meals for a green smoothie
+ * and all three are offered the same top-ranked picture. On the first run of
+ * this pass that happened twice, and four meals ended up sharing one photograph
+ * of a blueberry shake — a rail that reads as though it is repeating itself,
+ * which is the thing the spec's seventh user story asks us not to do.
+ *
+ * Cheaper to prevent here than to de-duplicate at render: this is one query and
+ * a set membership test, against a rail that would otherwise have to reason
+ * about what its neighbours are showing.
+ *
+ * Compared without the query string, because a stock CDN's resize parameters
+ * are not part of the picture's identity.
+ */
+const identity = (url: string) => url.split('?')[0];
+const taken = new Set<string>(
+  (await selectAll(
+    'meal_library',
+    'select=id,image_url&is_active=eq.true&image_url=not.is.null',
+  )).map((r: { image_url: string }) => identity(r.image_url)),
+);
+console.log(`already in use: ${taken.size} distinct photographs\n`);
 
 const dir = await Deno.makeTempDir({ prefix: 'mvdish-' });
 const fetchTile = createTileFetcher();
@@ -212,6 +247,8 @@ async function candidatesFor(row: Row): Promise<{ cands: Candidate[]; queries: s
     try {
       for (const c of await PROVIDERS[name](q)) {
         if (!c.url || seen.has(c.url) || refused.has(c.url)) continue;
+        // Another meal is already showing this one.
+        if (taken.has(identity(c.url))) continue;
         if (!licenseOk(c.license)) continue;
         seen.add(c.url);
         pool.push({ ...c, query: q } as Candidate);
@@ -276,6 +313,10 @@ async function accept(
   bytes: Uint8Array,
   refused: string[],
 ) {
+  // Claimed before the upload, so two workers racing on the same candidate
+  // cannot both take it.
+  taken.add(identity(cand.url));
+
   let url = cand.url;
   if ((MAY_MIRROR as Record<string, boolean>)[cand.provider] && !DRY) {
     // Archive material is ours to serve; stock providers require their CDN.
