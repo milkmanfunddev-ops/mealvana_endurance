@@ -165,11 +165,15 @@ recomputes from scratch where it can.
 
 - **Separability** classifies from name and ingredients only — no image is fetched and none is
   needed, because "cherry ice cream" tells you the cherries are gone. Batched, stored once.
-- **Bank verification** looks at a Tile and asks whether it shows its ingredient. It gains a strict
-  mode that fails a composed dish outright: a bowl of porridge is not a photograph of oats, and a
-  cell showing a finished dish makes a grid read as several different Meals. Strict mode ships
-  **off**; turning it on is a gated decision, because on sample it rejects roughly a quarter of the
-  bank and the rejections are concentrated in its most-used Tiles.
+- **Bank verification** looks at a Tile and asks whether it shows its ingredient. A strict mode
+  exists that fails a composed dish outright — a bowl of porridge is not a photograph of oats.
+  **Decision (Lee, 2026-09-10): a Tile may be a finished dish. Strict mode stays off.** On sample it
+  rejected roughly a quarter of the bank, concentrated in its most-used Tiles (avocado, quinoa,
+  spinach, peanut butter), and purging those would cost far more Meals than it would repair.
+
+  The consequence is accepted deliberately: a Mosaic cell may show a finished dish, so some grids
+  read as several Meals rather than one Meal's parts. Those are caught individually by the
+  Meal-image judge and repaired with a Dish photo, rather than pre-emptively at the bank.
 - **Meal-image judging** renders the picture the app composes and rates it `ok` / `weak` / `wrong`
   against the Meal's name and ingredients. This is the measure; it is also the acceptance test for
   any newly sourced picture.
@@ -177,13 +181,17 @@ recomputes from scratch where it can.
 - **Dish-photo sourcing** (new) searches licensed stock by *dish name* rather than by ingredient, for
   Meals a Mosaic cannot serve, and submits every candidate to the judge **before** accepting it.
 
-### Ordering, and the gate
+### Ordering
 
-Measurement comes first. The full judging sweep runs over the whole library before any strictness
-decision is taken, because the Dish photos have never been judged at all and the strategy depends on
-whether they are good. The sweep's output — verdict counts per Image mode — is the input to a single
-human decision: strict bank on or off. Work on the Tile bank is conditional on that decision; work on
-Dish photos is not, and is the larger piece either way.
+Measurement comes first, for two reasons. The Dish photos have never been judged at all, so the
+36.8% of the library assumed to be fine is an assumption. And with the bank left as it is, the
+judge's per-Meal verdict is the only thing that identifies which Mosaics need repair — it is not a
+report, it is the work queue.
+
+Before the sweep, the compositor the judge renders with must be shown to match the component the
+athlete sees; otherwise the sweep grades pictures nobody has ever looked at.
+
+Dish-photo sourcing is the larger piece and carries most of the remaining library.
 
 ### Query construction
 
