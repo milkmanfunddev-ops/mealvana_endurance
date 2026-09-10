@@ -35,6 +35,7 @@ let rows = await selectAll(
   'ingredient_images',
   'select=slug,display_name,rows_using,image_url,origin_url,provider,vision_reason,rejected_urls,attempts' +
   '&status=eq.rejected&order=rows_using.desc',
+  { key: 'slug' },
 );
 
 const skippedExhausted = rows.filter((r) => (r.attempts ?? 0) >= MAX_ATTEMPTS);

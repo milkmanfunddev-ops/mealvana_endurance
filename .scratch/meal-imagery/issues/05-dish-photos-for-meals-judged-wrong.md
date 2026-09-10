@@ -19,3 +19,9 @@ photo outranks a Mosaic in the ladder, so a successful sourcing simply replaces 
 - [ ] A replaced Mosaic's Tiles are cleared, so no Meal carries both.
 - [ ] The honesty figure is re-reported, and the remaining blocked population is broken down by
       reason.
+
+**Sized by 03's measurement (2026-09-10):** 910 meals are rated `wrong` — 539 `dish`, 367 `mosaic`,
+4 `tile` — ordered by reach in `docs/meal-images/honesty.md` and listable in full with
+`node scripts/meal-images/09-image-report.mjs --wrong`. The dish half was not anticipated: these
+meals have a photograph of the wrong food, so "a dish photo outranks a mosaic" does not rescue them
+and each needs re-sourcing on its own.

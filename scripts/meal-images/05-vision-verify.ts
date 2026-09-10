@@ -56,6 +56,7 @@ type Row = { slug: string; display_name: string; image_url: string };
 let rows: Row[] = await selectAll(
   'ingredient_images',
   `select=slug,display_name,image_url&status=eq.ok${RECHECK ? '' : '&vision_ok=is.null'}&order=rows_using.desc`,
+{ key: 'slug' },
 );
 if (LIMIT) rows = rows.slice(0, LIMIT);
 console.log(`model: ${MODEL}`);

@@ -21,3 +21,8 @@ Every previous pass accepted on a text score and discovered the problem later.
       reason. None is left showing a Mosaic.
 - [ ] The pass is idempotent: a re-run skips Meals already served and retries only failures.
 - [ ] The honesty figure is re-reported against ticket 03's baseline.
+
+**Rescoped by 03's measurement (2026-09-10).** The 170 transformed meals are no longer the largest
+population needing a photograph: **539 meals already wearing a dish photo are wrong**, and this
+pass's sourcing is what fixes them too (ticket 05). Judge-before-accept matters more than expected
+— the existing dish photos are exactly what accepting on a text score produces.

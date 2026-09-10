@@ -31,7 +31,7 @@ console.log(`providers: wikimedia, openverse${hasPexels ? ', pexels' : ''}`
   + `${hasUnsplash ? ` , unsplash (top ${UNSPLASH_TOP} only)` : ''}`);
 
 let pending = await selectAll('ingredient_images',
-  'select=slug,display_name,rows_using,rejected_urls,attempts&status=eq.pending&order=rows_using.desc');
+  'select=slug,display_name,rows_using,rejected_urls,attempts&status=eq.pending&order=rows_using.desc', { key: 'slug' });
 pending = pending.map((p, i) => ({ ...p, rank: i + 1 }));
 if (LIMIT) pending = pending.slice(0, LIMIT);
 console.log(`pending ingredients: ${pending.length}\n`);

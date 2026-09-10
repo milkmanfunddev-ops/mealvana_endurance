@@ -12,7 +12,7 @@ const run = promisify(execFile);
 const COLS = 8, CELL = 150, PER_SHEET = 96;
 
 const rows = await selectAll('ingredient_images',
-  'select=slug,image_url,provider,rows_using&status=eq.ok&order=rows_using.desc');
+  'select=slug,image_url,provider,rows_using&status=eq.ok&order=rows_using.desc', { key: 'slug' });
 console.log(`tiles: ${rows.length}`);
 
 const dir = mkdtempSync(join(tmpdir(), 'mvsheet-'));

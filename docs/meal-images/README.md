@@ -28,10 +28,12 @@ a handful of shared "grain bowl" stock photos would.
 | `dish` | a real photograph of the meal; `image_url` is used, tiles ignored |
 | `mosaic` | 2-4 ingredient tiles in `image_tiles` |
 | `tile` | exactly one ingredient tile |
-| `none` | nothing usable — **the app shows no image at all** (Lee, 2026-09-08) |
+| `none` | nothing usable — the card keeps its icon, and `image_blocked` is raised with `image_blocked_reason` so the population is countable |
 
-`none` deliberately does not fall back to an icon glyph. A row can move up the
-ladder later simply by re-running pass 3 after the bank grows.
+`none` is a state, not an absence: the card draws the meal's icon in the space
+the picture would occupy, so a rail of mixed rows does not go ragged
+(`meal_card.dart`). A row can move up the ladder later simply by re-running
+pass 3 after the bank grows.
 
 The rules that pick the rung live in `scripts/meal-images/lib/ladder.mjs` —
 `resolveMealImage(meal, bank)`, a pure function that touches no network, no
@@ -107,18 +109,30 @@ node scripts/meal-images/lib/compose-mosaic.mjs --out /tmp/grid.png a.jpg b.jpg 
 ## Pipeline
 
 ```
-01-build-bank.mjs     ingredients_json -> normalized slugs -> ingredient_images
-02-fetch-images.mjs   search providers -> score -> tile -> storage/hotlink
-05-vision-verify.ts   look at the pixels -> demote tiles that aren't the food
-03-assign-tiles.mjs   bank + ingredients -> meal_library.image_tiles/image_mode
-04-contact-sheet.mjs  (review) render the whole bank as a few PNGs
+01-build-bank.mjs      ingredients_json -> normalized slugs -> ingredient_images
+02-fetch-images.mjs    search providers -> score -> tile -> storage/hotlink
+05-vision-verify.ts    look at the pixels -> demote tiles that aren't the food
+07-classify-separability.ts  can this meal be told by its parts at all?
+03-assign-tiles.mjs    bank + ingredients -> image_tiles/image_mode/image_blocked
+08-verify-meal-image.ts  compose what the athlete sees -> image_verdict  ($, hours)
+09-image-report.mjs    count it all -> docs/meal-images/honesty.md
+04-contact-sheet.mjs   (review) render the whole bank as a few PNGs
 ```
 
-Run order is 01 -> 02 -> 05 -> 03 -> 04; pass 5 must precede pass 3, because
-pass 3 only reads `status='ok'`.
+Run order is 01 -> 02 -> 05 -> 07 -> 03 -> 08 -> 09; pass 5 must precede pass 3,
+because pass 3 only reads `status='ok'`, and pass 7 must precede it because a
+transformed meal may not wear tiles. Pass 8 judges what pass 3 assigned, so it
+comes after, and pass 9 only counts what 3 and 8 wrote.
 
-All are idempotent. Pass 2 only touches `status='pending'` and pass 5 only
-tiles without a verdict, so re-running resumes rather than redoing.
+All are idempotent, and all resume. Pass 2 only touches `status='pending'`,
+pass 5 only tiles without a verdict, and pass 8 only meals without one — and
+pass 8 writes each verdict as it reaches it rather than batching to the end, so
+a run killed an hour in keeps every verdict it paid for. Passes 3 and 9
+recompute from scratch every time.
+
+**Pass 8 spends real money** — one frontier-model vision call per meal showing a
+picture, about $5 for the library, several hours at `CONCURRENCY=5`. What each
+run actually cost is in [honesty.md](honesty.md).
 
 ```bash
 set -a; source secrets/image_apis.env; source secrets/ai_gateway.env; set +a
@@ -127,10 +141,18 @@ node scripts/meal-images/02-fetch-images.mjs      # LIMIT= CONCURRENCY= to sampl
 deno run --allow-net --allow-read --allow-env --allow-sys \
   scripts/meal-images/05-vision-verify.ts        # RECHECK=1 to re-judge
 node scripts/meal-images/03-assign-tiles.mjs
+deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
+  scripts/meal-images/08-verify-meal-image.ts    # LIMIT= to sample, DRY=1 to price it
+node scripts/meal-images/09-image-report.mjs --write
 node scripts/meal-images/04-contact-sheet.mjs
 ```
 
 ## Where it landed (2026-09-08)
+
+> **Do not quote the number below.** 94.5% is *coverage* — how many meals have a
+> picture — and it counts fifteen meals represented by a photograph of water as
+> fifteen covered meals. The number that means anything is honesty, measured per
+> meal against the composed image: **[honesty.md](honesty.md)**.
 
 **94.5% coverage — 1,816 of 1,922 meals**, from a bank of ~500 vision-checked
 ingredient tiles. Baseline before this work was 36.8%.
@@ -235,6 +257,20 @@ These all cost a run, and the guards for them are in the code:
   forced 80s per ingredient (27h for the tail); Pexels' 200/hr forced 20s.
   Metered providers lead only for the top-ranked ingredients; the unmetered
   archives carry the tail, which runs ~16/min.
+- **A `Range:`-paged read with no unique ordering is a silent data loss.**
+  Postgres promises nothing about the order of two separate queries, so page 2
+  can repeat page 1 and omit rows instead — and ordering by `rows_using.desc`
+  is the same bug wearing a hat, because hundreds of slugs share a count. The
+  omitted meals keep a stale `image_mode` and nothing says so. `selectAll` now
+  appends the table's key to every order, and takes `{ key: 'slug' }` for
+  `ingredient_images`.
+- **A skip is not free just because it is correct.** Pass 8's first full sweep
+  asked upload.wikimedia.org for five pictures at once, got 429s thirty meals
+  in, and skipped **41 of the next 44 meals in seconds** — every skipped meal
+  stayed unjudged, so nothing was corrupted, and the run still measured a fifth
+  of the library while reporting success. A 429 is the host saying "slower",
+  and `lib/fetch-tile.mjs` now says it back: per-host pacing that widens on a
+  429 (honouring `Retry-After`) and narrows on success. Re-run: 0 skips in 300.
 - **Normalization bugs are silent.** `\bwhole\b` matched inside hyphenated
   compounds, so `whole-grain crackers` became the unmatchable slug
   `-grain-crackers`. Compounds are stripped before the bare word; check

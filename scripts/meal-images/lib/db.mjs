@@ -53,11 +53,38 @@ async function restOnce(path, init = {}) {
   return body ? JSON.parse(body) : null;
 }
 
-/** Page through a table so we are never capped by PostgREST's row limit. */
-export async function selectAll(table, query, pageSize = 1000) {
+/**
+ * Make a paged read repeatable.
+ *
+ * PostgREST pages with `Range:`, and Postgres promises nothing about the order
+ * of two separate queries — so an unordered page 2 can repeat rows from page 1
+ * and omit others just as silently. Ordering by a non-unique column is the same
+ * bug wearing a hat: hundreds of ingredients share a `rows_using` count, and
+ * ties may fall either side of a page boundary.
+ *
+ * So every paged read is ordered, and the table's key is always the last term.
+ *
+ * @param {string} query a PostgREST query string
+ * @param {string} key a column unique within the table (`id`, `slug`, …)
+ */
+export function withStableOrder(query, key) {
+  const order = query.match(/(?:^|&)order=([^&]*)/);
+  if (!order) return `${query}&order=${key}`;
+  const terms = order[1].split(',').map((t) => t.split('.')[0]);
+  if (terms.includes(key)) return query;
+  return query.replace(order[0], `${order[0]},${key}`);
+}
+
+/**
+ * Page through a table so we are never capped by PostgREST's row limit.
+ *
+ * @param {string} key a column unique within the table — see `withStableOrder`.
+ */
+export async function selectAll(table, query, { pageSize = 1000, key = 'id' } = {}) {
+  const ordered = withStableOrder(query, key);
   const out = [];
   for (let from = 0; ; from += pageSize) {
-    const res = await fetch(`${BASE}/rest/v1/${table}?${query}`, {
+    const res = await fetch(`${BASE}/rest/v1/${table}?${ordered}`, {
       headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, Range: `${from}-${from + pageSize - 1}` },
     });
     if (!res.ok) throw new Error(`select ${table} -> ${res.status} ${await res.text()}`);

@@ -15,7 +15,7 @@ const DRY = process.env.DRY === '1';
 
 const bank = new Map(
   (await selectAll('ingredient_images',
-    'select=slug,display_name,image_url,license,creator,source_url,provider&status=eq.ok'))
+    'select=slug,display_name,image_url,license,creator,source_url,provider&status=eq.ok', { key: 'slug' }))
     .map((r) => [r.slug, r]));
 console.log(`bank: ${bank.size} ingredient tiles`);
 
@@ -34,7 +34,16 @@ for (const m of meals) {
   tally[mode]++;
   if (isBlocked) blocked[reason]++;
 
-  updates.push({ id: m.id, image_tiles: tiles, image_mode: mode, image_blocked: isBlocked });
+  updates.push({
+    id: m.id,
+    image_tiles: tiles,
+    image_mode: mode,
+    image_blocked: isBlocked,
+    // Which of the three reasons, per meal and not only in the tally: a
+    // transformed meal needs a dish photo, a meal with no tile needs the bank
+    // to grow, and pass 9 cannot tell those populations apart without this.
+    image_blocked_reason: isBlocked ? reason : null,
+  });
 }
 
 const withImage = tally.dish + tally.mosaic + tally.tile;

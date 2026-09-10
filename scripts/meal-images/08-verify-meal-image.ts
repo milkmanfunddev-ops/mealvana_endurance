@@ -20,22 +20,29 @@
  *   wrong  actively misleading — a different food, or parts that are not what
  *          the finished meal looks like
  *
- * BILLS REAL SPEND: one vision call per meal, ~1,800 meals, roughly $7 on
- * Sonnet 5. Run it when the library changes, not casually.
+ * BILLS REAL SPEND: one vision call per meal, ~1,500 meals, single-digit
+ * dollars on Sonnet 5. Run it when the library changes, not casually. What each
+ * run cost is appended to docs/meal-images/honesty.md, so the next person can
+ * see the price before they decide to pay it.
  *
  *   set -a; source secrets/ai_gateway.env; set +a
  *   deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
  *     scripts/meal-images/08-verify-meal-image.ts
  *
- * Idempotent: only meals with no verdict yet are judged. LIMIT=n to sample,
- * REVERIFY=1 to redo, MODE=mosaic to judge one rung only, DRY=1 to print
- * without writing, KEEP=1 to leave the composites on disk for eyeballing.
+ * Resumable: each verdict is written as it is reached, not batched to the end,
+ * so a run killed at meal 900 keeps 900 verdicts and the next run picks up the
+ * rest. Idempotent: only meals with no verdict yet are judged. LIMIT=n to
+ * sample, REVERIFY=1 to redo, MODE=mosaic to judge one rung only, DRY=1 to
+ * print without writing, KEEP=1 to leave the composites on disk for eyeballing.
  */
 import { generateObject } from 'npm:ai@6';
 import { z } from 'npm:zod@3';
 import { selectAll, updateMany } from './lib/db.mjs';
+import { estimateSpend, renderRunRow } from './lib/honesty.mjs';
+import { appendRun } from './lib/report-doc.mjs';
 import { pinnedGeometry } from './lib/mosaic-geometry.mjs';
 import { CANVAS, composeMosaic } from './lib/compose-mosaic.mjs';
+import { createTileFetcher } from './lib/fetch-tile.mjs';
 
 const MODEL = Deno.env.get('MEAL_IMAGE_JUDGE_MODEL') ?? 'anthropic/claude-sonnet-5';
 const CONCURRENCY = Number(Deno.env.get('CONCURRENCY') ?? 4);
@@ -84,6 +91,11 @@ if (!rows.length) Deno.exit(0);
 
 const dir = await Deno.makeTempDir({ prefix: 'mvjudge-' });
 
+// Paced per host. The library hotlinks 668 pictures to upload.wikimedia.org,
+// and asking it for five at a time gets 429s about thirty meals in — see
+// lib/fetch-tile.mjs for what that cost before this existed.
+const fetchTile = createTileFetcher();
+
 function urlsFor(row: Row): string[] {
   if (row.image_mode === 'dish') return row.image_url ? [row.image_url] : [];
   return (row.image_tiles ?? []).map((t) => t.url).filter(Boolean).slice(0, 4);
@@ -105,13 +117,8 @@ async function render(row: Row): Promise<Uint8Array | null> {
 
   const files: string[] = [];
   for (const [i, url] of urls.entries()) {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'MealvanaBot/1.0 (https://mealvana.com)' },
-      signal: AbortSignal.timeout(25_000),
-    });
-    if (!res.ok) throw new Error(`tile ${i} -> ${res.status}`);
     const f = `${dir}/${row.id}_${i}.img`;
-    await Deno.writeFile(f, new Uint8Array(await res.arrayBuffer()));
+    await Deno.writeFile(f, await fetchTile(url));
     files.push(f);
   }
 
@@ -135,7 +142,7 @@ async function judge(row: Row, bytes: Uint8Array) {
     ? 'a single ingredient photograph standing in for the whole meal'
     : 'a grid of ingredient photographs, one cell per ingredient, standing in for the meal';
 
-  const { object } = await generateObject({
+  const { object, usage: used } = await generateObject({
     model: MODEL,
     schema: Verdict,
     messages: [{
@@ -166,13 +173,36 @@ async function judge(row: Row, bytes: Uint8Array) {
       ],
     }],
   });
+  // Accumulated so the run can say what it cost rather than what it guessed.
+  usage.inputTokens += used?.inputTokens ?? 0;
+  usage.outputTokens += used?.outputTokens ?? 0;
   return object;
 }
 
 const tally: Record<string, number> = { ok: 0, weak: 0, wrong: 0 };
-const results: { id: string; verdict: string; reason: string }[] = [];
 const worst: { name: string; mode: string; reason: string }[] = [];
-let done = 0, skipped = 0;
+const usage = { inputTokens: 0, outputTokens: 0 };
+let done = 0, skipped = 0, judged = 0, written = 0, unwritten = 0;
+
+/**
+ * Write one verdict the moment it is reached.
+ *
+ * The previous version collected every verdict in memory and wrote them all at
+ * the end, which meant a run killed at meal 900 — a laptop lid, a dropped
+ * network, an hour into a run that takes several — had bought 900 model calls
+ * and kept none of them. A PATCH per meal costs a round trip against a spend
+ * that dwarfs it, and turns a killed run into lost time rather than lost work.
+ */
+async function record(row: Row, v: z.infer<typeof Verdict>) {
+  if (DRY) return;
+  await updateMany('meal_library', [{
+    id: row.id,
+    image_verdict: v.verdict,
+    image_verdict_reason: v.reason,
+    image_verdict_at: new Date().toISOString(),
+  }]);
+  written++;
+}
 
 const queue = [...rows];
 await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
@@ -184,6 +214,7 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
         const bytes = await render(row);
         if (!bytes) break;
         v = await judge(row, bytes);
+        await record(row, v);
       } catch (e) {
         if (attempt === 3) {
           skipped++;
@@ -194,8 +225,8 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
     done++;
     if (!v) continue;
 
+    judged++;
     tally[v.verdict]++;
-    results.push({ id: row.id, verdict: v.verdict, reason: v.reason });
     if (v.verdict === 'wrong' && worst.length < 25) {
       worst.push({ name: row.name, mode: row.image_mode, reason: v.reason });
     }
@@ -210,9 +241,12 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
 if (!KEEP) await Deno.remove(dir, { recursive: true }).catch(() => {});
 else console.log(`\ncomposites kept in ${dir}`);
 
-console.log(`\njudged ${results.length}${skipped ? `, skipped ${skipped}` : ''}`);
+console.log(
+  `\njudged ${judged}${skipped ? `, skipped ${skipped}` : ''}, rows written ${written}` +
+    (unwritten ? `, ${unwritten} judged but NOT written (paid for, not kept — re-run to redo them)` : ''),
+);
 for (const k of ['ok', 'weak', 'wrong']) {
-  const pct = results.length ? (100 * tally[k] / results.length).toFixed(1) : '0.0';
+  const pct = judged ? (100 * tally[k] / judged).toFixed(1) : '0.0';
   console.log(`  ${k.padEnd(6)} ${String(tally[k]).padStart(5)}  ${pct}%`);
 }
 if (worst.length) {
@@ -222,13 +256,20 @@ if (worst.length) {
   }
 }
 
+// What it cost, at list price, recorded where the numbers it bought are.
+const spendUsd = estimateSpend({ model: MODEL, ...usage });
+const at = new Date().toISOString();
+console.log(
+  `\ntokens: ${usage.inputTokens.toLocaleString('en-US')} in / ` +
+    `${usage.outputTokens.toLocaleString('en-US')} out` +
+    (spendUsd === null ? '  (no list price recorded for this model)' : `  ≈ $${spendUsd.toFixed(2)}`),
+);
+
 if (DRY) { console.log('\nDRY=1 — nothing written'); Deno.exit(0); }
 
-const at = new Date().toISOString();
-const written = await updateMany('meal_library', results.map((r) => ({
-  id: r.id,
-  image_verdict: r.verdict,
-  image_verdict_reason: r.reason,
-  image_verdict_at: at,
-})));
-console.log(`\nrows written: ${written}`);
+const runRow = renderRunRow({
+  at, model: MODEL, geometryVersion: GEOMETRY.version,
+  judged, skipped, ...usage, spendUsd,
+});
+if (await appendRun(runRow)) console.log('spend appended to docs/meal-images/honesty.md');
+console.log('\nnow: node scripts/meal-images/09-image-report.mjs --write');
