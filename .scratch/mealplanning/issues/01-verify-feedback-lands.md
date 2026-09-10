@@ -1,8 +1,10 @@
 # 01: Verify feedback lands from Vana
 
-**Status:** ready-for-human
-**Blocked by:** A decision from Lee — see "The open question" below
-**Next:** Decide how the acknowledgement is kept short, then the remaining copy variants can be written and re-run.
+**Status:** ready-for-agent
+**Blocked by:** None. One acceptance line — the reply's length — waits on a decision; the rest does not.
+**Next:** Run `/mattpocock-skills:implement 01`. It writes the praise and suggestion cases and
+verifies the first-conversation prompt. It must NOT touch the acknowledgement wording, which is the
+one line waiting on Lee.
 
 **What to build:** An athlete tells Vana "you keep suggesting fish" in a real dev conversation. Vana thanks them in one plain sentence, does not troubleshoot, and a feedback row exists with negative sentiment, about Vana, the message in their words, and the conversation id. The same for praise and for a suggestion. The first conversation of a fresh user shows the one-time "have feedback? just type it here" prompt after the opener and never again. Whatever this finds broken gets fixed in the same ticket. Nothing here is built on a self-report: the rows are read back from the table.
 
@@ -68,5 +70,33 @@ twice. This needs a decision rather than another rewrite:
 1. **Clamp the saveFeedback turn server-side to one sentence.** There is precedent —
    `RUNAWAY_SENTENCES` already clamps planning turns — but it contradicts the posture written into
    chat.ts, that brevity is a prompt rule because a clamp only cuts text after it was paid for.
+   **A naive clamp also keeps the wrong sentence**: in the best run the first sentence was "Your
+   feedback is saved"; in the worst it was "You're right, and I apologize."
 2. **Relax the criterion to two sentences** and accept a short acknowledgement.
 3. **Use a stronger model for this turn only**, which the eval's per-case token numbers now price.
+4. **RECOMMENDED — a server-authored acknowledgement.** When `saveFeedback` succeeds the server
+   appends a fixed, content-managed line and the model is told to say nothing about the feedback at
+   all. The precedent is in this same file: the first-conversation `feedback_prompt` part is
+   server-authored precisely so "the model never sees or writes it, so it cannot be paraphrased
+   away." Deterministic like a clamp but it keeps the right words; removes the priming problem,
+   because she is asked to be silent rather than brief; puts the copy in the content system; costs
+   fewer output tokens. The case to handle is a message that is both a complaint and a question,
+   where she still answers the question.
+
+**Separate the requirement from its proxy while deciding.** The user story is "I am not troubleshot
+when I was venting". One sentence was a proxy for that. What causes the harm is the diagnosing and
+the promising, not the sentence count.
+
+## Triage correction, 2026-09-10
+
+This was labelled `ready-for-human` because one acceptance line needs a decision. That was wrong:
+two of the three unfinished items need nothing from Lee.
+
+- The praise and suggestion variants are unwritten. No decision needed.
+- The first-conversation feedback prompt has never been verified live — a brand-new user seeing it
+  once and never again. No decision needed, and it is the only part of this ticket that has never
+  been exercised at all.
+- Only the acknowledgement's length waits on a ruling.
+
+An agent can take this ticket now and leave that one line alone.
+

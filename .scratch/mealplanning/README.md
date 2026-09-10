@@ -12,11 +12,13 @@ uses this repo's own vocabulary (`docs/agents/triage-labels.md`) plus `done`, `b
 ## Run this next
 
 ```
-git push                                    # 16 commits are only on this laptop
+git push                                    # 17 commits are only on this laptop
 /clear
-/mattpocock-skills:implement 14             # server-only, small, closes a gap the review found
+/mattpocock-skills:implement 01             # the spec's own ticket zero; two thirds of it needs no ruling
 /clear
-/mattpocock-skills:implement 15             # the profile seam — give it a fresh window
+/mattpocock-skills:implement 15             # home location on the device — the profile seam
+/clear
+/mattpocock-skills:implement 14             # the episode writer — value arrives with the sheet
 ```
 
 One ticket per session, `/clear` between. That is the workflow's step 4, and it matters here: the
@@ -24,19 +26,22 @@ last four tickets of the long first session were noticeably worse served than th
 
 ## Waiting on Lee, not on an agent
 
-Three decisions. The first unblocks three tickets; the others close one each.
+Two decisions. The first unblocks three tickets.
+
+A third, the feedback acknowledgement's length, is **one line inside ticket 01** rather than a
+blocker on it — the rest of that ticket can be built now. The recommendation is a server-authored
+acknowledgement, the way the first-conversation prompt already works.
 
 | # | Decision | Unblocks |
 |---|---|---|
 | 09 | Confirm the two answers the design export gave: the sheet's rest heights, and the launcher's mark being a drawn speech bubble — the first branded glyph on the shell | 10, then 11 and 12 |
-| 01 | How the feedback acknowledgement is kept short. Recommendation: a server-authored line, the way the first-conversation prompt already works | 01 |
 | 13 | What makes Vana speak unprompted. Three candidate trigger sets are in the ticket | 13 |
 
 ## Where every ticket stands
 
 | # | Ticket | Status | Blocked by |
 |---|---|---|---|
-| 01 | Verify feedback lands | ready-for-human | a decision |
+| 01 | Verify feedback lands | ready-for-agent | one acceptance line waits on a ruling |
 | 02 | Vana test harness | done | |
 | 03 | General mode reads the Doll | done | |
 | 04 | Situation | ready-for-human | a simulator check, riding along with 10 |
@@ -52,7 +57,7 @@ Three decisions. The first unblocks three tickets; the others close one each.
 | 14 | An episode for a still-open conversation | ready-for-agent | |
 | 15 | Home location on the device | ready-for-agent | |
 
-Six done, two ready to build, three waiting on a decision, three blocked behind those, one deferred.
+Six done, three ready to build, two waiting on a decision, three blocked behind those, one deferred.
 
 ## State of the world, 2026-09-10
 
