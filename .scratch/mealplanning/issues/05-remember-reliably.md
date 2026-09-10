@@ -1,10 +1,9 @@
 # 05: Remember reliably
 
+**Status:** done
+**Blocked by:** None
+
 **What to build:** An athlete says "remember that Wednesdays are chaos" and it sticks: the remember tool fires every time the person asks, and the next conversation uses it unprompted. The prompt is sharpened so the model also calls remember on its own when the margin-note rule is met and never for this week's plan or a Fact it already has. Writes are deduped: a sentence near-identical by embedding to an existing Memory is not inserted; the existing row's confirmed date is refreshed instead. The duplicated debrief learning on dev is the fixture.
-
-**Blocked by:** 02 Vana test harness
-
-**Status:** done, verified live (2026-09-10)
 
 - [x] Server seam: writing a sentence near-identical to an existing Memory inserts nothing and refreshes the existing confirmed date; a distinct sentence inserts
 - [x] The duplicated debrief learning, replayed through the writer, yields one row
@@ -46,4 +45,3 @@ in the block, and the margin-note rule told her not to write what she already ha
 right for a note she decides to keep on her own and wrong for one the athlete asks for. The tool
 description and both personas now separate the two triggers: when they ask, always call, every time,
 and let the server decide new-note or refresh. That is what the dedupe is for.
-

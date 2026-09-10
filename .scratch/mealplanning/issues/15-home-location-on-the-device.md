@@ -1,13 +1,13 @@
 # 15: Home location on the device
 
+**Status:** ready-for-agent
+**Blocked by:** None
+**Next:** Run `/mattpocock-skills:implement 15`.
+
 **What to build:** The three home fields carried by the local profile and its sync, so the app can show
 and edit where the athlete lives rather than only Vana being able to set it. The server half is done
 and verified: the columns exist on dev, Vana writes them through `setHomeLocation`, and weather and
 Kroger key off them.
-
-**Blocked by:** None
-
-**Status:** ready-for-agent
 
 **Why it was split out (2026-09-09):** `UserProfile` is the model whose partial parsers once silently
 reset onboarding answers, and three new fields mean touching the constructor, `fromSupabaseRow`,

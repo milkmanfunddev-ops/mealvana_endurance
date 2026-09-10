@@ -1,5 +1,9 @@
 # 10: Vana everywhere — the launcher and the sheet
 
+**Status:** blocked
+**Blocked by:** 09 Vana sheet spec (confirmation)
+**Next:** Run `/mattpocock-skills:implement 10` once 09 is confirmed.
+
 **What to build:** An athlete on any ordinary screen sees Vana in the bottom-right corner, taps her,
 and a glass sheet rises over the screen they were on. They ask about what is in front of them and she
 answers with the Situation. Closing the sheet condenses it back into the launcher and returns them
@@ -8,10 +12,7 @@ next day starts a new one. A full-screen affordance opens the existing chat rout
 conversation. The launcher is absent on auth, onboarding, privacy consent, paywall, force-upgrade, and
 all Vana routes. Gating follows the app's gate; nothing Vana-specific.
 
-**Blocked by:** 09 Vana sheet spec (ratification — Q-VS1 and Q-VS2 are answered by the export and need
 confirming; Q-VS3 and Q-VS4 are still open but do not block a passive build)
-
-**Status:** ready-for-agent once the spec is confirmed
 
 **Scope note (Lee, 2026-09-10):** everywhere, not home-first. The Situation plumbing already reports
 from fifteen screens, so the launcher has something to say wherever it appears.

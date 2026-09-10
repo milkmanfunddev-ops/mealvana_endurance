@@ -1,5 +1,9 @@
 # 13: The companion that speaks first — DEFERRED
 
+**Status:** deferred
+**Blocked by:** A decision from Lee — what makes Vana speak
+**Next:** Nothing to run. The three candidate trigger sets are below for when you want to pick one.
+
 **What the export draws:** Vana speaking unprompted. A traced ring around the launcher for about two
 seconds, then a colour tint — orange when there is something to do, electrolyte when it is only news.
 For an actionable moment, a short pill beside the launcher ("Fuel tonight's run?") that retires after
@@ -12,10 +16,6 @@ message and quick replies — in the export, "That's your fuel timeline behind m
 run is at 5:30, and the pre-run window opens at 4:30. Want me to walk you through fueling it?" with
 "Walk me through it" and "I'll explore on my own". Dismissing returns the moment to the launcher
 rather than clearing it.
-
-**Blocked by:** a decision, not a ticket.
-
-**Status:** DEFERRED (Lee, 2026-09-10: "i don't really know. we can worry about this later")
 
 ## The question that has to be answered first
 

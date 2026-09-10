@@ -1,10 +1,9 @@
 # 06: Lazy extraction
 
+**Status:** done
+**Blocked by:** None
+
 **What to build:** An athlete mentions in passing that their partner is vegetarian, never says "remember", and the next conversation already knows. When a conversation opens, the person's most recent conversation not yet read back is fed to one Haiku call with the margin-note rule and a strict schema: zero to three Memory sentences and one episode sentence. Sentences are written through the deduped writer with source conversation; the episode is written as an episode Memory and may also fill the conversation's summary column for list previews. The conversation is marked read back so it is never extracted twice. Nothing is announced to the person. The opener's synthetic message is not part of the transcript and must not be relied on.
-
-**Blocked by:** 05 Remember reliably
-
-**Status:** done, migration applied, verified live (2026-09-10)
 
 - [x] Server seam: a fixture transcript with two durable facts and one plan detail yields two Memories and one episode, and the plan detail is not written
 - [x] Server seam: a second run over the same conversation writes nothing
@@ -46,4 +45,3 @@ whichever way it starts.
 person and tight for an eval opening a conversation every few seconds — the eval now waits out the
 window. A rate-limited read-back releases its claim, so nothing is lost; it happens on a later
 conversation instead.
-

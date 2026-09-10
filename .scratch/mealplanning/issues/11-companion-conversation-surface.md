@@ -1,5 +1,9 @@
 # 11: The companion's conversation surface
 
+**Status:** blocked
+**Blocked by:** 10 Vana everywhere
+**Next:** Run `/mattpocock-skills:implement 11` once 10 lands.
+
 **What to build:** The inside of the sheet, as the export draws it. A status chip at the top naming
 what this exchange is about — "Fuel plan · to do" in orange when there is something to do, "Update" in
 electrolyte when there is not. Vana's messages flush left, each with a small filled orange sparkle
@@ -9,10 +13,6 @@ moment the thread has anything in it and do not come back in that exchange. A co
 control is inert until there is a draft and orange once there is.
 
 The generative-UI parts Vana already renders compose inside the message column unchanged.
-
-**Blocked by:** 10 Vana everywhere
-
-**Status:** ready-for-agent once 10 lands
 
 - [ ] Status chip derives from the exchange, not from a hardcoded string; both tones render
 - [ ] Vana and athlete message treatments match the spec, at iPhone-SE width and at large text

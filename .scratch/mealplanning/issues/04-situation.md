@@ -1,10 +1,10 @@
 # 04: Situation
 
+**Status:** ready-for-human
+**Blocked by:** None — the code is done; a simulator check is not
+**Next:** Rides along with ticket 10's simulator pass. Nothing to implement.
+
 **What to build:** An athlete on the fuel log for Saturday's ride asks Vana "what should I eat before this", and she answers about that ride. Each message from the client carries the route and, for screens with an entity in view, its id and date: Plan tab (date, plan), meal detail (meal), fuel log and current plan (activity), event screens (event), meal-log screens (date, slot), main tabs (date). The server resolves ids into one SITUATION sentence in the block. The Situation is never stored. Clients never send names or free text.
-
-**Blocked by:** 03 General mode reads the Doll
-
-**Status:** built, live eval not run (2026-09-09)
 
 - [x] Server seam: each screen in the table resolves to its sentence from fixture rows; an unknown route resolves to route only; a missing entity resolves without error
 - [x] Client seam: the Situation provider emits the right route, entity, and date for each screen in the table through the real provider
@@ -32,4 +32,3 @@ the race checklist, the events list, the main tab shell, and all six meal-loggin
 Meal-log screens report their date; the slot is not one of their extras, so it is not sent yet.
 
 Not done: the live eval line (case `situation` work is covered by `knows-tomorrow` and by hand).
-

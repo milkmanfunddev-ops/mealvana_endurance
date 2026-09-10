@@ -1,10 +1,10 @@
 # 03: General mode reads the Doll
 
+**Status:** done
+**Blocked by:** None
+**Next:** The episode prepend is carried by ticket 14 — this ticket does not wait for it.
+
 **What to build:** An athlete opens Vana from the Plan tab avatar and asks "what's my workout tomorrow" or "what did I log today". She answers from what she already knows, without a tool call failing or a guess. Both conversation kinds receive the same context block every turn, extended with a LIKES line from Meal feedback (thumbed-up and thumbed-down Meals by name) and a GOALS line from the onboarding survey. Long conversations stay coherent: each turn replays at most the last 20 messages, and when the cap bites the conversation's episode sentence is prepended once. This ticket also creates the personalization eval runner beside the existing vana-eval scripts, with these as its first cases and token cost recorded per case.
-
-**Blocked by:** 02 Vana test harness
-
-**Status:** built, live evals green; episode prepend still has no writer (2026-09-10)
 
 - [x] General and planning kinds produce the same context block for the same fixture rows, proven at the server seam
 - [x] LIKES line lists thumbed Meals by name and stance; absent thumbs reads "none"
@@ -43,4 +43,3 @@ the cap first bites, run the existing extractor's episode half over the messages
 dropped, in the background, and let the next turn pick it up. That is one Haiku call per
 conversation that crosses twenty messages. It is a real addition rather than a fix, so it is Lee's
 call, and the code carries a comment pointing here.
-

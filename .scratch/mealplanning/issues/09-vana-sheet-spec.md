@@ -1,10 +1,10 @@
 # 09: Vana sheet spec
 
+**Status:** ready-for-human
+**Blocked by:** A confirmation from Lee — Q-VS1 and Q-VS2 below
+**Next:** Confirm the two answers the export gave, then mirror. Ticket 10 cannot start until this is confirmed.
+
 **What to build:** A component spec for the Vana sheet exists in the design SSOT so the widget can be built once under its spec name. Drafted in the QA repo from the existing glass surface and tab-bar tokens: a bottom-corner launcher, a sheet that rises over the current screen leaving it visible, a full-screen affordance, and the states (closed, open, streaming, error). Synced into this repo's design SSOT mirror by the design-sync process. No Flutter code in this ticket.
-
-**Blocked by:** None (can start immediately)
-
-**Status:** spec revised against the export; awaiting confirmation, not synced (2026-09-10)
 
 - [x] Spec written in the QA repo under the design components, versioned, citing the tokens it composes
 - [ ] Synced verbatim into this repo's SSOT mirror; nothing edited app-side
@@ -48,4 +48,3 @@ the FAB clearance rule extend to the Plan tab's swipe rows).
 
 Added from the export: the sheet condenses back into the launcher rather than sliding away; the status
 chip; the message treatments; the quick replies and how they retire; the composer's send state.
-

@@ -1,10 +1,10 @@
 # 07: Home location Fact
 
+**Status:** done
+**Blocked by:** None
+**Next:** The device half is ticket 15. This ticket is the server, and the server is verified.
+
 **What to build:** An athlete tells Vana "I live in Birmingham" and from then on "what's the weather tomorrow" answers for Birmingham, not the race venue. Home city, coordinates, and timezone are three fields on the user record, a Fact the Doll reads. A profile tool lets Vana set them when the person mentions where they live. Weather and Kroger coverage key off home location when present and fall back to race location when not. The fields sync like the rest of the profile.
-
-**Blocked by:** 03 General mode reads the Doll
-
-**Status:** server done and verified live; local Drift mirror still not done (2026-09-10)
 
 - [x] Idempotent migration applied on dev (the local profile table and its sync do NOT carry them — see below)
 - [x] Server seam: the profile tool writes the fields; the context block carries a HOME line when set and omits it when not
@@ -37,4 +37,3 @@ Not done, and deliberately:
 **Verified live on dev, 2026-09-10.** "I live in Birmingham, Alabama" wrote `home_city =
 Birmingham, Alabama` and `home_timezone = America/Chicago` to the user record, and the next question
 about tomorrow's weather answered for Birmingham (93°F, 40% rain) rather than for a race venue.
-

@@ -1,10 +1,10 @@
 # 01: Verify feedback lands from Vana
 
+**Status:** ready-for-human
+**Blocked by:** A decision from Lee — see "The open question" below
+**Next:** Decide how the acknowledgement is kept short, then the remaining copy variants can be written and re-run.
+
 **What to build:** An athlete tells Vana "you keep suggesting fish" in a real dev conversation. Vana thanks them in one plain sentence, does not troubleshoot, and a feedback row exists with negative sentiment, about Vana, the message in their words, and the conversation id. The same for praise and for a suggestion. The first conversation of a fresh user shows the one-time "have feedback? just type it here" prompt after the opener and never again. Whatever this finds broken gets fixed in the same ticket. Nothing here is built on a self-report: the rows are read back from the table.
-
-**Blocked by:** None (can start immediately)
-
-**Status:** verified live on dev; one defect open (2026-09-10)
 
 - [x] A complaint produces one feedback row (praise and suggestion variants still unwritten) with the right sentiment, about-field, message, and conversation id
 - [ ] **OPEN:** the reply is 3–5 sentences and troubleshoots. See below.
@@ -70,4 +70,3 @@ twice. This needs a decision rather than another rewrite:
    chat.ts, that brevity is a prompt rule because a clamp only cuts text after it was paid for.
 2. **Relax the criterion to two sentences** and accept a short acknowledgement.
 3. **Use a stronger model for this turn only**, which the eval's per-case token numbers now price.
-

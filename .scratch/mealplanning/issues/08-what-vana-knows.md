@@ -1,10 +1,9 @@
 # 08: What Vana knows
 
+**Status:** done
+**Blocked by:** None
+
 **What to build:** An athlete opens Vana settings and sees everything she remembers as one flat list of sentences, each with its source and date, newest first. Keyed Memories (batch cooking, coverage, budget, pantry) appear as sentences like any other. Swiping or tapping delete removes a Memory in place and Vana stops using it from the next turn. Facts are not listed here; they are edited where they already live.
-
-**Blocked by:** 05 Remember reliably
-
-**Status:** done (2026-09-09)
 
 - [x] Vana settings shows a flat list of Memories with source and date, newest first, using shared design widgets and content-system strings
 - [x] Delete goes through the real notifier with a seam test: the row is soft-deleted locally first with upload tracking and reaches the server
@@ -27,4 +26,3 @@
 - Goldens: `memory_list` and `memory_list_empty`, light and dark, on the glass shell.
 
 97/97 local edge-function tests and 418 meal-planning Flutter tests pass.
-
