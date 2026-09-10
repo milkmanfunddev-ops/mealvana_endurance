@@ -82,6 +82,7 @@ import '../../features/coach_mode/application/coach_service.dart';
 import '../../features/meal_planning/domain/vana_conversation_kind.dart';
 import '../../features/meal_planning/presentation/screens/cooking_mode_screen.dart';
 import '../../features/meal_planning/presentation/screens/food_screen.dart';
+import '../../features/kroger/presentation/kroger_screen.dart';
 import '../../features/meal_planning/presentation/screens/meal_detail_screen.dart';
 import '../../features/meal_planning/presentation/screens/recents_screen.dart';
 import '../../features/meal_planning/presentation/screens/swap_meal_screen.dart';
@@ -1096,6 +1097,15 @@ class AppRouter {
               builder: (context, state) => SwapMealScreen(
                 planMealId: state.pathParameters['planMealId']!,
               ),
+            ),
+            // Shop with Kroger sits inside the Food tree rather than on a
+            // Navigator route of its own, so it keeps the app's chrome and
+            // the Pro gate that `/food/*` already carries.
+            GoRoute(
+              path: 'kroger/:planId',
+              name: 'food-kroger',
+              builder: (context, state) =>
+                  KrogerScreen(planId: state.pathParameters['planId']!),
             ),
           ],
         ),

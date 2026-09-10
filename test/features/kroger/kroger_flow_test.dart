@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -270,7 +272,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: KrogerScreen(planId: plan)),
+        child: MaterialApp.router(routerConfig: _router('/food/kroger/$plan')),
       ),
     );
     await tester.pumpAndSettle();
@@ -706,21 +708,18 @@ void main() {
     // "Choose a store first." explains a refusal. A button says what it does.
     final copy = loadDefaultContent();
     await showScreen(tester);
-    for (final button in tester.widgetList<ButtonStyleButton>(
-      find.byWidgetPredicate((w) => w is ButtonStyleButton),
+    final forbidden = const [
+      'kroger.choose_store',
+      'kroger.product_unavailable',
+      'kroger.no_products',
+      'kroger.review_required',
+    ].map((k) => copy[k]).toList();
+    final buttons = find.byWidgetPredicate((w) => w is ButtonStyleButton);
+    expect(buttons, findsWidgets);
+    for (final label in tester.widgetList<Text>(
+      find.descendant(of: buttons, matching: find.byType(Text)),
     )) {
-      final label = button.child;
-      if (label is Text) {
-        expect(
-          const [
-            'kroger.choose_store',
-            'kroger.product_unavailable',
-            'kroger.no_products',
-            'kroger.review_required',
-          ].map((k) => copy[k]),
-          isNot(contains(label.data)),
-        );
-      }
+      expect(forbidden, isNot(contains(label.data)));
     }
   });
   testWidgets('a control that cannot act is not rendered', (tester) async {
@@ -735,8 +734,7 @@ void main() {
     for (final button in tester.widgetList<ButtonStyleButton>(
       find.byWidgetPredicate((w) => w is ButtonStyleButton),
     )) {
-      final label = button.child;
-      expect(button.enabled, true, reason: label is Text ? label.data : '?');
+      expect(button.enabled, true);
     }
     await tester.runAsync(() async {
       await controller.setArea('35209');
@@ -773,7 +771,7 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(home: Scaffold(body: ShoppingTab())),
+        child: MaterialApp.router(routerConfig: _router('/')),
       ),
     );
     await tester.pumpAndSettle();
@@ -1039,7 +1037,10 @@ void main() {
       await tester.runAsync(controller.matchAll);
       await showScreen(tester);
       await tester.tap(
-        find.descendant(of: matched, matching: find.byIcon(Icons.add)),
+        find.descendant(
+          of: matched,
+          matching: find.byIcon(FontAwesomeIcons.plus.data),
+        ),
       );
       await tester.pumpAndSettle();
       expect(current().draft.lines.single.quantity, 3);
@@ -1092,3 +1093,24 @@ void main() {
     });
   });
 }
+
+/// The two screens under test, wired the way the app wires them: the Shopping
+/// tab at the root and Kroger under `/food`, so tapping the entry point
+/// exercises the real route rather than a Navigator push the app no longer
+/// makes.
+GoRouter _router(String initialLocation) => GoRouter(
+  initialLocation: initialLocation,
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (_, _) => const Scaffold(body: ShoppingTab()),
+      routes: [
+        GoRoute(
+          path: 'food/kroger/:planId',
+          builder: (_, state) =>
+              KrogerScreen(planId: state.pathParameters['planId']!),
+        ),
+      ],
+    ),
+  ],
+);

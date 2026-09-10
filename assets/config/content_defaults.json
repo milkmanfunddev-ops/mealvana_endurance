@@ -48,6 +48,7 @@
     "needed": "Needed: {quantity}",
     "package": "Package: {size}",
     "unknown_size": "Size not provided",
+    "product_image": "Photograph of {product}, from Kroger",
     "quantity": "Packages",
     "quantity_decrease": "One fewer package",
     "quantity_increase": "One more package",

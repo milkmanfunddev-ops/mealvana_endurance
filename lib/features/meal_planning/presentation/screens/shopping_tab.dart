@@ -6,11 +6,11 @@ import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
+import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/shopping_list_controller.dart';
 import '../widgets/shopping_list.dart';
-import '../../../kroger/presentation/kroger_screen.dart';
 import '../../../kroger/application/kroger_availability.dart';
 
 /// The Shopping tab (05 §4): the confirmed plan's aisle-grouped list with
@@ -57,15 +57,14 @@ class ShoppingTab extends ConsumerWidget {
                   ref.watch(krogerEntryVisibleProvider)) ...[
                 Align(
                   alignment: Alignment.centerRight,
-                  child: OutlinedButton.icon(
+                  child: KyleSecondaryButtonSmall(
                     key: const ValueKey('meal_planning.kroger'),
-                    icon: const Icon(Icons.shopping_cart_outlined),
-                    label: Text(content.getValue(ContentKeys.krogerTitle)),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => KrogerScreen(planId: state.planId!),
-                      ),
-                    ),
+                    icon: Icons.shopping_cart_outlined,
+                    text: content.getValue(ContentKeys.krogerTitle),
+                    // Into the Food tree, not onto a bare Navigator route:
+                    // the screen keeps the app's chrome and the Pro gate.
+                    onPressed: () =>
+                        context.push('/food/kroger/${state.planId}'),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),

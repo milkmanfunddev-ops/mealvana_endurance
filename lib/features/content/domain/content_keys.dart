@@ -612,6 +612,10 @@ class ContentKeys {
   static const String krogerNeeded = 'kroger.needed';
   static const String krogerPackage = 'kroger.package';
   static const String krogerUnknownSize = 'kroger.unknown_size';
+
+  /// Screen-reader label for Kroger's own product photograph, which is shown
+  /// whole and unadorned under Kroger's terms.
+  static const String krogerProductImage = 'kroger.product_image';
   static const String krogerQuantity = 'kroger.quantity';
   static const String krogerQuantityDecrease = 'kroger.quantity_decrease';
   static const String krogerQuantityIncrease = 'kroger.quantity_increase';
