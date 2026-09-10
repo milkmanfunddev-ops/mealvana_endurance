@@ -249,6 +249,33 @@ SEPARABILITY=transformed   narrow any queue to one separability
 MAX_ATTEMPTS=2     give meals already attempted one more round
 ```
 
+## Looking at them together — what the judge cannot see
+
+The judge rates one picture, alone, against one meal. Two failures survive that
+by construction, and both were found by putting the sourced photographs on a
+contact sheet and looking:
+
+```bash
+SUBJECT=meals SINCE=<iso> node scripts/meal-images/04-contact-sheet.mjs
+```
+
+**A picture can pass while its subject is packaging.** "Baby food pouch, ultra
+race-week snack" was accepted on a photograph of a supermarket shelf, price tags
+included. The judge described exactly that — *"Ella's Kitchen … pouches on a
+store shelf"* — and still rated it `ok`, because it does depict the meal. The
+prompt names "packaging or branding as the subject" as `wrong`; the judge
+weighed matching the meal above it. One row, handed back. Whether the prompt
+should be sharpened is a real question and a costly one: a prompt change
+re-values every verdict in the table, exactly as a geometry change does.
+
+**Two meals can repeat each other without sharing a URL.** Three chocolate-milk
+meals hold three different photographs of a glass mug topped with chocolate
+sprinkles. Pass 10's de-duplication compares URLs, so it sees three distinct
+pictures; an athlete sees the same picture three times. Ticket 07 wants
+perceptual similarity, not URL identity.
+
+Neither is visible in the honesty figure, which is the point of the sheet.
+
 ## Licensing — read before changing anything
 
 **Storage policy is per-provider and is not a performance choice.**

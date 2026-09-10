@@ -79,6 +79,25 @@ archives now lead and Pexels is asked only for what they cannot answer.
 libraries and gets the same answers, all already refused — so `MAX_ATTEMPTS`
 defaults to 1, and a maintainer raises it deliberately after changing the pass.
 
+## What the contact sheet found, after the row counts said done
+
+`SUBJECT=meals` on pass 4 renders the sourced photographs as one sheet. Two
+things that no per-picture verdict can express showed up immediately:
+
+- **The judge accepted a supermarket shelf.** "Baby food pouch, ultra race-week
+  snack" got a photograph of Ella's Kitchen pouches on a shop shelf with price
+  tags. The judge *described* the shelf and the branding and rated it `ok`
+  anyway, weighing "matches the meal" above the prompt's own "packaging or
+  branding as the subject is `wrong`". Handed back. Sharpening the prompt is a
+  decision for a person: it re-values every verdict in the table.
+- **Three chocolate-milk meals hold three near-identical photographs.**
+  Different URLs, same glass mug and chocolate sprinkles, so pass 10's URL
+  de-duplication cannot see it. Ticket 07 needs perceptual similarity.
+
+So "no meal shows a picture rated `wrong`" is true of the judge's verdicts, and
+the judge has a blind spot a person spotted in about ten seconds. Worth running
+the sheet after every sourcing run.
+
 ## Deviations
 
 **Nine Transformed meals still show a `weak` photograph** rather than an `ok` one
