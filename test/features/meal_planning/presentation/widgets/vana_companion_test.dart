@@ -153,6 +153,9 @@ const _paths = [
   '/vana',
   '/vana/conversations',
   '/settings/vana',
+  '/distancepacegut',
+  '/events/create',
+  '/meal-log/review',
 ];
 
 class _Harness {
@@ -210,6 +213,10 @@ Future<_Harness> _pump(
     observers: [observer],
     routes: [
       GoRoute(path: '/fuel-log', builder: (_, _) => const _FuelLogPage()),
+      GoRoute(
+        path: '/food/cook/:id',
+        builder: (_, _) => const Scaffold(body: Center(child: Text('cook'))),
+      ),
       for (final path in _paths)
         GoRoute(
           path: path,
@@ -310,6 +317,10 @@ void main() {
         '/vana',
         '/vana/conversations',
         '/settings/vana',
+        // Flow screens (ticket 11).
+        '/distancepacegut',
+        '/events/create',
+        '/meal-log/review',
       };
       for (final path in [..._paths, '/fuel-log']) {
         h.router.go(path);
@@ -320,6 +331,73 @@ void main() {
           reason: path,
         );
       }
+    });
+
+    testWidgets('a flow screen with a parameter has no launcher at its '
+        'location; the browsing screen it returns to has one', (tester) async {
+      final h = await _pump(tester, initial: '/events');
+      expect(find.byKey(_launcher), findsOneWidget);
+      unawaited(h.router.push('/food/cook/D-048'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsNothing);
+      h.router.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsOneWidget);
+    });
+
+    testWidgets('a flow screen pushed without the router, named by its '
+        'route settings, has no launcher', (tester) async {
+      final h = await _pump(tester, initial: '/events');
+      final navigator = h.router.routerDelegate.navigatorKey.currentState!;
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: '/events/create'),
+            builder: (_) => const Scaffold(body: Text('event form')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsNothing);
+      // A dialog over it, then gone: still the flow screen underneath.
+      unawaited(
+        showDialog<void>(
+          context: navigator.context,
+          builder: (_) => const AlertDialog(content: Text('dialog')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsNothing);
+      navigator.pop();
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsOneWidget);
+    });
+
+    testWidgets('a browsing screen pushed without the router keeps the '
+        'launcher, named or not', (tester) async {
+      final h = await _pump(tester, initial: '/events');
+      final navigator = h.router.routerDelegate.navigatorKey.currentState!;
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('event detail')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsOneWidget);
+      unawaited(
+        navigator.push(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: '/events/e1/checklist'),
+            builder: (_) => const Scaffold(body: Text('checklist')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(_launcher), findsOneWidget);
     });
 
     testWidgets('a pushed route counts, not the one under it', (tester) async {

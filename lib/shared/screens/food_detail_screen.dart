@@ -180,6 +180,10 @@ class FoodDetailResult {
 /// Returns a [FoodDetailResult] when saved, or null when cancelled/deleted.
 /// Use with `context.push<FoodDetailResult>('/food-detail', extra: {...})` and await result.
 class FoodDetailScreen extends ConsumerStatefulWidget {
+  /// Names this screen when it is pushed without the router, so the Vana
+  /// launcher reads it as the flow screen it is (`vana_launcher_rule.dart`).
+  static const routeSettings = RouteSettings(name: '/food-detail');
+
   const FoodDetailScreen({
     super.key,
     required this.foodData,

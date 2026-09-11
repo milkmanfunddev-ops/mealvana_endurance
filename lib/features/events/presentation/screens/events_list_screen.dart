@@ -284,6 +284,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
     if (!mounted) return;
     final result = await Navigator.of(context).push<Map<String, dynamic>>(
       MaterialPageRoute(
+        settings: EventFormScreen.routeSettings,
         builder: (context) =>
             const EventFormScreen(), // Create mode (event = null)
       ),

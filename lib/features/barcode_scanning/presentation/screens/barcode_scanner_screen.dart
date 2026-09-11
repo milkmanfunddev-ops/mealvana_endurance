@@ -619,6 +619,7 @@ class _BarcodeScannerScreenState extends ConsumerState<BarcodeScannerScreen>
     final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
+        settings: FoodDetailScreen.routeSettings,
         builder: (context) => FoodDetailScreen(
           foodData: FoodDetailData(id: uuid, name: '', categoryIds: [1, 2, 3]),
           mode: FoodDetailMode.createNew,

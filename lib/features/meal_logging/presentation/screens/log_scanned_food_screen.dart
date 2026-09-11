@@ -32,6 +32,10 @@ class ScannedFoodLogRequest {
 /// preview. This page pops a [ScannedFoodLogRequest] on confirm, or `null` if
 /// the user backs out.
 class LogScannedFoodScreen extends StatefulWidget {
+  /// Names this screen when it is pushed without the router, so the Vana
+  /// launcher reads it as the flow screen it is (`vana_launcher_rule.dart`).
+  static const routeSettings = RouteSettings(name: '/meal-log/scanned');
+
   const LogScannedFoodScreen({
     super.key,
     required this.food,

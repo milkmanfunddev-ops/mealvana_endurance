@@ -34,7 +34,7 @@ One ticket per session, with `/clear` between them. 11 does not depend on 09 or 
 | 08 | Sheet gestures | **done** (drag checked on the simulator) |
 | 09 | The companion that speaks first: the pre-workout moment | ready |
 | 10 | The recovery moment and the two-a-day cap | after 09 |
-| 11 | The launcher stays off flow screens | ready (independent) |
+| 11 | The launcher stays off flow screens | **done** (simulator check owed) |
 | 12 | Meal-plan moments | needs grilling, after 10 |
 
 ## Settled on 2026-09-11

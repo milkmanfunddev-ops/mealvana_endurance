@@ -4,8 +4,9 @@
 ///
 /// [VanaCompanionHost] sits above the router's Navigator (composed in
 /// `MaterialApp.builder`) so the launcher floats over every route. It decides
-/// from the router alone whether the launcher renders
-/// ([vanaLauncherShownOn]), hides it under any dialog or sheet via
+/// from the route on top whether the launcher renders
+/// ([vanaLauncherShownOn]) — the router's, or the name a page pushed without
+/// the router carries — hides it under any dialog or sheet via
 /// [VanaCompanionObserver], and tells the Situation which route is on top.
 /// [VanaCompanionSheet] is the conversation inside the sheet: today's ambient
 /// general conversation, the same Vana as the chat route.
@@ -43,18 +44,31 @@ import 'streamed_text.dart';
 import 'vana_part_renderer.dart';
 
 /// Watches the root Navigator for a dialog or sheet on top of the page, so
-/// the launcher never floats over one (its own sheet included). Add it to the
-/// router's observers and hand the same instance to [VanaCompanionHost].
+/// the launcher never floats over one (its own sheet included), and for a
+/// page pushed without the router. Add it to the router's observers and hand
+/// the same instance to [VanaCompanionHost].
 class VanaCompanionObserver extends NavigatorObserver {
   /// True while the top route is a popup (dialog, bottom sheet, the Vana
   /// sheet). Turns false the moment a popup starts to pop, so the launcher is
   /// back in time for the sheet to condense into it.
   final ValueNotifier<bool> popupOnTop = ValueNotifier(false);
 
+  /// The [RouteSettings.name] of the top page when that page was pushed
+  /// without the router (a `MaterialPageRoute`), so a flow screen opened that
+  /// way can name itself to [vanaLauncherShownOn]. Null when the top page is
+  /// the router's, or is unnamed: the router's location then stands.
+  final ValueNotifier<String?> pagelessOnTop = ValueNotifier(null);
+
   final List<Route<dynamic>> _routes = [];
 
-  void _update() =>
-      popupOnTop.value = _routes.isNotEmpty && _routes.last is PopupRoute;
+  void _update() {
+    popupOnTop.value = _routes.isNotEmpty && _routes.last is PopupRoute;
+    final page = _routes.reversed.where((r) => r is! PopupRoute).firstOrNull;
+    final settings = page?.settings;
+    pagelessOnTop.value = settings == null || settings is Page
+        ? null
+        : settings.name;
+  }
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
@@ -123,6 +137,7 @@ class VanaCompanionHost extends ConsumerStatefulWidget {
 class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   String _path = '';
   bool _popupOnTop = false;
+  String? _pageless;
 
   /// Watches a conversation the server has not named yet, so the day holds
   /// it even when the sheet closes, or hands over to the full-screen chat,
@@ -147,7 +162,9 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     super.initState();
     widget.router.routerDelegate.addListener(_onRoute);
     widget.observer.popupOnTop.addListener(_onPopup);
+    widget.observer.pagelessOnTop.addListener(_onPageless);
     _popupOnTop = widget.observer.popupOnTop.value;
+    _pageless = widget.observer.pagelessOnTop.value;
     _onRoute();
   }
 
@@ -157,6 +174,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     _answering?.close();
     widget.router.routerDelegate.removeListener(_onRoute);
     widget.observer.popupOnTop.removeListener(_onPopup);
+    widget.observer.pagelessOnTop.removeListener(_onPageless);
     super.dispose();
   }
 
@@ -173,6 +191,9 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   }
 
   void _onPopup() => _set(() => _popupOnTop = widget.observer.popupOnTop.value);
+
+  void _onPageless() =>
+      _set(() => _pageless = widget.observer.pagelessOnTop.value);
 
   /// The router and the Navigator report during their own build; this widget
   /// is above them, so it rebuilds after that frame instead of inside it.
@@ -291,7 +312,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 
   @override
   Widget build(BuildContext context) {
-    final shown = vanaLauncherShownOn(_path) && !_popupOnTop;
+    final shown = vanaLauncherShownOn(_pageless ?? _path) && !_popupOnTop;
     final moment = ref.watch(vanaMomentControllerProvider).value;
     _ringWhenShown(moment, shown);
     final live = moment?.moment;

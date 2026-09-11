@@ -403,6 +403,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     final detailResult = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
+        settings: FoodDetailScreen.routeSettings,
         builder: (ctx) => FoodDetailScreen(
           foodData: FoodDetailData(
             id: '',
@@ -700,6 +701,7 @@ class _FoodPreferencesScreenState extends ConsumerState<FoodPreferencesScreen> {
     final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
+        settings: FoodDetailScreen.routeSettings,
         builder: (ctx) => FoodDetailScreen(
           foodData: FoodDetailData(id: uuid, name: '', categoryIds: [1, 2, 3]),
           mode: FoodDetailMode.createNew,

@@ -37,6 +37,10 @@ class EventFormScreen extends ConsumerStatefulWidget {
 
   const EventFormScreen({super.key, this.event, this.forUserId});
 
+  /// Names this screen when it is pushed without the router, so the Vana
+  /// launcher reads it as the flow screen it is (`vana_launcher_rule.dart`).
+  static const routeSettings = RouteSettings(name: '/events/create');
+
   @override
   ConsumerState<EventFormScreen> createState() => _EventFormScreenState();
 }

@@ -564,7 +564,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     // slot — reuse that sub-flow, then quick-log directly instead of
     // routing through the servings/time confirm sheet a second time.
     final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
-      MaterialPageRoute(builder: (_) => LogScannedFoodScreen(food: food)),
+      MaterialPageRoute(
+        settings: LogScannedFoodScreen.routeSettings,
+        builder: (_) => LogScannedFoodScreen(food: food),
+      ),
     );
     if (logRequest == null || !mounted) return;
 

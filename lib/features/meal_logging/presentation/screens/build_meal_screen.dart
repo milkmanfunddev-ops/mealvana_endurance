@@ -57,6 +57,7 @@ void openBuildMealScreen(
 }) {
   Navigator.of(context).push<void>(
     MaterialPageRoute(
+      settings: BuildMealScreen.routeSettings,
       builder: (_) => BuildMealScreen(logDate: logDate, startFrom: startFrom),
     ),
   );
@@ -68,6 +69,10 @@ void openBuildMealScreen(
 
 class BuildMealScreen extends ConsumerStatefulWidget {
   const BuildMealScreen({super.key, required this.logDate, this.startFrom});
+
+  /// Names this screen when it is pushed without the router, so the Vana
+  /// launcher reads it as the flow screen it is (`vana_launcher_rule.dart`).
+  static const routeSettings = RouteSettings(name: '/meal-log/build');
 
   final String logDate;
   final MealLog? startFrom;

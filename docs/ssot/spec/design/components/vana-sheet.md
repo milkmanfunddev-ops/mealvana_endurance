@@ -80,8 +80,16 @@ already holds, and an empty conversation opens to the opener.
 Absent on: authentication, onboarding, privacy consent, paywall, force-upgrade, and **every Vana
 route** (a launcher that summons the surface you are already on is a bug, not a shortcut). This is
 a **suppression contract** — a screenshot of a paywall cannot show that the launcher is absent *by
-rule* rather than scrolled off, so it needs its own conformance golden. Everywhere else it appears,
-including screens with no Situation to report.
+rule* rather than scrolled off, so it needs its own conformance golden.
+
+Also absent on **flow screens** (Lee, 2026-09-11): a screen whose job ends in a full-width bottom
+action — creating or editing something, a wizard step, a form — where the launcher would cover the
+action's right end. Hidden rather than given a clearance inset. The app names the set of routes
+beside the other exclusions, as exact routes, never as subtrees; a flow screen opened without the
+router names itself with the same kind of route name.
+
+Everywhere else — every browsing screen — it appears, including screens with no Situation to
+report.
 
 ## Gestures
 
