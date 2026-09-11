@@ -4,6 +4,7 @@ import 'package:location_iq/location_iq.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../services/logging_service.dart';
 import '../data/repositories/location_repository.dart';
+import '../domain/reverse_place.dart';
 import '../../features/weather/domain/location.dart' as domain;
 
 part 'location_service.g.dart';
@@ -276,7 +277,7 @@ class LocationService {
   /// Convert coordinates to an address (reverse geocoding)
   ///
   /// Useful when you have lat/lng and need the human-readable address.
-  Future<LocationIQReverseResult?> reverseGeocodeCoordinates({
+  Future<ReversePlace?> reverseGeocodeCoordinates({
     required double latitude,
     required double longitude,
   }) async {

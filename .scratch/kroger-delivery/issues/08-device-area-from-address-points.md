@@ -10,7 +10,14 @@ Found on the 2026-09-10 simulator pass (`../device-verification.md`, defect 1; s
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent (filed 2026-09-10)
+**Status:** built 2026-09-10; the simulator check (last box) is still to do.
+
+`location_iq` 1.1.4 is the latest on pub.dev, so `LocationRepository.reverseGeocode` now makes
+the request and decodes it itself, returning `ReversePlace` (`lib/shared/domain/`). Two more
+things the live probe found: the package sends `addressdetails=0`, and with it LocationIQ leaves
+out the `address` block and the postcode with it, so the request now asks for `1`; and the live
+Homewood response omits `osm_type`/`osm_id` entirely rather than sending null. Fixtures in
+`test/fixtures/location_iq/`, captured 2026-09-10.
 
 ## What happens
 
@@ -62,11 +69,11 @@ Kroger controller.
 
 ## Acceptance
 
-- [ ] The reverse lookup succeeds on a response with `osm_type: null` and `osm_id: null`, and
+- [x] The reverse lookup succeeds on a response with `osm_type: null` and `osm_id: null`, and
       yields postcode `35209`
-- [ ] A seam test feeds the captured payload above, producer-shaped (not the app's own output),
+- [x] A seam test feeds the captured payload above, producer-shaped (not the app's own output),
       and asserts the Kroger area finder returns `35209`
-- [ ] A response with OSM fields still decodes (keep a San Francisco- or Boston-shaped case)
-- [ ] A response with no postcode still ends on the typed path, not an error
+- [x] A response with OSM fields still decodes (keep a San Francisco- or Boston-shaped case)
+- [x] A response with no postcode still ends on the typed path, not an error
 - [ ] On the simulator at 33.47, -86.80 with location allowed, the Kroger screen shows "Delivery
       to 35209" without the shopper typing, and matching then works

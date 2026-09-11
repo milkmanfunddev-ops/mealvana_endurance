@@ -1,0 +1,21 @@
+{
+    "place_id": "303619129",
+    "licence": "https://locationiq.com/attribution",
+    "osm_type": "relation",
+    "osm_id": "1210746",
+    "lat": "25.0405135",
+    "lon": "-80.8337157",
+    "display_name": "Monroe County, Florida, USA",
+    "address": {
+        "county": "Monroe County",
+        "state": "Florida",
+        "country": "United States of America",
+        "country_code": "us"
+    },
+    "boundingbox": [
+        "24.3963080",
+        "25.8052273",
+        "-82.9874770",
+        "-80.1502470"
+    ]
+}

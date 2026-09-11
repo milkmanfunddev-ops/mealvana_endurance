@@ -38,7 +38,7 @@ KrogerAreaFinder krogerAreaFinder(Ref ref) => () async {
     latitude: position.latitude,
     longitude: position.longitude,
   );
-  return krogerArea(place?.address.postcode);
+  return krogerArea(place?.postcode);
 };
 @riverpod
 Future<String?> krogerUserId(Ref ref) async {

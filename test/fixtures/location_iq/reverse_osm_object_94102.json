@@ -1,0 +1,27 @@
+{
+    "place_id": "331515501600",
+    "osm_type": "relation",
+    "osm_id": "7261820",
+    "licence": "https://locationiq.com/attribution",
+    "lat": "37.779319",
+    "lon": "-122.419272",
+    "display_name": "1, Dr Carlton B Goodlett Place, Civic Center, San Francisco, San Francisco County, California, 94102, USA",
+    "boundingbox": [
+        "37.779319",
+        "37.779319",
+        "-122.419272",
+        "-122.419272"
+    ],
+    "importance": 0.225,
+    "address": {
+        "house_number": "1",
+        "road": "Dr Carlton B Goodlett Place",
+        "neighbourhood": "Civic Center",
+        "city": "San Francisco",
+        "county": "San Francisco County",
+        "state": "California",
+        "postcode": "94102",
+        "country": "United States of America",
+        "country_code": "us"
+    }
+}

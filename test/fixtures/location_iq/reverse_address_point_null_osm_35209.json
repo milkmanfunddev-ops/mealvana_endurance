@@ -1,0 +1,15 @@
+{
+  "place_id": "331739302909",
+  "licence": "https://locationiq.com/attribution",
+  "osm_type": null,
+  "osm_id": null,
+  "lat": "33.47003",
+  "lon": "-86.800165",
+  "display_name": "318, West Glenwood Drive, Homewood, Jefferson County, Alabama, 35209, USA",
+  "address": {
+    "house_number": "318", "road": "West Glenwood Drive", "city": "Homewood",
+    "county": "Jefferson County", "state": "Alabama", "postcode": "35209",
+    "country": "United States of America", "country_code": "us"
+  },
+  "boundingbox": ["33.47003", "33.47003", "-86.800165", "-86.800165"]
+}
