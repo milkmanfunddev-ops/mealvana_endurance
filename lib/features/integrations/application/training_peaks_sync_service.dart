@@ -271,6 +271,14 @@ class TrainingPeaksSyncService {
         }
       }
 
+      // Q-INT2: hidden-by-disconnect rows matched by this re-sync unhide.
+      for (final unhide in changeResult.unhiddenActivities) {
+        await _activitiesRepository.unhideAndUpdateFromProvider(
+          unhide.activityId,
+          unhide.updatedActivity,
+        );
+      }
+
       // Soft-delete REMOVED activities
       for (final activityId in changeResult.deletedActivityIds) {
         await _activitiesRepository.softDeleteFromProvider(activityId);
@@ -443,6 +451,13 @@ class TrainingPeaksSyncService {
         await _activitiesRepository.reviveTombstoneFromProvider(
           revive.activityId,
           revive.updatedActivity,
+        );
+      }
+
+      for (final unhide in changeResult.unhiddenActivities) {
+        await _activitiesRepository.unhideAndUpdateFromProvider(
+          unhide.activityId,
+          unhide.updatedActivity,
         );
       }
 

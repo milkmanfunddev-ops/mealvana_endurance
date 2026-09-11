@@ -6,13 +6,16 @@ import '../../nutrition_plan/domain/nutrition_plan.dart';
 
 /// Converts a NutritionPlan into a compact text block for TP workout descriptions.
 ///
+/// Macro register (RULED Xuan, 2026-09-10 — TP-5 option A): Pre + During
+/// ONLY — no Post line. Pre = carbs g, water oz, timing. During = carbs g/h
+/// (essential), water oz/h, sodium mg/h.
+///
 /// Format:
 /// ```
 /// ---
 /// [Mealvana Fuel Plan]
 /// Pre: 60g carb, 16oz water (2-3h before)
-/// During: 60g/h carb, 20oz/h water
-/// Post: 25g protein, 40g carb within 30min
+/// During: 60g/h carb, 500ml/h water, 400mg/h sodium
 /// [/Mealvana]
 /// ```
 class TpWritebackFormatter {
@@ -46,11 +49,8 @@ class TpWritebackFormatter {
       }
     }
 
-    // After section
-    final afterSection = _findSection(plan, 'after');
-    if (afterSection != null) {
-      lines.add(_formatAfterLine(afterSection));
-    }
+    // No Post line: the macro register is Pre + During ONLY (RULED Xuan,
+    // 2026-09-10) — recovery guidance lives in the app, not the TP block.
 
     lines.add(endDelimiter);
     return lines.join('\n');
@@ -74,10 +74,16 @@ class TpWritebackFormatter {
   }
 
   /// Remove the Mealvana block from a description.
+  ///
+  /// Delimiter robustness (RULED fix, handback §3): the fuel terminator
+  /// `[/Mealvana]` is a PREFIX of `[/Mealvana Feedback]` — a truncated fuel
+  /// block must not make this strip swallow the feedback block (athlete
+  /// notes included). The negative lookahead keeps the match from ending
+  /// inside the feedback terminator.
   static String stripBlockFromDescription(String desc) {
     // Find the "---\n[Mealvana Fuel Plan]" or just "[Mealvana Fuel Plan]" start
     final startPattern = RegExp(
-      r'(\n{0,2}---\n)?\[Mealvana Fuel Plan\].*?\[/Mealvana\]',
+      r'(\n{0,2}---\n)?\[Mealvana Fuel Plan\].*?\[/Mealvana\](?! Feedback)',
       dotAll: true,
     );
     return desc.replaceAll(startPattern, '').trimRight();
@@ -113,24 +119,23 @@ class TpWritebackFormatter {
     final carbsPerHour = (totalCarbs / durationHours).round();
     if (carbsPerHour > 0) parts.add('${carbsPerHour}g/h carb');
 
-    final totalFluidsOz = _mlToOz(section.fluidsTarget);
-    if (totalFluidsOz != null && totalFluidsOz > 0) {
-      final fluidsPerHour = (totalFluidsOz / durationHours).round();
-      if (fluidsPerHour > 0) parts.add('${fluidsPerHour}oz/h water');
+    // Water rate in ml/h — the bundle manifest's amended TP-5 register
+    // ("During water ml/h") supersedes the handback's oz phrasing; the
+    // ratified consent rendering's example block agrees ("500 ml/hr").
+    final totalFluidsMl = section.fluidsTarget;
+    if (totalFluidsMl != null && totalFluidsMl > 0) {
+      final fluidsPerHour = (totalFluidsMl / durationHours).round();
+      if (fluidsPerHour > 0) parts.add('${fluidsPerHour}ml/h water');
+    }
+
+    // Sodium rate (ADDED per the ruled register — absent before).
+    final totalSodiumMg = section.sodiumTarget;
+    if (totalSodiumMg != null && totalSodiumMg > 0) {
+      final sodiumPerHour = (totalSodiumMg / durationHours).round();
+      if (sodiumPerHour > 0) parts.add('${sodiumPerHour}mg/h sodium');
     }
 
     return 'During: ${parts.join(', ')}';
-  }
-
-  static String _formatAfterLine(PlanSection section) {
-    final parts = <String>[];
-    final protein = section.proteinTarget?.round();
-    final carbs = section.carbsTarget?.round();
-
-    if (protein != null && protein > 0) parts.add('${protein}g protein');
-    if (carbs != null && carbs > 0) parts.add('${carbs}g carb');
-
-    return 'Post: ${parts.join(', ')} within 30min';
   }
 
   // ─── Feedback block ───

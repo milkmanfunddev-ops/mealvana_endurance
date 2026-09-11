@@ -593,6 +593,7 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'tp_calories_planned', 'REAL');
           await addColumn('activities', 'parent_summary_id', 'TEXT');
           await addColumn('activities', 'is_parent', 'INTEGER');
+          await addColumn('activities', 'hidden_by_disconnect', 'INTEGER');
           await addColumn('integrations', 'provider_is_premium', 'INTEGER');
           await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
         }

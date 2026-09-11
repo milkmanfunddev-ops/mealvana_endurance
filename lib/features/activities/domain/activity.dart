@@ -109,6 +109,7 @@ class Activity {
     this.tpCaloriesPlanned,
     this.parentSummaryId,
     this.isParent,
+    this.hiddenByDisconnect,
   });
 
   final String id;
@@ -236,6 +237,13 @@ class Activity {
   final String? parentSummaryId;
   final bool? isParent;
 
+  // Q-INT2: soft-hidden by provider disconnect — excluded from display and
+  // engine; revives on a matching re-sync (never a tombstone).
+  final bool? hiddenByDisconnect;
+
+  /// Whether this row is currently soft-hidden by a disconnect.
+  bool get isHiddenByDisconnect => hiddenByDisconnect == true;
+
   /// Convenience getter to check if this is a brick activity
   bool get isBrick => activityType == ActivityType.brick;
 
@@ -314,6 +322,7 @@ class Activity {
       'tpCaloriesPlanned': tpCaloriesPlanned,
       'parentSummaryId': parentSummaryId,
       'isParent': isParent,
+      'hiddenByDisconnect': hiddenByDisconnect,
     };
   }
 
@@ -387,6 +396,7 @@ class Activity {
     double? tpCaloriesPlanned,
     String? parentSummaryId,
     bool? isParent,
+    bool? hiddenByDisconnect,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -464,6 +474,7 @@ class Activity {
       tpCaloriesPlanned: tpCaloriesPlanned ?? this.tpCaloriesPlanned,
       parentSummaryId: parentSummaryId ?? this.parentSummaryId,
       isParent: isParent ?? this.isParent,
+      hiddenByDisconnect: hiddenByDisconnect ?? this.hiddenByDisconnect,
     );
   }
 
@@ -530,7 +541,8 @@ class Activity {
         other.tpCalories == tpCalories &&
         other.tpCaloriesPlanned == tpCaloriesPlanned &&
         other.parentSummaryId == parentSummaryId &&
-        other.isParent == isParent;
+        other.isParent == isParent &&
+        other.hiddenByDisconnect == hiddenByDisconnect;
   }
 
   @override
@@ -600,7 +612,8 @@ class Activity {
           tpCaloriesPlanned,
           parentSummaryId,
           isParent,
-        );
+        ) ^
+        (hiddenByDisconnect == true ? 0x1 : 0x0);
   }
 
   @override

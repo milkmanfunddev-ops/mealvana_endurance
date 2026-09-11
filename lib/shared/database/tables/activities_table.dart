@@ -204,6 +204,12 @@ class ActivitiesTable extends Table {
       text().nullable().named('parent_summary_id')();
   BoolColumn get isParent => boolean().nullable().named('is_parent')();
 
+  // Q-INT2 disconnect redesign: soft-hidden by provider disconnect —
+  // excluded from display and engine reads; REVIVES on a matching re-sync
+  // (distinct from the status='deleted' tombstone, which suppresses).
+  BoolColumn get hiddenByDisconnect =>
+      boolean().nullable().named('hidden_by_disconnect')();
+
   // Garmin completion linkage — set when a Garmin push provides the activity's
   // completion data (distance, duration, HR, etc.). Authoritative signal that
   // this activity displays Garmin-sourced data, regardless of which provider

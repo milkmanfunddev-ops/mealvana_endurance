@@ -1489,6 +1489,9 @@ class ActivitiesRepository with SyncableRepository {
       // planned imports never carry it.
       parentSummaryId: incoming.parentSummaryId ?? existing.parentSummaryId,
       isParent: incoming.isParent ?? existing.isParent,
+      // Q-INT2: hidden-by-disconnect is LOCAL state — a provider update
+      // never implicitly unhides (revive is an explicit, id-keyed act).
+      hiddenByDisconnect: existing.hiddenByDisconnect,
 
       // preserve local metadata
       createdAt: existing.createdAt,
@@ -2190,6 +2193,77 @@ class ActivitiesRepository with SyncableRepository {
       );
       rethrow;
     }
+  }
+
+  /// Q-INT2 disconnect redesign: soft-hide every activity this provider
+  /// imported. The rows keep their status and metadata — a matching
+  /// re-sync after reconnect REVIVES them (unlike the tombstone, which
+  /// suppresses re-import). Returns the number of rows hidden.
+  Future<int> hideActivitiesForProviderDisconnect({
+    required String userId,
+    required String provider,
+  }) async {
+    try {
+      final now = DateTime.now();
+      final hidden =
+          await (_database.update(_database.activitiesTable)..where(
+                (tbl) =>
+                    tbl.userId.lower().equals(userId.toLowerCase()) &
+                    tbl.syncedFromProvider.equals(provider) &
+                    tbl.deletedAt.isNull(),
+              ))
+              .write(
+                ActivitiesTableCompanion(
+                  hiddenByDisconnect: const Value(true),
+                  needsUpload: const Value(true),
+                  localUpdatedAt: Value(now),
+                  updatedAt: Value(now),
+                ),
+              );
+      _logger.info(
+        'Soft-hid provider activities on disconnect (Q-INT2)',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'provider': provider, 'hidden': hidden},
+      );
+      return hidden;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to hide provider activities on disconnect',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'provider': provider},
+      );
+      rethrow;
+    }
+  }
+
+  /// Q-INT2 revive: a matching re-sync after reconnect unhides the row and
+  /// applies the provider update (id-keyed; never suppresses like a
+  /// tombstone).
+  Future<void> unhideAndUpdateFromProvider(
+    String activityId,
+    domain.Activity incoming,
+  ) async {
+    await updateActivityFromProvider(
+      incoming.copyWith(id: activityId, hiddenByDisconnect: false),
+    );
+    // The L-2 merge preserves the EXISTING hidden state by design, so the
+    // unhide is written explicitly after the merge.
+    final now = DateTime.now();
+    await (_database.update(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        hiddenByDisconnect: const Value(false),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+      ),
+    );
+    await _queueImmediateActivityUpsertById(
+      activityId,
+      operation: 'disconnect_revive',
+    );
   }
 
   /// Clear nutrition refresh flag after regeneration

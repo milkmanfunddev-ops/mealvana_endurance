@@ -54,6 +54,7 @@ class ChangeDetectionService {
     final updatedActivities = <ActivityChange>[];
     final deletedActivityIds = <String>[];
     final revivedActivities = <ActivityChange>[];
+    final unhiddenActivities = <ActivityChange>[];
     int unchangedCount = 0;
     int tombstoneDropped = 0;
 
@@ -173,6 +174,26 @@ class ChangeDetectionService {
             );
           }
         }
+      } else if (localActivity.isHiddenByDisconnect) {
+        // Q-INT2 revive: the row was soft-hidden by a disconnect and the
+        // provider (re-connected) still carries it — unhide and take the
+        // update. Hidden rows match-and-revive, never suppress.
+        unhiddenActivities.add(
+          ActivityChange(
+            activityId: localActivity.id,
+            updatedActivity: remoteWorkout,
+            scheduleChanged: false,
+            oldScheduledAt: localActivity.scheduledDateTime,
+            newScheduledAt: remoteWorkout.scheduledDateTime,
+          ),
+        );
+        if (kDebugMode) {
+          debugPrint(
+            '   👁 REVIVED: ${remoteWorkout.title} '
+            '(provider_id: $providerId) — hidden-by-disconnect row unhidden '
+            'by re-sync (Q-INT2)',
+          );
+        }
       } else {
         // EXISTS: Check if schedule changed
         final scheduleChanged = _isScheduleChangeSignificant(
@@ -273,6 +294,7 @@ class ChangeDetectionService {
       unchangedCount: unchangedCount,
       tombstoneDroppedCount: tombstoneDropped,
       revivedActivities: revivedActivities,
+      unhiddenActivities: unhiddenActivities,
     );
   }
 

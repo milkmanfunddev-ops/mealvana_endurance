@@ -109,8 +109,12 @@ async function requireUser(req: Request) {
  * Returns a valid Garmin access token, refreshing it via the refresh_token
  * grant when the stored one is expired (or about to expire). Garmin's backfill
  * endpoint rejects a stale token with "Token is not active", so without this
- * every backfill after the access token's lifetime fails. The refreshed token
- * is persisted back to `garmin_user_mappings` so subsequent calls reuse it.
+ * every backfill after the access token's lifetime fails.
+ *
+ * Q-INT8 (RULED 2026-09-10): `integrations` is the SOLE token custodian —
+ * tokens are read from and refreshed back to the integrations row; the
+ * garmin_user_mappings copies are stripped by migration 20260911160000 and
+ * never written again.
  *
  * Falls back to the existing token (and lets Garmin surface the error) when we
  * have no refresh_token or the refresh call itself fails — this never throws,
@@ -173,14 +177,15 @@ async function ensureFreshGarminToken(
       .toISOString();
 
     const { error: updateErr } = await supabase
-      .from('garmin_user_mappings')
+      .from('integrations')
       .update({
         access_token: newAccessToken,
         refresh_token: newRefreshToken,
         token_expires_at: newExpiresAt,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('provider', 'garmin');
 
     if (updateErr) {
       console.error(
@@ -242,15 +247,17 @@ serve(withSentry(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Q-INT8: tokens live on the integrations row (sole custodian).
     const { data: mapping, error: mappingErr } = await supabase
-      .from('garmin_user_mappings')
-      .select('garmin_user_id, access_token, refresh_token, token_expires_at')
+      .from('integrations')
+      .select('access_token, refresh_token, token_expires_at')
       .eq('user_id', user.id)
+      .eq('provider', 'garmin')
       .maybeSingle();
 
     if (mappingErr) {
-      console.error('[garmin-backfill] Mapping lookup error:', mappingErr);
-      return errorResponse('Failed to look up Garmin mapping', 500);
+      console.error('[garmin-backfill] Integration lookup error:', mappingErr);
+      return errorResponse('Failed to look up Garmin connection', 500);
     }
     if (!mapping?.access_token) {
       return errorResponse(

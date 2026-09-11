@@ -11018,6 +11018,19 @@ class $ActivitiesTableTable extends ActivitiesTable
       'CHECK ("is_parent" IN (0, 1))',
     ),
   );
+  static const VerificationMeta _hiddenByDisconnectMeta =
+      const VerificationMeta('hiddenByDisconnect');
+  @override
+  late final GeneratedColumn<bool> hiddenByDisconnect = GeneratedColumn<bool>(
+    'hidden_by_disconnect',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hidden_by_disconnect" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _garminSummaryIdMeta = const VerificationMeta(
     'garminSummaryId',
   );
@@ -11147,6 +11160,7 @@ class $ActivitiesTableTable extends ActivitiesTable
     tpCaloriesPlanned,
     parentSummaryId,
     isParent,
+    hiddenByDisconnect,
     garminSummaryId,
     garminDeviceName,
     notes,
@@ -11696,6 +11710,15 @@ class $ActivitiesTableTable extends ActivitiesTable
         isParent.isAcceptableOrUnknown(data['is_parent']!, _isParentMeta),
       );
     }
+    if (data.containsKey('hidden_by_disconnect')) {
+      context.handle(
+        _hiddenByDisconnectMeta,
+        hiddenByDisconnect.isAcceptableOrUnknown(
+          data['hidden_by_disconnect']!,
+          _hiddenByDisconnectMeta,
+        ),
+      );
+    }
     if (data.containsKey('garmin_summary_id')) {
       context.handle(
         _garminSummaryIdMeta,
@@ -12003,6 +12026,10 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.bool,
         data['${effectivePrefix}is_parent'],
       ),
+      hiddenByDisconnect: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hidden_by_disconnect'],
+      ),
       garminSummaryId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}garmin_summary_id'],
@@ -12100,6 +12127,7 @@ class Activity extends DataClass implements Insertable<Activity> {
   final double? tpCaloriesPlanned;
   final String? parentSummaryId;
   final bool? isParent;
+  final bool? hiddenByDisconnect;
   final String? garminSummaryId;
   final String? garminDeviceName;
   final String? notes;
@@ -12170,6 +12198,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.tpCaloriesPlanned,
     this.parentSummaryId,
     this.isParent,
+    this.hiddenByDisconnect,
     this.garminSummaryId,
     this.garminDeviceName,
     this.notes,
@@ -12359,6 +12388,9 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || isParent != null) {
       map['is_parent'] = Variable<bool>(isParent);
     }
+    if (!nullToAbsent || hiddenByDisconnect != null) {
+      map['hidden_by_disconnect'] = Variable<bool>(hiddenByDisconnect);
+    }
     if (!nullToAbsent || garminSummaryId != null) {
       map['garmin_summary_id'] = Variable<String>(garminSummaryId);
     }
@@ -12546,6 +12578,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       isParent: isParent == null && nullToAbsent
           ? const Value.absent()
           : Value(isParent),
+      hiddenByDisconnect: hiddenByDisconnect == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hiddenByDisconnect),
       garminSummaryId: garminSummaryId == null && nullToAbsent
           ? const Value.absent()
           : Value(garminSummaryId),
@@ -12676,6 +12711,9 @@ class Activity extends DataClass implements Insertable<Activity> {
       ),
       parentSummaryId: serializer.fromJson<String?>(json['parentSummaryId']),
       isParent: serializer.fromJson<bool?>(json['isParent']),
+      hiddenByDisconnect: serializer.fromJson<bool?>(
+        json['hiddenByDisconnect'],
+      ),
       garminSummaryId: serializer.fromJson<String?>(json['garminSummaryId']),
       garminDeviceName: serializer.fromJson<String?>(json['garminDeviceName']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -12761,6 +12799,7 @@ class Activity extends DataClass implements Insertable<Activity> {
       'tpCaloriesPlanned': serializer.toJson<double?>(tpCaloriesPlanned),
       'parentSummaryId': serializer.toJson<String?>(parentSummaryId),
       'isParent': serializer.toJson<bool?>(isParent),
+      'hiddenByDisconnect': serializer.toJson<bool?>(hiddenByDisconnect),
       'garminSummaryId': serializer.toJson<String?>(garminSummaryId),
       'garminDeviceName': serializer.toJson<String?>(garminDeviceName),
       'notes': serializer.toJson<String?>(notes),
@@ -12834,6 +12873,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<double?> tpCaloriesPlanned = const Value.absent(),
     Value<String?> parentSummaryId = const Value.absent(),
     Value<bool?> isParent = const Value.absent(),
+    Value<bool?> hiddenByDisconnect = const Value.absent(),
     Value<String?> garminSummaryId = const Value.absent(),
     Value<String?> garminDeviceName = const Value.absent(),
     Value<String?> notes = const Value.absent(),
@@ -12982,6 +13022,9 @@ class Activity extends DataClass implements Insertable<Activity> {
         ? parentSummaryId.value
         : this.parentSummaryId,
     isParent: isParent.present ? isParent.value : this.isParent,
+    hiddenByDisconnect: hiddenByDisconnect.present
+        ? hiddenByDisconnect.value
+        : this.hiddenByDisconnect,
     garminSummaryId: garminSummaryId.present
         ? garminSummaryId.value
         : this.garminSummaryId,
@@ -13162,6 +13205,9 @@ class Activity extends DataClass implements Insertable<Activity> {
           ? data.parentSummaryId.value
           : this.parentSummaryId,
       isParent: data.isParent.present ? data.isParent.value : this.isParent,
+      hiddenByDisconnect: data.hiddenByDisconnect.present
+          ? data.hiddenByDisconnect.value
+          : this.hiddenByDisconnect,
       garminSummaryId: data.garminSummaryId.present
           ? data.garminSummaryId.value
           : this.garminSummaryId,
@@ -13241,6 +13287,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('tpCaloriesPlanned: $tpCaloriesPlanned, ')
           ..write('parentSummaryId: $parentSummaryId, ')
           ..write('isParent: $isParent, ')
+          ..write('hiddenByDisconnect: $hiddenByDisconnect, ')
           ..write('garminSummaryId: $garminSummaryId, ')
           ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
@@ -13316,6 +13363,7 @@ class Activity extends DataClass implements Insertable<Activity> {
     tpCaloriesPlanned,
     parentSummaryId,
     isParent,
+    hiddenByDisconnect,
     garminSummaryId,
     garminDeviceName,
     notes,
@@ -13390,6 +13438,7 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.tpCaloriesPlanned == this.tpCaloriesPlanned &&
           other.parentSummaryId == this.parentSummaryId &&
           other.isParent == this.isParent &&
+          other.hiddenByDisconnect == this.hiddenByDisconnect &&
           other.garminSummaryId == this.garminSummaryId &&
           other.garminDeviceName == this.garminDeviceName &&
           other.notes == this.notes &&
@@ -13462,6 +13511,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<double?> tpCaloriesPlanned;
   final Value<String?> parentSummaryId;
   final Value<bool?> isParent;
+  final Value<bool?> hiddenByDisconnect;
   final Value<String?> garminSummaryId;
   final Value<String?> garminDeviceName;
   final Value<String?> notes;
@@ -13533,6 +13583,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.tpCaloriesPlanned = const Value.absent(),
     this.parentSummaryId = const Value.absent(),
     this.isParent = const Value.absent(),
+    this.hiddenByDisconnect = const Value.absent(),
     this.garminSummaryId = const Value.absent(),
     this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
@@ -13605,6 +13656,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.tpCaloriesPlanned = const Value.absent(),
     this.parentSummaryId = const Value.absent(),
     this.isParent = const Value.absent(),
+    this.hiddenByDisconnect = const Value.absent(),
     this.garminSummaryId = const Value.absent(),
     this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
@@ -13682,6 +13734,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<double>? tpCaloriesPlanned,
     Expression<String>? parentSummaryId,
     Expression<bool>? isParent,
+    Expression<bool>? hiddenByDisconnect,
     Expression<String>? garminSummaryId,
     Expression<String>? garminDeviceName,
     Expression<String>? notes,
@@ -13770,6 +13823,8 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (tpCaloriesPlanned != null) 'tp_calories_planned': tpCaloriesPlanned,
       if (parentSummaryId != null) 'parent_summary_id': parentSummaryId,
       if (isParent != null) 'is_parent': isParent,
+      if (hiddenByDisconnect != null)
+        'hidden_by_disconnect': hiddenByDisconnect,
       if (garminSummaryId != null) 'garmin_summary_id': garminSummaryId,
       if (garminDeviceName != null) 'garmin_device_name': garminDeviceName,
       if (notes != null) 'notes': notes,
@@ -13844,6 +13899,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<double?>? tpCaloriesPlanned,
     Value<String?>? parentSummaryId,
     Value<bool?>? isParent,
+    Value<bool?>? hiddenByDisconnect,
     Value<String?>? garminSummaryId,
     Value<String?>? garminDeviceName,
     Value<String?>? notes,
@@ -13924,6 +13980,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       tpCaloriesPlanned: tpCaloriesPlanned ?? this.tpCaloriesPlanned,
       parentSummaryId: parentSummaryId ?? this.parentSummaryId,
       isParent: isParent ?? this.isParent,
+      hiddenByDisconnect: hiddenByDisconnect ?? this.hiddenByDisconnect,
       garminSummaryId: garminSummaryId ?? this.garminSummaryId,
       garminDeviceName: garminDeviceName ?? this.garminDeviceName,
       notes: notes ?? this.notes,
@@ -14148,6 +14205,9 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (isParent.present) {
       map['is_parent'] = Variable<bool>(isParent.value);
     }
+    if (hiddenByDisconnect.present) {
+      map['hidden_by_disconnect'] = Variable<bool>(hiddenByDisconnect.value);
+    }
     if (garminSummaryId.present) {
       map['garmin_summary_id'] = Variable<String>(garminSummaryId.value);
     }
@@ -14238,6 +14298,7 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('tpCaloriesPlanned: $tpCaloriesPlanned, ')
           ..write('parentSummaryId: $parentSummaryId, ')
           ..write('isParent: $isParent, ')
+          ..write('hiddenByDisconnect: $hiddenByDisconnect, ')
           ..write('garminSummaryId: $garminSummaryId, ')
           ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
@@ -46959,6 +47020,7 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<double?> tpCaloriesPlanned,
       Value<String?> parentSummaryId,
       Value<bool?> isParent,
+      Value<bool?> hiddenByDisconnect,
       Value<String?> garminSummaryId,
       Value<String?> garminDeviceName,
       Value<String?> notes,
@@ -47032,6 +47094,7 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<double?> tpCaloriesPlanned,
       Value<String?> parentSummaryId,
       Value<bool?> isParent,
+      Value<bool?> hiddenByDisconnect,
       Value<String?> garminSummaryId,
       Value<String?> garminDeviceName,
       Value<String?> notes,
@@ -47362,6 +47425,11 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<bool> get isParent => $composableBuilder(
     column: $table.isParent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hiddenByDisconnect => $composableBuilder(
+    column: $table.hiddenByDisconnect,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -47720,6 +47788,11 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hiddenByDisconnect => $composableBuilder(
+    column: $table.hiddenByDisconnect,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get garminSummaryId => $composableBuilder(
     column: $table.garminSummaryId,
     builder: (column) => ColumnOrderings(column),
@@ -48053,6 +48126,11 @@ class $$ActivitiesTableTableAnnotationComposer
   GeneratedColumn<bool> get isParent =>
       $composableBuilder(column: $table.isParent, builder: (column) => column);
 
+  GeneratedColumn<bool> get hiddenByDisconnect => $composableBuilder(
+    column: $table.hiddenByDisconnect,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get garminSummaryId => $composableBuilder(
     column: $table.garminSummaryId,
     builder: (column) => column,
@@ -48172,6 +48250,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> tpCaloriesPlanned = const Value.absent(),
                 Value<String?> parentSummaryId = const Value.absent(),
                 Value<bool?> isParent = const Value.absent(),
+                Value<bool?> hiddenByDisconnect = const Value.absent(),
                 Value<String?> garminSummaryId = const Value.absent(),
                 Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -48243,6 +48322,7 @@ class $$ActivitiesTableTableTableManager
                 tpCaloriesPlanned: tpCaloriesPlanned,
                 parentSummaryId: parentSummaryId,
                 isParent: isParent,
+                hiddenByDisconnect: hiddenByDisconnect,
                 garminSummaryId: garminSummaryId,
                 garminDeviceName: garminDeviceName,
                 notes: notes,
@@ -48316,6 +48396,7 @@ class $$ActivitiesTableTableTableManager
                 Value<double?> tpCaloriesPlanned = const Value.absent(),
                 Value<String?> parentSummaryId = const Value.absent(),
                 Value<bool?> isParent = const Value.absent(),
+                Value<bool?> hiddenByDisconnect = const Value.absent(),
                 Value<String?> garminSummaryId = const Value.absent(),
                 Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -48387,6 +48468,7 @@ class $$ActivitiesTableTableTableManager
                 tpCaloriesPlanned: tpCaloriesPlanned,
                 parentSummaryId: parentSummaryId,
                 isParent: isParent,
+                hiddenByDisconnect: hiddenByDisconnect,
                 garminSummaryId: garminSummaryId,
                 garminDeviceName: garminDeviceName,
                 notes: notes,

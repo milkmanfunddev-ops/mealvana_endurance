@@ -347,6 +347,13 @@ class FinalSurgeSyncService {
         );
       }
 
+      for (final unhide in changes.unhiddenActivities) {
+        await _activitiesRepository.unhideAndUpdateFromProvider(
+          unhide.activityId,
+          unhide.updatedActivity,
+        );
+      }
+
       for (final activityId in changes.deletedActivityIds) {
         await _activitiesRepository.softDeleteFromProvider(activityId);
         if (kDebugMode) {
@@ -627,6 +634,13 @@ class FinalSurgeSyncService {
         await _activitiesRepository.reviveTombstoneFromProvider(
           revive.activityId,
           revive.updatedActivity,
+        );
+      }
+
+      for (final unhide in changes.unhiddenActivities) {
+        await _activitiesRepository.unhideAndUpdateFromProvider(
+          unhide.activityId,
+          unhide.updatedActivity,
         );
       }
 

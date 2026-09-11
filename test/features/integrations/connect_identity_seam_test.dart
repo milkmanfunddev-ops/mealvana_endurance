@@ -198,7 +198,7 @@ void main() {
   });
 
   test(
-    'disconnecting wipes what the platform gave us — autofill and workouts',
+    'disconnecting hides what the platform gave us and clears autofill (Q-INT2)',
     () async {
       // The disconnect side of the seam, mirroring the real service's tail
       // exactly like authenticate() above: deactivate through the REAL
@@ -283,27 +283,29 @@ void main() {
           .read(connectTrainingControllerProvider.notifier)
           .disconnectFinalSurge();
 
-      // 1. The platform's workouts are gone; the manual one survives.
-      final remaining = await activitiesRepo.getActivitiesByUserAndProvider(
-        _localProfileId,
-        'final_surge',
-      );
-      expect(
-        remaining,
-        isEmpty,
-        reason: 'disconnect must delete every workout the provider imported',
-      );
-      // Quantified at the table level too, so the assertion cannot be
-      // satisfied by dedup hiding rows from the repository query: no
-      // provider-sourced row may remain alive.
-      final aliveProviderRows =
+      // 1. Q-INT2 (RULED 2026-09-10): the DEFAULT disconnect SOFT-HIDES the
+      // provider's workouts — the rows stay alive (they revive on a
+      // matching re-sync after reconnect) but leave every display surface.
+      // The manual workout is untouched either way.
+      final providerRows =
           await (db.select(db.activitiesTable)..where(
                 (t) =>
                     t.syncedFromProvider.equals('final_surge') &
                     t.deletedAt.isNull(),
               ))
               .get();
-      expect(aliveProviderRows, isEmpty);
+      expect(
+        providerRows,
+        hasLength(2),
+        reason: 'the default disconnect hides, never deletes (Q-INT2)',
+      );
+      for (final row in providerRows) {
+        expect(
+          row.hiddenByDisconnect,
+          isTrue,
+          reason: 'every provider row must be soft-hidden',
+        );
+      }
       final manualRow =
           await (db.select(db.activitiesTable)..where(
                 (t) => t.id.equals('aaaaaaaa-0000-0000-0000-000000000003'),
@@ -315,6 +317,11 @@ void main() {
         reason:
             'a manually logged workout is the athlete\'s, not the '
             'provider\'s — disconnect must leave it alone',
+      );
+      expect(
+        manualRow.hiddenByDisconnect,
+        isNot(isTrue),
+        reason: 'the hide is provider-scoped',
       );
 
       // 2. The autofilled draft fields are cleared; the athlete-owned edit

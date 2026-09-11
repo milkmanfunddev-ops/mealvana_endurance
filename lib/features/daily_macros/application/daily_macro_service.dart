@@ -527,6 +527,7 @@ class DailyMacroService {
          AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
          AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick')
          ORDER BY bucket_time ASC''',
           variables: [
@@ -578,6 +579,7 @@ class DailyMacroService {
          AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
          AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick')
          ORDER BY bucket_time ASC''',
           variables: [
@@ -610,6 +612,7 @@ class DailyMacroService {
          AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
          AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick') ''',
           variables: [
             Variable.withString(userId),
@@ -642,6 +645,7 @@ class DailyMacroService {
          AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
          AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick') ''',
           variables: [
             Variable.withString(userId),

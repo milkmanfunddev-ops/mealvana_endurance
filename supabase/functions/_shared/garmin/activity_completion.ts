@@ -322,6 +322,10 @@ export function buildGarminCompletionUpdate(
 
   const updateFields: Record<string, unknown> = {
     status: "completed",
+    // Q-INT2 revive: measured evidence matching a row soft-hidden by a
+    // disconnect brings it back (id-keyed match-and-revive; hidden is
+    // never a tombstone). A no-op on rows that were never hidden.
+    hidden_by_disconnect: false,
     // Replace the planned start time with the ACTUAL Garmin start time
     // (bug 3a6e3fdb: a run scheduled for 1:30 PM but started at 12:30 PM
     // kept showing 1:30 PM). Local-naive form — see garminTimestampToLocalNaiveISO.

@@ -11,6 +11,8 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/analytics/analytics_events.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../activities/data/activities_repository.dart';
+import '../../../daily_macros/data/daily_macro_targets_repository.dart';
+import 'tp_writeback_providers.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
@@ -646,20 +648,24 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
   /// Generic provider disconnect helper to reduce duplication.
   ///
-  /// Disconnecting removes what the provider gave us, not just the token:
-  /// every workout imported from it is deleted, and any onboarding answers
-  /// it pre-filled are cleared. Leaving that data behind meant a
-  /// disconnected platform still silently shaped the athlete's plan, with
-  /// no way to tell which numbers came from where.
+  /// Q-INT2 disconnect redesign (RULED 2026-09-10): the DEFAULT disconnect
+  /// clears the tokens and SOFT-HIDES what the provider gave us —
+  /// hidden-by-disconnect rows leave display and the engine but revive on a
+  /// matching re-sync after reconnect. The explicit "also delete my synced
+  /// data" choice ([alsoDeleteData]) keeps the old hard purge. Either way
+  /// the plan re-runs (F27) because the engine inputs changed.
   Future<void> _disconnectProvider({
     required String providerId,
     required Future<void> Function() disconnect,
     required ConnectTrainingState Function() updateState,
+    bool alsoDeleteData = false,
   }) async {
     if (_currentUserId == null) return;
     try {
       await disconnect();
-      final removedWorkouts = await _purgeProviderData(providerId);
+      final removedWorkouts = alsoDeleteData
+          ? await _purgeProviderData(providerId)
+          : await _hideProviderData(providerId);
       // The awaits above are async gaps on an auto-dispose provider —
       // writing state through a stale ref throws UnmountedRefException
       // (Sentry MEALVANA-ENDURANCE-AV family). The disconnect and the purge
@@ -677,6 +683,66 @@ class ConnectTrainingController extends _$ConnectTrainingController {
           state.value!.copyWith(errorMessage: 'Failed to disconnect: $e'),
         );
       }
+    }
+  }
+
+  /// Q-INT2 default path: soft-hide the provider's rows (and, for Garmin,
+  /// best-effort flag the server-side wellness store), then invalidate the
+  /// cached macro windows so the plan re-runs without the hidden sessions.
+  Future<int> _hideProviderData(String providerId) async {
+    final userId = _currentUserId;
+    if (userId == null) return 0;
+
+    var hidden = 0;
+    try {
+      hidden = await _activitiesRepo.hideActivitiesForProviderDisconnect(
+        userId: userId,
+        provider: providerId,
+      );
+    } catch (e, stackTrace) {
+      _reportFailureToSentry(providerId, 'hide_workouts', e, stackTrace);
+    }
+
+    if (providerId == 'garmin') {
+      // Wellness rows live only server-side; hide them there. Best effort —
+      // a network failure must not fail the disconnect (the tokens are
+      // already gone), and the flag is re-appliable.
+      try {
+        final supabaseClient = ref
+            .read(appExternalDepsProvider)
+            .supabaseClient;
+        await supabaseClient
+            .from('garmin_health_data')
+            .update({'hidden_by_disconnect': true})
+            .eq('user_id', userId);
+      } catch (e, stackTrace) {
+        _reportFailureToSentry(providerId, 'hide_wellness', e, stackTrace);
+      }
+    }
+
+    // The provider's identity prefill leaves with it, same as the purge
+    // path — onboarding-only, a no-op after onboarding completes.
+    try {
+      ref
+          .read(onboardingControllerProvider.notifier)
+          .clearIntegrationAutofill();
+    } catch (e, stackTrace) {
+      _reportFailureToSentry(providerId, 'hide_autofill', e, stackTrace);
+    }
+
+    await _invalidateMacroWindows(userId, providerId);
+    return hidden;
+  }
+
+  /// F27: the engine inputs changed (sessions hidden or purged) — drop the
+  /// cached macro windows so the next read recalculates.
+  Future<void> _invalidateMacroWindows(String userId, String providerId) async {
+    try {
+      await ref
+          .read(dailyMacroTargetsRepositoryProvider)
+          .invalidateAllForUser(userId);
+    } catch (e, stackTrace) {
+      _reportFailureToSentry(providerId, 'invalidate_macros', e, stackTrace);
     }
   }
 
@@ -712,6 +778,28 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       _reportFailureToSentry(providerId, 'purge_workouts', e, stackTrace);
     }
 
+    if (providerId == 'garmin') {
+      // Explicit "also delete my synced data": the wellness store and the
+      // users mirrors go too (Q-INT2 hard-purge half). Best effort.
+      try {
+        final supabaseClient = ref
+            .read(appExternalDepsProvider)
+            .supabaseClient;
+        await supabaseClient
+            .from('garmin_health_data')
+            .delete()
+            .eq('user_id', userId);
+        await supabaseClient
+            .from('users')
+            .update({'weight_pounds': null, 'body_fat_pct': null})
+            .eq('id', userId);
+      } catch (e, stackTrace) {
+        _reportFailureToSentry(providerId, 'purge_wellness', e, stackTrace);
+      }
+    }
+
+    await _invalidateMacroWindows(userId, providerId);
+
     // Onboarding-only: drop the personal details this provider pre-filled.
     // No-op once onboarding is over — by then the values live on the saved
     // profile and are the athlete's to edit in Settings.
@@ -726,8 +814,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     return removed;
   }
 
-  Future<void> disconnectFinalSurge() async {
+  Future<void> disconnectFinalSurge({bool alsoDeleteData = false}) async {
     await _disconnectProvider(
+      alsoDeleteData: alsoDeleteData,
       providerId: 'final_surge',
       disconnect: () => _finalSurgeOAuth.disconnect(_currentUserId!),
       updateState: () => state.value!.copyWith(
@@ -763,8 +852,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
   }
 
-  Future<void> disconnectGarmin() async {
+  Future<void> disconnectGarmin({bool alsoDeleteData = false}) async {
     await _disconnectProvider(
+      alsoDeleteData: alsoDeleteData,
       providerId: 'garmin',
       disconnect: () => _garminOAuth.disconnect(_currentUserId!),
       updateState: () => state.value!.copyWith(
@@ -939,8 +1029,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     );
   }
 
-  Future<void> disconnectVdot() async {
+  Future<void> disconnectVdot({bool alsoDeleteData = false}) async {
     await _disconnectProvider(
+      alsoDeleteData: alsoDeleteData,
       providerId: 'vdot',
       disconnect: () => _vdotOAuth.disconnect(_currentUserId!),
       updateState: () => state.value!.copyWith(
@@ -1257,8 +1348,9 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     }
   }
 
-  Future<void> disconnectRunna() async {
+  Future<void> disconnectRunna({bool alsoDeleteData = false}) async {
     await _disconnectProvider(
+      alsoDeleteData: alsoDeleteData,
       providerId: 'runna',
       // Delete (not just deactivate) so the stored feed URL is removed both
       // locally and from Supabase — a reconnect always starts from a freshly
@@ -1834,10 +1926,20 @@ class ConnectTrainingController extends _$ConnectTrainingController {
     return connected;
   }
 
-  Future<void> disconnectTrainingPeaks() async {
+  Future<void> disconnectTrainingPeaks({bool alsoDeleteData = false}) async {
     await _disconnectProvider(
+      alsoDeleteData: alsoDeleteData,
       providerId: 'training_peaks',
       disconnect: () async {
+        // Q-INT16: strip the pushed [Mealvana ...] blocks and purge the
+        // write-back ledger BEFORE the tokens go (the strip needs them).
+        // Best effort — never blocks the disconnect.
+        try {
+          final writeback = await ref.read(tpWritebackServiceProvider.future);
+          await writeback.handleDisconnect(userId: _currentUserId!);
+        } catch (_) {
+          // handleDisconnect never throws; this guards provider resolution.
+        }
         final oauthService = await _trainingPeaksOAuth;
         await oauthService.disconnect(_currentUserId!);
       },

@@ -44,6 +44,21 @@ ALTER TABLE public.integrations
   ADD COLUMN IF NOT EXISTS provider_is_premium boolean,
   ADD COLUMN IF NOT EXISTS athlete_metrics_json jsonb;
 
+-- Q-INT2 disconnect redesign (Stage D): default disconnect SOFT-HIDES
+-- provider data instead of purging it. hidden_by_disconnect is a distinct
+-- state from status='deleted' (a tombstone suppresses re-import; a hidden
+-- row REVIVES on a matching re-sync). Applies to provider activity rows and
+-- to the Garmin wellness store.
+ALTER TABLE public.activities
+  ADD COLUMN IF NOT EXISTS hidden_by_disconnect boolean;
+ALTER TABLE public.garmin_health_data
+  ADD COLUMN IF NOT EXISTS hidden_by_disconnect boolean;
+
+COMMENT ON COLUMN public.activities.hidden_by_disconnect IS
+  'Q-INT2: soft-hidden by provider disconnect — excluded from display and engine; revives on matching re-sync (NOT a tombstone)';
+COMMENT ON COLUMN public.garmin_health_data.hidden_by_disconnect IS
+  'Q-INT2: soft-hidden by Garmin disconnect — excluded from engine reads; revives on reconnect';
+
 COMMENT ON COLUMN public.activities.tss_planned IS
   'TP TSSPlanned (data-integrations@v1 capture; null for basic TP athletes)';
 COMMENT ON COLUMN public.activities.tss_actual IS

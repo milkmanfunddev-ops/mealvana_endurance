@@ -95,6 +95,10 @@ class ActivitiesService {
           (tbl) =>
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.deletedAt.isNull() &
+              // Q-INT2: rows soft-hidden by a provider disconnect are
+              // excluded from display (they revive on a matching re-sync).
+              (tbl.hiddenByDisconnect.isNull() |
+                  tbl.hiddenByDisconnect.equals(false)) &
               tbl.status.equals('draft').not() &
               (tbl.status.equals('archivedForBrick') |
                       tbl.status.equals('archived_for_brick'))

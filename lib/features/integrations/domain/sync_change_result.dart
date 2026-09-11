@@ -14,6 +14,7 @@ class SyncChangeResult {
     required this.unchangedCount,
     this.tombstoneDroppedCount = 0,
     this.revivedActivities = const [],
+    this.unhiddenActivities = const [],
   });
 
   /// Activities that exist in remote but not in local (need to be inserted)
@@ -40,6 +41,11 @@ class SyncChangeResult {
   /// local row id with the completion-carrying remote activity.
   final List<ActivityChange> revivedActivities;
 
+  /// Q-INT2 revive: rows soft-hidden by a provider disconnect that this
+  /// re-sync matched by provider id — they unhide and take the provider
+  /// update (hidden rows match-and-revive, never suppress).
+  final List<ActivityChange> unhiddenActivities;
+
   /// Total number of changes detected (new + updated + deleted)
   int get totalChanges =>
       newActivities.length +
@@ -61,7 +67,8 @@ class SyncChangeResult {
         'deleted: ${deletedActivityIds.length}, '
         'unchanged: $unchangedCount, '
         'tombstoneDropped: $tombstoneDroppedCount, '
-        'revived: ${revivedActivities.length}'
+        'revived: ${revivedActivities.length}, '
+        'unhidden: ${unhiddenActivities.length}'
         ')';
   }
 }

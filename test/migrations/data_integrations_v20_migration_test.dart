@@ -29,6 +29,7 @@ const _newActivityColumns = {
   'tp_calories_planned',
   'parent_summary_id',
   'is_parent',
+  'hidden_by_disconnect', // Q-INT2 (Stage D)
 };
 
 const _newIntegrationColumns = {'provider_is_premium', 'athlete_metrics_json'};
