@@ -1298,7 +1298,9 @@ workflows:
       vars:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
-        RELEASE_VERSION: "latest"
+        # PINNED for the brick-docked-panel OTA patch (this branch only):
+        # 1.26.0+110 is the ANDROID release; 1.26.0+109 is iOS. Never "latest".
+        RELEASE_VERSION: "1.26.0+110"
 
     triggering:
       events: []
