@@ -104,7 +104,7 @@ test('a wrong mosaic is retired to nothing, blocked, and says the judge refused 
   assert.equal(next.image_mode, 'none');
   assert.equal(next.image_tiles, null);
   assert.equal(next.image_blocked, true);
-  assert.equal(next.image_blocked_reason, 'judged_wrong');
+  assert.equal(next.image_blocked_reason, 'grid_refused');
   assert.equal(next.image_verdict, null);
 });
 
@@ -116,7 +116,7 @@ test('a wrong single tile is retired to nothing as well', () => {
   const next = retire(meal, bank);
 
   assert.equal(next.image_mode, 'none');
-  assert.equal(next.image_blocked_reason, 'judged_wrong');
+  assert.equal(next.image_blocked_reason, 'grid_refused');
 });
 
 // The one that matters most: pass 3 recomputes every meal from scratch, and
@@ -146,7 +146,7 @@ test('a wrong grid stored with CDN parameters is still recognised when the ladde
 
   assert.deepEqual(next.image_rejected_mosaics,
     ['https://img.example/cherries.jpg + https://img.example/ice-cream.jpg']);
-  assert.equal(next.image_blocked_reason, 'judged_wrong');
+  assert.equal(next.image_blocked_reason, 'grid_refused');
 });
 
 test('a wrong dish photo whose fallback mosaic was already refused is retired to nothing', () => {
@@ -162,7 +162,7 @@ test('a wrong dish photo whose fallback mosaic was already refused is retired to
   const next = retire(meal, bank);
 
   assert.equal(next.image_mode, 'none');
-  assert.equal(next.image_blocked_reason, 'judged_wrong');
+  assert.equal(next.image_blocked_reason, 'grid_refused');
 });
 
 test('a wrong dish photo on a transformed meal is retired to its icon', () => {
@@ -199,6 +199,29 @@ test('a picture the judge did not rate wrong is not remembered as refused', () =
     const meal = row({ ingredients: ['cherries', 'ice cream'], bank, verdict });
     assert.deepEqual(rememberRejected(meal), { image_rejected_urls: [], image_rejected_mosaics: [] }, String(verdict));
   }
+});
+
+// Decided 2026-09-10 (Lee): a meal whose photograph was of the wrong food does
+// not get to keep a thin grid in its place. The grid it falls back to must be
+// `ok`; a `weak` one is refused like a wrong one, and the meal shows its icon.
+test('a grid the caller refuses is remembered and retired, whatever its verdict', () => {
+  const bank = bankOf('cherries', 'ice-cream');
+  const meal = row({ ingredients: ['cherries', 'ice cream'], bank, verdict: 'weak' });
+
+  const next = retire(meal, bank, { refuse: true });
+
+  assert.equal(next.image_mode, 'none');
+  assert.equal(next.image_blocked_reason, 'grid_refused');
+  assert.deepEqual(next.image_rejected_mosaics,
+    ['https://img.example/cherries.jpg + https://img.example/ice-cream.jpg']);
+  assert.equal(resolveMealImage({ ...meal, ...next }, bank).mode, 'none');
+});
+
+test('left to itself, retiring does not refuse a picture the judge did not rate wrong', () => {
+  const bank = bankOf('cherries', 'ice-cream');
+  const meal = row({ ingredients: ['cherries', 'ice cream'], bank, verdict: 'weak' });
+
+  assert.deepEqual(retire(meal, bank).image_rejected_mosaics, []);
 });
 
 test('retiring twice records each refusal once', () => {

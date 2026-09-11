@@ -221,7 +221,7 @@ test('a mosaic the judge rated wrong is not offered to the same meal again', () 
   assert.equal(r.mode, 'none');
   assert.equal(r.tiles, null);
   assert.equal(r.blocked, true);
-  assert.equal(r.reason, 'judged_wrong');
+  assert.equal(r.reason, 'grid_refused');
 });
 
 test('a single tile the judge rated wrong is not offered again either', () => {
@@ -234,7 +234,7 @@ test('a single tile the judge rated wrong is not offered again either', () => {
   );
 
   assert.equal(r.mode, 'none');
-  assert.equal(r.reason, 'judged_wrong');
+  assert.equal(r.reason, 'grid_refused');
 });
 
 // The verdict was about a picture. Once pass 2 replaces a tile's photograph the
@@ -273,7 +273,7 @@ test('a stored refusal is the grid\'s photographs in drawing order, joined by " 
     image_rejected_mosaics: ['https://img.example/cherries.jpg + https://img.example/cream.jpg'],
   }, bank);
 
-  assert.equal(r.reason, 'judged_wrong');
+  assert.equal(r.reason, 'grid_refused');
 });
 
 test('a dish photo still wins over a rejected mosaic', () => {

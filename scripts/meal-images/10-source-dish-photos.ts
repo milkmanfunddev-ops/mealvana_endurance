@@ -441,8 +441,10 @@ function timing(row: Row, search: number, fetch: number, judge: number) {
  * with every refusal remembered. The next rung down may be a Mosaic this meal
  * has never been judged on — a meal whose photograph was of the wrong food may
  * be entitled to a perfectly good grid — so it is judged here, the same way
- * pass 8 would judge it. If that grid is wrong too, retiring again lands on the
- * icon, because the ladder now knows both refusals.
+ * pass 8 would judge it. Only `ok` keeps it: a meal that was showing the wrong
+ * food does not get to keep a thin grid in its place (Lee, 2026-09-10), so a
+ * `weak` grid is refused like a wrong one. Retiring again lands on the icon,
+ * because the ladder now knows both refusals.
  *
  * A grid that cannot be drawn (a tile host down) is left unjudged rather than
  * guessed at; pass 8 picks it up and pass 9 reports the figure as provisional
@@ -466,8 +468,8 @@ async function retireAndSettle(row: Row): Promise<Record<string, unknown>> {
   usage.outputTokens += used.outputTokens;
   fallbacksJudged++;
 
-  if (verdict.verdict === 'wrong') {
-    next = retire({ ...row, ...next, image_verdict: 'wrong' } as Row, bank) as Record<string, unknown>;
+  if (verdict.verdict !== 'ok') {
+    next = retire({ ...row, ...next } as Row, bank, { refuse: true }) as Record<string, unknown>;
   } else {
     next = {
       ...next,

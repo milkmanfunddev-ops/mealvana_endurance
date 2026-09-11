@@ -17,6 +17,6 @@ alter table public.meal_library
   add column if not exists image_rejected_mosaics text[] not null default '{}';
 
 comment on column public.meal_library.image_rejected_mosaics is
-  'Mosaics (and single tiles) the judge rated wrong for this meal, as their '
+  'Mosaics (and single tiles) the judge refused for this meal, as their '
   'photograph URLs in drawing order joined by '' + ''. The ladder never offers '
-  'one of these to the meal again; the meal is blocked with judged_wrong instead.';
+  'one of these to the meal again; the meal is blocked with grid_refused instead.';

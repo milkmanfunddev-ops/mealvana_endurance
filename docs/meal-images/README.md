@@ -48,10 +48,10 @@ node --test scripts/meal-images/lib/ladder.test.mjs
 Every rule in that file was argued for and should break exactly one test when it
 changes.
 
-**The ladder remembers what the judge refused.** A grid the judge rated `wrong`
-for a meal is kept in `meal_library.image_rejected_mosaics` (its photographs in
+**The ladder remembers what the judge refused.** A grid the judge refused for a
+meal is kept in `meal_library.image_rejected_mosaics` (its photographs in
 drawing order), and the ladder never offers that grid to that meal again: the
-meal resolves to `none` with the reason `judged_wrong`. Pass 3 recomputes every
+meal resolves to `none` with the reason `grid_refused`. Pass 3 recomputes every
 meal from scratch, so without this a re-run would hand every retired meal back
 the picture it was retired from. The memory is of the picture, not the meal —
 once pass 2 replaces one of the tile photographs, the grid is a different
@@ -250,8 +250,10 @@ photograph, a grid or a single tile — that picture is retired
 (`lib/retire.mjs`) and the ladder answers again without it. A wrong picture is
 worse than no picture, and an icon is a state rather than an absence. A meal
 whose photograph was of the wrong food may still be entitled to a good grid,
-so the rung it drops to is judged before the pass leaves it; if that grid is
-wrong too, the meal lands on its icon with `judged_wrong`. A meal already out of
+so the rung it drops to is judged before the pass leaves it. Only `ok` keeps it
+— a meal that was showing the wrong food does not get to keep a thin grid in
+its place (Lee, 2026-09-10) — so a `weak` or `wrong` grid is refused and the
+meal lands on its icon with `grid_refused`. A meal already out of
 rounds is retired without being searched again.
 
 A fallback grid whose tiles could not be downloaded is left unjudged rather than

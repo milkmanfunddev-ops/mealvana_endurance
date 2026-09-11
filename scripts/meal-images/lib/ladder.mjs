@@ -24,7 +24,7 @@
 //      & coconut" shown as a photograph of cherries is not: it looks like a
 //      picture of the meal and is a picture of one fifth of it.
 //
-//   4. A grid the judge rated `wrong` for this meal is never offered to it
+//   4. A grid the judge refused for this meal is never offered to it
 //      again. The first three rules are about what a mosaic COULD say; this one
 //      is about what the judge saw one say. Without it, re-running pass 3 hands
 //      every retired meal back the picture it was retired from. The memory is
@@ -54,7 +54,7 @@ export const BLOCKED_REASONS = {
   transformed: 'transformed (a mosaic would misrepresent it)',
   no_bank_tile: 'no tile in the bank for any ingredient',
   multi_part_single_tile: 'one tile for a meal of several parts',
-  judged_wrong: 'the judge rated the only grid available wrong',
+  grid_refused: 'the judge refused the only grid available',
 };
 
 /**
@@ -97,7 +97,7 @@ export function resolveMealImage(meal, bank) {
 
   // Rule 4: the judge has already seen this picture on this meal and said no.
   if (tiles.length && (meal.image_rejected_mosaics ?? []).includes(pictureIdentity(tiles))) {
-    return { mode: 'none', tiles: null, blocked: true, reason: 'judged_wrong' };
+    return { mode: 'none', tiles: null, blocked: true, reason: 'grid_refused' };
   }
 
   if (tiles.length >= 2) {
