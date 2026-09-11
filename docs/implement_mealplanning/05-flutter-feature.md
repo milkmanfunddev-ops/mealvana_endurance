@@ -71,7 +71,7 @@ CI-config contract — reproduced on the branch base). `flutter analyze` 0 error
 
 ## Status — Phase 4b (data + application) **built 2026-09-01** (branch `mealplanning`, dev only)
 Phase 4a (`domain/`) and 4b (`data/`, `application/`, Drift v20, sync registration) are in code and unit
-tested (`test/features/meal_planning/`, `test/migrations/meal_planning_v20_migration_test.dart`).
+tested (`test/features/meal_planning/`, `test/migrations/meal_planning_v21_migration_test.dart`).
 Phase 4c (`presentation/`, router, tabs, content keys) is next. Nothing under `supabase/` changed.
 
 | Piece | Where | State |

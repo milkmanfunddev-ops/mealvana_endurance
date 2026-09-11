@@ -290,33 +290,33 @@ class AppDatabase extends _$AppDatabase {
   /// value in migration 20260814120000). Supabase
   /// app_config.current_schema_version must be bumped to 18 when this ships.
   ///
-  /// v19 forked on 2026-09-06: `develop` used v19 for the template_foods
-  /// food-recommendation columns while `mealplanning` used v19 for
-  /// `user_entitlements` (and v20 for the meal-planning tables). Both lines
-  /// shipped dev builds at their own v19, so the merge lands as v21 and the
-  /// ladder below runs every forked step for any device below 21 — each step
-  /// is idempotent (ensureTable / addColumn), so a device that already has one
-  /// side's v19 is unaffected by re-running it.
+  /// v19 added template_foods.min_servings_during + is_indivisible (mirrors
+  /// of existing Supabase columns the client solvers now read — §4.2 one-cap
+  /// twin port) and template_foods.solvent_min_ml (catalog-conventions v1.1
+  /// solvent dependency, food-recommendation@v1 §6(e); Supabase migration
+  /// 20260903120000). This is the SHIPPED 1.25.x/1.26.0 step. History note:
+  /// v19 forked on 2026-09-06 (`develop` used v19 for these catalog columns
+  /// while `mealplanning` used v19 for `user_entitlements` and v20 for the
+  /// meal-planning tables); on 2026-09-11 the mealplanning steps were
+  /// consolidated into v21 so the ladder matches what prod actually ran, and
+  /// the v21 step idempotently re-runs both forked sides for dev devices from
+  /// either lineage.
   ///
-  /// v19 (mealplanning) added `user_entitlements` — a read-only local mirror of
-  /// the user's Pro subscription rows (docs/implement_mealplanning/04-entitlement.md).
-  /// Server-side the table is written only by the revenuecat-webhook edge
-  /// function; the app caches its own row so the Pro gate can answer offline
-  /// and before RevenueCat responds on a cold start.
+  /// v20 is RESERVED for the data-integration bundle (ships as 1.27.0 off the
+  /// shipped 1.26.0 tree); its step arrives with the feature/data-integration
+  /// merge. Supabase app_config.current_schema_version must be bumped to 20
+  /// when that build ships.
   ///
-  /// v20 (mealplanning) added the meal-planning user data (Phase 4b of
-  /// docs/implement_mealplanning): `meal_plans`, `plan_meals`, `user_memories`
-  /// (all offline-first with `needs_upload`), `meal_logs.plan_meal_id`, and
-  /// the `saved_meals` planning columns (`icon notes meal_types batch
-  /// library_meal_id`).
-  ///
-  /// v21 (was develop's v19) added template_foods.min_servings_during +
-  /// is_indivisible (mirrors of existing Supabase columns the client solvers
-  /// now read — §4.2 one-cap twin port) and template_foods.solvent_min_ml
-  /// (catalog-conventions v1.1 solvent dependency, food-recommendation@v1
-  /// §6(e); Supabase migration 20260903120000). Supabase
-  /// app_config.current_schema_version must be bumped to 21 when the build
-  /// carrying this ships.
+  /// v21: meal planning (Vana) — `user_entitlements` (read-only local mirror
+  /// of the user's Pro subscription rows,
+  /// docs/implement_mealplanning/04-entitlement.md; written server-side only
+  /// by the revenuecat-webhook edge function) plus the Phase 4b user data
+  /// (docs/implement_mealplanning): `meal_plans`, `plan_meals`,
+  /// `user_memories` (all offline-first with `needs_upload`),
+  /// `meal_logs.plan_meal_id`, and the `saved_meals` planning columns (`icon
+  /// notes meal_types batch library_meal_id`). Ships with Vana (1.28.0);
+  /// Supabase app_config.current_schema_version must be bumped to 21 when
+  /// that build ships.
   int get schemaVersion => 21;
 
   /// Ensure sync tracking columns exist for user-authored tables.
@@ -581,18 +581,41 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'calories_burned', 'REAL');
         }
 
-        // v19 (mealplanning line): user_entitlements — local cache of the Pro
-        // subscription row (Phase 3 of meal planning). ensureTable is
-        // idempotent for web user_version replays; no columns change on
-        // existing tables. Re-run under v21 too — see the fork note there.
+        // v19: template_foods catalog columns (food-recommendation@v1) — the
+        // shipped 1.25.x/1.26.0 step, in the slot prod actually ran. All
+        // defaulted or nullable; addColumn is idempotent for web user_version
+        // replays. Values arrive via the template_foods full resync (the
+        // repository selects *).
         if (from < 19) {
-          await ensureTable(userEntitlementsTable);
+          await addColumn(
+            'template_foods',
+            'min_servings_during',
+            'REAL NOT NULL DEFAULT 1.0',
+          );
+          await addColumn(
+            'template_foods',
+            'is_indivisible',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'solvent_min_ml', 'REAL');
         }
 
-        // v20: meal-planning user data (Phase 4b). Three new tables plus
-        // additive nullable/defaulted columns on meal_logs and saved_meals.
-        // ensureTable / addColumn are idempotent for web user_version replays.
-        if (from < 20) {
+        // v20 is reserved for the data-integration bundle (1.27.0); its
+        // `if (from < 20)` step arrives with the feature/data-integration
+        // merge. Nothing of Vana may live at or below v20 — prod must never
+        // partially run the meal-planning schema.
+
+        // v21: meal planning (Vana), consolidated from the former
+        // mealplanning-lineage v19 (user_entitlements) and v20 (Phase 4b)
+        // steps on 2026-09-11 so data-integration could take v20.
+        // ensureTable / addColumn are idempotent for web user_version
+        // replays, and idempotency also covers the 2026-09-06 fork: a dev
+        // device from the mealplanning lineage (its own v19/v20) re-adds the
+        // template_foods catalog columns here, and one from develop's old
+        // lineage (catalog columns at its v19) gets the meal-planning schema
+        // here.
+        if (from < 21) {
+          await ensureTable(userEntitlementsTable);
           await ensureTable(mealPlansTable);
           await ensureTable(planMealsTable);
           await ensureTable(userMemoriesTable);
@@ -606,21 +629,8 @@ class AppDatabase extends _$AppDatabase {
           );
           await addColumn('saved_meals', 'batch', 'INTEGER');
           await addColumn('saved_meals', 'library_meal_id', 'TEXT');
-        }
-
-        // v21 (develop's former v19): food-recommendation@v1 catalog columns
-        // on template_foods — min_servings_during + is_indivisible (Supabase
-        // mirrors the client solvers now read, §4.2 one-cap twin port) and
-        // solvent_min_ml (catalog-conventions v1.1). All defaulted or
-        // nullable; addColumn is idempotent, so develop devices that already
-        // ran this at 19 are unaffected. Values arrive via the template_foods
-        // full resync (the repository selects *).
-        //
-        // Fork catch-up: a device coming from develop's own v19 never ran the
-        // mealplanning v19 step above (from == 19 skips `from < 19`), so make
-        // sure user_entitlements exists here as well — idempotent.
-        if (from < 21) {
-          await ensureTable(userEntitlementsTable);
+          // Fork catch-up (idempotent) for mealplanning-lineage dev devices
+          // that never ran the shipped v19 step above:
           await addColumn(
             'template_foods',
             'min_servings_during',

@@ -1,10 +1,12 @@
-/// Tests for the v19 `user_entitlements` cache table (Pro subscription,
+/// Tests for the v21 `user_entitlements` cache table (Pro subscription,
 /// docs/implement_mealplanning/04-entitlement.md).
 ///
 /// Covers, in the repo's migration-test shape (see
 /// rerun_migration_idempotency_test.dart):
 ///  - onCreate produces the table with the (user_id, entitlement) key
-///  - a v18 install gets the table from the `from < 19` step
+///  - a v18 install gets the table from the `from < 21` step (the
+///    mealplanning steps were renumbered v19/v20 -> v21 on 2026-09-11 so
+///    data-integration could take v20)
 ///  - replaying that step when the table already exists is a no-op (web
 ///    `user_version` re-run safety)
 ///  - the row round-trips through the Drift companion
@@ -24,7 +26,7 @@ Future<Set<String>> _tables(AppDatabase db) async {
 }
 
 void main() {
-  group('user_entitlements (v19)', () {
+  group('user_entitlements (v21)', () {
     test('onCreate produces the table with a composite primary key', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
@@ -58,11 +60,11 @@ void main() {
       expect(byName['active']!.read<int>('notnull'), 1);
     });
 
-    test('a v18 install gets the table from the from < 19 step', () async {
+    test('a v18 install gets the table from the from < 21 step', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
 
-      // Simulate the pre-v19 state, then run the ladder from 18.
+      // Simulate the pre-Vana state, then run the ladder from 18.
       await db.customStatement('DROP TABLE user_entitlements');
       expect(await _tables(db), isNot(contains('user_entitlements')));
 
@@ -71,7 +73,7 @@ void main() {
       expect(await _tables(db), contains('user_entitlements'));
     });
 
-    test('re-running the v19 step when the table exists is a no-op', () async {
+    test('re-running the v21 step when the table exists is a no-op', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
 

@@ -4,7 +4,7 @@
 | Item | State |
 |---|---|
 | Contract / fixtures | **done** (4a) — `fixture_roundtrip_test.dart` + `vana_stream_event_test.dart` over the 13 frozen `contract-v1` fixtures in `test/features/meal_planning/fixtures/`; the same fixtures drive the edge contract test. |
-| Drift migration | **done** — `test/migrations/meal_planning_v20_migration_test.dart` (v20, not v19). |
+| Drift migration | **done** — `test/migrations/meal_planning_v21_migration_test.dart` (renumbered to v21 on 2026-09-11; v20 is data-integration). |
 | Repositories | **done** (4b) — `meal_plan_repository_test`, `user_memory_repository_test`, `vana_chat_repository_test`, `vana_action_client_test`. |
 | Controllers | **done** (4b) — plan, catalog, chat, cooking-session, plus `plan_coverage_service` / `meal_icon_classifier` / `cooking_step_timers` / `ui_action` in `domain/`. |
 | Widgets | **done** (4c) — chips, part renderer, plan bar, shopping list. |
