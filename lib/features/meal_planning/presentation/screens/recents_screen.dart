@@ -9,6 +9,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_catalog_controller.dart';
 import '../../domain/meal_ref.dart';
+import '../../domain/list_pictures.dart';
 import '../widgets/meal_card.dart';
 import '../widgets/vana_round_button.dart';
 
@@ -22,6 +23,7 @@ class RecentsScreen extends ConsumerWidget {
     final content = ref.read(contentServiceProvider);
     final catalog = ref.watch(mealCatalogControllerProvider).value;
     final recents = catalog?.recents ?? const <RecentMeal>[];
+    final pictures = picturesForList([for (final r in recents) r.meal]);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
 
@@ -82,6 +84,7 @@ class RecentsScreen extends ConsumerWidget {
                   child: MealCard(
                     key: ValueKey('meal_planning.recents_${meal.id}'),
                     meal: meal,
+                    picture: pictures[i],
                     onTap: () => context.push('/food/meals/${meal.id}'),
                   ),
                 );

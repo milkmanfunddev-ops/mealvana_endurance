@@ -32,6 +32,30 @@ void main() {
     expect(meal.displayTiles, hasLength(1));
   });
 
+  test('a dish row carries where the photograph came from, and who took it', () {
+    final meal = MealLibraryRemoteDataSource.rowToMealRef(
+      row({
+        'image_mode': 'dish',
+        'image_url':
+            'https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/object/public/meal-images/meals/S-008.jpg',
+        'image_credit': 'Valereee · CC-BY-SA-4.0 · Wikimedia Commons',
+        'image_creator': 'Valereee',
+        'image_license': 'cc-by-sa-4.0',
+        'image_source_url':
+            'https://commons.wikimedia.org/wiki/File:Homemade_White_Bread_with_Strawberry_Jam.jpg',
+        'image_tiles': <dynamic>[],
+      }),
+    )!;
+
+    final photo = meal.displayTiles.single;
+    expect(
+      photo.sourceUrl,
+      'https://commons.wikimedia.org/wiki/File:Homemade_White_Bread_with_Strawberry_Jam.jpg',
+    );
+    expect(photo.creator, 'Valereee');
+    expect(photo.license, 'cc-by-sa-4.0');
+  });
+
   test('a mosaic row carries its tiles in order, with attribution', () {
     final meal = MealLibraryRemoteDataSource.rowToMealRef(
       row({

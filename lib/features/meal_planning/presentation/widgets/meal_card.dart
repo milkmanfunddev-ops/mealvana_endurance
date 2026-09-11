@@ -31,6 +31,9 @@ import 'vana_tag.dart';
 /// [onSwap] / [onRemove] add the `⋮` overflow (plan Phase 6.2) after
 /// [trailing]; a card for a meal not in the plan passes neither and gets
 /// no menu.
+///
+/// [picture] is what the card draws; a list passes the one `picturesForList`
+/// gave it so no photograph repeats. Null draws the meal's own.
 class MealCard extends ConsumerWidget {
   const MealCard({
     super.key,
@@ -42,9 +45,11 @@ class MealCard extends ConsumerWidget {
     this.showMacros = false,
     this.excluded = false,
     this.compact = false,
+    this.picture,
   });
 
   final MealRef meal;
+  final MealPicture? picture;
   final VoidCallback onTap;
 
   /// Optional right-aligned action (e.g. the picker's "Add").
@@ -62,6 +67,7 @@ class MealCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
+    final picture = this.picture ?? meal.picture;
 
     // kcal sits in the tag strip only when the pill row is not showing it
     // (never twice — macro-pill-row MP-L3).
@@ -100,19 +106,19 @@ class MealCard extends ConsumerWidget {
                 // The meal's picture when it has one, else the icon glyph.
                 // `none` deliberately keeps the icon so the row never loses its
                 // leading element and go ragged (docs/meal-images/README.md).
-                if (meal.imageMode != MealImageMode.none)
+                if (picture.mode != MealImageMode.none)
                   Semantics(
                     // The licences want the photographer credited wherever the
                     // photo appears, but a 36pt thumbnail in a dense list has
                     // no room for a credit line. The visible credit lives on
                     // the detail screen; this keeps it readable here.
-                    label: mealPictureCredit(meal.imageMode, meal.displayTiles),
+                    label: mealPictureCredit(picture.mode, picture.tiles),
                     child: SizedBox(
                       width: compact ? 32 : 36,
                       height: compact ? 32 : 36,
                       child: MealImageMosaic(
-                        mode: kyleImageMode(meal.imageMode),
-                        tiles: kyleImageTiles(meal.displayTiles),
+                        mode: kyleImageMode(picture.mode),
+                        tiles: kyleImageTiles(picture.tiles),
                         borderRadius: BorderRadius.circular(9),
                       ),
                     ),

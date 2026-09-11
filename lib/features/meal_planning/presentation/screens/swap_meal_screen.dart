@@ -12,6 +12,7 @@ import '../../application/meal_plan_controller.dart';
 import '../../data/meal_library_remote_data_source.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_ref.dart';
+import '../../domain/list_pictures.dart';
 import '../../domain/plan_meal.dart';
 import '../../application/meal_icon_classifier.dart';
 import '../widgets/meal_card.dart';
@@ -203,6 +204,7 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                               );
                             }
                             final meals = snapshot.data ?? const <MealRef>[];
+                            final pictures = picturesForList(meals);
                             return ListView.builder(
                               padding: const EdgeInsets.all(AppSpacing.md),
                               itemCount: meals.length,
@@ -210,6 +212,7 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: MealCard(
                                   meal: meals[i],
+                                  picture: pictures[i],
                                   onTap: () =>
                                       _swap(context, meals[i], current),
                                 ),

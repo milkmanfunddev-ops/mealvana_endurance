@@ -8,6 +8,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../data/meal_library_remote_data_source.dart';
 import '../../domain/meal_ref.dart';
+import '../../domain/list_pictures.dart';
 import '../../domain/meal_type.dart';
 import 'meal_card.dart';
 
@@ -67,6 +68,7 @@ class _SwapPickerState extends ConsumerState<SwapPicker> {
           );
         }
         final meals = snapshot.data ?? const <MealRef>[];
+        final pictures = picturesForList(meals);
 
         if (meals.isEmpty) {
           return Padding(
@@ -82,11 +84,12 @@ class _SwapPickerState extends ConsumerState<SwapPicker> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final meal in meals)
+            for (final (i, meal) in meals.indexed)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                 child: MealCard(
                   meal: meal,
+                  picture: pictures[i],
                   compact: true,
                   onTap: () => widget.onPick(meal),
                 ),

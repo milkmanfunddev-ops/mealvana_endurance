@@ -122,6 +122,9 @@ class MealRef extends WireRecord {
     MealImageMode.none => const <MealImageTile>[],
   };
 
+  /// What a card draws for this meal on its own.
+  MealPicture get picture => MealPicture(imageMode, displayTiles);
+
   factory MealRef.fromJson(Map<String, dynamic> json) {
     return MealRef(
       source: MealSource.requireWire(readString(json, 'source')),

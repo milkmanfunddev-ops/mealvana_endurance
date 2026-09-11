@@ -257,7 +257,15 @@ class MealLibraryRemoteDataSource {
       imageTiles: tiles,
       image: imageUrl == null
           ? null
-          : MealImage(url: imageUrl, credit: readString(r, 'image_credit')),
+          : MealImage(
+              url: imageUrl,
+              credit: readString(r, 'image_credit'),
+              creator: readString(r, 'image_creator'),
+              license: readString(r, 'image_license'),
+              // A mirrored photograph is stored once per meal, so the page it
+              // came from is what says two meals wear the same one.
+              sourceUrl: readString(r, 'image_source_url'),
+            ),
     );
   }
 

@@ -35,6 +35,20 @@ the picture would occupy, so a rail of mixed rows does not go ragged
 (`meal_card.dart`). A row can move up the ladder later simply by re-running
 pass 3 after the bank grows.
 
+**One photograph, one card per list.** Reusing a photograph across the
+library is fine; a list showing it on two Meals at once reads as though it is
+repeating itself. `picturesForList` (`lib/features/meal_planning/domain/list_pictures.dart`)
+decides what each card in a list draws: the first Meal wearing a photograph
+keeps it, and a later one falls back to its Mosaic if it carries one, otherwise
+to its icon. Only a photograph standing for the whole Meal counts, a Dish photo
+or a one-thing Meal's Tile; Mosaic cells are shared ingredients by design. Two
+photographs are the same one when their address (without its query string) or
+their source page matches, because a mirrored archive photo is stored once per
+Meal. `search_meals` returns `image_source_url` for that reason. Nothing is
+stored: the Meal itself, the detail screen and every other list are unaffected.
+No Dish photo carries a Mosaic today (the ladder writes `image_tiles` only when
+there is no `image_url`), so in practice the fallback is the icon.
+
 The rules that pick the rung live in `scripts/meal-images/lib/ladder.mjs` —
 `resolveMealImage(meal, bank)`, a pure function that touches no network, no
 database and no model. Pass 3 is only the part that cannot be pure: it reads the
@@ -300,10 +314,14 @@ should be sharpened is a real question and a costly one: a prompt change
 re-values every verdict in the table, exactly as a geometry change does.
 
 **Two meals can repeat each other without sharing a URL.** Three chocolate-milk
-meals hold three different photographs of a glass mug topped with chocolate
-sprinkles. Pass 10's de-duplication compares URLs, so it sees three distinct
-pictures; an athlete sees the same picture three times. Ticket 07 wants
-perceptual similarity, not URL identity.
+meals (`AS-196`, `AS-364`, `S-083`) looked like three photographs of one mug.
+They are one: the same Wikimedia file, mirrored three times under three meal
+ids, byte-identical. Pass 10 now keys "already in use" on the source page, and
+a list keys on it too (below). What neither can see is two *different*
+photographs of one plate: `D-037` and `L-027` (chicken tikka masala) wear two
+files from the same shoot. A difference hash puts them 16 bits apart of 64, far
+outside any duplicate threshold, so only a look at the contact sheet finds that
+kind.
 
 Neither is visible in the honesty figure, which is the point of the sheet.
 

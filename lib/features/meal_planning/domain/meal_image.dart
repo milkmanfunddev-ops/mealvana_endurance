@@ -27,6 +27,18 @@ enum MealImageMode {
   };
 }
 
+/// What one card draws: the rung, and the photographs on it in drawing order.
+/// Usually a meal's own ([MealRef.picture]); a list may hand a card something
+/// less (`picturesForList`).
+class MealPicture {
+  const MealPicture(this.mode, this.tiles);
+
+  static const none = MealPicture(MealImageMode.none, <MealImageTile>[]);
+
+  final MealImageMode mode;
+  final List<MealImageTile> tiles;
+}
+
 /// One ingredient photograph backing a meal's mosaic, with the attribution the
 /// licence requires. See `docs/meal-images/README.md`.
 class MealImageTile extends WireRecord {
