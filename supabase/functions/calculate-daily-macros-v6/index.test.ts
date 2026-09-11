@@ -5,7 +5,12 @@
 
 import { assertEquals, assertThrows } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { calculateRMR } from './formulas/rmr.ts';
-import { zoneDistributionToIF, sessionCost, carbDemand } from './formulas/session.ts';
+import {
+  carbDemand,
+  sessionCost,
+  sessionCostF4a,
+  zoneDistributionToIF,
+} from './formulas/session.ts';
 import { baselineMacros, clampMacros } from './formulas/baseline.ts';
 import {
   recoveryDebt,
@@ -157,10 +162,11 @@ Deno.test('Iter1: Session Cost - Running short easy', () => {
   assertWithinPercent(sessionCost('running', 0.75, 0.65, 75), 465, 5);
 });
 
-// INTERIM behavior pending the SSOT ruling in
-// qa/intake/2026-08-20-session-cost-unknown-activity-types.md — see
-// ops/data/bug-reports/2026-08-20-session-cost-unknown-sport-priced-as-running.md.
-// Deliberately un-vectored: session-demand.json pins no unmapped-sport case.
+// F4a (session-demand.md, RULED Xuan 2026-09-10): resolves the 2026-08-20
+// unknown-sport intake. Unknown sports contribute EXACTLY 0 kcal with the
+// estimate flag; MOBILITY class prices at 2.5 linear; composites decompose
+// by legs / dominant leg. Vectored by the f4a-* rows of session-demand.json
+// (vectors.conformance.test.ts); these tests pin the call-site shape.
 function captureWarn(body: () => void): string[] {
   const warnings: string[] = [];
   const original = console.warn;
@@ -175,17 +181,16 @@ function captureWarn(body: () => void): string[] {
   return warnings;
 }
 
-Deno.test('INTERIM bug 2026-08-20: unmapped sports use the conservative linear strength rate and are flagged by name', () => {
-  const unmapped = ['other', 'triathlon', 'duathlon', 'multisport', 'brick'];
+Deno.test('F4a: unknown sports contribute exactly 0 with the estimate flag', () => {
+  const unknowns = ['other', 'zumba', 'esports'];
   const warnings = captureWarn(() => {
-    for (const sport of unmapped) {
-      const kcal = sessionCost(sport, 1.0, 0.75, 70);
-      // 5 kcal/kg/hr, linear, IF at reference 0.75: 5 × 1 × 1 × 70.
-      assertEquals(Math.abs(kcal - 350) < 0.001, true, sport);
+    for (const sport of unknowns) {
+      const r = sessionCostF4a(sport, 1.0, 0.75, 70);
+      assertEquals(r.kcal, 0, sport);
+      assertEquals(r.estimate_flag, true, sport);
     }
   });
-  assertEquals(warnings.length, unmapped.length);
-  for (const sport of unmapped) {
+  for (const sport of unknowns) {
     assertEquals(
       warnings.some((w) => w.includes(`"${sport}"`)),
       true,
@@ -194,26 +199,29 @@ Deno.test('INTERIM bug 2026-08-20: unmapped sports use the conservative linear s
   }
 });
 
-Deno.test('INTERIM bug 2026-08-20: 60-min foam roll (other, IF 0.74, 70 kg) is no longer ~750 kcal (or NaN)', () => {
-  let kcal = NaN;
-  captureWarn(() => {
-    kcal = sessionCost('other', 1.0, 0.74, 70);
-  });
-  const expected = 5 * (0.74 / 0.75) * 1.0 * 70; // ≈345.3
-  assertEquals(Math.abs(kcal - expected) < 0.001, true);
-  assertEquals(kcal < 400, true);
+Deno.test('F4a: 60-min foam roll prices at the MOBILITY rate, linear in IF', () => {
+  // 2.5 kcal/kg/hr × (0.74/0.75) × 1 h × 70 kg ≈ 172.7 — not ~750 (the
+  // removed RUNNING fallback) and not ~345 (the removed interim floor).
+  const r = sessionCostF4a('foam_rolling', 1.0, 0.74, 70);
+  assertEquals(Math.abs(r.kcal - 2.5 * (0.74 / 0.75) * 70) < 0.001, true);
+  assertEquals(r.estimate_flag, false);
+  // Linear-in-IF scaling class (quadratic would double this ratio):
+  const ratio = sessionCostF4a('mobility', 1.0, 0.90, 70).kcal /
+    sessionCostF4a('mobility', 1.0, 0.45, 70).kcal;
+  assertEquals(Math.abs(ratio - 2.0) < 1e-9, true);
 });
 
-Deno.test('INTERIM bug 2026-08-20: unmapped sport scales linearly with IF, not quadratically', () => {
-  let ratio = NaN;
+Deno.test('F4a: a composite with neither legs nor dominant falls to the unknown rung', () => {
   captureWarn(() => {
-    ratio = sessionCost('other', 1.0, 0.90, 70) /
-      sessionCost('other', 1.0, 0.45, 70);
+    for (const sport of ['triathlon', 'duathlon', 'multisport', 'brick']) {
+      const r = sessionCostF4a(sport, 1.0, 0.75, 70);
+      assertEquals(r.kcal, 0, sport);
+      assertEquals(r.estimate_flag, true, sport);
+    }
   });
-  assertEquals(Math.abs(ratio - 2.0) < 1e-9, true); // quadratic would give 4.0
 });
 
-Deno.test('INTERIM bug 2026-08-20: mapped sports are unchanged and not flagged', () => {
+Deno.test('F4 mapped sports are unchanged and not flagged', () => {
   const warnings = captureWarn(() => {
     assertEquals(
       Math.abs(

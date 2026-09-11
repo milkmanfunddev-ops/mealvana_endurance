@@ -26,6 +26,7 @@ import { baselineMacros } from './formulas/baseline.ts';
 import {
   carbDemand,
   sessionCost,
+  sessionCostF4a,
   zoneDistributionToIF,
 } from './formulas/session.ts';
 import {
@@ -202,8 +203,28 @@ describe('vectors: session-demand', () => {
         const f = zoneDistributionToIF(i.pctConv, i.pctTempo, i.pctAllout);
         assertAlmostEquals(f, e.IF, 0.005); // spec tolerance for F3
       } else if ('kcal' in e) {
-        const kcal = sessionCost(lc(i.sport), i.durationHr, i.IF, i.weightKg);
-        assertAlmostEquals(kcal, e.kcal, tol);
+        // F4a rows may carry legs (composite decomposition) or a
+        // resolver-supplied dominant sport, and may pin the estimate flag.
+        const r = sessionCostF4a(
+          lc(i.sport),
+          i.durationHr ?? 0,
+          i.IF ?? 0.75,
+          i.weightKg,
+          {
+            legs: i.legs?.map((
+              l: { sport: string; IF: number; durationHr: number },
+            ) => ({
+              sport: lc(l.sport),
+              intensity_factor: l.IF,
+              duration_hr: l.durationHr,
+            })),
+            dominant_sport: i.dominantSport ? lc(i.dominantSport) : undefined,
+          },
+        );
+        assertAlmostEquals(r.kcal, e.kcal, tol);
+        if ('estimateFlag' in e) {
+          assertEquals(r.estimate_flag, e.estimateFlag);
+        }
       } else if ('carbG' in e) {
         const carb = carbDemand(lc(i.sport), i.IF, i.durationHr, i.weightKg);
         assertAlmostEquals(carb, e.carbG, tol);

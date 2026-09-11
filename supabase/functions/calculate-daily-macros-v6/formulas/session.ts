@@ -33,58 +33,139 @@ export function zoneDistributionToIF(
 }
 
 /**
- * Calculate session calorie cost (F4).
+ * Calculate session calorie cost (F4 + F4a).
  * Weight is multiplied LAST so cost is exactly linear in body weight
  * (invariant I6: the 60:75:90 kg ratio is 0.800:1.000:1.200 exactly,
  * not within tolerance — floating-point ordering matters here).
  *
- * INTERIM (bug: ops/data/bug-reports/
- * 2026-08-20-session-cost-unknown-sport-priced-as-running.md): the Dart twin
- * (DailyBaselineCalculator.sessionCost) used to price sports missing from
- * BASE_RATE (other/triathlon/duathlon/multisport/brick) at the RUNNING rate
- * on the quadratic curve (~750 kcal for a 60-min foam-roll); here an
- * unmapped sport produced NaN. Until the spec owner rules on
- * non-endurance/composite types
- * (qa/intake/2026-08-20-session-cost-unknown-activity-types.md), unmapped
- * sports take the already-ratified strength rate (5 kcal/kg/hr) on the
- * LINEAR curve — a conservative floor, not an invented rate — and each
- * occurrence is logged so unmapped sport names accrete. Deliberately
- * un-vectored: docs/ssot/vectors/daily-macros/session-demand.json pins no
- * unmapped-sport case. Mirrored in daily_baseline_calculator.dart.
+ * F4a (session-demand.md, RULED Xuan 2026-09-10; resolves the 2026-08-20
+ * unknown-sport intake and REMOVES both the historical `?? 11` RUNNING
+ * fallback and the interim strength-rate floor):
+ *  - MOBILITY class (foam-rolling / stretching / yoga / aqua-routine):
+ *    BASE_RATE 2.5 kcal·kg⁻¹·hr⁻¹, LINEAR in IF (like strength).
+ *  - Composite types (triathlon/duathlon/brick/multisport): decompose by
+ *    legs where supplied, else price as the dominant leg (CONVENTION:
+ *    dominant = longest-duration leg, resolver-supplied). With neither,
+ *    the session falls to the unknown rung.
+ *  - Genuinely unknown sports contribute EXACTLY 0 kcal with a
+ *    sources-style estimate flag (0 is a recommendation, not null).
+ * Mirrored in daily_baseline_calculator.dart (D-005 twin discipline);
+ * both pinned by the f4a-* rows of session-demand.json.
  */
+export interface SessionCostLeg {
+  sport: string;
+  duration_hr: number;
+  intensity_factor: number;
+}
+
+export interface SessionCostResult {
+  kcal: number;
+  /** True when the sport was genuinely unknown and the 0 is an estimate. */
+  estimate_flag: boolean;
+}
+
+const SESSION_BASE_RATE: Record<string, number> = {
+  running: 11,
+  cycling: 9,
+  swimming: 7,
+  strength: 5,
+  mobility: 2.5, // F4a
+};
+
+/** Sports whose cost is LINEAR in IF (everything else priced is quadratic). */
+const LINEAR_IF_SPORTS = new Set(['strength', 'mobility']);
+
+/** The F4a MOBILITY class members, verbatim from the ruling. */
+const MOBILITY_SPORTS = new Set([
+  'mobility',
+  'foam_rolling',
+  'stretching',
+  'yoga',
+  'aqua_routine',
+]);
+
+export const COMPOSITE_SPORTS = new Set([
+  'triathlon',
+  'duathlon',
+  'brick',
+  'multisport',
+]);
+
+export function sessionCostF4a(
+  sport: Sport | string,
+  duration_hr: number,
+  intensity_factor: number,
+  weight_kg: number,
+  opts?: { legs?: SessionCostLeg[]; dominant_sport?: string },
+): SessionCostResult {
+  const normalized = MOBILITY_SPORTS.has(sport) ? 'mobility' : sport;
+
+  if (COMPOSITE_SPORTS.has(normalized)) {
+    const legs = opts?.legs;
+    if (legs && legs.length > 0) {
+      let kcal = 0;
+      let estimate_flag = false;
+      for (const leg of legs) {
+        const r = sessionCostF4a(
+          leg.sport,
+          leg.duration_hr,
+          leg.intensity_factor,
+          weight_kg,
+        );
+        kcal += r.kcal;
+        estimate_flag = estimate_flag || r.estimate_flag;
+      }
+      return { kcal, estimate_flag };
+    }
+    if (opts?.dominant_sport) {
+      return sessionCostF4a(
+        opts.dominant_sport,
+        duration_hr,
+        intensity_factor,
+        weight_kg,
+      );
+    }
+    // No legs and no resolvable dominant leg: the composite is unpriceable
+    // without inventing a rate — the F4a unknown rung applies.
+    return { kcal: 0, estimate_flag: true };
+  }
+
+  const rate = SESSION_BASE_RATE[normalized];
+  if (rate === undefined) {
+    // F4a: genuinely unknown sports contribute 0 with the estimate flag —
+    // never a hidden fallback rate.
+    console.warn(
+      `sessionCost: unknown sport "${sport}" — F4a zero-with-estimate-flag ` +
+        `(session-demand.md F4a, RULED 2026-09-10)`,
+    );
+    return { kcal: 0, estimate_flag: true };
+  }
+
+  if (LINEAR_IF_SPORTS.has(normalized)) {
+    return {
+      kcal: rate * (intensity_factor / 0.75) * duration_hr * weight_kg,
+      estimate_flag: false,
+    };
+  }
+  return {
+    kcal: rate * Math.pow(intensity_factor / 0.75, 2) * duration_hr *
+      weight_kg,
+    estimate_flag: false,
+  };
+}
+
+/** Numeric convenience over [sessionCostF4a] for call sites that only need
+ * the kcal (an unknown sport reads as exactly 0 here — check the flag via
+ * sessionCostF4a when the source attribution matters). */
 export function sessionCost(
   sport: Sport | string,
   duration_hr: number,
   intensity_factor: number,
   weight_kg: number,
+  opts?: { legs?: SessionCostLeg[]; dominant_sport?: string },
 ): number {
-  const BASE_RATE: Record<Sport, number> = {
-    running: 11,
-    cycling: 9,
-    swimming: 7,
-    strength: 5,
-  };
-
-  const rate = (BASE_RATE as Record<string, number | undefined>)[sport];
-  if (rate === undefined) {
-    // INTERIM fallback — see the doc comment above; do not ratify this rate.
-    console.warn(
-      `sessionCost: unmapped sport "${sport}" — INTERIM conservative linear ` +
-        `rate ${BASE_RATE.strength} kcal/kg/hr pending SSOT ruling ` +
-        `(qa/intake/2026-08-20-session-cost-unknown-activity-types.md)`,
-    );
-    return BASE_RATE.strength * (intensity_factor / 0.75) * duration_hr *
-      weight_kg;
-  }
-
-  if (sport === 'strength') {
-    // Strength: linear with IF
-    return rate * (intensity_factor / 0.75) * duration_hr * weight_kg;
-  } else {
-    // Endurance sports: quadratic with IF
-    return rate * Math.pow(intensity_factor / 0.75, 2) * duration_hr *
-      weight_kg;
-  }
+  return sessionCostF4a(sport, duration_hr, intensity_factor, weight_kg, opts)
+    .kcal;
 }
 
 /**

@@ -133,45 +133,125 @@ class DailyBaselineCalculator {
     'cycling': 9,
     'swimming': 7,
     'strength': 5,
+    'mobility': 2.5, // F4a
   };
 
-  /// Session calorie cost. Endurance sports scale quadratically with IF.
-  /// Weight multiplies LAST, mirroring session.ts, so cost is exactly linear
-  /// in body weight (invariant I6).
+  /// Sports whose cost is LINEAR in IF (everything else priced is quadratic).
+  static const Set<String> _linearIfSports = {'strength', 'mobility'};
+
+  /// The F4a MOBILITY class members, verbatim from the ruling.
+  static const Set<String> _mobilitySports = {
+    'mobility',
+    'foam_rolling',
+    'stretching',
+    'yoga',
+    'aqua_routine',
+  };
+
+  /// Composite types (F4a): decompose by legs, else dominant leg.
+  static const Set<String> compositeSports = {
+    'triathlon',
+    'duathlon',
+    'brick',
+    'multisport',
+  };
+
+  /// One leg of a composite session for [sessionCostF4a].
+  /// (sport, durationHr, intensityFactor).
+
+  /// Session calorie cost (F4 + F4a). Endurance sports scale quadratically
+  /// with IF; strength and the MOBILITY class scale linearly. Weight
+  /// multiplies LAST, mirroring session.ts, so cost is exactly linear in
+  /// body weight (invariant I6).
   ///
-  /// INTERIM (bug: ops/data/bug-reports/
-  /// 2026-08-20-session-cost-unknown-sport-priced-as-running.md): sports
-  /// missing from [_sessionBaseRateKcalPerKg] (other/triathlon/duathlon/
-  /// multisport/brick) used to fall back to the RUNNING rate on the quadratic
-  /// curve — a 60-min foam-roll priced at ~750 kcal. Until the spec owner
-  /// rules on non-endurance/composite types
-  /// (qa/intake/2026-08-20-session-cost-unknown-activity-types.md), unmapped
-  /// sports take the already-ratified strength rate (5 kcal/kg/hr) on the
-  /// LINEAR curve — a conservative floor, not an invented rate — and each
-  /// occurrence is logged so unmapped sport names accrete. Deliberately
-  /// un-vectored: docs/ssot/vectors/daily-macros/session-demand.json pins no
-  /// unmapped-sport case. Mirrored in session.ts sessionCost.
+  /// F4a (session-demand.md, RULED Xuan 2026-09-10; removes both the
+  /// historical `?? 11` RUNNING fallback and the interim strength floor):
+  /// MOBILITY class prices at 2.5 linear; composites decompose by [legs]
+  /// where supplied, else price as [dominantSport] (CONVENTION: the
+  /// longest-duration leg, resolver-supplied), else fall to the unknown
+  /// rung; genuinely unknown sports contribute EXACTLY 0 kcal with
+  /// `estimateFlag` set — 0 is a recommendation, never null. D-005 twin of
+  /// session.ts sessionCostF4a; both pinned by the f4a-* vectors.
+  static ({double kcal, bool estimateFlag}) sessionCostF4a({
+    required String sport,
+    required double durationHr,
+    required double intensityFactor,
+    required double weightKg,
+    List<({String sport, double durationHr, double intensityFactor})>? legs,
+    String? dominantSport,
+  }) {
+    final normalized = _mobilitySports.contains(sport) ? 'mobility' : sport;
+
+    if (compositeSports.contains(normalized)) {
+      if (legs != null && legs.isNotEmpty) {
+        var kcal = 0.0;
+        var estimateFlag = false;
+        for (final leg in legs) {
+          final r = sessionCostF4a(
+            sport: leg.sport,
+            durationHr: leg.durationHr,
+            intensityFactor: leg.intensityFactor,
+            weightKg: weightKg,
+          );
+          kcal += r.kcal;
+          estimateFlag = estimateFlag || r.estimateFlag;
+        }
+        return (kcal: kcal, estimateFlag: estimateFlag);
+      }
+      if (dominantSport != null) {
+        return sessionCostF4a(
+          sport: dominantSport,
+          durationHr: durationHr,
+          intensityFactor: intensityFactor,
+          weightKg: weightKg,
+        );
+      }
+      // No legs and no resolvable dominant leg: unpriceable without
+      // inventing a rate — the F4a unknown rung applies.
+      return (kcal: 0, estimateFlag: true);
+    }
+
+    final rate = _sessionBaseRateKcalPerKg[normalized];
+    if (rate == null) {
+      debugPrint(
+        'DailyBaselineCalculator.sessionCost: unknown sport "$sport" — '
+        'F4a zero-with-estimate-flag (session-demand.md F4a, RULED '
+        '2026-09-10)',
+      );
+      return (kcal: 0, estimateFlag: true);
+    }
+
+    if (_linearIfSports.contains(normalized)) {
+      return (
+        kcal: rate * (intensityFactor / 0.75) * durationHr * weightKg,
+        estimateFlag: false,
+      );
+    }
+    return (
+      kcal:
+          rate * math.pow(intensityFactor / 0.75, 2) * durationHr * weightKg,
+      estimateFlag: false,
+    );
+  }
+
+  /// Numeric convenience over [sessionCostF4a] (an unknown sport reads as
+  /// exactly 0 here — use [sessionCostF4a] when the flag matters).
   static double sessionCost({
     required String sport,
     required double durationHr,
     required double intensityFactor,
     required double weightKg,
+    List<({String sport, double durationHr, double intensityFactor})>? legs,
+    String? dominantSport,
   }) {
-    final rate = _sessionBaseRateKcalPerKg[sport];
-    if (rate == null) {
-      final interimRate = _sessionBaseRateKcalPerKg['strength']!;
-      debugPrint(
-        'DailyBaselineCalculator.sessionCost: unmapped sport "$sport" — '
-        'INTERIM conservative linear rate $interimRate kcal/kg/hr pending '
-        'SSOT ruling '
-        '(qa/intake/2026-08-20-session-cost-unknown-activity-types.md)',
-      );
-      return interimRate * (intensityFactor / 0.75) * durationHr * weightKg;
-    }
-    if (sport == 'strength') {
-      return rate * (intensityFactor / 0.75) * durationHr * weightKg;
-    }
-    return rate * math.pow(intensityFactor / 0.75, 2) * durationHr * weightKg;
+    return sessionCostF4a(
+      sport: sport,
+      durationHr: durationHr,
+      intensityFactor: intensityFactor,
+      weightKg: weightKg,
+      legs: legs,
+      dominantSport: dominantSport,
+    ).kcal;
   }
 
   /// Carb oxidation anchors: [IF, g/hr at 75 kg reference] (session.ts).

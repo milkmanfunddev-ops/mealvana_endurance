@@ -42,16 +42,6 @@ const String _sportCycling = 'cycling';
 const String _sportSwimming = 'swimming';
 const String _sportStrength = 'strength';
 
-/// Activity types with no ratified session rate of their own. They stay on the
-/// display's interim conservative path pending
-/// `qa/intake/2026-08-20-session-cost-unknown-activity-types.md`.
-const Set<String> _compositeTypes = {
-  'triathlon',
-  'duathlon',
-  'multisport',
-  'brick',
-};
-
 class SessionInputResolver {
   const SessionInputResolver._();
 
@@ -129,25 +119,29 @@ class SessionInputResolver {
     return minutes;
   }
 
-  /// Activity type → the sport key the ENGINE prices it as. This is the mapping
-  /// that decides the athlete's macro targets.
+  /// Activity type → the sport key the ENGINE prices it as. This is the
+  /// mapping that decides the athlete's macro targets.
+  ///
+  /// F4a (session-demand.md, RULED Xuan 2026-09-10): the historical
+  /// `_ => running` fallback and the `other → strength` interim are GONE.
+  /// Known endurance sports map to themselves; composites pass through (the
+  /// engine decomposes by legs or dominant leg); everything else passes
+  /// through untouched and the engine prices it 0 kcal with the estimate
+  /// flag — never a hidden fallback rate.
   static String engineSport(String activityType) => switch (activityType) {
+        _sportRunning => _sportRunning,
         _sportCycling => _sportCycling,
         _sportSwimming => _sportSwimming,
-        'other' => _sportStrength,
-        _ => _sportRunning,
+        _sportStrength => _sportStrength,
+        _ => activityType,
       };
 
   /// Activity type → the sport key a DISPLAY surface prices it as.
   ///
-  /// Identical to [engineSport] except for the composite types, which are held
-  /// on the interim conservative rate rather than the engine's `→ running`
-  /// until `qa/intake/2026-08-20-session-cost-unknown-activity-types.md` is
-  /// ruled. That divergence is a RATE question (~2× on a brick), deliberately
-  /// out of scope for the duration fix, and it is pinned by a test so it cannot
-  /// silently widen. When the ruling lands these two collapse into one.
+  /// The 2026-08-20 intake that held these two apart is RULED (F4a), so
+  /// display and engine pricing collapsed into one mapping — the divergence
+  /// this alias used to pin cannot exist anymore. Kept as an alias so call
+  /// sites read as intent.
   static String displaySport(String activityType) =>
-      _compositeTypes.contains(activityType)
-          ? activityType
-          : engineSport(activityType);
+      engineSport(activityType);
 }
