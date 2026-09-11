@@ -501,8 +501,7 @@ void main() {
     pending.complete({
       'products': [product.toJson()],
     });
-    await search;
-    expect(current().products, isEmpty);
+    expect(await search, isEmpty);
     expect(repo.load('user-b', plan).lines.single.product, null);
   });
   group('sending once, and handing off once', () {
@@ -1039,14 +1038,37 @@ void main() {
       expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
     });
     test(
+      'a search that could not run shows no results, not old ones',
+      () async {
+        // 2026-09-10: a search refused while another action held the controller
+        // left the screen reading the previous line's results, and a tap on one
+        // chose it for this line.
+        await twoLines();
+        expect(await controller.search(lineId('Broccoli'), 'Broccoli'), [
+          isA<KrogerProduct>(),
+        ]);
+        final held = Completer<Map<String, dynamic>>();
+        final answer = remote.onCall!;
+        remote.onCall = (action, data) =>
+            action == 'status' ? held.future : answer(action, data);
+        final refresh = controller.refresh();
+        expect(await controller.search(lineId('Bread'), 'Bread'), isEmpty);
+        held.complete(await answer('status', const {}));
+        await refresh;
+        expect(current().draft.lines.every((l) => l.product == null), true);
+      },
+    );
+    test(
       'a different query that finds something takes the answer away',
       () async {
         // The answer was about what was searched for, and that has changed.
         await twoLines();
         await controller.search(lineId('Bread'), 'Bread');
         expect(names(current().draft.unmatched), ['Bread']);
-        await controller.search(lineId('Bread'), 'Sourdough');
-        expect(current().products, isNotEmpty);
+        expect(
+          await controller.search(lineId('Bread'), 'Sourdough'),
+          isNotEmpty,
+        );
         expect(current().draft.unmatched, isEmpty);
         expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
       },

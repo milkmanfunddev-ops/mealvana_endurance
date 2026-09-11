@@ -87,8 +87,6 @@ class KrogerState {
     this.message,
     this.unavailableReason,
     this.area,
-    this.products = const [],
-    this.searchLineId,
   });
   final KrogerDraft draft;
   final bool busy, connected;
@@ -126,8 +124,6 @@ class KrogerState {
   /// historical record rather than something still being edited.
   bool get canChooseProduct =>
       connected && draft.store != null && !draft.exported;
-  final String? searchLineId;
-  final List<KrogerProduct> products;
 
   /// [message] carries like every other field: omitting it keeps what is
   /// already on the state, and [clearMessage] is how a caller drops it.
@@ -145,8 +141,6 @@ class KrogerState {
     String? unavailableReason,
     bool clearUnavailableReason = false,
     String? area,
-    List<KrogerProduct>? products,
-    String? searchLineId,
   }) => KrogerState(
     draft: draft ?? this.draft,
     busy: busy ?? this.busy,
@@ -157,8 +151,6 @@ class KrogerState {
         ? null
         : unavailableReason ?? this.unavailableReason,
     area: area ?? this.area,
-    products: products ?? this.products,
-    searchLineId: searchLineId ?? this.searchLineId,
   );
 }
 
@@ -279,7 +271,7 @@ class KrogerController extends _$KrogerController {
             : draft.lines,
       ),
     );
-    _publish(state.value!.copyWith(area: area, products: []));
+    _publish(state.value!.copyWith(area: area));
   }
 
   Future<KrogerState> _loadDraft() async {
@@ -376,9 +368,11 @@ class KrogerController extends _$KrogerController {
     }
   }
 
-  Future<void> _run(Future<void> Function() work) async {
+  /// Runs [work] as this controller's one action at a time. True only when
+  /// it ran to completion for the session that started it.
+  Future<bool> _run(Future<void> Function() work) async {
     final current = state.value;
-    if (current == null || current.busy) return;
+    if (current == null || current.busy) return false;
     // Each action reports its own outcome: the previous one's message goes.
     // `unavailableReason` deliberately does not, being a standing fact.
     _publish(current.copyWith(busy: true, clearMessage: true));
@@ -392,13 +386,14 @@ class KrogerController extends _$KrogerController {
       }),
       zoneValues: {#krogerScope: scope},
     );
-    if (!ref.mounted || !identical(scope, _scope)) return;
+    if (!ref.mounted || !identical(scope, _scope)) return false;
     final settled = (state.value ?? current).copyWith(busy: false);
     _publish(
       result.hasError
           ? settled.copyWith(message: _error(result.error))
           : settled,
     );
+    return !result.hasError;
   }
 
   Future<void> refresh() => _run(() async {
@@ -475,22 +470,26 @@ class KrogerController extends _$KrogerController {
     ];
   }
 
-  Future<void> search(String lineId, String query) => _run(() async {
-    _publish(state.value!.copyWith(products: []));
-    final products = await _search(query);
-    // The shopper's own query answers for the line as much as its name does,
-    // and a different query that finds something takes the old answer away.
-    await _recordAnswer(lineId, noMatch: products.isEmpty);
-    _publish(
-      state.value!.copyWith(
-        products: products,
-        searchLineId: lineId,
-        // A found result needs no message: `_run` already cleared the one
-        // this action started with.
-        message: products.isEmpty ? 'no_products' : null,
-      ),
-    );
-  });
+  /// The products this search found for [lineId]: none when it could not
+  /// run, because another action held the controller or it failed. Returned
+  /// to the caller rather than kept on the state, so nothing can show one
+  /// line's results while choosing for another.
+  Future<List<KrogerProduct>> search(String lineId, String query) async {
+    var found = const <KrogerProduct>[];
+    final completed = await _run(() async {
+      found = await _search(query);
+      // The shopper's own query answers for the line as much as its name
+      // does, and a different query that finds something takes the old
+      // answer away.
+      await _recordAnswer(lineId, noMatch: found.isEmpty);
+      // A found result needs no message: `_run` already cleared the one this
+      // action started with.
+      if (found.isEmpty) {
+        _publish(state.value!.copyWith(message: 'no_products'));
+      }
+    });
+    return completed ? found : const [];
+  }
 
   /// Matches every line the shopper has neither ticked off nor excluded, and
   /// says what actually happened: a run that matched nothing, and a run that
@@ -579,7 +578,6 @@ class KrogerController extends _$KrogerController {
             : KrogerMatching.packages(l.requiredQty, product.size) ?? 1,
       ),
     );
-    _publish(state.value!.copyWith(products: []));
   });
   Future<void> approve(String id) => _run(() async {
     final line = state.value!.draft.lines.firstWhere((l) => l.id == id);

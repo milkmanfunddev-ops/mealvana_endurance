@@ -872,12 +872,8 @@ Future<void> _chooseProduct(
     initial: line.name,
   );
   if (query == null || !context.mounted) return;
-  await controller.search(line.id, query);
-  if (!context.mounted) return;
-  final products =
-      ref.read(krogerControllerProvider(controller.planId)).value?.products ??
-      [];
-  if (products.isEmpty) return;
+  final products = await controller.search(line.id, query);
+  if (products.isEmpty || !context.mounted) return;
   await _sheet<void>(
     context,
     (context) => ConstrainedBox(
