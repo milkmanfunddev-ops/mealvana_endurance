@@ -108,6 +108,10 @@ class AppMaterials {
   /// is corrected by that ruling. Between the page and the sheet.
   static final Color sheetScrim = AppColors.blackberry.withValues(alpha: 0.60);
 
+  /// The summoned sheet's grabber bar at rest: cream 30% (the calendar
+  /// sheet's value, carried by the Vana sheet so the two share it).
+  static final Color sheetGrabber = AppColors.cream.withValues(alpha: 0.30);
+
   // ---- liquid-glass bubble (tab-bar active highlight; PROPOSED Xuan
   // 2026-09-06, Bevel recording — intake
   // 2026-09-06-tab-bar-liquid-bubble, pending ratification) ----

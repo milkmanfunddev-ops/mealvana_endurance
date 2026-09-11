@@ -73,6 +73,17 @@ class VanaSituation {
       date = null,
       slot = null;
 
+  /// What the main tab shell says for the tab on screen. The Fuel Timeline is
+  /// the shell's own screen, so it sends the day. Every other tab is sent as
+  /// its route (`/food`, `/events`, `/learn`, `/coach`): all tabs share the
+  /// `/main` route, so without this a tab with no scope of its own would leave
+  /// the previous tab speaking for it. A tab that reports for itself reports
+  /// after the shell and wins.
+  static VanaSituation shellTab(String tabId, DateTime today) =>
+      tabId == 'timeline'
+      ? VanaSituation.screen(VanaScreen.main, date: today)
+      : VanaSituation.route('/$tabId');
+
   /// The matched route pattern, e.g. `/plan`, `/food/meals/:id`.
   final String route;
 

@@ -116,6 +116,11 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   String _path = '';
   bool _popupOnTop = false;
 
+  /// Watches a conversation the server has not named yet, so the day holds
+  /// it even when the sheet closes, or hands over to the full-screen chat,
+  /// before the first event arrives.
+  ProviderSubscription<AsyncValue<VanaChatState>>? _naming;
+
   /// Set from the launcher tap until the sheet has closed. The launcher only
   /// leaves the tree on the frame after the push, so a second tap can still
   /// land on it; it must not open a second sheet.
@@ -132,6 +137,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 
   @override
   void dispose() {
+    _naming?.close();
     widget.router.routerDelegate.removeListener(_onRoute);
     widget.observer.popupOnTop.removeListener(_onPopup);
     super.dispose();
@@ -191,6 +197,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
       conversationId = null;
     }
     if (!mounted) return;
+    if (conversationId == null) _awaitNaming();
     final content = ref.read(contentServiceProvider);
     // Completes when the sheet closes.
     await navigator.push(
@@ -199,6 +206,25 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
         builder: (_) => VanaCompanionSheet(conversationId: conversationId),
       ),
     );
+  }
+
+  /// The day's first sheet: start its conversation fresh, and hold whatever
+  /// id the server gives it for the rest of the day (VS-5).
+  void _awaitNaming() {
+    final provider = vanaChatControllerProvider(
+      kind: VanaConversationKind.general,
+    );
+    _naming?.close();
+    // The unnamed conversation is shared with the chat route opened without
+    // an id; a previous day's must not be what today's sheet opens to.
+    ref.invalidate(provider);
+    _naming = ref.listenManual(provider, (_, next) {
+      final id = next.value?.conversationId;
+      if (id == null || id.isEmpty) return;
+      ref.read(vanaAmbientConversationProvider.notifier).adopt(id);
+      _naming?.close();
+      _naming = null;
+    });
   }
 
   @override
@@ -226,8 +252,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 /// The conversation inside the sheet: today's ambient general conversation
 /// (VS-5). [conversationId] is what the day held when the sheet opened — null
 /// for the day's first sheet — and stays the sheet's key for its whole life;
-/// when the server names a new conversation it is adopted for the rest of the
-/// day.
+/// the host adopts the id the server gives a new one.
 ///
 /// This is a working conversation column, not yet the export's surface (status
 /// chip, quick replies, the new message treatments are ticket 07). Planning
@@ -311,24 +336,25 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
 
   void _leaveTo(String location, {bool replace = false}) {
     final router = GoRouter.of(context);
+    final route = ModalRoute.of(context);
     _close();
-    replace ? router.go(location) : router.push(location);
+    if (!replace) {
+      router.push(location);
+      return;
+    }
+    // Replacing the stack removes the page the sheet sits on, which would cut
+    // the condense short (VS-9): go once the sheet has finished closing.
+    if (route != null) {
+      route.completed.then((_) => router.go(location));
+    } else {
+      router.go(location);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
     final state = ref.watch(_provider).value;
-
-    ref.listen(_provider, (previous, next) {
-      final id = next.value?.conversationId;
-      if (widget.conversationId == null &&
-          id != null &&
-          id.isNotEmpty &&
-          previous?.value?.conversationId != id) {
-        ref.read(vanaAmbientConversationProvider.notifier).adopt(id);
-      }
-    });
 
     return VanaSheet(
       closeLabel: content.getValue(ContentKeys.mpCompanionClose),

@@ -218,12 +218,11 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       _currentIndex = 0;
     }
 
-    // The shell speaks for the tab that has no screen of its own (the Fuel
-    // Timeline). Every other tab reports for itself from inside the stack, so
-    // the shell says nothing and does not overwrite it.
-    final shellSituation = _currentIndex == 0
-        ? VanaSituation.screen(VanaScreen.main, date: DateTime.now())
-        : null;
+    // The shell speaks for every tab: the day on the Fuel Timeline, the tab's
+    // route elsewhere. A tab with a scope of its own (Food, Events) reports
+    // after the shell and overrides it; one without (Learn) is still not
+    // spoken for by the tab before it.
+    final shellSituation = VanaSituation.shellTab(_activeTabId, DateTime.now());
 
     final body = Column(
       children: [

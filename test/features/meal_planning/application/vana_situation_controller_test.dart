@@ -333,6 +333,65 @@ void main() {
       expect(c.read(vanaSituationControllerProvider)!.entityId, 'D-012');
     });
 
+    testWidgets('the tab shell speaks for a tab with no scope of its own', (
+      tester,
+    ) async {
+      // Food reports for itself; Learn has no scope. Going Food → Learn must
+      // not leave the Food Situation standing — every tab shares `/main`.
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      const tabs = ['timeline', 'food', 'learn'];
+
+      Future<void> pumpAt(int current) => tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: MaterialApp(
+            home: VanaSituationScope(
+              situation: VanaSituation.shellTab(tabs[current], saturday),
+              child: IndexedStack(
+                index: current,
+                children: [
+                  for (final (i, _) in tabs.indexed)
+                    VanaSituationVisibility(
+                      visible: i == current,
+                      child: i == 1
+                          ? VanaSituationScope(
+                              situation: VanaSituation.screen(
+                                VanaScreen.planTab,
+                                entityId: 'plan-1',
+                              ),
+                              child: const SizedBox.shrink(),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await pumpAt(0);
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.toJson(), {
+        'route': '/main',
+        'date': '2026-09-12',
+      });
+
+      await pumpAt(1);
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.toJson(), {
+        'route': '/food',
+        'entityId': 'plan-1',
+      });
+
+      await pumpAt(2);
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.toJson(), {
+        'route': '/learn',
+      });
+    });
+
     testWidgets('a screen reports again when it comes back on top', (
       tester,
     ) async {

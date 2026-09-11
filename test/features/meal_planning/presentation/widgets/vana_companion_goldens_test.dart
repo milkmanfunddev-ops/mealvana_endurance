@@ -1,7 +1,8 @@
 // Golden conformance — the Vana sheet (vana-sheet spec, Conformance L1):
 // CLOSED (the launcher over a populated screen), OPEN and STREAMING, each
-// light and dark, at iPhone-SE width, over mock shell content so the glass
-// composes against real content rather than a flat fill. The sheet's inside
+// light and dark, at iPhone-SE width, over mock shell content and the real
+// tab bar, so the glass composes against real content rather than a flat fill
+// and the launcher is seen in the tab bar's utility slot. The sheet's inside
 // is dark in both modes (glass-sheet is dark-first; tokens.md defers the light
 // variant); light mode changes the page behind it.
 //
@@ -21,6 +22,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
@@ -34,6 +36,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_eve
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_tab_bar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
@@ -103,7 +106,48 @@ class _Ground extends StatelessWidget {
     final ink = dark ? AppColors.cream : AppColors.blackberry;
     return Scaffold(
       backgroundColor: dark ? AppColors.blackberry : AppColors.cream,
-      body: ListView(
+      body: Stack(
+        children: [
+          Positioned.fill(child: _cards(ink)),
+          // The tab bar where the shell anchors it, so the launcher is seen
+          // in the utility slot it fills.
+          Positioned(
+            left: 14,
+            bottom: 28,
+            child: KyleTabBar(
+              destinations: [
+                KyleTabBarDestination(
+                  id: 'timeline',
+                  icon: FontAwesomeIcons.solidHouse.data,
+                  label: 'Timeline',
+                ),
+                KyleTabBarDestination(
+                  id: 'events',
+                  icon: FontAwesomeIcons.trophy.data,
+                  label: 'Events',
+                ),
+                KyleTabBarDestination(
+                  id: 'food',
+                  icon: FontAwesomeIcons.utensils.data,
+                  label: 'Food',
+                ),
+              ],
+              activeId: 'timeline',
+              maxWidth:
+                  _size.width -
+                  14 -
+                  KyleTabBar.utilitySlotGap -
+                  KyleTabBar.utilitySlotSize -
+                  14,
+              onSelect: (_) {},
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cards(Color ink) => ListView(
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(14, 40, 14, 0),
         children: [
@@ -130,9 +174,7 @@ class _Ground extends StatelessWidget {
             const SizedBox(height: 12),
           ],
         ],
-      ),
-    );
-  }
+      );
 }
 
 Future<_FakeChatRepo> _pump(WidgetTester tester, {required bool dark}) async {

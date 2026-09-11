@@ -54,7 +54,14 @@ SharedPreferences, so it is per device: a second phone opens its own ambient con
 reported nothing, so the last scoped screen, say the fuel log, went on speaking for the athlete
 from settings. The host now tells the controller which route is on top. A report counts only while
 the route it was made under is on top; anywhere else the Situation is that route alone. A scope also
-re-reports when its route comes back on top, so meal A → meal B → back reads as A again.
+re-reports when its route comes back on top, so meal A → meal B → back reads as A again. All
+the main tabs share `/main`, so the tab shell now speaks for every tab (the day on the Timeline,
+`/learn` and so on elsewhere). A tab's own scope reports after the shell and wins, and Food → Learn
+no longer leaves Food speaking.
+
+**Adoption.** The host, not the sheet, adopts the id the server gives the day's first
+conversation. So closing the sheet, or going full screen, before the opener's first event still
+leaves the day holding that conversation.
 
 **Full screen, VS-3.** The chat route is opened with the sheet's own provider key: `c=<id>` when
 the day already had a conversation, no `c` when the sheet started one. Either way the chat screen

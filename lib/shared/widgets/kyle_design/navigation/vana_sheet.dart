@@ -262,7 +262,7 @@ class _Grabber extends StatelessWidget {
       height: 5,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(3),
-        color: AppColors.cream.withValues(alpha: 0.3),
+        color: AppMaterials.sheetGrabber,
       ),
     );
   }

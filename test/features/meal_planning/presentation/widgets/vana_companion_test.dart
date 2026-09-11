@@ -45,6 +45,10 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
   /// flight.
   Completer<void>? hold;
 
+  /// When set, a turn waits for this before its first event — the server
+  /// has not yet named the conversation.
+  Completer<void>? holdFirst;
+
   @override
   Future<VanaChatResponse> streamChat({
     String? message,
@@ -64,7 +68,9 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     });
     if (throwOnStream != null) throw throwOnStream!;
     final hold = this.hold;
+    final holdFirst = this.holdFirst;
     Stream<VanaStreamEvent> events() async* {
+      if (holdFirst != null) await holdFirst.future;
       yield VanaTextEvent(opener ? 'Morning. What is on your mind?' : 'Sure.');
       if (hold != null) await hold.future;
       yield const VanaDoneEvent();
@@ -509,7 +515,41 @@ void main() {
       );
       expect(shared.value!.conversationId, 'conv-server');
       await tester.pumpAndSettle();
+      expect(
+        await h.container.read(vanaAmbientConversationProvider.future),
+        'conv-server',
+      );
     });
+
+    testWidgets('VS-5 holds when the sheet closes before the server has named '
+        'the conversation', (tester) async {
+      final repo = _FakeChatRepo()..holdFirst = Completer<void>();
+      final h = await _pump(tester, repo: repo);
+      await _open(tester);
+      await _close(tester);
+      // The opener is still in flight; the sheet is gone.
+      repo.holdFirst!.complete();
+      await _settleTurn(tester);
+      expect(
+        await h.container.read(vanaAmbientConversationProvider.future),
+        'conv-server',
+      );
+
+      // So the next sheet that day continues it rather than starting over.
+      repo.history = [
+        VanaMessage(
+          id: 'm1',
+          conversationId: 'conv-server',
+          role: VanaMessageRole.assistant,
+          content: 'Morning. What is on your mind?',
+          createdAt: DateTime(2026, 9, 10, 9),
+        ),
+      ];
+      await _open(tester);
+      expect(repo.fetched, ['conv-server']);
+      expect(repo.calls.where((c) => c['opener'] == true), hasLength(1));
+    });
+
 
     testWidgets('ERROR: one plain line and a retry, never a snackbar', (
       tester,
