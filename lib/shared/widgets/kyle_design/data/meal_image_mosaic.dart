@@ -1,7 +1,7 @@
 /// Design SSOT component — **Meal Image Mosaic**.
 ///
-/// Spec: `docs/ssot/spec/design/components/meal-image-mosaic.md` **v1**
-/// (PROPOSED Lee 2026-09-08, awaiting Xuan).
+/// Spec: `docs/ssot/spec/design/components/meal-image-mosaic.md` **v1.1**
+/// (PROPOSED Lee 2026-09-08, icon state 2026-09-11, awaiting Xuan).
 ///
 /// The picture of a meal, at any size. Renders whichever rung of the image
 /// fallback ladder that meal reached: one real photograph, a mosaic of 2–4
@@ -14,17 +14,21 @@
 ///
 /// Contracts held here:
 /// * **MIM-1** — the mode decides the form: `dish`/`tile` → one photograph,
-///   `mosaic` → an even grid in the order given, `none` → a zero-size box.
-/// * **MIM-2** — `none` shows nothing: no icon, no placeholder, no panel.
+///   `mosaic` → an even grid in the order given, `none` → the host's
+///   [MealImageMosaic.fallback], or a zero-size box when it has none.
+/// * **MIM-2** — `none` draws nothing of its own: no placeholder, no panel.
 /// * **MIM-3** — tile count drives the grid: 2 → two columns, 3 → one full
 ///   column left plus two stacked right, 4 → 2×2. Never more than 4.
 /// * **MIM-4** — every tile is square-cropped and centred; equal sizes; never
 ///   letterboxed, never distorted.
 /// * **MIM-5** — a failed image collapses its cell and the rest re-flow to the
-///   next legal grid; all failed → MIM-2.
+///   next legal grid; all failed → MIM-2, so the host's icon rather than a
+///   blank slot.
 /// * **MIM-7** — a 1px surface-coloured gap is the only separator; the outer
 ///   radius belongs to the host.
 /// * **MIM-8** — no motion beyond the host's standard loading treatment.
+/// * **MIM-9** — the icon state: the fallback is drawn in the picture's own
+///   box and corners, so a list mixing pictures and icons stays aligned.
 ///
 /// * **MIM-6** — attribution travels with the image: [KyleImageCredit] words
 ///   and links one photograph's credit the way its provider asks, and
@@ -245,6 +249,7 @@ class MealImageMosaic extends StatefulWidget {
     this.mode = KyleMealImageMode.mosaic,
     this.aspectRatio,
     this.borderRadius = BorderRadius.zero,
+    this.fallback,
   });
 
   /// For [KyleMealImageMode.dish] and [KyleMealImageMode.tile] only the first is used.
@@ -256,6 +261,12 @@ class MealImageMosaic extends StatefulWidget {
   final double? aspectRatio;
 
   final BorderRadius borderRadius;
+
+  /// MIM-9 — what stands in the picture's place when there is nothing to show:
+  /// mode `none`, or every photograph failed to load. The host passes the
+  /// Meal's icon; it gets the same box and corners a picture would. Null
+  /// takes no space (MIM-2), as the detail hero wants.
+  final Widget? fallback;
 
   @override
   State<MealImageMosaic> createState() => _MealImageMosaicState();
@@ -280,19 +291,28 @@ class _MealImageMosaicState extends State<MealImageMosaic> {
 
   @override
   Widget build(BuildContext context) {
-    // MIM-1/MIM-2 — nothing to show is shown as nothing.
-    if (widget.mode == KyleMealImageMode.none) return const SizedBox.shrink();
-    final tiles = _live;
-    if (tiles.isEmpty) return const SizedBox.shrink();
+    final tiles = widget.mode == KyleMealImageMode.none
+        ? const <KyleMealImageTile>[]
+        : _live;
 
-    final single =
-        widget.mode == KyleMealImageMode.dish ||
-        widget.mode == KyleMealImageMode.tile ||
-        tiles.length == 1;
+    final Widget picture;
+    if (tiles.isEmpty) {
+      // MIM-2/MIM-9 — nothing to show is shown as nothing, or as the host's
+      // icon in the picture's place.
+      final fallback = widget.fallback;
+      if (fallback == null) return const SizedBox.shrink();
+      picture = fallback;
+    } else {
+      final single =
+          widget.mode == KyleMealImageMode.dish ||
+          widget.mode == KyleMealImageMode.tile ||
+          tiles.length == 1;
+      picture = single ? _cell(tiles.first) : _grid(tiles);
+    }
 
     final content = ClipRRect(
       borderRadius: widget.borderRadius,
-      child: single ? _cell(tiles.first) : _grid(tiles),
+      child: picture,
     );
 
     return widget.aspectRatio == null

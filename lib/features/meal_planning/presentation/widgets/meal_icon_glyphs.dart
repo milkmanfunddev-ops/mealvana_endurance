@@ -495,7 +495,8 @@ enum MealIconTone {
 Color mealTypeColor(MealType type) =>
     slotColor(MealSlot.values.firstWhere((s) => s.wireValue == type.wire));
 
-/// 36px circular meal tile (port of the prototype's `MealIcon`; the
+/// 36px meal tile, circular unless [shape] says otherwise (port of the
+/// prototype's `MealIcon`; the
 /// meal-planning analogue of `KyleFoodIcon`).
 ///
 /// Colour resolution: explicit [color] > [mealType]'s slot colour > brand
@@ -513,11 +514,17 @@ class MealIconTile extends StatelessWidget {
     this.mealType,
     this.glyphColor,
     this.semanticLabel,
+    this.shape = BoxShape.circle,
   });
 
   final MealIcon icon;
   final double size;
   final MealIconTone tone;
+
+  /// [BoxShape.rectangle] fills the tile edge to edge, for a row where the
+  /// icon stands in a picture's place and the picture's frame gives it its
+  /// corners (meal-image-mosaic.md MIM-9).
+  final BoxShape shape;
 
   /// Explicit accent colour; wins over [mealType].
   final Color? color;
@@ -553,7 +560,7 @@ class MealIconTile extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: background, shape: shape),
       alignment: Alignment.center,
       child: MealIconGlyph(
         icon: icon,

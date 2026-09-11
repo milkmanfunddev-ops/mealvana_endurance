@@ -31,9 +31,11 @@ a handful of shared "grain bowl" stock photos would.
 | `none` | nothing usable — the card keeps its icon, and `image_blocked` is raised with `image_blocked_reason` so the population is countable |
 
 `none` is a state, not an absence: the card draws the meal's icon in the space
-the picture would occupy, so a rail of mixed rows does not go ragged
-(`meal_card.dart`). A row can move up the ladder later simply by re-running
-pass 3 after the bank grows.
+the picture would occupy, with the picture's corners, so a rail of mixed rows
+does not go ragged (`meal_card.dart`, component contract MIM-9). A photograph
+that fails to load falls back to the same icon rather than leaving a blank
+slot. A row can move up the ladder later simply by re-running pass 3 after the
+bank grows.
 
 **One photograph, one card per list.** Reusing a photograph across the
 library is fine; a list showing it on two Meals at once reads as though it is

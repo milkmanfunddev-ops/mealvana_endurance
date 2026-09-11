@@ -67,6 +67,8 @@ class MealCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
+    final secondary = textColor.withValues(alpha: 0.55);
+    final thumb = compact ? 32.0 : 36.0;
     final picture = this.picture ?? meal.picture;
 
     // kcal sits in the tag strip only when the pill row is not showing it
@@ -103,31 +105,36 @@ class MealCard extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // The meal's picture when it has one, else the icon glyph.
-                // `none` deliberately keeps the icon so the row never loses its
-                // leading element and go ragged (docs/meal-images/README.md).
-                if (picture.mode != MealImageMode.none)
-                  Semantics(
-                    // The licences want the photographer credited wherever the
-                    // photo appears, but a 36pt thumbnail in a dense list has
-                    // no room for a credit line. The visible credit lives on
-                    // the detail screen; this keeps it readable here.
-                    label: mealPictureCredit(picture.mode, picture.tiles),
-                    child: SizedBox(
-                      width: compact ? 32 : 36,
-                      height: compact ? 32 : 36,
-                      child: MealImageMosaic(
-                        mode: kyleImageMode(picture.mode),
-                        tiles: kyleImageTiles(picture.tiles),
-                        borderRadius: BorderRadius.circular(9),
+                // The meal's picture, or its icon in the picture's place: the
+                // same box and corners, so a list mixing the two stays aligned
+                // and a Meal with nothing honest to show reads as designed,
+                // not as failing to load (meal-image-mosaic.md MIM-9). A
+                // photograph that fails to load lands on the icon too. It is
+                // drawn in the card's own ink, at the secondary text's weight,
+                // so it claims no accent's meaning and stays legible in both
+                // themes.
+                Semantics(
+                  // The licences want the photographer credited wherever the
+                  // photo appears, but a 36pt thumbnail in a dense list has
+                  // no room for a credit line. The visible credit lives on
+                  // the detail screen; this keeps it readable here.
+                  label: mealPictureCredit(picture.mode, picture.tiles),
+                  child: SizedBox.square(
+                    dimension: thumb,
+                    child: MealImageMosaic(
+                      mode: kyleImageMode(picture.mode),
+                      tiles: kyleImageTiles(picture.tiles),
+                      borderRadius: BorderRadius.circular(9),
+                      fallback: MealIconTile(
+                        icon: meal.effectiveIcon,
+                        size: thumb,
+                        shape: BoxShape.rectangle,
+                        color: textColor,
+                        glyphColor: secondary,
                       ),
                     ),
-                  )
-                else
-                  MealIconTile(
-                    icon: meal.effectiveIcon,
-                    size: compact ? 32 : 36,
                   ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -151,7 +158,7 @@ class MealCard extends ConsumerWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: textColor.withValues(alpha: 0.55),
+                            color: secondary,
                           ),
                         ),
                       ],
@@ -173,7 +180,7 @@ class MealCard extends ConsumerWidget {
                             Text(
                               fact,
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: textColor.withValues(alpha: 0.55),
+                                color: secondary,
                               ),
                             ),
                         ],
