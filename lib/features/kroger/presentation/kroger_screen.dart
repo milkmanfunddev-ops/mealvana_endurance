@@ -77,7 +77,7 @@ class KrogerScreen extends ConsumerWidget {
           context,
           krogerText(
             ref,
-            krogerMessageKey(message) ?? ContentKeys.krogerUnavailable,
+            krogerMessageKey(message) ?? ContentKeys.krogerUnexpected,
           ),
         );
       }
@@ -185,7 +185,7 @@ class _Body extends ConsumerWidget {
             krogerText(
               ref,
               krogerMessageKey(view.unavailableReason ?? 'not_configured') ??
-                  ContentKeys.krogerNotConfigured,
+                  ContentKeys.krogerUnexpected,
             ),
           ),
         if (view.message == 'draft_conflict') ...[

@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthRetryableFetchException, PostgrestException;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
@@ -412,6 +415,39 @@ void main() {
       }
     });
   });
+  group('a failure is blamed on what actually failed', () {
+    Future<void> failingWith(Object error) async {
+      remote.onCall = (action, data) async => throw error;
+      await restart();
+    }
+
+    test('a request that never got an answer could not reach Kroger', () async {
+      for (final error in [
+        http.ClientException('Connection refused'),
+        // Offline with an expired session: the refresh before the request
+        // fails first, and gotrue reports it as this.
+        AuthRetryableFetchException(message: 'Connection refused'),
+      ]) {
+        await failingWith(error);
+        expect(current().message, 'unavailable', reason: '$error');
+        expect(current().unavailableReason, 'unavailable', reason: '$error');
+      }
+    });
+    test('anything else went wrong on this side', () async {
+      for (final error in [
+        StateError('bug'),
+        const PostgrestException(message: 'boom'),
+      ]) {
+        await failingWith(error);
+        expect(current().message, 'unexpected', reason: '$error');
+      }
+    });
+    test('an action that fails the same way says the same', () async {
+      remote.onCall = (action, data) async => throw StateError('bug');
+      await controller.refresh();
+      expect(current().message, 'unexpected');
+    });
+  });
   test(
     'matching suggests package count but requires shopper approval',
     () async {
@@ -708,6 +744,20 @@ void main() {
     await tester.runAsync(controller.refresh);
     await tester.pumpAndSettle();
     expect(find.text(copy['kroger.rate_limited']!), findsWidgets);
+  });
+  testWidgets('a code the app has no copy for does not blame Kroger', (
+    tester,
+  ) async {
+    // The 2026-09-10 simulator pass: a function three tickets behind the app
+    // answered `invalid_action`, and the shopper read that Kroger was down.
+    final copy = loadDefaultContent();
+    await showScreen(tester);
+    remote.onCall = (action, data) async =>
+        throw const KrogerException('invalid_action');
+    await tester.runAsync(controller.refresh);
+    await tester.pumpAndSettle();
+    expect(find.text(copy['kroger.unexpected']!), findsWidgets);
+    expect(find.textContaining('Kroger could not be reached'), findsNothing);
   });
   testWidgets('no control is labelled with an error message', (tester) async {
     // "Choose a store first." explains a refusal. A button says what it does.

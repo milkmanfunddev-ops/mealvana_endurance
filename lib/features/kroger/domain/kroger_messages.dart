@@ -4,11 +4,13 @@ import '../../content/domain/content_keys.dart';
 /// function as `error`/`reason`, by `KrogerException`, or set by the
 /// controller — mapped to the content key that explains them to the shopper.
 ///
-/// Codes the server can raise that have no shopper-facing explanation of
-/// their own (`invalid_body`, `invalid_action`, `invalid_token_response`,
-/// and their kin) are deliberately absent: they describe a request this app
-/// built wrong, and there is nothing a shopper can do about one. They resolve
-/// to null and the caller shows [ContentKeys.krogerUnavailable].
+/// Every code the server can return has an entry; a test reads them out of
+/// the function's source. Codes that describe a request this app built wrong
+/// (`invalid_body`, `invalid_action` from a function out of step with the app,
+/// and their kin) share [ContentKeys.krogerUnexpected]: there is nothing a
+/// shopper can do differently about any of them, and Kroger is not the cause.
+/// Only `kroger_unavailable` and `unavailable` (a request that never got an
+/// answer, or a hand-off no app would open) say Kroger could not be reached.
 const Map<String, String> _messageKeys = {
   'all_skipped': ContentKeys.krogerAllSkipped,
   'authorization_cancelled': ContentKeys.krogerAuthorizationCancelled,
@@ -35,9 +37,20 @@ const Map<String, String> _messageKeys = {
   'review_required': ContentKeys.krogerReviewRequired,
   'session_changed': ContentKeys.krogerSessionChanged,
   'storage_unavailable': ContentKeys.krogerStorageUnavailable,
+  'unauthenticated': ContentKeys.krogerSignedOut,
   'unavailable': ContentKeys.krogerUnavailable,
+  'unexpected': ContentKeys.krogerUnexpected,
+  // Mealvana's own mistakes, never Kroger's.
+  'export_unknown': ContentKeys.krogerUnexpected,
+  'invalid_action': ContentKeys.krogerUnexpected,
+  'invalid_body': ContentKeys.krogerUnexpected,
+  'invalid_id': ContentKeys.krogerUnexpected,
+  'invalid_input': ContentKeys.krogerUnexpected,
+  'invalid_modality': ContentKeys.krogerUnexpected,
+  'invalid_token_response': ContentKeys.krogerUnexpected,
+  'method_not_allowed': ContentKeys.krogerUnexpected,
 };
 
-/// The content key explaining [code], or null when this app has nothing
-/// specific to say about it.
+/// The content key explaining [code], or null for a code this app has never
+/// heard of; callers fall back to [ContentKeys.krogerUnexpected].
 String? krogerMessageKey(String code) => _messageKeys[code];

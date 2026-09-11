@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -111,5 +114,45 @@ void main() {
       ),
     );
     expect(repo.load('a', 'plan').lines.single.name, 'Milk');
+  });
+  group('KrogerRemote', () {
+    KrogerRemote answering(http.Response Function() respond) => KrogerRemote(
+      SupabaseClient(
+        'https://example.supabase.co',
+        'test',
+        httpClient: MockClient((_) async => respond()),
+      ),
+    );
+    Matcher code(String c) =>
+        throwsA(isA<KrogerException>().having((e) => e.code, 'code', c));
+
+    test("the server's own code reaches the controller", () async {
+      final remote = answering(
+        () => http.Response(
+          jsonEncode({'error': 'invalid_action'}),
+          400,
+          headers: {'content-type': 'application/json'},
+        ),
+      );
+      await expectLater(remote.call('location'), code('invalid_action'));
+    });
+    test('an answer with no code is not blamed on Kroger', () async {
+      // A crashed function or a gateway page: Mealvana answered, badly.
+      final remote = answering(() => http.Response('Internal error', 502));
+      await expectLater(remote.call('status'), code('unexpected'));
+    });
+    test(
+      'a request that never got an answer is left for the controller',
+      () async {
+        // The controller is what tells a network failure from a bug.
+        final remote = answering(
+          () => throw http.ClientException('Connection refused'),
+        );
+        await expectLater(
+          remote.call('status'),
+          throwsA(isA<http.ClientException>()),
+        );
+      },
+    );
   });
 }

@@ -9,7 +9,7 @@ Found on the 2026-09-10 simulator pass (`../device-verification.md`, defect 4; s
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent (filed 2026-09-10)
+**Status:** built 2026-09-11. Not yet seen on a device.
 
 ## What happens
 
@@ -50,7 +50,27 @@ word-for-word the same as `unavailable`, so the two can't be told apart on scree
 
 ## Acceptance
 
-- [ ] `invalid_action` and the validation codes do not show "Kroger could not be reached"
-- [ ] `unauthenticated` gets copy that tells the shopper what to do
-- [ ] `kroger_unavailable` and a network failure still say Kroger could not be reached
-- [ ] A test fails if the server gains an error code the app has no mapping for
+- [x] `invalid_action` and the validation codes do not show "Kroger could not be reached"
+- [x] `unauthenticated` gets copy that tells the shopper what to do
+- [x] `kroger_unavailable` and a network failure still say Kroger could not be reached
+- [x] A test fails if the server gains an error code the app has no mapping for
+
+## Notes from the build
+
+- The controller's `_error` decides whose fault a failure is. `http.ClientException` (the socket
+  failure package:http wraps) and `AuthRetryableFetchException` (the session refresh that runs
+  first when the access token has expired, offline) are `unavailable`. Anything else, such as a
+  `PostgrestException` or a bug, is the new `unexpected` code. A `FunctionException` with no
+  `error` in its body (a crashed function or a gateway page) is `unexpected` as well.
+- New copy: `kroger.unexpected` ("Something went wrong…") and `kroger.signed_out`.
+  `kroger.kroger_unavailable` now adds "Try again in a few minutes", so the two "could not be
+  reached" messages differ.
+- `kroger_content_keys_test` reads error codes out of the kroger function's TypeScript source.
+  It only sees string literals in `index.ts`, `_shared/kroger/*.ts`, `auth.ts` and
+  `entitlement.ts`.
+- `export_unknown` is mapped even though `service.ts` catches it and stores a receipt instead.
+  The scan requires a mapping, and the mapping is harmless.
+- A hand-off that no app would open still throws `unavailable` ("Kroger could not be reached").
+- Open, server side: the catch-all in `supabase/functions/kroger/index.ts` turns any
+  non-`KrogerError` throw, including a bug in the function itself, into `kroger_unavailable`.
+  So a function crash still blames Kroger. This ticket did not ask for a server change.

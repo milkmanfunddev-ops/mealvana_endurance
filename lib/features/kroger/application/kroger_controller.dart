@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_web_auth_2/flutter_web_auth_2.dart';
+import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthRetryableFetchException;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
@@ -331,8 +334,15 @@ class KrogerController extends _$KrogerController {
     );
   }
 
-  String _error(Object? error) =>
-      error is KrogerException ? error.code : 'unavailable';
+  /// The code for what failed. A request that never got an answer could not
+  /// reach Kroger — including the session refresh that runs before it when
+  /// the access token has expired — and anything else thrown here is this
+  /// app's own. (A hand-off that no app would open is also `unavailable`.)
+  String _error(Object? error) => switch (error) {
+    KrogerException(:final code) => code,
+    http.ClientException() || AuthRetryableFetchException() => 'unavailable',
+    _ => 'unexpected',
+  };
   KrogerDraft _environment(KrogerDraft draft, Map<String, dynamic> status) {
     final environment = status['environment'] as String? ?? draft.environment;
     if (environment == draft.environment) return draft;

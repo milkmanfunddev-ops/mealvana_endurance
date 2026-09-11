@@ -32,10 +32,12 @@ class KrogerRemote {
       if (body['error'] case final String error) throw KrogerException(error);
       return body;
     } on FunctionException catch (e) {
+      // The function answered, so Kroger was not necessarily involved: a
+      // crash or a gateway page carries no code, and is not Kroger's fault.
       throw KrogerException(
         e.details is Map
-            ? (e.details as Map)['error'] as String? ?? 'unavailable'
-            : 'unavailable',
+            ? (e.details as Map)['error'] as String? ?? 'unexpected'
+            : 'unexpected',
       );
     }
   }
@@ -137,7 +139,7 @@ class KrogerRepository {
     final draft = KrogerDraft.fromJson(
       Map<String, dynamic>.from(row['draft'] as Map),
     ).copyWith(revision: row['revision'] as int, dirty: false);
-    if (draft.planId != plan) throw const KrogerException('unavailable');
+    if (draft.planId != plan) throw const KrogerException('unexpected');
     await _store(user, draft);
     return draft;
   }

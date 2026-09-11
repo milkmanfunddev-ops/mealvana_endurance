@@ -591,7 +591,7 @@ class ContentKeys {
   // Shop with Kroger — lib/features/kroger. Codes the edge function and
   // KrogerException raise are mapped to these keys by
   // `krogerMessageKey` (lib/features/kroger/domain/kroger_messages.dart);
-  // a code with no key of its own falls back to [krogerUnavailable].
+  // a code with no key of its own falls back to [krogerUnexpected].
   static const String krogerTitle = 'kroger.title';
   static const String krogerIntro = 'kroger.intro';
   static const String krogerConnect = 'kroger.connect';
@@ -611,6 +611,8 @@ class ContentKeys {
   static const String krogerProRequired = 'kroger.pro_required';
   static const String krogerConnectionBusy = 'kroger.connection_busy';
   static const String krogerUnavailable = 'kroger.unavailable';
+  static const String krogerUnexpected = 'kroger.unexpected';
+  static const String krogerSignedOut = 'kroger.signed_out';
   static const String krogerUpstreamUnavailable = 'kroger.kroger_unavailable';
   static const String krogerStorageUnavailable = 'kroger.storage_unavailable';
   static const String krogerLocalSaveFailed = 'kroger.local_save_failed';
