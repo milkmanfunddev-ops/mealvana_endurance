@@ -134,9 +134,28 @@ class MealvanaSnackbar {
       context,
       message: message,
       type: SnackbarType.loading,
-      duration: const Duration(days: 1), // Stays until dismissed
+      // Self-healing ceiling, not "until dismissed". This was a literal DAY:
+      // in release builds ScaffoldFeatureController.close() silently no-ops
+      // when the snackbar isn't first in the messenger queue (the debug
+      // assert that would catch it is stripped), and a missed dismissal left
+      // the spinner animating on screen indefinitely — stuck banner + a warm
+      // phone (prod, 2026-09-11, post-ungroup). No in-app loading state is
+      // legitimately longer than this; if dismissal fails, the snackbar now
+      // buries itself.
+      duration: const Duration(seconds: 30),
       showIcon: true,
     );
+  }
+
+  /// Removes EVERY queued snackbar on [messenger], immediately.
+  ///
+  /// The reliable way to end a [showLoading] state: capture the messenger
+  /// BEFORE your await (`ScaffoldMessenger.of(context)`), then call this —
+  /// it works when the originating context has unmounted and regardless of
+  /// what else got queued meanwhile, where `controller.close()` quietly
+  /// targets whatever happens to be first in the queue.
+  static void clearAll(ScaffoldMessengerState messenger) {
+    messenger.clearSnackBars();
   }
 
   /// Hides the currently showing snackbar
