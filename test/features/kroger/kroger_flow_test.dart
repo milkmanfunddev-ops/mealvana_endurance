@@ -956,7 +956,7 @@ void main() {
       deviceArea = null;
       await tester.runAsync(restart);
       await showScreen(tester);
-      expect(find.text(copy['kroger.area_unknown']!), findsOneWidget);
+      expect(find.text(copy['kroger.set_area']!), findsOneWidget);
       expect(find.text(copy['kroger.match_all']!), findsOneWidget);
     });
     testWidgets('a shopper with no resolved area is asked for one', (
@@ -965,7 +965,6 @@ void main() {
       final copy = loadDefaultContent();
       await tester.runAsync(firstUse);
       await showScreen(tester);
-      expect(find.text(copy['kroger.area_unknown']!), findsOneWidget);
       expect(find.text(copy['kroger.set_area']!), findsOneWidget);
     });
   });
@@ -1139,7 +1138,7 @@ void main() {
       await tester.runAsync(twoLines);
       await showScreen(tester);
       expect(unmatched, findsNothing);
-      expect(find.text(copy['kroger.unmatched_note']!), findsNothing);
+      expect(find.text(copy['kroger.unmatched_heading']!), findsNothing);
       expect(
         find.descendant(
           of: unsearched,
@@ -1171,14 +1170,13 @@ void main() {
       // fails here.
       expect(product.name, 'Broccoli Crowns');
       expect(
-        find.descendant(of: matched, matching: find.text(product.name)),
-        findsOneWidget,
-      );
-      expect(
         find.descendant(
           of: matched,
           matching: find.text(
-            ContentKeys.format(copy['kroger.package']!, {'size': '1 ct'}),
+            ContentKeys.format(copy['kroger.product_line']!, {
+              'product': product.name,
+              'size': '1 ct',
+            }),
           ),
         ),
         findsOneWidget,
@@ -1198,7 +1196,7 @@ void main() {
       expect(
         find.descendant(
           of: unmatched,
-          matching: find.text(copy['kroger.unmatched_note']!),
+          matching: find.text(copy['kroger.unmatched_heading']!),
         ),
         findsOneWidget,
       );
@@ -1254,7 +1252,13 @@ void main() {
       expect(find.textContaining(r'$'), findsNothing);
       expect(find.textContaining('stimate'), findsNothing);
       // Including in the product picker, which listed a price of its own.
-      await tester.tap(find.text(copy['kroger.change']!));
+      // "Change" names both this and the delivery area's control.
+      await tester.tap(
+        find.descendant(
+          of: matched,
+          matching: find.text(copy['kroger.change']!),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text(copy['kroger.continue']!));
       await tester.pumpAndSettle();

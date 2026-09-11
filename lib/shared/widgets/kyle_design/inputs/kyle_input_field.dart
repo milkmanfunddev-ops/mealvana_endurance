@@ -26,6 +26,7 @@ class KyleInputField extends StatelessWidget {
     this.onSubmitted,
     this.onChanged,
     this.textAlign = TextAlign.left,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -39,6 +40,10 @@ class KyleInputField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final TextAlign textAlign;
+
+  /// Takes focus, and raises the keyboard, as soon as it is shown: for a
+  /// sheet that exists to be typed into.
+  final bool autofocus;
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +60,7 @@ class KyleInputField extends StatelessWidget {
             child: TextField(
               controller: controller,
               focusNode: focusNode,
+              autofocus: autofocus,
               enabled: enabled,
               keyboardType: keyboardType,
               textInputAction: textInputAction,

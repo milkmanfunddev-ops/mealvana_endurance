@@ -595,7 +595,6 @@ class ContentKeys {
   // `krogerMessageKey` (lib/features/kroger/domain/kroger_messages.dart);
   // a code with no key of its own falls back to [krogerUnexpected].
   static const String krogerTitle = 'kroger.title';
-  static const String krogerIntro = 'kroger.intro';
   static const String krogerConnect = 'kroger.connect';
   static const String krogerDisconnect = 'kroger.disconnect';
   static const String krogerRefresh = 'kroger.refresh';
@@ -630,10 +629,8 @@ class ContentKeys {
   /// their groceries come from. The Location behind it is an API parameter
   /// with a name and an address, and neither reaches the screen.
   static const String krogerDeliveryTo = 'kroger.delivery_to';
-  static const String krogerDeliveryNote = 'kroger.delivery_note';
   static const String krogerSetArea = 'kroger.set_area';
   static const String krogerChangeArea = 'kroger.change_area';
-  static const String krogerAreaUnknown = 'kroger.area_unknown';
   static const String krogerNoDeliveryArea = 'kroger.no_delivery_area';
 
   /// The refusal when an action needs a Location and the area has not
@@ -651,13 +648,12 @@ class ContentKeys {
   static const String krogerItemName = 'kroger.item_name';
   static const String krogerAdd = 'kroger.add';
   static const String krogerNeeded = 'kroger.needed';
-  static const String krogerPackage = 'kroger.package';
+  static const String krogerProductLine = 'kroger.product_line';
   static const String krogerUnknownSize = 'kroger.unknown_size';
 
   /// Screen-reader label for Kroger's own product photograph, which is shown
   /// whole and unadorned under Kroger's terms.
   static const String krogerProductImage = 'kroger.product_image';
-  static const String krogerQuantity = 'kroger.quantity';
   static const String krogerQuantityDecrease = 'kroger.quantity_decrease';
   static const String krogerQuantityIncrease = 'kroger.quantity_increase';
   static const String krogerQuantityReview = 'kroger.quantity_review';
@@ -676,13 +672,11 @@ class ContentKeys {
   static const String krogerMatchedHeading = 'kroger.matched_heading';
   static const String krogerUnsearchedHeading = 'kroger.unsearched_heading';
   static const String krogerUnmatchedHeading = 'kroger.unmatched_heading';
-  static const String krogerUnmatchedNote = 'kroger.unmatched_note';
   static const String krogerSkippedHeading = 'kroger.skipped_heading';
 
   /// Why there are no prices. A delivery-only Location returns none for any
   /// product, so an estimate there is a column of blanks totalling zero;
   /// Kroger's terms forbid filling it from another Location's catalogue.
-  static const String krogerPriceNote = 'kroger.price_note';
   static const String krogerSend = 'kroger.send';
   static const String krogerSendConfirm = 'kroger.send_confirm';
 
@@ -696,8 +690,6 @@ class ContentKeys {
   static const String krogerUnknown = 'kroger.unknown';
   static const String krogerSending = 'kroger.sending';
   static const String krogerOpenCart = 'kroger.open_cart';
-  static const String krogerAfterExport = 'kroger.after_export';
-  static const String krogerSavedLocal = 'kroger.saved_local';
 
   /// A matching run where every list line was already ticked off. Distinct
   /// from [krogerNoProducts], which is a run that searched and found nothing.

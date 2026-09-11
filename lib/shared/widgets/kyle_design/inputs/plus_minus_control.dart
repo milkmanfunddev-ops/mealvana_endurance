@@ -20,6 +20,8 @@ class KylePlusMinusControl extends ConsumerStatefulWidget {
     this.unit,
     this.enabled = true,
     this.tappable = false,
+    this.increaseLabel,
+    this.decreaseLabel,
   });
 
   final int value;
@@ -31,6 +33,12 @@ class KylePlusMinusControl extends ConsumerStatefulWidget {
   final String? unit;
   final bool enabled;
   final bool tappable;
+
+  /// What a screen reader says for each button, from the caller's content.
+  /// Without them the control falls back to "Increase <label>" and
+  /// "Decrease <label>", built in English.
+  final String? increaseLabel;
+  final String? decreaseLabel;
 
   @override
   ConsumerState<KylePlusMinusControl> createState() =>
@@ -126,6 +134,8 @@ class _KylePlusMinusControlState extends ConsumerState<KylePlusMinusControl> {
   }
 
   String _semanticLabel({required bool decrement}) {
+    final given = decrement ? widget.decreaseLabel : widget.increaseLabel;
+    if (given != null) return given;
     final verb = decrement ? 'Decrease' : 'Increase';
     final subject = widget.label ?? widget.unit ?? 'value';
     return '$verb $subject';

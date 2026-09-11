@@ -14,9 +14,8 @@ import '../../../shared/widgets/kyle_design/cards/base_card.dart';
 import '../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../shared/widgets/kyle_design/inputs/kyle_input_field.dart';
 import '../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
-import '../../../shared/widgets/kyle_design/materials/glass.dart';
+import '../../../shared/widgets/kyle_design/materials/glass_sheet.dart';
 import '../../../theme/kyle_design/app_colors.dart';
-import '../../../theme/kyle_design/app_materials.dart';
 import '../../../theme/kyle_design/app_spacing.dart';
 import '../../../theme/kyle_design/app_text_styles.dart';
 import '../application/kroger_controller.dart';
@@ -28,14 +27,14 @@ String krogerText(WidgetRef ref, String key) =>
 String _format(WidgetRef ref, String key, Map<String, String> values) =>
     ContentKeys.format(krogerText(ref, key), values);
 
-/// How tall Kroger's product photograph is drawn.
+/// How large Kroger's product photograph is drawn: a square thumbnail.
 ///
 /// Local on purpose. The design system has no ratified product-image
 /// component and no size for one (gap DS-4), and
 /// `docs/ssot/spec/design/source-authority.md` §3 keeps unratified values out
 /// of `lib/theme/kyle_design/` — so this waits here for the ruling rather
 /// than entering the registry ahead of it.
-const _productImageHeight = 96.0;
+const _productImageSize = 64.0;
 
 /// The screen's own ink: cream on blackberry in the dark theme, blackberry on
 /// cream in the light one. Read once per build rather than threaded through
@@ -91,12 +90,7 @@ class KrogerScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _Header(
-              // A refresh that cannot run is not drawn — the progress bar
-              // below already says why it is gone.
-              onRefresh: busy ? null : controller.refresh,
-            ),
-            if (busy) const LinearProgressIndicator(),
+            _Header(busy: busy, onRefresh: controller.refresh),
             Expanded(
               child: result.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -123,8 +117,9 @@ class KrogerScreen extends ConsumerWidget {
 /// The header the meal-planning detail screens draw in the body rather than in
 /// an [AppBar]: a round back button, the screen's name, and the one action.
 class _Header extends ConsumerWidget {
-  const _Header({required this.onRefresh});
-  final VoidCallback? onRefresh;
+  const _Header({required this.busy, required this.onRefresh});
+  final bool busy;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => Padding(
@@ -147,12 +142,27 @@ class _Header extends ConsumerWidget {
             ),
           ),
         ),
-        if (onRefresh != null)
+        // While an action runs, the refresh's slot shows it running: a
+        // refresh that cannot run is not drawn.
+        if (busy)
+          SizedBox.square(
+            dimension: 40,
+            child: Center(
+              child: SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: _ink(context),
+                ),
+              ),
+            ),
+          )
+        else
           VanaRoundButton(
             key: const ValueKey('kroger.refresh'),
             icon: FontAwesomeIcons.arrowsRotate,
             tooltip: krogerText(ref, ContentKeys.krogerRefresh),
-            onTap: onRefresh!,
+            onTap: onRefresh,
           ),
       ],
     ),
@@ -175,7 +185,6 @@ class _Body extends ConsumerWidget {
         AppSpacing.xxl,
       ),
       children: [
-        _BodyText(krogerText(ref, ContentKeys.krogerIntro)),
         if (view.environment == 'certification' && view.available)
           _BodyText(krogerText(ref, ContentKeys.krogerCertification)),
         if (!view.available)
@@ -213,73 +222,28 @@ class _Body extends ConsumerWidget {
               onPressed: controller.connect,
             ),
           ),
-        if (view.connected)
-          _LeftAction(
-            child: KyleTertiaryButton(
-              text: krogerText(ref, ContentKeys.krogerDisconnect),
-              onPressed: controller.disconnect,
-            ),
-          ),
         // Where the groceries are going, and nothing about the facility they
         // come from: a shopper does not think in Locations, and a Spoke is not
         // somewhere to be sent.
         if (view.available)
           if (view.confirmedArea case final area?)
-            BaseCard(
-              key: const ValueKey('kroger.area'),
-              margin: const EdgeInsets.only(top: AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _format(ref, ContentKeys.krogerDeliveryTo, {
-                            'area': area,
-                          }),
-                          style: AppTextStyles.subtitle.copyWith(
-                            color: _ink(context),
-                          ),
-                        ),
-                      ),
-                      KyleTertiaryButtonSmall(
-                        text: krogerText(ref, ContentKeys.krogerChangeArea),
-                        onPressed: () =>
-                            _promptForArea(context, ref, controller),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    krogerText(ref, ContentKeys.krogerDeliveryNote),
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: _mutedInk(context),
-                    ),
-                  ),
-                ],
-              ),
+            _AreaRow(
+              area: area,
+              onChange: () => _promptForArea(context, ref, controller),
             )
-          else ...[
-            _BodyText(krogerText(ref, ContentKeys.krogerAreaUnknown)),
-            _LeftAction(
-              child: KyleSecondaryButtonSmall(
-                key: const ValueKey('kroger.set_area'),
-                text: krogerText(ref, ContentKeys.krogerSetArea),
-                onPressed: () => _promptForArea(context, ref, controller),
+          else
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: _LeftAction(
+                child: KyleSecondaryButtonSmall(
+                  key: const ValueKey('kroger.set_area'),
+                  text: krogerText(ref, ContentKeys.krogerSetArea),
+                  onPressed: () => _promptForArea(context, ref, controller),
+                ),
               ),
             ),
-          ],
         if (view.draft.exported) ...[
-          _BodyText(
-            krogerText(
-              ref,
-              view.draft.receiptStatus == 'sent'
-                  ? ContentKeys.krogerSent
-                  : view.draft.receiptStatus == 'sending'
-                  ? ContentKeys.krogerSending
-                  : ContentKeys.krogerUnknown,
-            ),
-          ),
+          _Receipt(status: view.draft.receiptStatus),
           if (view.isProduction)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
@@ -289,7 +253,6 @@ class _Body extends ConsumerWidget {
                 onPressed: controller.handOff,
               ),
             ),
-          _BodyText(krogerText(ref, ContentKeys.krogerAfterExport)),
         ],
         // A Location, not an area: the Location is persisted and the area is
         // not, so a shopper coming back to a resolved draft can still match
@@ -304,7 +267,7 @@ class _Body extends ConsumerWidget {
           ),
         // The review, in four parts. A line is going to Kroger, has not been
         // searched for yet, is the shopper's own to add there, or is not
-        // being ordered — and it says which without being read closely.
+        // being ordered — and the heading says which.
         if (view.draft.matched.isNotEmpty)
           _Section(
             key: const ValueKey('kroger.matched'),
@@ -333,7 +296,6 @@ class _Body extends ConsumerWidget {
           _Section(
             key: const ValueKey('kroger.unmatched'),
             title: krogerText(ref, ContentKeys.krogerUnmatchedHeading),
-            note: krogerText(ref, ContentKeys.krogerUnmatchedNote),
             children: [
               for (final line in view.draft.unmatched)
                 _ProductlessLine(
@@ -367,9 +329,6 @@ class _Body extends ConsumerWidget {
               },
             ),
           ),
-        _BodyText(krogerText(ref, ContentKeys.krogerPriceNote)),
-        if (view.draft.dirty)
-          _BodyText(krogerText(ref, ContentKeys.krogerSavedLocal)),
         const SizedBox(height: AppSpacing.md),
         // Rendered only when it can send. A permanently greyed button is a
         // control the shopper cannot learn anything from by tapping.
@@ -408,7 +367,92 @@ class _Body extends ConsumerWidget {
               },
             ),
           ),
+        // Rarely wanted, so it is last rather than under the title.
+        if (view.connected)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xl),
+            child: Center(
+              child: KyleTertiaryButtonSmall(
+                text: krogerText(ref, ContentKeys.krogerDisconnect),
+                onPressed: controller.disconnect,
+              ),
+            ),
+          ),
       ],
+    );
+  }
+}
+
+/// Where the groceries are going, on one line, with the one way to change it.
+class _AreaRow extends ConsumerWidget {
+  const _AreaRow({required this.area, required this.onChange});
+  final String area;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => BaseCard(
+    key: const ValueKey('kroger.area'),
+    margin: const EdgeInsets.only(top: AppSpacing.xs),
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.md,
+      AppSpacing.xxs,
+      AppSpacing.xxs,
+      AppSpacing.xxs,
+    ),
+    child: Row(
+      children: [
+        FaIcon(FontAwesomeIcons.locationDot, size: 14, color: _ink(context)),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            _format(ref, ContentKeys.krogerDeliveryTo, {'area': area}),
+            style: AppTextStyles.bodyMedium.copyWith(color: _ink(context)),
+          ),
+        ),
+        KyleTertiaryButtonSmall(
+          text: krogerText(ref, ContentKeys.krogerChangeArea),
+          onPressed: onChange,
+        ),
+      ],
+    ),
+  );
+}
+
+/// What became of the send, in a line: sent, still in flight, or unknown.
+class _Receipt extends ConsumerWidget {
+  const _Receipt({required this.status});
+  final String? status;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sent = status == 'sent';
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Row(
+        children: [
+          FaIcon(
+            sent
+                ? FontAwesomeIcons.circleCheck
+                : FontAwesomeIcons.circleExclamation,
+            size: 16,
+            color: sent ? AppColors.success : AppColors.warning,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              krogerText(
+                ref,
+                sent
+                    ? ContentKeys.krogerSent
+                    : status == 'sending'
+                    ? ContentKeys.krogerSending
+                    : ContentKeys.krogerUnknown,
+              ),
+              style: AppTextStyles.bodyMedium.copyWith(color: _ink(context)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -441,14 +485,8 @@ class _BodyText extends StatelessWidget {
 /// One part of the review, with its heading. Rendered only when it has lines
 /// in it: an empty "You add these on Kroger" reads as a failure.
 class _Section extends StatelessWidget {
-  const _Section({
-    super.key,
-    required this.title,
-    required this.children,
-    this.note,
-  });
+  const _Section({super.key, required this.title, required this.children});
   final String title;
-  final String? note;
   final List<Widget> children;
   @override
   Widget build(BuildContext context) => Column(
@@ -459,7 +497,6 @@ class _Section extends StatelessWidget {
         title,
         style: AppTextStyles.sectionTitle.copyWith(color: _ink(context)),
       ),
-      if (note case final note?) _BodyText(note),
       ...children,
     ],
   );
@@ -482,25 +519,63 @@ class _MatchedLine extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final product = line.product!;
     final editable = !state.draft.exported;
+    final muted = AppTextStyles.bodySmall.copyWith(color: _mutedInk(context));
     return BaseCard(
       margin: const EdgeInsets.only(top: AppSpacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _ShopperLine(line: line, state: state, controller: controller),
-          const SizedBox(height: AppSpacing.xs),
-          _ProductImage(product: product),
-          Text(
-            product.name,
-            style: AppTextStyles.bodyMedium.copyWith(color: _ink(context)),
-          ),
-          Text(
-            _format(ref, ContentKeys.krogerPackage, {
-              'size': product.size.isEmpty
-                  ? krogerText(ref, ContentKeys.krogerUnknownSize)
-                  : product.size,
-            }),
-            style: AppTextStyles.bodySmall.copyWith(color: _mutedInk(context)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _ProductImage(product: product),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            line.name,
+                            style: AppTextStyles.foodTitle.copyWith(
+                              color: _ink(context),
+                            ),
+                          ),
+                        ),
+                        if (line.approved)
+                          FaIcon(
+                            FontAwesomeIcons.circleCheck,
+                            size: 16,
+                            color: AppColors.success,
+                            semanticLabel: krogerText(
+                              ref,
+                              ContentKeys.krogerApproved,
+                            ),
+                          ),
+                      ],
+                    ),
+                    Text(
+                      _format(ref, ContentKeys.krogerProductLine, {
+                        'product': product.name,
+                        'size': product.size.isEmpty
+                            ? krogerText(ref, ContentKeys.krogerUnknownSize)
+                            : product.size,
+                      }),
+                      style: muted,
+                    ),
+                    if (line.requiredQty.isNotEmpty)
+                      Text(
+                        _format(ref, ContentKeys.krogerNeeded, {
+                          'quantity': line.requiredQty,
+                        }),
+                        style: muted,
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
           if (!product.available)
             _BodyText(krogerText(ref, ContentKeys.krogerUnavailableProduct)),
@@ -513,22 +588,26 @@ class _MatchedLine extends ConsumerWidget {
               min: 1,
               max: 99,
               enabled: editable,
-              label: krogerText(ref, ContentKeys.krogerQuantity),
+              increaseLabel: krogerText(
+                ref,
+                ContentKeys.krogerQuantityIncrease,
+              ),
+              decreaseLabel: krogerText(
+                ref,
+                ContentKeys.krogerQuantityDecrease,
+              ),
               onChanged: (value) => controller.quantity(line.id, value),
             ),
           ),
-          if (line.approved)
-            Text(
-              krogerText(ref, ContentKeys.krogerApproved),
-              style: AppTextStyles.smallLabel.copyWith(
-                color: _mutedInk(context),
-              ),
-            ),
           if (editable)
             Wrap(
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.xs,
               children: [
+                KyleTertiaryButtonSmall(
+                  text: krogerText(ref, ContentKeys.krogerSkip),
+                  onPressed: () => controller.exclude(line.id, true),
+                ),
                 // Correcting one match is still here; it is simply no longer
                 // the way the shopper is expected to work.
                 if (state.canChooseProduct)
@@ -561,23 +640,26 @@ class _ProductImage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final image = product.image;
     if (image == null || image.isEmpty) return const SizedBox.shrink();
+    // The white tile is the photograph's own ground (Kroger shoots on white),
+    // padded so the rounded corners never cut into the picture.
     return Semantics(
       image: true,
       label: _format(ref, ContentKeys.krogerProductImage, {
         'product': product.name,
       }),
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-        child: SizedBox(
-          height: _productImageHeight,
-          width: double.infinity,
-          child: Image.network(
-            image,
-            fit: BoxFit.contain,
-            alignment: Alignment.centerLeft,
-            excludeFromSemantics: true,
-            errorBuilder: (_, _, _) => const SizedBox.shrink(),
-          ),
+      child: Container(
+        width: _productImageSize,
+        height: _productImageSize,
+        padding: const EdgeInsets.all(AppSpacing.xxs),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(AppSpacing.xs),
+        ),
+        child: Image.network(
+          image,
+          fit: BoxFit.contain,
+          excludeFromSemantics: true,
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
         ),
       ),
     );
@@ -687,29 +769,20 @@ class _ShopperLine extends ConsumerWidget {
   );
 }
 
-/// Every sheet this screen raises: the glass surface over the standard scrim,
-/// as the calendar and What's-new sheets draw it.
+/// Every sheet this screen raises, on the glass sheet recipe.
 Future<T?> _sheet<T>(
   BuildContext context,
   Widget Function(BuildContext context) builder,
-) => showModalBottomSheet<T>(
-  context: context,
-  isScrollControlled: true,
-  barrierColor: AppMaterials.sheetScrim,
-  backgroundColor: Colors.transparent,
-  builder: (context) => GlassSheetSurface(
-    child: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xl,
-          AppSpacing.xl,
-          AppSpacing.xl,
-          AppSpacing.lg,
-        ),
-        child: builder(context),
-      ),
+) => showGlassSheet<T>(
+  context,
+  builder: (context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      AppSpacing.xl,
+      AppSpacing.xl,
+      AppSpacing.xl,
+      AppSpacing.lg,
     ),
+    child: builder(context),
   ),
 );
 
@@ -776,22 +849,9 @@ class _InputSheet extends StatefulWidget {
 class _InputSheetState extends State<_InputSheet> {
   late final text = TextEditingController(text: widget.initial);
 
-  // KyleInputField takes a focus node but has no `autofocus` of its own, so
-  // the sheet raises the keyboard through the node it owns (gap DS-2).
-  final focus = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) focus.requestFocus();
-    });
-  }
-
   @override
   void dispose() {
     text.dispose();
-    focus.dispose();
     super.dispose();
   }
 
@@ -812,7 +872,7 @@ class _InputSheetState extends State<_InputSheet> {
           textField: true,
           child: KyleInputField(
             controller: text,
-            focusNode: focus,
+            autofocus: true,
             // No hint: the title above the field already says what this is,
             // and a hint repeating it reads twice to a screen reader.
             keyboardType: widget.numeric
@@ -910,29 +970,37 @@ class _ProductChoice extends ConsumerWidget {
     label: product.name,
     child: InkWell(
       onTap: product.available ? onTap : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ProductImage(product: product),
-            Text(
-              product.name,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.cream.withValues(
-                  alpha: product.available ? 1 : 0.5,
+      child: Opacity(
+        opacity: product.available ? 1 : 0.5,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          child: Row(
+            children: [
+              _ProductImage(product: product),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.cream,
+                      ),
+                    ),
+                    Text(
+                      product.size.isEmpty
+                          ? krogerText(ref, ContentKeys.krogerUnknownSize)
+                          : product.size,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.cream.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            Text(
-              product.size.isEmpty
-                  ? krogerText(ref, ContentKeys.krogerUnknownSize)
-                  : product.size,
-              style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.cream.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ),

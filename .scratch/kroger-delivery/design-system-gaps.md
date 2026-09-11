@@ -8,6 +8,8 @@ implemented in `kyle_design/`, pushed by `/design-sync`).
 
 ## DS-1 — There is no Kroger integration logo, so Kroger's mark appears nowhere
 
+**2026-09-11: still open.** Needs Kroger's integration logo file and a licence ruling; nothing to build without them.
+
 `assets/images/integrations/` carries Garmin, Strava, TrainingPeaks and Final Surge marks. It
 carries no Kroger asset, and the design system has no integration-attribution component the other
 integrations share either — each one draws its own badge at its own call site.
@@ -23,11 +25,15 @@ integration attribution becomes a shared component or stays per-call-site.
 
 ## DS-2 — `KyleInputField` cannot take focus on open
 
+**2026-09-11: fixed.** `KyleInputField` has `autofocus`; the Kroger sheet uses it and its focus-node workaround is gone.
+
 It accepts a `focusNode` but has no `autofocus`. A sheet that exists to be typed into has to own a
 `FocusNode` and request focus in a post-frame callback (`_InputSheetState`). Every caller that
 wants a keyboard will repeat that.
 
 ## DS-3 — `KylePlusMinusControl` announces itself in hardcoded English
+
+**2026-09-11: labels fixed.** `KylePlusMinusControl` takes `increaseLabel` / `decreaseLabel`, and Kroger passes its content keys. The `tappable: true` dialog is still raw Material.
 
 `_semanticLabel` builds "Increase <label>" / "Decrease <label>" in Dart. The content system already
 holds this screen's own words for it (`kroger.quantity_increase`, `kroger.quantity_decrease`) and
@@ -40,6 +46,8 @@ stay clear of it.
 
 ## DS-4 — There is no product-image slot, and no token for one
 
+**2026-09-11: still local.** The photo is now a 64 px square thumbnail on a white tile (`_productImageSize`), still uncropped. Waits for a ratified component.
+
 The screen shows Kroger's product photograph, which under Kroger's terms must be uncropped with
 nothing drawn over it. The design system has no component for a remote product image (the meal
 mosaic is a different thing with different rules — it crops, and it composes tiles).
@@ -51,11 +59,15 @@ an unratified 96 px would be worse there than here. It wants a ruling with the c
 
 ## DS-5 — There is no design-system progress indicator
 
+**2026-09-11: smaller.** The Material linear bar under the header is gone; while busy, the refresh button's slot shows a small ink-coloured spinner. A Kyle spinner is still missing.
+
 Busy and first-load states fall back to Material's `LinearProgressIndicator` and
 `CircularProgressIndicator`. Every Kyle button already draws its own inline spinner, so the shapes
 exist; there is no standalone one.
 
 ## DS-6 — Every sheet re-assembles the glass recipe by hand
+
+**2026-09-11: packaged.** `showGlassSheet` (`lib/shared/widgets/kyle_design/materials/glass_sheet.dart`) holds the recipe; Kroger uses it. The calendar and What's-new sheets are not migrated: both files carry another session's uncommitted edits.
 
 `showModalBottomSheet` + `AppMaterials.sheetScrim` + transparent background + `GlassSheetSurface` +
 `SafeArea` + padding is copied at each call site (`whats_new_sheet.dart`, `kyle_calendar_sheet.dart`,
@@ -64,12 +76,16 @@ that forgets the scrim or the transparent background gets a sheet that looks nea
 
 ## DS-8 — There is no design-system row for a choice inside a sheet
 
+**2026-09-11: still open.** The product row is now a thumbnail beside the name, but still its own `InkWell`.
+
 The product search results are a list of tappable rows on the glass sheet. The design system has
 list-shaped cards (`FoodItemCard`, `MealCard`) but nothing for a plain selectable row on a sheet
 surface, so `_ProductChoice` wraps its own `InkWell`. `KyleCalendarSheet` has the same problem and
 solves it the same way.
 
 ## DS-9 — `VanaRoundButton` is a design-bearing widget living in a feature
+
+**2026-09-11: still open.** Moving `VanaRoundButton` would collide with in-flight Vana work in that file.
 
 The in-body round back button every meal-planning detail screen draws lives at
 `lib/features/meal_planning/presentation/widgets/vana_round_button.dart`. Kroger now composes it
