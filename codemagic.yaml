@@ -1232,7 +1232,11 @@ workflows:
         FLUTTER_ENV: prod
         APP_ENVIRONMENT: prod
         # Set to patch a specific version (e.g., "1.0.0+1") or "latest"
-        RELEASE_VERSION: "latest"
+        # PINNED for the brick-docked-panel OTA patch (this branch only):
+        # the shipped App Store binary is the iOS release 1.26.0+109
+        # (Shorebird console; 1.26.0+110 is the ANDROID release — the two
+        # prod workflows increment the same counter). Never "latest" here.
+        RELEASE_VERSION: "1.26.0+109"
 
     triggering:
       events: []
