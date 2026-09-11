@@ -1,12 +1,10 @@
 /// Design SSOT component — **Vana Sheet** (the launcher and the summoned
 /// glass sheet).
 ///
-/// Spec: `spec/design/components/vana-sheet.md` in the QA repo, **PROPOSED**
-/// (2026-09-10 revision, QA `9ffd92e`). Not yet ratified and not yet mirrored
-/// to `docs/ssot/spec/design/components/vana-sheet.md` — the mirror waits on
-/// tickets 04/05 of `.scratch/mealplanning`. Built against Q-VS1 (three
+/// Spec: `docs/ssot/spec/design/components/vana-sheet.md`, **PROPOSED v1**
+/// (Lee, 2026-09-11), authored app-side and awaiting Xuan. Q-VS1 (three
 /// heights, the grabber dragging between them) and Q-VS2 (the drawn
-/// speech-bubble mark) as the export answered them.
+/// speech-bubble mark) are confirmed.
 ///
 /// Material: `docs/ssot/spec/design/tokens.md` §Materials — the launcher takes
 /// `glass` with `lift`, dimmed like the collapsed tab-bar button it mirrors on

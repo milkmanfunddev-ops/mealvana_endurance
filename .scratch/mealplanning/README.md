@@ -29,8 +29,8 @@ are not urgent, but 06 cannot start without them.
 | 01 | Finish the feedback loop | **done** |
 | 02 | Home location on the device | **done** |
 | 03 | An episode for a still-open conversation | **done** |
-| 04 | Reconcile the design SSOT mirror | ready-for-human |
-| 05 | Ratify and mirror the sheet spec | ready-for-human |
+| 04 | Reconcile the design SSOT mirror | **done** (app side; QA repo left to Xuan) |
+| 05 | Ratify and mirror the sheet spec | **done** (app side; spec in `docs/ssot/`, awaiting Xuan) |
 | 06 | The launcher and the sheet | **done** (fuel-log screen not reached on the sim) |
 | 07 | The companion's conversation surface | **done** (not yet seen on a device) |
 | 08 | Sheet gestures | **done** (drag checked on the simulator) |

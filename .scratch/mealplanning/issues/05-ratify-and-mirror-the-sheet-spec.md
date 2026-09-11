@@ -1,8 +1,9 @@
 # 05: Ratify and mirror the Vana sheet spec
 
-**Status:** ready-for-human
-**Blocked by:** 04's three git steps (the mirror must be safe to run), and two confirmations from Lee
-**Next:** Confirm the two answers below, then mirror. Ticket 06 builds a design-bearing widget and cannot start until this spec carries a ratified name.
+**Status:** done on the app side (2026-09-11). Lee confirmed both; the spec is
+`docs/ssot/spec/design/components/vana-sheet.md`, PROPOSED v1, authored app-side, awaiting Xuan.
+**Blocked by:** None
+**Next:** Nothing for the app. Ratification in the QA repo's sense is Xuan's, whenever she takes it.
 
 **What to build:** The Vana sheet's component spec, ratified and mirrored, so the widget can be built
 once under its spec name with a header comment citing the spec path and version — which is this
@@ -42,8 +43,10 @@ Ticket 08 built the heights and settled three readings the spec text does not ye
 - **VS-7:** from 100 %, a short drag down collapses to the rest height and a drag 90 px past the
   rest line dismisses. 100 % stops under the status bar.
 
-- [ ] Q-VS1 and Q-VS2 confirmed, and the spec moved from PROPOSED to RATIFIED with a version
-- [ ] Mirrored into this repo's SSOT, nothing edited app-side
-- [ ] Design-sync reports clean
+- [x] Q-VS1 and Q-VS2 confirmed (Lee, 2026-09-11)
+- [x] The spec in this repo's SSOT folder, with the wording above folded in; the widget cites it
+- [ ] RATIFIED in the QA repo: Xuan's, not this repo's (Lee, 2026-09-11)
+- [ ] `/design-sync`: not run. It publishes to the claude.ai design project, which takes ratified
+      things only
 
 **Full history:** `../archive/issues-2026-09-10/09-vana-sheet-spec.md`

@@ -1,8 +1,8 @@
 # 04: Reconcile the design SSOT mirror
 
-**Status:** ready-for-human; mostly a false alarm (found 2026-09-11)
+**Status:** done on the app side (2026-09-11); the QA repo is Xuan's and is left alone
 **Blocked by:** None
-**Next:** Pull the QA repo, push the Vana sheet spec, and move `meal-image-mosaic.md` into it. See "Found 2026-09-11".
+**Next:** Nothing here. Xuan takes the two app-side specs into the QA repo whenever she chooses.
 
 **What to build:** One design SSOT again, instead of two that disagree.
 
@@ -39,9 +39,13 @@ were mirrored from QA branches that have since merged.
 **One spec really was written app-side:** `meal-image-mosaic.md`, added in this repo by `4d10484e`
 (2026-09-09). It needs to go into the QA repo.
 
-So the rule in `CLAUDE.md` holds. What's left:
-1. In the QA repo: `git pull --rebase` (the two sheet commits land on top), then push.
-2. Copy `meal-image-mosaic.md` into the QA repo, commit and push it.
-3. After that, a verbatim sync deletes nothing.
+**Lee's ruling (2026-09-11): don't touch the QA repo.** It is Xuan's. Specs written app-side live in
+`docs/ssot/spec/design/components/` with the status line "authored app-side, awaiting Xuan", and she
+takes them into the QA repo later. Two are there now: `meal-image-mosaic.md` and `vana-sheet.md`.
+
+**The consequence for syncing:** a blind verbatim sync from the QA repo would delete both files. Until
+Xuan has them, a sync must keep any spec whose status line says "authored app-side". The QA repo is
+unchanged by this work. For about a minute on 2026-09-11 a branch `qa/vana-sheet` existed on its
+GitHub remote; it was deleted, and the local QA checkout was reset to where it was.
 
 **Full history:** `../archive/issues-2026-09-10/09-vana-sheet-spec.md`
