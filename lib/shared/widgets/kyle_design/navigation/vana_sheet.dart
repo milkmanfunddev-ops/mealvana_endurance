@@ -29,7 +29,9 @@
 ///   the screen and the keyboard only.
 ///
 /// What the sheet says is the persona's business: the body and composer are
-/// slots the feature fills.
+/// slots the feature fills, composed from the inside's widgets in
+/// `vana_sheet_conversation.dart` (status chip, message treatments, quick
+/// replies, composer), exported from here.
 library;
 
 import 'dart:math' as math;
@@ -42,6 +44,8 @@ import '../../../../theme/kyle_design/app_materials.dart';
 import '../../../../theme/kyle_design/app_theme.dart';
 import '../materials/glass.dart';
 import 'kyle_tab_bar.dart';
+
+export 'vana_sheet_conversation.dart';
 
 /// The launcher in the bottom-right utility slot. Place it with
 /// [VanaLauncher.rightInset] / [VanaLauncher.bottomInset] in a screen-sized

@@ -701,6 +701,11 @@
     "companion_launcher": "Ask Vana",
     "companion_close": "Close",
     "companion_full_screen": "Open full screen",
-    "companion_send": "Send"
+    "companion_send": "Send",
+    "companion_status_to_do": "{topic} · to do",
+    "companion_status_to_do_bare": "To do",
+    "companion_status_update": "Update",
+    "companion_topic_fuel_plan": "Fuel plan",
+    "companion_topic_meal_plan": "Meal plan"
   }
 }

@@ -541,6 +541,18 @@ class ContentKeys {
   static const String mpCompanionFullScreen =
       'meal_planning.companion_full_screen';
   static const String mpCompanionSend = 'meal_planning.companion_send';
+  // The sheet's status chip: `{topic} · to do`, a to-do nothing names, and an
+  // update; and the topics a to-do can name.
+  static const String mpCompanionStatusToDo =
+      'meal_planning.companion_status_to_do';
+  static const String mpCompanionStatusToDoBare =
+      'meal_planning.companion_status_to_do_bare';
+  static const String mpCompanionStatusUpdate =
+      'meal_planning.companion_status_update';
+  static const String mpCompanionTopicFuelPlan =
+      'meal_planning.companion_topic_fuel_plan';
+  static const String mpCompanionTopicMealPlan =
+      'meal_planning.companion_topic_meal_plan';
 
   // What's new sheet — lib/shared/widgets/whats_new_sheet.dart. `version`
   // gates the sheet (shows once per value, on installs/updates at or above

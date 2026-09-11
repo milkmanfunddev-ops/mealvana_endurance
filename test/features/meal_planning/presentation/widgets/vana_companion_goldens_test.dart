@@ -9,6 +9,19 @@
 // The sheet is the real composed one — host, route, conversation — driven by
 // a fake repository, so a golden that moves means the sheet moved.
 //
+// The inside of the sheet (ticket 07, "Inside the sheet"): OPEN is the
+// opening — Vana's prose with the sparkle avatar and her offers as the two
+// quick replies, under the electrolyte Update chip (offers are a menu, not a
+// to-do); STREAMING is the athlete's turn and the typing indicator; THREAD is
+// the athlete's turn answered with a follow-up question, which is a to-do on
+// the Fuel Timeline, so the chip is the orange "Fuel plan · to do" and the
+// question's chips compose in Vana's column; THREAD at large text is the same
+// at iPhone-SE width with the text scaled to 200 %.
+//
+// OPEN and STREAMING were regenerated for ticket 07 without a spec change:
+// ticket 06 drew a placeholder interior, knowingly short of the spec's
+// "Inside the sheet", and these are the first goldens of the spec's own.
+//
 // The ERROR state and the suppression rule are held by widget tests
 // (vana_companion_test.dart): the suppression is "no node", which a picture
 // cannot show.
@@ -31,6 +44,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_reposit
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
@@ -72,6 +86,16 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
             ? "That's your fuel timeline behind me. Tonight's run is at 5:30 — "
                   'want me to walk you through fueling it?'
             : 'Have a banana and a slice of toast about an hour before.',
+      );
+      yield VanaUiEvent(
+        opener
+            ? const VanaChoicesPart(
+                options: ['Walk me through it', "I'll explore on my own"],
+              )
+            : const VanaChoicesPart(
+                question: 'Is it a hard session?',
+                options: ['Easy run', 'Intervals'],
+              ),
       );
       yield const VanaDoneEvent();
     }
@@ -148,39 +172,47 @@ class _Ground extends StatelessWidget {
   }
 
   Widget _cards(Color ink) => ListView(
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(14, 40, 14, 0),
-        children: [
-          for (var i = 0; i < 8; i++) ...[
-            Container(
-              height: 76,
-              decoration: BoxDecoration(
-                color: i.isEven
-                    ? (dark ? AppColors.blackberryLight : AppColors.creamDark)
-                    : AppColors.orange.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              padding: const EdgeInsets.all(14),
-              alignment: Alignment.topLeft,
-              child: Text(
-                i.isEven ? 'Timeline card ${i + 1}' : 'Fuel window ${i + 1}',
-                style: TextStyle(
-                  fontFamily: AppTextStyles.apercu,
-                  fontSize: 14,
-                  color: ink.withValues(alpha: 0.8),
-                ),
-              ),
+    physics: const NeverScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(14, 40, 14, 0),
+    children: [
+      for (var i = 0; i < 8; i++) ...[
+        Container(
+          height: 76,
+          decoration: BoxDecoration(
+            color: i.isEven
+                ? (dark ? AppColors.blackberryLight : AppColors.creamDark)
+                : AppColors.orange.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          padding: const EdgeInsets.all(14),
+          alignment: Alignment.topLeft,
+          child: Text(
+            i.isEven ? 'Timeline card ${i + 1}' : 'Fuel window ${i + 1}',
+            style: TextStyle(
+              fontFamily: AppTextStyles.apercu,
+              fontSize: 14,
+              color: ink.withValues(alpha: 0.8),
             ),
-            const SizedBox(height: 12),
-          ],
-        ],
-      );
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    ],
+  );
 }
 
-Future<_FakeChatRepo> _pump(WidgetTester tester, {required bool dark}) async {
+Future<_FakeChatRepo> _pump(
+  WidgetTester tester, {
+  required bool dark,
+  double textScale = 1,
+}) async {
   tester.view.physicalSize = _size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
+  if (textScale != 1) {
+    tester.platformDispatcher.textScaleFactorTestValue = textScale;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  }
 
   SharedPreferences.setMockInitialValues({});
   final prefs = await SharedPreferences.getInstance();
@@ -190,7 +222,10 @@ Future<_FakeChatRepo> _pump(WidgetTester tester, {required bool dark}) async {
     initialLocation: '/main',
     observers: [observer],
     routes: [
-      GoRoute(path: '/main', builder: (_, _) => _Ground(dark: dark)),
+      GoRoute(
+        path: '/main',
+        builder: (_, _) => _Ground(dark: dark),
+      ),
     ],
   );
   addTearDown(router.dispose);
@@ -217,8 +252,11 @@ Future<_FakeChatRepo> _pump(WidgetTester tester, {required bool dark}) async {
         darkTheme: AppTheme.darkTheme,
         themeMode: dark ? ThemeMode.dark : ThemeMode.light,
         routerConfig: router,
-        builder: (context, child) =>
-            VanaCompanionHost(router: router, observer: observer, child: child!),
+        builder: (context, child) => VanaCompanionHost(
+          router: router,
+          observer: observer,
+          child: child!,
+        ),
       ),
     ),
   );
@@ -283,5 +321,34 @@ void main() {
       repo.hold!.complete();
       await _frames(tester, 10);
     });
+
+    testWidgets("THREAD — the athlete's turn answered with a question, under "
+        'the to-do chip ($mode)', (tester) async {
+      await _pump(tester, dark: dark);
+      await _open(tester);
+      await _sendAndLand(tester);
+      await _golden(tester, 'thread_$mode');
+    });
   }
+
+  testWidgets('THREAD at large text — iPhone-SE width, text at 200 %', (
+    tester,
+  ) async {
+    await _pump(tester, dark: true, textScale: 2);
+    await _open(tester);
+    await _sendAndLand(tester);
+    await _golden(tester, 'thread_large_text_dark');
+  });
+}
+
+Future<void> _sendAndLand(WidgetTester tester) async {
+  await tester.enterText(
+    find.byKey(const ValueKey('vana_sheet.composer')),
+    'What should I eat before it?',
+  );
+  await tester.pump();
+  await tester.tap(find.byKey(const ValueKey('vana_sheet.send')));
+  await tester.pump();
+  FocusManager.instance.primaryFocus?.unfocus();
+  await _frames(tester);
 }

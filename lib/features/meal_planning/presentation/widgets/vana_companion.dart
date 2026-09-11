@@ -14,7 +14,6 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../features/content/application/content_service.dart';
@@ -29,9 +28,11 @@ import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_chat_controller.dart';
 import '../../application/vana_situation_controller.dart';
 import '../../domain/vana_conversation_kind.dart';
+import '../../domain/vana_exchange.dart';
 import '../../domain/vana_launcher_rule.dart';
 import '../../domain/vana_message.dart';
-import 'vana_message_card.dart';
+import 'part_entrance.dart';
+import 'streamed_text.dart';
 import 'vana_part_renderer.dart';
 
 /// Watches the root Navigator for a dialog or sheet on top of the page, so
@@ -148,7 +149,9 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     // The Vana routes speak for no screen: the one under them stays the
     // Situation, so the full-screen chat still knows what was underneath.
     if (top.pattern.isNotEmpty && !isVanaRoute(top.path)) {
-      ref.read(vanaSituationControllerProvider.notifier).routeOnTop(top.pattern);
+      ref
+          .read(vanaSituationControllerProvider.notifier)
+          .routeOnTop(top.pattern);
     }
     _set(() => _path = top.path);
   }
@@ -254,10 +257,12 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 /// for the day's first sheet — and stays the sheet's key for its whole life;
 /// the host adopts the id the server gives a new one.
 ///
-/// This is a working conversation column, not yet the export's surface (status
-/// chip, quick replies, the new message treatments are ticket 07). Planning
-/// actions a part offers (picking a meal, accepting a rule, the pantry) open
-/// the full-screen chat on the same conversation, where the plan bar lives.
+/// The export's surface ([VanaExchange] decides what shows): the status chip,
+/// Vana's turns with the sparkle avatar and no bubble, the athlete's in a
+/// cream-tinted bubble, the opening's offers as at most two quick replies,
+/// the typing indicator, and the composer. Planning actions a part offers
+/// (picking a meal, accepting a rule, the pantry) open the full-screen chat on
+/// the same conversation, where the plan bar lives.
 class VanaCompanionSheet extends ConsumerStatefulWidget {
   const VanaCompanionSheet({super.key, this.conversationId});
 
@@ -276,6 +281,14 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   /// What the retry button repeats: the opener, or the last message sent.
   Future<void> Function()? _lastAttempt;
 
+  /// The screen underneath, as the Situation has it when the sheet opens. It
+  /// names a to-do the transcript does not name itself.
+  String? _situationRoute;
+
+  /// Set by the athlete's first send, so the quick replies stay retired even
+  /// if that turn fails and leaves the transcript (VS-8).
+  bool _repliesRetired = false;
+
   VanaChatControllerProvider get _provider => vanaChatControllerProvider(
     kind: _kind,
     conversationId: widget.conversationId,
@@ -286,6 +299,10 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   @override
   void initState() {
     super.initState();
+    _situationRoute = ref
+        .read(vanaSituationControllerProvider.notifier)
+        .current()
+        ?.route;
     _text.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) => _openToOpener());
   }
@@ -311,6 +328,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     final text = (label ?? _text.text).trim();
     if (text.isEmpty) return;
     if (label == null) _text.clear();
+    setState(() => _repliesRetired = true);
     _lastAttempt = () => _controller.send(text);
     _controller.send(text);
   }
@@ -329,9 +347,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     final router = GoRouter.of(context);
     final id = widget.conversationId;
     _close();
-    router.push(
-      id == null ? '/vana?mode=general' : '/vana?mode=general&c=$id',
-    );
+    router.push(id == null ? '/vana?mode=general' : '/vana?mode=general&c=$id');
   }
 
   void _leaveTo(String location, {bool replace = false}) {
@@ -355,19 +371,34 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
     final state = ref.watch(_provider).value;
+    final streaming = state?.isStreaming ?? false;
 
     return VanaSheet(
       closeLabel: content.getValue(ContentKeys.mpCompanionClose),
       fullScreenLabel: content.getValue(ContentKeys.mpCompanionFullScreen),
       onClose: _close,
       onFullScreen: _fullScreen,
-      body: _thread(state),
-      composer: _composer(content, streaming: state?.isStreaming ?? false),
+      body: state == null ? const SizedBox.expand() : _body(content, state),
+      composer: VanaSheetComposer(
+        fieldKey: const ValueKey('vana_sheet.composer'),
+        sendKey: const ValueKey('vana_sheet.send'),
+        controller: _text,
+        focusNode: _focus,
+        hint: content.getValue(ContentKeys.mpPickerPlaceholderGeneral),
+        sendLabel: content.getValue(ContentKeys.mpCompanionSend),
+        canSend: _text.text.trim().isNotEmpty && !streaming,
+        onSend: _send,
+      ),
     );
   }
 
-  Widget _thread(VanaChatState? state) {
-    if (state == null) return const SizedBox.expand();
+  Widget _body(ContentService content, VanaChatState state) {
+    final exchange = VanaExchange.of(
+      state.messages,
+      isStreaming: state.isStreaming,
+      situationRoute: _situationRoute,
+      repliesRetired: _repliesRetired,
+    );
     final callbacks = VanaPartCallbacks(
       onTapMeal: (meal) => _leaveTo('/food/meals/${meal.id}'),
       onPickMeal: (_, _) => _fullScreen(),
@@ -381,38 +412,138 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
       onSwapPicked: (_) => _fullScreen(),
     );
     final messages = state.messages;
+    final rows = <Widget>[
+      for (var i = 0; i < messages.length; i++)
+        if (messages[i].isUser)
+          VanaSheetAthleteTurn(
+            key: ValueKey('vana_sheet.message_$i'),
+            text: messages[i].content,
+          )
+        else if (_vanaTurn(messages[i], i, exchange, callbacks, state)
+            case final turn?)
+          turn,
+      if (exchange.quickReplies.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(left: kVanaSheetProseInset, top: 4),
+          child: VanaSheetQuickReplies(
+            labels: exchange.quickReplies,
+            onTap: _send,
+          ),
+        ),
+    ];
+    final status = exchange.status;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: ListView.builder(
-            // Newest at the bottom, and the list sticks to it as turns land.
-            reverse: true,
+        if (status != null)
+          Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.sm,
+              kVanaSheetColumnInset + kVanaSheetProseInset,
+              4,
+              kVanaSheetColumnInset,
+              AppSpacing.xs,
             ),
-            itemCount: messages.length,
-            itemBuilder: (context, i) {
-              final index = messages.length - 1 - i;
-              final VanaMessage message = messages[index];
-              final isLast = index == messages.length - 1;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: VanaMessageCard(
-                  key: ValueKey('vana_sheet.message_$index'),
-                  message: message,
-                  index: index,
-                  callbacks: callbacks,
-                  isStreaming: state.isStreaming && isLast,
-                ),
-              );
-            },
+            child: VanaSheetStatusChip(
+              key: const ValueKey('vana_sheet.status'),
+              label: _statusLabel(content, exchange),
+              tone: switch (status) {
+                VanaExchangeStatus.toDo => VanaSheetStatusTone.toDo,
+                VanaExchangeStatus.update => VanaSheetStatusTone.update,
+              },
+            ),
+          ),
+        Expanded(
+          // A short conversation sits under the chip, as the export draws it;
+          // a long one fills the sheet and sticks to its newest turn.
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ListView.separated(
+              reverse: true,
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(
+                kVanaSheetColumnInset,
+                AppSpacing.xs,
+                kVanaSheetColumnInset,
+                AppSpacing.md,
+              ),
+              itemCount: rows.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 16),
+              itemBuilder: (_, i) => rows[rows.length - 1 - i],
+            ),
           ),
         ),
         if (state.error != null) _errorLine(state),
       ],
+    );
+  }
+
+  /// One of Vana's turns, or null when it has nothing to show: an opening
+  /// turn whose only part is the offers the quick replies carry.
+  Widget? _vanaTurn(
+    VanaMessage message,
+    int index,
+    VanaExchange exchange,
+    VanaPartCallbacks callbacks,
+    VanaChatState state,
+  ) {
+    final inFlight = state.isStreaming && index == state.messages.length - 1;
+    if (inFlight && exchange.typing) {
+      return const VanaSheetVanaTurn(
+        key: ValueKey('vana_sheet.typing'),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: VanaSheetTypingDots(),
+        ),
+      );
+    }
+    final parts = exchange.inlineParts(index, message);
+    final prose = exchange.prose(index, message);
+    if (prose.isEmpty && parts.isEmpty) return null;
+
+    return VanaSheetVanaTurn(
+      key: ValueKey('vana_sheet.message_$index'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (prose.isNotEmpty)
+            StreamedText(
+              text: prose,
+              animate: inFlight,
+              style: kVanaSheetProseStyle,
+            ),
+          if (parts.isNotEmpty) ...[
+            if (prose.isNotEmpty) const SizedBox(height: AppSpacing.sm),
+            // Parts wait for the prose (or the end of the stream) before
+            // they come in — see [PartEntrance].
+            PartEntrance(
+              show: message.content.isNotEmpty || !inFlight,
+              children: [
+                for (final part in parts)
+                  VanaPartRenderer(part: part, callbacks: callbacks),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _statusLabel(ContentService content, VanaExchange exchange) {
+    if (exchange.status == VanaExchangeStatus.update) {
+      return content.getValue(ContentKeys.mpCompanionStatusUpdate);
+    }
+    final topic = switch (exchange.topic) {
+      VanaExchangeTopic.fuelPlan => ContentKeys.mpCompanionTopicFuelPlan,
+      VanaExchangeTopic.mealPlan => ContentKeys.mpCompanionTopicMealPlan,
+      null => null,
+    };
+    if (topic == null) {
+      return content.getValue(ContentKeys.mpCompanionStatusToDoBare);
+    }
+    return ContentKeys.format(
+      content.getValue(ContentKeys.mpCompanionStatusToDo),
+      {'topic': content.getValue(topic)},
     );
   }
 
@@ -433,7 +564,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     };
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
+        kVanaSheetColumnInset,
         0,
         AppSpacing.xs,
         AppSpacing.xs,
@@ -453,80 +584,6 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
             child: Text(
               content.getValue(ContentKeys.mpRetry),
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.orange),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _composer(ContentService content, {required bool streaming}) {
-    final hasDraft = _text.text.trim().isNotEmpty;
-    final canSend = hasDraft && !streaming;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.xs,
-        AppSpacing.xs,
-        AppSpacing.sm,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              key: const ValueKey('vana_sheet.composer'),
-              controller: _text,
-              focusNode: _focus,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _send(),
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.cream),
-              decoration: InputDecoration(
-                hintText: content.getValue(
-                  ContentKeys.mpPickerPlaceholderGeneral,
-                ),
-                // The sheet is the surface; the field draws no box of its own.
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                filled: false,
-                isDense: true,
-              ),
-            ),
-          ),
-          Semantics(
-            container: true,
-            button: true,
-            enabled: canSend,
-            label: content.getValue(ContentKeys.mpCompanionSend),
-            excludeSemantics: true,
-            child: GestureDetector(
-              key: const ValueKey('vana_sheet.send'),
-              behavior: HitTestBehavior.opaque,
-              onTap: canSend ? _send : null,
-              child: SizedBox.square(
-                dimension: 44,
-                child: Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      // Inert until there is a draft, orange once there is.
-                      color: canSend ? AppColors.orange : AppColors.disabled,
-                    ),
-                    child: const Center(
-                      child: FaIcon(
-                        FontAwesomeIcons.arrowUp,
-                        size: 14,
-                        color: AppColors.blackberry,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ),
           ),
         ],

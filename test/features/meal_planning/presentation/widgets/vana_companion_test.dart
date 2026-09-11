@@ -13,6 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
@@ -20,14 +21,19 @@ import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_reposit
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/choice_chips.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picker_carousel.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/vana_sheet.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/container.dart';
@@ -48,6 +54,16 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
   /// When set, a turn waits for this before its first event — the server
   /// has not yet named the conversation.
   Completer<void>? holdFirst;
+
+  /// Parts the opener's turn carries after its prose (its offers).
+  List<VanaPart> openerParts = const [];
+
+  /// Parts an athlete's turn is answered with after the prose.
+  List<VanaPart> replyParts = const [];
+
+  /// Parts a turn carries before any prose, then the turn waits on this
+  /// before its text: a tool result landed, the prose has not.
+  (List<VanaPart>, Completer<void>)? leadParts;
 
   @override
   Future<VanaChatResponse> streamChat({
@@ -71,7 +87,16 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     final holdFirst = this.holdFirst;
     Stream<VanaStreamEvent> events() async* {
       if (holdFirst != null) await holdFirst.future;
+      if (leadParts case (final parts, final gate)?) {
+        for (final part in parts) {
+          yield VanaUiEvent(part);
+        }
+        await gate.future;
+      }
       yield VanaTextEvent(opener ? 'Morning. What is on your mind?' : 'Sure.');
+      for (final part in opener ? openerParts : replyParts) {
+        yield VanaUiEvent(part);
+      }
       if (hold != null) await hold.future;
       yield const VanaDoneEvent();
     }
@@ -89,6 +114,18 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     return history;
   }
 }
+
+final _picker = VanaMealPickerPart(
+  title: 'Dinners that fit',
+  meals: [
+    MealRef.fromJson(const {
+      'source': 'library',
+      'id': 'D-001',
+      'name': 'Salmon rice bowl',
+      'mealType': 'dinner',
+    }),
+  ],
+);
 
 class _FakeActionClient extends Fake implements VanaActionClient {
   @override
@@ -198,8 +235,11 @@ Future<_Harness> _pump(
       container: container,
       child: MaterialApp.router(
         routerConfig: router,
-        builder: (context, child) =>
-            VanaCompanionHost(router: router, observer: observer, child: child!),
+        builder: (context, child) => VanaCompanionHost(
+          router: router,
+          observer: observer,
+          child: child!,
+        ),
       ),
     ),
   );
@@ -238,7 +278,10 @@ Future<void> _condensed(WidgetTester tester) async {
 }
 
 Future<void> _send(WidgetTester tester, String text) async {
-  await tester.enterText(find.byKey(const ValueKey('vana_sheet.composer')), text);
+  await tester.enterText(
+    find.byKey(const ValueKey('vana_sheet.composer')),
+    text,
+  );
   await tester.pump();
   await tester.tap(find.byKey(const ValueKey('vana_sheet.send')));
   await tester.pump();
@@ -246,7 +289,6 @@ Future<void> _send(WidgetTester tester, String text) async {
 }
 
 void main() {
-
   group('VS-6: where the launcher renders', () {
     testWidgets('absent on every excluded route, present elsewhere', (
       tester,
@@ -312,10 +354,7 @@ void main() {
       expect(node.label, 'Ask Vana');
       expect(node.rect.size, const Size.square(VanaLauncher.size));
       // The page underneath keeps its own nodes; it is not relabelled.
-      expect(
-        tester.getSemantics(find.text('page /main')).label,
-        'page /main',
-      );
+      expect(tester.getSemantics(find.text('page /main')).label, 'page /main');
       handle.dispose();
     });
 
@@ -565,11 +604,11 @@ void main() {
       expect(repo.calls.where((c) => c['opener'] == true), hasLength(1));
     });
 
-
     testWidgets('ERROR: one plain line and a retry, never a snackbar', (
       tester,
     ) async {
-      final repo = _FakeChatRepo()..throwOnStream = const VanaOfflineException('offline');
+      final repo = _FakeChatRepo()
+        ..throwOnStream = const VanaOfflineException('offline');
       await _pump(tester, repo: repo);
       await _open(tester);
       final offline = loadDefaultContent()['meal_planning.vana_offline']!;
@@ -602,9 +641,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       final state = h.container
-          .read(
-            vanaChatControllerProvider(kind: VanaConversationKind.general),
-          )
+          .read(vanaChatControllerProvider(kind: VanaConversationKind.general))
           .value!;
       expect(state.isStreaming, isTrue);
       expect(tester.getRect(find.byType(VanaSheet)), before);
@@ -612,5 +649,298 @@ void main() {
       repo.hold!.complete();
       await _settleTurn(tester);
     });
+  });
+
+  group('the conversation surface', () {
+    const offers = VanaChoicesPart(
+      options: ['What should I eat today?', 'Before tomorrow', 'Start a plan'],
+    );
+
+    VanaSheetStatusChip chip(WidgetTester tester) =>
+        tester.widget<VanaSheetStatusChip>(find.byType(VanaSheetStatusChip));
+
+    const followUp = VanaChoicesPart(options: ['Before', 'During']);
+
+    testWidgets(
+      'the opening\'s offers are a menu, so the chip opens on Update; '
+      'a question in the thread is a to-do named by the screen underneath, '
+      'and stays one while the athlete\'s answer is in flight',
+      (tester) async {
+        final repo = _FakeChatRepo()
+          ..openerParts = const [offers]
+          ..replyParts = const [followUp];
+        final h = await _pump(tester, initial: '/main', repo: repo);
+        unawaited(h.router.push('/fuel-log'));
+        await tester.pumpAndSettle();
+        await _open(tester);
+
+        final content = loadDefaultContent();
+        final update = content['meal_planning.companion_status_update'];
+        expect(chip(tester).tone, VanaSheetStatusTone.update);
+        expect(chip(tester).label, update);
+
+        await _send(tester, 'help me fuel this');
+        expect(chip(tester).tone, VanaSheetStatusTone.toDo);
+        expect(
+          chip(tester).label,
+          ContentKeys.format(content['meal_planning.companion_status_to_do']!, {
+            'topic': content['meal_planning.companion_topic_fuel_plan'],
+          }),
+        );
+
+        // Answering does not finish the to-do; Vana's next turn does.
+        repo
+          ..replyParts = const []
+          ..hold = Completer<void>();
+        await _send(tester, 'Before');
+        expect(find.byKey(const ValueKey('vana_sheet.typing')), findsNothing);
+        expect(chip(tester).tone, VanaSheetStatusTone.toDo);
+        repo.hold!.complete();
+        await _settleTurn(tester);
+        expect(chip(tester).tone, VanaSheetStatusTone.update);
+        expect(chip(tester).label, update);
+      },
+    );
+
+    testWidgets('a to-do nothing names is a bare to-do; a meal picker names '
+        'the meal plan', (tester) async {
+      final repo = _FakeChatRepo()..replyParts = const [followUp];
+      final h = await _pump(tester, initial: '/settings', repo: repo);
+      await _open(tester);
+      final content = loadDefaultContent();
+
+      await _send(tester, 'what should I eat');
+      expect(chip(tester).tone, VanaSheetStatusTone.toDo);
+      expect(
+        chip(tester).label,
+        content['meal_planning.companion_status_to_do_bare'],
+      );
+
+      repo.replyParts = [_picker];
+      await _send(tester, 'plan my dinners');
+      expect(chip(tester).tone, VanaSheetStatusTone.toDo);
+      expect(
+        chip(tester).label,
+        ContentKeys.format(content['meal_planning.companion_status_to_do']!, {
+          'topic': content['meal_planning.companion_topic_meal_plan'],
+        }),
+      );
+      expect(h.location, '/settings');
+    });
+
+    testWidgets('quick replies: the opening\'s offers, at most two, the first '
+        'filled and the second outline; a tap sends it', (tester) async {
+      final repo = _FakeChatRepo()..openerParts = const [offers];
+      await _pump(tester, repo: repo);
+      await _open(tester);
+
+      final replies = tester.widget<VanaSheetQuickReplies>(
+        find.byType(VanaSheetQuickReplies),
+      );
+      expect(replies.labels, ['What should I eat today?', 'Before tomorrow']);
+      expect(find.byKey(const ValueKey('vana_sheet.quick_reply_1')), findsOne);
+      expect(find.text('Start a plan'), findsNothing);
+      // The offers are the replies; they are not drawn inline as well.
+      expect(find.byType(ChoiceChips), findsNothing);
+      BoxDecoration face(int i) =>
+          tester
+                  .widget<Container>(
+                    find
+                        .descendant(
+                          of: find.byKey(ValueKey('vana_sheet.quick_reply_$i')),
+                          matching: find.byType(Container),
+                        )
+                        .first,
+                  )
+                  .decoration!
+              as BoxDecoration;
+      expect(face(0).color, AppColors.orange);
+      expect(face(1).color, isNull);
+      expect(face(1).border, isNotNull);
+
+      await tester.tap(find.byKey(const ValueKey('vana_sheet.quick_reply_1')));
+      await tester.pump();
+      await _settleTurn(tester);
+      expect(repo.calls.last['message'], 'Before tomorrow');
+      expect(find.byType(VanaSheetAthleteTurn), findsOneWidget);
+      expect(find.byType(VanaSheetQuickReplies), findsNothing);
+    });
+
+    testWidgets('quick replies retire on the first thread entry and stay '
+        'retired, even when that turn fails', (tester) async {
+      final repo = _FakeChatRepo()..openerParts = const [offers];
+      await _pump(tester, repo: repo);
+      await _open(tester);
+      expect(find.byType(VanaSheetQuickReplies), findsOneWidget);
+
+      repo.throwOnStream = const VanaOfflineException('offline');
+      await tester.tap(find.byKey(const ValueKey('vana_sheet.quick_reply_0')));
+      await tester.pump();
+      await _settleTurn(tester);
+      // The failed turn left the transcript; the replies did not come back.
+      expect(find.byType(VanaSheetAthleteTurn), findsNothing);
+      expect(find.byKey(const ValueKey('vana_sheet.error')), findsOneWidget);
+      expect(find.byType(VanaSheetQuickReplies), findsNothing);
+      expect(find.byType(ChoiceChips), findsNothing);
+    });
+
+    testWidgets('a conversation with a thread reopens without quick replies', (
+      tester,
+    ) async {
+      final repo = _FakeChatRepo()..openerParts = const [offers];
+      final h = await _pump(tester, repo: repo);
+      await _open(tester);
+      await _send(tester, 'hi');
+      await _close(tester);
+      repo.history = h.container
+          .read(vanaChatControllerProvider(kind: VanaConversationKind.general))
+          .value!
+          .messages;
+      await _open(tester);
+      expect(find.byType(VanaSheetQuickReplies), findsNothing);
+      expect(find.byType(ChoiceChips), findsNothing);
+    });
+
+    testWidgets('the typing indicator shows only while a turn is in flight, '
+        'and never alongside quick replies', (tester) async {
+      final repo = _FakeChatRepo()
+        ..openerParts = const [offers]
+        ..holdFirst = Completer<void>();
+      await _pump(tester, repo: repo);
+      await _open(tester);
+      // The opener is in flight with nothing said yet.
+      expect(find.byKey(const ValueKey('vana_sheet.typing')), findsOneWidget);
+      expect(find.byType(VanaSheetQuickReplies), findsNothing);
+      expect(find.byType(VanaSheetStatusChip), findsNothing);
+
+      repo.holdFirst!.complete();
+      await _settleTurn(tester);
+      expect(find.byKey(const ValueKey('vana_sheet.typing')), findsNothing);
+      expect(find.byType(VanaSheetQuickReplies), findsOneWidget);
+
+      repo
+        ..holdFirst = Completer<void>()
+        ..openerParts = const [];
+      await tester.tap(find.byKey(const ValueKey('vana_sheet.quick_reply_0')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byKey(const ValueKey('vana_sheet.typing')), findsOneWidget);
+      expect(find.byType(VanaSheetQuickReplies), findsNothing);
+
+      repo.holdFirst!.complete();
+      await _settleTurn(tester);
+      expect(find.byKey(const ValueKey('vana_sheet.typing')), findsNothing);
+    });
+
+    testWidgets('an opener whose offers land before its prose shows the '
+        'typing indicator, not the replies', (tester) async {
+      final gate = Completer<void>();
+      final repo = _FakeChatRepo()..leadParts = (const [offers], gate);
+      await _pump(tester, repo: repo);
+      await _open(tester);
+      expect(find.byKey(const ValueKey('vana_sheet.typing')), findsOneWidget);
+      expect(find.byType(VanaSheetQuickReplies), findsNothing);
+
+      gate.complete();
+      await _settleTurn(tester);
+      expect(find.byKey(const ValueKey('vana_sheet.typing')), findsNothing);
+      expect(find.byType(VanaSheetQuickReplies), findsOneWidget);
+    });
+
+    testWidgets('send is inert with an empty draft and orange with one', (
+      tester,
+    ) async {
+      final h = await _pump(tester);
+      await _open(tester);
+      final calls = h.repo.calls.length;
+      Color sendColor() =>
+          (tester
+                      .widget<AnimatedContainer>(
+                        find.descendant(
+                          of: find.byKey(const ValueKey('vana_sheet.send')),
+                          matching: find.byType(AnimatedContainer),
+                        ),
+                      )
+                      .decoration!
+                  as BoxDecoration)
+              .color!;
+
+      expect(sendColor(), isNot(AppColors.orange));
+      await tester.tap(find.byKey(const ValueKey('vana_sheet.send')));
+      await tester.pump();
+      expect(h.repo.calls, hasLength(calls));
+
+      await tester.enterText(
+        find.byKey(const ValueKey('vana_sheet.composer')),
+        '   ',
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(sendColor(), isNot(AppColors.orange));
+
+      await tester.enterText(
+        find.byKey(const ValueKey('vana_sheet.composer')),
+        'hello',
+      );
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(sendColor(), AppColors.orange);
+    });
+
+    testWidgets('a meal picker renders inside Vana\'s message column', (
+      tester,
+    ) async {
+      final repo = _FakeChatRepo()..replyParts = [_picker];
+      await _pump(tester, repo: repo);
+      await _open(tester);
+      await _send(tester, 'dinner ideas');
+
+      final picker = find.byType(MealPickerCarousel);
+      expect(picker, findsOneWidget);
+      final turn = find.ancestor(
+        of: picker,
+        matching: find.byType(VanaSheetVanaTurn),
+      );
+      expect(turn, findsOneWidget);
+      // It starts where the prose starts, right of the sparkle avatar.
+      final prose = tester.getTopLeft(find.text('Sure.')).dx;
+      expect(tester.getTopLeft(picker).dx, closeTo(prose, 0.5));
+    });
+
+    for (final (name, scale) in [('default text', 1.0), ('large text', 2.0)]) {
+      testWidgets('iPhone SE width, $name: the treatments lay out without '
+          'overflow', (tester) async {
+        final repo = _FakeChatRepo()..openerParts = const [offers];
+        final h = await _pump(tester, repo: repo);
+        tester.view.physicalSize = const Size(320, 568);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await tester.pumpAndSettle();
+        expect(h.location, '/main');
+
+        await _open(tester);
+        expect(find.byType(VanaSheetQuickReplies), findsOneWidget);
+        await _send(
+          tester,
+          'What should I eat before my long run tomorrow morning?',
+        );
+        expect(tester.takeException(), isNull);
+
+        final bubble = tester.getRect(find.byType(VanaSheetAthleteTurn));
+        final column = 320 - 2 * kVanaSheetColumnInset;
+        // Right-aligned to the column, and no wider than 82 % of it.
+        expect(bubble.right, closeTo(320 - kVanaSheetColumnInset, 0.5));
+        final face = tester.getRect(
+          find.descendant(
+            of: find.byType(VanaSheetAthleteTurn),
+            matching: find.byType(Container),
+          ),
+        );
+        expect(face.width, lessThanOrEqualTo(column * 0.82 + 0.5));
+        // Vana's prose starts right of the avatar, with no bubble.
+        expect(
+          tester.getTopLeft(find.text('Sure.')).dx,
+          closeTo(kVanaSheetColumnInset + kVanaSheetProseInset, 0.5),
+        );
+      });
+    }
   });
 }
