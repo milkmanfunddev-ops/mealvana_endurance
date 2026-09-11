@@ -1,7 +1,7 @@
 # 05: Ratify and mirror the Vana sheet spec
 
 **Status:** ready-for-human
-**Blocked by:** 04 (the mirror must be safe to run), and two confirmations from Lee
+**Blocked by:** 04's three git steps (the mirror must be safe to run), and two confirmations from Lee
 **Next:** Confirm the two answers below, then mirror. Ticket 06 builds a design-bearing widget and cannot start until this spec carries a ratified name.
 
 **What to build:** The Vana sheet's component spec, ratified and mirrored, so the widget can be built
