@@ -304,6 +304,21 @@ void main() {
       expect(find.byKey(_launcher), findsOneWidget);
     });
 
+    testWidgets('the launcher is its own accessibility node, the size of '
+        'the launcher', (tester) async {
+      final handle = tester.ensureSemantics();
+      await _pump(tester);
+      final node = tester.getSemantics(find.byKey(_launcher));
+      expect(node.label, 'Ask Vana');
+      expect(node.rect.size, const Size.square(VanaLauncher.size));
+      // The page underneath keeps its own nodes; it is not relabelled.
+      expect(
+        tester.getSemantics(find.text('page /main')).label,
+        'page /main',
+      );
+      handle.dispose();
+    });
+
     testWidgets('a double tap opens one sheet', (tester) async {
       await _pump(tester);
       await tester.tap(find.byKey(_launcher));

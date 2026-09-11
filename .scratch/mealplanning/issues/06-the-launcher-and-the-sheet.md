@@ -1,10 +1,11 @@
 # 06: The launcher and the sheet
 
-**Status:** built, awaiting the simulator pass (2026-09-10)
+**Status:** built; simulator pass done except the fuel-log screen itself (2026-09-10)
 **Blocked by:** None for the code. The spec is still PROPOSED: 05 has not ratified it and it is not
 mirrored into `docs/ssot/`. Built against Q-VS1 and Q-VS2 as the export answered them (Lee chose to
 start 06 ahead of 05).
-**Next:** The simulator pass below, then `/mattpocock-skills:implement 07` or `08`.
+**Next:** `/mattpocock-skills:implement 07` or `08`. The launcher-over-bottom-CTA overlap seen on
+the device needs a ruling first (see the simulator notes).
 
 **What to build:** An athlete on any ordinary screen sees Vana in the bottom-right corner, taps her,
 and a glass sheet rises over the screen they were on. They ask about what is in front of them and she
@@ -30,7 +31,38 @@ sheet is what will exercise the reporting for real.
 - [x] Full-screen affordance opens the chat route with the same conversation
 - [x] Dismissing condenses into the launcher (spec VS-9); it never slides off-screen
 - [x] Goldens for closed, open and streaming on the glass shell
-- [ ] Simulator: the Plan tab, the fuel log and settings, and from a fuel-log Situation "what should I eat before this" names that session
+- [~] Simulator: the Plan tab, the fuel log and settings, and from a fuel-log Situation "what should I eat before this" names that session
+
+## Simulator pass (iPhone 17 Pro, dev, 2026-09-10)
+
+- **Timeline:** the opener landed and knew today was a rest day (the `/main` Situation).
+- **Plan tab:** "which of the meals on this plan has the most protein" named the plan's meals and
+  their protein. Reopening later continued the same conversation (VS-5).
+- **Settings:** "what screen am I looking at" answered "the settings screen". That is the
+  route-only Situation. Before the fix it would have been the Plan tab.
+- **A session:** the test account had none, so a 12 mi run was created for today on dev. On its
+  activity-detail screen, "what should I eat before this" named the 12 mi run. **The fuel-log
+  screen itself was not reached**: it only opens for a completed session. It resolves to the same
+  activity server-side.
+- Under the calendar sheet the launcher has no node. Scrim and close returned to the same screen.
+
+**Found on the device, fixed:** the launcher's `Semantics` merged into the app's root node, so
+VoiceOver read the whole screen as one "Ask Vana" button. It is its own node now, with a test.
+
+**Found on the device, not fixed:**
+- **The launcher covers the right end of full-width bottom buttons** ("Generate Plan" on the
+  new-activity screen) and the right edge of the pre-workout card on the session screen. This is
+  Q-VS4 widened to every screen. It needs a ruling: a clearance inset per screen, or hiding the
+  launcher on flow screens.
+- **Dev builds:** the accessibility-tools buttons (red checker, blue wrench) sit on the launcher,
+  and the wrench covers the sheet's send button. Return still sends.
+- **Server, pre-existing:** a reloaded transcript loses assistant text that came before a tool
+  part. The opener's "Today is a full rest day…" and the "I'll pull up the meals…" preamble were
+  gone on reopen, and only the text after the tool call came back. The chat route has the same
+  problem.
+- **Server, pre-existing:** the activity Situation sentence read "1h 48m" as "starting at 108
+  minutes", and Vana asked what time the run was on "Thursday" (it was today, 9:30 pm). The
+  resolver's sentence should carry the start time and say "today".
 
 ## Notes (2026-09-10)
 

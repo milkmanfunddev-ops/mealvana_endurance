@@ -78,6 +78,9 @@ class VanaLauncher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      // Its own node: without it the label merges up into the app's root and
+      // the whole screen reads as the launcher.
+      container: true,
       button: true,
       label: semanticLabel,
       excludeSemantics: true,
@@ -284,6 +287,7 @@ class _ChromeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      container: true,
       button: true,
       label: label,
       excludeSemantics: true,

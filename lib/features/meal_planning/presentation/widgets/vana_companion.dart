@@ -496,6 +496,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
             ),
           ),
           Semantics(
+            container: true,
             button: true,
             enabled: canSend,
             label: content.getValue(ContentKeys.mpCompanionSend),
