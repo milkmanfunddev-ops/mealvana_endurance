@@ -94,24 +94,24 @@ this must deploy `kroger` along with the app. Nothing checks that the two match.
 
 ### Defects found
 
-1. **Device location never resolves an area in most US places (ticket 04).** LocationIQ reverse
+1. **Device location never resolves an area in most US places (ticket 04).** → `issues/08`. LocationIQ reverse
    returns `osm_type: null, osm_id: null` for address-point matches, and `location_iq` 1.1.4
    declares both as non-null `String`, so `LocationRepository.reverseGeocode` throws
    `type 'Null' is not a subtype of type 'String'` even though the response has
    `postcode: "35209"`. 4 of 6 US coordinates probed return the nulls (all three in Birmingham,
    plus Cincinnati). The Kroger area finder is the only caller. The shopper falls back to typing a
    postcode, on every load.
-2. **A draft saved before ticket 02 can never deliver (tickets 02 and 04).** The draft on this
+2. **A draft saved before ticket 02 can never deliver (tickets 02 and 04).** → `issues/09`. The draft on this
    simulator was `modality: PICKUP` with the Spoke from the old Location picker. `location` sends
    `draft.modality`, the server probes curbside (0 results) and answers "Kroger does not deliver
    to that ZIP code". Ticket 04 removed the Location picker, which was the only thing that ever
    reset the Modality, so nothing in the app can recover the draft. Pre-release data only. Worked
    around by rewriting the local draft to `DELIVERY` with no Location (backup kept in the session
    scratchpad), and the app uploaded it.
-3. **Before a matching run, every line reads "Kroger's delivery catalogue has no match for these"**
+3. **Before a matching run, every line reads "Kroger's delivery catalogue has no match for these"** → `issues/10`.
    (screenshot 02). `unmatched` means "no product yet", so the note claims a search that has not
    happened.
-4. **A failure that is not a `KrogerException` reads as "Kroger could not be reached"**, including
+4. **A failure that is not a `KrogerException` reads as "Kroger could not be reached"** → `issues/11`., including
    a 400 `invalid_action`, which is our own version mismatch, not Kroger's.
 
 ### The cart write, 20:47 CDT
