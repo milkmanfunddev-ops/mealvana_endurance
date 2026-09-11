@@ -107,6 +107,7 @@ void main() {
   var found = true;
   late Map<String, KrogerProduct> catalog;
   late Set<String> unmatchable;
+  late Set<String> unreachable;
   late List<String> searches;
   Map<String, dynamic>? sent;
   Map<String, dynamic>? receipt;
@@ -141,6 +142,7 @@ void main() {
     // and comes by the count; the Store's has a price and comes by weight.
     catalog = {locations['35242']!: storeProduct};
     unmatchable = {};
+    unreachable = {};
     searches = [];
     sent = null;
     receipt = null;
@@ -171,6 +173,9 @@ void main() {
           };
         case 'search':
           searches.add(data['query'] as String);
+          if (unreachable.contains(data['query'])) {
+            throw const KrogerException('rate_limited');
+          }
           return {
             'products': [
               if (found && !unmatchable.contains(data['query']))
@@ -930,6 +935,155 @@ void main() {
         current().draft.lines.firstWhere((l) => l.name == name).id;
     final matched = find.byKey(const ValueKey('kroger.matched'));
     final unmatched = find.byKey(const ValueKey('kroger.unmatched'));
+    final unsearched = find.byKey(const ValueKey('kroger.unsearched'));
+    List<String> names(List<KrogerLine> lines) =>
+        lines.map((l) => l.name).toList();
+
+    test('nothing is said to have no match before anything is searched', () {
+      // setUp resolved a Location and ran no search. "Kroger has no match"
+      // is a claim about a search, and there has not been one.
+      expect(searches, isEmpty);
+      expect(current().draft.unmatched, isEmpty);
+      expect(names(current().draft.unsearched), ['Broccoli']);
+    });
+    test(
+      'after a run, only what Kroger returned nothing for is unmatched',
+      () async {
+        await twoLines();
+        await controller.matchAll();
+        expect(names(current().draft.matched), ['Broccoli']);
+        expect(names(current().draft.unmatched), ['Bread']);
+        expect(current().draft.unsearched, isEmpty);
+      },
+    );
+    test(
+      'a run that fails partway leaves unreached lines unanswered',
+      () async {
+        // Broccoli is searched and Kroger has nothing; the run fails on Bread.
+        // Bread was never answered, so it is not Kroger's to have no match for.
+        await twoLines();
+        unmatchable = {'Broccoli'};
+        unreachable = {'Bread'};
+        await controller.matchAll();
+        expect(current().message, 'rate_limited');
+        expect(names(current().draft.unmatched), ['Broccoli']);
+        expect(names(current().draft.unsearched), ['Bread']);
+        // And the answer it did get is kept, not just shown.
+        expect(names(repo.load(account, plan).unmatched), ['Broccoli']);
+      },
+    );
+    test('a search the shopper runs for a line answers for it too', () async {
+      await twoLines();
+      await controller.search(lineId('Bread'), 'Bread');
+      expect(current().message, 'no_products');
+      expect(names(current().draft.unmatched), ['Bread']);
+      expect(names(current().draft.unsearched), ['Broccoli']);
+    });
+    test('a new Location takes the old answers with it', () async {
+      // Catalogues are per-Location: the Spoke having no bread says nothing
+      // about what the next Location has.
+      await twoLines();
+      await controller.matchAll();
+      await controller.setArea('30301');
+      expect(current().draft.unmatched, isEmpty);
+      expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
+    });
+    test(
+      'a different query that finds something takes the answer away',
+      () async {
+        // The answer was about what was searched for, and that has changed.
+        await twoLines();
+        await controller.search(lineId('Bread'), 'Bread');
+        expect(names(current().draft.unmatched), ['Bread']);
+        await controller.search(lineId('Bread'), 'Sourdough');
+        expect(current().products, isNotEmpty);
+        expect(current().draft.unmatched, isEmpty);
+        expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
+      },
+    );
+    test('a different Kroger environment takes the answers with it', () async {
+      await twoLines();
+      await controller.matchAll();
+      expect(names(current().draft.unmatched), ['Bread']);
+      await inProduction();
+      expect(current().draft.unmatched, isEmpty);
+      expect(names(current().draft.unsearched), ['Broccoli', 'Bread']);
+    });
+    test('choosing a product answers the line', () async {
+      await twoLines();
+      await controller.matchAll();
+      await controller.choose(lineId('Bread'), product);
+      expect(current().draft.unmatched, isEmpty);
+      expect(names(current().draft.matched), ['Broccoli', 'Bread']);
+    });
+    test(
+      'a draft stored before answers were recorded is not matched yet',
+      () async {
+        // No migration: a line without the flag reads as unanswered, which is
+        // the one thing that is true of it. The draft is written out in the
+        // shape the app stored before the flag existed, on the device and in
+        // the cloud row alike.
+        final legacy = {
+          'planId': plan,
+          'store': {...store.toJson(), 'id': locations['35209']},
+          'modality': 'DELIVERY',
+          'environment': 'certification',
+          'lines': [
+            {
+              'id': KrogerLine.sourceId(plan, 'Broccoli'),
+              'name': 'Broccoli',
+              'requiredQty': '2 ct',
+              'product': null,
+              'quantity': 1,
+              'quantityEdited': false,
+              'approved': false,
+              'excluded': false,
+              'sourceExcluded': false,
+              'manual': false,
+            },
+          ],
+          'revision': 1,
+          'dirty': false,
+          'receiptStatus': null,
+        };
+        await prefs.setString(
+          'kroger.draft.$account.$plan',
+          jsonEncode(legacy),
+        );
+        await restart();
+        expect(current().draft.unmatched, isEmpty);
+        expect(names(current().draft.unsearched), ['Broccoli']);
+        await prefs.remove('kroger.draft.$account.$plan');
+        remote.onLoad = (_) async => {'revision': 1, 'draft': legacy};
+        await restart();
+        expect(current().draft.unmatched, isEmpty);
+        expect(names(current().draft.unsearched), ['Broccoli']);
+      },
+    );
+    testWidgets('before a run the screen promises nothing about Kroger', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await tester.runAsync(twoLines);
+      await showScreen(tester);
+      expect(unmatched, findsNothing);
+      expect(find.text(copy['kroger.unmatched_note']!), findsNothing);
+      expect(
+        find.descendant(
+          of: unsearched,
+          matching: find.text(copy['kroger.unsearched_heading']!),
+        ),
+        findsOneWidget,
+      );
+      for (final name in ['Broccoli', 'Bread']) {
+        expect(
+          find.descendant(of: unsearched, matching: find.text(name)),
+          findsOneWidget,
+        );
+      }
+      // The action that answers them is on the screen with them.
+      expect(find.text(copy['kroger.match_all']!), findsOneWidget);
+    });
 
     testWidgets('a matched line carries Kroger\'s product name and pack size', (
       tester,
@@ -961,6 +1115,7 @@ void main() {
     testWidgets('what did not match is listed plainly and on its own', (
       tester,
     ) async {
+      final copy = loadDefaultContent();
       await tester.runAsync(twoLines);
       await tester.runAsync(controller.matchAll);
       await showScreen(tester);
@@ -968,6 +1123,14 @@ void main() {
         find.descendant(of: unmatched, matching: find.text('Bread')),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: unmatched,
+          matching: find.text(copy['kroger.unmatched_note']!),
+        ),
+        findsOneWidget,
+      );
+      expect(unsearched, findsNothing);
       expect(
         find.descendant(of: matched, matching: find.text('Bread')),
         findsNothing,

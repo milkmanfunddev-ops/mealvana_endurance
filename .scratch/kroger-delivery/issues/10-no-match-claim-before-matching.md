@@ -9,7 +9,7 @@ Found on the 2026-09-10 simulator pass (`../device-verification.md`, defect 3; s
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent (filed 2026-09-10)
+**Status:** built 2026-09-11. Not yet seen on a device.
 
 ## What happens
 
@@ -38,10 +38,23 @@ New copy goes in as content keys (`lib/features/content/domain/content_keys.dart
 
 ## Acceptance
 
-- [ ] On a draft with no matching run, no line is described as having no match on Kroger
-- [ ] After a run, only lines whose search returned nothing appear under "You add these on
+- [x] On a draft with no matching run, no line is described as having no match on Kroger
+- [x] After a run, only lines whose search returned nothing appear under "You add these on
       Kroger"
-- [ ] A run that fails partway does not mark unreached lines as unmatched
-- [ ] A draft stored before this change loads without a migration and reads as "not matched yet"
-- [ ] Controller tests go through the real notifier; the screen test asserts both states
-- [ ] Goldens updated where the grouping changes
+- [x] A run that fails partway does not mark unreached lines as unmatched
+- [x] A draft stored before this change loads without a migration and reads as "not matched yet"
+- [x] Controller tests go through the real notifier; the screen test asserts both states
+- [x] Goldens updated where the grouping changes
+
+## Notes from the build
+
+- The answer is `KrogerLine.noMatch`. `copyWith` clears it whenever the product is set or cleared,
+  which covers a new Location, a new Kroger environment, a chosen product and export's
+  `changed` path in one place.
+- A line has no stored query: its name is fixed, because the id is derived from it. The query
+  that can change is the one the shopper types into the product search. An empty result there
+  marks the line, and a later query that finds something unmarks it.
+- A search that returns only unavailable products counts as no match ("nothing it could use").
+- Open: a draft sent with lines never searched shows them under "Not matched yet" after the
+  Hand-off, where the match action is no longer offered. That is honest, but it leaves the
+  shopper with no next step. It only happens when a line is added after the last matching run.

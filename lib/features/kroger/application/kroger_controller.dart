@@ -468,6 +468,9 @@ class KrogerController extends _$KrogerController {
   Future<void> search(String lineId, String query) => _run(() async {
     _publish(state.value!.copyWith(products: []));
     final products = await _search(query);
+    // The shopper's own query answers for the line as much as its name does,
+    // and a different query that finds something takes the old answer away.
+    await _recordAnswer(lineId, noMatch: products.isEmpty);
     _publish(
       state.value!.copyWith(
         products: products,
@@ -492,10 +495,11 @@ class KrogerController extends _$KrogerController {
         .where((l) => !l.approved)
         .toList();
     var matched = 0;
+    // Each line's answer is saved as it arrives, so a run that fails partway
+    // keeps what it learned and leaves the lines it never reached unanswered.
     for (final line in pending) {
       final products = await _search(line.name);
       if (!ref.mounted) return;
-      if (products.isEmpty) continue;
       final preferred = _repo.preferred(
         _user!,
         state.value!.draft.store!.id,
@@ -523,6 +527,8 @@ class KrogerController extends _$KrogerController {
                 : KrogerMatching.packages(l.requiredQty, product.size) ?? 1,
           ),
         );
+      } else {
+        await _recordAnswer(line.id, noMatch: true);
       }
     }
     _publish(
@@ -533,6 +539,14 @@ class KrogerController extends _$KrogerController {
       ),
     );
   });
+
+  /// What Kroger's latest search for this line said: [noMatch] when it had
+  /// nothing the line could use. A line that already has a product keeps it,
+  /// and with it no such answer.
+  Future<void> _recordAnswer(String id, {required bool noMatch}) => _updateLine(
+    id,
+    (l) => l.product == null ? l.copyWith(noMatch: noMatch) : l,
+  );
   Future<void> _updateLine(
     String id,
     KrogerLine Function(KrogerLine) edit,

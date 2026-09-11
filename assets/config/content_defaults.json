@@ -62,6 +62,7 @@
     "unavailable_product": "Unavailable for this store or fulfillment mode.",
     "product_unavailable": "Choose an available product before approving.",
     "matched_heading": "Going to your Kroger cart",
+    "unsearched_heading": "Not matched yet",
     "unmatched_heading": "You add these on Kroger",
     "unmatched_note": "Kroger’s delivery catalogue has no match for these. Add them yourself once you are on Kroger.",
     "skipped_heading": "Not being ordered",

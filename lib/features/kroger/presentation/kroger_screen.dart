@@ -302,9 +302,9 @@ class _Body extends ConsumerWidget {
               onPressed: controller.matchAll,
             ),
           ),
-        // The review, in three parts. A line is going to Kroger, is the
-        // shopper's own to add there, or is not being ordered — and it says
-        // which without being read closely.
+        // The review, in four parts. A line is going to Kroger, has not been
+        // searched for yet, is the shopper's own to add there, or is not
+        // being ordered — and it says which without being read closely.
         if (view.draft.matched.isNotEmpty)
           _Section(
             key: const ValueKey('kroger.matched'),
@@ -314,6 +314,21 @@ class _Body extends ConsumerWidget {
                 _MatchedLine(line: line, state: view, controller: controller),
             ],
           ),
+        // Waiting on a matching run, and saying nothing about Kroger until one
+        // has answered.
+        if (view.draft.unsearched.isNotEmpty)
+          _Section(
+            key: const ValueKey('kroger.unsearched'),
+            title: krogerText(ref, ContentKeys.krogerUnsearchedHeading),
+            children: [
+              for (final line in view.draft.unsearched)
+                _ProductlessLine(
+                  line: line,
+                  state: view,
+                  controller: controller,
+                ),
+            ],
+          ),
         if (view.draft.unmatched.isNotEmpty)
           _Section(
             key: const ValueKey('kroger.unmatched'),
@@ -321,7 +336,11 @@ class _Body extends ConsumerWidget {
             note: krogerText(ref, ContentKeys.krogerUnmatchedNote),
             children: [
               for (final line in view.draft.unmatched)
-                _UnmatchedLine(line: line, state: view, controller: controller),
+                _ProductlessLine(
+                  line: line,
+                  state: view,
+                  controller: controller,
+                ),
             ],
           ),
         if (view.draft.skipped.isNotEmpty)
@@ -565,11 +584,12 @@ class _ProductImage extends ConsumerWidget {
   }
 }
 
-/// An ingredient Kroger's delivery catalogue had nothing for. Listed plainly,
-/// because the shopper is going to add it themselves on Kroger's site — and
-/// listed still after the Hand-off, for exactly the same reason.
-class _UnmatchedLine extends ConsumerWidget {
-  const _UnmatchedLine({
+/// An ingredient with no product: one Kroger's delivery catalogue had nothing
+/// for, or one not searched for yet. Listed plainly, because the first kind the shopper is going to add
+/// themselves on Kroger's site — and listed still after the Hand-off, for
+/// exactly the same reason.
+class _ProductlessLine extends ConsumerWidget {
+  const _ProductlessLine({
     required this.line,
     required this.state,
     required this.controller,

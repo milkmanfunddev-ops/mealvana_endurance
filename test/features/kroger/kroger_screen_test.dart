@@ -52,10 +52,12 @@ KrogerLine _matched({bool approved = true}) => KrogerLine(
   approved: approved,
 );
 
+/// Searched for, and Kroger had nothing.
 const _unmatched = KrogerLine(
   id: 'b',
   name: 'Sourdough starter',
   requiredQty: '1 jar',
+  noMatch: true,
 );
 const _skipped = KrogerLine(
   id: 'c',
@@ -71,6 +73,7 @@ KrogerState _state({
   bool connected = true,
   bool approved = true,
   bool located = true,
+  bool searched = true,
 }) => KrogerState(
   connected: connected,
   environment: environment,
@@ -81,11 +84,14 @@ KrogerState _state({
     store: located ? spokeStore : null,
     environment: environment,
     receiptStatus: receiptStatus,
-    lines: [
-      _matched(approved: approved),
-      _unmatched,
-      _skipped,
-    ],
+    lines: searched
+        ? [_matched(approved: approved), _unmatched, _skipped]
+        // Before any matching run: no product anywhere, and no answer yet.
+        : [
+            _matched().copyWith(clearProduct: true),
+            _unmatched.copyWith(noMatch: false),
+            _skipped,
+          ],
   ),
 );
 
@@ -158,6 +164,10 @@ void main() {
   // resolved — so the Approve and Set-delivery-area actions are both drawn,
   // and the send action is not.
   bothThemes('to_review', () => _state(approved: false, located: false));
+
+  // Before any matching run: every line waits under "Not matched yet", and
+  // nothing is said to have no match on Kroger.
+  bothThemes('not_matched_yet', () => _state(searched: false));
 
   // After the hand-off: the receipt, the cart action, and a list that can no
   // longer be edited.

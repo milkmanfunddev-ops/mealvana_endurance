@@ -154,11 +154,36 @@ void main() {
       approved: true,
       quantity: 2,
     );
-    const unmatched = KrogerLine(id: '2', name: 'Saffron', requiredQty: '1 g');
-    test('a line with no product is listed apart from one with a product', () {
-      final subject = draft([approved, unmatched]);
-      expect(subject.matched.map((l) => l.id), ['1']);
+    const unmatched = KrogerLine(
+      id: '2',
+      name: 'Saffron',
+      requiredQty: '1 g',
+      noMatch: true,
+    );
+    const unsearched = KrogerLine(id: '3', name: 'Leeks', requiredQty: '2');
+    test(
+      'a line Kroger had nothing for is listed apart from a matched one',
+      () {
+        final subject = draft([approved, unmatched]);
+        expect(subject.matched.map((l) => l.id), ['1']);
+        expect(subject.unmatched.map((l) => l.id), ['2']);
+      },
+    );
+    test('a line nothing has searched for yet is not a line with no match', () {
+      final subject = draft([approved, unmatched, unsearched]);
       expect(subject.unmatched.map((l) => l.id), ['2']);
+      expect(subject.unsearched.map((l) => l.id), ['3']);
+    });
+    test('a new product, or none, takes the answer with it', () {
+      // The answer was about a search that no longer describes the line.
+      expect(unmatched.copyWith(product: milk).noMatch, false);
+      expect(unmatched.copyWith(clearProduct: true).noMatch, false);
+      expect(unmatched.copyWith(excluded: true).noMatch, true);
+    });
+    test('a line stored before the answer was recorded is not matched yet', () {
+      final legacy = unsearched.toJson()..remove('noMatch');
+      expect(KrogerLine.fromJson(legacy).noMatch, false);
+      expect(draft([KrogerLine.fromJson(legacy)]).unsearched, hasLength(1));
     });
     test('an unmatched line does not stop the matched ones being sent', () {
       // The shopper adds what Mealvana could not match on Kroger's own site.

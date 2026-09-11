@@ -62,11 +62,18 @@ class KrogerLine {
     this.excluded = false,
     this.sourceExcluded = false,
     this.manual = false,
+    this.noMatch = false,
   });
   final String id, name, requiredQty;
   final KrogerProduct? product;
   final int quantity;
   final bool quantityEdited, approved, excluded, sourceExcluded, manual;
+
+  /// Kroger answered a search for this line, at this Location, with nothing
+  /// it could use. False until one has: a line with no product is not a line
+  /// Kroger has no match for until Kroger has been asked. Drafts stored
+  /// before this was recorded read false, so they need no migration.
+  final bool noMatch;
   static String sourceId(String planId, String name) =>
       const Uuid().v5(planId, name.trim().toLowerCase());
   factory KrogerLine.fromJson(Map<String, dynamic> j) => KrogerLine(
@@ -82,6 +89,7 @@ class KrogerLine {
     excluded: j['excluded'] == true,
     sourceExcluded: j['sourceExcluded'] == true,
     manual: j['manual'] == true,
+    noMatch: j['noMatch'] == true,
   );
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -94,6 +102,7 @@ class KrogerLine {
     'excluded': excluded,
     'sourceExcluded': sourceExcluded,
     'manual': manual,
+    'noMatch': noMatch,
   };
   KrogerLine copyWith({
     String? requiredQty,
@@ -104,6 +113,7 @@ class KrogerLine {
     bool? excluded,
     bool? sourceExcluded,
     bool clearProduct = false,
+    bool? noMatch,
   }) => KrogerLine(
     id: id,
     name: name,
@@ -115,6 +125,10 @@ class KrogerLine {
     excluded: excluded ?? this.excluded,
     sourceExcluded: sourceExcluded ?? this.sourceExcluded,
     manual: manual,
+    // The answer belongs to the product it left the line without, so a new
+    // product, or none, takes it with it unless the caller says otherwise.
+    noMatch:
+        noMatch ?? (product != null || clearProduct ? false : this.noMatch),
   );
 }
 
@@ -149,14 +163,18 @@ class KrogerDraft {
   bool get sent => receiptStatus == 'sent';
   List<KrogerLine> get included => lines.where((l) => !l.excluded).toList();
 
-  /// The three parts of the review, which every line belongs to exactly one
-  /// of. What matched is what Kroger will be sent; what did not is the
-  /// shopper's own to add on Kroger's site, and is listed rather than sent;
-  /// what is skipped is out of the order but not off the screen.
+  /// The four parts of the review, which every line belongs to exactly one
+  /// of. What matched is what Kroger will be sent; what Kroger had nothing
+  /// for is the shopper's own to add on Kroger's site, and is listed rather
+  /// than sent; what has not been searched for yet is waiting on a matching
+  /// run and says nothing about Kroger; what is skipped is out of the order
+  /// but not off the screen.
   List<KrogerLine> get matched =>
       included.where((l) => l.product != null).toList();
   List<KrogerLine> get unmatched =>
-      included.where((l) => l.product == null).toList();
+      included.where((l) => l.product == null && l.noMatch).toList();
+  List<KrogerLine> get unsearched =>
+      included.where((l) => l.product == null && !l.noMatch).toList();
   List<KrogerLine> get skipped => lines.where((l) => l.excluded).toList();
 
   /// Whether what the shopper has approved is fit to send.

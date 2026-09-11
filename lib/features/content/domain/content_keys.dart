@@ -647,10 +647,11 @@ class ContentKeys {
   static const String krogerUnavailableProduct = 'kroger.unavailable_product';
   static const String krogerProductUnavailable = 'kroger.product_unavailable';
 
-  /// The three parts of the review: what Kroger will be sent, what the
-  /// shopper has to add themselves, and what they have taken out of the
-  /// order. A line belongs to exactly one of them.
+  /// The four parts of the review: what Kroger will be sent, what has not
+  /// been searched for yet, what the shopper has to add themselves, and what
+  /// they have taken out of the order. A line belongs to exactly one of them.
   static const String krogerMatchedHeading = 'kroger.matched_heading';
+  static const String krogerUnsearchedHeading = 'kroger.unsearched_heading';
   static const String krogerUnmatchedHeading = 'kroger.unmatched_heading';
   static const String krogerUnmatchedNote = 'kroger.unmatched_note';
   static const String krogerSkippedHeading = 'kroger.skipped_heading';
