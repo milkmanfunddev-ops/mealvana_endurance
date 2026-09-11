@@ -275,5 +275,6 @@ also the moment frozen functions from §6 can be deleted.
 |---|---|---|
 | daily-macros dashboard v2 + engine v6.0.0 (Drift 17→18, `calculate-daily-macros-v6`) | `../ops/docs/deploys/2026-08-daily-macros-v6.md` | P1–P7 step 1 done 2026-08-27; step 2 open |
 | food-recommendation@v1 (Drift 18→19, catalog v1.1 + §10 ledger, v4+v3 in place) | `../ops/docs/deploys/2026-09-food-recommendation.md` | dev half done 2026-09-03; attestation + landing pending; prod not started |
+| data-integrations@v1 (Drift 19→20, capture + matcher tier + TP write-back, ships 1.27.0) | `../ops/docs/deploys/2026-09-data-integration.md` | opened 2026-09-11; pre-work done (branch cut + v21 renumber); Stage A not started |
 
 Add a row when you start a runbook; update the status column when it closes.
