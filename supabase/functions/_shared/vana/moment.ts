@@ -65,7 +65,7 @@ export function preWorkoutOpener(s: MomentSession): string {
 }
 
 /** The opener for a general conversation: the moment's, when the body names one that resolves, else the general opener. */
-export async function generalOpener(v: VanaCtx, body: { opener?: boolean; moment?: unknown }): Promise<{ text: string; variant: 'plan' | 'moment' }> {
+export async function generalOpener(v: VanaCtx, body: { moment?: unknown }): Promise<{ text: string; variant: 'plan' | 'moment' }> {
   const ref = parseMoment(body.moment);
   const session = ref ? await momentSession(v, ref) : null;
   return session ? { text: preWorkoutOpener(session), variant: 'moment' } : { text: OPENERS.general, variant: 'plan' };

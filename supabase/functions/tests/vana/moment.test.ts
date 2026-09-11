@@ -7,7 +7,7 @@
 import { assertEquals, assertStringIncludes } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 import { generalOpener, parseMoment } from '../../_shared/vana/moment.ts';
 import { OPENERS } from '../../_shared/vana/persona.ts';
-import { ensureConversation, partsFromSteps } from '../../_shared/vana/chat.ts';
+import { conversationHasTurns, ensureConversation, partsFromSteps } from '../../_shared/vana/chat.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Tables } from './support/fake_db.ts';
 
@@ -23,7 +23,7 @@ const moment = { kind: 'pre_workout', activity_id: 'act-run', window_minutes: 60
 
 Deno.test('the opener for a moment names the session, its start and the window', async () => {
   const v = testCtx(world());
-  const { text, variant } = await generalOpener(v, { opener: true, moment });
+  const { text, variant } = await generalOpener(v, { moment });
   assertEquals(variant, 'moment');
   assertStringIncludes(text, 'Tempo run');
   assertStringIncludes(text, '5:30 pm');
@@ -34,19 +34,19 @@ Deno.test('the opener for a moment names the session, its start and the window',
 
 Deno.test('the window comes from the device when it sent one', async () => {
   const v = testCtx(world());
-  const { text } = await generalOpener(v, { opener: true, moment: { ...moment, window_minutes: 45 } });
+  const { text } = await generalOpener(v, { moment: { ...moment, window_minutes: 45 } });
   assertStringIncludes(text, '4:45 pm');
 });
 
 Deno.test('a body with no moment gets the general opener, unchanged', async () => {
   const v = testCtx(world());
-  assertEquals(await generalOpener(v, { opener: true }), { text: OPENERS.general, variant: 'plan' });
+  assertEquals(await generalOpener(v, {}), { text: OPENERS.general, variant: 'plan' });
 });
 
 Deno.test('a moment for a session that is not theirs, or gone, falls back to the general opener', async () => {
   const v = testCtx(world());
   for (const activity_id of ['act-other', 'act-gone']) {
-    assertEquals((await generalOpener(v, { opener: true, moment: { ...moment, activity_id } })).text, OPENERS.general);
+    assertEquals((await generalOpener(v, { moment: { ...moment, activity_id } })).text, OPENERS.general);
   }
 });
 
@@ -79,4 +79,11 @@ Deno.test('the opener\'s sentence before its askChoice is kept in the stored tur
   // A step that fetches something first still has its narration dropped.
   const fetched = partsFromSteps('', [{ text: "I'll pull up your plan.", toolCalls: [{ toolName: 'getWorkouts' }], toolResults: [] }, { text: 'Two runs this week.', toolCalls: [], toolResults: [] }], null);
   assertEquals(fetched.parts.map((p) => (p as { text?: string }).text), ['Two runs this week.']);
+});
+
+Deno.test('a moment opener into a conversation with turns is not its first turn: no second tip, no read-back', async () => {
+  const v = testCtx({ ...world(), vana_messages: [{ id: 'm1', conversation_id: 'conv-today', user_id: U, role: 'user', content: 'What should I eat today?' }] });
+  assertEquals(await conversationHasTurns(v, 'conv-today'), true);
+  assertEquals(await conversationHasTurns(v, 'conv-new'), false);
+  assertEquals(await conversationHasTurns(v, ''), false);
 });

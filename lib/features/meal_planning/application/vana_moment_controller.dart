@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
+import '../../../shared/services/app_external_deps.dart';
 import '../../activities/domain/activity.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../meal_logging/presentation/providers/meal_log_providers.dart';
@@ -117,13 +118,16 @@ class VanaMomentController extends _$VanaMomentController {
     _publish();
   }
 
-  /// The athlete acted on the moment (VM-3): it retires.
-  void answer() {
-    final moment = state.value?.moment;
-    if (moment == null) return;
-    _save(_record.copyWith(answered: {..._record.answered, moment.key}));
+  /// The athlete acted on the moment [key] (VM-3): it retires.
+  void answer(String key) {
+    if (_record.answered.contains(key)) return;
+    _save(_record.copyWith(answered: {..._record.answered, key}));
     _resolveInPlace();
   }
+
+  /// Where the moment [key]'s opening turn sits in the day's conversation,
+  /// once written there.
+  int? startOf(String key) => _record.starts[key];
 
   DateTime _now() => ref.read(vanaClockProvider)();
 
@@ -199,12 +203,25 @@ class VanaMomentController extends _$VanaMomentController {
     state = AsyncData(_state(state.value?.moment));
   }
 
+  /// Holds [record] now and writes it behind. A failed write costs at most
+  /// one more ring after a restart; it is logged, not surfaced.
   void _save(VanaMomentDay record) {
     _record = record;
     unawaited(
       ref
           .read(vanaMomentStoreProvider)
-          .write(userId: _userId, day: _day, record: record),
+          .write(userId: _userId, day: _day, record: record)
+          .catchError((Object e) {
+            if (!ref.mounted) return;
+            ref
+                .read(appExternalDepsProvider)
+                .logger
+                .warning(
+                  'moment record not saved',
+                  context: 'VANA_MOMENT',
+                  error: e,
+                );
+          }),
     );
   }
 

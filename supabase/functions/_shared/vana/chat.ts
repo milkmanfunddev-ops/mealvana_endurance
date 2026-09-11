@@ -97,6 +97,13 @@ export async function priorConversationCount(v: VanaCtx, exceptId: string): Prom
   if (error) { console.error('[vana] priorConversationCount:', error.message); return 1; }
   return count ?? 1;
 }
+/** Whether the conversation already holds a turn. An opener written into one (a moment's, VM-1) starts a new exchange, not
+ *  the conversation: it is not the first turn. */
+export async function conversationHasTurns(v: VanaCtx, conversationId: string): Promise<boolean> {
+  if (!conversationId) return false;
+  const { data } = await v.db.from('vana_messages').select('id').eq('conversation_id', conversationId).eq('user_id', v.userId).limit(1);
+  return (data ?? []).length > 0;
+}
 export async function createConversation(v: VanaCtx, kind: ConversationKind = 'meal_planning'): Promise<string> {
   const { data, error } = await v.db.from('vana_conversations').insert({ user_id: v.userId, title: null, kind, last_message_at: new Date().toISOString() }).select('id').single();
   if (error) throw new Error(error.message); return data.id as string;
@@ -231,14 +238,16 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
-  const firstConversation = opener && persist && (await priorConversationCount(v, convId)) === 0;
+  // A moment's opener lands in the day's conversation mid-thread (VM-1): that is not the conversation's first turn.
+  const intoThread = opener && persist && !!body.conversation_id && (await conversationHasTurns(v, convId));
+  const firstConversation = opener && persist && !intoThread && (await priorConversationCount(v, convId)) === 0;
   // Lazy extraction: opening a conversation is what reads the previous one back. It runs in the background of
   // this request and never delays the reply; nothing it writes is announced to the athlete.
   //
   // "Opening" is the conversation's FIRST TURN, not the scripted opener. A general conversation usually starts
   // with the athlete typing, which leaves `opener` false — gating on that alone meant a typed-first conversation
   // never read anything back (found in the 2026-09-10 dev eval, where only the scripted openers extracted).
-  const firstTurn = opener || messages.length <= 1;
+  const firstTurn = (opener && !intoThread) || (!opener && messages.length <= 1);
   if (firstTurn && persist && convId) waitUntil(readBackPrevious(v, convId));
   const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
   // A moment's opener goes into the day's conversation even when it already has a thread (VM-1).

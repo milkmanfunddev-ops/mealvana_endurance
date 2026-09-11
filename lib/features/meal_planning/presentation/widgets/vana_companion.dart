@@ -137,6 +137,11 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   /// The moment a ring has been asked for, so a rebuild does not ask twice.
   String? _ringing;
 
+  /// Watches the conversation a sheet opened on a moment, so a turn sent in
+  /// the moment's exchange answers it (VM-3) — from the sheet or from the
+  /// full-screen chat it hands over to.
+  ProviderSubscription<AsyncValue<VanaChatState>>? _answering;
+
   @override
   void initState() {
     super.initState();
@@ -149,6 +154,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   @override
   void dispose() {
     _naming?.close();
+    _answering?.close();
     widget.router.routerDelegate.removeListener(_onRoute);
     widget.observer.popupOnTop.removeListener(_onPopup);
     super.dispose();
@@ -214,6 +220,8 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     final content = ref.read(contentServiceProvider);
     // VM-1: a live moment is what the sheet opens on.
     final moment = ref.read(vanaMomentControllerProvider).value;
+    final live = moment?.moment;
+    if (live != null) _awaitAnswer(conversationId, live);
     // Completes when the sheet closes.
     await navigator.push(
       VanaSheetRoute<void>(
@@ -246,6 +254,27 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     });
   }
 
+  /// VM-3: the athlete's first turn after the moment's opening answers it.
+  void _awaitAnswer(String? conversationId, VanaMoment moment) {
+    _answering?.close();
+    final controller = ref.read(vanaMomentControllerProvider.notifier);
+    _answering = ref.listenManual(
+      vanaChatControllerProvider(
+        kind: VanaConversationKind.general,
+        conversationId: conversationId,
+      ),
+      (_, next) {
+        final start = controller.startOf(moment.key);
+        final messages = next.value?.messages;
+        if (start == null || messages == null) return;
+        if (!messages.skip(start).any((m) => m.isUser)) return;
+        controller.answer(moment.key);
+        _answering?.close();
+        _answering = null;
+      },
+    );
+  }
+
   /// A raised moment rings on a launcher the athlete can see, never on one
   /// that is hidden (its one ring would be spent where nobody saw it).
   void _ringWhenShown(VanaMomentState? moment, bool shown) {
@@ -266,6 +295,11 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     final moment = ref.watch(vanaMomentControllerProvider).value;
     _ringWhenShown(moment, shown);
     final live = moment?.moment;
+    if (live == null && _answering != null) {
+      // Retired another way (a log, the start): nothing left to answer.
+      _answering!.close();
+      _answering = null;
+    }
     final content = ref.read(contentServiceProvider);
     final pill = live == null ? null : vanaMomentPillLine(content, live);
     return Stack(
@@ -290,8 +324,9 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
                       VanaMomentPhase.pill => VanaLauncherState.pill,
                       VanaMomentPhase.tinted => VanaLauncherState.tinted,
                     },
-              // Both moments so far are to-dos.
-              tone: VanaLauncherTone.toDo,
+              tone: live == null || live.kind.toDo
+                  ? VanaLauncherTone.toDo
+                  : VanaLauncherTone.news,
               pill: pill,
               onTap: _open,
             ),
@@ -303,12 +338,14 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 
 /// The pill's one line for [moment]: "Fuel tonight's run?".
 String vanaMomentPillLine(ContentService content, VanaMoment moment) {
-  final hour = moment.startsAt.hour;
-  final line = hour < 12
-      ? ContentKeys.mpCompanionMomentPreWorkoutMorning
-      : hour < 17
-      ? ContentKeys.mpCompanionMomentPreWorkoutAfternoon
-      : ContentKeys.mpCompanionMomentPreWorkoutEvening;
+  final line = switch (moment.partOfDay) {
+    VanaMomentPartOfDay.morning =>
+      ContentKeys.mpCompanionMomentPreWorkoutMorning,
+    VanaMomentPartOfDay.afternoon =>
+      ContentKeys.mpCompanionMomentPreWorkoutAfternoon,
+    VanaMomentPartOfDay.evening =>
+      ContentKeys.mpCompanionMomentPreWorkoutEvening,
+  };
   final session = switch (moment.activityType) {
     ActivityType.running => ContentKeys.mpCompanionSessionRun,
     ActivityType.cycling => ContentKeys.mpCompanionSessionRide,
@@ -336,7 +373,8 @@ String vanaMomentPillLine(ContentService content, VanaMoment moment) {
 /// into the conversation, even one with a thread, and reads the exchange from
 /// there: its two quick replies and the orange to-do chip. [momentStart] is
 /// where an earlier sheet already wrote it; a dismiss (VM-2) leaves it there
-/// for the next sheet, and anything the athlete sends answers it (VM-3).
+/// for the next sheet. The host answers the moment (VM-3) when a turn is
+/// sent in its exchange.
 class VanaCompanionSheet extends ConsumerStatefulWidget {
   const VanaCompanionSheet({
     super.key,
@@ -432,10 +470,6 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     if (text.isEmpty) return;
     if (label == null) _text.clear();
     setState(() => _repliesRetired = true);
-    // VM-3: anything sent in the moment's exchange answers it.
-    if (widget.moment != null) {
-      ref.read(vanaMomentControllerProvider.notifier).answer();
-    }
     _lastAttempt = () => _controller.send(text);
     _controller.send(text);
   }
@@ -487,10 +521,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
             start: _exchangeStart,
             situationRoute: _situationRoute,
             repliesRetired: _repliesRetired,
-            raisedFor: switch (widget.moment?.kind) {
-              VanaMomentKind.preWorkout => VanaExchangeTopic.fuelPlan,
-              null => null,
-            },
+            raisedFor: widget.moment?.kind.topic,
           );
     if (exchange != null) {
       _restsAtAuto = (_restsAtAuto ?? true) && exchange.oneMessage;

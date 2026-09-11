@@ -214,7 +214,7 @@ void main() {
       final c = start();
       async.flushMicrotasks();
       notifier(c).ring();
-      notifier(c).answer();
+      notifier(c).answer(read(c)!.moment!.key);
       async.flushMicrotasks();
       expect(read(c)!.moment, isNull);
       c.dispose();

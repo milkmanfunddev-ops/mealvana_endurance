@@ -100,8 +100,9 @@ the three candidate trigger sets).
 
 - **Window.** The resolver takes the workout's stored `time_before_minutes` (the create flow's
   `defaultFuelingWindowMinutes`, or the athlete's own adjustment) and falls back to
-  `defaultFuelingWindowMinutes` from the row's duration and intensity, clamped to the minutes since
-  midnight. The device sends that window in `moment.window_minutes`, so Vana names the same one.
+  `defaultFuelingWindowMinutes` from the row's duration and intensity, with the gap between the
+  row's `created_at` and its start as the create flow passes it. The device sends that window in
+  `moment.window_minutes`, so Vana names the same one.
   A workout created close to its start has its window clamped to the time left, so it opens the
   minute it is created.
 - **Phases.** Strict sequence ring (2 s, glass, drop + trace) → pill (4 s, tinted capsule) → tinted.
@@ -118,5 +119,12 @@ the three candidate trigger sets).
   after a dismiss and a reopen), VM-3 (answering retired it). The ring and the pill were not caught
   in a device screenshot: the dev build's debug buttons sit over the launcher. They are held by the
   widget tests and the goldens.
-- Only a VM-3 send in the sheet answers the moment; a send from the full-screen chat on the same
-  conversation does not.
+- **VM-3 is read off the transcript:** the host watches the conversation a sheet opened on a
+  moment, and the athlete's first turn after the moment's opening answers it, whether it was sent
+  from the sheet or from the full-screen chat it handed over to.
+- **A moment opener into a conversation with turns is not that conversation's first turn** on the
+  server: no second first-conversation tip, no read-back of the previous conversation.
+- Open from the review: the controller reads two providers that live in presentation folders
+  (`activitiesControllerProvider`, `mealLogsForDateProvider`), as three application files already do;
+  goldens hold the orange tone only (nothing raises news yet); a moment that retires unanswered
+  leaves its turn in the thread, where its options draw inline like any in-thread question.

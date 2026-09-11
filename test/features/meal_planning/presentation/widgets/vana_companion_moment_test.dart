@@ -22,6 +22,7 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
@@ -190,6 +191,32 @@ class _Home extends StatelessWidget {
   );
 }
 
+/// Stands in for the full-screen chat: it sends on the same conversation's
+/// notifier, as the chat route does.
+class _ChatRoute extends ConsumerWidget {
+  const _ChatRoute({this.conversationId});
+
+  final String? conversationId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
+    body: Center(
+      child: TextButton(
+        key: const ValueKey('chat_route.send'),
+        onPressed: () => ref
+            .read(
+              vanaChatControllerProvider(
+                kind: VanaConversationKind.general,
+                conversationId: conversationId,
+              ).notifier,
+            )
+            .send('What should I eat?'),
+        child: const Text('send'),
+      ),
+    ),
+  );
+}
+
 class _Harness {
   _Harness(this.repo, this.container, this.logs);
   final _FakeChatRepo repo;
@@ -219,7 +246,14 @@ Future<_Harness> _pump(
   final router = GoRouter(
     initialLocation: '/main',
     observers: [observer],
-    routes: [GoRoute(path: '/main', builder: (_, _) => const _Home())],
+    routes: [
+      GoRoute(path: '/main', builder: (_, _) => const _Home()),
+      GoRoute(
+        path: '/vana',
+        builder: (_, state) =>
+            _ChatRoute(conversationId: state.uri.queryParameters['c']),
+      ),
+    ],
   );
   addTearDown(router.dispose);
 
@@ -452,6 +486,27 @@ void main() {
       await _open(tester);
       // The moment has gone: no second opener.
       expect(h.repo.calls.where((c) => c['moment'] != null), hasLength(1));
+      await _finish(tester, h);
+    });
+
+    testWidgets('VM-3 from the full-screen chat: a turn sent there, in the '
+        'moment\'s exchange, answers it too', (tester) async {
+      final h = await _pump(tester, ambient: 'conv-today');
+      await _untilTinted(tester);
+      await _open(tester);
+      await tester.tap(find.byKey(const ValueKey('vana_sheet.full_screen')));
+      await tester.pump();
+      await tester.pump(
+        VanaSheet.condenseDuration + const Duration(milliseconds: 50),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('chat_route.send')));
+      await _settle(tester);
+      expect(h.repo.calls.last['message'], 'What should I eat?');
+      final router = GoRouter.of(tester.element(find.byType(_ChatRoute)));
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(_state(tester), VanaLauncherState.quiet);
       await _finish(tester, h);
     });
 

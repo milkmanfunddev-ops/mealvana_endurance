@@ -10,17 +10,29 @@ import '../../activities/domain/activity.dart';
 import '../../meal_logging/domain/meal_log.dart';
 import '../../nutrition_plan/domain/fueling_window_authority.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
+import 'vana_exchange.dart';
 
-/// Which moment. Each is a to-do or news, and names its own tone.
+/// Which moment. Each is a to-do or news (its tone), and has a topic the
+/// sheet's chip names.
 enum VanaMomentKind {
   /// M-1: a workout's pre-workout window has opened and nothing is logged.
-  preWorkout('pre_workout');
+  preWorkout('pre_workout', toDo: true, topic: VanaExchangeTopic.fuelPlan);
 
-  const VanaMomentKind(this.wire);
+  const VanaMomentKind(this.wire, {required this.toDo, required this.topic});
 
   /// The name the chat body carries.
   final String wire;
+
+  /// A to-do (`orange`, with a pill) rather than news (`electrolyte`).
+  final bool toDo;
+
+  /// What the exchange the moment opens is about.
+  final VanaExchangeTopic topic;
 }
+
+/// When in the day a session starts, for the words that name it ("this
+/// morning's run", "tonight's run").
+enum VanaMomentPartOfDay { morning, afternoon, evening }
 
 /// How the launcher shows a live moment, in order: it rings once, a to-do
 /// shows its pill, then the launcher stays tinted until the moment retires.
@@ -65,6 +77,13 @@ class VanaMoment {
   /// The window, in minutes before the start.
   int get windowMinutes => startsAt.difference(windowOpensAt).inMinutes;
 
+  /// Before noon is the morning; from 17:00 it is the evening.
+  VanaMomentPartOfDay get partOfDay => startsAt.hour < 12
+      ? VanaMomentPartOfDay.morning
+      : startsAt.hour < 17
+      ? VanaMomentPartOfDay.afternoon
+      : VanaMomentPartOfDay.evening;
+
   /// When the moment's window closes. Of two live moments, the one that
   /// closes sooner wins.
   DateTime get closesAt => startsAt;
@@ -94,13 +113,14 @@ class VanaMoment {
 
 /// The pre-workout window of [activity], in minutes: the window stored on it
 /// (the create flow's default from the fuelling-window authority, or the
-/// athlete's own adjustment), else the authority's default for the session.
-/// The default is clamped to the minutes since midnight: a window cannot open
-/// yesterday.
+/// athlete's own adjustment), else the authority's default for the session,
+/// given the gap between when it was planned and its start, as the create
+/// flow gives it.
 int preWorkoutWindowMinutes(Activity activity) {
   final stored = activity.timeBeforeMinutes;
   if (stored != null && stored > 0) return stored;
   final start = activity.scheduledDateTime;
+  final gap = start.difference(activity.createdAt).inMinutes;
   return defaultFuelingWindowMinutes(
     // An unknown duration takes the table's shortest row.
     durationMinutes: activity.durationMinutes ?? 0,
@@ -108,7 +128,7 @@ int preWorkoutWindowMinutes(Activity activity) {
         activity.intensityDistribution ??
         IntensityDistribution.defaultDistribution(),
     startHour: start.hour,
-    minutesUntilStart: start.hour * 60 + start.minute,
+    minutesUntilStart: gap < 0 ? 0 : gap,
   );
 }
 

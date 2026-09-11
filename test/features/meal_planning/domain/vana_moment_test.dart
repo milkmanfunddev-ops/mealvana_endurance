@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/data/activity_mapper.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_exchange.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 
@@ -24,6 +25,7 @@ Activity _activity({
   int? durationMinutes = 60,
   int? timeBeforeMinutes = 60,
   String? deletedAt,
+  String createdAt = '2026-09-01T12:00:00+00:00',
 }) => _mapper.fromJson({
   'id': id,
   'user_id': 'user-1',
@@ -34,7 +36,7 @@ Activity _activity({
   'duration_minutes': durationMinutes,
   'time_before_minutes': timeBeforeMinutes,
   'deleted_at': deletedAt,
-  'created_at': '2026-09-01T12:00:00+00:00',
+  'created_at': createdAt,
   'updated_at': '2026-09-01T12:00:00+00:00',
 });
 
@@ -146,6 +148,29 @@ void main() {
       expect(moment.windowOpensAt, _at(15, 30));
       expect(moment.windowMinutes, 150);
     });
+  });
+
+  test('with no window on the row, a session planned close to its start '
+      'has its window clamped to the time there was', () {
+    // Planned at 17:20 for 18:00: the authority caps the window at the 40
+    // minutes left when it was planned.
+    final ride = _activity(
+      id: 'act-late',
+      type: 'cycling',
+      scheduled: '2026-09-11T18:00:00',
+      durationMinutes: 100,
+      timeBeforeMinutes: null,
+      createdAt: DateTime(2026, 9, 11, 17, 20).toUtc().toIso8601String(),
+    );
+    expect(_resolve(now: _at(17, 19), activities: [ride]), isNull);
+    expect(_resolve(now: _at(17, 20), activities: [ride])!.windowMinutes, 40);
+  });
+
+  test('the moment says what it is about and that it is a to-do', () {
+    final moment = _resolve(now: _at(16, 45))!;
+    expect(moment.kind.topic, VanaExchangeTopic.fuelPlan);
+    expect(moment.kind.toDo, isTrue);
+    expect(moment.partOfDay, VanaMomentPartOfDay.evening);
   });
 
   group('cadence', () {
