@@ -14,3 +14,10 @@ itself.
 - [ ] A Meal that loses its photograph to this rule still shows something — its Mosaic if it has one,
       otherwise its icon.
 - [ ] Reuse across different rails, and across the library, is unaffected.
+
+**Added by ticket 05 (2026-09-10).** Pass 10's "already in use" check now keys on
+a photograph's source page as well as its address, so a mirrored archive photo is
+recognised after a restart. Still shared: an açaí bowl (`S-058`, with two other
+açaí meals) and "White bread with jam" (`S-008`, with "White bread & jam"); and
+`D-037` / `L-027` (chicken tikka masala) wear two different Wikimedia files of
+what looks like one picture — the perceptual case.

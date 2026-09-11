@@ -39,7 +39,7 @@
  * LIMIT=n to sample, DRY=1 to search and judge without writing, CONCURRENCY=n,
  * MAX_JUDGED=n candidates shown to the judge per meal, MAX_ATTEMPTS=n rounds
  * before a meal is left alone, SEPARABILITY=transformed|separable or
- * IDS=a,b,c to narrow a queue, USE_UNSPLASH=1 to add Unsplash as a last resort (slow — see
+ * IDS=a,b,c to name meals directly (the queue is ignored), USE_UNSPLASH=1 to add Unsplash as a last resort (slow — see
  * `candidatesFor`).
  *
  * Idempotent: a meal that ends with an `ok` photograph leaves every queue, and a
@@ -137,9 +137,13 @@ type Row = {
 const ONLY = Deno.env.get('SEPARABILITY') ?? '';
 
 /**
- * Or to a named handful. `MAX_ATTEMPTS` is a blunt instrument for repair work:
- * raising it to give five known meals another round hands one to every meal
- * that has had one, and re-buys a hundred refusals to fix five rows.
+ * Or name a handful outright. `MAX_ATTEMPTS` is a blunt instrument for repair
+ * work: raising it to give five known meals another round hands one to every
+ * meal that has had one, and re-buys a hundred refusals to fix five rows.
+ *
+ * Named meals are taken whatever queue they would fall in, because repair work
+ * is usually on meals no queue describes — a meal showing an `ok` photograph
+ * that another meal also shows is in none of them.
  */
 const IDS = (Deno.env.get('IDS') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
@@ -147,7 +151,8 @@ const queued: Row[] = await selectAll(
   'meal_library',
   'select=id,name,ingredients,ingredients_json,separability,image_mode,image_url,image_tiles,' +
     'image_verdict,image_rejected_urls,image_rejected_mosaics,image_attempts' +
-    `&is_active=eq.true&or=(${QUEUES.map((q) => FILTERS[q]).join(',')})` +
+    `&is_active=eq.true` +
+    (IDS.length ? '' : `&or=(${QUEUES.map((q) => FILTERS[q]).join(',')})`) +
     `${ONLY ? `&separability=eq.${ONLY}` : ''}` +
     `${IDS.length ? `&id=in.(${IDS.map(encodeURIComponent).join(',')})` : ''}&order=id`,
 );
@@ -167,7 +172,7 @@ if (LIMIT) {
 }
 
 console.log(`model: ${MODEL}`);
-console.log(`queue: ${QUEUES.join(' + ')} — ${rows.length} meals, up to ${MAX_JUDGED} candidates each` +
+console.log(`queue: ${IDS.length ? 'named' : QUEUES.join(' + ')} — ${rows.length} meals, up to ${MAX_JUDGED} candidates each` +
   (spent.length ? `; ${spent.length} out of rounds and still wrong, to retire` : ''));
 console.log(`providers: wikimedia, openverse${Deno.env.get('PEXELS_API_KEY') ? ', pexels' : ''}` +
   `${USE_UNSPLASH ? ', unsplash' : ''}\n`);
@@ -216,14 +221,25 @@ const bank = new Map<string, BankTile>(
  *
  * Compared without the query string, because a stock CDN's resize parameters
  * are not part of the picture's identity.
+ *
+ * And by the page the photograph came from as well as its address. Archive
+ * photographs are mirrored into our storage, so the stored `image_url` is ours
+ * and never matches the address a search returns. Keyed on the address alone,
+ * this set forgot every mirrored photograph whenever a run restarted: ticket
+ * 05's run was restarted twice and gave five meals a photograph another meal
+ * was already showing. `image_source_url` survives the mirroring.
  */
 const identity = (url: string) => url.split('?')[0];
 const taken = new Set<string>(
   (await selectAll(
     'meal_library',
-    'select=id,image_url&is_active=eq.true&image_url=not.is.null',
-  )).map((r: { image_url: string }) => identity(r.image_url)),
+    'select=id,image_url,image_source_url&is_active=eq.true&image_url=not.is.null',
+  )).flatMap((r: { image_url: string; image_source_url: string | null }) =>
+    [r.image_url, r.image_source_url].filter((u): u is string => !!u).map(identity)
+  ),
 );
+const isTaken = (c: { url: string; source_url?: string | null }) =>
+  taken.has(identity(c.url)) || (!!c.source_url && taken.has(identity(c.source_url)));
 console.log(`already in use: ${taken.size} distinct photographs\n`);
 
 const dir = await Deno.makeTempDir({ prefix: 'mvdish-' });
@@ -278,7 +294,7 @@ async function candidatesFor(row: Row): Promise<{ cands: Candidate[]; queries: s
       for (const c of await PROVIDERS[name](q)) {
         if (!c.url || seen.has(c.url) || refused.has(identity(c.url))) continue;
         // Another meal is already showing this one.
-        if (taken.has(identity(c.url))) continue;
+        if (isTaken(c)) continue;
         if (!licenseOk(c.license)) continue;
         seen.add(c.url);
         pool.push({ ...c, query: q } as Candidate);
@@ -346,6 +362,7 @@ async function accept(
   // Claimed before the upload, so two workers racing on the same candidate
   // cannot both take it.
   taken.add(identity(cand.url));
+  if (cand.source_url) taken.add(identity(cand.source_url));
 
   let url = cand.url;
   if ((MAY_MIRROR as Record<string, boolean>)[cand.provider] && !DRY) {
