@@ -19,6 +19,19 @@ export async function listMemories(v: VanaCtx, limit = 50): Promise<Memory[]> {
   const { data } = await v.db.from('user_memories').select('*').eq('user_id', v.userId).eq('is_deleted', false).order('last_confirmed_at', { ascending: false }).limit(limit);
   return (data ?? []).map(toMemory);
 }
+/** The athlete's margin notes, newest first: every kind but the episode. An episode is a sentence per
+ *  conversation, so an athlete who talks often would otherwise push every note out of a short list. */
+export async function listNotes(v: VanaCtx, limit = 10): Promise<Memory[]> {
+  const { data } = await v.db.from('user_memories').select('*').eq('user_id', v.userId).eq('is_deleted', false).neq('kind', 'episode').order('last_confirmed_at', { ascending: false }).limit(limit);
+  return (data ?? []).map(toMemory);
+}
+/** The newest conversations' episode sentences, newest first, a sentence repeated across conversations
+ *  shown once. */
+export async function recentEpisodes(v: VanaCtx, limit = 3): Promise<Memory[]> {
+  const { data } = await v.db.from('user_memories').select('*').eq('user_id', v.userId).eq('is_deleted', false).eq('kind', 'episode').order('last_confirmed_at', { ascending: false }).limit(limit * 4);
+  const seen = new Set<string>();
+  return (data ?? []).map(toMemory).filter((m) => !seen.has(m.fact) && seen.add(m.fact)).slice(0, limit);
+}
 export async function recallMemories(v: VanaCtx, text: string, limit = 8): Promise<Memory[]> {
   try {
     const e = vec(await embedText(v, text));

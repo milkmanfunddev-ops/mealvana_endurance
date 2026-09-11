@@ -127,7 +127,8 @@ export interface AthleteContext {
   // Without it the context coalesced to `true` and the persona's "ask once when unknown" fork could never fire.
   // coverageScope (additive, 2026-09-03): the athlete's chosen coverage ('dinners' | 'dinners_lunches' | 'all'), null = never chosen → the persona asks once.
   plan: { exists: boolean; status: string | null; mealsLeft: number | null; batchCooking: boolean; batchKnown?: boolean; coverageScope?: string | null };
-  memories: Memory[];       // top ~10 by recency/relevance
+  memories: Memory[];       // top ~10 margin notes by relevance/recency; never an episode (those are lastTalks)
+  lastTalks?: { date: string; fact: string }[];   // additive 2026-09-11: the newest conversations' episode sentences, newest first
   // ---- additive 2026-09-03 (plan Phase 2 + 3; server-internal, Dart never sees AthleteContext)
   recentSession?: { date: string; title: string; type: string; minutes: number | null; intensity: string | null; status: string | null } | null;   // the notable session of the last 2 days ("you crushed a century yesterday")
   season?: string[];                                                                   // in-season produce this month (season.ts)

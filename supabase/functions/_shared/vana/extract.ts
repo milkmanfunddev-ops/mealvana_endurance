@@ -142,6 +142,40 @@ export async function readBackPrevious(v: VanaCtx, openingConversationId: string
   } catch { return null; }
 }
 
+/** What an opener got from its read-back: the outcome when it landed in time, or the conversation it
+ *  could not wait for. */
+export interface OpenerReadBack { outcome: ExtractOutcome | null; late: string | null }
+
+/**
+ * An opener's read-back, given a moment to land. The opener is written from the context, so a
+ * conversation read back first is one the opener can pick up from ("ready for Saturday's ride?").
+ * Past `budgetMs` the opener goes without it and gets `late` instead, so it can still read the
+ * athlete's own last words (`athleteWordsFrom`); the read-back keeps running under `background`.
+ * Never throws.
+ */
+export async function readBackWithin(v: VanaCtx, openingConversationId: string, budgetMs: number, background: (p: Promise<unknown>) => void, deps: ExtractDeps = defaultExtractDeps): Promise<OpenerReadBack> {
+  let id: string | null = null;
+  try { id = await pendingReadBack(v, openingConversationId); } catch { /* nothing to read back */ }
+  if (!id) return { outcome: null, late: null };
+  const run = extractConversation(v, id, deps).catch(() => null);
+  background(run);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const LATE = Symbol('late');
+  const late = new Promise<typeof LATE>((resolve) => { timer = setTimeout(() => resolve(LATE), budgetMs); });
+  try {
+    const got = await Promise.race([run, late]);
+    return got === LATE ? { outcome: null, late: id } : { outcome: got, late: null };
+  } finally { clearTimeout(timer); }
+}
+
+/** The athlete's last `n` turns of a conversation, in their words, joined — what an opener has of a
+ *  conversation whose read-back is still running. Null when they said nothing there. */
+export async function athleteWordsFrom(v: VanaCtx, conversationId: string, n = 2): Promise<string | null> {
+  const said = (await transcriptOf(v, conversationId)).filter((l) => l.role === 'user').slice(-n).map((l) => l.text.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const words = said.join(' / ').replace(/"/g, "'");
+  return words ? (words.length > 280 ? `${words.slice(0, 279)}…` : words) : null;
+}
+
 /** The one place an episode is written, whoever wrote it: keyed by conversation, so the sentence
  *  written mid-conversation is the row lazy extraction later rewrites, never a second one. */
 async function writeEpisode(v: VanaCtx, conversationId: string, episode: string): Promise<void> {

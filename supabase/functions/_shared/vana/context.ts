@@ -4,7 +4,7 @@ import { deriveWeekCharacter } from './derive-week-character.ts';
 import { today, addDays, weekStartFor } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { weatherLine } from './weather.ts';
-import { listMemories, recallMemories, getSetting, getCoverageScope } from './memory.ts';
+import { listNotes, recallMemories, recentEpisodes, getSetting, getCoverageScope } from './memory.ts';
 import { seasonalProduce } from './season.ts';
 import { getPlan } from './plan.ts';
 import { ensureWeekTargets } from './macros.ts';
@@ -83,8 +83,10 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
   // Today's weather is where they live, when we know it — the race venue only stands in when we do not.
   const home = user?.home_city ? { city: String(user.home_city), lat: user.home_lat == null ? null : Number(user.home_lat), lon: user.home_lon == null ? null : Number(user.home_lon), timezone: user.home_timezone ? String(user.home_timezone) : null } : null;
   const [wToday, wRace] = await Promise.all([deps.weatherLine(home?.city ?? race?.location ?? null, t), race ? deps.weatherLine(race.location, race.date) : Promise.resolve(null)]);
-  let memories: Memory[] = latestUserText ? await deps.recallMemories(v, latestUserText, 6) : [];
-  const recent = await listMemories(v, 10);
+  // Margin notes and conversations are separate lines: an athlete who talks often would otherwise fill
+  // MEMORIES with conversation sentences and push every note out of it.
+  let memories: Memory[] = latestUserText ? (await deps.recallMemories(v, latestUserText, 6)).filter((m) => m.kind !== 'episode') : [];
+  const [recent, episodes] = await Promise.all([listNotes(v, 10), recentEpisodes(v, 3)]);
   for (const m of recent) if (!memories.some((x) => x.id === m.id)) memories.push(m);
   memories = memories.slice(0, 10);
   const holidays = (await holidaysInRange(v.db, t, addDays(t, 13))).map((h) => ({ date: h.date, name: h.name, daysOut: Math.round((new Date(h.date + 'T00:00:00Z').getTime() - new Date(t + 'T00:00:00Z').getTime()) / 86400_000) }));
@@ -100,9 +102,16 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
     loggedToday: { count: logs?.length ?? 0, carbsG: Math.round((logs ?? []).reduce((s: number, l: any) => s + Number(l.carbs_g ?? 0), 0)) },
     plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true, batchKnown: batchSetting != null, coverageScope },  // only the setting memory records an explicit choice — a plan row defaults batch_cooking:true at insert, so it cannot distinguish chosen from default
     memories,
+    lastTalks: episodes.map((m) => ({ date: String(m.lastConfirmedAt).slice(0, 10), fact: m.fact })),
     recentSession, season: seasonalProduce(t), grocery: { weeklyUsd: budgetSetting != null ? Number(budgetSetting) : null }, lastWeek,
     likes, goals: ((survey?.goals ?? []) as unknown[]).map(String).filter(Boolean), home,
   };
+}
+
+/** The context with a conversation that has not been read back yet put first in LAST TALKS, as the
+ *  athlete's own words: an opener whose read-back ran late still knows what was said just before. */
+export function withUnreadTalk(c: AthleteContext, today: string, words: string | null): AthleteContext {
+  return words ? { ...c, lastTalks: [{ date: today, fact: `not read back yet; they said: "${words}"` }, ...(c.lastTalks ?? [])].slice(0, 4) } : c;
 }
 
 /** Compact text block for the system prompt (~250 tokens). */
@@ -122,6 +131,7 @@ export function contextBlock(c: AthleteContext): string {
     `SEASON in season now: ${(c.season ?? []).join(', ') || 'n/a'}${c.grocery?.weeklyUsd ? ` · BUDGET about $${Math.round(c.grocery.weeklyUsd)}/week` : ''}`,
     `LAST WEEK ${c.lastWeek ? `${c.lastWeek.completed} of ${c.lastWeek.planned} planned meals happened${c.lastWeek.skipReason ? ` (skipped: ${c.lastWeek.skipReason})` : ''}` : 'no debrief yet'}`,
     `MEMORIES ${c.memories.slice(0, 8).map((m) => `${m.fact}${m.source ? ` (${m.source} · ${String(m.lastConfirmedAt).slice(0, 10)})` : ''}`).join(' | ') || 'none'}`,
+    `LAST TALKS ${(c.lastTalks ?? []).length ? `(what they said, not their schedule) ${(c.lastTalks ?? []).map((t) => `${t.date.slice(5)} ${t.fact}`).join(' | ')}` : 'none'}`,
     `LIKES ${(c.likes ?? []).length ? (c.likes ?? []).map((l) => `${l.stance === 'up' ? '\u{1F44D}' : '\u{1F44E}'} ${l.name}`).join(' | ') : 'none'}`,
     `GOALS ${(c.goals ?? []).join(', ') || 'none'}`,
     // Only when they have told us. No HOME line is the signal to ask rather than assume the race venue.

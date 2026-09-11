@@ -148,6 +148,8 @@ interface EvalCase { name: string; about: string; ticket: string; run: (c: CaseC
 /** The `user_feedback` shape every feedback case reads back: sentiment and about live in the metadata jsonb; the column is `rating`. */
 type FeedbackRow = { rating: number | null; message: string; conversation_id: string | null; metadata: { about?: string; sentiment?: string } | null };
 const mentions = (t: string, ...words: string[]) => words.some((w) => new RegExp(`\\b${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(t));
+/** An opener that shows it knows the athlete by quoting the file rather than by using it. */
+const READOUT = /\b(you told me|you mentioned|i remember|i recall|your notes|according to (my|your) notes|on file)\b/i;
 const DONT_KNOW = /\b(i (don'?t|do not) (know|have)|no (information|data|record)|can'?t (find|see|tell)|not sure|unable to)\b/i;
 
 const CASES: EvalCase[] = [
@@ -162,7 +164,7 @@ const CASES: EvalCase[] = [
       const acts = await c.rows<{ title: string | null; activity_type: string }>(c.s, `activities?select=title,activity_type,scheduled_date_time&scheduled_date_time=gte.${tomorrow}&scheduled_date_time=lt.${tomorrow}T23:59:59&deleted_at=is.null`);
       c.log(`tomorrow's rows: ${acts.map((a) => a.title ?? a.activity_type).join(', ') || '(none)'}`);
       if (acts.length && !mentions(ex.text, ...acts.flatMap((a) => [a.title ?? '', a.activity_type]).filter(Boolean))) c.fail(`names none of tomorrow's sessions: "${ex.text}"`);
-      if (!acts.length && !/\b(nothing|no (session|workout|training)|rest)\b/i.test(ex.text)) c.fail(`no session tomorrow, but the answer does not say so: "${ex.text}"`);
+      if (!acts.length && !/\b(nothing|no (session|workout|training)|rest|empty|anything)\b/i.test(ex.text)) c.fail(`no session tomorrow, but the answer does not say so: "${ex.text}"`);
     },
   },
   {
@@ -246,7 +248,10 @@ const CASES: EvalCase[] = [
       const settings = await c.rows<{ key: string; fact: string }>(c.s, 'user_memories?select=key,fact&kind=eq.setting&is_deleted=eq.false');
       if (!settings.some((s) => s.key === 'batch_cooking')) { c.log('batch_cooking was never chosen — choosing it first'); await c.say('I cook in batches on Sundays.', { kind: 'meal_planning' }); await new Promise((r) => setTimeout(r, 2000)); }
       const { ex } = await c.opener('meal_planning');
-      if (/\bbatch/i.test(ex.text) && /\?/.test(ex.text)) c.fail(`asks about batch cooking again: "${ex.text}"`);
+      // A question about batch cooking fails; an opener that honours it ("batch cooking is the move") and then asks
+      // about dinners does not (openers name what they know since 2026-09-11, so "batch" and "?" now share a turn).
+      const asked = ex.text.split(/(?<=[.!?])\s+/).filter((q) => q.endsWith('?') && /\bbatch/i.test(q));
+      if (asked.length) c.fail(`asks about batch cooking again: "${asked.join(' ')}"`);
     },
   },
   {
@@ -452,6 +457,37 @@ const CASES: EvalCase[] = [
       else if (!/birmingham/i.test(user.home_city)) c.fail(`home_city is "${user.home_city}"`);
       const { ex } = await c.say("What's the weather tomorrow?", { kind: 'general' });
       if (!mentions(ex.text, 'birmingham')) c.fail(`the weather answer does not name Birmingham: "${ex.text}"`);
+    },
+  },
+  {
+    name: 'opener-picks-up-last-talk', ticket: 'openers',
+    about: 'The general opener picks up where the conversation before it left off, without reading notes aloud',
+    async run(c) {
+      const first = await c.say("I'm riding four hours on Saturday with Marco, and he's bringing a camping stove for oatmeal at the halfway stop. What should I eat Friday night?", { kind: 'general' });
+      if (first.ex.error) c.fail(`stream error: ${first.ex.error}`);
+      // The read-back runs when the next conversation opens; wait out vana.extract's per-minute limit first.
+      c.log('waiting out the extract rate-limit window before the opener');
+      await new Promise((r) => setTimeout(r, 62_000));
+      const { ex } = await c.opener('general');
+      const said = `${ex.text} ${JSON.stringify(ex.parts)}`;
+      c.log(`opener: ${ex.text}`);
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      if (!mentions(said, 'Marco', 'stove', 'Saturday', 'ride', 'oatmeal')) c.fail(`the opener does not pick up the last conversation: "${ex.text}"`);
+      if (READOUT.test(ex.text)) c.fail(`the opener reads its notes aloud: "${ex.text}"`);
+    },
+  },
+  {
+    name: 'plan-opener-is-theirs', ticket: 'openers',
+    about: 'The planning opener carries something only this athlete has said, without reading notes aloud',
+    async run(c) {
+      const notes = await c.rows<{ fact: string; kind: string }>(c.s, 'user_memories?select=fact,kind&is_deleted=eq.false&order=last_confirmed_at.desc&limit=40');
+      const { ex } = await c.opener('meal_planning');
+      const said = `${ex.text} ${JSON.stringify(ex.parts)}`;
+      c.log(`opener: ${ex.text}`);
+      c.log(`on file: ${notes.filter((n) => n.kind !== 'episode').map((n) => n.fact).join(' | ') || '(no notes)'}`);
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      if (!mentions(said, 'Marco', 'stove', 'Saturday', 'vegetarian', 'partner', 'broccoli', 'batch', 'Wednesday', 'late shift', 'variety')) c.fail(`the planning opener carries nothing personal: "${ex.text}"`);
+      if (READOUT.test(ex.text)) c.fail(`the opener reads its notes aloud: "${ex.text}"`);
     },
   },
 ];

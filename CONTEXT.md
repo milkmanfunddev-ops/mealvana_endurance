@@ -135,6 +135,19 @@ carries its source and date; the person can see and delete any of them as one fl
 Memory (batch cooking, coverage scope, budget) is a choice Vana honours without asking again.
 _Avoid_: Preference, note, decision, summary, meal feedback (a thumbs vote is a Fact)
 
+**Episode**:
+One sentence saying what a single conversation established, written when Vana reads it back.
+It is not a Memory and never competes with one for space: Vana reads the newest few episodes on
+their own, so she can pick up where the last conversation left off.
+_Avoid_: Summary (that is only the conversation list's preview of it), transcript
+
+**Opener**:
+Vana's first turn in a conversation she starts: the day's first sheet, a new plan, a check-in, a
+debrief, or a moment. Every opener carries one thing only this person has told her (an episode, a
+Memory, a meal they voted on, a goal), said the way a dietitian who remembers them would, never
+read out. When nothing she knows bears on the moment, she leaves it out rather than stretch.
+_Avoid_: Greeting (an opener never greets)
+
 
 **Meal feedback**:
 A thumbs vote the person gives one Meal on its detail page. It is a Fact about that Meal and that

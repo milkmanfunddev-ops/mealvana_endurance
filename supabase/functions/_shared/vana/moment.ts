@@ -7,7 +7,7 @@
  * Like the Situation, a moment carries ids and one number, never text: the server reads the names itself.
  */
 import type { VanaCtx } from './env.ts';
-import { OPENERS } from './persona.ts';
+import { MAKE_IT_THEIRS, OPENERS } from './persona.ts';
 
 /**
  * What the client sends: which moment, which workout, and the window the device resolved — minutes before the start for
@@ -118,11 +118,15 @@ export async function recoverySession(v: VanaCtx, m: MomentRef): Promise<Recover
 }
 
 
+/** A moment's copy is a contract (the times, the window, the two replies), so what makes it theirs rides inside those
+ *  sentences and never adds one, and only when it changes how this session should be fuelled. */
+const MOMENT_THEIRS = `${MAKE_IT_THEIRS} In a moment the clause lives inside your 1–2 sentences and only when it changes how this session is fuelled — a diet, a food they rely on or avoid, what they planned for this session in LAST TALKS; it never changes the times, the window or the two replies.`;
+
 /** The first user message for a pre-workout moment. It ends in exactly two replies: the sheet shows at most two. */
 export function preWorkoutOpener(s: MomentSession): string {
   const bits = [s.activityType, s.durationMinutes ? `${s.durationMinutes} min` : null].filter(Boolean).join(', ');
   const window = s.windowOpensAt ? `; its pre-workout fuelling window opened at ${s.windowOpensAt}` : '';
-  return `[MOMENT opener — the athlete did not open this to ask anything: the app raised it because the pre-workout fuelling window for today's session is open and nothing has been logged since it opened. The session: "${s.title}"${bits ? ` (${bits})` : ''} starts at ${s.startsAt}${window}. Write 1–2 sentences that name the session, its start time and when the window opened. Then call askChoice once, with the question "Want me to walk you through fuelling it?" and exactly two options: ["Walk me through it", "I'll handle it"]. Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. No greeting.]`;
+  return `[MOMENT opener — the athlete did not open this to ask anything: the app raised it because the pre-workout fuelling window for today's session is open and nothing has been logged since it opened. The session: "${s.title}"${bits ? ` (${bits})` : ''} starts at ${s.startsAt}${window}. Write 1–2 sentences that name the session, its start time and when the window opened. Then call askChoice once, with the question "Want me to walk you through fuelling it?" and exactly two options: ["Walk me through it", "I'll handle it"]. Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. ${MOMENT_THEIRS} No greeting.]`;
 }
 
 /**
@@ -133,7 +137,7 @@ export function preWorkoutOpener(s: MomentSession): string {
  */
 export function recoveryOpener(s: RecoverySession): string {
   const lead = `[MOMENT opener — the athlete did not open this to ask anything: the app raised it because a session today has finished and nothing has been logged since it ended. The session: "${s.title}" (${s.activityType}, ${s.durationMinutes} min) finished at ${s.endedAt}.`;
-  const tail = 'Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. Never say "within 30 minutes" or "within the hour". No greeting.]';
+  const tail = `Do not ask that question in your sentences as well, and do not suggest meals or list foods yet. Never say "within 30 minutes" or "within the hour". ${MOMENT_THEIRS} No greeting.]`;
   if (s.urgentUntil && s.next) {
     return `${lead} The next session, "${s.next.title}", starts ${s.next.when}: under 8 hours away, so recovery is urgent. Start refuelling now and keep carbs coming through the next 4 hours, until ${s.urgentUntil}, with ~20–30 g of protein within the first couple of hours. Write 1–2 sentences that name the finished session and the next one, and say that. Then call askChoice once, with the question "Want help picking what to eat now?" and exactly two options: ["Help me pick", "I've got it"]. ${tail}`;
   }

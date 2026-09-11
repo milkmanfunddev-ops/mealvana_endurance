@@ -7,12 +7,12 @@
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
-import { buildAthleteContext, contextBlock } from './context.ts';
+import { buildAthleteContext, contextBlock, withUnreadTalk } from './context.ts';
 import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { episodeFor } from './memory.ts';
-import { readBackPrevious, writeOpenEpisode, defaultEpisodeDeps, type EpisodeDeps } from './extract.ts';
+import { athleteWordsFrom, readBackPrevious, readBackWithin, writeOpenEpisode, defaultEpisodeDeps, type EpisodeDeps } from './extract.ts';
 import { resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
@@ -178,11 +178,17 @@ export function partsFromSteps(text: string, steps: any[], maxSentences: number 
   if (!anyText && text.trim() && !(filed && silenceFeedback)) parts.unshift({ type: 'text', text: clamp(text) });
   return { parts, ui };
 }
+/** The day's name, so "Saturday" in a past conversation can be read against today without date arithmetic. */
+const weekdayOf = (iso: string) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(`${iso}T12:00:00Z`).getUTCDay()];
 /** Both kinds get the same block (the Voodoo Doll, 2026-09-09). Only the prompt above it differs.
  *  Before this, general mode carried a first name and a date, and everything else had to be fetched
  *  by a tool call the model might not make. */
 export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '') =>
-  `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}) ---\n${contextBlock(ctx)}${extra}`;
+  `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}, ${weekdayOf(todayIso)}) ---\n${contextBlock(ctx)}${extra}`;
+
+/** How long an opener waits for the previous conversation to be read back (one small-model call, usually 1–2 s)
+ *  before it is written without it. The sheet shows Vana typing meanwhile. */
+export const OPENER_READ_BACK_MS = 3500;
 
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
@@ -219,11 +225,27 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const opener = messages.length === 0;
   const last = [...messages].reverse().find((m) => m.role === 'user');
   const lastText = last ? textOf(last) : '';
-  const [ctx, conv] = await Promise.all([
-    buildAthleteContext(v, lastText || undefined, anchorDate),
-    persist ? ensureConversation(v, body.conversation_id ?? null, kind) : Promise.resolve({ id: '', kind }),
-  ]);
+  const conv = persist ? await ensureConversation(v, body.conversation_id ?? null, kind) : { id: '', kind };
   const convId = conv.id; const convKind = conv.kind;
+  // A moment's opener lands in the day's conversation mid-thread (VM-1): that is not the conversation's first turn.
+  const intoThread = opener && persist && !!body.conversation_id && (await conversationHasTurns(v, convId));
+  // Lazy extraction: opening a conversation is what reads the previous one back; nothing it writes is announced.
+  //
+  // "Opening" is the conversation's FIRST TURN, not the scripted opener. A general conversation usually starts
+  // with the athlete typing, which leaves `opener` false — gating on that alone meant a typed-first conversation
+  // never read anything back (found in the 2026-09-10 dev eval, where only the scripted openers extracted).
+  //
+  // An opener waits for it, up to a budget, and is written from a context that already holds the conversation
+  // before it (LAST TALKS): the opener is where Vana shows she remembers. A typed turn never waits.
+  const firstTurn = (opener && !intoThread) || (!opener && messages.length <= 1);
+  let unread: string | null = null;
+  if (firstTurn && persist && convId) {
+    if (opener) {
+      const { late } = await readBackWithin(v, convId, OPENER_READ_BACK_MS, waitUntil);
+      if (late) unread = await athleteWordsFrom(v, late);
+    } else waitUntil(readBackPrevious(v, convId));
+  }
+  const ctx = withUnreadTalk(await buildAthleteContext(v, lastText || undefined, anchorDate), anchorDate, unread);
   // Planning writes land on this conversation's own draft; the context's PLAN line describes that draft, not the Plan tab's plan.
   const scope = convKind === 'meal_planning' && convId ? { conversationId: convId } : null;
   if (scope) { const draft = await getConversationPlan(v, convId, false); ctx.plan = { exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? ctx.plan.batchCooking }; }
@@ -238,17 +260,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
-  // A moment's opener lands in the day's conversation mid-thread (VM-1): that is not the conversation's first turn.
-  const intoThread = opener && persist && !!body.conversation_id && (await conversationHasTurns(v, convId));
   const firstConversation = opener && persist && !intoThread && (await priorConversationCount(v, convId)) === 0;
-  // Lazy extraction: opening a conversation is what reads the previous one back. It runs in the background of
-  // this request and never delays the reply; nothing it writes is announced to the athlete.
-  //
-  // "Opening" is the conversation's FIRST TURN, not the scripted opener. A general conversation usually starts
-  // with the athlete typing, which leaves `opener` false — gating on that alone meant a typed-first conversation
-  // never read anything back (found in the 2026-09-10 dev eval, where only the scripted openers extracted).
-  const firstTurn = (opener && !intoThread) || (!opener && messages.length <= 1);
-  if (firstTurn && persist && convId) waitUntil(readBackPrevious(v, convId));
   const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
   // A moment's opener goes into the day's conversation even when it already has a thread (VM-1).
   if (convKind === 'general' && opener) ({ text: openerText, variant: openerVariant } = await generalOpener(v, body));
