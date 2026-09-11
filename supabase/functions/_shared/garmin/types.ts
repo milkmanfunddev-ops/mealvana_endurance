@@ -46,6 +46,16 @@ export const GARMIN_ACTIVITY_TYPE_MAP: Record<string, string> = {
   triathlon: 'triathlon',
   duathlon: 'duathlon',
   transition: 'transition',
+  // B-4 (matching.md, RATIFIED): ALL transition variants map to
+  // 'transition' and never become standalone rows. Before this, the
+  // unmapped variants fell to 'other' and auto-imported (M-5.2.4 defect).
+  transition_v2: 'transition',
+  bike_to_run_transition: 'transition',
+  swim_to_bike_transition: 'transition',
+  run_to_bike_transition: 'transition',
+  bike_to_swim_transition: 'transition',
+  run_to_swim_transition: 'transition',
+  swim_to_run_transition: 'transition',
 
   // Everything else → 'other' (we'll handle on the Dart side)
 };
