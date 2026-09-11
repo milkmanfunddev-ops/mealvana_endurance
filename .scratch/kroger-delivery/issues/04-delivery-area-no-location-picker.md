@@ -15,7 +15,7 @@ Pickup remains representable in the model and on the wire. It is not on the crit
 
 **Blocked by:** 03
 
-**Status:** built, awaiting device verification (2026-09-10)
+**Status:** typed-postcode path verified on the iOS simulator (2026-09-10); device path fails, reverse-geocode defect, see `../device-verification.md`
 
 - [x] The screen presents the delivery area, never a Location name or address
 - [x] No Location list is shown anywhere in the flow

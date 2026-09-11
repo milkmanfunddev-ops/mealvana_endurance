@@ -15,7 +15,7 @@ is not shown.
 
 **Blocked by:** 01
 
-**Status:** built, awaiting device verification (2026-09-10)
+**Status:** partly verified on the iOS simulator (2026-09-10): entry point shows, but Coverage never answered (no home location → 400 → unknown) and "before connected" not exercised; see `../device-verification.md`
 
 - [x] Location and product reads use the application token — one cached
       `client_credentials` token per isolate, `product.compact` only

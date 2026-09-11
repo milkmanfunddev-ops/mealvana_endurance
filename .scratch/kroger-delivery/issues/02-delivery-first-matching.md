@@ -25,7 +25,7 @@ it does not, every ticket after this one is being built on an assumption.
 
 **Blocked by:** 01
 
-**Status:** built, awaiting device verification (2026-09-09)
+**Status:** matching verified on the iOS simulator against Kroger production (2026-09-10); cart write not yet done (needs Lee); legacy-PICKUP-draft defect, see `../device-verification.md`
 
 - [x] A new draft defaults to `DELIVERY`
 - [x] Delivery Modality maps to Kroger's delivery-to-home filter; pickup maps to curbside
@@ -46,7 +46,8 @@ it does not, every ticket after this one is being built on an assumption.
 - [x] A run with no eligible lines reports that nothing was selected
 - [x] No control renders in a state where tapping it does nothing
 - [x] No control is labelled with an error message
-- [ ] Verified on a real device in a delivery-only market: matches return real products
+- [x] Verified in a delivery-only market: matches return real products — iOS simulator against
+      Kroger production, Birmingham Spoke, 11 of 13 lines (2026-09-10)
 - [ ] Verified by hand: one item sent to a real Kroger account arrives in that cart
 
 ## Notes

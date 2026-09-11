@@ -14,7 +14,7 @@ Kroger's site and handles no payment.
 
 **Blocked by:** 05
 
-**Status:** built, awaiting device verification (2026-09-10)
+**Status:** built, awaiting device verification: the send needs Lee (2026-09-10 pass stopped at the stop gate)
 
 - [x] Sending puts every matched line in the Kroger cart tagged for delivery
 - [x] A sent draft cannot be sent again without an explicit confirmation
