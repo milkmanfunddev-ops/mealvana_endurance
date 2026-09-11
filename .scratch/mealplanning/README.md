@@ -11,18 +11,16 @@ Every ticket carries the same three lines at the top: **Status**, **Blocked by**
 ## Run them in order
 
 ```
-git push                                    # the commits are only on this laptop
 /clear
-/mattpocock-skills:implement 02             # home location on the device
+/mattpocock-skills:implement .scratch/mealplanning/issues/09-the-companion-that-speaks-first.md
 /clear
-/mattpocock-skills:implement 03             # an episode for a still-open conversation
+/mattpocock-skills:implement .scratch/mealplanning/issues/10-the-recovery-moment-and-the-cap.md
+/clear
+/mattpocock-skills:implement .scratch/mealplanning/issues/11-launcher-off-flow-screens.md
 ```
 
-One ticket per session, `/clear` between. That is step 4 of the workflow, and it earns its keep: the
-last tickets of the long first session were noticeably worse served than the first.
-
-**04 and 05 are yours, not an agent's**, and they gate everything after them. Do them whenever — they
-are not urgent, but 06 cannot start without them.
+One ticket per session, with `/clear` between them. 11 does not depend on 09 or 10 and can go first.
+12 needs a grilling before any agent builds it.
 
 | # | Ticket | Status |
 |---|---|---|
@@ -34,20 +32,21 @@ are not urgent, but 06 cannot start without them.
 | 06 | The launcher and the sheet | **done** (fuel-log screen not reached on the sim) |
 | 07 | The companion's conversation surface | **done** (not yet seen on a device) |
 | 08 | Sheet gestures | **done** (drag checked on the simulator) |
-| 09 | The companion that speaks first | needs a decision |
+| 09 | The companion that speaks first: the pre-workout moment | ready |
+| 10 | The recovery moment and the two-a-day cap | after 09 |
+| 11 | The launcher stays off flow screens | ready (independent) |
+| 12 | Meal-plan moments | needs grilling, after 10 |
 
-## The three things waiting on you
+## Settled on 2026-09-11
 
-1. **The mirror (04).** Fifteen design specs here, six in the QA repo. Which side is the truth? A
-   verbatim sync today deletes nine ratified specs, two of which the sheet spec cites.
-2. **The sheet spec (05).** Confirm the two answers the design export gave: the three rest heights,
-   and the launcher being a drawn speech bubble — the first branded glyph on the shell.
-3. **What makes Vana speak (09).** Three candidate trigger sets are in the ticket. My lean is the
-   second: fuelling windows plus the plan beats, because `pickOpener` already decides the plan half
-   server-side and is already tested.
-
-The fourth, which lived *inside* ticket 01, is settled: the feedback acknowledgement is
-server-authored, and 01 is done.
+- **The mirror (04):** a stale local QA checkout, not two truths. The QA repo is Xuan's and is left
+  alone. Specs written app-side live in `docs/ssot/spec/design/components/` as "authored app-side,
+  awaiting Xuan": `meal-image-mosaic`, `vana-sheet` and `vana-moment`. A blind sync from the QA repo
+  would delete them.
+- **The sheet spec (05):** Lee confirmed the three heights and the drawn speech bubble.
+- **What makes Vana speak (09):** fuelling windows, decided on the device (`vana-moment.md`). The
+  meal-plan beats follow in 12.
+- **The launcher over bottom buttons:** hidden on flow screens (11).
 
 ## What is already done
 

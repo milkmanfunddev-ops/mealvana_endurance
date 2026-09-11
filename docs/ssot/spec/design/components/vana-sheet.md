@@ -134,7 +134,8 @@ actionable moment a short pill beside the launcher ("Fuel tonight's run?") that 
 four seconds and leaves the tint behind. It draws a **minimized** state too: a pulsing pill reading
 "planning…" for work happening in the background. The tab bar retracts while she speaks.
 
-**None of that is contracted here, and it is not deferred for lack of drawing — it is deferred
+**Contracted since 2026-09-11 in [`vana-moment.md`](vana-moment.md)**, once the trigger set was
+ruled. What follows is the original note, kept for the drawing. **None of that is contracted here, and it is not deferred for lack of drawing — it is deferred
 because nothing has decided what makes her speak.** A companion that interrupts on the wrong trigger
 is worse than one that waits. When the trigger set is ruled, this section becomes its own component
 spec; the states above are recorded so the drawing is not lost in the meantime.
