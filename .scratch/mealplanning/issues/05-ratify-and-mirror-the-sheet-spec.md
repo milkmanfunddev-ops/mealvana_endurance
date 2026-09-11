@@ -29,6 +29,19 @@ Still open, and neither blocks a passive build: **Q-VS3** (does the launcher col
 on scroll — the export only shows the bar retracting while Vana *speaks*, which is ticket 09's
 deferred behaviour) and **Q-VS4** (does the FAB clearance rule extend to the Plan tab's swipe rows).
 
+## Wording to carry into the spec when it is ratified (from 08, 2026-09-11)
+
+Ticket 08 built the heights and settled three readings the spec text does not yet say:
+
+- **VS-4:** the stream never resizes the sheet, but the athlete's first send grows an `auto` sheet
+  to 75 % once. `auto` is as tall as what it holds, so holding it through the turn would resize it
+  with every word.
+- **Three heights:** "a dismiss" is any single reply; a receipt part counts as a card.
+- **Anatomy / VS-9:** "transform origin at the launcher's own corner" means the launcher's centre,
+  which is where the export's `transform-origin` sits.
+- **VS-7:** from 100 %, a short drag down collapses to the rest height and a drag 90 px past the
+  rest line dismisses. 100 % stops under the status bar.
+
 - [ ] Q-VS1 and Q-VS2 confirmed, and the spec moved from PROPOSED to RATIFIED with a version
 - [ ] Mirrored into this repo's SSOT, nothing edited app-side
 - [ ] Design-sync reports clean

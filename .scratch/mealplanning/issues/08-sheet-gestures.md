@@ -2,7 +2,7 @@
 
 **Status:** built; the drag checked on the simulator (2026-09-10)
 **Blocked by:** None
-**Next:** Rulings on the three questions under "For the ruling desk", then 09 when its trigger set is decided.
+**Next:** Nothing. The three open questions are settled below and wait on 05 for the spec text.
 
 **What to build:** The grabber drags the sheet between its three heights: `auto` for a sheet that is
 one message and a dismiss, 75% at rest with a card and replies, 100% expanded. Dragging down past the
@@ -58,15 +58,17 @@ runs the rise and the condense; the sheet's height inside that room is the sheet
   remounted the sheet mid-drag and dropped the keyboard after the first send. The review caught it, and
   a frame-by-frame drag test now covers it.
 
-**For the ruling desk.**
-- **Send from `auto`.** The athlete's first send grows an `auto` sheet to 75 %, in the frame the send
-  lands. VS-4 says send does not change the height. But `auto` is as tall as what it holds, so holding
-  it through the turn would grow it with every streamed word, which is worse. The export goes further
-  and expands to 100 % on every send. That was not built, because VS-4 governs.
-- **"A dismiss"** is read as any single reply, whatever its label. A lone action ("Plan my week") also
-  rests at `auto`. A receipt part (memory saved, logged) counts as a card, so the sheet rests at 75 %.
-- **Condense origin.** The ticket says the launcher's corner, but the code (unchanged since 06) uses
-  the launcher's centre. On the device it reads as closing into the corner.
+**Settled (2026-09-11, Lee left the call to the agent; carried to 05 for the spec text).**
+- **Send from `auto` grows the sheet to 75 %, once, in the frame of the send.** VS-4 is read as "the
+  stream does not resize the sheet": the athlete's own action may, and the stream never does. The
+  alternative, holding `auto` through the turn, would grow the sheet with every streamed word. The
+  export's grow-to-100 %-on-send is not adopted.
+- **"A dismiss" is any single reply.** One message and one reply is a short exchange whatever the
+  reply says. A receipt part (memory saved, logged) counts as a card.
+- **The condense origin is the launcher's centre.** The export's `transform-origin` is
+  `calc(100% - 42px) calc(100% - 48px)`, which is the centre of its launcher (16 px from the right,
+  22 px from the bottom, 52 px wide). "The launcher's corner" in the spec means the launcher in its
+  corner.
 
 **Seen on the device, not fixed (from 06):** under the scrim, the page's accessibility nodes report
 the barrier's "Close" label. This comes from the route's barrier, not from this ticket.
