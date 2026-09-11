@@ -27,7 +27,7 @@ are not urgent, but 06 cannot start without them.
 | # | Ticket | Status |
 |---|---|---|
 | 01 | Finish the feedback loop | **done** |
-| 02 | Home location on the device | ready-for-agent |
+| 02 | Home location on the device | **done** |
 | 03 | An episode for a still-open conversation | **done** |
 | 04 | Reconcile the design SSOT mirror | ready-for-human |
 | 05 | Ratify and mirror the sheet spec | ready-for-human |
