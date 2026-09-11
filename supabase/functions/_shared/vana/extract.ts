@@ -34,8 +34,6 @@ export const ExtractionZ = z.object({
 });
 export type Extraction = z.infer<typeof ExtractionZ>;
 
-const EPISODE_RULE = `THE EPISODE — always exactly one sentence, at most 20 words, saying what this conversation was about, so it can stand in for the whole transcript later. "Planned three batch dinners around Saturday's long ride." "Asked what to eat before a hot half marathon."`;
-
 export const EXTRACTOR_SYSTEM = `You read one finished conversation between an endurance athlete and Vana, their nutrition assistant, and write what belongs in the athlete's file.
 
 THE MARGIN-NOTE RULE — this is the whole job. A Memory is one sentence a good dietitian would write in the margin of this athlete's file, and only if it changes how Vana plans for them next time.
@@ -44,7 +42,7 @@ THE MARGIN-NOTE RULE — this is the whole job. A Memory is one sentence a good 
 - One sentence each, present tense, about the athlete, no hedging, no "the user".
 Zero memories is the normal outcome. Most conversations contain none.
 
-${EPISODE_RULE}`;
+THE EPISODE — always exactly one sentence, at most 20 words, saying what this conversation was about, so it can stand in for the whole transcript later. "Planned three batch dinners around Saturday's long ride." "Asked what to eat before a hot half marathon."`;
 
 /** What the extractor sees: the stored turns, oldest first. */
 export interface TranscriptLine { role: 'user' | 'assistant'; text: string }
@@ -156,10 +154,9 @@ async function writeEpisode(v: VanaCtx, conversationId: string, episode: string)
 
 export const EpisodeZ = z.object({ episode: ExtractionZ.shape.episode });
 
-export const OPEN_EPISODE_SYSTEM = `You read a conversation between an endurance athlete and Vana, their nutrition assistant. It is still going, and it has grown long enough that its opening turns are about to be dropped from what Vana can see. Your sentence is what replaces them.
+export const OPEN_EPISODE_SYSTEM = `You read the opening turns of a conversation between an endurance athlete and Vana, their nutrition assistant. The conversation is still going, and these turns are about to leave what Vana can see. Your sentence is what replaces them.
 
-${EPISODE_RULE}
-Because the conversation continues, keep the specifics a later reply would need: a name, a number, a day, a constraint the athlete gave. Write nothing else — no memories, no advice.`;
+THE EPISODE — exactly one sentence, at most 25 words, saying what the athlete established in these turns. Keep the specifics a later reply would need: a name, a number, a day, a plan, a constraint. "Building a race-week menu for Sunday's 10K; partner cooks Tuesdays, budget $80." Not a list of topics. Write nothing else — no memories, no advice.`;
 
 export interface EpisodeDeps {
   generate: (input: { system: string; prompt: string }) => Promise<{ object: { episode: string }; inputTokens?: number; outputTokens?: number }>;
@@ -175,9 +172,11 @@ export const defaultEpisodeDeps: EpisodeDeps = {
  * The extractor's episode half, for a conversation the athlete is still in. The history cap calls it
  * the first time it bites; the next turn finds the episode and prepends it.
  *
- * It reads the whole transcript so far, not only the rows being dropped this turn. At the crossing
- * that is one row — usually Vana's first line — and the opening turns that fall off over the next
- * twenty messages would have nothing standing in for them. It does not stamp `read_back_at`: the
+ * It reads the opening half of the transcript: what falls out of view soonest. Not only the rows
+ * dropped this turn — at the crossing that is one row, usually Vana's first line. Not the whole
+ * transcript either — the recent half is still in view, and the first live run on dev (2026-09-10)
+ * showed a sentence written from all of it lists the latest topics and drops the opening, which is
+ * the one thing it exists to keep. It does not stamp `read_back_at`: the
  * conversation's margin notes are still owed, and lazy extraction later rewrites the same episode row
  * from the finished transcript.
  *
@@ -189,7 +188,8 @@ export async function writeOpenEpisode(v: VanaCtx, conversationId: string, deps:
     if (!rl.allowed) return null;   // no episode written, so the next turn tries again
     const lines = await transcriptOf(v, conversationId);
     if (!lines.length) return null;
-    const { object, inputTokens, outputTokens } = await deps.generate({ system: OPEN_EPISODE_SYSTEM, prompt: `--- CONVERSATION SO FAR ---\n${conversationText(lines)}` });
+    const opening = lines.slice(0, Math.ceil(lines.length / 2));
+    const { object, inputTokens, outputTokens } = await deps.generate({ system: OPEN_EPISODE_SYSTEM, prompt: `--- OPENING TURNS ---\n${conversationText(opening)}` });
     await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.episode', model: TOOL_MODEL, inputTokens, outputTokens });
     const episode = object.episode.trim() || null;
     // Whatever landed while the model was thinking wins: lazy extraction's sentence comes from the

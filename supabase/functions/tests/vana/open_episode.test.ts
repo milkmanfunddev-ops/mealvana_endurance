@@ -81,6 +81,10 @@ Deno.test('the turn that crosses the cap writes an episode in the background and
   assertEquals(await episodeFor(v, CONV), EPISODE);
   assertEquals(model.calls.length, 1);
   assert(model.calls[0].prompt.includes(FIRST_WORDS), 'the words about to fall off the front reached the model');
+  // The recent half is still in Vana's view; written from it, the episode drifts to the latest topics
+  // and drops the opening — what the first live run on dev did (2026-09-10).
+  assert(model.calls[0].prompt.includes('answer 9'), 'the opening half reached the model');
+  assert(!model.calls[0].prompt.includes('question 20'), 'the recent half, still in view, did not');
 });
 
 Deno.test('the next turn prepends the episode, and the turn after that does not write a second one', async () => {

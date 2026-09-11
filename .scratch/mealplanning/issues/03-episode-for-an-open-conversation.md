@@ -1,9 +1,9 @@
 # 03: An episode for a conversation still in progress
 
-**Status:** built, live eval not yet run (2026-09-10)
+**Status:** done (2026-09-10) — `vana-chat` and `jade-chat` deployed to dev
 **Blocked by:** None
-**Next:** `./scripts/deploy_dev.sh vana-chat jade-chat`, then
-`deno run -A scripts/vana-eval/personalization.ts --only long-conversation-remembers-its-start`
+**Next:** nothing. `vana-action` and `vana-day-notes` bundle the changed `memory.ts` but never touch
+episodes; they pick it up on their next deploy.
 
 **What to build:** The history cap's episode prepend, made real. `capHistory` already replays the last
 twenty messages and prepends the conversation's episode sentence when the cap bites, and it is tested.
@@ -24,16 +24,19 @@ this protects.
 - [x] Server seam: the next turn prepends it, and the turn after that does not write a second one
 - [x] The episode written mid-conversation is the same keyed row lazy extraction would later write, not a second one
 - [x] A conversation that never crosses the cap writes nothing
-- [ ] Live eval: a long conversation stays coherent about something said in its first few turns
-  (case `long-conversation-remembers-its-start` written; needs `vana-chat` on dev first)
+- [x] Live eval: a long conversation stays coherent about something said in its first few turns
+  (`long-conversation-remembers-its-start`, 1/1 on dev after the fix below)
 
 **What was built.** `replayHistory` in `chat.ts` replaces the known-gap block: past the cap with no
 episode, it hands `writeOpenEpisode` (`extract.ts`) to `waitUntil` and replays without one; the next
 turn finds it. Tests: `supabase/functions/tests/vana/open_episode.test.ts`.
 
-- **It reads the whole transcript so far, not just the rows dropped that turn.** At the crossing that
-  is one row, usually Vana's first line; the opening athlete turns that fall off over the next twenty
-  messages would have had nothing standing in for them. Past roughly forty messages the front is lost
+- **It reads the opening half of the transcript.** Not only the rows dropped that turn: at the
+  crossing that is one row, usually Vana's first line. And not the whole transcript: the first live
+  run fed it everything and got *"Discussed breakfast, lunch, protein targets, lentil dinners…"*, a
+  list of the recent topics with the opening gone, and the eval failed. From the opening half, with a
+  prompt that asks for names and numbers, it wrote *"Planning Saturday's four-hour ride with Marco;
+  mid-ride camping stove stop; …"* and the eval passed. Past roughly forty messages the front is lost
   again, which the ticket's one-call-per-conversation budget accepts.
 - **It never stamps `read_back_at`.** The conversation's margin notes are still owed; lazy extraction
   later rewrites the same episode row from the finished transcript.

@@ -28,7 +28,7 @@ are not urgent, but 06 cannot start without them.
 |---|---|---|
 | 01 | Finish the feedback loop | **done** |
 | 02 | Home location on the device | ready-for-agent |
-| 03 | An episode for a still-open conversation | built; live eval awaits a dev deploy |
+| 03 | An episode for a still-open conversation | **done** |
 | 04 | Reconcile the design SSOT mirror | ready-for-human |
 | 05 | Ratify and mirror the sheet spec | ready-for-human |
 | 06 | The launcher and the sheet | blocked by 05 |
