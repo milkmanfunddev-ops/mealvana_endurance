@@ -7,7 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveMealImage, MAX_TILES } from './ladder.mjs';
+import { resolveMealImage, pictureIdentity, MAX_TILES } from './ladder.mjs';
 
 /** A bank row as pass 1/2 leaves it, keyed by slug. */
 const tile = (slug, extra = {}) => ({
@@ -206,6 +206,88 @@ test('a meal never yet classified is treated as separable', () => {
   );
 
   assert.equal(r.mode, 'mosaic');
+});
+
+// Rule 4. A mosaic is the ladder's own choice, so without a memory of the
+// judge's answer every re-run of pass 3 would hand a meal back the very grid it
+// was retired from.
+test('a mosaic the judge rated wrong is not offered to the same meal again', () => {
+  const bank = bankOf('cherries', 'cream');
+  const m = meal({ name: 'Cherries & cream', ingredients: ['cherries', 'cream'] });
+  const shown = resolveMealImage(m, bank);
+
+  const r = resolveMealImage({ ...m, image_rejected_mosaics: [pictureIdentity(shown.tiles)] }, bank);
+
+  assert.equal(r.mode, 'none');
+  assert.equal(r.tiles, null);
+  assert.equal(r.blocked, true);
+  assert.equal(r.reason, 'judged_wrong');
+});
+
+test('a single tile the judge rated wrong is not offered again either', () => {
+  const bank = bankOf('energy-bar');
+  const m = meal({ name: 'Energy bar, whole', ingredients: ['energy bar'] });
+
+  const r = resolveMealImage(
+    { ...m, image_rejected_mosaics: [pictureIdentity(resolveMealImage(m, bank).tiles)] },
+    bank,
+  );
+
+  assert.equal(r.mode, 'none');
+  assert.equal(r.reason, 'judged_wrong');
+});
+
+// The verdict was about a picture. Once pass 2 replaces a tile's photograph the
+// grid is a different picture, and nobody has judged it.
+test('a rejected mosaic does not block a different picture of the same ingredients', () => {
+  const m = meal({ ingredients: ['cherries', 'cream'] });
+  const before = resolveMealImage(m, bankOf('cherries', 'cream'));
+  const regrown = new Map([
+    ['cherries', tile('cherries', { image_url: 'https://img.example/cherries-v2.jpg' })],
+    ['cream', tile('cream')],
+  ]);
+
+  const r = resolveMealImage({ ...m, image_rejected_mosaics: [pictureIdentity(before.tiles)] }, regrown);
+
+  assert.equal(r.mode, 'mosaic');
+  assert.deepEqual(r.tiles.map((t) => t.url),
+    ['https://img.example/cherries-v2.jpg', 'https://img.example/cream.jpg']);
+});
+
+test("a stock CDN's resize parameters are not part of a picture's identity", () => {
+  const a = [{ url: 'https://images.pexels.com/1.jpeg?w=600' }, { url: 'https://x.example/2.jpg' }];
+  const b = [{ url: 'https://images.pexels.com/1.jpeg?w=1200' }, { url: 'https://x.example/2.jpg' }];
+
+  assert.equal(pictureIdentity(a), pictureIdentity(b));
+});
+
+// What pass 10 stores, spelled out rather than rebuilt with the function under
+// test: rows already in the database are compared against this format, and a
+// change to it would silently stop every stored refusal from matching.
+test('a stored refusal is the grid\'s photographs in drawing order, joined by " + "', () => {
+  const bank = bankOf('cherries', 'cream');
+  const m = meal({ ingredients: ['cherries', 'cream'] });
+
+  const r = resolveMealImage({
+    ...m,
+    image_rejected_mosaics: ['https://img.example/cherries.jpg + https://img.example/cream.jpg'],
+  }, bank);
+
+  assert.equal(r.reason, 'judged_wrong');
+});
+
+test('a dish photo still wins over a rejected mosaic', () => {
+  const bank = bankOf('cherries', 'cream');
+  const m = meal({ ingredients: ['cherries', 'cream'] });
+  const rejected = [pictureIdentity(resolveMealImage(m, bank).tiles)];
+
+  const r = resolveMealImage(
+    { ...m, image_url: 'https://img.example/dish.jpg', image_rejected_mosaics: rejected },
+    bank,
+  );
+
+  assert.equal(r.mode, 'dish');
+  assert.equal(r.blocked, false);
 });
 
 test('the same inputs produce the same output on a re-run', () => {

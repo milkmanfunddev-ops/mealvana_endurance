@@ -32,8 +32,10 @@
  *
  * QUEUE=transformed  meals a mosaic can never serve (the default)
  *      =blocked      every meal the ladder found nothing for
- *      =wrong        meals whose current picture was judged `wrong`
- *      =all          both of the above
+ *      =wrong        meals whose current picture was judged `wrong`, any rung
+ *      =recipes      recipes wearing ingredient tiles, whatever their verdict
+ *      =all          blocked and wrong
+ * Queues combine: QUEUE=wrong,recipes is ticket 05's population.
  * LIMIT=n to sample, DRY=1 to search and judge without writing, CONCURRENCY=n,
  * MAX_JUDGED=n candidates shown to the judge per meal, MAX_ATTEMPTS=n rounds
  * before a meal is left alone, SEPARABILITY=transformed|separable or
@@ -43,6 +45,11 @@
  * Idempotent: a meal that ends with an `ok` photograph leaves every queue, and a
  * re-run retries only the failures — skipping the candidates already refused.
  *
+ * A meal still showing a picture rated `wrong` when its rounds run out is
+ * retired (`lib/retire.mjs`): it drops to the Mosaic it is entitled to, which is
+ * judged here before the meal is left, or to its icon. A meal already out of
+ * rounds is retired without searching again.
+ *
  * No two meals are given the same photograph: see `taken` below.
  */
 import { rest, selectAll, uploadImage } from './lib/db.mjs';
@@ -50,6 +57,7 @@ import { licenseOk, MAY_MIRROR, PROVIDERS } from './lib/providers.mjs';
 import { dishQueryVariants, plainDishName } from './lib/dish-query.mjs';
 import { rankDishCandidates } from './lib/dish-score.mjs';
 import { resolveMealImage } from './lib/ladder.mjs';
+import { rememberRejected, retire, showsWrongPicture } from './lib/retire.mjs';
 import { CANVAS, composeMosaic } from './lib/compose-mosaic.mjs';
 import { createTileFetcher } from './lib/fetch-tile.mjs';
 import { squareImage } from './lib/square-image.mjs';
@@ -89,17 +97,21 @@ if (!Deno.env.get('AI_GATEWAY_API_KEY')) {
   Deno.exit(1);
 }
 
+/** Each queue as one PostgREST `or=(…)` term, so any of them can be combined. */
 const FILTERS: Record<string, string> = {
   // A mosaic would lie about these, so a photograph is the only thing that can
   // help — including the ones already wearing a photograph of something else.
-  transformed: 'separability=eq.transformed&or=(image_verdict.is.null,image_verdict.neq.ok)',
-  blocked: 'image_blocked=is.true&image_url=is.null',
-  // Ticket 05's population: already wearing a photograph, of something else.
-  wrong: 'image_verdict=eq.wrong',
-  all: 'or=(image_blocked.is.true,image_verdict.eq.wrong)',
+  transformed: 'and(separability.eq.transformed,or(image_verdict.is.null,image_verdict.neq.ok))',
+  blocked: 'and(image_blocked.is.true,image_url.is.null)',
+  // Showing a picture of something else — a photograph, a grid or one tile.
+  wrong: 'image_verdict.eq.wrong',
+  // The meals most likely to have a real photograph somewhere, and the ones a
+  // grid of ingredients describes worst: a recipe is a method, not a pile.
+  recipes: 'and(kind.eq.recipe,image_mode.in.(mosaic,tile))',
 };
-if (!FILTERS[QUEUE]) {
-  console.error(`QUEUE must be one of ${Object.keys(FILTERS).join(', ')}`);
+const QUEUES = QUEUE === 'all' ? ['blocked', 'wrong'] : QUEUE.split(',').map((q) => q.trim());
+if (!QUEUES.length || QUEUES.some((q) => !FILTERS[q])) {
+  console.error(`QUEUE must be all, or a comma-separated list of ${Object.keys(FILTERS).join(', ')}`);
   Deno.exit(2);
 }
 
@@ -109,9 +121,12 @@ type Row = {
   ingredients: string | null;
   ingredients_json: Array<{ name: string; role?: string }> | null;
   separability: string | null;
+  image_mode: string | null;
   image_url: string | null;
+  image_tiles: Array<{ url: string }> | null;
   image_verdict: string | null;
   image_rejected_urls: string[] | null;
+  image_rejected_mosaics: string[] | null;
   image_attempts: number | null;
 };
 
@@ -128,21 +143,35 @@ const ONLY = Deno.env.get('SEPARABILITY') ?? '';
  */
 const IDS = (Deno.env.get('IDS') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
-let rows: Row[] = await selectAll(
+const queued: Row[] = await selectAll(
   'meal_library',
-  'select=id,name,ingredients,ingredients_json,separability,image_url,image_verdict,' +
-    'image_rejected_urls,image_attempts' +
-    `&is_active=eq.true&${FILTERS[QUEUE]}&image_attempts=lt.${MAX_ATTEMPTS}` +
+  'select=id,name,ingredients,ingredients_json,separability,image_mode,image_url,image_tiles,' +
+    'image_verdict,image_rejected_urls,image_rejected_mosaics,image_attempts' +
+    `&is_active=eq.true&or=(${QUEUES.map((q) => FILTERS[q]).join(',')})` +
     `${ONLY ? `&separability=eq.${ONLY}` : ''}` +
     `${IDS.length ? `&id=in.(${IDS.map(encodeURIComponent).join(',')})` : ''}&order=id`,
 );
-if (LIMIT) rows = rows.slice(0, LIMIT);
+
+/**
+ * A meal with a round left is searched. A meal out of rounds is not searched
+ * again — the libraries would give the same answers — but if it is still
+ * showing a picture the judge rated wrong, it is retired all the same: the
+ * spec's rule does not lapse because the meal was unlucky earlier.
+ */
+const hasRound = (r: Row) => (r.image_attempts ?? 0) < MAX_ATTEMPTS;
+let rows = queued.filter(hasRound);
+let spent = queued.filter((r) => !hasRound(r) && showsWrongPicture(r));
+if (LIMIT) {
+  rows = rows.slice(0, LIMIT);
+  spent = spent.slice(0, Math.max(0, LIMIT - rows.length));
+}
 
 console.log(`model: ${MODEL}`);
-console.log(`queue: ${QUEUE} — ${rows.length} meals, up to ${MAX_JUDGED} candidates each`);
+console.log(`queue: ${QUEUES.join(' + ')} — ${rows.length} meals, up to ${MAX_JUDGED} candidates each` +
+  (spent.length ? `; ${spent.length} out of rounds and still wrong, to retire` : ''));
 console.log(`providers: wikimedia, openverse${Deno.env.get('PEXELS_API_KEY') ? ', pexels' : ''}` +
   `${USE_UNSPLASH ? ', unsplash' : ''}\n`);
-if (!rows.length) Deno.exit(0);
+if (!rows.length && !spent.length) Deno.exit(0);
 
 /**
  * The verified tile bank, so the ladder can answer honestly about any meal.
@@ -237,7 +266,8 @@ type Candidate = {
 async function candidatesFor(row: Row): Promise<{ cands: Candidate[]; queries: string[] }> {
   const variants = dishQueryVariants(row.name);
   const plain = plainDishName(row.name);
-  const refused = new Set(row.image_rejected_urls ?? []);
+  // By identity, like `taken`: a refusal at one resize is a refusal at all of them.
+  const refused = new Set((row.image_rejected_urls ?? []).map(identity));
   const seen = new Set<string>();
   const pool: Candidate[] = [];
   const queries: string[] = [];
@@ -246,7 +276,7 @@ async function candidatesFor(row: Row): Promise<{ cands: Candidate[]; queries: s
     queries.push(`${name}:${q}`);
     try {
       for (const c of await PROVIDERS[name](q)) {
-        if (!c.url || seen.has(c.url) || refused.has(c.url)) continue;
+        if (!c.url || seen.has(c.url) || refused.has(identity(c.url))) continue;
         // Another meal is already showing this one.
         if (taken.has(identity(c.url))) continue;
         if (!licenseOk(c.license)) continue;
@@ -283,23 +313,23 @@ async function candidatesFor(row: Row): Promise<{ cands: Candidate[]; queries: s
 }
 
 /**
- * The candidate as the athlete would see it.
+ * The picture as the athlete would see it.
  *
  * A dish photo is drawn into the same square the mosaic fills, with the same
  * cover fit, by the same compositor — so the judge grades the picture on the
- * card rather than the photographer's full frame. Pass 8 renders `dish` rows
+ * card rather than the photographer's full frame. Pass 8 renders every rung
  * exactly this way, which is what makes the verdict stored here interchangeable
  * with the one it would have reached.
  */
-async function compose(id: string, bytes: Uint8Array): Promise<Uint8Array> {
-  const src = `${dir}/${id}.src`;
+async function compose(id: string, sources: Uint8Array[]): Promise<Uint8Array> {
+  const files = sources.map((_, i) => `${dir}/${id}_${i}.src`);
   const out = `${dir}/${id}.jpg`;
-  await Deno.writeFile(src, bytes);
+  for (const [i, bytes] of sources.entries()) await Deno.writeFile(files[i], bytes);
   try {
-    await composeMosaic({ files: [src], out, width: CANVAS, height: CANVAS });
+    await composeMosaic({ files, out, width: CANVAS, height: CANVAS });
     return await Deno.readFile(out);
   } finally {
-    for (const f of [src, out]) await Deno.remove(f).catch(() => {});
+    for (const f of [...files, out]) await Deno.remove(f).catch(() => {});
   }
 }
 
@@ -332,7 +362,9 @@ async function accept(
   }
 
   // The rung is the ladder's to decide, here as everywhere: a meal with a dish
-  // photograph shows the photograph, and is no longer blocked.
+  // photograph shows the photograph, and is no longer blocked. `tiles` comes
+  // back null, so a replaced Mosaic's tiles are cleared rather than left
+  // lying beneath the photograph.
   const rung = resolveMealImage({ ...row, image_url: url }, bank);
   const now = new Date().toISOString();
 
@@ -357,8 +389,10 @@ async function accept(
     image_verdict_at: now,
     // The refusals bought on the way to this one. Kept even in success: if this
     // photograph is ever retired, the run that replaces it must not re-judge
-    // the pictures already rejected for this meal.
+    // the pictures already rejected for this meal — nor fall back to the grid
+    // this photograph just replaced, if the judge had rated that wrong.
     image_rejected_urls: refused,
+    image_rejected_mosaics: rememberRejected(row).image_rejected_mosaics,
     image_attempts: (row.image_attempts ?? 0) + 1,
   });
 }
@@ -378,7 +412,7 @@ async function patch(row: Row, body: Record<string, unknown>) {
   });
 }
 
-type Outcome = { ok: boolean; why: string; judged: number; retired?: boolean };
+type Outcome = { ok: boolean; why: string; judged: number; retired?: string };
 
 /**
  * Where a meal's wall-clock actually went, for the first few meals of a run.
@@ -400,45 +434,61 @@ function timing(row: Row, search: number, fetch: number, judge: number) {
 }
 
 /**
- * Take the photograph away and let the ladder answer again.
+ * Take the meal's wrong picture away, and do not leave until what it shows
+ * instead has been judged.
  *
- * Only ever a photograph — a meal wearing a `wrong` MOSAIC is a different
- * problem, and taking its tiles away would not help. The ladder is asked with
- * the real bank, so a separable meal falls back to the Mosaic it is entitled to
- * rather than being declared to have no tiles.
+ * `retire` (lib/retire.mjs) is the ladder answering again without the picture,
+ * with every refusal remembered. The next rung down may be a Mosaic this meal
+ * has never been judged on — a meal whose photograph was of the wrong food may
+ * be entitled to a perfectly good grid — so it is judged here, the same way
+ * pass 8 would judge it. If that grid is wrong too, retiring again lands on the
+ * icon, because the ladder now knows both refusals.
  *
- * The verdict goes with it. It was a statement about a picture this meal no
- * longer shows, and leaving it behind would keep the meal in pass 9's
- * "showing something wrong" queue while it shows an icon — the report would
- * contradict itself. What the picture was is not lost: the refused URL stays in
- * `image_rejected_urls`, which is what stops it ever being shown again.
+ * A grid that cannot be drawn (a tile host down) is left unjudged rather than
+ * guessed at; pass 8 picks it up and pass 9 reports the figure as provisional
+ * until it has.
  */
-function retire(row: Row): Record<string, unknown> {
-  const rung = resolveMealImage({ ...row, image_url: null }, bank);
-  return {
-    image_url: null,
-    image_verdict: null,
-    image_verdict_reason: null,
-    image_verdict_at: null,
-    image_source_url: null,
-    image_license: null,
-    image_creator: null,
-    image_provider: null,
-    image_credit: null,
-    image_unlicensed: false,
-    image_mode: rung.mode,
-    image_tiles: rung.tiles,
-    image_blocked: rung.blocked,
-    image_blocked_reason: rung.blocked ? rung.reason : null,
-  };
+async function retireAndSettle(row: Row): Promise<Record<string, unknown>> {
+  let next = retire(row, bank) as Record<string, unknown>;
+  const mode = next.image_mode as string;
+  if (mode !== 'mosaic' && mode !== 'tile') return next;
+
+  let bytes: Uint8Array;
+  try {
+    const tiles = next.image_tiles as Array<{ url: string }>;
+    bytes = await compose(row.id, await Promise.all(tiles.map((t) => fetchTile(t.url))));
+  } catch (e) {
+    console.log(`  (${row.name.slice(0, 40)}: fallback ${mode} not drawable — ${(e as Error).message.slice(0, 40)})`);
+    return next;
+  }
+  const { verdict, usage: used } = await judgeMealImage({ meal: row, mode, bytes, model: MODEL });
+  usage.inputTokens += used.inputTokens;
+  usage.outputTokens += used.outputTokens;
+  fallbacksJudged++;
+
+  if (verdict.verdict === 'wrong') {
+    next = retire({ ...row, ...next, image_verdict: 'wrong' } as Row, bank) as Record<string, unknown>;
+  } else {
+    next = {
+      ...next,
+      image_verdict: verdict.verdict,
+      image_verdict_reason: verdict.reason,
+      image_verdict_at: new Date().toISOString(),
+    };
+  }
+  return next;
 }
+
+let fallbacksJudged = 0;
 
 async function handle(row: Row): Promise<Outcome> {
   const t0 = Date.now();
   const { cands, queries } = await candidatesFor(row);
   const tSearch = Date.now() - t0;
   let tFetch = 0, tJudge = 0;
-  const refused = [...(row.image_rejected_urls ?? [])];
+  // Starts with the picture being replaced, if it was rated wrong: a later run
+  // must never find it again and pay the judge to refuse it twice.
+  const refused = rememberRejected(row).image_rejected_urls;
   let judged = 0;
 
   for (const cand of cands.slice(0, MAX_JUDGED)) {
@@ -446,7 +496,7 @@ async function handle(row: Row): Promise<Outcome> {
     const tf = Date.now();
     try {
       raw = await fetchTile(cand.url);
-      composed = await compose(row.id, raw);
+      composed = await compose(row.id, [raw]);
       tFetch += Date.now() - tf;
     } catch {
       tFetch += Date.now() - tf;
@@ -479,31 +529,53 @@ async function handle(row: Row): Promise<Outcome> {
   }
 
   const outOfRounds = (row.image_attempts ?? 0) + 1 >= MAX_ATTEMPTS;
-  const retireNow = outOfRounds && row.image_verdict === 'wrong' && !!row.image_url;
+  // A meal showing a picture of the wrong food, with nothing better found and
+  // no rounds left, drops down the ladder instead. That is the spec's rule
+  // rather than this pass's opinion — a wrong picture is worse than an icon —
+  // and it is the only way a meal already wearing one can reach an honest state.
+  // A recipe whose grid is `ok` or `weak` keeps it: this pass was looking for
+  // something better, not repairing something wrong.
+  const retireNow = outOfRounds && showsWrongPicture(row);
+  const settled = retireNow ? await retireAndSettle({ ...row, image_rejected_urls: refused }) : null;
   await patch(row, {
     image_rejected_urls: refused,
     image_attempts: (row.image_attempts ?? 0) + 1,
-    // A meal showing a picture of the wrong food, with nothing better found and
-    // no rounds left, shows nothing instead. That is the spec's rule rather than
-    // this pass's opinion — a wrong picture is worse than an icon — and it is
-    // the only way a meal already wearing one can reach an honest state at all.
-    ...(retireNow ? retire(row) : {}),
+    ...(settled ?? {}),
   });
   timing(row, tSearch, tFetch, tJudge);
   return {
     ok: false,
     why: judged
-      ? `${judged} candidate${judged > 1 ? 's' : ''} judged, none ok` +
-        (retireNow ? ' — wrong picture retired' : '')
+      ? `${judged} candidate${judged > 1 ? 's' : ''} judged, none ok`
       : `no licensed candidate (${queries.length} searches)`,
     judged,
-    retired: retireNow,
+    retired: settled ? landing(settled) : undefined,
   };
 }
 
-let done = 0, served = 0, judgedTotal = 0, failed = 0, retired = 0;
+/** Where a retired meal came to rest, as the run's summary counts it. */
+function landing(p: Record<string, unknown>): string {
+  if (p.image_mode === 'none') return `icon (${p.image_blocked_reason})`;
+  return `${p.image_mode} rated ${p.image_verdict ?? 'unjudged'}`;
+}
+
+let done = 0, served = 0, judgedTotal = 0, failed = 0, spentFailed = 0;
+const retiredTo: Record<string, number> = {};
+const tallyRetired = (where: string) => (retiredTo[where] = (retiredTo[where] ?? 0) + 1);
 const wins: string[] = [];
 const queue = [...rows];
+
+// Out of rounds and still wrong: no search, straight down the ladder.
+for (const row of spent) {
+  try {
+    const next = await retireAndSettle(row);
+    await patch(row, next);
+    tallyRetired(landing(next));
+  } catch (e) {
+    spentFailed++;
+    console.log(`  ERR  ${row.name.slice(0, 46)} — ${(e as Error).message.slice(0, 60)}`);
+  }
+}
 
 await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
   while (queue.length) {
@@ -523,7 +595,7 @@ await Promise.all(Array.from({ length: CONCURRENCY }, async () => {
     if (!out) continue;
 
     judgedTotal += out.judged;
-    if (out.retired) retired++;
+    if (out.retired) tallyRetired(out.retired);
     if (out.ok) {
       served++;
       wins.push(`${row.name.slice(0, 44).padEnd(46)}${out.why}`);
@@ -538,16 +610,22 @@ await Deno.remove(dir, { recursive: true }).catch(() => {});
 
 console.log(
   `\nserved ${served}/${rows.length}` +
-    ` (${(100 * served / rows.length).toFixed(1)}%), ${judgedTotal} candidates judged` +
-    (failed ? `, ${failed} meals errored` : ''),
+    ` (${rows.length ? (100 * served / rows.length).toFixed(1) : '0.0'}%), ${judgedTotal} candidates judged` +
+    (fallbacksJudged ? `, ${fallbacksJudged} fallback grids judged` : '') +
+    (failed ? `, ${failed} meals errored` : '') +
+    (spentFailed ? `, ${spentFailed} out-of-rounds meals errored before retiring` : ''),
 );
-// Deliberately not "keep their icon": on the `wrong` queue an unserved meal
-// keeps the picture it had unless it ran out of rounds, and saying otherwise
+// Deliberately not "keep their icon": an unserved meal keeps the picture it had
+// unless that picture was wrong and it ran out of rounds, and saying otherwise
 // would misreport the one thing this pass exists to change.
-console.log(
-  `${rows.length - served - failed} meals were not served` +
-    (retired ? `; ${retired} ran out of rounds and had a wrong picture retired` : '') + '.',
-);
+console.log(`${rows.length - served - failed} meals were not served.`);
+const retiredTotal = Object.values(retiredTo).reduce((a, b) => a + b, 0);
+if (retiredTotal) {
+  console.log(`${retiredTotal} wrong pictures retired; the meals now show:`);
+  for (const [where, n] of Object.entries(retiredTo).sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${where.padEnd(34)} ${String(n).padStart(5)}`);
+  }
+}
 
 const spendUsd = estimateSpend({ model: MODEL, ...usage });
 const at = new Date().toISOString();
@@ -567,8 +645,8 @@ const row = renderRunRow({
   at,
   model: MODEL,
   pass: '10',
-  judged: judgedTotal,
-  skipped: failed,
+  judged: judgedTotal + fallbacksJudged,
+  skipped: failed + spentFailed,
   ...usage,
   spendUsd,
 });

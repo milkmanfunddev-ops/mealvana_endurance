@@ -19,8 +19,11 @@ const bank = new Map(
     .map((r) => [r.slug, r]));
 console.log(`bank: ${bank.size} ingredient tiles`);
 
+// `image_rejected_mosaics` is not optional: without it the ladder cannot see
+// which grids the judge has refused, and this pass would hand every retired
+// meal back the picture it was retired from.
 const meals = await selectAll('meal_library',
-  'select=id,name,ingredients_json,image_url,separability&is_active=eq.true');
+  'select=id,name,ingredients_json,image_url,separability,image_rejected_mosaics&is_active=eq.true');
 
 const updates = [];
 const tally = { dish: 0, mosaic: 0, tile: 0, none: 0 };
@@ -39,9 +42,10 @@ for (const m of meals) {
     image_tiles: tiles,
     image_mode: mode,
     image_blocked: isBlocked,
-    // Which of the three reasons, per meal and not only in the tally: a
-    // transformed meal needs a dish photo, a meal with no tile needs the bank
-    // to grow, and pass 9 cannot tell those populations apart without this.
+    // Which reason, per meal and not only in the tally: a transformed meal
+    // needs a dish photo, a meal with no tile needs the bank to grow, a meal
+    // whose grid was judged wrong needs either, and pass 9 cannot tell those
+    // populations apart without this.
     image_blocked_reason: isBlocked ? reason : null,
   });
 }

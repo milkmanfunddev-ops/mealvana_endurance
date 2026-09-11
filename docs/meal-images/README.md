@@ -48,6 +48,15 @@ node --test scripts/meal-images/lib/ladder.test.mjs
 Every rule in that file was argued for and should break exactly one test when it
 changes.
 
+**The ladder remembers what the judge refused.** A grid the judge rated `wrong`
+for a meal is kept in `meal_library.image_rejected_mosaics` (its photographs in
+drawing order), and the ladder never offers that grid to that meal again: the
+meal resolves to `none` with the reason `judged_wrong`. Pass 3 recomputes every
+meal from scratch, so without this a re-run would hand every retired meal back
+the picture it was retired from. The memory is of the picture, not the meal —
+once pass 2 replaces one of the tile photographs, the grid is a different
+picture and the ladder offers it again, unjudged.
+
 ## Compositor parity — read before touching the grid
 
 The mosaic is drawn twice. `MealImageMosaic` draws it for the athlete, in
@@ -146,7 +155,7 @@ node scripts/meal-images/03-assign-tiles.mjs
 deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
   scripts/meal-images/08-verify-meal-image.ts    # LIMIT= to sample, DRY=1 to price it
 deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
-  scripts/meal-images/10-source-dish-photos.ts   # QUEUE=transformed|blocked|wrong|all
+  scripts/meal-images/10-source-dish-photos.ts   # QUEUE=transformed|blocked|wrong|recipes|all
 node scripts/meal-images/09-image-report.mjs --write
 node scripts/meal-images/04-contact-sheet.mjs
 ```
@@ -236,15 +245,35 @@ budget re-learning what the first round learned. So a second round is bought
 only when *the pass itself* has changed — a better query builder, another
 provider — with `MAX_ATTEMPTS=2`, deliberately.
 
-When a meal runs out of rounds still wearing a picture rated `wrong`, that
-picture is retired and the meal goes back to its icon. A wrong picture is worse
-than no picture, and an icon is a state rather than an absence.
+When a meal runs out of rounds still showing a picture rated `wrong` — a
+photograph, a grid or a single tile — that picture is retired
+(`lib/retire.mjs`) and the ladder answers again without it. A wrong picture is
+worse than no picture, and an icon is a state rather than an absence. A meal
+whose photograph was of the wrong food may still be entitled to a good grid,
+so the rung it drops to is judged before the pass leaves it; if that grid is
+wrong too, the meal lands on its icon with `judged_wrong`. A meal already out of
+rounds is retired without being searched again.
+
+A fallback grid whose tiles could not be downloaded is left unjudged rather than
+guessed at. So after a run that retired anything, run pass 8 (it judges only
+meals with no verdict), and if it rates any of those `wrong`, run pass 10 once
+more on the same queue: those meals are out of rounds, so they are retired
+straight to their icon without another search. Retiring is tested on its own:
+
+```bash
+node --test scripts/meal-images/lib/retire.test.mjs
+```
+
+A recipe wearing an `ok` or `weak` grid keeps it when no photograph is found:
+the pass was looking for something better there, not repairing something wrong.
 
 ```bash
 QUEUE=transformed  meals a Mosaic can never serve (the default)
 QUEUE=blocked      every meal the ladder found nothing for
-QUEUE=wrong        meals whose current picture was judged `wrong`
-QUEUE=all          both of the above
+QUEUE=wrong        meals whose current picture was judged `wrong`, any rung
+QUEUE=recipes      recipes wearing ingredient tiles, whatever their verdict
+QUEUE=all          blocked and wrong
+QUEUE=wrong,recipes   queues combine; this one is ticket 05's population
 SEPARABILITY=transformed   narrow any queue to one separability
 MAX_ATTEMPTS=2     give meals already attempted one more round
 ```

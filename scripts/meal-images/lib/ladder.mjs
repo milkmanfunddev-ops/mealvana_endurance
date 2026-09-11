@@ -24,6 +24,13 @@
 //      & coconut" shown as a photograph of cherries is not: it looks like a
 //      picture of the meal and is a picture of one fifth of it.
 //
+//   4. A grid the judge rated `wrong` for this meal is never offered to it
+//      again. The first three rules are about what a mosaic COULD say; this one
+//      is about what the judge saw one say. Without it, re-running pass 3 hands
+//      every retired meal back the picture it was retired from. The memory is
+//      of the picture, not of the meal: once a tile's photograph is replaced
+//      the grid is a different picture, and nobody has judged it yet.
+//
 // Pure: no network, no database, no model, no mutation of its arguments. The
 // rules are therefore testable on their own (`ladder.test.mjs`), which is the
 // point of them living here rather than inline in pass 3.
@@ -47,12 +54,26 @@ export const BLOCKED_REASONS = {
   transformed: 'transformed (a mosaic would misrepresent it)',
   no_bank_tile: 'no tile in the bank for any ingredient',
   multi_part_single_tile: 'one tile for a meal of several parts',
+  judged_wrong: 'the judge rated the only grid available wrong',
 };
+
+/**
+ * What makes two grids the same picture: the photographs, in the order they
+ * are drawn.
+ *
+ * Compared without the query string, because a stock CDN's resize parameters
+ * are not part of the picture's identity.
+ *
+ * @param {Array<{url: string}>} tiles
+ */
+export function pictureIdentity(tiles) {
+  return tiles.map((t) => String(t.url).split('?')[0]).join(' + ');
+}
 
 /**
  * Resolve one meal onto the ladder.
  *
- * @param {{image_url?: string|null, separability?: string|null, ingredients_json?: Array<{name: string, role?: string}>|null}} meal
+ * @param {{image_url?: string|null, separability?: string|null, ingredients_json?: Array<{name: string, role?: string}>|null, image_rejected_mosaics?: string[]|null}} meal
  * @param {Map<string, {slug: string, display_name: string, image_url: string, license: string, creator: string, source_url: string, provider: string}>} bank
  *   Verified ingredient tiles, keyed by slug.
  * @returns {{mode: 'dish'|'mosaic'|'tile'|'none', tiles: Array<object>|null, blocked: boolean, reason: string}}
@@ -73,6 +94,11 @@ export function resolveMealImage(meal, bank) {
   // original recipe order.
   cands.sort((a, b) => a.rank - b.rank || a.order - b.order);
   const tiles = cands.slice(0, MAX_TILES).map((c) => toTile(bank.get(c.slug)));
+
+  // Rule 4: the judge has already seen this picture on this meal and said no.
+  if (tiles.length && (meal.image_rejected_mosaics ?? []).includes(pictureIdentity(tiles))) {
+    return { mode: 'none', tiles: null, blocked: true, reason: 'judged_wrong' };
+  }
 
   if (tiles.length >= 2) {
     return { mode: 'mosaic', tiles, blocked: false, reason: 'mosaic' };
