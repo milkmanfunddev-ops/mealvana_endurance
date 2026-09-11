@@ -5,7 +5,8 @@
 ///
 /// The picture of a meal, at any size. Renders whichever rung of the image
 /// fallback ladder that meal reached: one real photograph, a mosaic of 2–4
-/// photographs of its principal ingredients, or nothing at all.
+/// photographs of its principal ingredients, or the host's icon in the
+/// picture's place (MIM-9).
 ///
 /// Most of `meal_library` is *assemblies* — "Barley, chard & pinto bean bowl" —
 /// of which no photograph exists anywhere, so a meal is depicted by its own

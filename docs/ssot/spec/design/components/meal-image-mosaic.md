@@ -50,8 +50,9 @@ image a meal gets, never reorders tiles, and never substitutes one.
 * **MIM-9 — the icon state takes the picture's place.** Direction from meal-imagery ticket 08
   (Lee): same footprint as a picture, a first-class state, no "missing image" affordance, token
   registry only. The specific treatment below is proposed app-side (2026-09-11) and not yet
-  seen by Lee or Xuan. A fifth of the
-  library has no honest picture, permanently, so a list will often mix pictures and icons. A
+  seen by Lee or Xuan. More than half
+  the library shows no picture (1,118 of 1,922 Meals on 2026-09-11,
+  `docs/meal-images/honesty.md`), so a list will usually mix pictures and icons. A
   host that keeps a leading element in its rows (the meal card) passes the meal's icon as the
   fallback, and the component draws it in the picture's own box and corners: same size, same
   outer radius, same position. Rows stay aligned; the list does not go ragged. The icon is a

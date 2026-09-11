@@ -6,6 +6,30 @@ we are and are not allowed to do with them.
 Scripts: `scripts/meal-images/`. Dev only — `lib/db.mjs` hard-codes the dev
 project ref so a stray env var cannot point a bulk write at prod.
 
+## Where it stands (2026-09-11)
+
+**Honesty is 75.3%.** 1,447 of 1,922 active meals either show a picture the judge
+rated `ok` or show their icon with a recorded reason. No meal shows a picture
+rated `wrong`. The live figures, the breakdown by mode and reason, and what each
+run cost are in [honesty.md](honesty.md), regenerated from the database by pass 9.
+
+Coverage, the share of meals showing any picture at all, is 41.8% (804 meals).
+It is not a measure of quality and should not be quoted as one. The two numbers
+count different things:
+
+- Coverage counts a meal as done when it shows a picture, whatever the
+  picture is of.
+- Honesty counts a meal as done when it shows a picture the judge rated
+  `ok` for that meal, or shows its icon on purpose. A `weak` picture counts
+  toward coverage and not toward honesty.
+
+The library once reported 94.5% coverage (2026-09-08). That figure counted
+fifteen meals shown with a photograph of water as fifteen covered meals. When
+the judge first looked at every meal (2026-09-10), coverage was 80.3% and
+honesty 27.3%, and 539 of the 708 dish photos were of the wrong food. Coverage has
+fallen since because wrong pictures were retired, and a meal with no honest
+picture shows its icon rather than a wrong one.
+
 ## Why tiles instead of dish photos
 
 Only ~250 of the 1,922 rows are `kind='recipe'`. The rest are *assemblies* —
@@ -14,8 +38,10 @@ compositional entries like "Barley, chard & pinto bean bowl" or
 dishes exists anywhere**, which is why literal dish matching stalled at 36.8%
 coverage in the 2026-09-01 Wikimedia pass.
 
-So a meal without a real photo is represented by a mosaic of its *principal
-ingredients*, drawn from a shared bank. Tiles repeat across meals, but the
+So a Separable meal without a real photo is represented by a mosaic of its
+*principal ingredients*, drawn from a shared bank. A Transformed meal (a
+smoothie, a bake) cannot be told by its parts, so it gets a dish photo or its
+icon. Tiles repeat across meals, but the
 combination is unique to each meal, so the library does not look canned the way
 a handful of shared "grain bowl" stock photos would.
 
@@ -32,9 +58,10 @@ a handful of shared "grain bowl" stock photos would.
 
 `none` is a state, not an absence: the card draws the meal's icon in the space
 the picture would occupy, with the picture's corners, so a rail of mixed rows
-does not go ragged (`meal_card.dart`, component contract MIM-9). A photograph
-that fails to load falls back to the same icon rather than leaving a blank
-slot. A row can move up the ladder later simply by re-running pass 3 after the
+does not go ragged (`meal_card.dart`, component contract MIM-9). On a card, a
+photograph that fails to load falls back to the same icon rather than leaving a
+blank slot. The detail screen passes no fallback, so a meal with no picture has
+no hero, and a hero whose photograph fails to load collapses. A row can move up the ladder later simply by re-running pass 3 after the
 bank grows.
 
 **One photograph, one card per list.** Reusing a photograph across the
@@ -77,7 +104,9 @@ picture and the ladder offers it again, unjudged.
 
 The mosaic is drawn twice. `MealImageMosaic` draws it for the athlete, in
 Flutter, and pass 8 draws it again as a file so a model can look at it and
-record a verdict in `meal_library.image_verdict`.
+record a verdict in `meal_library.image_verdict`. It is drawn on the client
+because most grids contain a photograph we may not store a copy of
+([ADR 0002](../adr/0002-mosaics-are-composed-on-the-client.md)).
 
 **Every stored verdict is a statement about the picture the compositor drew.**
 If the two drawings stop agreeing, those verdicts describe a picture no athlete
@@ -175,23 +204,6 @@ deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-
 node scripts/meal-images/09-image-report.mjs --write
 node scripts/meal-images/04-contact-sheet.mjs
 ```
-
-## Where it landed (2026-09-08)
-
-> **Do not quote the number below.** 94.5% is *coverage* — how many meals have a
-> picture — and it counts fifteen meals represented by a photograph of water as
-> fifteen covered meals. The number that means anything is honesty, measured per
-> meal against the composed image: **[honesty.md](honesty.md)**.
-
-**94.5% coverage — 1,816 of 1,922 meals**, from a bank of ~500 vision-checked
-ingredient tiles. Baseline before this work was 36.8%.
-
-| mode | rows | share |
-|---|---|---|
-| `dish` | 708 | 36.8% |
-| `mosaic` | 835 | 43.4% |
-| `tile` | 273 | 14.2% |
-| `none` | 106 | 5.5% |
 
 ## Pass 5 — why vision verification exists
 
@@ -329,7 +341,9 @@ Neither is visible in the honesty figure, which is the point of the sheet.
 
 ## Licensing — read before changing anything
 
-**Storage policy is per-provider and is not a performance choice.**
+**Storage policy is per-provider and is not a performance choice.** Why, and
+what reversing it would cost:
+[ADR 0001](../adr/0001-meal-images-mirroring-is-decided-per-provider.md).
 `providers.mjs` exports `MAY_MIRROR`:
 
 | provider | licence | storage |
@@ -449,9 +463,10 @@ These all cost a run, and the guards for them are in the code:
 
 ## Known issues
 
-- **40 unlicensed hotlinks — FLAGGED, deliberately kept.** 40 meals across 24 food-blog
-  hosts (`featherstonenutrition.com`, `recipetineats.com`, `teaforturmeric.com`)
-  whose `image_credit` is a bare domain. These are og:image scrapes from the
+- **30 unlicensed hotlinks — FLAGGED, deliberately kept.** 30 meals across 19 food-blog
+  hosts (`norecipes.com`, `urbanblisslife.com`, `blondekimchi.com`) whose
+  `image_credit` is a bare domain (40 across 24 hosts on 2026-09-08; retiring
+  pictures the judge rated wrong has taken ten of them away since). These are og:image scrapes from the
   recipe-directions backfill: unlicensed hotlinks to identifiable small
   businesses, which also cost those sites bandwidth.
 
@@ -462,6 +477,10 @@ These all cost a run, and the guards for them are in the code:
 
   **Prod gate — this must be zero before any prod cutover:**
   `select count(*) from meal_library where image_unlicensed;`
-- The 668 Wikimedia images from the 2026-09-01 pass are still hotlinked to
-  `upload.wikimedia.org` rather than mirrored. Permitted but discouraged and
+  The gate is a step in the cutover runbook
+  (`supabase/migrations/cutover/meal_planning/`, `03_image_gate.sql`), which
+  raises rather than returning a number, so it cannot be read past.
+- 133 dish photos from the 2026-09-01 Wikimedia pass are still hotlinked to
+  `upload.wikimedia.org` rather than mirrored (668 when the pass ran; the rest
+  were judged wrong and retired). Permitted but discouraged and
   fragile; re-running pass 2 against them would mirror them properly.

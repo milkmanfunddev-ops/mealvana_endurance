@@ -59,6 +59,17 @@ select
   (select count(*) from public.meal_library where method_steps is not null)           as library_with_steps,
   (select count(*) from public.meal_library_pairs)                                    as library_pairs,
 
+  -- ---- meal imagery (added 2026-09-11) --------------------------------
+  -- Unlicensed food-blog hotlinks must be zero on prod; 03_image_gate.sql
+  -- raises on the same condition.
+  (select count(*) from public.meal_library where image_unlicensed)                   as library_unlicensed_images,
+  -- Mirrored pictures still pointing at the DEV storage bucket. The snapshot
+  -- copies image URLs verbatim, so this is non-zero unless the bucket was
+  -- copied and the URLs rewritten (README, "Meal imagery").
+  (select count(*) from public.meal_library
+    where image_url like '%vlmtsdzpnjnavdgytcmi.supabase.co/storage/%'
+       or image_tiles::text like '%vlmtsdzpnjnavdgytcmi.supabase.co/storage/%')        as library_images_on_dev_storage,
+
   -- ---- RLS is on for every new table (a table without RLS is world-readable)
   (select count(*) from pg_class c join pg_namespace n on n.oid = c.relnamespace
     where n.nspname = 'public' and c.relrowsecurity
@@ -74,6 +85,9 @@ select
 --   rls_enabled_tables = 8 (eight tables — see the plan_days note above);
 --   library_rows = 1922, library_embedded = 1922, library_with_steps = 1922,
 --   library_assemblies = 1675, library_recipes = 247, library_pairs = 8106.
+--   library_unlicensed_images = 0 (a hard gate, not a measurement).
+--   library_images_on_dev_storage = 0 once the bucket is copied; on dev on
+--   2026-09-11 it was 506 of the 804 meals showing a picture.
 --
 -- The library counts are the dev snapshot's, so they hold only if prod was
 -- seeded from `data/meal-library.snapshot.json` (06 §3). A prod re-scrape

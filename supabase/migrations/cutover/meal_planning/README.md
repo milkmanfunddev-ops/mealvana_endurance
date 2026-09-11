@@ -1,6 +1,8 @@
 # PROD cutover — meal planning (Vana)
 
 **Status: ⛔ NOT RUN. Prepared and verified against live dev + prod on 2026-09-02.**
+**Amended 2026-09-11 (meal imagery):** image gate, stale snapshot, dev-storage URLs; see
+"Meal imagery" below.
 Prod ref `wvmvsodrvbkxfydabqed` · dev ref `vlmtsdzpnjnavdgytcmi`.
 
 This is Phase 5 of `docs/implement_mealplanning/06-sync-schema-envs.md`, made
@@ -67,10 +69,10 @@ Everything is idempotent and re-runnable.
 | # | what | how |
 |---|---|---|
 | 1 | Pre-check (read-only) | `01_pre_check.sql` — compare with §"Expected pre-check answer" |
-| 2 | Apply all 13 pending migrations | `supabase db push --linked` against prod (relink first), in timestamp order — the CLI does the ordering |
-| 3 | Seed `meal_library` from the dev snapshot | `cd ~/development/mealplanning-prototype/packages/web && node scripts/seed_meal_library.mjs --snapshot data/meal-library.snapshot.json --env <prod env file>` |
+| 2 | Apply all pending migrations (13 on 2026-09-02, plus six for meal imagery, see "Meal imagery") | `supabase db push --linked` against prod (relink first), in timestamp order — the CLI does the ordering |
+| 3 | Gate the images on dev, re-export the snapshot, seed `meal_library` | `03_image_gate.sql` against **dev** must pass (see "Meal imagery" below). Then, in `~/development/mealplanning-prototype/packages/web`: `node scripts/export_meal_library.mjs --env <dev env file>`, then `node scripts/seed_meal_library.mjs --snapshot data/meal-library.snapshot.json --env <prod env file>` |
 | 4 | Refresh the pair view | `select public.refresh_meal_library_pairs();` (service_role) |
-| 5 | Verify (read-only) | `90_verify.sql` — paste the row into the status header above |
+| 5 | Verify (read-only) | `03_image_gate.sql` against prod must pass; then `90_verify.sql` — paste the row into the status header above |
 | 6 | Deploy edge functions to prod | `/deploy-edge` for `vana-chat`, `vana-action`, `vana-day-notes`, `revenuecat-webhook`, `jade-chat` |
 | 7 | Secrets | `PRO_GATE_ENABLED=true` on prod; `VANA_*_MODEL` optional |
 | 8 | Smoke | `search_meals` as the QA user excludes their allergens; a `vana_calls` row is written; `jade_conversations` still serves the shipped app |
@@ -82,6 +84,48 @@ snapshot carries every column **except** `embedding` and `search_text`
 regenerated on prod — there is no way to skip that cost, and `90_verify.sql`
 checks `library_embedded = library_rows` precisely because a half-embedded
 library still answers `search_meals` (just badly).
+
+## Meal imagery (added 2026-09-11)
+
+The meal-image work (`docs/meal-images/README.md`, `.scratch/meal-imagery/`)
+happened after this runbook was written. It changes four things here.
+
+**Six more migrations are pending.** All are applied to dev only, and all are
+idempotent. They are `20260909120000_meal_images_schema_and_catalog_paging`,
+`20260909170000_meal_image_verdicts`, `20260910140000_meal_image_blocked_reason`,
+`20260910180000_meal_dish_photo_sourcing`, `20260910200000_meal_rejected_mosaics`,
+`20260911120000_search_meals_photo_source`. The last one redefines
+`search_meals` to return `image_source_url`, `image_creator` and
+`image_license`, which the app's list de-duplication and card credits read.
+
+**The snapshot is stale.** `data/meal-library.snapshot.json` was exported on
+2026-09-01, before any of the imagery work. Seeding from it would ship the old
+library: no `image_mode` or `image_tiles`, no verdicts, and the 539 dish photos
+the judge later rated wrong. It also has no `image_unlicensed` column, so the
+food-blog photographs in it would arrive unflagged and the gate below would
+pass without meaning anything. Re-export from dev in step 3, after the gate
+passes. The imagery work changed no row's ingredients: `90_verify.sql` on dev
+on 2026-09-11 still returned the 2026-09-02 library counts (1,922 rows, 1,922
+embedded, 8,106 pairs), so its expected values stand.
+
+**Production gate: no unlicensed pictures.** 30 dev rows (2026-09-11) show a
+photograph hotlinked from a food blog with no recorded licence. They are kept
+on dev on purpose while the library is a prototype and flagged
+`meal_library.image_unlicensed`. They must not reach production.
+`03_image_gate.sql` raises while any remain; run it against dev before the
+export and against prod after the seed. `90_verify.sql` reports the same count
+as `library_unlicensed_images`, and it must be 0.
+
+**Mirrored pictures point at dev storage.** Archive photographs are copied into
+the `meal-images` bucket, and every copy so far is in the **dev** project
+(`docs/adr/0001-meal-images-mirroring-is-decided-per-provider.md`). The
+snapshot copies URLs verbatim, so on 2026-09-11, 506 of the 804 meals showing a
+picture would load at least one image from dev storage in production. Before
+the seed, either copy the bucket to prod and rewrite the host in
+`image_url` and `image_tiles` in the snapshot, or decide explicitly that prod
+may read dev's public bucket for now. `90_verify.sql` reports
+`library_images_on_dev_storage`; 0 means the bucket was moved. Stock photos
+(Unsplash, Pexels) are hotlinked to the provider and need nothing.
 
 ## Expected pre-check answer (prod, 2026-09-02)
 
