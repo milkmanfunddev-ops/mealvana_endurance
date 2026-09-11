@@ -910,15 +910,17 @@ class MacroDashboardScreen extends ConsumerWidget {
     final selected = List<Activity>.from(
       ref.read(brickSelectionControllerProvider).selectedActivities,
     );
-    final loading = MealvanaSnackbar.showLoading(
-      context,
-      'Creating brick workout...',
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    MealvanaSnackbar.showLoading(context, 'Creating brick workout...');
     var dismissed = false;
     void dismiss() {
       if (dismissed) return;
       dismissed = true;
-      loading.close();
+      // Clear the WHOLE queue via the pre-captured messenger: in release,
+      // controller.close() silently targets whatever is first in the queue
+      // (the debug assert is stripped), which left this loading snackbar —
+      // and its spinner — on screen for good (prod, 2026-09-11).
+      MealvanaSnackbar.clearAll(messenger);
     }
 
     try {
@@ -1008,15 +1010,17 @@ class MacroDashboardScreen extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
 
-    final loading = MealvanaSnackbar.showLoading(
-      context,
-      'Ungrouping brick...',
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    MealvanaSnackbar.showLoading(context, 'Ungrouping brick...');
     var dismissed = false;
     void dismiss() {
       if (dismissed) return;
       dismissed = true;
-      loading.close();
+      // Clear the WHOLE queue via the pre-captured messenger: in release,
+      // controller.close() silently targets whatever is first in the queue
+      // (the debug assert is stripped), which left this loading snackbar —
+      // and its spinner — on screen for good (prod, 2026-09-11).
+      MealvanaSnackbar.clearAll(messenger);
     }
 
     try {
@@ -1097,12 +1101,17 @@ class MacroDashboardScreen extends ConsumerWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    final loading = MealvanaSnackbar.showLoading(context, 'Deleting brick...');
+    final messenger = ScaffoldMessenger.of(context);
+    MealvanaSnackbar.showLoading(context, 'Deleting brick...');
     var dismissed = false;
     void dismiss() {
       if (dismissed) return;
       dismissed = true;
-      loading.close();
+      // Clear the WHOLE queue via the pre-captured messenger: in release,
+      // controller.close() silently targets whatever is first in the queue
+      // (the debug assert is stripped), which left this loading snackbar —
+      // and its spinner — on screen for good (prod, 2026-09-11).
+      MealvanaSnackbar.clearAll(messenger);
     }
 
     try {
