@@ -33,7 +33,12 @@ the two do not currently agree**: the listing reads **1.20.1**, while the build
 behind it is **1.20.0+9**.
 
 `1.20.0+9` is the value that matters — it is what the Shorebird runtime reports,
-and it is what you pass to `--release-version`. Go looking for a "1.20.1"
+and it is what you pass to `--release-version`.
+
+Also: **one cut = TWO releases with consecutive build numbers** — prod-ios and
+prod-android each bump the same counter, so e.g. 1.26.0 registered as
+`1.26.0+109` (iOS) and `1.26.0+110` (Android). Patch each platform against ITS
+number; the console's Releases tab shows the platform icon per row. Go looking for a "1.20.1"
 release and you will not find one, and will wrongly conclude the patch channel
 is broken.
 
@@ -96,32 +101,52 @@ what saves them a reinstall — it isn't redundant.
 
 Dev is the same, using `dev-ios-patch` off `develop`.
 
-## The hard way: local CLI
+## The hard way: local CLI — iOS ONLY
 
-Only if Codemagic isn't an option.
+Fully viable for iOS since 2026-09-11 (patches #1–#3 on 1.26.0+109 all shipped
+this way). The old heads-up — the IPA export dying on
+`OneSignalLocation.framework.dSYM` — is **obsolete**: pass `--no-codesign` and
+the export step (where that failure lived) never runs at all. A patch ships no
+IPA, so nothing is lost, and no distribution certificate is needed in the
+local keychain either.
 
-> **Heads up: `shorebird patch ios` currently fails on a local Mac.** The Xcode
-> *archive* succeeds, then the IPA *export* dies with:
-> `Uncategorized (Xcode): The file "OneSignalLocation.framework.dSYM" couldn't
-> be opened because there is no such file.`
-> Codemagic builds the same commit fine, which is the main reason to prefer it.
-> If you must go local, expect to fix this first.
+> **Android can NOT go local.** The prod flavor hard-requires the release
+> upload keystore (`android/key.properties`), which exists ONLY in Codemagic's
+> `CM_KEYSTORE_B64` env group, and `shorebird patch android` has no
+> `--no-codesign`. Android patches run via the `prod-android-patch` workflow —
+> pin `RELEASE_VERSION` in `codemagic.yaml` ON the backport branch (grep the
+> 1.26.0 patch branch for the precedent) rather than trusting a UI field.
+
+**Auth:** `SHOREBIRD_TOKEN` from an API key (console → Account → API Keys;
+the support@mealvana.io account owns the org). The current key lives in
+`secrets/shorebird.env` — `set -a; source secrets/shorebird.env; set +a`.
+No `shorebird login` needed.
 
 Every one of these has cost someone an hour.
 
 ```bash
 shorebird upgrade          # DO THIS FIRST — see below
 
-git worktree add /tmp/wt-120 origin/release/1.20
-cd /tmp/wt-120
+git worktree add --detach /tmp/wt-126 <backport-branch-tip-sha>
+cd /tmp/wt-126
 cp /path/to/repo/.env /path/to/repo/.env.dev.local /path/to/repo/.env.prod.local .
+flutter pub get
 
-# Detach it. Do not pipe to tail.
+# ALWAYS dry-run first (validates + shows asset/native diffs, uploads nothing):
+set -a; source /path/to/repo/secrets/shorebird.env; set +a
 CI=true nohup shorebird patch ios --flavor prod --target lib/main_prod.dart \
-  --release-version 1.20.0+9 --allow-asset-diffs > patch.log 2>&1 &
+  --release-version 1.26.0+109 --no-codesign --dry-run > patch_dry.log 2>&1 &
+
+# READ the reported diffs (see the --allow-asset-diffs bullet), THEN ship:
+CI=true nohup shorebird patch ios --flavor prod --target lib/main_prod.dart \
+  --release-version 1.26.0+109 --no-codesign --allow-asset-diffs > patch.log 2>&1 &
 
 tail -f patch.log
 ```
+
+A patch is a FULL Dart snapshot, not a delta on earlier patches: build it from
+a tree carrying EVERY fix that should be live (the backport branch), and
+devices jump straight to the newest patch number.
 
 - **`shorebird upgrade` first.** An out-of-date CLI fails at the *very last
   step* ("Creating patch ✗") after build, verify and diff have all succeeded.
@@ -133,7 +158,9 @@ tail -f patch.log
 - **Copy the `.env*` files in.** They're gitignored, and the build fails without
   them ("No file or variants found for asset: .env").
 - **`--allow-asset-diffs` suppresses a real warning — read every diff before you
-  use it.** Patches do **not** ship assets, so any asset the patched Dart code
+  use it.** The known-inert set (1.20 and 1.26 precedents): the copied `.env*`
+  files, and Xcode toolchain version stamps inside `Assets.car` when the local
+  Xcode differs from Codemagic's. Patches do **not** ship assets, so any asset the patched Dart code
   actually depends on will be missing at runtime. Only pass this flag once you
   have looked at each reported diff and confirmed it is inert. In the 1.20
   backport they were: the `.env*` files you copied in to make the worktree
