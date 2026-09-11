@@ -17,7 +17,7 @@ returned.
 
 **Blocked by:** 06
 
-**Status:** verified on the iOS simulator in dark, screen in light (2026-09-10); sheets in light not yet seen; design-system gaps in `../design-system-gaps.md`
+**Status:** verified on the iOS simulator in dark, and the screen and confirm sheets in light (2026-09-10); design-system gaps in `../design-system-gaps.md`
 
 - [x] The screen renders inside the app shell with the app's normal chrome —
       `/food/kroger/:planId` under the Food tree, so it carries `/food`'s Pro gate and the in-body

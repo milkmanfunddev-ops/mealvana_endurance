@@ -89,7 +89,7 @@ this must deploy `kroger` along with the app. Nothing checks that the two match.
 | 03 | Entry point shows (screenshot 01). **Coverage never got an answer for this account**: the app calls `coverage` with no ZIP, the server falls back to `users.home_lat/lon`, which are null here, and returns 400 `invalid_zip`, so the answer is "unknown" and the entry point shows by default. "Shows before Kroger is connected" was **not** exercised: Kroger was already connected, and disconnecting needs Lee's Kroger password to reconnect. |
 | 04 | Typed path verified: "Delivery to 35209", no Location name or address anywhere, and the draft stores the Location with no ZIP or coordinates (screenshot 05). **Device path fails: defect below.** "Change" was not tapped; "Set delivery area" opens the same postcode-only sheet. |
 | 02 | Matching verified at the Birmingham Spoke under delivery: 11 of 13 lines matched with real products, no prices anywhere, and the price note shows. With no Location, the match and choose buttons are not drawn. An empty search says "No matching products found". Weak match worth knowing about: white beans became Bush's White *Chili* Beans. **Cart write not done** (stop gate). |
-| 06 | Not verified: needs the send, which is Lee's call. |
+| 06 | **Cart write proven** (Lee approved; see below). After the send the review is read-only, "Open Kroger cart" shows, and "Send these items again" sits behind the warning, which says the cart only accepts additions and Mealvana cannot remove anything. Cancelling it sends nothing. The hand-off opened Safari (Kroger app not installed) at **login.kroger.com**, so the no-second-sign-in claim is untested: the account's OAuth predates ticket 06's non-ephemeral session. |
 | `searchLineId` | Did not reproduce by hand. The body's `AbsorbPointer` serializes searches, so a second search can't start while the first is in flight. The stale-results path still exists in code: it needs `search()` to no-op on `busy` while another `_run` (the shopping-list listener, say) holds it. |
 
 ### Defects found
@@ -114,9 +114,20 @@ this must deploy `kroger` along with the app. Nothing checks that the two match.
 4. **A failure that is not a `KrogerException` reads as "Kroger could not be reached"**, including
    a 400 `invalid_action`, which is our own version mismatch, not Kroger's.
 
+### The cart write, 20:47 CDT
+
+Lee approved it. To keep what reached his cart to a minimum, every matched line except Quinoa was
+skipped and Quinoa set to one package. The stored draft was checked before sending: one line, UPC
+0001111091238 (Simple Truth Organic Quinoa 16 oz) × 1, `DELIVERY`, store 540FC242. After
+confirming, `kroger_exports` holds one row, `sent`, `production`, with exactly that payload.
+`sent` is written only after Kroger answers 204 to `PUT /cart/add`. The send also refreshed the
+customer token (`kroger_connections.updated_at` moved), so the refresh path works too.
+Screenshots 16 to 22. **Still open: Lee to confirm the quinoa shows in his cart at kroger.com.**
+
 ### Left for the next pass
-- Lee: the cart write (approve items, "Add approved items to Kroger cart"), then ticket 06's
-  receipt, "Send these items again" warning and the hand-off to kroger.com/cart.
+- Lee: confirm the item is in the Kroger cart; delete it there if unwanted.
+- Ticket 06's "not asked to sign in again": disconnect, reconnect (Lee's Kroger password), send a
+  new plan, and watch the hand-off.
 - Ticket 03 before connecting, and a Coverage answer from a real area.
-- Ticket 07 sheets in light mode.
+- Ticket 07: the product sheet in light (the confirm sheets were seen in light).
 - Put the app theme back to **Dark** (Settings → Appearance). This pass set it to Light.
