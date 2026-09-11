@@ -3,11 +3,11 @@
 //   MIM-2  `none` renders nothing at all — no icon, no placeholder, no box
 //   MIM-3  tile count drives the grid; never more than four
 //   MIM-4  every cell is BoxFit.cover
-//   MIM-6  attribution names photographer AND source per provider
+//   MIM-6  lives in meal_image_credits_test.dart
 //   both themes build without exception
 //
-// Mutation check: let `none` paint a placeholder, let a 5th tile through, or
-// drop "on Unsplash" from the credit → the matching test fails.
+// Mutation check: let `none` paint a placeholder or let a 5th tile through →
+// the matching test fails.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -109,13 +109,7 @@ void main() {
         t,
         MealImageMosaic(
           mode: KyleMealImageMode.mosaic,
-          tiles: [
-            _tile('a'),
-            _tile('b'),
-            _tile('c'),
-            _tile('d'),
-            _tile('e'),
-          ],
+          tiles: [_tile('a'), _tile('b'), _tile('c'), _tile('d'), _tile('e')],
         ),
       );
       expect(find.byType(Image), findsNWidgets(4));
@@ -146,55 +140,6 @@ void main() {
     );
     expect(t.takeException(), isNull);
     expect(find.byType(Image), findsNWidgets(3));
-  });
-
-  group('MIM-6 — attribution per provider', () {
-    test('Unsplash names the photographer and Unsplash', () {
-      const t = KyleMealImageTile(
-        url: 'u',
-        creator: 'Annie Spratt',
-        provider: 'unsplash',
-      );
-      expect(t.attribution, 'Photo by Annie Spratt on Unsplash');
-    });
-
-    test('Pexels names the photographer and Pexels', () {
-      const t = KyleMealImageTile(
-        url: 'u',
-        creator: 'Ella Olsson',
-        provider: 'pexels',
-      );
-      expect(t.attribution, 'Photo by Ella Olsson on Pexels');
-    });
-
-    test('Unsplash still credits the source with no photographer', () {
-      const t = KyleMealImageTile(url: 'u', provider: 'unsplash');
-      expect(t.attribution, 'Photo on Unsplash');
-    });
-
-    test('Creative Commons pairs creator with licence', () {
-      const t = KyleMealImageTile(
-        url: 'u',
-        creator: 'Fructibus',
-        license: 'CC0',
-        provider: 'wikimedia',
-      );
-      expect(t.attribution, 'Fructibus · CC0');
-    });
-
-    test('licence alone is enough', () {
-      const t = KyleMealImageTile(
-        url: 'u',
-        license: 'CC BY-SA 4.0',
-        provider: 'wikimedia',
-      );
-      expect(t.attribution, 'CC BY-SA 4.0');
-    });
-
-    test('nothing to credit returns null, never an empty line', () {
-      const t = KyleMealImageTile(url: 'u', provider: 'wikimedia');
-      expect(t.attribution, isNull);
-    });
   });
 
   group('mode wire parsing', () {

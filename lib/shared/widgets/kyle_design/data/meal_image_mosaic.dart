@@ -26,13 +26,18 @@
 ///   radius belongs to the host.
 /// * **MIM-8** — no motion beyond the host's standard loading treatment.
 ///
-/// Attribution (**MIM-6**) is the host surface's job, not this widget's — it
-/// must credit *every* distinct tile shown. See [KyleMealImageTile.attribution].
+/// * **MIM-6** — attribution travels with the image: [KyleImageCredit] words
+///   and links one photograph's credit the way its provider asks, and
+///   [MealImageCredits] shows every distinct photograph behind a picture. Where
+///   the credit appears is the host's call — a card thumbnail carries it in
+///   semantics only, the detail hero shows it.
 library;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../../theme/kyle_design/app_text_styles.dart';
 
 /// One photograph in a meal's picture — a whole dish, or one ingredient.
 @immutable
@@ -44,6 +49,7 @@ class KyleMealImageTile {
     this.creator,
     this.sourceUrl,
     this.provider,
+    this.creditLine,
   });
 
   final String url;
@@ -53,29 +59,167 @@ class KyleMealImageTile {
 
   final String? license;
   final String? creator;
+
+  /// The page the photograph came from — what its credit opens.
   final String? sourceUrl;
 
-  /// `wikimedia` | `openverse` | `unsplash` | `pexels`.
+  /// `wikimedia` | `openverse` | `unsplash` | `pexels`, or null for a
+  /// photograph taken from a recipe page.
   final String? provider;
 
-  /// Human-readable credit line for this one photograph.
-  ///
-  /// Unsplash and Pexels both require the photographer and the source to be
-  /// named; Creative Commons requires creator plus licence. Returns null only
-  /// when we hold neither a creator nor a licence.
-  String? get attribution {
-    final who = (creator ?? '').trim();
+  /// A credit already written out, for when the photograph arrives without
+  /// the fields above (`search_meals` sends a dish photo's url and this only).
+  final String? creditLine;
+
+  /// This photograph's credit, worded and linked as its provider asks: the
+  /// photographer links to the photograph's page, and Unsplash and Pexels are
+  /// linked themselves because their terms want a link back. Null only when
+  /// there is nobody and nowhere to name.
+  KyleImageCredit? get credit {
+    final who = _clean(creator);
+    final source = _webUri(sourceUrl);
+    final platform = _platform(source);
+    final licence = _licenceLabel(license);
+    if (who == null && platform == null && licence == null) {
+      final line = _clean(creditLine);
+      return line == null ? null : KyleImageCredit([KyleCreditSpan(line)]);
+    }
+    final page = source == null ? null : _referral(platform, source);
+    final home = _stockHomes[platform];
+    return KyleImageCredit([
+      KyleCreditSpan(who == null ? 'Photo' : 'Photo by '),
+      if (who != null) KyleCreditSpan(who, page),
+      if (platform != null) ...[
+        const KyleCreditSpan(' on '),
+        KyleCreditSpan(platform, home ?? (who == null ? page : null)),
+      ],
+      if (licence != null) KyleCreditSpan(' ($licence)'),
+    ]);
+  }
+
+  /// The platform named in the credit. Openverse is a search engine over other
+  /// sites, so its photographs are credited to the site they live on.
+  String? _platform(Uri? source) {
     switch (provider) {
       case 'unsplash':
-        return who.isEmpty ? 'Photo on Unsplash' : 'Photo by $who on Unsplash';
+        return 'Unsplash';
       case 'pexels':
-        return who.isEmpty ? 'Photo on Pexels' : 'Photo by $who on Pexels';
-      default:
-        final lic = (license ?? '').trim();
-        if (who.isEmpty && lic.isEmpty) return null;
-        if (who.isEmpty) return lic;
-        return lic.isEmpty ? who : '$who · $lic';
+        return 'Pexels';
+      case 'wikimedia':
+        return 'Wikimedia Commons';
     }
+    final host = source?.host.toLowerCase().replaceFirst(RegExp(r'^www\.'), '');
+    if (host == null) return provider == 'openverse' ? 'Openverse' : null;
+    return _knownHosts[host] ?? host;
+  }
+
+  static const _knownHosts = {
+    'unsplash.com': 'Unsplash',
+    'pexels.com': 'Pexels',
+    'commons.wikimedia.org': 'Wikimedia Commons',
+    'flickr.com': 'Flickr',
+  };
+
+  static final _stockHomes = {
+    'Unsplash': _referral('Unsplash', Uri.https('unsplash.com', '/')),
+    'Pexels': Uri.https('www.pexels.com', '/'),
+  };
+
+  /// Unsplash's API terms require every link back to carry the app's name and
+  /// `utm_medium=referral`. It must match the application registered with
+  /// Unsplash.
+  static const _unsplashApp = 'mealvana';
+
+  static Uri _referral(String? platform, Uri uri) => platform != 'Unsplash'
+      ? uri
+      : uri.replace(
+          queryParameters: {
+            ...uri.queryParameters,
+            'utm_source': _unsplashApp,
+            'utm_medium': 'referral',
+          },
+        );
+
+  static String? _clean(String? v) {
+    final t = v?.trim() ?? '';
+    return t.isEmpty ? null : t;
+  }
+
+  static Uri? _webUri(String? v) {
+    final uri = Uri.tryParse(v?.trim() ?? '');
+    if (uri == null || !uri.isScheme('http') && !uri.isScheme('https')) {
+      return null;
+    }
+    return uri.host.isEmpty ? null : uri;
+  }
+
+  /// One spelling per licence, whichever way the pipeline stored it
+  /// (`cc-by-sa-4.0`, `CC BY-SA 4.0`, `cc0-or-pd`). The stock licences are
+  /// already named by their platform, so they are not repeated.
+  static String? _licenceLabel(String? raw) {
+    final s = _clean(raw);
+    if (s == null) return null;
+    final l = s.toLowerCase();
+    if (l == 'unsplash' || l == 'pexels') return null;
+    if (RegExp(r'^(pd|pdm|public domain|cc0[\s-]or[\s-]pd)$').hasMatch(l)) {
+      return 'public domain';
+    }
+    if (RegExp(r'^cc0([\s-]1\.0)?$').hasMatch(l)) return 'CC0';
+    final by = RegExp(
+      r'^cc[\s-]+by((?:[\s-]+(?:sa|nc|nd))*)(?:[\s-]+(\d+(?:\.\d+)?))?$',
+    ).firstMatch(l);
+    if (by == null) return s;
+    final terms = [
+      'CC BY',
+      ...by
+          .group(1)!
+          .split(RegExp(r'[\s-]+'))
+          .where((t) => t.isNotEmpty)
+          .map((t) => t.toUpperCase()),
+    ].join('-');
+    return by.group(2) == null ? terms : '$terms ${by.group(2)}';
+  }
+}
+
+/// A run of a credit's text, and where it goes when tapped.
+@immutable
+class KyleCreditSpan {
+  const KyleCreditSpan(this.text, [this.link]);
+
+  final String text;
+  final Uri? link;
+}
+
+/// One photograph's credit, as the licence wants it worded and linked.
+///
+/// The wording is the providers' own ("Photo by … on Unsplash"), so it lives
+/// here rather than in the content system, where an edit could break a
+/// licence term.
+@immutable
+class KyleImageCredit {
+  const KyleImageCredit(this.spans);
+
+  final List<KyleCreditSpan> spans;
+
+  String get text => spans.map((s) => s.text).join();
+
+  /// Every distinct photograph the picture shows, credited once each, in the
+  /// order shown. A photograph is the page it came from, so two photographs
+  /// by one photographer are two credits and one photograph in two cells is one.
+  static List<KyleImageCredit> forPicture(
+    KyleMealImageMode mode,
+    List<KyleMealImageTile> tiles,
+  ) {
+    final shown = switch (mode) {
+      KyleMealImageMode.none => const <KyleMealImageTile>[],
+      KyleMealImageMode.dish || KyleMealImageMode.tile => tiles.take(1),
+      KyleMealImageMode.mosaic => tiles.take(4), // MIM-3
+    };
+    final seen = <String>{};
+    return [
+      for (final tile in shown)
+        if (seen.add(tile.sourceUrl ?? tile.url)) ?tile.credit,
+    ];
   }
 }
 
@@ -141,7 +285,8 @@ class _MealImageMosaicState extends State<MealImageMosaic> {
     final tiles = _live;
     if (tiles.isEmpty) return const SizedBox.shrink();
 
-    final single = widget.mode == KyleMealImageMode.dish ||
+    final single =
+        widget.mode == KyleMealImageMode.dish ||
         widget.mode == KyleMealImageMode.tile ||
         tiles.length == 1;
 
@@ -162,42 +307,54 @@ class _MealImageMosaicState extends State<MealImageMosaic> {
     final divider = isDark ? AppColors.blackberry : AppColors.cream;
 
     if (t.length == 2) {
-      return Row(children: [
-        Expanded(child: _cell(t[0])),
-        Container(width: gap, color: divider),
-        Expanded(child: _cell(t[1])),
-      ]);
-    }
-    if (t.length == 3) {
-      return Row(children: [
-        Expanded(child: _cell(t[0])),
-        Container(width: gap, color: divider),
-        Expanded(
-          child: Column(children: [
-            Expanded(child: _cell(t[1])),
-            Container(height: gap, color: divider),
-            Expanded(child: _cell(t[2])),
-          ]),
-        ),
-      ]);
-    }
-    return Column(children: [
-      Expanded(
-        child: Row(children: [
+      return Row(
+        children: [
           Expanded(child: _cell(t[0])),
           Container(width: gap, color: divider),
           Expanded(child: _cell(t[1])),
-        ]),
-      ),
-      Container(height: gap, color: divider),
-      Expanded(
-        child: Row(children: [
-          Expanded(child: _cell(t[2])),
+        ],
+      );
+    }
+    if (t.length == 3) {
+      return Row(
+        children: [
+          Expanded(child: _cell(t[0])),
           Container(width: gap, color: divider),
-          Expanded(child: _cell(t[3])),
-        ]),
-      ),
-    ]);
+          Expanded(
+            child: Column(
+              children: [
+                Expanded(child: _cell(t[1])),
+                Container(height: gap, color: divider),
+                Expanded(child: _cell(t[2])),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(child: _cell(t[0])),
+              Container(width: gap, color: divider),
+              Expanded(child: _cell(t[1])),
+            ],
+          ),
+        ),
+        Container(height: gap, color: divider),
+        Expanded(
+          child: Row(
+            children: [
+              Expanded(child: _cell(t[2])),
+              Container(width: gap, color: divider),
+              Expanded(child: _cell(t[3])),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   /// MIM-4 — square-cropped, centred, never distorted.
@@ -222,6 +379,80 @@ class _MealImageMosaicState extends State<MealImageMosaic> {
           });
           return ColoredBox(color: holding);
         },
+      ),
+    );
+  }
+}
+
+/// MIM-6 — the credits for a picture shown at size: every distinct photograph,
+/// its photographer and platform tappable. [onOpen] receives the link; the host
+/// decides how to open it.
+class MealImageCredits extends StatefulWidget {
+  const MealImageCredits({
+    super.key,
+    required this.tiles,
+    required this.onOpen,
+    this.mode = KyleMealImageMode.mosaic,
+  });
+
+  /// The same tiles and mode the [MealImageMosaic] beside it was given.
+  final List<KyleMealImageTile> tiles;
+  final KyleMealImageMode mode;
+  final ValueChanged<Uri> onOpen;
+
+  @override
+  State<MealImageCredits> createState() => _MealImageCreditsState();
+}
+
+class _MealImageCreditsState extends State<MealImageCredits> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  void _disposeRecognizers() {
+    for (final r in _recognizers) {
+      r.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final credits = KyleImageCredit.forPicture(widget.mode, widget.tiles);
+    _disposeRecognizers();
+    if (credits.isEmpty) return const SizedBox.shrink();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ink = (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+      alpha: 0.65,
+    );
+    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+
+    TextSpan span(KyleCreditSpan s) {
+      final link = s.link;
+      if (link == null) return TextSpan(text: s.text);
+      final tap = TapGestureRecognizer()..onTap = () => widget.onOpen(link);
+      _recognizers.add(tap);
+      return TextSpan(
+        text: s.text,
+        style: TextStyle(color: accent, fontWeight: FontWeight.w600),
+        recognizer: tap,
+      );
+    }
+
+    return Text.rich(
+      TextSpan(
+        style: AppTextStyles.bodySmall.copyWith(color: ink),
+        children: [
+          for (final (i, credit) in credits.indexed) ...[
+            if (i > 0) const TextSpan(text: ' · '),
+            ...credit.spans.map(span),
+          ],
+        ],
       ),
     );
   }

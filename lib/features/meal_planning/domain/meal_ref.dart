@@ -113,6 +113,7 @@ class MealRef extends WireRecord {
           license: image!.license,
           creator: image!.creator,
           sourceUrl: image!.sourceUrl,
+          credit: image!.credit,
         )
       else
         ...imageTiles.take(1),

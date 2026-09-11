@@ -11,28 +11,9 @@ import 'card_overflow_menu.dart';
 import 'meal_icon_glyphs.dart';
 import '../../domain/meal_image.dart';
 import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
-    show MealImageMosaic, KyleMealImageMode, KyleMealImageTile;
+    show MealImageMosaic;
+import 'meal_picture_mapping.dart';
 import 'vana_tag.dart';
-
-/// Every distinct photo credit behind a card's thumbnail, joined — the same
-/// line the detail screen renders visibly, carried here for screen readers.
-/// Null when nothing is creditable (a Wikimedia public-domain file, say).
-String? mealThumbnailCredit(MealRef meal) {
-  final credits = <String>{};
-  for (final tile in meal.displayTiles) {
-    final credit = KyleMealImageTile(
-      url: tile.url,
-      name: tile.name,
-      license: tile.license,
-      creator: tile.creator,
-      sourceUrl: tile.sourceUrl,
-      provider: tile.provider,
-    ).attribution;
-    if (credit != null) credits.add(credit);
-  }
-  if (credits.isEmpty) return null;
-  return 'Photos: ${credits.join(' · ')}';
-}
 
 /// A [MealRef] presented as a tappable row: icon tile, name, the why-line,
 /// then the tag strip (Yours · No recipe · Batch · prep · kcal). Mirrors the
@@ -125,28 +106,13 @@ class MealCard extends ConsumerWidget {
                     // photo appears, but a 36pt thumbnail in a dense list has
                     // no room for a credit line. The visible credit lives on
                     // the detail screen; this keeps it readable here.
-                    label: mealThumbnailCredit(meal),
+                    label: mealPictureCredit(meal.imageMode, meal.displayTiles),
                     child: SizedBox(
                       width: compact ? 32 : 36,
                       height: compact ? 32 : 36,
                       child: MealImageMosaic(
-                        mode: switch (meal.imageMode) {
-                          MealImageMode.dish => KyleMealImageMode.dish,
-                          MealImageMode.mosaic => KyleMealImageMode.mosaic,
-                          MealImageMode.tile => KyleMealImageMode.tile,
-                          MealImageMode.none => KyleMealImageMode.none,
-                        },
-                        tiles: [
-                          for (final t in meal.displayTiles)
-                            KyleMealImageTile(
-                              url: t.url,
-                              name: t.name,
-                              license: t.license,
-                              creator: t.creator,
-                              sourceUrl: t.sourceUrl,
-                              provider: t.provider,
-                            ),
-                        ],
+                        mode: kyleImageMode(meal.imageMode),
+                        tiles: kyleImageTiles(meal.displayTiles),
                         borderRadius: BorderRadius.circular(9),
                       ),
                     ),

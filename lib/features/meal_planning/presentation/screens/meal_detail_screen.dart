@@ -9,7 +9,7 @@ import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
-    show MealImageMosaic, KyleMealImageMode, KyleMealImageTile;
+    show MealImageCredits, MealImageMosaic;
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
@@ -25,6 +25,7 @@ import '../../domain/meal_image.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/choice_chip_button.dart';
+import '../widgets/meal_picture_mapping.dart';
 import '../widgets/servings_sheet.dart';
 import '../widgets/dashed_box.dart';
 import '../widgets/vana_round_button.dart';
@@ -183,50 +184,21 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
 
         if (detail.imageMode != MealImageMode.none) ...[
           MealImageMosaic(
-            mode: switch (detail.imageMode) {
-              MealImageMode.dish => KyleMealImageMode.dish,
-              MealImageMode.mosaic => KyleMealImageMode.mosaic,
-              MealImageMode.tile => KyleMealImageMode.tile,
-              MealImageMode.none => KyleMealImageMode.none,
-            },
-            tiles: [
-              for (final t in detail.displayTiles)
-                KyleMealImageTile(
-                  url: t.url,
-                  name: t.name,
-                  license: t.license,
-                  creator: t.creator,
-                  sourceUrl: t.sourceUrl,
-                  provider: t.provider,
-                ),
-            ],
+            mode: kyleImageMode(detail.imageMode),
+            tiles: kyleImageTiles(detail.displayTiles),
             aspectRatio: 16 / 10,
             borderRadius: BorderRadius.circular(14),
           ),
-          // MIM-6 — credit every distinct photograph shown, not just the first.
-          Builder(
-            builder: (context) {
-              final credits = <String>{
-                if (detail.imageMode == MealImageMode.dish &&
-                    (detail.image?.credit?.isNotEmpty ?? false))
-                  detail.image!.credit!,
-                for (final t in detail.displayTiles)
-                  ?KyleMealImageTile(
-                    url: t.url,
-                    creator: t.creator,
-                    license: t.license,
-                    provider: t.provider,
-                  ).attribution,
-              };
-              if (credits.isEmpty) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'Photos: ${credits.join(' · ')}',
-                  style: AppTextStyles.bodySmall.copyWith(color: secondary),
-                ),
-              );
-            },
+          // MIM-6 — every distinct photograph shown, photographer and platform
+          // named, each opening its source.
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: MealImageCredits(
+              mode: kyleImageMode(detail.imageMode),
+              tiles: kyleImageTiles(detail.displayTiles),
+              onOpen: (uri) =>
+                  launchUrl(uri, mode: LaunchMode.externalApplication),
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
         ],

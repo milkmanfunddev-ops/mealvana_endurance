@@ -331,6 +331,32 @@ at an unknown licence string, we drop the candidate.
 Every row keeps `license`, `creator`, `source_url` and `provider` so attribution
 can be rendered wherever the image is.
 
+### How the app credits a photograph
+
+The app builds each credit from those fields (`KyleImageCredit` in
+`lib/shared/widgets/kyle_design/data/meal_image_mosaic.dart`), not from the
+stored `image_credit` line:
+
+- Unsplash: "Photo by *name* on *Unsplash*", both linked, both carrying
+  `utm_source=mealvana&utm_medium=referral`. The name opens the photograph's
+  page; we do not store the photographer's profile URL.
+- Pexels: "Photo by *name* on *Pexels*", the name opening the photograph's page
+  and Pexels linking back.
+- Creative Commons: "Photo by *name* on Wikimedia Commons (CC BY-SA 4.0)", with
+  the licence spelled one way whatever way it was stored. Openverse photographs
+  are credited to the site they live on (usually Flickr), taken from
+  `source_url`.
+- A recipe-page photograph with no provider: "Photo on *host*", linking the page.
+
+A picture credits every distinct photograph it shows once, keyed on the
+photograph's source page. The detail hero shows the credits and opens them on
+tap. Card thumbnails are too small for a visible line, so they carry the same
+text as their screen-reader label.
+
+`search_meals` sends a dish photo's `image_url` and `image_credit` only, so a
+card's label for a dish photo is that stored line as written. The detail screen
+gets the structured fields from `get_meal`.
+
 ### Rate limits
 
 Enforced in `lib/ratelimit.mjs` as token buckets, because exceeding either
@@ -338,7 +364,11 @@ metered limit gets the key throttled:
 
 - **Unsplash 50/hr** on a demo key (45 used, safety margin). Production is
   1,000/hr but must be applied for, and the application requires screenshots of
-  in-app attribution — so it cannot be requested until the UI ships.
+  in-app attribution. Linked credits shipped in meal-imagery ticket 06; the
+  screenshots come from the meal detail hero of a meal with an Unsplash tile.
+  One gap remains against Unsplash's guideline: the photographer's name links
+  to the photograph's page, not their profile, because the pipeline drops
+  `user.links.html` (Pexels: `photographer_url`). Close it before applying.
 - **Pexels 200/hr**, 20,000/month.
 
 Because Pexels allows only ~20s per ingredient, the metered libraries lead for

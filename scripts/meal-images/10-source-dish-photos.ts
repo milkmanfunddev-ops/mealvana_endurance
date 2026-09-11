@@ -414,7 +414,10 @@ async function accept(
   });
 }
 
-/** What the card shows beneath the picture. Ticket 06 turns this into a link. */
+/**
+ * The credit as one line of text. The app builds its linked credit from the
+ * structured columns; this line is what `search_meals` sends a card instead.
+ */
 function creditLine(cand: Candidate): string {
   const platform = cand.provider.charAt(0).toUpperCase() + cand.provider.slice(1);
   return cand.creator ? `${cand.creator} / ${platform}` : platform;

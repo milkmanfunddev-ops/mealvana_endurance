@@ -37,6 +37,7 @@ class MealImageTile extends WireRecord {
     this.creator,
     this.sourceUrl,
     this.provider,
+    this.credit,
   });
 
   final String url;
@@ -48,6 +49,11 @@ class MealImageTile extends WireRecord {
   /// `wikimedia` | `openverse` | `unsplash` | `pexels`.
   final String? provider;
 
+  /// A dish photo's stored credit line ([MealImage.credit]), set by
+  /// `displayTiles` so a photograph that arrives with nothing else can still
+  /// be credited. Null on ingredient tiles: the server never sends one.
+  final String? credit;
+
   factory MealImageTile.fromJson(Map<String, dynamic> json) => MealImageTile(
     url: requireString(json, 'url'),
     name: readString(json, 'name'),
@@ -55,6 +61,7 @@ class MealImageTile extends WireRecord {
     creator: readString(json, 'creator'),
     sourceUrl: readString(json, 'sourceUrl'),
     provider: readString(json, 'provider'),
+    credit: readString(json, 'credit'),
   );
 
   @override
@@ -65,6 +72,7 @@ class MealImageTile extends WireRecord {
     'creator': creator,
     'sourceUrl': sourceUrl,
     'provider': provider,
+    if (credit != null) 'credit': credit,
   };
 }
 

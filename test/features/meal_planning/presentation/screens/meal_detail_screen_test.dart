@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +16,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dar
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/meal_detail_screen.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/data/meal_image_mosaic.dart';
 
 import '../helpers/test_content.dart';
 
@@ -144,6 +148,116 @@ void main() {
     expect(find.text('One serving'), findsNothing);
     expect(find.text('HOW TO COOK'), findsNothing);
     expect(find.text('Show carbs / protein'), findsNothing);
+  });
+
+  /// The picture at size carries its credits (meal-image-mosaic.md MIM-6).
+  /// Details are the producer's `get_meal` payload (`_shared/vana/meals.ts`)
+  /// with the image fields a real row sends.
+  group('photo credits under the hero', () {
+    MealDetail fromProducer(Map<String, dynamic> image) {
+      final json =
+          jsonDecode(
+                File(
+                  'test/features/meal_planning/fixtures/meal_detail.json',
+                ).readAsStringSync(),
+              )['meal']
+              as Map<String, dynamic>;
+      return MealDetail.fromJson({...json, ...image});
+    }
+
+    Future<void> pumpDetail(WidgetTester tester, MealDetail d) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contentServiceProvider.overrideWith(testContentService),
+            mealDetailControllerProvider(
+              d.meal.id,
+            ).overrideWith(() => _FixedDetailController(d)),
+          ],
+          child: MaterialApp(home: MealDetailScreen(id: d.meal.id)),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('a dish photo names the photographer and the platform', (
+      tester,
+    ) async {
+      await pumpDetail(
+        tester,
+        fromProducer({
+          'imageMode': 'dish',
+          'image': {
+            'url': 'https://images.pexels.com/1346342.jpeg',
+            'license': 'Pexels',
+            'creator': 'Alisha Mishra',
+            'credit': 'Alisha Mishra / Pexels',
+            'sourceUrl':
+                'https://www.pexels.com/photo/vegetable-shake-1346342/',
+          },
+          'imageTiles': <dynamic>[],
+        }),
+      );
+
+      expect(find.byType(MealImageCredits), findsOneWidget);
+      expect(
+        find.textContaining(
+          'Photo by Alisha Mishra on Pexels',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a mosaic credits each distinct photograph once', (
+      tester,
+    ) async {
+      final tile = {
+        'url': 'https://upload.wikimedia.org/avocado.jpg',
+        'name': 'avocado',
+        'license': 'cc-by-sa-4.0',
+        'creator': 'Jami430',
+        'sourceUrl': 'https://commons.wikimedia.org/wiki/File:Avocado.jpg',
+        'provider': 'wikimedia',
+      };
+      await pumpDetail(
+        tester,
+        fromProducer({
+          'imageMode': 'mosaic',
+          'image': null,
+          'imageTiles': [
+            tile,
+            {
+              'url': 'https://images.unsplash.com/quinoa.jpg',
+              'name': 'quinoa',
+              'license': 'Unsplash',
+              'creator': 'Annie Spratt',
+              'sourceUrl': 'https://unsplash.com/photos/quinoa',
+              'provider': 'unsplash',
+            },
+            {...tile, 'name': 'avocado slices'},
+          ],
+        }),
+      );
+
+      expect(
+        find.textContaining(
+          'Photo by Jami430 on Wikimedia Commons (CC BY-SA 4.0) · '
+          'Photo by Annie Spratt on Unsplash',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Jami430', findRichText: true),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('no picture, no credit line', (tester) async {
+      await pumpDetail(tester, fromProducer({}));
+      expect(find.byType(MealImageCredits), findsNothing);
+    });
   });
 
   group('"Add to plan" (?pick= from the Vana browse screen)', () {
