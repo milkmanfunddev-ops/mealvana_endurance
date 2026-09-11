@@ -40,6 +40,7 @@ class TrainingPeaksTransformResult {
     this.elevationGainMeters,
     this.caloriesPlanned,
     this.tags,
+    this.providerReportsCompletion = false,
   });
 
   /// The transformed Activity object
@@ -80,6 +81,12 @@ class TrainingPeaksTransformResult {
 
   /// Tags from the workout (used for intensity inference and user reference)
   final List<String>? tags;
+
+  /// True when the payload carries provider-reported completion evidence
+  /// (actual TotalTime — planned workouts carry TotalTimePlanned only).
+  /// M-1.3: a keyed completion signal pierces a tombstone; a plan
+  /// re-import never does.
+  final bool providerReportsCompletion;
 }
 
 /// Result of transforming a TrainingPeaks event
@@ -384,6 +391,7 @@ class TrainingPeaksTransformer {
       elevationGainMeters: elevationGainMeters,
       caloriesPlanned: caloriesPlanned,
       tags: tags,
+      providerReportsCompletion: workout['TotalTime'] != null,
     );
   }
 

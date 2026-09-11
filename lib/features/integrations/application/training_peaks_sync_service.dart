@@ -148,6 +148,9 @@ class TrainingPeaksSyncService {
 
       // 3. Transform remote workouts to Activity objects
       final remoteActivities = <Activity>[];
+      // M-1.3: provider ids whose payload carries completion evidence — a
+      // keyed completion pierces a tombstone; a plan re-import never does.
+      final completionSignalIds = <String>{};
       int filteredCount = 0;
 
       for (final workoutJson in workoutsJson) {
@@ -164,6 +167,9 @@ class TrainingPeaksSyncService {
         }
 
         remoteActivities.add(result.activity);
+        if (result.providerReportsCompletion) {
+          completionSignalIds.add(result.providerWorkoutId);
+        }
       }
 
       if (kDebugMode) {
@@ -211,6 +217,7 @@ class TrainingPeaksSyncService {
         localActivities: localActivities,
         remoteWorkouts: dedupedRemoteActivities,
         provider: 'training_peaks',
+        completionSignalIds: completionSignalIds,
       );
 
       if (kDebugMode) {
@@ -247,6 +254,19 @@ class TrainingPeaksSyncService {
         if (kDebugMode) {
           print(
             '   ↻ Updated: ${updatedActivity.title} (needsRefresh: ${change.scheduleChanged})',
+          );
+        }
+      }
+
+      // M-1.3: keyed completion signals revive their tombstones.
+      for (final revive in changeResult.revivedActivities) {
+        await _activitiesRepository.reviveTombstoneFromProvider(
+          revive.activityId,
+          revive.updatedActivity,
+        );
+        if (kDebugMode) {
+          print(
+            '   ⚡ Revived tombstone ${revive.activityId} from completion signal',
           );
         }
       }
@@ -371,6 +391,8 @@ class TrainingPeaksSyncService {
 
       // Transform remote workouts to Activity objects
       final remoteActivities = <Activity>[];
+      // M-1.3: completion-carrying provider ids (see syncWorkouts).
+      final completionSignalIds = <String>{};
       int filteredCount = 0;
 
       for (final workoutJson in workoutsJson) {
@@ -386,6 +408,9 @@ class TrainingPeaksSyncService {
         }
 
         remoteActivities.add(result.activity);
+        if (result.providerReportsCompletion) {
+          completionSignalIds.add(result.providerWorkoutId);
+        }
       }
 
       final dedupedRemoteActivities = _dedupeRemoteActivities(remoteActivities);
@@ -410,7 +435,16 @@ class TrainingPeaksSyncService {
         localActivities: localActivities,
         remoteWorkouts: dedupedRemoteActivities,
         provider: 'training_peaks',
+        completionSignalIds: completionSignalIds,
       );
+
+      // M-1.3: keyed completion signals revive their tombstones.
+      for (final revive in changeResult.revivedActivities) {
+        await _activitiesRepository.reviveTombstoneFromProvider(
+          revive.activityId,
+          revive.updatedActivity,
+        );
+      }
 
       // Apply changes
       final insertedActivities = <Activity>[];

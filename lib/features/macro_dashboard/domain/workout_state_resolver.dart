@@ -33,7 +33,14 @@ WorkoutCardState resolveWorkoutCardState(
   // so a skipped row that syncs reads as DONE_VERIFIED here regardless of
   // what `status` says.
   final done = a.status == ActivityStatus.completed || a.actualTime != null;
-  final verified = done && a.garminSummaryId != null;
+  // B-3 (matching.md, RATIFIED 2026-09-10): a BRICK is verified only when
+  // the parent is stamped AND every endurance leg carries its Garmin leg
+  // stamp; partial leg matches complete the parent but never show
+  // verified. Single-sport rows keep the summary-id predicate.
+  final isBrick = a.isBrick;
+  final verified = done &&
+      a.garminSummaryId != null &&
+      (!isBrick || (a.brickMetadata?.allEnduranceLegsStamped ?? false));
 
   // SKIPPED — two triggers (Q-D6):
   //  ACTIVE  — status = 'skipped', written by the Skip press (allowed on

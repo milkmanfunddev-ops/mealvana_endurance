@@ -2136,6 +2136,62 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// M-1.3 provable-fact primacy (matching.md, RULED Xuan 2026-09-10):
+  /// revive a tombstoned row that a keyed provider COMPLETION signal
+  /// reports as done. The platform proved it happened — status flips to
+  /// completed, the tombstone clears, and the provider's measured fields
+  /// land. A keyed PLAN re-import never reaches this path (the tombstone
+  /// drop in ChangeDetectionService stands).
+  Future<void> reviveTombstoneFromProvider(
+    String activityId,
+    domain.Activity incoming,
+  ) async {
+    try {
+      _logger.info(
+        'Reviving tombstoned activity from provider completion signal',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'activityId': activityId,
+          'provider': incoming.syncedFromProvider,
+        },
+      );
+
+      final now = DateTime.now();
+
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).write(
+        ActivitiesTableCompanion(
+          status: const Value('completed'),
+          deletedAt: const Value(null),
+          completedAt: Value(incoming.completedAt ?? now),
+          // Provider-owned planning fields refresh from the signal.
+          title: Value(incoming.title),
+          durationMinutes: Value(incoming.durationMinutes),
+          distanceMiles: Value(incoming.distanceMiles),
+          lastSyncedAt: Value(incoming.lastSyncedAt ?? now),
+          needsUpload: const Value(true),
+          localUpdatedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+
+      await _queueImmediateActivityUpsertById(
+        activityId,
+        operation: 'tombstone_revive_completion',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to revive tombstoned activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activityId},
+      );
+      rethrow;
+    }
+  }
+
   /// Clear nutrition refresh flag after regeneration
   Future<void> clearNutritionRefreshFlag(String activityId) async {
     try {
