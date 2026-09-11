@@ -119,6 +119,35 @@ class SessionInputResolver {
     return minutes;
   }
 
+  /// DI-7 pair rule (lifecycle.md L-2 split, RULED Xuan 2026-09-10):
+  /// measured and planned metrics are separate FAMILIES. A row with any
+  /// measured data resolves to the measured pair; otherwise the planned
+  /// pair. Consumers must never mix families — a measured duration beside
+  /// a planned distance is exactly the DI-DEV-1 mixed-pair prod bug
+  /// (verified card rendering planned 8 mi with measured 44 min).
+  static ({int? durationMinutes, double? distanceMiles, bool measured})
+      resolveMetricsPair({
+    required int? actualDurationMinutes,
+    required double? actualDistanceMiles,
+    required int? durationMinutes,
+    required double? distanceMiles,
+  }) {
+    final measured =
+        actualDurationMinutes != null || actualDistanceMiles != null;
+    if (measured) {
+      return (
+        durationMinutes: actualDurationMinutes,
+        distanceMiles: actualDistanceMiles,
+        measured: true,
+      );
+    }
+    return (
+      durationMinutes: durationMinutes,
+      distanceMiles: distanceMiles,
+      measured: false,
+    );
+  }
+
   /// Activity type → the sport key the ENGINE prices it as. This is the
   /// mapping that decides the athlete's macro targets.
   ///

@@ -643,14 +643,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             average_heart_rate: activityRow.average_heart_rate,
             max_heart_rate: activityRow.max_heart_rate,
             calories_burned: activityRow.calories_burned,
-            duration_minutes: activityRow.duration_minutes,
-            distance_meters: activityRow.distance_meters,
           };
 
-          // Mirror the actual_* and sport-specific fields that
-          // buildGarminCompletionUpdate writes on first completion, so a
-          // later manual Garmin edit overwrites the same metrics. Zero is a
-          // valid value, so guard with typeof === "number", not truthiness.
+          // L-2 split (DI-7): a manual Garmin edit is MEASURED data — it
+          // updates the actual_* family and the measured scalar columns
+          // only; the planner columns (duration_minutes, distance_miles,
+          // distance_meters) keep the plan. Zero is a valid value, so guard
+          // with typeof === "number", not truthiness.
           if (typeof activityRow.duration_minutes === "number") {
             updateFields.actual_duration_minutes = activityRow.duration_minutes;
           }
@@ -666,9 +665,6 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           if (typeof activityRow.average_pace_minutes_per_mile === "number") {
             updateFields.average_pace_minutes_per_mile =
               activityRow.average_pace_minutes_per_mile;
-          }
-          if (typeof activityRow.distance_miles === "number") {
-            updateFields.distance_miles = activityRow.distance_miles;
           }
           if (typeof activityRow.cycling_power_watts === "number") {
             updateFields.cycling_power_watts = activityRow.cycling_power_watts;

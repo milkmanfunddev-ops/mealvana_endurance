@@ -215,6 +215,48 @@ Deno.test("guard refusal falls to insert and leaves the plan open", async () => 
   assertEquals(db.inserts[0].status, "completed");
 });
 
+Deno.test("DI-7 seam: completing a row leaves every planner field byte-identical", async () => {
+  const db = new FakeDb([
+    row({
+      id: "A",
+      status: "planned",
+      duration_minutes: 60,
+      distance_miles: 8.0,
+      distance_meters: 12874.7,
+      pace_target_minutes_per_mile: 7.5,
+    }),
+  ]);
+  const before = JSON.stringify({
+    duration_minutes: db.get("A")!.duration_minutes,
+    distance_miles: db.get("A")!.distance_miles,
+    distance_meters: db.get("A")!.distance_meters,
+    pace_target_minutes_per_mile: db.get("A")!.pace_target_minutes_per_mile,
+  });
+
+  const outcome = await runGarminActivityPipeline(
+    db,
+    FAKE_USER_ID,
+    garmin({
+      summaryId: "g44",
+      durationInSeconds: 44 * 60,
+      startTimeInSeconds: Date.parse("2026-09-10T06:03:00Z") / 1000,
+    }),
+    "[test]",
+  );
+  assertEquals(outcome.kind, "completed");
+
+  const after = db.get("A")!;
+  const planners = JSON.stringify({
+    duration_minutes: after.duration_minutes,
+    distance_miles: after.distance_miles,
+    distance_meters: after.distance_meters,
+    pace_target_minutes_per_mile: after.pace_target_minutes_per_mile,
+  });
+  assertEquals(planners, before); // L-2 split: the plan survives completion
+  assertEquals(after.actual_duration_minutes, 44);
+  assertEquals(after.status, "completed");
+});
+
 Deno.test("tombstone drop writes nothing", async () => {
   const db = new FakeDb([
     row({ id: "A", status: "deleted", garmin_summary_id: "g1" }),
