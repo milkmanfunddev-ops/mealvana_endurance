@@ -333,6 +333,69 @@ void main() {
     expect(brickPill, findsNothing);
   });
 
+  // Prod 2026-09-11 (post-patch-2 device test): the 'Ungrouping brick...'
+  // loading snackbar survived the flow indefinitely, spinner animating —
+  // release-mode controller.close() silently targets whatever is first in
+  // the messenger queue. Dismissal now clears the queue via a pre-captured
+  // messenger; this pins that NO snackbar outlives the ungroup flow,
+  // whichever path it exits through (here: the error path — the fake
+  // controller's brick doesn't exist in the real repository underneath).
+  testWidgets('no snackbar outlives the ungroup flow', (tester) async {
+    const metadata = BrickMetadata(
+      segmentOrder: ['cycling', 'running'],
+      segments: [
+        BrickSegment(
+          sport: 'cycling',
+          order: 1,
+          durationMinutes: 60,
+          intensity: 'moderate',
+        ),
+        BrickSegment(
+          sport: 'running',
+          order: 2,
+          durationMinutes: 30,
+          intensity: 'moderate',
+        ),
+      ],
+      originalActivityIds: ['ride1', 'run1'],
+      createdFromExisting: true,
+      totalDurationMinutes: 90,
+    );
+    await _pump(tester, [
+      _activity('brick1', ActivityType.brick, 8, brickMetadata: metadata),
+    ]);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(TimelineBrickTile),
+        matching: find.byType(PopupMenuButton<String>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ungroup legs'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ungroup'));
+    // Let the flow run to its end (whichever exit), then give any stray
+    // snackbar time to prove itself stuck.
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+
+    // The invariant: the LOADING snackbar never outlives the flow.
+    expect(find.text('Ungrouping brick...'), findsNothing);
+    // Whatever outcome snackbar the exit path showed must expire on its
+    // own timer — nothing day-long survives.
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pumpAndSettle();
+    expect(find.byType(SnackBar), findsNothing);
+    // Dismiss whatever dialog the error path raised so teardown is clean.
+    final ok = find.text('OK');
+    if (ok.evaluate().isNotEmpty) {
+      await tester.tap(ok.first);
+      await tester.pumpAndSettle();
+    }
+  });
+
   // Bug (Lee, device testing 2026-09-04): taps on the empty padding inside a
   // dashed pill's border did nothing — the GestureDetector deferred to its
   // children and only the label/icon pixels hit-tested. The whole painted
