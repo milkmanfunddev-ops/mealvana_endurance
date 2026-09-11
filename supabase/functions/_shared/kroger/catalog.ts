@@ -13,6 +13,12 @@ export class KrogerError extends Error {
     super(code);
   }
 }
+// What the function answers for anything it throws. A throw that is not a
+// KrogerError is a bug here, never Kroger's: the client turns every failure
+// to reach Kroger into `kroger_unavailable` before it gets this far.
+export function failure(e: unknown): KrogerError {
+  return e instanceof KrogerError ? e : new KrogerError("internal_error", 500);
+}
 // Kroger's `filter.fulfillment` code for a Modality: delivery-to-home, or
 // curbside pickup.
 export const fulfillmentFilter = (mode: Modality) =>

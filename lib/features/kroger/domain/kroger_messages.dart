@@ -42,6 +42,7 @@ const Map<String, String> _messageKeys = {
   'unexpected': ContentKeys.krogerUnexpected,
   // Mealvana's own mistakes, never Kroger's.
   'export_unknown': ContentKeys.krogerUnexpected,
+  'internal_error': ContentKeys.krogerUnexpected,
   'invalid_action': ContentKeys.krogerUnexpected,
   'invalid_body': ContentKeys.krogerUnexpected,
   'invalid_id': ContentKeys.krogerUnexpected,

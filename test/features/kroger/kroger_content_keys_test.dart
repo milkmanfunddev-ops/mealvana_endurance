@@ -160,6 +160,7 @@ void main() {
         'invalid_modality',
         'invalid_token_response',
         'method_not_allowed',
+        'internal_error',
         'unexpected',
       ]) {
         final key = krogerMessageKey(code);

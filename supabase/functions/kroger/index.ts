@@ -4,7 +4,7 @@ import { jsonResponse } from "../_shared/responses.ts";
 import { authenticate } from "../_shared/vana/auth.ts";
 import { requirePro } from "../_shared/vana/entitlement.ts";
 import { config, KrogerClient } from "../_shared/kroger/client.ts";
-import { KrogerError } from "../_shared/kroger/catalog.ts";
+import { failure, KrogerError } from "../_shared/kroger/catalog.ts";
 import { KrogerService } from "../_shared/kroger/service.ts";
 
 serve(async (req: Request) => {
@@ -93,9 +93,13 @@ serve(async (req: Request) => {
     return jsonResponse(result);
   } catch (e) {
     // Never log upstream response bodies, authorization codes, or tokens.
-    const error = e instanceof KrogerError
-      ? e
-      : new KrogerError("kroger_unavailable", 503);
+    const error = failure(e);
+    if (error.code === "internal_error") {
+      console.error(
+        "kroger: unhandled",
+        e instanceof Error ? e.name : typeof e,
+      );
+    }
     return jsonResponse({ error: error.code }, error.status);
   }
 });

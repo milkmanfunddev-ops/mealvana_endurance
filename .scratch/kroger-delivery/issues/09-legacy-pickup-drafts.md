@@ -9,7 +9,9 @@ Found on the 2026-09-10 simulator pass (`../device-verification.md`, defect 2; s
 
 **Blocked by:** None (can start immediately)
 
-**Status:** needs-triage (filed 2026-09-10): fix, or `wontfix` because it is pre-release data
+**Status:** wontfix (Lee, 2026-09-11). Pre-release data only. The one known stuck draft, the dev
+account's on the simulator, was already rewritten to `DELIVERY` during the 2026-09-10 pass, so no
+cleanup is owed.
 
 ## What happens
 

@@ -49,9 +49,26 @@ const applicationTokens = new Map<string, CachedToken>();
 export class KrogerClient {
   constructor(
     readonly config: Config,
-    private request: typeof fetch = fetch,
+    private fetcher: typeof fetch = fetch,
     private cache: Map<string, CachedToken> = applicationTokens,
   ) {}
+  // A request that never got an answer (refused, reset, timed out) is
+  // Kroger's failure, not this function's.
+  private async request(url: string, init: RequestInit): Promise<Response> {
+    try {
+      return await this.fetcher(url, init);
+    } catch {
+      throw new KrogerError("kroger_unavailable", 502);
+    }
+  }
+  // Kroger answered, but not with JSON: a maintenance page, say.
+  private async json(response: Response): Promise<any> {
+    try {
+      return await response.json();
+    } catch {
+      throw new KrogerError("kroger_unavailable", 502);
+    }
+  }
   // Pays for Locations and Products. The shopper's own token pays for the
   // cart write and for nothing else, which is what lets Coverage be answered
   // before anyone has authorized Mealvana with Kroger.
@@ -99,7 +116,7 @@ export class KrogerClient {
         502,
       );
     }
-    const body = await response.json();
+    const body = await this.json(response);
     if (!body.access_token || !(Number(body.expires_in) > 0)) {
       throw new KrogerError("invalid_token_response", 502);
     }
@@ -120,7 +137,7 @@ export class KrogerClient {
         502,
       );
     }
-    return await response.json();
+    return await this.json(response);
   }
   async product(
     upc: string,

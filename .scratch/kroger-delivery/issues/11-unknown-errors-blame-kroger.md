@@ -71,6 +71,7 @@ word-for-word the same as `unavailable`, so the two can't be told apart on scree
 - `export_unknown` is mapped even though `service.ts` catches it and stores a receipt instead.
   The scan requires a mapping, and the mapping is harmless.
 - A hand-off that no app would open still throws `unavailable` ("Kroger could not be reached").
-- Open, server side: the catch-all in `supabase/functions/kroger/index.ts` turns any
-  non-`KrogerError` throw, including a bug in the function itself, into `kroger_unavailable`.
-  So a function crash still blames Kroger. This ticket did not ask for a server change.
+- Server side, fixed after the review (Lee asked, "#12"): `KrogerClient` turns a request that never
+  got an answer, or a reply that isn't JSON, into `kroger_unavailable`. Any other throw is a bug in
+  the function, and `failure()` in `catalog.ts` answers it as `internal_error` (500), which the app
+  shows as "Something went wrong". The function has to be deployed for this to reach dev.

@@ -5,6 +5,7 @@ import {
 } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   cartLines,
+  failure,
   KrogerError,
   productFromApi,
   rankProducts,
@@ -183,6 +184,38 @@ Deno.test("token secret stays in Basic header; failures do not leak upstream con
     KrogerError,
   );
   assertEquals(error.message, "reconnect_required");
+});
+Deno.test("a Kroger request that never got an answer is Kroger's failure", async () => {
+  for (
+    const thrown of [
+      new TypeError("error sending request: connection refused"),
+      new DOMException("Signal timed out.", "TimeoutError"),
+    ]
+  ) {
+    const client = new KrogerClient(cfg, () => Promise.reject(thrown));
+    const error = await assertRejects(
+      () => client.get("/locations", "test-token"),
+      KrogerError,
+    );
+    assertEquals(error.code, "kroger_unavailable", thrown.name);
+  }
+});
+Deno.test("a Kroger reply that is not JSON is Kroger's failure", async () => {
+  const client = new KrogerClient(
+    cfg,
+    async () => new Response("<html>maintenance</html>", { status: 200 }),
+  );
+  const error = await assertRejects(
+    () => client.get("/locations", "test-token"),
+    KrogerError,
+  );
+  assertEquals(error.code, "kroger_unavailable");
+});
+Deno.test("a bug in this function is not blamed on Kroger", () => {
+  const bug = failure(new TypeError("Cannot read properties of undefined"));
+  assertEquals([bug.code, bug.status], ["internal_error", 500]);
+  const known = new KrogerError("rate_limited", 429);
+  assertEquals(failure(known), known);
 });
 Deno.test("cart timeout is never automatically retried", async () => {
   let attempts = 0;
