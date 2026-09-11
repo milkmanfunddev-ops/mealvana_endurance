@@ -146,6 +146,59 @@ void main() {
       n.report(VanaSituation.screen(VanaScreen.mealDetail, entityId: 'D-048'));
       expect(n.current()!.route, '/food/meals/:id');
     });
+
+    test('a screen with no scope speaks as its route, not as the last '
+        'scoped screen', () {
+      // The sheet opens over settings after the athlete left the fuel log:
+      // the fuel log is not what they are looking at any more.
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(vanaSituationControllerProvider.notifier);
+      n.routeOnTop('/fuel-log');
+      n.report(VanaSituation.screen(VanaScreen.fuelLog, entityId: 'act-1'));
+      n.routeOnTop('/settings');
+      expect(n.current()!.toJson(), {'route': '/settings'});
+    });
+
+    test('a scoped screen that came on top speaks for itself', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(vanaSituationControllerProvider.notifier);
+      n.routeOnTop('/settings');
+      n.routeOnTop('/fuel-log');
+      n.report(VanaSituation.screen(VanaScreen.fuelLog, entityId: 'act-1'));
+      expect(n.current()!.toJson(), {'route': '/fuel-log', 'entityId': 'act-1'});
+    });
+
+    test('coming back to a screen hands back what it reported', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(vanaSituationControllerProvider.notifier);
+      n.routeOnTop('/main');
+      n.report(VanaSituation.screen(VanaScreen.main, date: saturday));
+      n.routeOnTop('/fuel-log');
+      n.report(VanaSituation.screen(VanaScreen.fuelLog, entityId: 'act-1'));
+      n.routeOnTop('/main');
+      expect(n.current()!.toJson(), {'route': '/main', 'date': '2026-09-12'});
+    });
+
+    test('the route-only fallback never goes stale', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(vanaSituationControllerProvider.notifier);
+      n.routeOnTop('/settings');
+      final later = DateTime.now().add(const Duration(hours: 3));
+      expect(n.current(now: later)!.route, '/settings');
+    });
+
+    test('clear forgets the route too', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(vanaSituationControllerProvider.notifier);
+      n.routeOnTop('/settings');
+      n.clear();
+      expect(n.current(), isNull);
+    });
   });
 
   group('VanaSituationScope', () {
@@ -278,6 +331,40 @@ void main() {
       await pumpWith('D-012');
       await tester.pump();
       expect(c.read(vanaSituationControllerProvider)!.entityId, 'D-012');
+    });
+
+    testWidgets('a screen reports again when it comes back on top', (
+      tester,
+    ) async {
+      // Meal A, then meal B pushed over it, then back to A: the same route
+      // pattern both times, so only A reporting again can say it is A.
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final navigator = GlobalKey<NavigatorState>();
+
+      Widget meal(String id) => VanaSituationScope(
+        situation: VanaSituation.screen(VanaScreen.mealDetail, entityId: id),
+        child: const SizedBox.shrink(),
+      );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: MaterialApp(navigatorKey: navigator, home: meal('D-048')),
+        ),
+      );
+      await tester.pump();
+      expect(c.read(vanaSituationControllerProvider)!.entityId, 'D-048');
+
+      navigator.currentState!.push(
+        MaterialPageRoute<void>(builder: (_) => meal('D-012')),
+      );
+      await tester.pumpAndSettle();
+      expect(c.read(vanaSituationControllerProvider)!.entityId, 'D-012');
+
+      navigator.currentState!.pop();
+      await tester.pumpAndSettle();
+      expect(c.read(vanaSituationControllerProvider)!.entityId, 'D-048');
     });
   });
 }

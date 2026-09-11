@@ -697,6 +697,10 @@
     "meal_type_breakfast_short": "Bfast",
     "meal_type_lunch_short": "Lunch",
     "meal_type_dinner_short": "Dinner",
-    "meal_type_snack_short": "Snack"
+    "meal_type_snack_short": "Snack",
+    "companion_launcher": "Ask Vana",
+    "companion_close": "Close",
+    "companion_full_screen": "Open full screen",
+    "companion_send": "Send"
   }
 }

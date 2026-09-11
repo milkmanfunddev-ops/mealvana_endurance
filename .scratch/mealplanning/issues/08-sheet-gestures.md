@@ -1,8 +1,8 @@
 # 08: Sheet gestures — three heights and the condense
 
-**Status:** blocked
-**Blocked by:** 06
-**Next:** `/mattpocock-skills:implement 08` once 06 lands.
+**Status:** ready-for-agent
+**Blocked by:** None (06 is built)
+**Next:** `/mattpocock-skills:implement 08` (06 landed 2026-09-10).
 
 **What to build:** The grabber drags the sheet between its three heights: `auto` for a sheet that is
 one message and a dismiss, 75% at rest with a card and replies, 100% expanded. Dragging down past the

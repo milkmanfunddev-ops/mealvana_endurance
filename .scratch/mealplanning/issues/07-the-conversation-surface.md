@@ -1,8 +1,8 @@
 # 07: The companion's conversation surface
 
-**Status:** blocked
-**Blocked by:** 06 (there has to be a sheet before there is anything inside it)
-**Next:** `/mattpocock-skills:implement 07` once 06 lands.
+**Status:** ready-for-agent
+**Blocked by:** None (06 is built)
+**Next:** `/mattpocock-skills:implement 07` (06 landed 2026-09-10).
 
 **What to build:** The inside of the sheet, as the design export draws it. A status chip at the top
 naming what this exchange is about — "Fuel plan · to do" in orange when there is something to do,

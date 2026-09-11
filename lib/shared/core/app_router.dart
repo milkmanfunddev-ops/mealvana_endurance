@@ -90,6 +90,7 @@ import '../../features/meal_planning/presentation/screens/vana_browse_screen.dar
 import '../../features/meal_planning/presentation/screens/vana_chat_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_conversations_screen.dart';
 import '../../features/meal_planning/presentation/screens/vana_settings_screen.dart';
+import '../../features/meal_planning/presentation/widgets/vana_companion.dart';
 // Meal logging screens
 import '../../features/meal_logging/presentation/screens/edit_meal_log_screen.dart';
 import '../../features/meal_logging/presentation/screens/manual_log_screen.dart';
@@ -123,7 +124,8 @@ class AppRouter {
       navigatorKey: sentryNavigatorKey,
       // SentryNavigatorObserver records screen transitions as Sentry breadcrumbs
       // and navigation spans for performance monitoring.
-      observers: [SentryNavigatorObserver()],
+      // The Vana launcher's observer hides it under any dialog or sheet.
+      observers: [SentryNavigatorObserver(), vanaCompanionObserver],
       // Redirect logic based on app startup state
       redirect: (context, state) {
         final currentPath = state.uri.path;

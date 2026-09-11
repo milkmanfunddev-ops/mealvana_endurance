@@ -19,6 +19,7 @@ import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
+import '../../features/meal_planning/presentation/widgets/vana_companion.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
 import '../services/app_external_deps.dart';
@@ -184,8 +185,14 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                   return _appShell(
                     context,
                     AppStartupWidget(
-                      // Pass router child back when initialization is complete
-                      onLoaded: (_) => child!,
+                      // Pass router child back when initialization is complete,
+                      // under the Vana launcher, which floats over every
+                      // ordinary route (vana-sheet spec).
+                      onLoaded: (_) => VanaCompanionHost(
+                        router: goRouter,
+                        observer: vanaCompanionObserver,
+                        child: child!,
+                      ),
                     ),
                     isDev: config.isDevelopment,
                   );

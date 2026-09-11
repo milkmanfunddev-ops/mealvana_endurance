@@ -41,7 +41,9 @@ class VanaSituationVisibility extends InheritedWidget {
 /// Reporting happens after the frame, so a screen can build its Situation from
 /// state it resolved during build without a provider write inside build. It
 /// happens only while the subtree is visible ([VanaSituationVisibility]) and
-/// only when there is something to report.
+/// only when there is something to report. A screen reports again when its
+/// route comes back on top, because the screen that was pushed over it may
+/// have had the same route pattern and a different entity.
 class VanaSituationScope extends ConsumerStatefulWidget {
   const VanaSituationScope({
     required this.situation,
@@ -61,6 +63,7 @@ class VanaSituationScope extends ConsumerStatefulWidget {
 
 class _VanaSituationScopeState extends ConsumerState<VanaSituationScope> {
   bool _visible = true;
+  bool _current = true;
 
   @override
   void didChangeDependencies() {
@@ -68,8 +71,11 @@ class _VanaSituationScopeState extends ConsumerState<VanaSituationScope> {
     final visible = VanaSituationVisibility.of(context);
     final becameVisible = visible && !_visible;
     _visible = visible;
-    // First build, or this subtree just came on screen.
-    if (becameVisible || !_reportedOnce) _report();
+    final current = ModalRoute.isCurrentOf(context) ?? true;
+    final cameBackOnTop = current && !_current;
+    _current = current;
+    // First build, this subtree just came on screen, or its route did.
+    if (becameVisible || cameBackOnTop || !_reportedOnce) _report();
   }
 
   bool _reportedOnce = false;

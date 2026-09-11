@@ -31,9 +31,9 @@ are not urgent, but 06 cannot start without them.
 | 03 | An episode for a still-open conversation | **done** |
 | 04 | Reconcile the design SSOT mirror | ready-for-human |
 | 05 | Ratify and mirror the sheet spec | ready-for-human |
-| 06 | The launcher and the sheet | blocked by 05 |
-| 07 | The companion's conversation surface | blocked by 06 |
-| 08 | Sheet gestures | blocked by 06 |
+| 06 | The launcher and the sheet | built; simulator pass outstanding |
+| 07 | The companion's conversation surface | ready (06 landed) |
+| 08 | Sheet gestures | ready (06 landed) |
 | 09 | The companion that speaks first | needs a decision |
 
 ## The three things waiting on you

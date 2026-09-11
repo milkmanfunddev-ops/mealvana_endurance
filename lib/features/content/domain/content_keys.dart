@@ -535,6 +535,12 @@ class ContentKeys {
       'meal_planning.meal_type_dinner_short';
   static const String mpMealTypeSnackShort =
       'meal_planning.meal_type_snack_short';
+  // The Vana sheet and its launcher (vana-sheet spec).
+  static const String mpCompanionLauncher = 'meal_planning.companion_launcher';
+  static const String mpCompanionClose = 'meal_planning.companion_close';
+  static const String mpCompanionFullScreen =
+      'meal_planning.companion_full_screen';
+  static const String mpCompanionSend = 'meal_planning.companion_send';
 
   // What's new sheet — lib/shared/widgets/whats_new_sheet.dart. `version`
   // gates the sheet (shows once per value, on installs/updates at or above
