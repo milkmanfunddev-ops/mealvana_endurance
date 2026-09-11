@@ -187,7 +187,7 @@ export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayI
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
 export interface ChatBody { message?: string; conversation_id?: string | null; kind?: ConversationKind | string; timezone?: string; opener?: boolean; anchor_date?: string; situation?: Situation | null;
-  /** With `opener`: the device raised a moment (vana-moment spec VM-1) — `{ kind, activity_id, window_minutes }`. */
+  /** With `opener`: the device raised a moment (vana-moment spec VM-1) — `{ kind, activity_id, window_minutes, branch?, next_activity_id? }`. */
   moment?: unknown }
 export interface ChatRunOpts {
   /** `ai_usage.function_name` / log tag: 'vana-chat' | 'jade-chat'. */

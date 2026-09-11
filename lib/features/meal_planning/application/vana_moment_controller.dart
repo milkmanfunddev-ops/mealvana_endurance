@@ -5,7 +5,6 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
-import '../../activities/domain/activity.dart';
 import '../../activities/presentation/providers/activities_controller.dart';
 import '../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../data/vana_moment_store.dart';
@@ -15,9 +14,9 @@ import 'vana_ambient_conversation_controller.dart';
 
 part 'vana_moment_controller.g.dart';
 
-/// How often the moment is resolved again with nothing else changing, while a
-/// workout today has yet to start: a window opening or a workout starting is
-/// noticed within this.
+/// How often the moment is resolved again with nothing else changing, while
+/// the clock alone can raise or retire one: a window opening or closing, or a
+/// workout starting, is noticed within this.
 const vanaMomentResolveInterval = Duration(minutes: 1);
 
 /// Whether the platform asks for reduced motion. Overridden in tests.
@@ -56,8 +55,9 @@ class VanaMomentState {
 ///
 /// Resolves [resolveVanaMoment] from today's activities and meal logs when
 /// either changes, when the app comes back to the foreground, and every
-/// [vanaMomentResolveInterval] while a workout today has yet to start (with
-/// none left, nothing can be raised until tomorrow). A raised moment
+/// [vanaMomentResolveInterval] while the clock matters: a workout today has
+/// yet to start, or a finished one's recovery window has yet to close (with
+/// neither, nothing changes until a row does). A raised moment
 /// waits until the launcher's host calls [ring] with a launcher on screen, so
 /// it never spends its one ring where nobody can see it. What rang, what was
 /// answered and where each opening sits persist per user per day, so a
@@ -167,13 +167,7 @@ class VanaMomentController extends _$VanaMomentController {
       rung: _record.rung,
       answered: _record.answered,
     );
-    final ahead = activities.any(
-      (a) =>
-          a.status == ActivityStatus.planned &&
-          todayIso(a.scheduledDateTime) == _day &&
-          now.isBefore(a.scheduledDateTime),
-    );
-    if (!ahead) {
+    if (!vanaMomentClockMatters(now: now, activities: activities)) {
       _tick?.cancel();
       _tick = null;
     } else {

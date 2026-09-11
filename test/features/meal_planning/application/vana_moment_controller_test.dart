@@ -1,7 +1,9 @@
 /// The moment controller (vana-moment spec, Cadence and VM-2/VM-3) through
 /// the real notifier, the real SharedPreferences-backed store and a fake
 /// clock: it rings once per workout window, across restarts; a log retires
-/// the moment; a dismissed moment stays live; an answer retires it.
+/// the moment; a dismissed moment stays live; an answer retires it; a
+/// finished session's recovery is raised and closes with its window; a third
+/// moment in a day never rings.
 library;
 
 import 'dart:async';
@@ -35,6 +37,25 @@ final _run = _mapper.fromJson({
   'status': 'planned',
   'duration_minutes': 60,
   'time_before_minutes': 60,
+  'created_at': '2026-09-01T12:00:00+00:00',
+  'updated_at': '2026-09-01T12:00:00+00:00',
+});
+
+/// This morning's run as the rows carry it before and after mark-done:
+/// 06:30 for 60 min, a 60 min window. Mark-done writes the planned start as
+/// `actual_time` and `completed_at` (G1).
+Activity _morningRun({required bool done}) => _mapper.fromJson({
+  'id': 'act-am',
+  'user_id': 'user-1',
+  'activity_type': 'running',
+  'title': 'Easy run',
+  'scheduled_date_time': '2026-09-11T06:30:00',
+  'planned_time': '2026-09-11T06:30:00',
+  'status': done ? 'completed' : 'planned',
+  'duration_minutes': 60,
+  'time_before_minutes': 60,
+  'actual_time': done ? '2026-09-11T06:30:00' : null,
+  'completed_at': done ? '2026-09-11T06:30:00' : null,
   'created_at': '2026-09-01T12:00:00+00:00',
   'updated_at': '2026-09-01T12:00:00+00:00',
 });
@@ -223,6 +244,62 @@ void main() {
       async.flushMicrotasks();
       expect(read(restarted)!.moment, isNull);
       restarted.dispose();
+    });
+  });
+
+  group('M-2 and the cap', () {
+    test('a finished session raises the recovery moment, and it retires when '
+        'its window closes', () {
+      fakeAsync((async) {
+        _seeded = [_morningRun(done: true)];
+        now = DateTime(2026, 9, 11, 7, 45);
+        final c = start();
+        async.flushMicrotasks();
+        expect(read(c)!.moment!.kind, VanaMomentKind.recovery);
+        notifier(c).ring();
+        async.elapse(vanaMomentRingDuration + vanaMomentPillDuration);
+        expect(read(c)!.phase, VanaMomentPhase.tinted);
+
+        // No row changes: the clock alone closes the 2 h window at 09:30.
+        now = DateTime(2026, 9, 11, 9, 30);
+        async.elapse(vanaMomentResolveInterval);
+        expect(read(c)!.moment, isNull);
+        c.dispose();
+      });
+    });
+
+    test('a morning and an evening session: two rings, and the third moment '
+        'is never raised, across restarts', () {
+      fakeAsync((async) {
+        // 06:00: the morning run's pre-workout window is open. It rings.
+        _seeded = [_morningRun(done: false), _run];
+        now = DateTime(2026, 9, 11, 6);
+        final dawn = start();
+        async.flushMicrotasks();
+        expect(read(dawn)!.moment!.kind, VanaMomentKind.preWorkout);
+        notifier(dawn).ring();
+        async.flushMicrotasks();
+        dawn.dispose();
+
+        // 07:45: marked done, nothing logged. Recovery rings: the second.
+        _seeded = [_morningRun(done: true), _run];
+        now = DateTime(2026, 9, 11, 7, 45);
+        final morning = start();
+        async.flushMicrotasks();
+        expect(read(morning)!.moment!.kind, VanaMomentKind.recovery);
+        expect(read(morning)!.phase, VanaMomentPhase.waiting);
+        notifier(morning).ring();
+        async.flushMicrotasks();
+        morning.dispose();
+
+        // 16:45: tonight's run's window is open with nothing logged. It
+        // would be the third: Vana stays quiet.
+        now = DateTime(2026, 9, 11, 16, 45);
+        final evening = start();
+        async.flushMicrotasks();
+        expect(read(evening)!.moment, isNull);
+        evening.dispose();
+      });
     });
   });
 }

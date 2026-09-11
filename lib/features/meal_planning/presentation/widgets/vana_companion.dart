@@ -336,8 +336,12 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   }
 }
 
-/// The pill's one line for [moment]: "Fuel tonight's run?".
+/// The pill's one line for [moment]: "Fuel tonight's run?", or "Recovery
+/// fuel?" after a session.
 String vanaMomentPillLine(ContentService content, VanaMoment moment) {
+  if (moment.kind == VanaMomentKind.recovery) {
+    return content.getValue(ContentKeys.mpCompanionMomentRecovery);
+  }
   final line = switch (moment.partOfDay) {
     VanaMomentPartOfDay.morning =>
       ContentKeys.mpCompanionMomentPreWorkoutMorning,

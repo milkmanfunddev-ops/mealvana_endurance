@@ -2,7 +2,7 @@
 /// real GoRouter, the real host, the real moment controller and the home
 /// shell's real chrome: RING → PILL → TINTED on a to-do, the tab bar stepping
 /// aside while the pill shows, VM-1 to VM-3 through [VanaCompanionHost], and
-/// reduced motion.
+/// reduced motion; and the recovery moment after a finished session.
 ///
 /// Tonight's run is seeded the way the Supabase row carries it: 17:30 wall
 /// clock with a 60 min window, and the clock stands at 16:45 with nothing
@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/activities/data/activity_mapper.dart';
+import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/calendar/presentation/providers/calendar_selected_date_provider.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/home_shell/presentation/home_shell_chrome.dart';
@@ -58,6 +59,22 @@ final _run = ActivityMapper(logger: NoopAppLogger()).fromJson({
   'status': 'planned',
   'duration_minutes': 60,
   'time_before_minutes': 60,
+  'created_at': '2026-09-01T12:00:00+00:00',
+  'updated_at': '2026-09-01T12:00:00+00:00',
+});
+
+/// This morning's run, marked done: 06:30 for 60 min, so it ended at 07:30.
+final _finished = ActivityMapper(logger: NoopAppLogger()).fromJson({
+  'id': 'act-am',
+  'user_id': 'user-1',
+  'activity_type': 'running',
+  'title': 'Easy run',
+  'scheduled_date_time': '2026-09-11T06:30:00',
+  'planned_time': '2026-09-11T06:30:00',
+  'actual_time': '2026-09-11T06:30:00',
+  'completed_at': '2026-09-11T06:30:00',
+  'status': 'completed',
+  'duration_minutes': 60,
   'created_at': '2026-09-01T12:00:00+00:00',
   'updated_at': '2026-09-01T12:00:00+00:00',
 });
@@ -230,6 +247,8 @@ Future<_Harness> _pump(
   bool reducedMotion = false,
   String? ambient,
   List<VanaMessage> history = const [],
+  List<Activity>? activities,
+  DateTime? now,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -261,7 +280,7 @@ Future<_Harness> _pump(
     overrides: [
       ...baseOverrides(),
       ...vanaMomentInputs(
-        activities: [_run],
+        activities: activities ?? [_run],
         logs: () async* {
           yield const <MealLog>[];
           yield* logs.stream;
@@ -273,7 +292,9 @@ Future<_Harness> _pump(
       proUnlockedProvider.overrideWithValue(true),
       vanaChatRepositoryProvider.overrideWithValue(repo),
       vanaActionClientProvider.overrideWithValue(_FakeActionClient()),
-      vanaClockProvider.overrideWithValue(() => DateTime(2026, 9, 11, 16, 45)),
+      vanaClockProvider.overrideWithValue(
+        () => now ?? DateTime(2026, 9, 11, 16, 45),
+      ),
       calendarSelectedDateProvider.overrideWith(_FixedDay.new),
     ],
   );
@@ -418,6 +439,36 @@ void main() {
       await tester.pump();
       await tester.pump();
       expect(_state(tester), VanaLauncherState.quiet);
+      await _finish(tester, h);
+    });
+  });
+
+  group('M-2: the recovery moment', () {
+    testWidgets('a finished session with nothing logged: the pill asks '
+        '"Recovery fuel?", and the sheet opens on the session', (tester) async {
+      final h = await _pump(
+        tester,
+        activities: [_finished],
+        now: DateTime(2026, 9, 11, 7, 45),
+      );
+      await tester.pump(vanaMomentRingDuration);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_state(tester), VanaLauncherState.pill);
+      expect(find.text('Recovery fuel?'), findsOneWidget);
+      await tester.pump(vanaMomentPillDuration);
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(_state(tester), VanaLauncherState.tinted);
+
+      await _open(tester);
+      final call = h.repo.calls.single;
+      expect(call['opener'], isTrue);
+      expect(call['moment'], {
+        'kind': 'recovery',
+        'activity_id': 'act-am',
+        'window_minutes': 120,
+        'branch': 'relaxed',
+      });
+      _expectToDo(tester);
       await _finish(tester, h);
     });
   });

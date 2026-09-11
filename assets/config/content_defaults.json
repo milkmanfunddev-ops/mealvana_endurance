@@ -714,6 +714,7 @@
     "companion_moment_pre_workout_morning": "Fuel this morning's {session}?",
     "companion_moment_pre_workout_afternoon": "Fuel this afternoon's {session}?",
     "companion_moment_pre_workout_evening": "Fuel tonight's {session}?",
+    "companion_moment_recovery": "Recovery fuel?",
     "companion_session_run": "run",
     "companion_session_ride": "ride",
     "companion_session_swim": "swim",

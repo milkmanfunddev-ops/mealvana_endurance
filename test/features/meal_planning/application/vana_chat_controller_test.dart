@@ -242,6 +242,7 @@ void main() {
       activityType: ActivityType.running,
       startsAt: DateTime(2026, 9, 11, 17, 30),
       windowOpensAt: DateTime(2026, 9, 11, 16, 30),
+      closesAt: DateTime(2026, 9, 11, 17, 30),
       rings: false,
     );
     await notifier.loadOpener(moment: moment);
