@@ -130,4 +130,4 @@ Screenshots 16 to 22. **Still open: Lee to confirm the quinoa shows in his cart 
   new plan, and watch the hand-off.
 - Ticket 03 before connecting, and a Coverage answer from a real area.
 - Ticket 07: the product sheet in light (the confirm sheets were seen in light).
-- Put the app theme back to **Dark** (Settings → Appearance). This pass set it to Light.
+- Simulator left with location permission granted and set to Homewood, AL (it was denied).
