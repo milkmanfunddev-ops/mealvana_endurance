@@ -33,7 +33,7 @@ are not urgent, but 06 cannot start without them.
 | 05 | Ratify and mirror the sheet spec | ready-for-human |
 | 06 | The launcher and the sheet | **done** (fuel-log screen not reached on the sim) |
 | 07 | The companion's conversation surface | **done** (not yet seen on a device) |
-| 08 | Sheet gestures | ready (06 landed) |
+| 08 | Sheet gestures | **done** (drag checked on the simulator) |
 | 09 | The companion that speaks first | needs a decision |
 
 ## The three things waiting on you

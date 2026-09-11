@@ -32,6 +32,7 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/v
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -461,6 +462,77 @@ void main() {
       await tester.pump();
       expect(find.byType(VanaSheet), findsNothing);
       expect(find.byKey(_launcher), findsOneWidget);
+    });
+  });
+
+  group('VS-7: the grabber and the three heights', () {
+    Rect glass(WidgetTester tester) =>
+        tester.getRect(find.byType(GlassSheetSurface));
+
+    testWidgets('the grabber dragged down closes to the same screen, '
+        'condensing', (tester) async {
+      final h = await _pump(tester, initial: '/fuel-log');
+      await _open(tester);
+      final open = glass(tester);
+      await tester.drag(
+        find.byKey(const ValueKey('vana_sheet.grabber')),
+        const Offset(0, 160),
+      );
+      await tester.pump();
+      await tester.pump(
+        Duration(milliseconds: VanaSheet.condenseDuration.inMilliseconds ~/ 2),
+      );
+      expect(glass(tester).width, lessThan(open.width * 0.8));
+      await _condensed(tester);
+      expect(find.byType(VanaSheet), findsNothing);
+      expect(h.location, '/fuel-log');
+      expect(find.byKey(_launcher), findsOneWidget);
+    });
+
+    testWidgets('a conversation that is one message rests at auto; the '
+        'thread grows it to 75 %, and it stays there', (tester) async {
+      final repo = _FakeChatRepo();
+      final h = await _pump(tester, repo: repo);
+      await _open(tester);
+      await _close(tester);
+      // The opener has no offers here: one message, nothing to act on.
+      repo.history = [
+        VanaMessage(
+          id: 'm1',
+          conversationId: 'conv-server',
+          role: VanaMessageRole.assistant,
+          content: 'Morning. What is on your mind?',
+          createdAt: DateTime(2026, 9, 10, 9),
+        ),
+      ];
+      h.container.invalidate(
+        vanaChatControllerProvider(
+          kind: VanaConversationKind.general,
+          conversationId: 'conv-server',
+        ),
+      );
+      await _open(tester);
+      await tester.pumpAndSettle();
+      final auto = glass(tester);
+      expect(auto.height, lessThan(844 * VanaSheet.restHeightFraction - 100));
+      expect(auto.bottom, closeTo(844, 0.5));
+
+      await _send(tester, 'what about lunch');
+      await tester.pump(VanaSheet.settleDuration);
+      expect(
+        glass(tester).height,
+        closeTo(844 * VanaSheet.restHeightFraction, 0.5),
+      );
+    });
+
+    testWidgets('an empty conversation rests at 75 % while the opener '
+        'streams in', (tester) async {
+      await _pump(tester);
+      await _open(tester);
+      expect(
+        glass(tester).height,
+        closeTo(844 * VanaSheet.restHeightFraction, 0.5),
+      );
     });
   });
 

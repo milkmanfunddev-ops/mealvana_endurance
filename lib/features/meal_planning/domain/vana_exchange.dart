@@ -38,6 +38,7 @@ class VanaExchange {
     required this.quickReplies,
     required this.openingLength,
     required this.typing,
+    required this.oneMessage,
   });
 
   /// Derives the exchange from the transcript. [situationRoute] is the route
@@ -83,6 +84,14 @@ class VanaExchange {
       }
     }
 
+    final vanaTurns = messages.where((m) => !m.isUser).toList();
+    final oneMessage =
+        !threadStarted &&
+        !isStreaming &&
+        vanaTurns.length == 1 &&
+        replies.length <= 1 &&
+        vanaTurns.single.parts.every((p) => p is VanaChoicesPart);
+
     return VanaExchange._(
       status: status,
       topic: ask == null
@@ -95,6 +104,7 @@ class VanaExchange {
           messages.isNotEmpty &&
           !messages.last.isUser &&
           messages.last.content.isEmpty,
+      oneMessage: oneMessage,
     );
   }
 
@@ -116,6 +126,10 @@ class VanaExchange {
 
   /// A turn is in flight and Vana has not said anything in it yet.
   final bool typing;
+
+  /// The exchange is one settled message of Vana's and at most one reply (a
+  /// dismiss): no card, no thread (the spec's "one message and a dismiss").
+  final bool oneMessage;
 
   /// The parts of the message at [index] drawn inline: all of them, except
   /// that the opening's offers are the quick replies and never drawn, so they

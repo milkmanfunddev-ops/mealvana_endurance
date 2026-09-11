@@ -289,6 +289,12 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   /// if that turn fails and leaves the transcript (VS-8).
   bool _repliesRetired = false;
 
+  /// Whether the sheet rests at `auto`: it opened on one message and a
+  /// dismiss, and still is one. Decided by the first transcript the sheet
+  /// sees (it rests at 75 % until then); once false it stays false, so the
+  /// sheet grows when the thread starts and does not shrink after that.
+  bool? _restsAtAuto;
+
   VanaChatControllerProvider get _provider => vanaChatControllerProvider(
     kind: _kind,
     conversationId: widget.conversationId,
@@ -372,13 +378,29 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     final content = ref.read(contentServiceProvider);
     final state = ref.watch(_provider).value;
     final streaming = state?.isStreaming ?? false;
+    final exchange = state == null
+        ? null
+        : VanaExchange.of(
+            state.messages,
+            isStreaming: state.isStreaming,
+            situationRoute: _situationRoute,
+            repliesRetired: _repliesRetired,
+          );
+    if (exchange != null) {
+      _restsAtAuto = (_restsAtAuto ?? true) && exchange.oneMessage;
+    }
 
     return VanaSheet(
+      rest: _restsAtAuto ?? false
+          ? VanaSheetHeight.auto
+          : VanaSheetHeight.threeQuarters,
       closeLabel: content.getValue(ContentKeys.mpCompanionClose),
       fullScreenLabel: content.getValue(ContentKeys.mpCompanionFullScreen),
       onClose: _close,
       onFullScreen: _fullScreen,
-      body: state == null ? const SizedBox.expand() : _body(content, state),
+      body: state == null || exchange == null
+          ? const SizedBox.shrink()
+          : _body(content, state, exchange),
       composer: VanaSheetComposer(
         fieldKey: const ValueKey('vana_sheet.composer'),
         sendKey: const ValueKey('vana_sheet.send'),
@@ -392,13 +414,11 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     );
   }
 
-  Widget _body(ContentService content, VanaChatState state) {
-    final exchange = VanaExchange.of(
-      state.messages,
-      isStreaming: state.isStreaming,
-      situationRoute: _situationRoute,
-      repliesRetired: _repliesRetired,
-    );
+  Widget _body(
+    ContentService content,
+    VanaChatState state,
+    VanaExchange exchange,
+  ) {
     final callbacks = VanaPartCallbacks(
       onTapMeal: (meal) => _leaveTo('/food/meals/${meal.id}'),
       onPickMeal: (_, _) => _fullScreen(),
@@ -433,7 +453,10 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     ];
     final status = exchange.status;
 
+    // As tall as what it holds: under the sheet's `auto` height the column is
+    // the sheet's height; at 75 % and 100 % the transcript sits under the chip.
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (status != null)
@@ -453,24 +476,21 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
               },
             ),
           ),
-        Expanded(
+        Flexible(
           // A short conversation sits under the chip, as the export draws it;
           // a long one fills the sheet and sticks to its newest turn.
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ListView.separated(
-              reverse: true,
-              shrinkWrap: true,
-              padding: const EdgeInsets.fromLTRB(
-                kVanaSheetColumnInset,
-                AppSpacing.xs,
-                kVanaSheetColumnInset,
-                AppSpacing.md,
-              ),
-              itemCount: rows.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 16),
-              itemBuilder: (_, i) => rows[rows.length - 1 - i],
+          child: ListView.separated(
+            reverse: true,
+            shrinkWrap: true,
+            padding: const EdgeInsets.fromLTRB(
+              kVanaSheetColumnInset,
+              AppSpacing.xs,
+              kVanaSheetColumnInset,
+              AppSpacing.md,
             ),
+            itemCount: rows.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 16),
+            itemBuilder: (_, i) => rows[rows.length - 1 - i],
           ),
         ),
         if (state.error != null) _errorLine(state),
