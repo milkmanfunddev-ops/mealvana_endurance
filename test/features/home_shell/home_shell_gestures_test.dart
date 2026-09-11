@@ -264,9 +264,13 @@ Future<void> _pumpShell(WidgetTester tester) async {
 }
 
 /// The vertical timeline scrollable (the filter row scrolls horizontally).
-Finder _timeline() => find.byWidgetPredicate(
-  (w) => w is Scrollable && axisDirectionToAxis(w.axisDirection) == Axis.vertical,
-).first;
+Finder _timeline() => find
+    .byWidgetPredicate(
+      (w) =>
+          w is Scrollable &&
+          axisDirectionToAxis(w.axisDirection) == Axis.vertical,
+    )
+    .first;
 
 /// Scroll the timeline to an absolute offset (px) with ONE monotonic drag —
 /// the position approaches [target] without ever overshooting, so a scroll
@@ -372,15 +376,22 @@ void main() {
     // the screen bottom, beneath the floating bar.
     final viewport = tester.getRect(_timeline());
     final barRect = tester.getRect(find.byType(KyleTabBar));
-    expect(viewport.bottom, greaterThanOrEqualTo(barRect.top),
-        reason: 'timeline must extend under the bar');
+    expect(
+      viewport.bottom,
+      greaterThanOrEqualTo(barRect.top),
+      reason: 'timeline must extend under the bar',
+    );
 
     await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 20);
     expect(_collapsedButton(), findsOneWidget);
     // Bottom-LEFT anchor.
     final rect = tester.getRect(_collapsedButton());
     expect(rect.left, lessThan(60), reason: 'collapsed button anchors left');
-    expect(rect.bottom, greaterThan(700), reason: 'collapsed button sits at the bottom');
+    expect(
+      rect.bottom,
+      greaterThan(700),
+      reason: 'collapsed button sits at the bottom',
+    );
     // Active tab's icon only.
     expect(
       find.descendant(of: _collapsedButton(), matching: find.byType(Icon)),
@@ -389,8 +400,11 @@ void main() {
     final icon = tester.widget<Icon>(
       find.descendant(of: _collapsedButton(), matching: find.byType(Icon)),
     );
-    expect(icon.icon, FontAwesomeIcons.solidHouse.data,
-        reason: 'the collapsed button shows the ACTIVE tab (house — Q4)');
+    expect(
+      icon.icon,
+      FontAwesomeIcons.solidHouse.data,
+      reason: 'the collapsed button shows the ACTIVE tab (house — Q4)',
+    );
     // Content still scrolls under in the collapsed state.
     expect(
       tester.getRect(_timeline()).bottom,
@@ -409,8 +423,11 @@ void main() {
       tester,
       HomeShellChrome.tabBarExpandThresholdPx + 12, // 76: inside the band
     );
-    expect(_collapsedButton(), findsNothing,
-        reason: 'inside the hysteresis band the expanded state holds');
+    expect(
+      _collapsedButton(),
+      findsNothing,
+      reason: 'inside the hysteresis band the expanded state holds',
+    );
 
     // Past the collapse threshold -> collapsed.
     await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 30);
@@ -418,8 +435,11 @@ void main() {
 
     // Back into the band from above must NOT re-expand.
     await _scrollTo(tester, HomeShellChrome.tabBarExpandThresholdPx + 12);
-    expect(_collapsedButton(), findsOneWidget,
-        reason: 'inside the hysteresis band the collapsed state holds');
+    expect(
+      _collapsedButton(),
+      findsOneWidget,
+      reason: 'inside the hysteresis band the collapsed state holds',
+    );
 
     // Below the expand threshold (and at top) -> expanded again.
     await _scrollTo(tester, 0);
@@ -428,8 +448,9 @@ void main() {
 
   // tb3_collapsed_icon_is_active_tab (Q3)
   testWidgets('tb3_collapsed_icon_is_active_tab: with 3 AND 5 destinations '
-      'the collapsed button shows the ACTIVE tab icon — never a fixed glyph',
-      (tester) async {
+      'the collapsed button shows the ACTIVE tab icon — never a fixed glyph', (
+    tester,
+  ) async {
     for (final count in [3, 5]) {
       for (final active in ['events', 'learn']) {
         await tester.pumpWidget(
@@ -462,8 +483,9 @@ void main() {
   // tb4_switch_travel (transition part 1)
   // pins: duration_ms = 340, easing = cubic-bezier(0.32,0.72,0,1)
   testWidgets('tb4_switch_travel: the highlight travels old -> new, position '
-      'AND width animating; mid-transit it is BETWEEN the items',
-      (tester) async {
+      'AND width animating; mid-transit it is BETWEEN the items', (
+    tester,
+  ) async {
     String active = 'timeline';
     await tester.pumpWidget(
       _frame(
@@ -487,25 +509,41 @@ void main() {
     final learnRect = tester.getRect(
       find.byKey(const ValueKey('kyle_tab_bar.item.learn')),
     );
-    expect(midRect.center.dx, greaterThan(restRect.center.dx + 5),
-        reason: 'no teleport — the highlight left the old item');
-    expect(midRect.center.dx, lessThan(learnRect.center.dx - 5),
-        reason: 'mid-transit the highlight is BETWEEN the items');
-    expect(midRect.width, greaterThan(restWidth + 4),
-        reason: 'width animates too (the capsule stretches in transit)');
+    expect(
+      midRect.center.dx,
+      greaterThan(restRect.center.dx + 5),
+      reason: 'no teleport — the highlight left the old item',
+    );
+    expect(
+      midRect.center.dx,
+      lessThan(learnRect.center.dx - 5),
+      reason: 'mid-transit the highlight is BETWEEN the items',
+    );
+    expect(
+      midRect.width,
+      greaterThan(restWidth + 4),
+      reason: 'width animates too (the capsule stretches in transit)',
+    );
 
     await tester.pumpAndSettle();
     final endRect = tester.getRect(_highlight());
-    expect((endRect.center.dx - learnRect.center.dx).abs(), lessThan(2),
-        reason: 'travel completes on the new item');
-    expect((endRect.width - restWidth).abs(), lessThan(2),
-        reason: 'width relaxes at rest');
+    expect(
+      (endRect.center.dx - learnRect.center.dx).abs(),
+      lessThan(2),
+      reason: 'travel completes on the new item',
+    );
+    expect(
+      (endRect.width - restWidth).abs(),
+      lessThan(2),
+      reason: 'width relaxes at rest',
+    );
   });
 
   // tb5_switch_drag_tracking (transition part 2)
   testWidgets('tb5_switch_drag_tracking: a live drag moves the highlight '
-      'fluidly under the finger; release commits to the nearest destination',
-      (tester) async {
+      'fluidly under the finger; release commits to the nearest destination', (
+    tester,
+  ) async {
     String active = 'timeline';
     final selections = <String>[];
     await tester.pumpWidget(
@@ -535,8 +573,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 16));
       final dx = tester.getRect(_highlight()).center.dx;
       if (lastDx != null) {
-        expect(dx, greaterThan(lastDx),
-            reason: 'highlight tracks the finger — no snapping mid-drag');
+        expect(
+          dx,
+          greaterThan(lastDx),
+          reason: 'highlight tracks the finger — no snapping mid-drag',
+        );
       }
       lastDx = dx;
     }
@@ -544,14 +585,18 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
     // 120 px from the timeline centre lands nearest the middle item.
-    expect(selections, ['events'],
-        reason: 'release commits to the nearest destination');
+    expect(selections, [
+      'events',
+    ], reason: 'release commits to the nearest destination');
     final endRect = tester.getRect(_highlight());
     final eventsRect = tester.getRect(
       find.byKey(const ValueKey('kyle_tab_bar.item.events')),
     );
-    expect((endRect.center.dx - eventsRect.center.dx).abs(), lessThan(2),
-        reason: 'the travel animation completed from the release position');
+    expect(
+      (endRect.center.dx - eventsRect.center.dx).abs(),
+      lessThan(2),
+      reason: 'the travel animation completed from the release position',
+    );
   });
 
   // tb6_liquid_lens_bubble (transition part 3 + Q1 highlight — PROPOSED
@@ -586,18 +631,27 @@ void main() {
 
     // AT REST: the bubble is present over the active item and overflows the
     // bar's border (the Bevel bulge).
-    expect(_lensBubble(), findsOneWidget,
-        reason: 'the bubble is the resting highlight (PROPOSED)');
+    expect(
+      _lensBubble(),
+      findsOneWidget,
+      reason: 'the bubble is the resting highlight (PROPOSED)',
+    );
     final barRect = tester.getRect(find.byType(GlassSurface).first);
     final bubbleRect = tester.getRect(_highlight());
-    expect(bubbleRect.top, lessThan(barRect.top),
-        reason: 'the bubble bulges over the bar border');
+    expect(
+      bubbleRect.top,
+      lessThan(barRect.top),
+      reason: 'the bubble bulges over the bar border',
+    );
     expect(bubbleRect.bottom, greaterThan(barRect.bottom));
     final timelineRect = tester.getRect(
       find.byKey(const ValueKey('kyle_tab_bar.item.timeline')),
     );
-    expect((bubbleRect.center.dx - timelineRect.center.dx).abs(), lessThan(2),
-        reason: 'the bubble rests on the active item');
+    expect(
+      (bubbleRect.center.dx - timelineRect.center.dx).abs(),
+      lessThan(2),
+      reason: 'the bubble rests on the active item',
+    );
 
     // IN TRANSIT: the same bubble travels between items (refraction is the
     // shader's; appearance golden-held in tab_bar_switch_transit_mid).
@@ -613,8 +667,11 @@ void main() {
     // own glass circle.
     setOuter(() => collapsed = true);
     await tester.pumpAndSettle();
-    expect(_lensBubble(), findsNothing,
-        reason: 'no bubble in the collapsed state');
+    expect(
+      _lensBubble(),
+      findsNothing,
+      reason: 'no bubble in the collapsed state',
+    );
   });
 
   // EXTRA (regression, not a manifest row): the collapse morph must land
@@ -650,15 +707,18 @@ void main() {
     );
     await tester.pumpAndSettle();
     final iconAfter = tester.getCenter(
-      find.descendant(
-        of: _collapsedButton(),
-        matching: find.byType(Icon),
-      ),
+      find.descendant(of: _collapsedButton(), matching: find.byType(Icon)),
     );
-    expect((iconAfter.dx - iconBefore.dx).abs(), lessThan(1.0),
-        reason: 'no horizontal snap at the morph -> button swap');
-    expect((iconAfter.dy - iconBefore.dy).abs(), lessThan(1.0),
-        reason: 'no vertical snap at the morph -> button swap');
+    expect(
+      (iconAfter.dx - iconBefore.dx).abs(),
+      lessThan(1.0),
+      reason: 'no horizontal snap at the morph -> button swap',
+    );
+    expect(
+      (iconAfter.dy - iconBefore.dy).abs(),
+      lessThan(1.0),
+      reason: 'no vertical snap at the morph -> button swap',
+    );
   });
 
   // tb7_utility_slot_reserved (Q2, option a) — NEGATIVE / geometry
@@ -677,21 +737,30 @@ void main() {
     void expectSlotEmpty(String state) {
       // The bar itself never occupies the slot region.
       final barRect = tester.getRect(find.byType(KyleTabBar));
-      expect(barRect.overlaps(slotRect), isFalse,
-          reason: 'the bar never occupies the slot ($state)');
+      expect(
+        barRect.overlaps(slotRect),
+        isFalse,
+        reason: 'the bar never occupies the slot ($state)',
+      );
       // And no other shell chrome renders there: the header owns the top
       // edge only, and the shell composes exactly these two chrome layers —
       // so an empty intersection with both IS the empty slot.
       final headerRect = tester.getRect(find.byType(KyleDateHeader));
-      expect(headerRect.overlaps(slotRect), isFalse,
-          reason: 'slot is EMPTY in v1 ($state)');
+      expect(
+        headerRect.overlaps(slotRect),
+        isFalse,
+        reason: 'slot is EMPTY in v1 ($state)',
+      );
     }
 
     expectSlotEmpty('expanded');
     await _scrollTo(tester, HomeShellChrome.tabBarCollapseThresholdPx + 30);
     expect(_collapsedButton(), findsOneWidget);
-    expect(tester.getRect(_collapsedButton()).left, lessThan(60),
-        reason: 'collapse morph targets the LEFT corner');
+    expect(
+      tester.getRect(_collapsedButton()).left,
+      lessThan(60),
+      reason: 'collapse morph targets the LEFT corner',
+    );
     expectSlotEmpty('collapsed');
   });
 
@@ -737,9 +806,7 @@ void main() {
     expect(find.byType(KyleCalendarSheet), findsNothing);
 
     // Path B: the COMPACT calendar button — same component, same callback.
-    tester
-        .state<_ParityHostState>(find.byType(_ParityHost))
-        .flipCompact(true);
+    tester.state<_ParityHostState>(find.byType(_ParityHost)).flipCompact(true);
     await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey('kyle_date_header.calendar_button')),
@@ -748,8 +815,11 @@ void main() {
     final sheetB = tester.widget<KyleCalendarSheet>(
       find.byType(KyleCalendarSheet),
     );
-    expect(find.byType(HomeShellCalendarHost), findsOneWidget,
-        reason: 'one component, two entry points — identical host');
+    expect(
+      find.byType(HomeShellCalendarHost),
+      findsOneWidget,
+      reason: 'one component, two entry points — identical host',
+    );
     // Identity of state, not just "a sheet appeared": same month, same
     // selected day, same today.
     expect(sheetB.month, sheetA.month);
@@ -761,13 +831,15 @@ void main() {
   // pair: the pinned instrument block never scrolls; the timeline runs
   // beneath it and dissolves under its backdrop)
   testWidgets('dh3_pinned_block_dissolve: the block (header + energy card + '
-      'filters + add row) never scrolls; the timeline dissolves under it',
-      (tester) async {
+      'filters + add row) never scrolls; the timeline dissolves under it', (
+    tester,
+  ) async {
     await _pumpShell(tester);
     expect(find.byKey(const ValueKey('kyle_date_header.rest')), findsOneWidget);
 
-    final headerBefore =
-        tester.getRect(find.byKey(const ValueKey('kyle_date_header.rest')));
+    final headerBefore = tester.getRect(
+      find.byKey(const ValueKey('kyle_date_header.rest')),
+    );
     final cardBefore = tester.getRect(
       find.byKey(const ValueKey('macro_dashboard.energy_card')),
     );
@@ -776,8 +848,11 @@ void main() {
 
     // The block is PINNED: header stays REST at the same position, energy
     // card unmoved, no compact state ever appears on the home.
-    expect(find.byKey(const ValueKey('kyle_date_header.rest')), findsOneWidget,
-        reason: 'the home header stays REST (ruling #4)');
+    expect(
+      find.byKey(const ValueKey('kyle_date_header.rest')),
+      findsOneWidget,
+      reason: 'the home header stays REST (ruling #4)',
+    );
     expect(
       find.byKey(const ValueKey('kyle_date_header.compact')),
       findsNothing,
@@ -788,15 +863,16 @@ void main() {
       reason: 'the pinned block never scrolls',
     );
     expect(
-      tester.getRect(
-        find.byKey(const ValueKey('macro_dashboard.energy_card')),
-      ),
+      tester.getRect(find.byKey(const ValueKey('macro_dashboard.energy_card'))),
       cardBefore,
       reason: 'S-1 glanceability: the energy card holds its place',
     );
     // The timeline runs beneath the block through the dissolve layer.
-    expect(find.byType(GlassTopFade), findsOneWidget,
-        reason: 'the block sits on its GlassTopFade dissolve');
+    expect(
+      find.byType(GlassTopFade),
+      findsOneWidget,
+      reason: 'the block sits on its GlassTopFade dissolve',
+    );
     expect(
       tester.state<ScrollableState>(_timeline()).position.pixels,
       moreOrLessEquals(150, epsilon: 1),
@@ -822,8 +898,11 @@ void main() {
       _day.subtract(const Duration(days: 1)),
       reason: '"<" shows the previous day',
     );
-    expect(find.byType(KyleCalendarSheet), findsNothing,
-        reason: 'a chevron tap never summons the sheet');
+    expect(
+      find.byType(KyleCalendarSheet),
+      findsNothing,
+      reason: 'a chevron tap never summons the sheet',
+    );
 
     await tester.tap(find.byKey(const ValueKey('kyle_date_header.next_day')));
     await tester.pumpAndSettle();
@@ -860,10 +939,16 @@ void main() {
     await gesture.up();
     await tester.pumpAndSettle();
 
-    expect(container.read(calendarSelectedDateProvider), before,
-        reason: 'ZERO screen-level day change from a horizontal drag');
-    expect(tester.getTopLeft(probe), anchorBefore,
-        reason: 'zero screen-level translation');
+    expect(
+      container.read(calendarSelectedDateProvider),
+      before,
+      reason: 'ZERO screen-level day change from a horizontal drag',
+    );
+    expect(
+      tester.getTopLeft(probe),
+      anchorBefore,
+      reason: 'zero screen-level translation',
+    );
 
     // The workout card still owns horizontal gestures (G4 reveal on the
     // non-verified DONE_CONFIRMED card — verified cards deliberately have
@@ -887,8 +972,11 @@ void main() {
     final revealed =
         find.text('Skip').evaluate().isNotEmpty ||
         find.text('Unskip').evaluate().isNotEmpty;
-    expect(revealed, isTrue,
-        reason: 'the card under the finger still receives its own G-set');
+    expect(
+      revealed,
+      isTrue,
+      reason: 'the card under the finger still receives its own G-set',
+    );
     expect(container.read(calendarSelectedDateProvider), before);
   });
 
@@ -933,8 +1021,11 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Wednesday, August 12'), findsOneWidget,
-        reason: 'the weekday replaces "Today"; nothing else changes');
+    expect(
+      find.text('Wednesday, August 12'),
+      findsOneWidget,
+      reason: 'the weekday replaces "Today"; nothing else changes',
+    );
     expect(find.bySemanticsLabel('Wednesday, August 12 ˅'), findsOneWidget);
     semantics.dispose();
   });
@@ -963,8 +1054,11 @@ void main() {
       const Duration(milliseconds: 200),
     );
     await tester.pumpAndSettle();
-    expect(find.byType(KyleCalendarSheet), findsOneWidget,
-        reason: 'a pull short of the commit threshold snaps back — sheet open');
+    expect(
+      find.byType(KyleCalendarSheet),
+      findsOneWidget,
+      reason: 'a pull short of the commit threshold snaps back — sheet open',
+    );
 
     // Past the commit threshold -> dismiss.
     await tester.timedDrag(
@@ -993,17 +1087,18 @@ void main() {
     final el = tester.element(find.byType(HomeShellChrome));
     final container = ProviderScope.containerOf(el, listen: false);
 
-    await tester.tap(
-      find.byKey(const ValueKey('kyle_calendar_sheet.day_20')),
-    );
+    await tester.tap(find.byKey(const ValueKey('kyle_calendar_sheet.day_20')));
     await tester.pumpAndSettle();
     expect(
       container.read(calendarSelectedDateProvider),
       DateTime(2026, 8, 20),
       reason: 'home navigated to the tapped date (real notifier write path)',
     );
-    expect(find.byType(KyleCalendarSheet), findsNothing,
-        reason: 'AND the sheet dismissed — one combined contract');
+    expect(
+      find.byType(KyleCalendarSheet),
+      findsNothing,
+      reason: 'AND the sheet dismissed — one combined contract',
+    );
   });
 
   // cs5_month_navigation_keeps_sheet (CS-5)
@@ -1016,8 +1111,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('September 2026'), findsOneWidget);
-    expect(find.byType(KyleCalendarSheet), findsOneWidget,
-        reason: 'the sheet stays open across month navigation');
+    expect(
+      find.byType(KyleCalendarSheet),
+      findsOneWidget,
+      reason: 'the sheet stays open across month navigation',
+    );
     await tester.tap(
       find.byKey(const ValueKey('kyle_calendar_sheet.prev_month')),
     );
@@ -1027,8 +1125,9 @@ void main() {
   });
 
   // cs6_today_pill (CS-6)
-  testWidgets('cs6_today_pill: current day selected and navigated to',
-      (tester) async {
+  testWidgets('cs6_today_pill: current day selected and navigated to', (
+    tester,
+  ) async {
     await _pumpShell(tester);
     await summonSheet(tester);
     final el = tester.element(find.byType(HomeShellChrome));
@@ -1050,8 +1149,9 @@ void main() {
   // cs7_dot_mapping (Q1: dot slot <- workout-card.md v3 states)
   testWidgets('cs7_dot_mapping: PLANNED hollow orange 2px/dark centre; both '
       'DONE states one filled electrolyte dot; SKIPPED active AND passive -> '
-      'no dot; rest day -> no dot; multi-workout best-state fold',
-      (tester) async {
+      'no dot; rest day -> no dot; multi-workout best-state fold', (
+    tester,
+  ) async {
     final month = DateTime(2026, 8, 1);
     final now = DateTime(2026, 8, 14); // fixed clock: 14th is "today"
     final days = assembleCalendarMonth(
@@ -1081,35 +1181,49 @@ void main() {
 
     expect(days[20]?.dot, CalendarDotState.planned);
     expect(days[5]?.dot, CalendarDotState.done);
-    expect(days[6]?.dot, CalendarDotState.done,
-        reason: 'no per-source distinction at cell size');
-    expect(days[10]?.dot ?? CalendarDotState.none, CalendarDotState.none,
-        reason: 'ACTIVE skip -> no dot (the banned failure signal)');
-    expect(days[3]?.dot ?? CalendarDotState.none, CalendarDotState.none,
-        reason: 'PASSIVE skip (derived, never written) -> no dot');
+    expect(
+      days[6]?.dot,
+      CalendarDotState.done,
+      reason: 'no per-source distinction at cell size',
+    );
+    expect(
+      days[10]?.dot ?? CalendarDotState.none,
+      CalendarDotState.none,
+      reason: 'ACTIVE skip -> no dot (the banned failure signal)',
+    );
+    expect(
+      days[3]?.dot ?? CalendarDotState.none,
+      CalendarDotState.none,
+      reason: 'PASSIVE skip (derived, never written) -> no dot',
+    );
     expect(days[15], isNull, reason: 'rest day -> no dot, no entry');
-    expect(days[8]?.dot, CalendarDotState.done,
-        reason: 'multi-workout: any completed -> filled');
-    expect(days[25]?.dot, CalendarDotState.planned,
-        reason: 'multi-workout: else any planned -> hollow');
+    expect(
+      days[8]?.dot,
+      CalendarDotState.done,
+      reason: 'multi-workout: any completed -> filled',
+    );
+    expect(
+      days[25]?.dot,
+      CalendarDotState.planned,
+      reason: 'multi-workout: else any planned -> hollow',
+    );
 
     // Render check: hollow = 2px orange ring over a dark centre; done =
     // filled electrolyte; both from the ONE cell widget.
     await tester.pumpWidget(
       _frame(
-        Row(children: [
-          SizedBox(
-            width: 52,
-            child: KyleCalendarDayCell(
-              day: 20,
-              data: days[20]!,
+        Row(
+          children: [
+            SizedBox(
+              width: 52,
+              child: KyleCalendarDayCell(day: 20, data: days[20]!),
             ),
-          ),
-          SizedBox(
-            width: 52,
-            child: KyleCalendarDayCell(day: 5, data: days[5]!),
-          ),
-        ]),
+            SizedBox(
+              width: 52,
+              child: KyleCalendarDayCell(day: 5, data: days[5]!),
+            ),
+          ],
+        ),
       ),
     );
     await tester.pump();
@@ -1141,8 +1255,9 @@ void main() {
 
   // cs8_tint_binary (Q2: tint slot; binary v1)
   testWidgets('cs8_tint_binary: >=1 athlete log tints; engine-planned-only '
-      'does NOT tint; binary (no intensity); day boundary = log_date',
-      (tester) async {
+      'does NOT tint; binary (no intensity); day boundary = log_date', (
+    tester,
+  ) async {
     final month = DateTime(2026, 8, 1);
     final now = DateTime(2026, 8, 14);
     // Producer-shaped: log_date strings exactly as the meal-logging service
@@ -1157,24 +1272,32 @@ void main() {
     );
     expect(days[15]?.tinted, isTrue);
     expect(days[16]?.tinted, isTrue);
-    expect(days[20]?.tinted ?? false, isFalse,
-        reason: 'a day with only engine-planned items must NOT tint');
-    expect(days[20]?.dot, CalendarDotState.planned,
-        reason: 'the planned dot still renders — the channels are independent');
+    expect(
+      days[20]?.tinted ?? false,
+      isFalse,
+      reason: 'a day with only engine-planned items must NOT tint',
+    );
+    expect(
+      days[20]?.dot,
+      CalendarDotState.planned,
+      reason: 'the planned dot still renders — the channels are independent',
+    );
 
     // Binary: both tinted days paint the identical decoration.
     await tester.pumpWidget(
       _frame(
-        Row(children: [
-          SizedBox(
-            width: 52,
-            child: KyleCalendarDayCell(day: 15, data: days[15]!),
-          ),
-          SizedBox(
-            width: 52,
-            child: KyleCalendarDayCell(day: 16, data: days[16]!),
-          ),
-        ]),
+        Row(
+          children: [
+            SizedBox(
+              width: 52,
+              child: KyleCalendarDayCell(day: 15, data: days[15]!),
+            ),
+            SizedBox(
+              width: 52,
+              child: KyleCalendarDayCell(day: 16, data: days[16]!),
+            ),
+          ],
+        ),
       ),
     );
     await tester.pump();
@@ -1185,8 +1308,11 @@ void main() {
         .where((d) => d.color == AppMaterials.calendarTintFill)
         .toList();
     expect(tints.length, 2, reason: 'both days tint');
-    expect(tints[0], equals(tints[1]),
-        reason: 'binary v1 — no intensity scaling renders');
+    expect(
+      tints[0],
+      equals(tints[1]),
+      reason: 'binary v1 — no intensity scaling renders',
+    );
 
     // Day boundary follows log_date itself (the daily-macros day
     // definition) — a '2026-08-15' log tints the 15th regardless of any
@@ -1209,11 +1335,13 @@ void main() {
 
     await tester.pumpWidget(
       _frame(
-        Row(children: [
-          cell(today: true, selected: false),
-          cell(today: false, selected: true),
-          cell(today: true, selected: true),
-        ]),
+        Row(
+          children: [
+            cell(today: true, selected: false),
+            cell(today: false, selected: true),
+            cell(today: true, selected: true),
+          ],
+        ),
       ),
     );
     await tester.pump();
@@ -1224,8 +1352,9 @@ void main() {
         .whereType<BoxDecoration>()
         .where((d) => d.borderRadius != null)
         .toList();
-    final filled =
-        numberBoxes.where((d) => d.color == AppColors.cream).toList();
+    final filled = numberBoxes
+        .where((d) => d.color == AppColors.cream)
+        .toList();
     final ringed = numberBoxes
         .where(
           (d) =>
@@ -1235,9 +1364,15 @@ void main() {
               d.border!.top.width == AppMaterials.calendarSelectedRingStroke,
         )
         .toList();
-    expect(filled.length, 2,
-        reason: 'today renders filled; selected==today keeps the fill');
-    expect(ringed.length, 1,
-        reason: 'a selected non-today day renders the 2 px cream ring');
+    expect(
+      filled.length,
+      2,
+      reason: 'today renders filled; selected==today keeps the fill',
+    );
+    expect(
+      ringed.length,
+      1,
+      reason: 'a selected non-today day renders the 2 px cream ring',
+    );
   });
 }

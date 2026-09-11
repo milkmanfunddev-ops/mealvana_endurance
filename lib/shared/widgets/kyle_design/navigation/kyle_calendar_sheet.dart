@@ -122,14 +122,16 @@ class _KyleCalendarSheetState extends State<KyleCalendarSheet>
   @override
   void initState() {
     super.initState();
-    _snapBack = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 320),
-    )..addListener(() {
-        setState(() {
-          _dragY = _snapFrom * (1 - Curves.easeOut.transform(_snapBack.value));
+    _snapBack =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 320),
+        )..addListener(() {
+          setState(() {
+            _dragY =
+                _snapFrom * (1 - Curves.easeOut.transform(_snapBack.value));
+          });
         });
-      });
   }
 
   @override
@@ -290,9 +292,7 @@ class _KyleCalendarSheetState extends State<KyleCalendarSheet>
           height: 38,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.cream.withValues(alpha: 0.14),
-            ),
+            border: Border.all(color: AppColors.cream.withValues(alpha: 0.14)),
           ),
           child: Icon(icon, size: 16, color: AppColors.cream),
         ),
@@ -405,10 +405,7 @@ class _KyleCalendarSheetState extends State<KyleCalendarSheet>
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.cream,
-                          width: 1.5,
-                        ),
+                        border: Border.all(color: AppColors.cream, width: 1.5),
                       ),
                     ),
                     const SizedBox(width: 9),

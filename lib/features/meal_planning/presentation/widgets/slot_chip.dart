@@ -40,14 +40,13 @@ class SlotChip extends ConsumerWidget {
         MealType.snack => content.getValue(ContentKeys.mpMealTypeSnackShort),
       };
 
-  static String labelFor(ContentService content, MealType type) => switch (
-    type
-  ) {
-    MealType.breakfast => content.getValue(ContentKeys.mpMealTypeBreakfast),
-    MealType.lunch => content.getValue(ContentKeys.mpMealTypeLunch),
-    MealType.dinner => content.getValue(ContentKeys.mpMealTypeDinner),
-    MealType.snack => content.getValue(ContentKeys.mpMealTypeSnack),
-  };
+  static String labelFor(ContentService content, MealType type) =>
+      switch (type) {
+        MealType.breakfast => content.getValue(ContentKeys.mpMealTypeBreakfast),
+        MealType.lunch => content.getValue(ContentKeys.mpMealTypeLunch),
+        MealType.dinner => content.getValue(ContentKeys.mpMealTypeDinner),
+        MealType.snack => content.getValue(ContentKeys.mpMealTypeSnack),
+      };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

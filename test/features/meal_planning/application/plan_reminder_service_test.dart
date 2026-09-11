@@ -9,7 +9,8 @@ import '../domain/fixture_helpers.dart';
 /// debrief = 18:00 on the Sunday that closes the week; both `null` once past.
 void main() {
   final plan = MealPlan.fromJson(
-    (loadFixture('batch')['parts'] as List).first['plan'] as Map<String, dynamic>,
+    (loadFixture('batch')['parts'] as List).first['plan']
+        as Map<String, dynamic>,
   ).copyWith(weekStart: '2026-09-06');
 
   test('cook day is the plan week start (a Sunday)', () {

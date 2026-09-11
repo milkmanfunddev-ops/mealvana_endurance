@@ -61,35 +61,35 @@ class RecentsScreen extends ConsumerWidget {
             ),
             Expanded(
               child: recents.isEmpty
-          ? Center(
-              child: Text(
-                content.getValue(ContentKeys.mpRecentsEmpty),
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: textColor.withValues(alpha: 0.6),
-                ),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                0,
-                AppSpacing.md,
-                AppSpacing.xxl,
-              ),
-              itemCount: recents.length,
-              itemBuilder: (context, i) {
-                final meal = recents[i].meal;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: MealCard(
-                    key: ValueKey('meal_planning.recents_${meal.id}'),
-                    meal: meal,
-                    picture: pictures[i],
-                    onTap: () => context.push('/food/meals/${meal.id}'),
-                  ),
-                );
-              },
-            ),
+                  ? Center(
+                      child: Text(
+                        content.getValue(ContentKeys.mpRecentsEmpty),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: textColor.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                        AppSpacing.xxl,
+                      ),
+                      itemCount: recents.length,
+                      itemBuilder: (context, i) {
+                        final meal = recents[i].meal;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: MealCard(
+                            key: ValueKey('meal_planning.recents_${meal.id}'),
+                            meal: meal,
+                            picture: pictures[i],
+                            onTap: () => context.push('/food/meals/${meal.id}'),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

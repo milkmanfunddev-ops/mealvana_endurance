@@ -9,13 +9,13 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../application/meal_icon_classifier.dart';
 import '../../domain/cooking_session.dart';
 import '../../domain/meal_plan.dart';
 import '../../domain/meal_plan_status.dart';
 import '../../domain/plan_meal.dart';
-import 'choice_chip_button.dart';
 import 'dashed_box.dart';
 import 'meal_icon_glyphs.dart';
 import 'slot_chip.dart';
@@ -157,16 +157,6 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
       0,
       (sum, m) => sum + m.servings,
     );
-    final types = <String>{
-      for (final m in widget.plan.meals)
-        SlotChip.shortLabelFor(label, m.mealType),
-    };
-    final howLabel = label.getValue(
-      widget.plan.batchCooking
-          ? ContentKeys.mpReviewGrouped
-          : ContentKeys.mpReviewNightOf,
-    );
-
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -176,12 +166,12 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
           children: [
             // What the week adds up to, before the meal-by-meal list.
             Text(
-              label.getValue(ContentKeys.mpReviewYourWeek).toUpperCase(),
+              label.getValue(ContentKeys.mpReviewYourWeek),
               key: const ValueKey('meal_planning.review_sheet.title'),
-              style: AppTextStyles.overline.copyWith(
-                color: secondary,
-                fontSize: 10,
-                letterSpacing: 1.5,
+              style: AppTextStyles.sectionTitle.copyWith(
+                color: textColor,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 2),
@@ -190,14 +180,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
                 'meals': widget.plan.meals.length,
                 'servings': totalServings,
               }),
-              style: AppTextStyles.sectionTitle.copyWith(
-                color: textColor,
-                fontSize: 18,
-              ),
-            ),
-            Text(
-              '${types.join(' · ')} · $howLabel',
-              style: AppTextStyles.bodySmall.copyWith(color: secondary),
+              style: AppTextStyles.bodyMedium.copyWith(color: secondary),
             ),
             const SizedBox(height: AppSpacing.md),
             if (widget.plan.meals.isEmpty)
@@ -314,7 +297,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
               text: label.getValue(
                 confirmed
                     ? ContentKeys.mpReviewConfirmed
-                    : ContentKeys.mpBtnConfirm,
+                    : ContentKeys.mpReviewConfirm,
               ),
               height: 48,
               isLoading: _confirming,
@@ -323,11 +306,11 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
                   : _confirm,
             ),
             const SizedBox(height: AppSpacing.sm),
-            Center(
-              child: ChoiceChipButton(
-                label: label.getValue(ContentKeys.mpReviewKeepPlanning),
-                onTap: () => Navigator.of(context).pop(),
-              ),
+            KyleSecondaryButton(
+              key: const ValueKey('meal_planning.review_sheet.keep_planning'),
+              text: label.getValue(ContentKeys.mpReviewKeepPlanning),
+              height: 48,
+              onPressed: () => Navigator.of(context).pop(),
             ),
             const SizedBox(height: AppSpacing.sm),
           ],

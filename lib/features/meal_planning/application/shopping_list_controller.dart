@@ -2,10 +2,14 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../shared/providers/unit_system_provider.dart';
+import '../../nutrition_plan/domain/run_parameters.dart';
 import '../domain/meal_plan.dart';
+import '../domain/plan_meal.dart';
 import '../domain/shopping_item.dart';
 import '../domain/ui_action.dart';
 import 'meal_plan_controller.dart';
+import 'shopping_qty_formatter.dart';
 
 part 'shopping_list_controller.g.dart';
 
@@ -20,6 +24,7 @@ class ShoppingListState {
     this.skipped = const [],
     this.totalServings = 0,
     this.mealCount = 0,
+    this.meals = const [],
   });
 
   final String? planId;
@@ -38,7 +43,17 @@ class ShoppingListState {
   final int totalServings;
   final int mealCount;
 
+  /// The plan's meals, so a line's `fromMealIds` can be shown by name and
+  /// tapped through to the recipe.
+  final List<PlanMeal> meals;
+
   bool get isEmpty => items.isEmpty;
+
+  /// The meals a line was built from, in plan order.
+  List<PlanMeal> sourcesOf(ShoppingItem item) => [
+    for (final meal in meals)
+      if (item.fromMealIds.contains(meal.id)) meal,
+  ];
 }
 
 /// Groups the active plan's `shopping` by aisle and routes the local-first
@@ -92,6 +107,7 @@ class ShoppingListController extends _$ShoppingListController {
         items,
         current.totalServings,
         current.mealCount,
+        current.meals,
       ),
     );
     state = await AsyncValue.guard(() async {
@@ -106,15 +122,23 @@ class ShoppingListController extends _$ShoppingListController {
   String shareText({required String title, required String summary}) {
     final current = state.value;
     if (current == null || current.isEmpty) return '';
-    return formatShareText(current, title: title, summary: summary);
+    final units = ref.read(unitSystemProvider).value ?? UnitSystem.imperial;
+    return formatShareText(
+      current,
+      title: title,
+      summary: summary,
+      units: units,
+    );
   }
 
   /// Formats a shopping list for Messages, Mail, Notes, Reminders, and other
-  /// text destinations exposed by the platform share sheet.
+  /// text destinations exposed by the platform share sheet. Quantities are
+  /// rendered in [units] (metric passes the server's own text through).
   static String formatShareText(
     ShoppingListState current, {
     required String title,
     required String summary,
+    UnitSystem units = UnitSystem.metric,
   }) {
     final buffer = StringBuffer();
     buffer
@@ -129,7 +153,8 @@ class ShoppingListController extends _$ShoppingListController {
       buffer.writeln(entry.key.toUpperCase());
       for (final item in needed) {
         final mark = item.checked ? '☑' : '☐';
-        final qty = item.qty.isEmpty ? '' : ' — ${item.qty}';
+        final shown = formatShoppingQty(item.qty, units);
+        final qty = shown.isEmpty ? '' : ' — $shown';
         buffer.writeln('$mark ${item.name}$qty');
       }
       buffer.writeln();
@@ -147,6 +172,7 @@ class ShoppingListController extends _$ShoppingListController {
       plan.shopping,
       servings,
       plan.meals.length,
+      plan.meals,
     );
   }
 
@@ -156,6 +182,7 @@ class ShoppingListController extends _$ShoppingListController {
     List<ShoppingItem> items,
     int totalServings,
     int mealCount,
+    List<PlanMeal> meals,
   ) {
     final grouped = <String, List<ShoppingItem>>{};
     for (final aisle in aisleOrder) {
@@ -180,6 +207,7 @@ class ShoppingListController extends _$ShoppingListController {
       ],
       totalServings: totalServings,
       mealCount: mealCount,
+      meals: meals,
     );
   }
 }

@@ -52,6 +52,10 @@ sealed class VanaPart extends WireRecord {
           return VanaWeekPart.fromJson(json);
         case 'debrief':
           return VanaDebriefPart.fromJson(json);
+        case 'feedback_saved':
+          return VanaFeedbackSavedPart.fromJson(json);
+        case 'feedback_prompt':
+          return const VanaFeedbackPromptPart();
         default:
           return null;
       }
@@ -428,6 +432,73 @@ class VanaMemorySavedPart extends VanaPart {
 
   VanaMemorySavedPart copyWith({UserMemory? memory}) =>
       VanaMemorySavedPart(memory: memory ?? this.memory);
+}
+
+enum FeedbackSentiment { positive, negative, neutral }
+
+enum FeedbackAbout { vana, app, suggestion }
+
+/// `saveFeedback` — the athlete typed feedback into Vana and it landed in
+/// `user_feedback` (2026-09-09). Typing into Vana IS the feedback system:
+/// no sheet, no link, no Wiredash. Renders as a quiet "saved for the team"
+/// row.
+class VanaFeedbackSavedPart extends VanaPart {
+  const VanaFeedbackSavedPart({
+    required this.message,
+    required this.sentiment,
+    required this.about,
+  });
+
+  final String message;
+  final FeedbackSentiment sentiment;
+  final FeedbackAbout about;
+
+  @override
+  String get kind => 'feedback_saved';
+
+  factory VanaFeedbackSavedPart.fromJson(Map<String, dynamic> json) =>
+      VanaFeedbackSavedPart(
+        message: requireString(json, 'message'),
+        sentiment: FeedbackSentiment.values.firstWhere(
+          (v) => v.name == json['sentiment'],
+          orElse: () => FeedbackSentiment.neutral,
+        ),
+        about: FeedbackAbout.values.firstWhere(
+          (v) => v.name == json['about'],
+          orElse: () => FeedbackAbout.vana,
+        ),
+      );
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'message': message,
+    'sentiment': sentiment.name,
+    'about': about.name,
+  };
+
+  VanaFeedbackSavedPart copyWith({
+    String? message,
+    FeedbackSentiment? sentiment,
+    FeedbackAbout? about,
+  }) => VanaFeedbackSavedPart(
+    message: message ?? this.message,
+    sentiment: sentiment ?? this.sentiment,
+    about: about ?? this.about,
+  );
+}
+
+/// Server-appended after the FIRST conversation's opener (2026-09-09):
+/// "Have feedback for me? Just type it here." Plain text — typing into the
+/// chat is the feedback system. No payload; copy is content-managed.
+class VanaFeedbackPromptPart extends VanaPart {
+  const VanaFeedbackPromptPart();
+
+  @override
+  String get kind => 'feedback_prompt';
+
+  @override
+  Map<String, dynamic> toJson() => {'kind': kind};
 }
 
 /// `logFromPlan`.

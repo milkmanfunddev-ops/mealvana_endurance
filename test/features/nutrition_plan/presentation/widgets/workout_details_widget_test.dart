@@ -12,10 +12,12 @@ import 'package:mealvana_endurance/shared/widgets/kyle_design/inputs/duration_pa
 
 void main() {
   final paceField = find.byKey(const ValueKey('activity_create.pace_field'));
-  final hrField =
-      find.byKey(const ValueKey('activity_create.duration_hr_field'));
-  final minField =
-      find.byKey(const ValueKey('activity_create.duration_mins_field'));
+  final hrField = find.byKey(
+    const ValueKey('activity_create.duration_hr_field'),
+  );
+  final minField = find.byKey(
+    const ValueKey('activity_create.duration_mins_field'),
+  );
 
   Widget build({
     ActivityType sport = ActivityType.running,
@@ -84,29 +86,31 @@ void main() {
     testWidgets('cycling shows Avg Speed with a decimal value and mph', (
       tester,
     ) async {
-      await tester.pumpWidget(build(
-        sport: ActivityType.cycling,
-        distance: 40,
-        mode: DurationPaceMode.byPace,
-        pace: 18.5,
-        paceUnit: 'mph',
-      ));
+      await tester.pumpWidget(
+        build(
+          sport: ActivityType.cycling,
+          distance: 40,
+          mode: DurationPaceMode.byPace,
+          pace: 18.5,
+          paceUnit: 'mph',
+        ),
+      );
 
       expect(find.text('Avg Speed'), findsOneWidget);
       expect(tester.widget<TextField>(paceField).controller?.text, '18.5');
       expect(find.text('mph'), findsOneWidget);
     });
 
-    testWidgets('swimming shows M:SS pace with the /100m unit', (
-      tester,
-    ) async {
-      await tester.pumpWidget(build(
-        sport: ActivityType.swimming,
-        distance: 3000,
-        distanceUnit: 'meters',
-        pace: 1.75,
-        paceUnit: 'min/100m',
-      ));
+    testWidgets('swimming shows M:SS pace with the /100m unit', (tester) async {
+      await tester.pumpWidget(
+        build(
+          sport: ActivityType.swimming,
+          distance: 3000,
+          distanceUnit: 'meters',
+          pace: 1.75,
+          paceUnit: 'min/100m',
+        ),
+      );
 
       expect(find.text('Avg Pace'), findsOneWidget);
       expect(tester.widget<TextField>(paceField).controller?.text, '1:45');
@@ -118,8 +122,10 @@ void main() {
     ) async {
       // Pace held ⇒ duration derived.
       await tester.pumpWidget(build(mode: DurationPaceMode.byPace));
-      expect(find.byKey(const ValueKey('activity_create.est_badge')),
-          findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_create.est_badge')),
+        findsOneWidget,
+      );
       expect(find.byIcon(Icons.push_pin), findsOneWidget);
       expect(
         tester.widget<TextField>(hrField).style?.fontStyle,
@@ -132,8 +138,10 @@ void main() {
 
       // Duration held ⇒ pace derived.
       await tester.pumpWidget(build(mode: DurationPaceMode.byDuration));
-      expect(find.byKey(const ValueKey('activity_create.est_badge')),
-          findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_create.est_badge')),
+        findsOneWidget,
+      );
       expect(
         tester.widget<TextField>(paceField).style?.fontStyle,
         FontStyle.italic,
@@ -142,22 +150,17 @@ void main() {
 
     testWidgets('editing pace reports parsed M:SS minutes', (tester) async {
       double? changedPace;
-      await tester.pumpWidget(build(
-        onPaceChanged: (v) => changedPace = v,
-      ));
+      await tester.pumpWidget(build(onPaceChanged: (v) => changedPace = v));
 
       await tester.enterText(paceField, '8:30');
       await tester.pump();
       expect(changedPace, closeTo(8.5, 0.01));
     });
 
-    testWidgets(
-        'pace field formats bare digits into M:SS and commits the pace '
+    testWidgets('pace field formats bare digits into M:SS and commits the pace '
         '(numeric keypad has no colon — bug 2026-09-04)', (tester) async {
       final paceChanges = <double>[];
-      await tester.pumpWidget(build(
-        onPaceChanged: paceChanges.add,
-      ));
+      await tester.pumpWidget(build(onPaceChanged: paceChanges.add));
 
       // The mm:ss field must NOT ask for the decimal pad — plain digits.
       expect(
@@ -184,14 +187,16 @@ void main() {
       tester,
     ) async {
       final paceChanges = <double>[];
-      await tester.pumpWidget(build(
-        sport: ActivityType.swimming,
-        distance: 3000,
-        distanceUnit: 'meters',
-        pace: null,
-        paceUnit: 'min/100m',
-        onPaceChanged: paceChanges.add,
-      ));
+      await tester.pumpWidget(
+        build(
+          sport: ActivityType.swimming,
+          distance: 3000,
+          distanceUnit: 'meters',
+          pace: null,
+          paceUnit: 'min/100m',
+          onPaceChanged: paceChanges.add,
+        ),
+      );
 
       expect(
         tester.widget<TextField>(paceField).keyboardType,
@@ -205,12 +210,14 @@ void main() {
 
     testWidgets('cycling speed field accepts decimal input', (tester) async {
       double? changedPace;
-      await tester.pumpWidget(build(
-        sport: ActivityType.cycling,
-        pace: 18.5,
-        paceUnit: 'mph',
-        onPaceChanged: (v) => changedPace = v,
-      ));
+      await tester.pumpWidget(
+        build(
+          sport: ActivityType.cycling,
+          pace: 18.5,
+          paceUnit: 'mph',
+          onPaceChanged: (v) => changedPace = v,
+        ),
+      );
 
       await tester.enterText(paceField, '20.0');
       await tester.pump();
@@ -219,10 +226,12 @@ void main() {
 
     testWidgets('editing hr/min reports the duration', (tester) async {
       Duration? changed;
-      await tester.pumpWidget(build(
-        mode: DurationPaceMode.byDuration,
-        onDurationChanged: (d) => changed = d,
-      ));
+      await tester.pumpWidget(
+        build(
+          mode: DurationPaceMode.byDuration,
+          onDurationChanged: (d) => changed = d,
+        ),
+      );
 
       await tester.enterText(hrField, '2');
       await tester.pump();
@@ -235,20 +244,21 @@ void main() {
       final modeChanges = <DurationPaceMode>[];
 
       // Pace held: touching the duration side must report byDuration.
-      await tester.pumpWidget(build(
-        mode: DurationPaceMode.byPace,
-        onModeChanged: modeChanges.add,
-      ));
+      await tester.pumpWidget(
+        build(mode: DurationPaceMode.byPace, onModeChanged: modeChanges.add),
+      );
       await tester.enterText(hrField, '2');
       await tester.pump();
       expect(modeChanges, contains(DurationPaceMode.byDuration));
 
       // Duration held: touching the pace side must report byPace.
       modeChanges.clear();
-      await tester.pumpWidget(build(
-        mode: DurationPaceMode.byDuration,
-        onModeChanged: modeChanges.add,
-      ));
+      await tester.pumpWidget(
+        build(
+          mode: DurationPaceMode.byDuration,
+          onModeChanged: modeChanges.add,
+        ),
+      );
       await tester.enterText(paceField, '8:00');
       await tester.pump();
       expect(modeChanges, contains(DurationPaceMode.byPace));
@@ -258,9 +268,7 @@ void main() {
       tester,
     ) async {
       double? changedPace;
-      await tester.pumpWidget(build(
-        onPaceChanged: (v) => changedPace = v,
-      ));
+      await tester.pumpWidget(build(onPaceChanged: (v) => changedPace = v));
 
       await tester.enterText(paceField, '8:75');
       await tester.pump();
@@ -271,10 +279,7 @@ void main() {
       await tester.pumpWidget(build(pace: null, estimatedDuration: null));
 
       expect(tester.widget<TextField>(paceField).controller?.text, isEmpty);
-      expect(
-        tester.widget<TextField>(paceField).decoration?.hintText,
-        '0:00',
-      );
+      expect(tester.widget<TextField>(paceField).decoration?.hintText, '0:00');
       expect(tester.widget<TextField>(hrField).controller?.text, isEmpty);
       expect(tester.widget<TextField>(hrField).decoration?.hintText, '0');
       expect(tester.widget<TextField>(minField).decoration?.hintText, '00');
@@ -284,10 +289,12 @@ void main() {
       tester,
     ) async {
       final paceChanges = <double>[];
-      await tester.pumpWidget(build(
-        mode: DurationPaceMode.byDuration,
-        onPaceChanged: paceChanges.add,
-      ));
+      await tester.pumpWidget(
+        build(
+          mode: DurationPaceMode.byDuration,
+          onPaceChanged: paceChanges.add,
+        ),
+      );
 
       expect(find.text('your usual · 9:00 /mi'), findsOneWidget);
       await tester.tap(
@@ -298,57 +305,60 @@ void main() {
     });
 
     testWidgets(
-        'tapping the chip TEXT (not the pencil) applies the usual pace, '
-        'and the tap target is at least 44px tall (bug 2026-09-04)', (
-      tester,
-    ) async {
-      final paceChanges = <double>[];
-      await tester.pumpWidget(build(
-        mode: DurationPaceMode.byDuration,
-        onPaceChanged: paceChanges.add,
-      ));
+      'tapping the chip TEXT (not the pencil) applies the usual pace, '
+      'and the tap target is at least 44px tall (bug 2026-09-04)',
+      (tester) async {
+        final paceChanges = <double>[];
+        await tester.pumpWidget(
+          build(
+            mode: DurationPaceMode.byDuration,
+            onPaceChanged: paceChanges.add,
+          ),
+        );
 
-      // Tap dead-center on the label text — nowhere near the pencil icon.
-      await tester.tap(find.text('your usual · 9:00 /mi'));
-      await tester.pump();
-      expect(paceChanges, [9.0]);
+        // Tap dead-center on the label text — nowhere near the pencil icon.
+        await tester.tap(find.text('your usual · 9:00 /mi'));
+        await tester.pump();
+        expect(paceChanges, [9.0]);
 
-      // The gesture surface, not the ~21px pill, defines the hit target.
-      final chipSize = tester.getSize(
-        find.byKey(const ValueKey('activity_create.usual_pace_chip')),
-      );
-      expect(chipSize.height, greaterThanOrEqualTo(44));
-    });
+        // The gesture surface, not the ~21px pill, defines the hit target.
+        final chipSize = tester.getSize(
+          find.byKey(const ValueKey('activity_create.usual_pace_chip')),
+        );
+        expect(chipSize.height, greaterThanOrEqualTo(44));
+      },
+    );
 
-    testWidgets(
-        'applying the chip while the pace field is FOCUSED updates the '
+    testWidgets('applying the chip while the pace field is FOCUSED updates the '
         'visible text, not just the committed value (bug 2026-09-04: field '
         'kept showing 7:45 after the chip set 9:00)', (tester) async {
       // Stateful harness: the parent feeds committed pace back in, exactly
       // like the real screen.
       double pace = 9.0;
-      await tester.pumpWidget(StatefulBuilder(
-        builder: (context, setState) => MaterialApp(
-          home: Scaffold(
-            body: SingleChildScrollView(
-              child: WorkoutDetailsWidget(
-                sport: ActivityType.running,
-                distance: 12.0,
-                distanceUnit: 'mi',
-                mode: DurationPaceMode.byPace,
-                estimatedDuration: const Duration(hours: 1, minutes: 48),
-                pace: pace,
-                paceUnit: 'min/mi',
-                enabled: true,
-                onDistanceChanged: (_) {},
-                onModeChanged: (_) {},
-                onPaceChanged: (v) => setState(() => pace = v),
-                onDurationChanged: (_) {},
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (context, setState) => MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: WorkoutDetailsWidget(
+                  sport: ActivityType.running,
+                  distance: 12.0,
+                  distanceUnit: 'mi',
+                  mode: DurationPaceMode.byPace,
+                  estimatedDuration: const Duration(hours: 1, minutes: 48),
+                  pace: pace,
+                  paceUnit: 'min/mi',
+                  enabled: true,
+                  onDistanceChanged: (_) {},
+                  onModeChanged: (_) {},
+                  onPaceChanged: (v) => setState(() => pace = v),
+                  onDurationChanged: (_) {},
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
 
       // Type a pace — field is focused and stays focused.
       await tester.enterText(paceField, '745');
@@ -391,10 +401,12 @@ void main() {
       tester,
     ) async {
       final paceChanges = <double>[];
-      await tester.pumpWidget(build(
-        pace: 4.5, // 4:30 /mi — the ruled F-27 class
-        onPaceChanged: paceChanges.add,
-      ));
+      await tester.pumpWidget(
+        build(
+          pace: 4.5, // 4:30 /mi — the ruled F-27 class
+          onPaceChanged: paceChanges.add,
+        ),
+      );
 
       expect(
         find.byKey(const ValueKey('activity_create.pace_guard')),
@@ -417,12 +429,14 @@ void main() {
     });
 
     testWidgets('cycling guard uses the speed band', (tester) async {
-      await tester.pumpWidget(build(
-        sport: ActivityType.cycling,
-        distance: 40,
-        pace: 35.0, // ≥ 30 mph — outside the ride band
-        paceUnit: 'mph',
-      ));
+      await tester.pumpWidget(
+        build(
+          sport: ActivityType.cycling,
+          distance: 40,
+          pace: 35.0, // ≥ 30 mph — outside the ride band
+          paceUnit: 'mph',
+        ),
+      );
       expect(
         find.byKey(const ValueKey('activity_create.pace_guard')),
         findsOneWidget,
@@ -443,10 +457,9 @@ void main() {
       tester,
     ) async {
       double? changedValue;
-      await tester.pumpWidget(build(
-        distance: 18.0,
-        onDistanceChanged: (v) => changedValue = v,
-      ));
+      await tester.pumpWidget(
+        build(distance: 18.0, onDistanceChanged: (v) => changedValue = v),
+      );
 
       final distanceField = find.widgetWithText(TextField, '18.0');
       await tester.enterText(distanceField, '20.5');
@@ -456,11 +469,9 @@ void main() {
     });
 
     testWidgets('uses the provided distance unit', (tester) async {
-      await tester.pumpWidget(build(
-        distance: 10.0,
-        distanceUnit: 'km',
-        paceUnit: 'min/km',
-      ));
+      await tester.pumpWidget(
+        build(distance: 10.0, distanceUnit: 'km', paceUnit: 'min/km'),
+      );
       expect(find.text('km'), findsOneWidget);
       expect(find.text('/km'), findsOneWidget);
     });

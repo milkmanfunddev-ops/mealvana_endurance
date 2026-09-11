@@ -68,13 +68,14 @@ class MacroPillRow extends StatelessWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final style = (compact ? AppTextStyles.nutritionFact : AppTextStyles.bodySmall)
-        .copyWith(
-          fontSize: compact ? 10 : 11,
-          fontWeight: FontWeight.w500,
-          height: 1.2,
-          color: textColor.withValues(alpha: 0.75),
-        );
+    final style =
+        (compact ? AppTextStyles.nutritionFact : AppTextStyles.bodySmall)
+            .copyWith(
+              fontSize: compact ? 10 : 11,
+              fontWeight: FontWeight.w500,
+              height: 1.2,
+              color: textColor.withValues(alpha: 0.75),
+            );
     final padding = compact
         ? const EdgeInsets.symmetric(horizontal: 5, vertical: 2)
         : const EdgeInsets.symmetric(horizontal: 7, vertical: 3);

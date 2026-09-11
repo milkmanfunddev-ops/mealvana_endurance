@@ -352,9 +352,9 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       },
       onSomethingElse: _focusComposer,
       onAcceptRule: _acceptRule,
-      onViewShopping: () => context.push('/food?tab=shopping'),
+      onViewShopping: () => context.go('/main?tab=food&food=shopping'),
       onPantryUse: _usePantry,
-      onPlanWeekOpen: () => context.push('/food?tab=plan'),
+      onPlanWeekOpen: () => context.go('/main?tab=food&food=plan'),
       onPantryPhoto: _snapFridgePhoto,
       onSwapPicked: (meal) => _swapPicked(plan, meal),
       onEditMessage: _beginEdit,
@@ -511,13 +511,15 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
-    // A pill field with a round electrolyte send button beside it, floating
-    // over the transcript rather than sitting in a bordered bar
-    // (prototype `.v-input` + `.k-send`). The `+` (attach) sits left of the
-    // field, the mic right of it, and an editing strip rides above the row
-    // while an athlete turn is being edited.
+    // One rounded pill holding everything, the way ChatGPT and Claude lay
+    // out their mobile composers (Lee, 2026-09-07): `+` flat on the left,
+    // the field in the middle, and on the right the mic while the field is
+    // empty, swapping for a filled send button (up arrow) the moment there
+    // is text. An editing strip rides above the pill while an athlete turn
+    // is being edited.
+    final border = textColor.withValues(alpha: 0.18);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, AppSpacing.sm, 20, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(16, AppSpacing.sm, 16, AppSpacing.sm),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -527,125 +529,101 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
               cancelTooltip: content.getValue(ContentKeys.mpEditingCancel),
               onCancel: _cancelEdit,
             ),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (isPlanning) ...[
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: VanaRoundButton(
-                    key: const ValueKey('meal_planning.chat_attach'),
-                    icon: FontAwesomeIcons.plus,
-                    tooltip: content.getValue(ContentKeys.mpAttachTooltip),
-                    onTap: isStreaming ? () {} : _openAttachSheet,
+          AnimatedBuilder(
+            animation: Listenable.merge([_textController, _inputFocus]),
+            builder: (context, _) {
+              final hasText = _textController.text.trim().isNotEmpty;
+              return Container(
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(
+                    color: _inputFocus.hasFocus
+                        ? AppColors.electrolyte.withValues(alpha: 0.7)
+                        : border,
+                    width: _inputFocus.hasFocus ? 1.2 : 0.8,
                   ),
                 ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    minHeight: 48,
-                    maxHeight: 140,
-                  ),
-                  child: TextField(
-                    key: const ValueKey('meal_planning.chat_input'),
-                    controller: _textController,
-                    focusNode: _inputFocus,
-                    enabled: !isStreaming,
-                    maxLines: null,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor,
-                      fontSize: 16,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: hint,
-                      hintStyle: AppTextStyles.bodyMedium.copyWith(
-                        color: textColor.withValues(alpha: 0.4),
-                        fontSize: 16,
+                padding: const EdgeInsets.fromLTRB(6, 6, 6, 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (isPlanning)
+                      VanaRoundButton(
+                        key: const ValueKey('meal_planning.chat_attach'),
+                        icon: FontAwesomeIcons.plus,
+                        tooltip: content.getValue(ContentKeys.mpAttachTooltip),
+                        onTap: isStreaming ? () {} : _openAttachSheet,
+                        size: 36,
+                        iconSize: 16,
+                        flat: true,
                       ),
-                      filled: true,
-                      fillColor: surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: textColor.withValues(alpha: 0.2),
-                          width: 0.5,
+                    Expanded(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: 36,
+                          maxHeight: 140,
+                        ),
+                        child: TextField(
+                          key: const ValueKey('meal_planning.chat_input'),
+                          controller: _textController,
+                          focusNode: _inputFocus,
+                          enabled: !isStreaming,
+                          maxLines: null,
+                          textInputAction: TextInputAction.send,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: textColor,
+                            fontSize: 16,
+                            height: 1.35,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: hint,
+                            hintStyle: AppTextStyles.bodyMedium.copyWith(
+                              color: textColor.withValues(alpha: 0.4),
+                              fontSize: 16,
+                              height: 1.35,
+                            ),
+                            isCollapsed: true,
+                            filled: false,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            contentPadding: EdgeInsets.fromLTRB(
+                              isPlanning ? 4 : 12,
+                              8,
+                              8,
+                              8,
+                            ),
+                          ),
+                          onSubmitted: isStreaming
+                              ? null
+                              : (_) => _sendFromInput(),
                         ),
                       ),
-                      disabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: textColor.withValues(alpha: 0.2),
-                          width: 0.5,
+                    ),
+                    // Mic while empty, send once there is text — the same
+                    // slot, so nothing shifts when the swap happens.
+                    if (!hasText && !kIsWeb)
+                      VanaMicButton(
+                        tooltip: content.getValue(ContentKeys.mpMicTooltip),
+                        listeningTooltip: content.getValue(
+                          ContentKeys.mpMicListening,
                         ),
+                        enabled: !isStreaming,
+                        onText: _dictated,
+                        size: 36,
+                        flat: true,
                       ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: const BorderSide(
-                          color: AppColors.electrolyte,
-                          width: 1.5,
-                        ),
-                      ),
+                    _SendButton(
+                      enabled: hasText && !isStreaming,
+                      streaming: isStreaming,
+                      onTap: _sendFromInput,
                     ),
-                    onSubmitted: isStreaming ? null : (_) => _sendFromInput(),
-                  ),
+                  ],
                 ),
-              ),
-              if (!kIsWeb) ...[
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: VanaMicButton(
-                    tooltip: content.getValue(ContentKeys.mpMicTooltip),
-                    listeningTooltip: content.getValue(
-                      ContentKeys.mpMicListening,
-                    ),
-                    enabled: !isStreaming,
-                    onText: _dictated,
-                  ),
-                ),
-              ],
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Material(
-                  color: isStreaming
-                      ? AppColors.electrolyte.withValues(alpha: 0.4)
-                      : AppColors.electrolyte,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    key: const ValueKey('meal_planning.chat_send'),
-                    onTap: isStreaming ? null : _sendFromInput,
-                    customBorder: const CircleBorder(),
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: Center(
-                        child: isStreaming
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: AppColors.blackberry,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.arrow_forward,
-                                size: 20,
-                                color: AppColors.blackberry,
-                              ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ],
       ),
@@ -961,9 +939,10 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         }
       },
       // Confirmed → the shopping list is the next thing the athlete needs
-      // (the server has just built it). `go` leaves the chat behind rather
-      // than stacking the Food tab on top of it.
-      onConfirmed: () => context.go('/food?tab=shopping'),
+      // (the server has just built it). `go` to the tab shell's Food tab
+      // (Shopping segment) so the bottom bar is there — a bare `/food`
+      // route has no way home (Lee, 2026-09-07).
+      onConfirmed: () => context.go('/main?tab=food&food=shopping'),
     );
   }
 
@@ -1028,6 +1007,63 @@ class _DividerRow extends _TranscriptRow {
   const _DividerRow(this.date);
 
   final DateTime date;
+}
+
+/// The composer's send button: a 32pt disc that reads muted while the field
+/// is empty, fills electrolyte with an up arrow once there is text, and
+/// shows a spinner while the reply streams — the ChatGPT / Claude idiom.
+class _SendButton extends StatelessWidget {
+  const _SendButton({
+    required this.enabled,
+    required this.streaming,
+    required this.onTap,
+  });
+
+  final bool enabled;
+  final bool streaming;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final fill = enabled
+        ? AppColors.electrolyte
+        : textColor.withValues(alpha: streaming ? 0.06 : 0.1);
+    final fg = enabled
+        ? AppColors.blackberry
+        : textColor.withValues(alpha: 0.4);
+    return Padding(
+      padding: const EdgeInsets.only(left: 2, bottom: 2),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(color: fill, shape: BoxShape.circle),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            key: const ValueKey('meal_planning.chat_send'),
+            onTap: enabled ? onTap : null,
+            customBorder: const CircleBorder(),
+            child: Center(
+              child: streaming
+                  ? SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: textColor.withValues(alpha: 0.6),
+                      ),
+                    )
+                  : Icon(Icons.arrow_upward_rounded, size: 18, color: fg),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// "Editing — sending will rewind the conversation" over the composer,

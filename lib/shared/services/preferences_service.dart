@@ -80,6 +80,19 @@ class PreferencesService {
     await _prefs.setBool(_keyAiCoachBaselineTipDismissed, true);
   }
 
+  // ─── What's New sheet ───
+
+  static const String _keyWhatsNewShownVersion = 'whats_new_shown_version';
+
+  /// The announcement version (`whats_new.version` content key) the sheet
+  /// was last shown for; null on a fresh install.
+  String? get whatsNewShownVersion =>
+      _prefs.getString(_keyWhatsNewShownVersion);
+
+  Future<void> markWhatsNewShown(String announcementVersion) async {
+    await _prefs.setString(_keyWhatsNewShownVersion, announcementVersion);
+  }
+
   // ─── Fuel Timeline Tracking ───
 
   static const String _keyFuelTrackingEnabled = 'fuel_tracking_enabled';

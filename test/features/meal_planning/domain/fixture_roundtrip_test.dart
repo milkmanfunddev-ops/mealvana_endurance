@@ -126,8 +126,9 @@ void main() {
     });
 
     test('Memory.source is optional and round-trips', () {
-      final json = (loadFixture('debrief')['memories'] as List).first
-          as Map<String, dynamic>;
+      final json =
+          (loadFixture('debrief')['memories'] as List).first
+              as Map<String, dynamic>;
       final memory = UserMemory.fromJson(json);
       expect(memory.source, 'debrief');
       expect(memory.copyWith(source: 'onboarding').source, 'onboarding');

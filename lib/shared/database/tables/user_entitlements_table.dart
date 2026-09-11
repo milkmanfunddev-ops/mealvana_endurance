@@ -17,8 +17,7 @@ class UserEntitlementsTable extends Table {
   /// Entitlement key, e.g. 'pro' (see `Entitlement.key`).
   TextColumn get entitlement => text()();
 
-  BoolColumn get active =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get active => boolean().withDefault(const Constant(false))();
 
   /// Store SKU that granted the entitlement.
   TextColumn get productId => text().nullable().named('product_id')();
@@ -29,12 +28,10 @@ class UserEntitlementsTable extends Table {
   /// NORMAL | TRIAL | INTRO | PROMOTIONAL.
   TextColumn get periodType => text().nullable().named('period_type')();
 
-  DateTimeColumn get expiresAt =>
-      dateTime().nullable().named('expires_at')();
+  DateTimeColumn get expiresAt => dateTime().nullable().named('expires_at')();
 
   /// revenuecat | promo | internal.
-  TextColumn get source =>
-      text().withDefault(const Constant('revenuecat'))();
+  TextColumn get source => text().withDefault(const Constant('revenuecat'))();
 
   /// Server `updated_at` (= RevenueCat event timestamp).
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();

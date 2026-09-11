@@ -110,7 +110,9 @@ class SessionInputResolver {
         minutes = (distanceMiles * paceTargetMinutesPerMile).round();
       }
     } else if (activityType == _sportCycling) {
-      if (distanceMiles != null && cyclingSpeedMph != null && cyclingSpeedMph > 0) {
+      if (distanceMiles != null &&
+          cyclingSpeedMph != null &&
+          cyclingSpeedMph > 0) {
         minutes = ((distanceMiles / cyclingSpeedMph) * 60).round();
       }
     } else if (activityType == _sportSwimming) {
@@ -124,7 +126,9 @@ class SessionInputResolver {
     }
 
     if (minutes == 0) {
-      minutes = activityType == 'other' ? fallbackOtherMinutes : fallbackMinutes;
+      minutes = activityType == 'other'
+          ? fallbackOtherMinutes
+          : fallbackMinutes;
     }
     return minutes;
   }
@@ -132,11 +136,11 @@ class SessionInputResolver {
   /// Activity type → the sport key the ENGINE prices it as. This is the mapping
   /// that decides the athlete's macro targets.
   static String engineSport(String activityType) => switch (activityType) {
-        _sportCycling => _sportCycling,
-        _sportSwimming => _sportSwimming,
-        'other' => _sportStrength,
-        _ => _sportRunning,
-      };
+    _sportCycling => _sportCycling,
+    _sportSwimming => _sportSwimming,
+    'other' => _sportStrength,
+    _ => _sportRunning,
+  };
 
   /// Activity type → the sport key a DISPLAY surface prices it as.
   ///
@@ -148,6 +152,6 @@ class SessionInputResolver {
   /// silently widen. When the ruling lands these two collapse into one.
   static String displaySport(String activityType) =>
       _compositeTypes.contains(activityType)
-          ? activityType
-          : engineSport(activityType);
+      ? activityType
+      : engineSport(activityType);
 }

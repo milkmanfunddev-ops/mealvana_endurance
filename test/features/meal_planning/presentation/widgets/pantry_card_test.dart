@@ -17,10 +17,7 @@ void main() {
   final content = loadDefaultContent();
   final part = VanaPart.fromJson(loadFixture('pantry')) as VanaPantryPart;
 
-  Future<void> pump(
-    WidgetTester tester,
-    Widget child,
-  ) async {
+  Future<void> pump(WidgetTester tester, Widget child) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [contentServiceProvider.overrideWith(testContentService)],
@@ -77,9 +74,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text(
-        content['meal_planning.pantry_used']!.replaceAll('{n}', '3'),
-      ),
+      find.text(content['meal_planning.pantry_used']!.replaceAll('{n}', '3')),
       findsOneWidget,
     );
     // Spent: the + is gone and a tap changes nothing.
@@ -129,10 +124,9 @@ void main() {
   testWidgets('photo origin shows the tag; missing title falls back', (
     tester,
   ) async {
-    final photo = VanaPantryPart.fromJson({
-      ...loadFixture('pantry'),
-      'origin': 'photo',
-    }..remove('title'));
+    final photo = VanaPantryPart.fromJson(
+      {...loadFixture('pantry'), 'origin': 'photo'}..remove('title'),
+    );
     await pump(tester, PantryCard(part: photo, onUse: (_) {}));
     expect(
       find.byKey(const ValueKey('meal_planning.pantry_from_photo')),
@@ -160,7 +154,10 @@ void main() {
         ),
       ),
     );
-    expect(find.byKey(const ValueKey('meal_planning.pantry_card')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.pantry_card')),
+      findsOneWidget,
+    );
     await tester.tap(use);
     expect(used, part.selectedNames);
   });

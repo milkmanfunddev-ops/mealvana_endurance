@@ -117,8 +117,7 @@ class KyleTabBar extends StatefulWidget {
   State<KyleTabBar> createState() => _KyleTabBarState();
 }
 
-class _KyleTabBarState extends State<KyleTabBar>
-    with TickerProviderStateMixin {
+class _KyleTabBarState extends State<KyleTabBar> with TickerProviderStateMixin {
   late final AnimationController _morph; // 0 = expanded, 1 = collapsed
   late final AnimationController _travel; // one run per highlight move
   late int _activeIndex;
@@ -136,13 +135,14 @@ class _KyleTabBarState extends State<KyleTabBar>
       duration: KyleTabBar.switchDuration,
       value: widget.collapsed ? 1 : 0,
     );
-    _travel = AnimationController(
-      vsync: this,
-      duration: KyleTabBar.switchDuration,
-      value: 1,
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) _travelFromX = null;
-      });
+    _travel =
+        AnimationController(
+          vsync: this,
+          duration: KyleTabBar.switchDuration,
+          value: 1,
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) _travelFromX = null;
+        });
   }
 
   @override
@@ -280,7 +280,9 @@ class _KyleTabBarState extends State<KyleTabBar>
     final toCenter = _itemCenter(_activeIndex, itemW);
     final fromCenter = _travelFromX ?? _itemCenter(_travelFromIndex, itemW);
     final dragging = _dragX != null;
-    final center = dragging ? _dragX! : fromCenter + (toCenter - fromCenter) * t;
+    final center = dragging
+        ? _dragX!
+        : fromCenter + (toCenter - fromCenter) * t;
     // Width morphs through the move: the capsule stretches along the travel
     // and relaxes at rest (tb4: position AND width both animate).
     final stretch = dragging
@@ -397,7 +399,8 @@ class _KyleTabBarState extends State<KyleTabBar>
                   opacity: lensVisibility * riderStrength,
                   child: Center(
                     child: Transform.scale(
-                      scale: 1 +
+                      scale:
+                          1 +
                           (AppMaterials.tabLensFocusZoom - 1) *
                               (dragging ? riderStrength : t) *
                               lensVisibility,
@@ -429,7 +432,9 @@ class _KyleTabBarState extends State<KyleTabBar>
     double lerp(double a, double b) => a + (b - a) * p;
     // Non-active items shrink away during the morph; the active one narrows
     // to the collapsed icon button (export-exact interpolation).
-    final w = active ? lerp(itemW, KyleTabBar.collapsedItemSize) : itemW * (1 - p);
+    final w = active
+        ? lerp(itemW, KyleTabBar.collapsedItemSize)
+        : itemW * (1 - p);
     // No cream fill under the active item anymore (liquid bubble,
     // PROPOSED 2026-09-06): active ink is cream on glass.
     final ink = active

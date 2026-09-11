@@ -28,6 +28,8 @@ import '../services/notification_service.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
 import '../../features/auth/application/auth_service.dart';
 import '../services/support/support_identity.dart';
+import '../../main.dart' show sentryNavigatorKey;
+import 'shake_to_report.dart';
 
 /// Root app widget that handles app initialization and navigation
 /// Following Andrea Bizzotto's patterns for app startup with deep link support
@@ -135,16 +137,22 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 thirdPenColor: Colors.green,
                 fourthPenColor: Colors.yellow,
               ),
+              // Two steps, not four (Lee, 2026-09-09): message → optional
+              // screenshot. Every Wiredash entry point (shake, Help → Report
+              // a bug, Vana's "Send to the team") is a bug path, so the Bug
+              // Report label is attached silently instead of asked for, and
+              // the email step is dropped — collectMetaData already carries
+              // the profile email. Product/Vana feedback goes to our own
+              // `user_feedback` table (features/feedback), not here.
               feedbackOptions: WiredashFeedbackOptions(
-                email: EmailPrompt.optional,
+                email: EmailPrompt.hidden,
                 screenshot: ScreenshotPrompt.optional,
                 labels: [
-                  Label(id: 'label-lhkcef66w1', title: 'Bug Report'),
-                  Label(id: 'label-wt5prvrxpl', title: 'Feature Request'),
-                  Label(id: 'label-xs0i7er9vl', title: 'Praise'),
-                  Label(id: 'label-u1rpq6potz', title: 'Nutrition Feedback'),
-                  Label(id: 'label-ovo60gyfw6', title: 'UI/UX Feedback'),
-                  Label(id: 'label-1anu74e8gf', title: 'High Priority'),
+                  Label(
+                    id: 'label-lhkcef66w1',
+                    title: 'Bug Report',
+                    hidden: true,
+                  ),
                 ],
                 collectMetaData: (metaData) async {
                   final supabaseUser = ref
@@ -182,19 +190,31 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 // Wrap router child with AppStartupWidget
                 // This is the key to supporting deep links during app initialization
                 builder: (context, child) {
-                  return _appShell(
-                    context,
-                    AppStartupWidget(
-                      // Pass router child back when initialization is complete,
-                      // under the Vana launcher, which floats over every
-                      // ordinary route (vana-sheet spec).
-                      onLoaded: (_) => VanaCompanionHost(
-                        router: goRouter,
-                        observer: vanaCompanionObserver,
-                        child: child!,
+                  // Shake-to-report sits inside Wiredash (so it can open it)
+                  // and above the router (so it covers every screen).
+                  return ShakeToReport(
+                    navigatorKey: sentryNavigatorKey,
+                    reportVisible: Wiredash.of(context).visible,
+                    onShakeDetected: (event) => ref
+                        .read(appExternalDepsProvider)
+                        .analytics
+                        .track(event),
+                    onReport: (ctx) =>
+                        Wiredash.of(ctx).show(inheritMaterialTheme: true),
+                    child: _appShell(
+                      context,
+                      AppStartupWidget(
+                        // Pass router child back when initialization is complete,
+                        // under the Vana launcher, which floats over every
+                        // ordinary route (vana-sheet spec).
+                        onLoaded: (_) => VanaCompanionHost(
+                          router: goRouter,
+                          observer: vanaCompanionObserver,
+                          child: child!,
+                        ),
                       ),
+                      isDev: config.isDevelopment,
                     ),
-                    isDev: config.isDevelopment,
                   );
                 },
               ),

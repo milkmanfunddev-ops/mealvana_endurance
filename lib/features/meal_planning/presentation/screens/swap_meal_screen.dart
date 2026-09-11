@@ -105,124 +105,136 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
             ),
             Expanded(
               child: current == null
-          ? Center(
-              child: Text(
-                content.getValue(ContentKeys.mpSearchEmpty),
-                style: AppTextStyles.bodySmall.copyWith(color: secondary),
-              ),
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // The meal being replaced, called out in dragonfruit so it
-                // never reads as one of the options below it.
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                  ),
-                  child: Container(
-                    key: const ValueKey('meal_planning.swap_replacing'),
-                    constraints: const BoxConstraints(minHeight: 60),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.blackberryLight
-                          : AppColors.surfaceLight,
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: AppColors.dragonfruit.withValues(alpha: 0.4),
+                  ? Center(
+                      child: Text(
+                        content.getValue(ContentKeys.mpSearchEmpty),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: secondary,
+                        ),
                       ),
-                    ),
-                    child: Row(
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        MealIconTile(
-                          icon:
-                              current.icon ??
-                              MealIconClassifier.classify(name: current.name),
-                          size: 36,
+                        // The meal being replaced, called out in dragonfruit so it
+                        // never reads as one of the options below it.
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          child: Container(
+                            key: const ValueKey('meal_planning.swap_replacing'),
+                            constraints: const BoxConstraints(minHeight: 60),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.blackberryLight
+                                  : AppColors.surfaceLight,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: AppColors.dragonfruit.withValues(
+                                  alpha: 0.4,
+                                ),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                MealIconTile(
+                                  icon:
+                                      current.icon ??
+                                      MealIconClassifier.classify(
+                                        name: current.name,
+                                      ),
+                                  size: 36,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        content.getValue(
+                                          ContentKeys.mpSwapSwappingOut,
+                                        ),
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: secondary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        current.name,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTextStyles.foodTitle.copyWith(
+                                          color: textColor,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.25,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '×${current.servings}',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: textColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: AppSpacing.sm),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                content.getValue(
-                                  ContentKeys.mpSwapSwappingOut,
+                          child: _future == null
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.electrolyte,
+                                  ),
+                                )
+                              : FutureBuilder<List<MealRef>>(
+                                  future: _future,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState !=
+                                        ConnectionState.done) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.electrolyte,
+                                        ),
+                                      );
+                                    }
+                                    final meals =
+                                        snapshot.data ?? const <MealRef>[];
+                                    final pictures = picturesForList(meals);
+                                    return ListView.builder(
+                                      padding: const EdgeInsets.all(
+                                        AppSpacing.md,
+                                      ),
+                                      itemCount: meals.length,
+                                      itemBuilder: (context, i) => Padding(
+                                        padding: const EdgeInsets.only(
+                                          bottom: 8,
+                                        ),
+                                        child: MealCard(
+                                          meal: meals[i],
+                                          picture: pictures[i],
+                                          onTap: () =>
+                                              _swap(context, meals[i], current),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: secondary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                current.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.foodTitle.copyWith(
-                                  color: textColor,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.25,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '×${current.servings}',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: textColor,
-                            fontWeight: FontWeight.w700,
-                          ),
                         ),
                       ],
                     ),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Expanded(
-                  child: _future == null
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: AppColors.electrolyte,
-                          ),
-                        )
-                      : FutureBuilder<List<MealRef>>(
-                          future: _future,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState !=
-                                ConnectionState.done) {
-                              return const Center(
-                                child: CircularProgressIndicator(
-                                  color: AppColors.electrolyte,
-                                ),
-                              );
-                            }
-                            final meals = snapshot.data ?? const <MealRef>[];
-                            final pictures = picturesForList(meals);
-                            return ListView.builder(
-                              padding: const EdgeInsets.all(AppSpacing.md),
-                              itemCount: meals.length,
-                              itemBuilder: (context, i) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: MealCard(
-                                  meal: meals[i],
-                                  picture: pictures[i],
-                                  onTap: () =>
-                                      _swap(context, meals[i], current),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
-            ),
             ),
           ],
         ),

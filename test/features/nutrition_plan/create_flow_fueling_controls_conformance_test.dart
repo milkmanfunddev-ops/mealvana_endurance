@@ -67,8 +67,11 @@ void main() {
   final farOut = DateTime.now().add(const Duration(days: 7));
   const nineAm = TimeOfDay(hour: 9, minute: 0);
 
-  Future<void> pumpBoxed(WidgetTester tester, Widget child,
-      {List<Override> overrides = const []}) async {
+  Future<void> pumpBoxed(
+    WidgetTester tester,
+    Widget child, {
+    List<Override> overrides = const [],
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -77,9 +80,7 @@ void main() {
           mockSharedPreferences(),
           ...overrides,
         ],
-        child: wrapForTest(
-          Scaffold(body: SingleChildScrollView(child: child)),
-        ),
+        child: wrapForTest(Scaffold(body: SingleChildScrollView(child: child))),
       ),
     );
     await tester.pump(const Duration(milliseconds: 300));
@@ -96,8 +97,10 @@ void main() {
       final n = container.read(runningInputControllerProvider.notifier);
 
       // Activity 1: soon-ish session; athlete steps the window by hand.
-      n.updateDateTime(DateTime.now().add(const Duration(minutes: 47)),
-          TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 47))));
+      n.updateDateTime(
+        DateTime.now().add(const Duration(minutes: 47)),
+        TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 47))),
+      );
       n.updatePreRunMinutes(45);
       expect(container.read(runningInputControllerProvider).preRunMinutes, 45);
       expect(
@@ -142,19 +145,13 @@ void main() {
 
       // 120-min session, default distribution ⇒ 1.5–2.5 h row ⇒ 150 min.
       n.updateDuration(const Duration(hours: 2));
-      expect(
-        container.read(runningInputControllerProvider).preRunMinutes,
-        150,
-      );
+      expect(container.read(runningInputControllerProvider).preRunMinutes, 150);
 
       // Race Pace preset ⇒ the race row (180) directly.
       n.updateIntensityDistribution(
         WorkoutPresetData.presetDistributions[WorkoutPreset.racePace]!,
       );
-      expect(
-        container.read(runningInputControllerProvider).preRunMinutes,
-        180,
-      );
+      expect(container.read(runningInputControllerProvider).preRunMinutes, 180);
 
       // Early-start overlay: training before 07:00 drops to 60; races exempt
       // — switch back to a training distribution first.
@@ -162,10 +159,7 @@ void main() {
         IntensityDistribution.defaultDistribution(),
       );
       n.updateDateTime(farOut, const TimeOfDay(hour: 6, minute: 0));
-      expect(
-        container.read(runningInputControllerProvider).preRunMinutes,
-        60,
-      );
+      expect(container.read(runningInputControllerProvider).preRunMinutes, 60);
     });
 
     test('a manual change persists and wins within the clamp', () {
@@ -175,10 +169,7 @@ void main() {
       n.updatePreRunMinutes(90);
       // Duration/intensity churn no longer re-derives the window.
       n.updateDuration(const Duration(hours: 3));
-      expect(
-        container.read(runningInputControllerProvider).preRunMinutes,
-        90,
-      );
+      expect(container.read(runningInputControllerProvider).preRunMinutes, 90);
       expect(
         container.read(runningInputControllerProvider).preRunMinutesManuallySet,
         isTrue,
@@ -199,12 +190,14 @@ void main() {
         ),
       );
       expect(find.text('2 HOURS 30 MIN'), findsOneWidget);
-      await t.tap(find.byKey(const ValueKey(
-          'activity_create.fueling_window_plus')));
+      await t.tap(
+        find.byKey(const ValueKey('activity_create.fueling_window_plus')),
+      );
       await t.pump();
       expect(value, 165);
-      await t.tap(find.byKey(const ValueKey(
-          'activity_create.fueling_window_minus')));
+      await t.tap(
+        find.byKey(const ValueKey('activity_create.fueling_window_minus')),
+      );
       await t.pump();
       expect(value, 150);
 
@@ -214,8 +207,7 @@ void main() {
       expect(FuelingWindowControl.formatWindow(45), '45 MINUTES');
     });
 
-    testWidgets(
-        'a clamp-seeded off-grid value snaps onto the 15-min grid '
+    testWidgets('a clamp-seeded off-grid value snaps onto the 15-min grid '
         '(AMENDED Xuan 2026-09-03)', (t) async {
       // The live defect: session 63 min out → clamp seeds 63; − must land
       // on 60 (not 48), and + from 60 must reach the real ceiling 63.
@@ -231,10 +223,12 @@ void main() {
           ),
         ),
       );
-      final minus =
-          find.byKey(const ValueKey('activity_create.fueling_window_minus'));
-      final plus =
-          find.byKey(const ValueKey('activity_create.fueling_window_plus'));
+      final minus = find.byKey(
+        const ValueKey('activity_create.fueling_window_minus'),
+      );
+      final plus = find.byKey(
+        const ValueKey('activity_create.fueling_window_plus'),
+      );
 
       await t.tap(minus);
       await t.pump();
@@ -269,18 +263,23 @@ void main() {
       expect(n.fuelingWindowCaption(), '3 h — race day');
     });
 
-    test('early start is labeled as such; manual override drops the caption',
-        () {
-      final container = makeContainer();
-      final n = container.read(runningInputControllerProvider.notifier);
-      n.updateDateTime(farOut, const TimeOfDay(hour: 5, minute: 30));
-      n.updateDuration(const Duration(hours: 3));
-      expect(n.fuelingWindowCaption(), '1 h — early start');
+    test(
+      'early start is labeled as such; manual override drops the caption',
+      () {
+        final container = makeContainer();
+        final n = container.read(runningInputControllerProvider.notifier);
+        n.updateDateTime(farOut, const TimeOfDay(hour: 5, minute: 30));
+        n.updateDuration(const Duration(hours: 3));
+        expect(n.fuelingWindowCaption(), '1 h — early start');
 
-      n.updatePreRunMinutes(45);
-      expect(n.fuelingWindowCaption(), isNull,
-          reason: "the athlete's number wears no class label");
-    });
+        n.updatePreRunMinutes(45);
+        expect(
+          n.fuelingWindowCaption(),
+          isNull,
+          reason: "the athlete's number wears no class label",
+        );
+      },
+    );
 
     testWidgets('the widget renders the caption text', (t) async {
       await pumpBoxed(
@@ -322,8 +321,11 @@ void main() {
       );
       final caption = n.fuelingWindowCaption();
       expect(caption, isNotNull);
-      expect(caption, startsWith('Capped: session in '),
-          reason: 'CF-2 legibility: the pinned stepper must explain itself');
+      expect(
+        caption,
+        startsWith('Capped: session in '),
+        reason: 'CF-2 legibility: the pinned stepper must explain itself',
+      );
     });
 
     testWidgets('stepping up at the bound is inert', (t) async {
@@ -342,8 +344,9 @@ void main() {
           },
         ),
       );
-      await t.tap(find.byKey(const ValueKey(
-          'activity_create.fueling_window_plus')));
+      await t.tap(
+        find.byKey(const ValueKey('activity_create.fueling_window_plus')),
+      );
       await t.pump();
       expect(calls, 0, reason: 'CF-2: + at the clamp must be inert');
       expect(value, 45);
@@ -403,70 +406,80 @@ void main() {
     });
 
     testWidgets(
-        'both fields visible; EST. rides the derived side and flips on a '
-        'duration edit', (t) async {
-      var mode = DurationPaceMode.byPace;
-      final modeChanges = <DurationPaceMode>[];
-      var duration = const Duration(hours: 1, minutes: 48);
-      await pumpBoxed(
-        t,
-        StatefulBuilder(
-          builder: (context, setState) => WorkoutDetailsWidget(
-            sport: ActivityType.running,
-            distance: 12,
-            distanceUnit: 'mi',
-            mode: mode,
-            estimatedDuration: duration,
-            pace: 9.0,
-            paceUnit: 'min/mi',
-            onDistanceChanged: (_) {},
-            onModeChanged: (m) => setState(() {
-              mode = m;
-              modeChanges.add(m);
-            }),
-            onPaceChanged: (_) {},
-            onDurationChanged: (d) => setState(() => duration = d),
+      'both fields visible; EST. rides the derived side and flips on a '
+      'duration edit',
+      (t) async {
+        var mode = DurationPaceMode.byPace;
+        final modeChanges = <DurationPaceMode>[];
+        var duration = const Duration(hours: 1, minutes: 48);
+        await pumpBoxed(
+          t,
+          StatefulBuilder(
+            builder: (context, setState) => WorkoutDetailsWidget(
+              sport: ActivityType.running,
+              distance: 12,
+              distanceUnit: 'mi',
+              mode: mode,
+              estimatedDuration: duration,
+              pace: 9.0,
+              paceUnit: 'min/mi',
+              onDistanceChanged: (_) {},
+              onModeChanged: (m) => setState(() {
+                mode = m;
+                modeChanges.add(m);
+              }),
+              onPaceChanged: (_) {},
+              onDurationChanged: (d) => setState(() => duration = d),
+            ),
           ),
-        ),
-      );
+        );
 
-      // No By Duration / By Pace toggle — both sides always mounted.
-      expect(find.text('By Duration'), findsNothing);
-      expect(find.text('By Pace'), findsNothing);
-      final paceKey = find.byKey(const ValueKey('activity_create.pace_field'));
-      final hrKey =
-          find.byKey(const ValueKey('activity_create.duration_hr_field'));
-      expect(paceKey, findsOneWidget);
-      expect(hrKey, findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('activity_create.duration_mins_field')),
-        findsOneWidget,
-      );
+        // No By Duration / By Pace toggle — both sides always mounted.
+        expect(find.text('By Duration'), findsNothing);
+        expect(find.text('By Pace'), findsNothing);
+        final paceKey = find.byKey(
+          const ValueKey('activity_create.pace_field'),
+        );
+        final hrKey = find.byKey(
+          const ValueKey('activity_create.duration_hr_field'),
+        );
+        expect(paceKey, findsOneWidget);
+        expect(hrKey, findsOneWidget);
+        expect(
+          find.byKey(const ValueKey('activity_create.duration_mins_field')),
+          findsOneWidget,
+        );
 
-      // Pace held ⇒ duration derived: one EST. badge, italic derived text.
-      expect(find.byKey(const ValueKey('activity_create.est_badge')),
-          findsOneWidget);
-      expect(t.widget<TextField>(hrKey).style?.fontStyle, FontStyle.italic);
-      expect(
-        t.widget<TextField>(paceKey).style?.fontStyle,
-        isNot(FontStyle.italic),
-      );
+        // Pace held ⇒ duration derived: one EST. badge, italic derived text.
+        expect(
+          find.byKey(const ValueKey('activity_create.est_badge')),
+          findsOneWidget,
+        );
+        expect(t.widget<TextField>(hrKey).style?.fontStyle, FontStyle.italic);
+        expect(
+          t.widget<TextField>(paceKey).style?.fontStyle,
+          isNot(FontStyle.italic),
+        );
 
-      // Editing the duration flips the hold: EST. moves to the pace side.
-      await t.enterText(hrKey, '2');
-      await t.pump();
-      expect(modeChanges, contains(DurationPaceMode.byDuration));
-      expect(t.widget<TextField>(paceKey).style?.fontStyle, FontStyle.italic);
-      expect(
-        t.widget<TextField>(hrKey).style?.fontStyle,
-        isNot(FontStyle.italic),
-      );
-      expect(find.byKey(const ValueKey('activity_create.est_badge')),
-          findsOneWidget);
-    });
+        // Editing the duration flips the hold: EST. moves to the pace side.
+        await t.enterText(hrKey, '2');
+        await t.pump();
+        expect(modeChanges, contains(DurationPaceMode.byDuration));
+        expect(t.widget<TextField>(paceKey).style?.fontStyle, FontStyle.italic);
+        expect(
+          t.widget<TextField>(hrKey).style?.fontStyle,
+          isNot(FontStyle.italic),
+        );
+        expect(
+          find.byKey(const ValueKey('activity_create.est_badge')),
+          findsOneWidget,
+        );
+      },
+    );
 
-    testWidgets('fallback chip reads 9:00 /mi and applies it on tap',
-        (t) async {
+    testWidgets('fallback chip reads 9:00 /mi and applies it on tap', (
+      t,
+    ) async {
       final paceChanges = <double>[];
       var mode = DurationPaceMode.byDuration;
       await pumpBoxed(
@@ -496,51 +509,55 @@ void main() {
     });
 
     testWidgets(
-        'F-27 guard: 4:30 /mi over 12 mi is called out; the fix applies 9:00',
-        (t) async {
-      final paceChanges = <double>[];
-      await pumpBoxed(
-        t,
-        WorkoutDetailsWidget(
-          sport: ActivityType.running,
-          distance: 12,
-          distanceUnit: 'mi',
-          mode: DurationPaceMode.byPace,
-          estimatedDuration: const Duration(minutes: 54),
-          pace: 4.5, // 4:30 /mi — the F-27 class
-          paceUnit: 'min/mi',
-          onDistanceChanged: (_) {},
-          onModeChanged: (_) {},
-          onPaceChanged: paceChanges.add,
-          onDurationChanged: (_) {},
-        ),
-      );
-      expect(
-        find.byKey(const ValueKey('activity_create.pace_guard')),
-        findsOneWidget,
-      );
-      expect(
-        find.text("That's 4:30 /mi — outside your run range."),
-        findsOneWidget,
-      );
-      // 12 mi × the 9:00 usual = 1 hr 48 min.
-      expect(
-        find.text('Use your usual 9:00 /mi → 1 hr 48 min'),
-        findsOneWidget,
-      );
-      await t.tap(
-        find.byKey(const ValueKey('activity_create.pace_guard_fix')),
-      );
-      await t.pump();
-      expect(paceChanges, [9.0]);
-    });
+      'F-27 guard: 4:30 /mi over 12 mi is called out; the fix applies 9:00',
+      (t) async {
+        final paceChanges = <double>[];
+        await pumpBoxed(
+          t,
+          WorkoutDetailsWidget(
+            sport: ActivityType.running,
+            distance: 12,
+            distanceUnit: 'mi',
+            mode: DurationPaceMode.byPace,
+            estimatedDuration: const Duration(minutes: 54),
+            pace: 4.5, // 4:30 /mi — the F-27 class
+            paceUnit: 'min/mi',
+            onDistanceChanged: (_) {},
+            onModeChanged: (_) {},
+            onPaceChanged: paceChanges.add,
+            onDurationChanged: (_) {},
+          ),
+        );
+        expect(
+          find.byKey(const ValueKey('activity_create.pace_guard')),
+          findsOneWidget,
+        );
+        expect(
+          find.text("That's 4:30 /mi — outside your run range."),
+          findsOneWidget,
+        );
+        // 12 mi × the 9:00 usual = 1 hr 48 min.
+        expect(
+          find.text('Use your usual 9:00 /mi → 1 hr 48 min'),
+          findsOneWidget,
+        );
+        await t.tap(
+          find.byKey(const ValueKey('activity_create.pace_guard_fix')),
+        );
+        await t.pump();
+        expect(paceChanges, [9.0]);
+      },
+    );
 
-    testWidgets('running tab mounts the chip with the ruled fallback',
-        (t) async {
+    testWidgets('running tab mounts the chip with the ruled fallback', (
+      t,
+    ) async {
       await pumpBoxed(t, const RunningTabContent());
       expect(find.text('your usual · 9:00 /mi'), findsOneWidget);
-      expect(find.byKey(const ValueKey('activity_create.est_badge')),
-          findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('activity_create.est_badge')),
+        findsOneWidget,
+      );
     });
   });
 
@@ -566,22 +583,22 @@ void main() {
 
     testWidgets('EnvironmentSection badge obeys the manual flag', (t) async {
       Widget section({required bool manual}) => EnvironmentSection(
-            isExpanded: true,
-            onToggle: () {},
-            temperatureC: 20,
-            onTemperatureChanged: (_) {},
-            humidityPct: 60,
-            onHumidityChanged: (_) {},
-            windCondition: 'still',
-            onWindChanged: (_) {},
-            sunExposure: 'mixed',
-            onSunChanged: (_) {},
-            isIndoor: false,
-            showWindAndSun: false,
-            weatherSource: WeatherSource.forecast,
-            onFetchWeather: () {},
-            valuesManuallyAdjusted: manual,
-          );
+        isExpanded: true,
+        onToggle: () {},
+        temperatureC: 20,
+        onTemperatureChanged: (_) {},
+        humidityPct: 60,
+        onHumidityChanged: (_) {},
+        windCondition: 'still',
+        onWindChanged: (_) {},
+        sunExposure: 'mixed',
+        onSunChanged: (_) {},
+        isIndoor: false,
+        showWindAndSun: false,
+        weatherSource: WeatherSource.forecast,
+        onFetchWeather: () {},
+        valuesManuallyAdjusted: manual,
+      );
 
       await pumpBoxed(t, section(manual: false));
       expect(find.text('AUTO'), findsOneWidget);
@@ -593,8 +610,9 @@ void main() {
   });
 
   group('CF-8 — INDOOR hides the weather block; OUTDOOR restores it', () {
-    testWidgets('cycling tab hides TEMPERATURE/HUMIDITY when indoor',
-        (t) async {
+    testWidgets('cycling tab hides TEMPERATURE/HUMIDITY when indoor', (
+      t,
+    ) async {
       final container = makeContainer();
       await t.pumpWidget(
         UncontrolledProviderScope(
@@ -616,8 +634,9 @@ void main() {
       expect(find.byType(EnvironmentSection), findsNothing);
 
       // Switching back restores it with prior values (state untouched).
-      final before =
-          container.read(cyclingInputControllerProvider).temperatureC;
+      final before = container
+          .read(cyclingInputControllerProvider)
+          .temperatureC;
       container
           .read(cyclingInputControllerProvider.notifier)
           .updateIndoorOutdoor(false);

@@ -46,9 +46,7 @@ Widget _ground() => ListView(
                 ? AppColors.blackberryLight
                 : AppColors.orange.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: AppColors.cream.withValues(alpha: 0.12),
-            ),
+            border: Border.all(color: AppColors.cream.withValues(alpha: 0.12)),
           ),
           padding: const EdgeInsets.all(14),
           alignment: Alignment.topLeft,
@@ -143,8 +141,12 @@ Widget _barOverGround({
         destinations: destinations,
         activeId: activeId,
         collapsed: collapsed,
-        maxWidth: 428 - 14 - KyleTabBar.utilitySlotGap -
-            KyleTabBar.utilitySlotSize - 14,
+        maxWidth:
+            428 -
+            14 -
+            KyleTabBar.utilitySlotGap -
+            KyleTabBar.utilitySlotSize -
+            14,
         onSelect: onSelect ?? (_) {},
       ),
     ),

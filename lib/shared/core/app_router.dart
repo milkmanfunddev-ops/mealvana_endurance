@@ -480,9 +480,20 @@ class AppRouter {
                 ? tabParam
                 : null;
 
+            // `food=plan|meals|shopping` picks the Food tab's segment, so a
+            // flow that ends on the shopping list (confirming a plan from
+            // Vana) lands inside the tab shell instead of on a bare `/food`
+            // screen with no way home (Lee, 2026-09-07).
+            final foodTab = switch (state.uri.queryParameters['food']) {
+              'meals' => FoodTab.meals,
+              'shopping' => FoodTab.shopping,
+              _ => FoodTab.plan,
+            };
+
             return TabsScreen(
               initialTabIndex: 0,
               initialTabName: tabName,
+              initialFoodTab: foodTab,
             );
           },
         ),
@@ -1089,9 +1100,8 @@ class AppRouter {
             GoRoute(
               path: 'cook/:id',
               name: 'food-cooking-mode',
-              builder: (context, state) => CookingModeScreen(
-                mealId: state.pathParameters['id']!,
-              ),
+              builder: (context, state) =>
+                  CookingModeScreen(mealId: state.pathParameters['id']!),
             ),
             GoRoute(
               path: 'swap/:planMealId',

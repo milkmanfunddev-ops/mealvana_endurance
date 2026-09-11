@@ -285,12 +285,12 @@ void main() {
   group('assembler — the surface arithmetic (B-1, B-2, B-5, F-1)', () {
     PreWorkoutBeforeCardData data(double t, {bool gated = false}) =>
         PreWorkoutBeforeCardAssembler.assemble(
-      preRun: mockPreRun(t: t, gated: gated),
-      subPhases: mockSubPhases(t),
-      timeBeforeWorkoutMin: t,
-      bodyWeightKg: 63,
-      hydrationCheck: null,
-    );
+          preRun: mockPreRun(t: t, gated: gated),
+          subPhases: mockSubPhases(t),
+          timeBeforeWorkoutMin: t,
+          bodyWeightKg: 63,
+          hydrationCheck: null,
+        );
 
     test(
       'B-2 membership: ≥2h meal·snack·top-off; 30–2h snack·top-off; <30 top-off',

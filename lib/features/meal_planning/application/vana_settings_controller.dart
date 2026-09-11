@@ -81,7 +81,9 @@ class VanaSettingsController extends _$VanaSettingsController {
     final memories = await _repo.watchMemories(userId).first;
     final initial = _fold(
       VanaSettingsState(
-        remindersEnabled: ref.read(planReminderServiceProvider).remindersEnabled,
+        remindersEnabled: ref
+            .read(planReminderServiceProvider)
+            .remindersEnabled,
       ),
       settings,
       memories,

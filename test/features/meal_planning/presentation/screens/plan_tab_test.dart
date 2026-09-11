@@ -28,7 +28,6 @@ Future<void> settle(WidgetTester tester) async {
 }
 
 void main() {
-
   final confirmedPlan = MealPlan.fromJson(
     (loadFixture('confirm_plan')['parts'] as List).firstWhere(
           (p) => (p as Map)['kind'] == 'batch',

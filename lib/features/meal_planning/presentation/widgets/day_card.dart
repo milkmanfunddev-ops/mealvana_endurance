@@ -24,9 +24,7 @@ class DayCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final secondary = textColor.withValues(alpha: 0.65);
-    final surface = isDark
-        ? AppColors.blackberryLight
-        : AppColors.surfaceLight;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
     return Container(
       key: ValueKey('meal_planning.day_card_${part.date}'),
@@ -35,9 +33,7 @@ class DayCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: AppColors.electrolyte.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.electrolyte.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,9 +87,7 @@ class DayCard extends ConsumerWidget {
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: textColor,
-                      ),
+                      style: AppTextStyles.bodySmall.copyWith(color: textColor),
                     ),
                   ),
                 ],

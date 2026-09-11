@@ -166,6 +166,10 @@ class VanaPartRenderer extends ConsumerWidget {
         return DayCard(part: p, onTapMeal: callbacks.onTapMeal);
       case VanaMemorySavedPart p:
         return _MemorySavedRow(fact: p.memory.fact);
+      case VanaFeedbackSavedPart _:
+        return const _FeedbackSavedRow();
+      case VanaFeedbackPromptPart _:
+        return const _FeedbackPromptRow();
       case VanaLoggedPart p:
         return _LoggedRow(
           text: ContentKeys.format(content.getValue(ContentKeys.mpLoggedRow), {
@@ -202,6 +206,52 @@ class _MemorySavedRow extends ConsumerWidget {
       style: AppTextStyles.bodySmall.copyWith(
         color: secondary,
         fontStyle: FontStyle.italic,
+      ),
+    );
+  }
+}
+
+/// "Have feedback for me? Just type it here." — plain italic text under
+/// the first conversation's opener. Not a link: the chat box is the input.
+class _FeedbackPromptRow extends ConsumerWidget {
+  const _FeedbackPromptRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = (isDark ? AppColors.cream : AppColors.blackberry).withValues(
+      alpha: 0.75,
+    );
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
+      child: Text(
+        content.getValue(ContentKeys.mpFeedbackPrompt),
+        key: const ValueKey('meal_planning.feedback_prompt'),
+        style: AppTextStyles.bodySmall.copyWith(
+          color: color,
+          fontStyle: FontStyle.italic,
+        ),
+      ),
+    );
+  }
+}
+
+/// `feedback_saved` — "Saved for the team." Same register as the memory row.
+class _FeedbackSavedRow extends ConsumerWidget {
+  const _FeedbackSavedRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    return Text(
+      content.getValue(ContentKeys.mpFeedbackSavedRow),
+      key: const ValueKey('meal_planning.feedback_saved_row'),
+      style: AppTextStyles.bodySmall.copyWith(
+        color: accent,
+        fontWeight: FontWeight.w600,
       ),
     );
   }

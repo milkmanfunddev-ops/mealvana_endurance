@@ -53,7 +53,7 @@ dependencies:
   uuid: ^4.2.1
   intl: any  # Let flutter_localizations pin this
   http: ^1.1.0
-  device_info_plus: ^10.1.0
+  device_info_plus: ^12.1.0
   package_info_plus: ^8.0.2
   shared_preferences: ^2.3.2
   # Keychain-backed storage. On iOS the Keychain survives app uninstall, which
@@ -69,9 +69,9 @@ dependencies:
   # Backend & Auth
   supabase_flutter: ^2.10.0  # Required for linkIdentityWithIdToken() (gotrue 2.15.0+)
   google_sign_in: ^6.2.1
-  sign_in_with_apple: ^6.1.0
+  sign_in_with_apple: ^8.2.0
   crypto: ^3.0.3
-  flutter_web_auth_2: ^4.1.0  # OAuth for Final Surge/TrainingPeaks integration
+  flutter_web_auth_2: ^5.1.0  # OAuth for Final Surge/TrainingPeaks integration
 
   # Environment Variables
   flutter_dotenv: ^5.1.0
@@ -131,6 +131,7 @@ dependencies:
   wakelock_plus: ^1.3.3
   vibration: ^3.2.0
   share_plus: ^12.0.2
+  shake: ^3.0.0
 
 
 dev_dependencies:
@@ -147,7 +148,7 @@ dev_dependencies:
 
   # Testing
   mocktail: ^1.0.4
-  patrol: ^4.5.0
+  patrol: ^4.9.0
   
   # Code Generation
   build_runner: ^2.6.0

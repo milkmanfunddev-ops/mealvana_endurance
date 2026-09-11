@@ -69,9 +69,7 @@ void main() {
     expect(reported, isEmpty, reason: 'toggle off leaves nothing selected');
   });
 
-  testWidgets('SCG-1: a selected chip carries the check glyph', (
-    tester,
-  ) async {
+  testWidgets('SCG-1: a selected chip carries the check glyph', (tester) async {
     await _pump(
       tester,
       items: const ['eggs', 'rice'],

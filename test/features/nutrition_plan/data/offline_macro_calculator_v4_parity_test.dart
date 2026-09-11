@@ -423,7 +423,7 @@ void main() {
           speedMph: 14.7,
           terrain: 'flat',
           hoursBefore: 3.0,
-            gutTraining: 'moderate',
+          gutTraining: 'moderate',
         );
       });
 

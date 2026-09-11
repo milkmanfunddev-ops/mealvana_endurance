@@ -91,9 +91,7 @@ class _VanaConversationsScreenState
                   ),
                   VanaRoundButton(
                     icon: FontAwesomeIcons.gear,
-                    tooltip: content.getValue(
-                      ContentKeys.mpSettingsVanaTitle,
-                    ),
+                    tooltip: content.getValue(ContentKeys.mpSettingsVanaTitle),
                     onTap: () => context.push('/settings/vana'),
                   ),
                 ],
@@ -285,9 +283,7 @@ class _ConversationRow extends ConsumerWidget {
                           : when,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: secondary,
-                      ),
+                      style: AppTextStyles.bodySmall.copyWith(color: secondary),
                     ),
                   ],
                 ),

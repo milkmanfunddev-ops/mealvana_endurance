@@ -37,6 +37,7 @@ recallConversations` — read-mostly; **no plan-building tool** (a general chat 
 | `dayGuidance {date?}` | both | `day_guidance` | — | deterministic (`../planning/day-guidance.md`) |
 | `logFromPlan {planMealId, mealType?}` | both | `logged` | `meal_logs` row + servings_left | P-6 |
 | `rememberFact {kind ∈ preference·constraint·pattern·episode, fact ≤200, confidence=0.8}` | both | `memory_saved` | memory row | MEM-1 |
+| `saveFeedback {message ≤2000, sentiment ∈ positive·negative·neutral, about ∈ vana·app·suggestion}` | both | `feedback_saved` | `user_feedback` row (source vana_chat) | typing feedback INTO Vana is the feedback system (Lee 2026-09-09): praise / complaint / suggestion / "this is broken" → once, then one acknowledging sentence; never for taste or a why question |
 | `recallFacts {query}` · `forgetFact {id}` | both | data / `{ok}` | soft delete | — |
 | `setSetting {key, value}` | planning | `memory_saved` | setting row; `batch_cooking` re-derives sessions | keys per MEM-4 (prototype: 2 keys) |
 | `getSetting {key}` | both | `{key, value, default}` | — | — |

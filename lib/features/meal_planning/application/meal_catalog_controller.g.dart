@@ -55,7 +55,7 @@ final class MealCatalogControllerProvider
 }
 
 String _$mealCatalogControllerHash() =>
-    r'f004c89c59032b55cc97d3189d7a4d4fc4f6702c';
+    r'5788aac817c57831ca9074e728d57d7738ea04af';
 
 /// Meals tab: rails (Recents / My Foods / Assemblies / Recipes) plus a
 /// debounced (350 ms) search with meal-type × kind filters.

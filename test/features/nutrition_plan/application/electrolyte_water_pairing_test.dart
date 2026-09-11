@@ -279,17 +279,19 @@ void main() {
       solventMinMlPerServing: solventMin,
     );
 
-    test('declared solvent_min supersedes the flat constant (W7: 2x600=1200)',
-        () {
-      final items = [mix()];
-      expect(solventRequirementMl(items), 1200);
-      expect(needsWaterPairing(items), isTrue);
+    test(
+      'declared solvent_min supersedes the flat constant (W7: 2x600=1200)',
+      () {
+        final items = [mix()];
+        expect(solventRequirementMl(items), 1200);
+        expect(needsWaterPairing(items), isTrue);
 
-      final res = ensureElectrolyteWaterPairing(items, pool);
-      expect(res.changed, isTrue);
-      expect(res.conflict, isNull);
-      expect(plainWaterMl(res.items), greaterThanOrEqualTo(1200));
-    });
+        final res = ensureElectrolyteWaterPairing(items, pool);
+        expect(res.changed, isTrue);
+        expect(res.conflict, isNull);
+        expect(plainWaterMl(res.items), greaterThanOrEqualTo(1200));
+      },
+    );
 
     test('a drink on the plate does not satisfy a declared solvent need', () {
       final sportsDrink = item(
@@ -300,20 +302,25 @@ void main() {
         isDrink: true,
         category: TimingCategory.fuelDrink,
       );
-      final res =
-          ensureElectrolyteWaterPairing([mix(qty: 1), sportsDrink], pool);
+      final res = ensureElectrolyteWaterPairing([
+        mix(qty: 1),
+        sportsDrink,
+      ], pool);
       expect(res.changed, isTrue);
       expect(plainWaterMl(res.items), greaterThanOrEqualTo(600));
     });
 
-    test('existing plain water counts toward the total (no double demand)',
-        () {
+    test('existing plain water counts toward the total (no double demand)', () {
       final water = FoodItemData(
         id: 'water',
         name: 'Water',
         quantity: '3',
-        nutritionalInfo:
-            const NutritionalInfo(calories: 0, carbs: 0, sodium: 0, fluids: 720),
+        nutritionalInfo: const NutritionalInfo(
+          calories: 0,
+          carbs: 0,
+          sodium: 0,
+          fluids: 720,
+        ),
         isDrink: true,
         timingCategory: TimingCategory.sipThroughout,
         numericQuantity: 3,

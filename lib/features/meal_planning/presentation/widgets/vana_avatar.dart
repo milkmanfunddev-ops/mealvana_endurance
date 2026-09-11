@@ -60,9 +60,10 @@ class _VanaAvatarState extends State<VanaAvatar>
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
-      opacity: Tween<double>(begin: 0.55, end: 1).animate(
-        CurvedAnimation(parent: _pulse, curve: Curves.easeInOut),
-      ),
+      opacity: Tween<double>(
+        begin: 0.55,
+        end: 1,
+      ).animate(CurvedAnimation(parent: _pulse, curve: Curves.easeInOut)),
       child: Container(
         width: widget.size,
         height: widget.size,

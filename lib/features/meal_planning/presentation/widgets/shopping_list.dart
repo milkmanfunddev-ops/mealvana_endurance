@@ -6,8 +6,15 @@ import '../../../../features/content/domain/content_keys.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../../shared/utils/adaptive_modal.dart';
+import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../application/shopping_list_controller.dart';
+import '../../application/shopping_qty_formatter.dart';
+import '../../domain/meal_icon.dart';
+import '../../domain/plan_meal.dart';
 import '../../domain/shopping_item.dart';
+import 'meal_icon_glyphs.dart';
+import 'slot_chip.dart';
 import 'vana_avatar.dart';
 import 'vana_bubble.dart';
 
@@ -15,17 +22,29 @@ import 'vana_bubble.dart';
 /// these off" note, and one card per aisle whose rows are checkbox · name ·
 /// quantity. Toggles are local-first through [ShoppingListController]
 /// (05 §4). Mirrors the prototype's `ShoppingList`.
+///
+/// Quantities render in [units] (Lee, 2026-09-07: US shoppers read pounds
+/// and ounces; metric only when the athlete chose it in Settings). A line
+/// built from more than one meal carries a small count badge, and tapping
+/// any line's body opens a sheet naming the meals it came from, each of
+/// which opens the recipe through [onOpenMeal].
 class ShoppingList extends ConsumerWidget {
   const ShoppingList({
     super.key,
     required this.state,
     required this.onToggleChecked,
     required this.onAddBack,
+    this.units = UnitSystem.imperial,
+    this.onOpenMeal,
   });
 
   final ShoppingListState state;
   final void Function(ShoppingItem item, bool value) onToggleChecked;
   final ValueChanged<String> onAddBack;
+  final UnitSystem units;
+
+  /// Opens a source meal's recipe. Null disables the tap-through.
+  final ValueChanged<PlanMeal>? onOpenMeal;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -109,12 +128,18 @@ class ShoppingList extends ConsumerWidget {
                   for (var i = 0; i < entry.value.length; i++)
                     _ShoppingRow(
                       item: entry.value[i],
+                      qty: formatShoppingQty(entry.value[i].qty, units),
+                      sourceCount: state.sourcesOf(entry.value[i]).length,
                       isLast: i == entry.value.length - 1,
                       textColor: textColor,
                       secondary: secondary,
                       accent: accent,
                       onToggleChecked: (v) =>
                           onToggleChecked(entry.value[i], v),
+                      onOpenSources: onOpenMeal == null
+                          ? null
+                          : () =>
+                                _showSources(context, content, entry.value[i]),
                     ),
                 ],
               ),
@@ -122,6 +147,28 @@ class ShoppingList extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
           ],
       ],
+    );
+  }
+
+  void _showSources(
+    BuildContext context,
+    ContentService content,
+    ShoppingItem item,
+  ) {
+    final sources = state.sourcesOf(item);
+    if (sources.isEmpty) return;
+    showAdaptiveModal<void>(
+      context: context,
+      builder: (sheetContext) => _SourcesSheet(
+        item: item,
+        qty: formatShoppingQty(item.qty, units),
+        sources: sources,
+        content: content,
+        onOpenMeal: (meal) {
+          Navigator.of(sheetContext).pop();
+          onOpenMeal?.call(meal);
+        },
+      ),
     );
   }
 }
@@ -189,25 +236,37 @@ class _LeftOffNote extends ConsumerWidget {
 }
 
 /// One 48pt list row inside an aisle card, hairline-separated from the next.
+/// The checkbox toggles; the rest of the row opens the source-meal sheet.
 class _ShoppingRow extends StatelessWidget {
   const _ShoppingRow({
     required this.item,
+    required this.qty,
+    required this.sourceCount,
     required this.isLast,
     required this.textColor,
     required this.secondary,
     required this.accent,
     required this.onToggleChecked,
+    required this.onOpenSources,
   });
 
   final ShoppingItem item;
+
+  /// [ShoppingItem.qty] already rendered in the athlete's units.
+  final String qty;
+
+  /// How many plan meals the line was built from (badge when > 1).
+  final int sourceCount;
   final bool isLast;
   final Color textColor;
   final Color secondary;
   final Color accent;
   final ValueChanged<bool> onToggleChecked;
+  final VoidCallback? onOpenSources;
 
   @override
   Widget build(BuildContext context) {
+    final canOpen = onOpenSources != null && sourceCount > 0;
     return Container(
       height: 48,
       decoration: BoxDecoration(
@@ -228,22 +287,242 @@ class _ShoppingRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              item.name,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: item.checked
-                    ? textColor.withValues(alpha: 0.5)
-                    : textColor,
-                decoration: item.checked ? TextDecoration.lineThrough : null,
+            child: GestureDetector(
+              key: ValueKey('meal_planning.shopping_row_${item.name}'),
+              behavior: HitTestBehavior.opaque,
+              onTap: canOpen ? onOpenSources : null,
+              child: SizedBox(
+                height: 48,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: item.checked
+                              ? textColor.withValues(alpha: 0.5)
+                              : textColor,
+                          decoration: item.checked
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                    ),
+                    if (sourceCount > 1) ...[
+                      const SizedBox(width: 8),
+                      _CountBadge(
+                        key: ValueKey(
+                          'meal_planning.shopping_sources_${item.name}',
+                        ),
+                        count: sourceCount,
+                        color: secondary,
+                      ),
+                    ],
+                    const Spacer(),
+                    if (qty.isNotEmpty)
+                      Text(
+                        qty,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: secondary,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
-          if (item.qty.isNotEmpty)
+        ],
+      ),
+    );
+  }
+}
+
+/// A quiet 18pt pill with the number of meals a line feeds — the only hint
+/// that the row opens something, so it stays tonal (secondary text on a
+/// 10% tint), never the accent.
+class _CountBadge extends StatelessWidget {
+  const _CountBadge({super.key, required this.count, required this.color});
+
+  final int count;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 18,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        '$count',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          height: 1,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+/// The sheet behind a row: the ingredient and its amount up top, then one
+/// tappable row per source meal (icon tile · name · slot · servings) that
+/// opens the recipe. Kept to the list's own surfaces and type — no header
+/// bar, no dividers heavier than the list's hairline.
+class _SourcesSheet extends StatelessWidget {
+  const _SourcesSheet({
+    required this.item,
+    required this.qty,
+    required this.sources,
+    required this.content,
+    required this.onOpenMeal,
+  });
+
+  final ShoppingItem item;
+  final String qty;
+  final List<PlanMeal> sources;
+  final ContentService content;
+  final ValueChanged<PlanMeal> onOpenMeal;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final secondary = textColor.withValues(alpha: 0.6);
+    final hairline = textColor.withValues(alpha: 0.1);
+
+    final label = content.getValue;
+    final from = sources.length == 1
+        ? label(ContentKeys.mpShoppingFromOne)
+        : ContentKeys.format(label(ContentKeys.mpShoppingFromMany), {
+            'n': sources.length,
+          });
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.sm,
+        ),
+        child: Column(
+          key: const ValueKey('meal_planning.shopping_sources_sheet'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Expanded(
+                  child: Text(
+                    item.name,
+                    style: AppTextStyles.sectionTitle.copyWith(
+                      color: textColor,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (qty.isNotEmpty) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    qty,
+                    style: AppTextStyles.bodyMedium.copyWith(color: secondary),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 2),
             Text(
-              item.qty,
+              '$from · ${label(ContentKeys.mpShoppingSourcesHint)}',
               style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
-        ],
+            const SizedBox(height: AppSpacing.md),
+            for (var i = 0; i < sources.length; i++)
+              _SourceRow(
+                meal: sources[i],
+                isLast: i == sources.length - 1,
+                textColor: textColor,
+                secondary: secondary,
+                hairline: hairline,
+                content: content,
+                onTap: () => onOpenMeal(sources[i]),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SourceRow extends StatelessWidget {
+  const _SourceRow({
+    required this.meal,
+    required this.isLast,
+    required this.textColor,
+    required this.secondary,
+    required this.hairline,
+    required this.content,
+    required this.onTap,
+  });
+
+  final PlanMeal meal;
+  final bool isLast;
+  final Color textColor;
+  final Color secondary;
+  final Color hairline;
+  final ContentService content;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final slot = SlotChip.shortLabelFor(content, meal.mealType);
+    return InkWell(
+      key: ValueKey('meal_planning.shopping_source_${meal.id}'),
+      onTap: onTap,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          border: isLast ? null : Border(bottom: BorderSide(color: hairline)),
+        ),
+        child: Row(
+          children: [
+            MealIconTile(
+              icon: meal.icon ?? MealIcon.bowl,
+              size: 32,
+              mealType: meal.mealType,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    meal.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '$slot · ${meal.servings}×',
+                    style: AppTextStyles.bodySmall.copyWith(color: secondary),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: secondary),
+          ],
+        ),
       ),
     );
   }

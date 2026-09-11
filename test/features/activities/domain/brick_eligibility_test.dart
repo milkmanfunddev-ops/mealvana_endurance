@@ -45,8 +45,11 @@ void main() {
 
     test('R5: a skipped leg is not eligible (fixes D-007)', () {
       expect(
-        act('s', ActivityType.running, status: ActivityStatus.skipped)
-            .isBrickEligible,
+        act(
+          's',
+          ActivityType.running,
+          status: ActivityStatus.skipped,
+        ).isBrickEligible,
         isFalse,
       );
     });
@@ -54,8 +57,11 @@ void main() {
     test('Q-BR1 characterization: completed legs stay linkable', () {
       // Open question — current behaviour pinned, not ratified truth.
       expect(
-        act('d', ActivityType.running, status: ActivityStatus.completed)
-            .isBrickEligible,
+        act(
+          'd',
+          ActivityType.running,
+          status: ActivityStatus.completed,
+        ).isBrickEligible,
         isTrue,
       );
     });

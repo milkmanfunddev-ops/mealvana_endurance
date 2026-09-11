@@ -63,8 +63,7 @@ class _ConfirmedCardState extends ConsumerState<ConfirmedCard> {
     final secondary = textColor.withValues(alpha: 0.65);
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
-    final plan =
-        widget.plan ?? ref.watch(mealPlanControllerProvider).value;
+    final plan = widget.plan ?? ref.watch(mealPlanControllerProvider).value;
     final part = widget.part;
 
     final line = ContentKeys.format(
@@ -280,7 +279,10 @@ class _WhereRow extends StatelessWidget {
             Container(
               width: 32,
               height: 32,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: iconColor),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: iconColor,
+              ),
               child: Icon(icon, size: 16, color: AppColors.blackberry),
             ),
             const SizedBox(width: 10),

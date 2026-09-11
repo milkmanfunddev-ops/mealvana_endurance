@@ -20,6 +20,8 @@ class VanaMicButton extends StatefulWidget {
     required this.listeningTooltip,
     this.enabled = true,
     this.speech,
+    this.size = 44,
+    this.flat = false,
   });
 
   /// Called with the recognised words so far (replace, not append — the
@@ -31,6 +33,11 @@ class VanaMicButton extends StatefulWidget {
 
   /// Injectable recogniser for tests.
   final SpeechToText? speech;
+
+  /// Button diameter, and whether it draws without its disc (inside the
+  /// composer pill).
+  final double size;
+  final bool flat;
 
   @override
   State<VanaMicButton> createState() => _VanaMicButtonState();
@@ -101,6 +108,10 @@ class _VanaMicButtonState extends State<VanaMicButton> {
           : FontAwesomeIcons.microphone,
       tooltip: _listening ? widget.listeningTooltip : widget.tooltip,
       onTap: widget.enabled ? _toggle : () {},
+      size: widget.size,
+      iconSize: widget.size < 40 ? 16 : 18,
+      flat: widget.flat,
+      color: _listening ? AppColors.electrolyte : null,
     );
     if (!_listening) return button;
 

@@ -100,3 +100,50 @@ _Avoid_: Score, rating (those are the text ranking, which decides nothing)
 **Judge**:
 The model call that reaches a Verdict. It is a gate, not an audit: no picture is stored for a
 Meal unless the Judge has already rated it `ok` for that Meal.
+
+### Vana and what she knows
+
+**Vana**:
+The single assistant persona in the app. Whatever the person asks — planning meals, a question
+about tomorrow's ride, a complaint — it is one Vana who answers, choosing an Intent rather than
+handing off to a different character.
+_Avoid_: Jade (the retired name), the bot, the agent
+
+**Intent**:
+What a person wants from Vana in a given exchange: planning a week, answering a question,
+passing feedback to the team, and others as they are named. Intent is recognised per exchange,
+never fixed per conversation.
+_Avoid_: Mode (that is a transport detail), kind
+
+**Voodoo Doll**:
+Everything Vana knows about one person, compiled into a single document at the moment she needs
+it. It is assembled from the canonical records, never stored as a second copy of them. It has
+two parts — Facts and Memories — and is read alongside the Situation.
+_Avoid_: Profile, user context, dossier
+
+**Fact**:
+Something the app records about a person in the ordinary course of use: name, diet, allergies,
+where they live, the training schedule, what they logged. A Fact has an owner elsewhere in the
+app; the Doll only reads it.
+_Avoid_: Memory (a Fact is never learned in conversation)
+
+**Memory**:
+One sentence a good dietitian would write in the margin of a person's file after talking to them:
+something that changes how Vana plans for them next time, and nothing else. It comes from the
+person saying it, from a debrief, or from Vana reading a finished conversation. Every Memory
+carries its source and date; the person can see and delete any of them as one flat list. A keyed
+Memory (batch cooking, coverage scope, budget) is a choice Vana honours without asking again.
+_Avoid_: Preference, note, decision, summary, meal feedback (a thumbs vote is a Fact)
+
+
+**Meal feedback**:
+A thumbs vote the person gives one Meal on its detail page. It is a Fact about that Meal and that
+person, kept in its own record, and Vana reads it every turn as what they liked and did not.
+Anything the person tells Vana about food in words ("no cilantro", "not Thai again") is a
+Memory, not Meal feedback. Fuelling-product tolerances are a separate, older record.
+_Avoid_: Meal preference, like, rating
+
+**Situation**:
+What the person is looking at and doing when they speak to Vana: the screen, the entity in view,
+the date. It travels with each message and is never stored.
+_Avoid_: Context (overloaded), screen state

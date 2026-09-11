@@ -25,9 +25,7 @@ class StaplesCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final secondary = textColor.withValues(alpha: 0.65);
-    final surface = isDark
-        ? AppColors.blackberryLight
-        : AppColors.surfaceLight;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
     if (part.meals.isEmpty) {
       return DashedBox(
@@ -83,10 +81,7 @@ class StaplesCard extends ConsumerWidget {
             ),
           const SizedBox(height: 6),
           for (final staple in part.meals)
-            _StapleRow(
-              staple: staple,
-              onTap: () => onTapMeal(staple.meal),
-            ),
+            _StapleRow(staple: staple, onTap: () => onTapMeal(staple.meal)),
         ],
       ),
     );

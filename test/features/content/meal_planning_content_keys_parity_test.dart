@@ -15,10 +15,14 @@ void main() {
     // The constants live in ContentKeys as `static const String mpX =
     // 'meal_planning.…'`; mirror-check via reflection is unavailable, so
     // assert on the constants' values extracted from the source file.
-    final source = File('lib/features/content/domain/content_keys.dart')
-        .readAsStringSync();
+    final source = File(
+      'lib/features/content/domain/content_keys.dart',
+    ).readAsStringSync();
     final keyPattern = RegExp(r"'(meal_planning\.[a-z0-9_]+)'");
-    final declared = keyPattern.allMatches(source).map((m) => m.group(1)!).toSet();
+    final declared = keyPattern
+        .allMatches(source)
+        .map((m) => m.group(1)!)
+        .toSet();
 
     expect(declared, isNotEmpty);
     final missing = declared.difference(content.keys.toSet());
@@ -30,10 +34,14 @@ void main() {
   });
 
   test('every meal_planning JSON entry has a ContentKeys constant', () {
-    final source = File('lib/features/content/domain/content_keys.dart')
-        .readAsStringSync();
+    final source = File(
+      'lib/features/content/domain/content_keys.dart',
+    ).readAsStringSync();
     final keyPattern = RegExp(r"'(meal_planning\.[a-z0-9_]+)'");
-    final declared = keyPattern.allMatches(source).map((m) => m.group(1)!).toSet();
+    final declared = keyPattern
+        .allMatches(source)
+        .map((m) => m.group(1)!)
+        .toSet();
     final jsonKeys = content.keys
         .where((k) => k.startsWith('meal_planning.'))
         .toSet();

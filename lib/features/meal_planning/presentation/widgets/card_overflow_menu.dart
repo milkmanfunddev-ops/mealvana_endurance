@@ -12,12 +12,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 /// carries no menu. Kyle-styled popup, both themes; no new library
 /// component (plan §4.2 — "extend `MealCard.trailing` / `PlanTile`").
 class CardOverflowMenu extends ConsumerWidget {
-  const CardOverflowMenu({
-    super.key,
-    this.onSwap,
-    this.onRemove,
-    this.menuKey,
-  });
+  const CardOverflowMenu({super.key, this.onSwap, this.onRemove, this.menuKey});
 
   final VoidCallback? onSwap;
   final VoidCallback? onRemove;

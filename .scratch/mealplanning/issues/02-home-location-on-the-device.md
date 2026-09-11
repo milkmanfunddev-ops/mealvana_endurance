@@ -2,7 +2,8 @@
 
 **Status:** done
 **Blocked by:** None
-**Next:** Nothing. The device carries home location; a screen that edits it is not in this spec.
+**Next:** `/mattpocock-skills:implement 03`. Nothing more here — the device carries home location,
+and a screen that edits it is not in this spec.
 
 **What to build:** The three home fields carried by the local profile and its sync, so the app can
 show and edit where the athlete lives rather than only Vana being able to set it.

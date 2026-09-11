@@ -57,54 +57,60 @@ void main() {
   // Real catalog shapes (dev rows, 2026-09-03) — the TS twin's POOL.
   final pool = <SolverFood>[
     _food(
-        id: 'carb_drink_mix',
-        productType: 'drink_mix',
-        carbs: 60,
-        sodium: 160,
-        calories: 240,
-        liquid: true,
-        solventMinMl: 475),
+      id: 'carb_drink_mix',
+      productType: 'drink_mix',
+      carbs: 60,
+      sodium: 160,
+      calories: 240,
+      liquid: true,
+      solventMinMl: 475,
+    ),
     _food(
-        id: 'energy_gel',
-        productType: 'gel',
-        carbs: 25,
-        sodium: 55,
-        fluid: 20,
-        calories: 100,
-        minServings: 1,
-        maxServings: 15,
-        indivisible: true,
-        solventMinMl: 150),
+      id: 'energy_gel',
+      productType: 'gel',
+      carbs: 25,
+      sodium: 55,
+      fluid: 20,
+      calories: 100,
+      minServings: 1,
+      maxServings: 15,
+      indivisible: true,
+      solventMinMl: 150,
+    ),
     _food(
-        id: 'energy_chews',
-        productType: 'chew',
-        carbs: 25,
-        sodium: 80,
-        calories: 100,
-        minServings: 1,
-        indivisible: true),
+      id: 'energy_chews',
+      productType: 'chew',
+      carbs: 25,
+      sodium: 80,
+      calories: 100,
+      minServings: 1,
+      indivisible: true,
+    ),
     _food(
-        id: 'sports_drink',
-        productType: 'sports_drink',
-        carbs: 15,
-        sodium: 100,
-        fluid: 240,
-        calories: 60,
-        maxServings: 20,
-        liquid: true),
+      id: 'sports_drink',
+      productType: 'sports_drink',
+      carbs: 15,
+      sodium: 100,
+      fluid: 240,
+      calories: 60,
+      maxServings: 20,
+      liquid: true,
+    ),
     _food(
-        id: 'water',
-        productType: 'beverage',
-        fluid: 240,
-        maxServings: 14,
-        liquid: true),
+      id: 'water',
+      productType: 'beverage',
+      fluid: 240,
+      maxServings: 14,
+      liquid: true,
+    ),
     _food(
-        id: 'electrolyte_capsule',
-        productType: 'supplement',
-        sodium: 190,
-        minServings: 1,
-        maxServings: 8,
-        indivisible: true),
+      id: 'electrolyte_capsule',
+      productType: 'supplement',
+      sodium: 190,
+      minServings: 1,
+      maxServings: 8,
+      indivisible: true,
+    ),
   ];
 
   const targets = SolverTargets(
@@ -119,8 +125,7 @@ void main() {
     fluidHighMl: 461,
   );
 
-  test('§6(e): every during-solver plate leaves the solvent backstop feasible',
-      () {
+  test('§6(e): every during-solver plate leaves the solvent backstop feasible', () {
     const solver = ClientDuringPhaseSolver();
     // Rotate the pool so the deterministic weighted pick lands on different
     // candidates (incl. the mix-first arrangement of the live defect).
@@ -138,8 +143,10 @@ void main() {
           .map((s) => byId[s.foodId]!.toFoodItemData(s.quantity))
           .toList();
 
-      final totalFluid =
-          items.fold<double>(0, (t, i) => t + (i.nutritionalInfo?.fluids ?? 0));
+      final totalFluid = items.fold<double>(
+        0,
+        (t, i) => t + (i.nutritionalInfo?.fluids ?? 0),
+      );
       final headroom = (461 - totalFluid).clamp(0, double.infinity);
       final requirement = solventRequirementMl(items);
       final plain = plainWaterMl(items);
@@ -156,14 +163,16 @@ void main() {
       // declared requirement is met (or the shortfall is below the
       // meaningful-pairing minimum next to plain water — the spec's solvent
       // lines are approximate, "gels chase ~150").
-      final paired = ensureElectrolyteWaterPairing(
-        items,
-        [byId['water']!],
-        fluidCeilingMl: 461,
+      final paired = ensureElectrolyteWaterPairing(items, [
+        byId['water']!,
+      ], fluidCeilingMl: 461);
+      expect(
+        paired.conflict,
+        isNull,
+        reason:
+            'rot $rot: pairing conflict — plate: '
+            '${selections.map((s) => '${s.foodId} x${s.quantity}').join(', ')}',
       );
-      expect(paired.conflict, isNull,
-          reason: 'rot $rot: pairing conflict — plate: '
-              '${selections.map((s) => '${s.foodId} x${s.quantity}').join(', ')}');
       final owed =
           solventRequirementMl(paired.items) - plainWaterMl(paired.items);
       expect(

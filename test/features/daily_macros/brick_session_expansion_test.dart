@@ -64,9 +64,7 @@ void main() {
     when(() => supabase.functions).thenReturn(functions);
     // Status 500 stops the flow right after the request is built — the
     // payload is what's under test, not the response handling.
-    when(
-      () => functions.invoke(any(), body: any(named: 'body')),
-    ).thenAnswer(
+    when(() => functions.invoke(any(), body: any(named: 'body'))).thenAnswer(
       (_) async => FunctionResponse(status: 500, data: {'error': 'seam'}),
     );
     service = DailyMacroService(
@@ -88,7 +86,9 @@ void main() {
     BrickMetadata? brick,
     String? brickMetadataRaw,
   }) async {
-    await database.into(database.activitiesTable).insert(
+    await database
+        .into(database.activitiesTable)
+        .insert(
           ActivitiesTableCompanion.insert(
             id: Value(id),
             userId: userId,
@@ -121,44 +121,46 @@ void main() {
   }
 
   BrickMetadata brickOf(List<(String, int)> legs) => BrickMetadata.fromJson({
-        'segment_order': [for (final (sport, _) in legs) sport],
-        'segments': [
-          for (final (i, (sport, minutes)) in legs.indexed)
-            {
-              'sport': sport,
-              'order': i + 1,
-              'duration_minutes': minutes,
-              'intensity': 'moderate',
-            },
-        ],
-        'created_from_existing': false,
-        'total_duration_minutes': legs.fold<int>(0, (s, l) => s + l.$2),
-      });
-
-  test('a brick row expands into one session PER LEG, each at its own sport',
-      () async {
-    // The reported Sept 5 brick: run 65 → bike 100 → run 144.
-    await insertActivity(
-      id: 'brick1',
-      activityType: 'brick',
-      durationMinutes: 309,
-      brick: brickOf([('running', 65), ('cycling', 100), ('running', 144)]),
-    );
-
-    final sessions = await sentSessions();
-
-    expect(sessions, hasLength(3));
-    expect(
-      sessions.map((s) => s['sport']),
-      ['running', 'cycling', 'running'],
-      reason: 'a bike leg must price at the cycling rate, not running',
-    );
-    expect(
-      sessions.map((s) => s['duration_hr']),
-      [65 / 60.0, 100 / 60.0, 144 / 60.0],
-      reason: 'each leg carries its OWN duration, never the brick total',
-    );
+    'segment_order': [for (final (sport, _) in legs) sport],
+    'segments': [
+      for (final (i, (sport, minutes)) in legs.indexed)
+        {
+          'sport': sport,
+          'order': i + 1,
+          'duration_minutes': minutes,
+          'intensity': 'moderate',
+        },
+    ],
+    'created_from_existing': false,
+    'total_duration_minutes': legs.fold<int>(0, (s, l) => s + l.$2),
   });
+
+  test(
+    'a brick row expands into one session PER LEG, each at its own sport',
+    () async {
+      // The reported Sept 5 brick: run 65 → bike 100 → run 144.
+      await insertActivity(
+        id: 'brick1',
+        activityType: 'brick',
+        durationMinutes: 309,
+        brick: brickOf([('running', 65), ('cycling', 100), ('running', 144)]),
+      );
+
+      final sessions = await sentSessions();
+
+      expect(sessions, hasLength(3));
+      expect(
+        sessions.map((s) => s['sport']),
+        ['running', 'cycling', 'running'],
+        reason: 'a bike leg must price at the cycling rate, not running',
+      );
+      expect(
+        sessions.map((s) => s['duration_hr']),
+        [65 / 60.0, 100 / 60.0, 144 / 60.0],
+        reason: 'each leg carries its OWN duration, never the brick total',
+      );
+    },
+  );
 
   test('legs carry NO activity_id — whole-brick Garmin kcal must not attach '
       'to every leg', () async {
@@ -224,26 +226,32 @@ void main() {
 
     final sessions = await sentSessions();
 
-    expect(sessions, hasLength(2),
-        reason: 'only the brick legs — the archived originals are the same '
-            'workout and must not be priced again');
+    expect(
+      sessions,
+      hasLength(2),
+      reason:
+          'only the brick legs — the archived originals are the same '
+          'workout and must not be priced again',
+    );
     expect(sessions.map((s) => s['duration_hr']), [108 / 60.0, 100 / 60.0]);
   });
 
-  test('a single-sport row is untouched: one session, its own activity_id',
-      () async {
-    await insertActivity(
-      id: 'run1',
-      activityType: 'running',
-      durationMinutes: 60,
-    );
+  test(
+    'a single-sport row is untouched: one session, its own activity_id',
+    () async {
+      await insertActivity(
+        id: 'run1',
+        activityType: 'running',
+        durationMinutes: 60,
+      );
 
-    final sessions = await sentSessions();
+      final sessions = await sentSessions();
 
-    expect(sessions, hasLength(1));
-    expect(sessions.single['sport'], 'running');
-    expect(sessions.single['activity_id'], 'run1');
-  });
+      expect(sessions, hasLength(1));
+      expect(sessions.single['sport'], 'running');
+      expect(sessions.single['activity_id'], 'run1');
+    },
+  );
 
   test('a brick with unparseable metadata falls back to ONE session rather '
       'than dropping the workout', () async {

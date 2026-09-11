@@ -37,9 +37,7 @@ class WeekCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: surface,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: AppColors.electrolyte.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: AppColors.electrolyte.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -244,7 +244,8 @@ class LiquidLensBubble extends StatelessWidget {
       shape: LiquidRoundedSuperellipse(borderRadius: radius),
       settings: LiquidGlassSettings(
         visibility: visibility.clamp(0.0, 1.0),
-        thickness: AppMaterials.tabLensThickness +
+        thickness:
+            AppMaterials.tabLensThickness +
             AppMaterials.tabLensTransitThicknessBoost * motion.clamp(0.0, 1.0),
         refractiveIndex: AppMaterials.tabLensRefractiveIndex,
         chromaticAberration: AppMaterials.tabLensChromaticAberration,
@@ -316,10 +317,7 @@ class GlassTopFade extends StatelessWidget {
                     height: stripHeight,
                     child: ClipRect(
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(
-                          sigmaX: sigma,
-                          sigmaY: sigma,
-                        ),
+                        filter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
                         child: const SizedBox.expand(),
                       ),
                     ),

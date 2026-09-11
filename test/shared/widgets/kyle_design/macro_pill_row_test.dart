@@ -28,7 +28,10 @@ Future<void> _pump(
 
 List<String> _pillTexts(WidgetTester tester) => tester
     .widgetList<Text>(
-      find.descendant(of: find.byType(MacroPillRow), matching: find.byType(Text)),
+      find.descendant(
+        of: find.byType(MacroPillRow),
+        matching: find.byType(Text),
+      ),
     )
     .map((t) => t.data!)
     .toList();

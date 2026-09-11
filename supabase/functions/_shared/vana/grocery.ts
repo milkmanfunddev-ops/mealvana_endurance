@@ -13,8 +13,35 @@ const AISLE_RULES: Array<[string, string[]]> = [
   ['Beverages', ['coffee','tea','juice','soda','sparkling','kombucha','sports drink','electrolyte']],
 ];
 const AISLE_ORDER = ['Produce','Protein','Dairy','Bakery & Grains','Pantry','Spices','Frozen','Beverages','Other'];
-/** Things nobody buys for one week's plan — always "have". */
-const ALWAYS_HAVE = ['salt','pepper','olive oil','water','oil','pinch'];
+/** Things nobody buys for one week's plan — always "have". Matched against the canonical key. */
+const ALWAYS_HAVE: RegExp[] = [
+  /^(sea |kosher |black |flaky |pinch (of )?)?salt( pinch| and pepper)?$/,
+  /^(black |white |cracked )?pepper$/,
+  /^(olive |vegetable |cooking |neutral |sunflower |canola )?oil( for the pan| spray| sachet)?$/,
+  /^water$/, /^pinch$/, /^ice$/,
+];
+const alwaysHave = (key: string) => ALWAYS_HAVE.some((re) => re.test(key));
+/**
+ * Per-serving fallbacks for catalog rows whose qty is blank (473 of the library's
+ * ingredient rows on 2026-09-07 — lemon, garlic, cucumber, herbs, spices…). A shopping
+ * line with no amount is useless in the aisle, so these give a sensible per-serving
+ * default that scales with the plan; the athlete can always buy more. Matched in
+ * order against the canonical key; the last group is by aisle.
+ */
+const DEFAULT_QTY: Array<[RegExp, string]> = [
+  [/garlic/, '1 clove'], [/^(lemon|lime)s?$/, '½'], [/ginger/, '1 tbsp'], [/cucumber/, '½'],
+  [/tomato/, '1'], [/carrot/, '1'], [/onion/, '½'], [/celery/, '1 stalk'], [/broccoli|cauliflower/, '1 cup'],
+  [/courgette|zucchini/, '½'], [/lettuce|spinach|kale|arugula|rocket|greens|salad/, '1 cup'],
+  [/scallion|spring onion/, '1'], [/parsley|basil|coriander|cilantro|mint|dill|rosemary|thyme|chive|curry leaves/, '¼ bunch'],
+  [/capers|mustard|hot sauce|salsa|pickle|relish|soy sauce|vinegar/, '1 tbsp'], [/stock|broth/, '1 cup'],
+  [/bean sprouts|sprouts/, '½ cup'], [/nori/, '1 sheet'], [/vanilla|baking (soda|powder)/, '½ tsp'],
+  [/avocado|egg|banana|apple|pear|orange|pepper|potato|corn|plantain/, '1'],
+];
+const DEFAULT_BY_AISLE: Record<string, string> = { Spices: '½ tsp', Produce: '1', Pantry: '1 tbsp', Protein: '100 g', Dairy: '50 g' };
+export function defaultQty(key: string): string {
+  for (const [re, q] of DEFAULT_QTY) if (re.test(key)) return q;
+  return DEFAULT_BY_AISLE[classifyAisle(key)] ?? '';
+}
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 /** Specific phrases that must win over a broader Produce/Protein match. */
 const PRIORITY: Array<[string, string[]]> = [['Pantry', ['crushed tomatoes','chopped tomatoes','tinned tomatoes','canned','tomato sauce','tomato paste','passata','marinara','coconut milk','peanut butter','almond butter','seed butter','stock','broth','dried','raisin','sun-dried']], ['Frozen', ['frozen']], ['Dairy', ['cottage cheese','greek yogurt','cream cheese']]];
@@ -24,7 +51,7 @@ export function classifyAisle(name: string): string {
   for (const [aisle, keys] of AISLE_RULES) for (const k of keys) if (new RegExp(`(?<![a-z])${esc(k)}`).test(f)) return aisle;
   return 'Other';
 }
-const COLLAPSE: Array<[RegExp, string]> = [[/\b(yellow|red|white|spanish|vidalia)\s+onion\b/, 'onion'], [/\bgarlic\s+cloves?\b/, 'garlic'], [/\bcloves?\s+of\s+garlic\b/, 'garlic'], [/\bbaby\s+spinach\b/, 'spinach'], [/\b(grilled|baked|roasted|raw|cooked|steamed|fresh|chopped|diced|sliced|boneless|skinless)\s+/g, ''], [/\s*\([^)]*\)\s*/g, ' '], [/\s+(splash|pinch|to taste|handful|drizzle)$/, '']];
+const COLLAPSE: Array<[RegExp, string]> = [[/\b(yellow|red|white|spanish|vidalia)\s+onion\b/, 'onion'], [/\bgarlic\s+cloves?\b/, 'garlic'], [/\bcloves?\s+of\s+garlic\b/, 'garlic'], [/\bbaby\s+spinach\b/, 'spinach'], [/\b(grilled|baked|roasted|raw|cooked|steamed|fresh|chopped|diced|sliced|boneless|skinless)\s+/g, ''], [/\s*\([^)]*\)\s*/g, ' '], [/\s+(splash|pinch|to taste|handful|drizzle)$/, ''], [/[()]/g, '']];
 export function canonicalName(name: string): string {
   let f = name.toLowerCase().trim().replace(/\s+/g, ' ');
   for (const [p, r] of COLLAPSE) f = f.replace(p, r);
@@ -42,11 +69,14 @@ export function parseQty(q: string): { n: number | null; unit: string } {
   let unit = m[2] || ''; if (['tbsps', 'tbs'].includes(unit)) unit = 'tbsp'; if (unit === 'grams' || unit === 'gram') unit = 'g'; if (unit === 'cups') unit = 'cup'; if (unit.startsWith('ml')) unit = 'ml';
   return { n, unit };
 }
+/** Count-style units read as words, so they take an s. */
+const PLURAL: Record<string, string> = { clove: 'cloves', stalk: 'stalks', bunch: 'bunches', sheet: 'sheets', cup: 'cups', can: 'cans', slice: 'slices', piece: 'pieces', head: 'heads' };
+const plural = (u: string, n: number) => (n > 1 && PLURAL[u]) || u;
 const fmt = (n: number) => { const r = Math.round(n * 4) / 4; const w = Math.floor(r); const f = r - w; const fs = f === 0.5 ? '½' : f === 0.25 ? '¼' : f === 0.75 ? '¾' : ''; return w === 0 && fs ? fs : fs ? `${w} ${fs}` : String(Math.round(r * 100) / 100); };
 export function aggregate(entries: { qty: string; mult: number }[]): string {
   const by = new Map<string, number>(); const other: string[] = [];
   for (const e of entries) { const { n, unit } = parseQty(e.qty); if (n == null) { if (e.qty) other.push(e.qty); continue; } by.set(unit, (by.get(unit) ?? 0) + n * e.mult); }
-  const parts = [...by.entries()].map(([u, n]) => { const big = (x: number) => String(Math.round(x * 10) / 10); if (u === 'g' && n >= 1000) return `${big(n / 1000)} kg`; if (u === 'ml' && n >= 1000) return `${big(n / 1000)} l`; return u ? `${fmt(n)} ${u}` : fmt(n); });
+  const parts = [...by.entries()].map(([u, n]) => { const big = (x: number) => String(Math.round(x * 10) / 10); if (u === 'g' && n >= 1000) return `${big(n / 1000)} kg`; if (u === 'ml' && n >= 1000) return `${big(n / 1000)} l`; return u ? `${fmt(n)} ${plural(u, n)}` : fmt(n); });
   if (other.length) parts.push(other[0]);
   return parts.join(' + ');
 }
@@ -55,9 +85,10 @@ export function aggregate(entries: { qty: string; mult: number }[]): string {
 export function buildItems(meals: { id: string; servings: number; baseServings: number; ingredients: { name: string; qty: string }[] }[], have: Set<string>): ShoppingItem[] {
   const buckets = new Map<string, { name: string; entries: { qty: string; mult: number }[]; from: Set<string> }>();
   for (const m of meals) for (const ing of m.ingredients) {
-    const key = canonicalName(ing.name); if (!key || ALWAYS_HAVE.some((h) => key === h)) continue;
+    const key = canonicalName(ing.name); if (!key || alwaysHave(key)) continue;
     const b = buckets.get(key) ?? { name: key.charAt(0).toUpperCase() + key.slice(1), entries: [], from: new Set<string>() };
-    b.entries.push({ qty: ing.qty, mult: m.servings / Math.max(1, m.baseServings) }); b.from.add(m.id); buckets.set(key, b);
+    const qty = (ing.qty ?? '').trim() || defaultQty(key);
+    b.entries.push({ qty, mult: m.servings / Math.max(1, m.baseServings) }); b.from.add(m.id); buckets.set(key, b);
   }
   const items: ShoppingItem[] = [...buckets.entries()].map(([key, b]) => ({ aisle: classifyAisle(key), name: b.name, qty: aggregate(b.entries), checked: false, have: [...have].some((h) => key.includes(h)), fromMealIds: [...b.from] }));
   items.sort((a, b) => AISLE_ORDER.indexOf(a.aisle) - AISLE_ORDER.indexOf(b.aisle) || a.name.localeCompare(b.name));

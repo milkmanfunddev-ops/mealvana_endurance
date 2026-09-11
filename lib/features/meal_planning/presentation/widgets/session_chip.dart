@@ -13,16 +13,14 @@ class SessionChip extends ConsumerWidget {
 
   final CookingSession session;
 
-  static String labelFor(ContentService content, CookingSession session) =>
-      switch (session) {
-        CookingSession.cookSun => content.getValue(ContentKeys.mpSessionCookSun),
-        CookingSession.topupWed => content.getValue(
-          ContentKeys.mpSessionTopupWed,
-        ),
-        CookingSession.freshFri => content.getValue(
-          ContentKeys.mpSessionFreshFri,
-        ),
-      };
+  static String labelFor(
+    ContentService content,
+    CookingSession session,
+  ) => switch (session) {
+    CookingSession.cookSun => content.getValue(ContentKeys.mpSessionCookSun),
+    CookingSession.topupWed => content.getValue(ContentKeys.mpSessionTopupWed),
+    CookingSession.freshFri => content.getValue(ContentKeys.mpSessionFreshFri),
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

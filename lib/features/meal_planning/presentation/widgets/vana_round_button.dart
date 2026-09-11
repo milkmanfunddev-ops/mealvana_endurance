@@ -15,6 +15,8 @@ class VanaRoundButton extends StatelessWidget {
     required this.onTap,
     this.size = 44,
     this.iconSize = 18,
+    this.flat = false,
+    this.color,
   });
 
   final FaIconData icon;
@@ -22,6 +24,13 @@ class VanaRoundButton extends StatelessWidget {
   final VoidCallback onTap;
   final double size;
   final double iconSize;
+
+  /// No filled disc — for icons that sit inside another surface (the
+  /// composer pill's `+` and mic, ChatGPT-style).
+  final bool flat;
+
+  /// Icon colour override (defaults to the text colour).
+  final Color? color;
 
   /// The standard back button for a meal-planning detail screen.
   factory VanaRoundButton.back({
@@ -42,7 +51,9 @@ class VanaRoundButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: isDark ? AppColors.blackberryLight : AppColors.surfaceLight,
+        color: flat
+            ? Colors.transparent
+            : (isDark ? AppColors.blackberryLight : AppColors.surfaceLight),
         shape: const CircleBorder(),
         child: InkWell(
           onTap: onTap,
@@ -54,7 +65,8 @@ class VanaRoundButton extends StatelessWidget {
               child: FaIcon(
                 icon,
                 size: iconSize,
-                color: isDark ? AppColors.cream : AppColors.blackberry,
+                color:
+                    color ?? (isDark ? AppColors.cream : AppColors.blackberry),
               ),
             ),
           ),

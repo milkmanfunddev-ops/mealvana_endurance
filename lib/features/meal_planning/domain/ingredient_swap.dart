@@ -48,5 +48,6 @@ class IngredientSwap {
   int get hashCode => Object.hash(from, to, effect);
 
   @override
-  String toString() => 'IngredientSwap($from → $to${effect == null ? '' : ' ($effect)'})';
+  String toString() =>
+      'IngredientSwap($from → $to${effect == null ? '' : ' ($effect)'})';
 }

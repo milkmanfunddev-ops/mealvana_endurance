@@ -50,9 +50,7 @@ void main() {
     expect(tailAlpha(tester), 1);
   });
 
-  testWidgets('animate false renders every update immediately', (
-    tester,
-  ) async {
+  testWidgets('animate false renders every update immediately', (tester) async {
     await pump(tester, 'Race week, ', animate: false);
     await pump(tester, 'Race week, so carbs.', animate: false);
     await tester.pump();

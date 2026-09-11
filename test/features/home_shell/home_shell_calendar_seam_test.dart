@@ -237,11 +237,18 @@ void main() {
         activities: [crossed],
         loggedDates: const {},
       );
-      expect(days[11]?.dot, CalendarDotState.done,
-          reason: 'displayTime (actual ?? planned ?? scheduled) buckets the '
-              '11th');
-      expect(days[10], isNull,
-          reason: 'the divergent scheduled_date_time key must NOT be used');
+      expect(
+        days[11]?.dot,
+        CalendarDotState.done,
+        reason:
+            'displayTime (actual ?? planned ?? scheduled) buckets the '
+            '11th',
+      );
+      expect(
+        days[10],
+        isNull,
+        reason: 'the divergent scheduled_date_time key must NOT be used',
+      );
     });
 
     test('a legacy row predating the two-time columns falls back to '

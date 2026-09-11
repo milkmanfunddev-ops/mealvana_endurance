@@ -31,51 +31,54 @@ void main() {
   const weightKg = 47.6;
 
   Activity plannedRun(DateTime day) => Activity(
-        id: 'w1',
-        userId: 'u1',
-        activityType: ActivityType.running,
-        title: 'Run - Long Run',
-        scheduledDateTime: DateTime(day.year, day.month, day.day, 7, 0),
-        plannedTime: DateTime(day.year, day.month, day.day, 7, 0),
-        status: ActivityStatus.planned,
-        durationMinutes: 90,
-        createdAt: day,
-        updatedAt: day,
-      );
+    id: 'w1',
+    userId: 'u1',
+    activityType: ActivityType.running,
+    title: 'Run - Long Run',
+    scheduledDateTime: DateTime(day.year, day.month, day.day, 7, 0),
+    plannedTime: DateTime(day.year, day.month, day.day, 7, 0),
+    status: ActivityStatus.planned,
+    durationMinutes: 90,
+    createdAt: day,
+    updatedAt: day,
+  );
 
   DailyMacroTargets targets(DateTime day) => DailyMacroTargets(
-        id: 't1',
-        userId: 'u1',
-        targetDate: day,
-        carbG: 447,
-        protG: 85,
-        fatG: 101,
-        tdee: 3037,
-        rmr: 1064,
-        sessionKcal: 1290,
-        neatKcal: 275,
-        tefKcal: 304,
-        mode: 'prospective',
-        createdAt: day,
-        updatedAt: day,
-      );
+    id: 't1',
+    userId: 'u1',
+    targetDate: day,
+    carbG: 447,
+    protG: 85,
+    fatG: 101,
+    tdee: 3037,
+    rmr: 1064,
+    sessionKcal: 1290,
+    neatKcal: 275,
+    tefKcal: 304,
+    mode: 'prospective',
+    createdAt: day,
+    updatedAt: day,
+  );
 
   DashboardData assemble(DateTime day) => assembler.assemble(
-        selectedDate: day,
-        now: now,
-        activities: [plannedRun(day)],
-        meals: const [],
-        targets: targets(day),
-        consumed: const ConsumedTotals(),
-        trackingOn: true,
-        profileWeightKg: weightKg,
-      );
+    selectedDate: day,
+    now: now,
+    activities: [plannedRun(day)],
+    meals: const [],
+    targets: targets(day),
+    consumed: const ConsumedTotals(),
+    trackingOn: true,
+    profileWeightKg: weightKg,
+  );
 
   group('elapsed minutes are a fact about the selected day', () {
     test('a FUTURE day has not started: elapsed = 0', () {
       final b = assemble(DateTime(2026, 8, 29)).breakdown!;
-      expect(b.minutesSinceMidnight, 0,
-          reason: 'a day a week away has zero elapsed minutes');
+      expect(
+        b.minutesSinceMidnight,
+        0,
+        reason: 'a day a week away has zero elapsed minutes',
+      );
     });
 
     test('a PAST day is over: elapsed = 1440', () {
@@ -102,23 +105,35 @@ void main() {
       expect(b.digestionSoFar, 0);
     });
 
-    test('a future day still PROJECTS the full day — the fix must not zero that',
-        () {
-      final b = assemble(DateTime(2026, 8, 29)).breakdown!;
+    test(
+      'a future day still PROJECTS the full day — the fix must not zero that',
+      () {
+        final b = assemble(DateTime(2026, 8, 29)).breakdown!;
 
-      expect(b.restingByEnd, greaterThan(0),
-          reason: 'by-day\'s-end is the engine\'s figure, unaffected by elapsed');
-      expect(b.movementByEnd, greaterThan(0));
-      expect(b.workoutByEnd, greaterThan(0),
-          reason: 'the planned session is still projected');
-    });
+        expect(
+          b.restingByEnd,
+          greaterThan(0),
+          reason:
+              'by-day\'s-end is the engine\'s figure, unaffected by elapsed',
+        );
+        expect(b.movementByEnd, greaterThan(0));
+        expect(
+          b.workoutByEnd,
+          greaterThan(0),
+          reason: 'the planned session is still projected',
+        );
+      },
+    );
 
     test('a future day publishes no phantom deficit', () {
       final energy = assemble(DateTime(2026, 8, 29)).energy!;
 
       // Was −1,339 ("deficit — time to eat") for a day that had not begun.
-      expect(energy.burnedKcal, 0,
-          reason: 'nothing has been burned on a day that has not started');
+      expect(
+        energy.burnedKcal,
+        0,
+        reason: 'nothing has been burned on a day that has not started',
+      );
       expect(energy.eatenKcal - energy.burnedKcal, 0);
     });
 

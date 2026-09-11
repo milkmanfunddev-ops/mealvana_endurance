@@ -36,7 +36,12 @@ void main() {
           ),
         ],
         child: const MaterialApp(
-          home: Scaffold(body: Align(alignment: Alignment.topRight, child: ShoppingShareButton())),
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.topRight,
+              child: ShoppingShareButton(),
+            ),
+          ),
         ),
       ),
     );

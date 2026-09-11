@@ -46,14 +46,10 @@ class PlanTile extends ConsumerWidget {
     final content = ref.read(contentServiceProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
-    final surface = isDark
-        ? AppColors.blackberryLight
-        : AppColors.surfaceLight;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
     final border = textColor.withValues(alpha: 0.10);
 
-    final icon =
-        meal.icon ??
-        MealIconClassifier.classify(name: meal.name);
+    final icon = meal.icon ?? MealIconClassifier.classify(name: meal.name);
 
     final macros = showMacros
         ? MacroPillRow(

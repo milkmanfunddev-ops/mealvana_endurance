@@ -350,9 +350,7 @@ void main() {
           _activity('run1', ActivityType.running, 8),
           _activity('ride1', ActivityType.cycling, 16),
         ]);
-        final addFood = find.byKey(
-          const ValueKey('macro_dashboard.add_food'),
-        );
+        final addFood = find.byKey(const ValueKey('macro_dashboard.add_food'));
         expect(addFood, findsOneWidget);
 
         final pillRect = tester.getRect(addFood);

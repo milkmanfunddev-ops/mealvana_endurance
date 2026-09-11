@@ -160,7 +160,7 @@ class PlanBarState extends ConsumerState<PlanBar> {
                   ? KylePrimaryButton(
                       key: const ValueKey('meal_planning.plan_bar.review'),
                       text: reviewLabel,
-                      height: 34,
+                      height: 40,
                       fontSize: 13,
                       isFullWidth: false,
                       onPressed: widget.confirmed ? null : widget.onReview,
@@ -168,7 +168,7 @@ class PlanBarState extends ConsumerState<PlanBar> {
                   : KyleSecondaryButton(
                       key: const ValueKey('meal_planning.plan_bar.review'),
                       text: reviewLabel,
-                      height: 34,
+                      height: 40,
                       fontSize: 13,
                       isFullWidth: false,
                       onPressed: widget.confirmed ? null : widget.onReview,

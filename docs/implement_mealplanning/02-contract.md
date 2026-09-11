@@ -60,6 +60,8 @@ sourceUrl, source, swaps: string[], prep, servings, notes, vote }`.
 | `shopping_list` | `{items[ShoppingItem], item_count, skipped[]}` | `ConfirmedCard` (inline) / `ShoppingListScreen` |
 | `day_guidance` | `{date, label, workout?, min_carbs_g, note, suggestions[MealRef]}` | `DayCard` |
 | `memory_saved` | `{memory}` | `MemorySavedRow` |
+| `feedback_prompt` | `{}` | `FeedbackPromptRow` — server-appended after the FIRST conversation's opener; plain text "Have feedback for me? Just type it here." (2026-09-09) |
+| `feedback_saved` | `{message, sentiment, about}` | `FeedbackSavedRow` — `saveFeedback` wrote the athlete's words to `user_feedback`; typing into Vana IS the feedback system (2026-09-09) |
 | `logged` | `{plan_meal_id, name, servings_left}` | `LoggedRow` |
 | `day` | `{date, label, slots: DayPlan, filled[]}` | `DayWidget` (Plan tab only) |
 | `brief` | legacy — parse, don't render | — |

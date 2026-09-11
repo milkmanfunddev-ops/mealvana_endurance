@@ -432,16 +432,13 @@ void main() {
     // only Snack/Top-Off/After and the athlete's During pins had no
     // on-screen trace (Xuan's Sept 5 RUN/BIKE/RUN brick — bug
     // 2026-09-04-brick-during-pins-invisible-and-tri-scope-unreachable).
-    PlanSection segment(
-      int order,
-      String sportName, {
-      PinDecision? pin,
-    }) => PlanSection(
-      id: 'during_segment_$order',
-      title: 'During $sportName',
-      foodItems: const [],
-      pinDecision: pin,
-    );
+    PlanSection segment(int order, String sportName, {PinDecision? pin}) =>
+        PlanSection(
+          id: 'during_segment_$order',
+          title: 'During $sportName',
+          foodItems: const [],
+          pinDecision: pin,
+        );
 
     test('each leg gets its OWN row, labeled by the section title', () {
       final data = collectPinBannerRows([
@@ -464,17 +461,19 @@ void main() {
       );
     });
 
-    test('brick segments count as pinnable phases for the onboarding state',
-        () {
-      // Segments alone, zero decisions anywhere, user has no pins → the
-      // banner must offer discovery, not hide.
-      final data = collectPinBannerRows([
-        segment(1, 'Run'),
-        segment(2, 'Bike'),
-      ]);
-      expect(data.isOnboarding, isTrue);
-      expect(data.rows, isEmpty);
-    });
+    test(
+      'brick segments count as pinnable phases for the onboarding state',
+      () {
+        // Segments alone, zero decisions anywhere, user has no pins → the
+        // banner must offer discovery, not hide.
+        final data = collectPinBannerRows([
+          segment(1, 'Run'),
+          segment(2, 'Bike'),
+        ]);
+        expect(data.isOnboarding, isTrue);
+        expect(data.rows, isEmpty);
+      },
+    );
 
     test('transition sections (T1/T2) stay non-pinnable', () {
       final data = collectPinBannerRows([

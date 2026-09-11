@@ -52,12 +52,15 @@ void main() {
     );
   }
 
-  testWidgets('meal_picker renders the carousel title and chip strip', (
+  testWidgets('meal_picker renders the tiles and chip strip, no title', (
     tester,
   ) async {
     final part = VanaMealPickerPart.fromJson(fixture('meal_picker'));
     await pumpPart(tester, part);
-    expect(find.text(part.title), findsOneWidget);
+    // 2026-09-07 (Lee): the picker draws no title / "tap to add" / why
+    // blurb — the tiles are self-explanatory.
+    expect(find.text(part.title), findsNothing);
+    expect(find.text(part.meals.first.name), findsOneWidget);
     // The chip strip renders under the picker (primary + other + something).
     expect(find.text('I like these'), findsOneWidget);
     expect(find.text('Something else…'), findsOneWidget);

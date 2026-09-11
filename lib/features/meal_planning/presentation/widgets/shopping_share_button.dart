@@ -55,7 +55,8 @@ class ShoppingShareButton extends ConsumerWidget {
       constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
       icon: Icon(
         switch (Theme.of(context).platform) {
-          TargetPlatform.iOS || TargetPlatform.macOS => Icons.ios_share_outlined,
+          TargetPlatform.iOS ||
+          TargetPlatform.macOS => Icons.ios_share_outlined,
           _ => Icons.share_outlined,
         },
         size: 22,

@@ -181,6 +181,8 @@ void main() {
         'logged',
         'day',
         'brief',
+        'feedback_saved',
+        'feedback_prompt',
       ];
       // Minimal valid payloads per kind.
       final samples = <String, Map<String, dynamic>>{
@@ -209,6 +211,12 @@ void main() {
         'logged': {'planMealId': 'pm', 'name': 'n', 'servingsLeft': 0},
         'day': {'date': '2026-09-01', 'label': '', 'slots': {}, 'filled': []},
         'brief': {'text': ''},
+        'feedback_saved': {
+          'message': 'm',
+          'sentiment': 'neutral',
+          'about': 'app',
+        },
+        'feedback_prompt': {},
       };
       for (final kind in kinds) {
         final part = VanaPart.fromJson({'kind': kind, ...samples[kind]!});

@@ -683,9 +683,11 @@ void main() {
               ),
             )
             .data;
-        for (var i = 0;
-            i < 25 && carbsStat().delivered <= (carbsStat().bandLow ?? 0);
-            i++) {
+        for (
+          var i = 0;
+          i < 25 && carbsStat().delivered <= (carbsStat().bandLow ?? 0);
+          i++
+        ) {
           await tester.tap(find.byKey(FeedingCard.incKey('rx')));
           await tester.pump();
         }

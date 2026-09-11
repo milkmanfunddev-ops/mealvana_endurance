@@ -40,7 +40,7 @@ final class ShoppingListControllerProvider
 }
 
 String _$shoppingListControllerHash() =>
-    r'd960eae5a6bf75007d21ef862738c238962a4002';
+    r'17f76595643089ab22371f5eca4ee8edb4a69252';
 
 /// Groups the active plan's `shopping` by aisle and routes the local-first
 /// `checked` / `have` toggles through [MealPlanController].

@@ -22,15 +22,14 @@ int estimateDurationMinutes({
   double? paceTargetMinutesPerMile,
   double? cyclingSpeedMph,
   int? swimmingPacePer100mSeconds,
-}) =>
-    SessionInputResolver.durationMinutes(
-      activityType: activityType,
-      explicitMinutes: durationMinutes,
-      distanceMiles: distanceMiles,
-      paceTargetMinutesPerMile: paceTargetMinutesPerMile,
-      cyclingSpeedMph: cyclingSpeedMph,
-      swimmingPacePer100mSeconds: swimmingPacePer100mSeconds,
-    );
+}) => SessionInputResolver.durationMinutes(
+  activityType: activityType,
+  explicitMinutes: durationMinutes,
+  distanceMiles: distanceMiles,
+  paceTargetMinutesPerMile: paceTargetMinutesPerMile,
+  cyclingSpeedMph: cyclingSpeedMph,
+  swimmingPacePer100mSeconds: swimmingPacePer100mSeconds,
+);
 
 String mapSportForActivity(String activityType) =>
     SessionInputResolver.engineSport(activityType);

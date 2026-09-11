@@ -53,7 +53,12 @@ void main() {
   testWidgets('both cards build in dark mode', (tester) async {
     await pump(
       tester,
-      Column(children: [WeekCard(part: week), DebriefCard(part: debrief)]),
+      Column(
+        children: [
+          WeekCard(part: week),
+          DebriefCard(part: debrief),
+        ],
+      ),
       dark: true,
     );
     expect(find.byType(WeekCard), findsOneWidget);

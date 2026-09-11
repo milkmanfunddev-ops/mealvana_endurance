@@ -28,9 +28,7 @@ Future<int?> showServingsSheet({
       return StatefulBuilder(
         builder: (sheetContext, setSheetState) {
           final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-          final textColor = isDark
-              ? AppColors.cream
-              : AppColors.blackberry;
+          final textColor = isDark ? AppColors.cream : AppColors.blackberry;
           final accent = isDark
               ? AppColors.electrolyte
               : AppColors.electrolyteDark;

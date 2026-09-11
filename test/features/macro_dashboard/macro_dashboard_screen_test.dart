@@ -522,9 +522,7 @@ void main() {
       settle: true,
       overrides: [
         ..._dayOverrides(),
-        mealLogControllerProvider.overrideWith(
-          _RecordingMealLogController.new,
-        ),
+        mealLogControllerProvider.overrideWith(_RecordingMealLogController.new),
       ],
     );
 
@@ -546,63 +544,62 @@ void main() {
   // The delete/restore write path through the REAL notifier → repository →
   // Drift: the tombstone lands with needsUpload for the sync sweep, and the
   // assembler drops tombstoned rows from the surface.
-  test('deleteLog tombstones through the real notifier; restoreLog undoes', () async {
-    final db = AppDatabase.memory();
-    addTearDown(db.close);
-    final mealRepo = MealLogRepository(
-      supabase: fakeSupabaseClient(),
-      database: db,
-      logger: MockAppLogger(),
-      sentry: mockSentryReporter(),
-    );
-    await mealRepo.insertLog(_bagel());
+  test(
+    'deleteLog tombstones through the real notifier; restoreLog undoes',
+    () async {
+      final db = AppDatabase.memory();
+      addTearDown(db.close);
+      final mealRepo = MealLogRepository(
+        supabase: fakeSupabaseClient(),
+        database: db,
+        logger: MockAppLogger(),
+        sentry: mockSentryReporter(),
+      );
+      await mealRepo.insertLog(_bagel());
 
-    final userRepo = _MockUserRepository();
-    when(
-      () => userRepo.getCurrentUser(),
-    ).thenAnswer((_) async => _userProfile());
+      final userRepo = _MockUserRepository();
+      when(
+        () => userRepo.getCurrentUser(),
+      ).thenAnswer((_) async => _userProfile());
 
-    final container = ProviderContainer(
-      overrides: [
-        mockAppExternalDeps(),
-        userRepositoryProvider.overrideWith((_) async => userRepo),
-        mealLogRepositoryProvider.overrideWithValue(mealRepo),
-        // The controller's guard eagerly builds the logging service, whose
-        // saved-meals repo reads Supabase.instance — keep it off the network.
-        savedMealsRepositoryProvider.overrideWith(
-          (ref) => SavedMealsRepository(
-            supabase: fakeSupabaseClient(),
-            database: db,
-            logger: MockAppLogger(),
-            sentry: mockSentryReporter(),
+      final container = ProviderContainer(
+        overrides: [
+          mockAppExternalDeps(),
+          userRepositoryProvider.overrideWith((_) async => userRepo),
+          mealLogRepositoryProvider.overrideWithValue(mealRepo),
+          // The controller's guard eagerly builds the logging service, whose
+          // saved-meals repo reads Supabase.instance — keep it off the network.
+          savedMealsRepositoryProvider.overrideWith(
+            (ref) => SavedMealsRepository(
+              supabase: fakeSupabaseClient(),
+              database: db,
+              logger: MockAppLogger(),
+              sentry: mockSentryReporter(),
+            ),
           ),
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
-    // Keep the auto-dispose controller alive across the awaits.
-    container.listen(mealLogControllerProvider, (_, __) {});
+        ],
+      );
+      addTearDown(container.dispose);
+      // Keep the auto-dispose controller alive across the awaits.
+      container.listen(mealLogControllerProvider, (_, __) {});
 
-    await container
-        .read(mealLogControllerProvider.notifier)
-        .deleteLog('m1');
-    expect(container.read(mealLogControllerProvider), isA<AsyncData<void>>());
+      await container.read(mealLogControllerProvider.notifier).deleteLog('m1');
+      expect(container.read(mealLogControllerProvider), isA<AsyncData<void>>());
 
-    final row = await (db.select(
-      db.mealLogsTable,
-    )..where((t) => t.id.equals('m1'))).getSingle();
-    expect(row.isDeleted, isTrue);
-    expect(row.needsUpload, isTrue, reason: 'the tombstone must sync up');
+      final row = await (db.select(
+        db.mealLogsTable,
+      )..where((t) => t.id.equals('m1'))).getSingle();
+      expect(row.isDeleted, isTrue);
+      expect(row.needsUpload, isTrue, reason: 'the tombstone must sync up');
 
-    await container
-        .read(mealLogControllerProvider.notifier)
-        .restoreLog('m1');
-    final restored = await (db.select(
-      db.mealLogsTable,
-    )..where((t) => t.id.equals('m1'))).getSingle();
-    expect(restored.isDeleted, isFalse);
-    expect(restored.needsUpload, isTrue);
-  });
+      await container.read(mealLogControllerProvider.notifier).restoreLog('m1');
+      final restored = await (db.select(
+        db.mealLogsTable,
+      )..where((t) => t.id.equals('m1'))).getSingle();
+      expect(restored.isDeleted, isFalse);
+      expect(restored.needsUpload, isTrue);
+    },
+  );
 
   testWidgets('Edit food opens the meal-log editor carrying the tapped log', (
     tester,

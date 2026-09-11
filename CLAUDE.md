@@ -1,133 +1,86 @@
 # Mealvana Endurance - AI Assistant Context
 
-## Purpose
-This is a routing guide for AI assistants in `mealvana_endurance`.
-Keep this file concise. Detailed implementation guidance lives in `/docs`.
+Routing guide for agents in this repo. Keep it short; detail lives in `/docs`.
 
-## Project Snapshot
-- App: personalized endurance nutrition planning
-- Stack: Flutter + Riverpod + Drift + Supabase
-- Architecture: FOA (Andrea Bizzotto patterns)
-- Platforms in repo: iOS, Android, Web
+## Snapshot
+- Personalized endurance nutrition planning. Flutter + Riverpod + Drift + Supabase. iOS, Android, Web.
+- Architecture: FOA (Andrea Bizzotto): `lib/features/<feature>/{presentation,application,domain,data}`,
+  shared services and widgets in `lib/shared/`, tokens in `lib/theme/`. Backend in `supabase/`.
+- Nutrition truth comes from the QA repo (`../mealvana_endurance_qa`), mirrored verbatim into
+  `docs/ssot/`. Never edit `docs/ssot/` here; change it in the QA repo and re-sync.
 
-## Project Structure (High Level)
-```text
-mealvana_endurance/
-├── lib/
-│   ├── features/        # FOA feature modules
-│   ├── shared/          # shared services, db, widgets, core wiring
-│   ├── core/
-│   ├── theme/
-│   ├── main.dart
-│   └── main_web.dart
-├── supabase/
-│   ├── functions/
-│   └── migrations/
-├── docs/
-├── database_schemas/
-├── test/
-├── integration_test/
-├── scripts/
-└── web/
-```
+## Non-negotiable rules
+- FOA layers: `presentation -> application -> domain <- data`. Screens are UI-only; business
+  logic lives in controllers and services. Controllers are `@riverpod` + `AsyncNotifier` +
+  `AsyncValue.guard()`. Run codegen after Riverpod or Drift annotation/schema changes.
+- No hardcoded user-facing strings where the content system exists. Use `MealvanaSnackbar`, never
+  raw `SnackBar`.
+- Offline-first: local write first with upload-state tracking; repository-level `ensureSynced`,
+  never startup sync-all. Coach-on-athlete writes that must be visible cross-user wait for the
+  remote ack before reporting success.
+- PostgREST upserts never `onConflict` on a partial-unique-index column (42P10); use
+  `onConflict: 'id'`. `uploadDirtyRecords()` swallows failures into `UploadResult.failed()`;
+  always check the result.
+- Design-bearing widgets are implemented once in `lib/shared/widgets/kyle_design/` under their
+  spec name (`docs/ssot/spec/design/components/<name>.md`), header comment citing spec path and
+  version. Features compose them, never redefine them. One token registry (`lib/theme/kyle_design/`):
+  no `Color(0x…)` literals or Material `Colors.*` for brand semantics outside `lib/theme/`.
+  Run `/design-sync` after changes under `lib/theme/`, `kyle_design/`, or `docs/ssot/spec/design/`.
+- Fuelling algorithm changes must go green against `docs/ssot/vectors/`. Seam tests feed
+  producer-shaped data, never the local engine's own output; every controller write path gets one
+  test through the real notifier (`docs/test/README.md`, Seam tests).
+- `main()` does non-recoverable bootstrap only; recoverable init (Drift, etc.) goes in the startup
+  flow (`docs/technical/andrea/andrea_initialization.txt`).
+- Don't add hide-flags for dev features; dev ships visible and broken freely.
+- Skills and agents added to `.claude/` must not restate these rules or hardcode volatile facts;
+  point here and at `/docs` and read the current code.
 
-## Non-Negotiable Rules
-- Enforce FOA layers: `presentation -> application -> domain <- data`.
-- Keep UI screens UI-only (state, navigation, composition, validation).
-- Put business logic in controllers/services (API calls, transforms, calculations, analytics).
-- Controllers must use `@riverpod` + `AsyncNotifier` + `AsyncValue.guard()`.
-- Do not hardcode user-facing strings when content/default systems exist.
-- Use `MealvanaSnackbar`; do not use raw Flutter `SnackBar` directly.
-- Preserve offline-first behavior with local-first writes and upload-state tracking.
-- For coach-on-athlete writes that require immediate cross-user visibility, require remote server acknowledgment before success/navigation.
-- Use repository-level on-demand sync (`ensureSynced`), not startup-wide sync-all.
-- PostgREST upserts: never `onConflict` on columns backed by a partial unique index (fails with
-  42P10) — use `onConflict: 'id'`. And `uploadDirtyRecords()` swallows exceptions into a silent
-  `UploadResult.failed()` — always check the result.
-- Skills, agents, and commands must not restate these rules or hardcode volatile facts (schema
-  versions, table lists, tier limits) — point at CLAUDE.md and `/docs` instead, and read the
-  current code for specifics.
-- **Design-bearing components live in the library, and trace to their spec.** Any widget that
-  carries a ratified contract — a state set, a gesture, a meaning-bound color, or has a
-  `docs/ssot/spec/design/components/<name>.md` — is implemented once in
-  `lib/shared/widgets/kyle_design/` under the spec's name, with a header comment citing the spec
-  path and version. Feature folders compose library components; they never redefine one. Tokens
-  have one registry (`lib/theme/kyle_design/`): no second token class, no `Color(0x…)` literal, no
-  Material `Colors.*` for brand semantics outside `lib/theme/`. A port prompt names the library
-  destination before it names the pixels.
-- Keep initialization invariant explicit: `main()` for non-recoverable setup, recoverable init in startup flow.
-- Do not run `flutter build` as assistant execution.
-- Seam tests feed producer-shaped data (server factor + wire rounding), never the local engine's
-  own output; never `assert` on data that crossed a process boundary; every controller write path
-  gets one test through the real notifier. Rationale + fixtures: `docs/test/README.md` §Seam tests.
-- Run codegen after Riverpod/Drift annotation/schema changes.
-- Run `/task-checker` after major changes and before commit.
-- Run `/release-cut` whenever a dev or prod build is cut or pushed — it keeps the Notion cut card an
-  honest manifest of what the build carries. A missed cut is what makes the whole board go stale.
-- Run `/sprint-sync` after landing work that maps to a Sprint Task, to keep the swimlane right.
-- Run `/design-sync` (user-invoked; Claude cannot launch it) after any change under `lib/theme/` or
-  `lib/shared/widgets/kyle_design/`, and after a design ratification lands in `docs/ssot/spec/design/`.
-  The Claude Design project is a sink regenerated from this repo — never hand-edit it. Authority map
-  and promotion path: `docs/ssot/spec/design/source-authority.md`.
-- Notion writes are scoped to Lee-owned cards. Never edit a card owned by Xuan; never set Status or
-  Branch on the Feature Request / Bug Report boards — those belong to Xuan's worker. See
-  `.claude/notion/boards.md`.
+## Deploys and CI cost
+- Before any backend, schema, or edge-function work read `docs/deployment/supabase-deploy-playbook.md`
+  (ordering, `app_config` window, function versioning) and the status header of the current bundle
+  runbook it lists. Newest ruling wins.
+- Prod `app_config` is written only at Xuan's explicit direction, in default permission mode, after
+  a read-only check (playbook §7).
+- Codemagic bills real minutes; pushing is spending. A push to `develop` auto-cuts the dev iOS
+  build (`[skip ci]` in the title for docs-only pushes); a push to `release/*` cuts release builds
+  and must wait for the playbook §8 gates. Batch pushes. Never add or re-arm a Codemagic workflow
+  without asking. Codemagic never runs Patrol or integration tests; those run locally or on the
+  self-hosted runner (`.github/workflows/tests-selfhosted.yml`). Verify locally before pushing.
+- Never run `flutter build` as assistant execution.
 
-## Backend Deploys & Codemagic Cost Discipline
-- Before ANY backend/deploy/schema/edge-function work, read
-  `docs/deployment/supabase-deploy-playbook.md` (generic rules: ordering, `app_config` window,
-  function versioning, standing orders), then the **status header of the current bundle runbook**
-  in `../ops/docs/deploys/` (playbook §10 lists them). Runbook rulings (newest first) beat the
-  playbook; both beat older docs. New bundles start from `docs/deployment/bundle-runbook-template.md`.
-- Prod `app_config` is written only at Xuan's explicit direction, in default (non-auto) permission
-  mode, after a read-only check — see playbook §7.
-- **Codemagic bills real minutes (free tier, ~9¢/min; no Pro plan). Pushing = spending.**
-  Per `codemagic.yaml` (read it for current truth): a push to `develop` auto-cuts the dev iOS
-  TestFlight build (put `[skip ci]` in the commit title for docs-only pushes — there is no changeset filter); a push to any `release/*` branch auto-cuts
-  the release builds. Batch work into few pushes; never push `release/*` until the playbook §8's
-  P1–P3 gates are green; never add or re-arm a Codemagic workflow without asking.
-- **Codemagic never runs integration/Patrol tests** (Lee, 2026-08-20 — one develop-push run billed
-  1h31m ≈ $9). The three `integration-tests*` workflows are trigger-disabled (`events: []`) in
-  `codemagic.yaml`; leave them disabled. Integration tests run locally
-  (`patrol test` / `run-algorithm-tests.sh --e2e`) or free on Lee's M1 mini — the self-hosted
-  GitHub Actions workflow `.github/workflows/tests-selfhosted.yml`, which fires on every push/PR
-  (`gh run list --workflow=tests-selfhosted.yml` to check; runner must be online).
-- If a change doesn't need a cloud build to verify, verify it locally (flutter test, simulator,
-  Deno/vector runners) instead of pushing to find out.
-- `MACRO_DASHBOARD_ENABLED` is pending full removal (Lee, 2026-08-20: delete the flag from app
-  code + the codemagic.yaml force-on). Don't add new hide-flags for dev features — dev is meant
-  to be shipped visible and broken freely.
+## Dev simulator login
+`scripts/sim-dev-login.sh` signs the dev app into the booted simulator using the Keychain entry
+`mealvana-dev-login` (needs `idb`).
 
-## App Initialization Pattern (Explicit)
-- `main()` handles non-recoverable bootstrap (e.g., SDK initialization).
-- Startup flow is managed by app startup widgets/providers/services.
-- Drift DB initialization belongs in startup flow/provider path, not ad-hoc UI logic.
-- Full reference: `/docs/technical/andrea/andrea_initialization.txt`
+## Docs map
+- Index of everything, incl. `features/` history and `_archived/`: `docs/README.md`
+- **Nutrition SSOT** (specs, vectors, conformance, deviations): `docs/ssot/`, start at
+  `PRE-WORKOUT-BUNDLE-DIGEST.md`; `.md` beats `.html`
+- Architecture and patterns: `docs/architecture/`, `docs/technical/` (FOA, sync, write
+  consistency, content management, responsiveness, Shorebird, Sentry)
+- Database and schema dumps: `docs/database/`, `docs/dev_schema.txt`, `docs/prod_schema.txt`
+- Business logic and nutrition systems: `docs/business_logic/`, brick workouts `docs/brick/`
+- Meal planning (Vana): research base `docs/new_mealplanning/`, build phases
+  `docs/implement_mealplanning/`; Kroger integration `docs/kroger/`
+- Macro screens and Kyle design work: `docs/kyle/`
+- Training integrations (Garmin, TrainingPeaks, FinalSurge, VDOT): `docs/integration/`
+- Testing strategy and commands: `docs/test/`
+- Deployment, CI/CD, flavors, release checklist: `docs/deployment/`, `docs/ci-cd/`,
+  `docs/flavors/`, `docs/release/`
+- Web mode: `docs/web_mode/`; privacy and requirements: `docs/privacy/`, `docs/requirements/`
+- Retired project skills, agents, commands, workflows (not loaded): `.claude/archive/`
 
-## Dev Simulator Login
-`scripts/sim-dev-login.sh` signs the dev app into the booted iOS simulator using a login
-stored in the macOS Keychain (service `mealvana-dev-login`). Prereqs: a booted simulator
-and `idb`. See the script header for details.
+## Agent skills
 
-## Docs Map
-- Docs index (core vs `features/` history vs `_archived/`): `/docs/README.md`
-- **Nutrition SSOT (ratified specs + conformance vectors, synced from the QA repo): `/docs/ssot/`** — `PRE-WORKOUT-BUNDLE-DIGEST.md` first; `spec/` is normative, `.md` beats `.html`, `DEVIATIONS.md` holds the open register. Fuelling algorithm changes must go green against `docs/ssot/vectors/`.
-- Notion boards (IDs, release protocol, ownership boundary): `.claude/notion/boards.md`
-- Saved multi-agent workflows (`bug-batch`, `sweep`, `daily-work` — run via the Workflow tool when Lee asks; `daily-work` is launched by the `/daily` skill): `.claude/workflows/`
-- Architecture overview: `/docs/architecture/README.md`
-- Technical patterns and standards: `/docs/technical/README.md`
-- FOA and UI/controller boundaries: `/docs/technical/foa-architecture.md`
-- App initialization flow: `/docs/technical/andrea/andrea_initialization.txt`
-- Sync architecture and staleness model: `/docs/technical/sync-architecture.md`
-- Training-integration API reference (Garmin/TrainingPeaks/FinalSurge/VDOT: endpoints, fields, example payloads): `/docs/integration/api-exploration/README.md`
-- Write consistency policy (offline-first vs remote-ack): `/docs/technical/write-consistency-policy.md`
-- Content management system: `/docs/technical/content-management.md`
-- Database architecture and schema docs: `/docs/database/README.md`
-- Business logic and nutrition systems: `/docs/business_logic/README.md`
-- Brick workouts: `/docs/brick/README.md`
-- Testing strategy and commands: `/docs/test/README.md`
-- Deployment hub (Supabase + Vercel): `/docs/deployment/README.md`
-- Web mode details: `/docs/web_mode/README.md`
-- Shorebird code push: `/docs/technical/shorebird-code-push.md`
-- Sentry integration: `/docs/technical/sentry-integration.md`
-- Responsiveness architecture: `/docs/technical/responsiveness.md`
+### Issue tracker
+
+Local markdown: one directory per feature under `.scratch/`, spec plus numbered
+issue files. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, each label string equal to its name. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` at the root plus `docs/adr/`. See `docs/agents/domain.md`.

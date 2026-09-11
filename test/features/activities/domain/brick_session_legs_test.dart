@@ -27,9 +27,24 @@ void main() {
     // The reported Sept 5 brick: run 65 → bike 100 → run 144 (309 min total),
     // which shipped priced as ONE 309-min conservative-rate session.
     final legs = _wire([
-      {'sport': 'running', 'order': 1, 'duration_minutes': 65, 'intensity': 'moderate'},
-      {'sport': 'cycling', 'order': 2, 'duration_minutes': 100, 'intensity': 'moderate'},
-      {'sport': 'running', 'order': 3, 'duration_minutes': 144, 'intensity': 'moderate'},
+      {
+        'sport': 'running',
+        'order': 1,
+        'duration_minutes': 65,
+        'intensity': 'moderate',
+      },
+      {
+        'sport': 'cycling',
+        'order': 2,
+        'duration_minutes': 100,
+        'intensity': 'moderate',
+      },
+      {
+        'sport': 'running',
+        'order': 3,
+        'duration_minutes': 144,
+        'intensity': 'moderate',
+      },
     ]).sessionLegs;
 
     expect(legs.map((l) => l.sport), ['running', 'cycling', 'running']);
@@ -38,7 +53,12 @@ void main() {
 
   test('a swim leg maps to the swimming rate, not running', () {
     final legs = _wire([
-      {'sport': 'swimming', 'order': 1, 'duration_minutes': 30, 'intensity': 'moderate'},
+      {
+        'sport': 'swimming',
+        'order': 1,
+        'duration_minutes': 30,
+        'intensity': 'moderate',
+      },
     ]).sessionLegs;
     expect(legs.single.sport, 'swimming');
   });
@@ -75,8 +95,10 @@ void main() {
     expect(legs.single.durationMinutes, 30);
   });
 
-  test('empty segments yield no legs (caller falls back to single-session)',
-      () {
-    expect(_wire([]).sessionLegs, isEmpty);
-  });
+  test(
+    'empty segments yield no legs (caller falls back to single-session)',
+    () {
+      expect(_wire([]).sessionLegs, isEmpty);
+    },
+  );
 }

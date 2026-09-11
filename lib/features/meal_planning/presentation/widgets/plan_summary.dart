@@ -33,10 +33,9 @@ class PlanSummary extends ConsumerWidget {
     final count = plan.meals.length;
     final meals = count == 1
         ? content.getValue(ContentKeys.mpPlanWeekMealOne)
-        : ContentKeys.format(
-            content.getValue(ContentKeys.mpPlanWeekMeals),
-            {'n': count},
-          );
+        : ContentKeys.format(content.getValue(ContentKeys.mpPlanWeekMeals), {
+            'n': count,
+          });
 
     return RichText(
       key: const ValueKey('meal_planning.plan_summary.coverage'),

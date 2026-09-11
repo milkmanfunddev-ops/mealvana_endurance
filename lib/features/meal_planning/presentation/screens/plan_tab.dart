@@ -21,7 +21,6 @@ import '../../domain/ui_action.dart';
 import '../widgets/dashed_box.dart';
 import '../widgets/plan_list.dart';
 import '../widgets/plan_summary.dart';
-import '../widgets/staples_card.dart';
 import '../widgets/vana_avatar.dart';
 
 /// The Plan tab (05 §4): Vana's day note, this week's plan with swipe
@@ -56,32 +55,22 @@ class PlanTab extends ConsumerWidget {
         children: [
           // Vana's note for today always has a slot — it carries the entry
           // point into the chat even before there is a plan to talk about.
-          _DayNoteCard(
-            text: home?.vana.text,
-            loading: home == null,
-          ),
+          _DayNoteCard(text: home?.vana.text, loading: home == null),
           const SizedBox(height: AppSpacing.md),
           Text(
             content.getValue(ContentKeys.mpPlanSectionTitle).toUpperCase(),
             key: const ValueKey('meal_planning.plan_section'),
             style: AppTextStyles.overline.copyWith(
-              color: (Theme.of(context).brightness == Brightness.dark
-                      ? AppColors.cream
-                      : AppColors.blackberry)
-                  .withValues(alpha: 0.6),
+              color:
+                  (Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.cream
+                          : AppColors.blackberry)
+                      .withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           if (plan == null || plan.meals.isEmpty)
-            _EmptyPlanCard(
-              staples: home?.staples != null
-                  ? StaplesCard(
-                      part: home!.staples!,
-                      onTapMeal: (meal) =>
-                          context.push('/food/meals/${meal.id}'),
-                    )
-                  : null,
-            )
+            const _EmptyPlanCard()
           else ...[
             PlanSummary(plan: plan),
             const SizedBox(height: AppSpacing.sm),
@@ -242,13 +231,12 @@ class _DayNoteCard extends ConsumerWidget {
   }
 }
 
-/// The no-plan state: one dashed note saying Vana will build the week, with
-/// the staples card underneath when the server sent one. The actions live
-/// below it in [PlanTab], not inside the box (prototype `.v-dashed`).
+/// The no-plan state: one dashed note saying Vana will build the week. The
+/// actions live below it in [PlanTab], not inside the box (prototype
+/// `.v-dashed`). The staples card that used to sit underneath was dropped
+/// from the Food tab on 2026-09-07 (Lee) — it remains a chat part.
 class _EmptyPlanCard extends ConsumerWidget {
-  const _EmptyPlanCard({required this.staples});
-
-  final Widget? staples;
+  const _EmptyPlanCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -257,23 +245,14 @@ class _EmptyPlanCard extends ConsumerWidget {
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final muted = textColor.withValues(alpha: 0.6);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DashedBox(
-          color: textColor.withValues(alpha: 0.25),
-          child: Text(
-            content.getValue(ContentKeys.mpEmptyPlanDashed),
-            key: const ValueKey('meal_planning.empty_plan_title'),
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium.copyWith(color: muted),
-          ),
-        ),
-        if (staples != null) ...[
-          const SizedBox(height: AppSpacing.sm),
-          staples!,
-        ],
-      ],
+    return DashedBox(
+      color: textColor.withValues(alpha: 0.25),
+      child: Text(
+        content.getValue(ContentKeys.mpEmptyPlanDashed),
+        key: const ValueKey('meal_planning.empty_plan_title'),
+        textAlign: TextAlign.center,
+        style: AppTextStyles.bodyMedium.copyWith(color: muted),
+      ),
     );
   }
 }

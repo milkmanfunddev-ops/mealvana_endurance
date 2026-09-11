@@ -231,10 +231,7 @@ class MealLogRepository with SyncableRepository {
       ..where(
         _database.mealLogsTable.userId.equals(userId) &
             _database.mealLogsTable.isDeleted.equals(false) &
-            _database.mealLogsTable.logDate.isBetweenValues(
-              startDate,
-              endDate,
-            ),
+            _database.mealLogsTable.logDate.isBetweenValues(startDate, endDate),
       );
 
     return query.watch().map(
