@@ -94,7 +94,7 @@ this must deploy `kroger` along with the app. Nothing checks that the two match.
 
 ### Defects found
 
-1. **Device location never resolves an area in most US places (ticket 04).** → `issues/08`. LocationIQ reverse
+1. **Device location never resolves an area in most US places (ticket 04).** → `issues/08`, fixed in `a8f15741`, and on 2026-09-11 the simulator showed "Delivery to 35209" with nothing typed. LocationIQ reverse
    returns `osm_type: null, osm_id: null` for address-point matches, and `location_iq` 1.1.4
    declares both as non-null `String`, so `LocationRepository.reverseGeocode` throws
    `type 'Null' is not a subtype of type 'String'` even though the response has

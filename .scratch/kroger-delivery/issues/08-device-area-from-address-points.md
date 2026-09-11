@@ -10,7 +10,9 @@ Found on the 2026-09-10 simulator pass (`../device-verification.md`, defect 1; s
 
 **Blocked by:** None (can start immediately)
 
-**Status:** built 2026-09-10; the simulator check (last box) is still to do.
+**Status:** built 2026-09-10 (`a8f15741`). Device area verified on the simulator on 2026-09-11.
+"Matching then works" was not exercised: this plan's list was already sent, so matching is hidden,
+and reopening it would take a second cart write.
 
 `location_iq` 1.1.4 is the latest on pub.dev, so `LocationRepository.reverseGeocode` now makes
 the request and decodes it itself, returning `ReversePlace` (`lib/shared/domain/`). Two more
@@ -75,5 +77,12 @@ Kroger controller.
       and asserts the Kroger area finder returns `35209`
 - [x] A response with OSM fields still decodes (keep a San Francisco- or Boston-shaped case)
 - [x] A response with no postcode still ends on the typed path, not an error
-- [ ] On the simulator at 33.47, -86.80 with location allowed, the Kroger screen shows "Delivery
+- [x] On the simulator at 33.47, -86.80 with location allowed, the Kroger screen shows "Delivery
       to 35209" without the shopper typing, and matching then works
+      *(2026-09-11, iPhone 17 Pro, dev app from `a8f15741`: "Delivery to 35209" on a fresh launch
+      with nothing typed, and no reverse-geocode error in the run log. Screenshot
+      `../evidence/2026-09-11/01-device-area-35209-untyped.png`. The matching half is **not
+      verified**: the draft for this plan is `sent`, the screen draws no match button on an exported
+      draft, and "Send these items again" is a real cart write. It needs an unsent plan. The
+      Location an area resolves to was proven to match at the Spoke on 2026-09-10, on the typed
+      path, and the device path now hands the same `35209` to the same resolution.)*
