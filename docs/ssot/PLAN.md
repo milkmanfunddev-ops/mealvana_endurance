@@ -93,6 +93,11 @@ end-to-end by the Phase-3 sim layer.
 
 ## Phase 5 — The DATA SSOT (producer row shapes) — a ratification family in its own right
 
+**RESOLVED 2026-09-10: ratified as the `spec/integrations/` family** (intake
+`2026-09-08-data-integration-lifecycle-family.md`, subsuming this phase's
+`2026-08-22-data-ssot-producer-shapes.md` via its option 1). Producer row shapes are the
+family's "stored" verb; the vectors corpus becomes `vectors/integrations/`.
+
 **Queued 2026-08-22.** Every family above ratifies *math*: given these inputs, this output. No
 family ratifies **what the inputs actually look like in production** — the shapes of the rows
 the app itself writes. That hole shipped a bug: providers deliberately write

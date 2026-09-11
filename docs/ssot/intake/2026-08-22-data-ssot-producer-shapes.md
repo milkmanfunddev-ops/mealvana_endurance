@@ -1,3 +1,4 @@
+> **RESOLVED 2026-09-10 → option 1, subsumed: producers is the stored-verb of the RATIFIED spec/integrations/ family (ruling desk 2026-09-10, C1)**
 type: ruling-request
 bundle: daily-macros-dashboard@v3
 

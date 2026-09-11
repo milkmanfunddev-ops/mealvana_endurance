@@ -1,0 +1,93 @@
+bundle:  data-integrations
+version: v1
+status:  ratified
+ratified: 2026-09-10            # Xuan, ruling desk fast-track; design slice + Q-INT27/28 + opt-out amendment folded through 2026-09-11
+ships: >
+  The integrations data contract: capture (per-source typed columns, planned/actual
+  split), the matching contract (M-0..M-5 incl. trigger tiers, plausibility guard,
+  day-wide upgrade, brick B-1..B-5/B-2'), disconnect soft-hide+revive, TP write-back
+  (OPT-OUT default-ON + ledger + option-A block, During water ml/h), first-connect
+  windows (Q-INT27), F4a session-demand + day-bucketing, schema hygiene, and the
+  ratified display contracts (card states, source chips, consent flow) with three
+  ratified renderings.
+
+specs:
+  - slice:   matching
+    version: RATIFIED 2026-09-10 (+ M-1.2/M-1.3/M-3 same-day clauses)
+    spec:    spec/integrations/matching.md
+    vectors: vectors/integrations/matching.json      # 41 (count-vectors.mjs, 2026-09-11)
+    engine:  matcher tier (edge fn + Dart) — runner built red-first in Stage B
+  - slice:   session-demand-f4a
+    version: v1 (2026-08-14, ratified) + F4a (2026-09-10, RULED addition)
+    spec:    spec/daily-macros/session-demand.md
+    vectors: vectors/daily-macros/session-demand.json # 38 total, 9 f4a-* rows
+    engine:  Dart + TS twins (D-005 discipline)
+  - slice:   lifecycle
+    spec:    spec/integrations/lifecycle.md          # L-1..L-9; planned/actual split; disconnect
+  - slice:   garmin
+    spec:    spec/integrations/garmin.md             # + Q-INT27 30d activities backfill
+  - slice:   final-surge
+    spec:    spec/integrations/final-surge.md        # + Q-INT27 28d window (probe-gated)
+  - slice:   training-peaks
+    spec:    spec/integrations/training-peaks.md     # TP-5 opt-out write-back, ml/h register
+  - slice:   field-map
+    spec:    spec/integrations/field-map.md
+  - slice:   performance-data
+    spec:    spec/integrations/performance-data.md
+  - slice:   payload-usage-map
+    spec:    spec/integrations/payload-usage-map.md  # capture shortlist §6, bucketing §7
+  - slice:   integrations-data-display
+    spec:    spec/design/surfaces/integrations-data-display.md   # RATIFIED 2026-09-11
+    renderings:
+      - spec/design/renderings/workout-card-states@v1.html
+      - spec/design/renderings/ftp-source-provenance@v1.html
+      - spec/design/renderings/tp-writeback-consent@v1.html
+    manifests:
+      - conformance/design/workout-card-states.goldens.yaml
+      - conformance/design/ftp-source-provenance.goldens.yaml
+      - conformance/design/tp-writeback-consent.goldens.yaml
+
+excludes:
+  - slice:  f22-bmr-correction
+    reason: STAGED class-c — ships as daily-macros-dashboard@v4 via its own ship (calories_burned − RMR/24×dur)
+  - slice:  deferred-register-rows
+    reason: Q-INT1 retention · Q-INT3 revocation · Q-INT5 provider_deleted_at · Q-INT6 platform skip · Q-INT7 orphans · Q-INT15 sport map — DEFERRED 2026-09-10, no contracts to pin
+  - slice:  computed-z2-fallback
+    reason: Q-INT28 STAGED at Xuan's request (2026-09-11) — awaits ruling
+  - slice:  per-sample-streams
+    reason: dated non-capture decision (2026-09-09) — revisit when an engine consumes samples
+  - slice:  producer-shape-payload-vectors
+    reason: follow Stage A capture columns; join the test plan as DI-13 extension
+  - slice:  coach-athlete-detail-map
+    reason: /coach route gated on an approved-coach account — capture rides Xuan's coach login
+
+conformance:
+  runner: qa/conformance/run_dart.sh + deno vectors runner + matcher-tier runner (Stage B, to build)
+  invoke:
+    - "Stage B: matcher-tier runner over vectors/integrations/matching.json — RED FIRST against current code, mandatory"
+    - "deno runner: session-demand incl. f4a-* rows (comparator gains estimateFlag/legs)"
+  done_when: >
+    all 41 matching vectors green through the matcher-tier runner (after the mandatory
+    red-first run); session-demand green incl. the 9 f4a rows; DI-7/DI-12 seam tests
+    green; migration rehearsal (test plan §4) green on a prod-schema shadow; the three
+    goldens manifests realized as green app suites; stages A–E of
+    docs/feature-test-plans/data-integrations.md each green-gated in order.
+  note: >
+    Vectors are EXPECTED-RED until implementation. The matcher-tier runner does not
+    exist yet — building it and proving it RED against today's earliest-first matcher
+    is Stage B's first task, not a precondition of this ship.
+
+deviations:
+  - id:     DI-DEV-1
+    slice:  display
+    status: bug (filed)
+    note: >
+      Live prod mixed-pair row (intake/2026-09-10-verified-run-mixed-pair-distance.md,
+      3beb1c3): verified card renders planned 8 mi with measured 44 min. The ratified
+      D-1 contract forbids it; fixed by the L-2 split + card-state implementation.
+  - id:     DI-DEV-2
+    slice:  garmin webhook auth
+    status: unratified (routed app-side)
+    note: >
+      Headerless inbound requests accepted + ping SSRF (Q-INT9 RULED: engineering
+      remediation tracked app-side, not a spec clause). NOT blessed by this bundle.

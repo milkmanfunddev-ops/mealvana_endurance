@@ -1,3 +1,4 @@
+> **RESOLVED 2026-09-10 → option 1 (ruling desk 2026-09-10): MOBILITY 2.5 linear; composites decompose; unknown → 0 + estimate flag; RUNNING fallback removed. Fold: session-demand.md F4a (class b addition); vectors via spec-to-vectors (queued)**
 type: ruling-request
 bundle: daily-macros-dashboard@v3
 

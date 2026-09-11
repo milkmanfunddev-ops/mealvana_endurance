@@ -219,3 +219,18 @@ flat 27 g/hr rate above. [Q-003](OPEN-QUESTIONS.md#q-003).
 | multiplier triggers | dur > 1.5 hr, IF > 0.85 | **Uncited** |
 | compounding factor | 1.1 per endurance position | **Uncited** |
 | strength flat carb rate | 27 g/hr @ 75 kg, IF-independent | **Structure research-derived** (Robergs 1991 PMID 2055849; Hamidvand 2025 PMC12717450; TrainingPeaks flat strength TSS); **number is a design choice** inside the 15–40 g/hr defensible band. Ruled Q-003, 2026-08-13 |
+
+
+## F4a — Unknown & mobility sports — RULED (Xuan, 2026-09-10, post-ratification addition)
+Source: `intake/2026-08-20-session-cost-unknown-activity-types.md`, option 1 (ruling desk 2026-09-10).
+F4's BASE_RATE table names four sports; everything else was unspecified and the code fell
+back to RUNNING (60-min foam roll ≈ 750 kcal). Ruled:
+- **MOBILITY class**: BASE_RATE **2.5 kcal·kg⁻¹·hr⁻¹, linear in IF** (like STRENGTH), for
+  foam-rolling / stretching / yoga / aqua-routine activity types.
+- **Composite types** (triathlon / duathlon / brick / multisport) decompose by legs where
+  the platform supplies them, else price as the dominant leg.
+- **Genuinely unknown sports contribute 0 kcal** with a `sources`-style estimate flag.
+- The code's RUNNING fallback (`?? 11`) is **removed** — it was never ratified.
+- Future direction (Xuan, 2026-09-10): past Garmin-reported data may later predict session cost.
+Vectors: unknown-sport rows to be added via a `spec-to-vectors` regeneration pass (queued;
+never hand-edited). Cross-ref: `spec/integrations/field-map.md` §2 sport rows.

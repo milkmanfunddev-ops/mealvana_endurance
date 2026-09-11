@@ -1,3 +1,4 @@
+> **RESOLVED 2026-09-10 → option 1 (ruling desk 2026-09-10): ±15 min stands for skipped rows; full matching contract at Q-INT4 / matching.md M-1.2**
 type: ruling-request
 bundle: daily-macros-dashboard@v2
 
