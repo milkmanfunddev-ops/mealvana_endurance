@@ -10,6 +10,7 @@ const WINDOWS = {
   'vana.daynotes': { seconds: 60, max: 4 },  // one call writes all seven days
   'vana.embed': { seconds: 60, max: 30 },
   'vana.extract': { seconds: 60, max: 3 },   // lazy read-back: one per opened conversation, and openers are already capped at 3/min
+  'vana.episode': { seconds: 60, max: 3 },   // one per conversation that crosses the history cap
 } as const;
 export type RateLimitedFn = keyof typeof WINDOWS;
 

@@ -57,7 +57,7 @@ export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: 
   const embedding: string | null = raw ? vec(raw) : null;
   // Keyed kinds own their uniqueness: one row per setting key, one episode per conversation.
   if (m.kind === 'episode' && m.key) {
-    const { data: existing } = await v.db.from('user_memories').select('id').eq('user_id', v.userId).eq('kind', 'episode').eq('key', m.key).eq('is_deleted', false).maybeSingle();
+    const { data: existing } = await newestEpisode(v, m.key);
     if (existing) {
       const { data } = await v.db.from('user_memories').update({ fact: m.fact, confidence: m.confidence ?? 0.8, source: m.source ?? 'conversation', last_confirmed_at: new Date().toISOString(), embedding }).eq('id', existing.id).select('*').single();
       return toMemory(data);
@@ -81,12 +81,19 @@ export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: 
   if (error) throw new Error(error.message);
   return toMemory(data);
 }
-/** The episode sentence a lazy extraction wrote for one conversation, or null. Keyed by conversation
- *  id so there is exactly one per conversation and re-extraction cannot pile them up. */
+/** The episode sentence for one conversation, or null. Keyed by conversation id so re-extraction
+ *  cannot pile them up. */
 export async function episodeFor(v: VanaCtx, conversationId: string): Promise<string | null> {
   if (!conversationId) return null;
-  const { data } = await v.db.from('user_memories').select('fact').eq('user_id', v.userId).eq('kind', 'episode').eq('key', conversationId).eq('is_deleted', false).maybeSingle();
+  const { data } = await newestEpisode(v, conversationId);
   return data?.fact ? String(data.fact) : null;
+}
+/** No index keeps an episode unique (select-then-insert, unlike settings), so two writers racing can
+ *  leave two rows. Read the newest rather than `maybeSingle` alone, which errors on two: a duplicate
+ *  must cost a spare row, never the episode. */
+function newestEpisode(v: VanaCtx, conversationId: string) {
+  return v.db.from('user_memories').select('id, fact').eq('user_id', v.userId).eq('kind', 'episode').eq('key', conversationId).eq('is_deleted', false)
+    .order('last_confirmed_at', { ascending: false }).limit(1).maybeSingle();
 }
 export async function forgetMemory(v: VanaCtx, id: string) {
   await v.db.from('user_memories').update({ is_deleted: true }).eq('id', id).eq('user_id', v.userId);

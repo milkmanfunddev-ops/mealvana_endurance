@@ -12,12 +12,15 @@
  *
  * The opener's synthetic user message is never stored, so a transcript begins with Vana's own first
  * turn. Nothing here may depend on that message existing.
+ *
+ * The episode half also runs on its own, over a conversation the athlete is still in: see
+ * `writeOpenEpisode`.
  */
 import { generateObject } from 'npm:ai@6';
 import { z } from 'npm:zod@3';
 import { TOOL_MODEL } from './env.ts';
 import type { VanaCtx } from './env.ts';
-import { listMemories, rememberFact } from './memory.ts';
+import { episodeFor, listMemories, rememberFact } from './memory.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
 
@@ -31,6 +34,8 @@ export const ExtractionZ = z.object({
 });
 export type Extraction = z.infer<typeof ExtractionZ>;
 
+const EPISODE_RULE = `THE EPISODE — always exactly one sentence, at most 20 words, saying what this conversation was about, so it can stand in for the whole transcript later. "Planned three batch dinners around Saturday's long ride." "Asked what to eat before a hot half marathon."`;
+
 export const EXTRACTOR_SYSTEM = `You read one finished conversation between an endurance athlete and Vana, their nutrition assistant, and write what belongs in the athlete's file.
 
 THE MARGIN-NOTE RULE — this is the whole job. A Memory is one sentence a good dietitian would write in the margin of this athlete's file, and only if it changes how Vana plans for them next time.
@@ -39,7 +44,7 @@ THE MARGIN-NOTE RULE — this is the whole job. A Memory is one sentence a good 
 - One sentence each, present tense, about the athlete, no hedging, no "the user".
 Zero memories is the normal outcome. Most conversations contain none.
 
-THE EPISODE — always exactly one sentence, at most 20 words, saying what this conversation was about, so it can stand in for the whole transcript later. "Planned three batch dinners around Saturday's long ride." "Asked what to eat before a hot half marathon."`;
+${EPISODE_RULE}`;
 
 /** What the extractor sees: the stored turns, oldest first. */
 export interface TranscriptLine { role: 'user' | 'assistant'; text: string }
@@ -58,12 +63,14 @@ export const defaultExtractDeps: ExtractDeps = {
 /** A conversation is worth reading back once the athlete actually said something in it. */
 const MIN_LINES = 2;
 
+const conversationText = (lines: TranscriptLine[]) => lines.map((l) => `${l.role === 'user' ? 'ATHLETE' : 'VANA'}: ${l.text}`).join('\n');
+
 export function extractionPrompt(lines: TranscriptLine[], existing: string[]): string {
   return [
     `--- EXISTING (already in the file; never repeat these) ---`,
     existing.length ? existing.map((f) => `- ${f}`).join('\n') : '- (nothing yet)',
     `--- CONVERSATION ---`,
-    lines.map((l) => `${l.role === 'user' ? 'ATHLETE' : 'VANA'}: ${l.text}`).join('\n'),
+    conversationText(lines),
   ].join('\n');
 }
 
@@ -117,11 +124,7 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
       written++;
     }
     const episode = object.episode.trim() || null;
-    if (episode) {
-      await rememberFact(v, { kind: 'episode', key: conversationId, fact: episode, confidence: 0.9, source: 'conversation' });
-      // The summary column is read by client and server and was written by nothing; the episode fills it for list previews.
-      await v.db.from('vana_conversations').update({ summary: episode }).eq('id', conversationId).eq('user_id', v.userId);
-    }
+    if (episode) await writeEpisode(v, conversationId, episode);
     await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.extract', model: TOOL_MODEL, inputTokens, outputTokens });
     console.log(`[vana] read back ${conversationId}: ${written} memory(ies) in ${Date.now() - started}ms`);
     return { conversationId, memories: written, episode };
@@ -139,6 +142,65 @@ export async function readBackPrevious(v: VanaCtx, openingConversationId: string
     if (!id) return null;
     return await extractConversation(v, id, deps);
   } catch { return null; }
+}
+
+/** The one place an episode is written, whoever wrote it: keyed by conversation, so the sentence
+ *  written mid-conversation is the row lazy extraction later rewrites, never a second one. */
+async function writeEpisode(v: VanaCtx, conversationId: string, episode: string): Promise<void> {
+  await rememberFact(v, { kind: 'episode', key: conversationId, fact: episode, confidence: 0.9, source: 'conversation' });
+  // The summary column is read by client and server and was written by nothing; the episode fills it for list previews.
+  await v.db.from('vana_conversations').update({ summary: episode }).eq('id', conversationId).eq('user_id', v.userId);
+}
+
+// ---------------------------------------------------------------- the episode of an open conversation
+
+export const EpisodeZ = z.object({ episode: ExtractionZ.shape.episode });
+
+export const OPEN_EPISODE_SYSTEM = `You read a conversation between an endurance athlete and Vana, their nutrition assistant. It is still going, and it has grown long enough that its opening turns are about to be dropped from what Vana can see. Your sentence is what replaces them.
+
+${EPISODE_RULE}
+Because the conversation continues, keep the specifics a later reply would need: a name, a number, a day, a constraint the athlete gave. Write nothing else — no memories, no advice.`;
+
+export interface EpisodeDeps {
+  generate: (input: { system: string; prompt: string }) => Promise<{ object: { episode: string }; inputTokens?: number; outputTokens?: number }>;
+}
+export const defaultEpisodeDeps: EpisodeDeps = {
+  generate: async ({ system, prompt }) => {
+    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: EpisodeZ, maxOutputTokens: 120, system, prompt });
+    return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
+  },
+};
+
+/**
+ * The extractor's episode half, for a conversation the athlete is still in. The history cap calls it
+ * the first time it bites; the next turn finds the episode and prepends it.
+ *
+ * It reads the whole transcript so far, not only the rows being dropped this turn. At the crossing
+ * that is one row — usually Vana's first line — and the opening turns that fall off over the next
+ * twenty messages would have nothing standing in for them. It does not stamp `read_back_at`: the
+ * conversation's margin notes are still owed, and lazy extraction later rewrites the same episode row
+ * from the finished transcript.
+ *
+ * Never throws — it runs in the background of a turn, where nobody is listening.
+ */
+export async function writeOpenEpisode(v: VanaCtx, conversationId: string, deps: EpisodeDeps = defaultEpisodeDeps): Promise<string | null> {
+  try {
+    const rl = await checkRateLimit(v.admin, v.userId, 'vana.episode');
+    if (!rl.allowed) return null;   // no episode written, so the next turn tries again
+    const lines = await transcriptOf(v, conversationId);
+    if (!lines.length) return null;
+    const { object, inputTokens, outputTokens } = await deps.generate({ system: OPEN_EPISODE_SYSTEM, prompt: `--- CONVERSATION SO FAR ---\n${conversationText(lines)}` });
+    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.episode', model: TOOL_MODEL, inputTokens, outputTokens });
+    const episode = object.episode.trim() || null;
+    // Whatever landed while the model was thinking wins: lazy extraction's sentence comes from the
+    // finished transcript, and a concurrent turn's is as good as this one. Never overwrite.
+    if (!episode || await episodeFor(v, conversationId)) return null;
+    await writeEpisode(v, conversationId, episode);
+    return episode;
+  } catch (e) {
+    console.error('[vana] open-conversation episode failed:', (e as Error).message);
+    return null;
+  }
 }
 
 async function claim(v: VanaCtx, conversationId: string): Promise<boolean> {

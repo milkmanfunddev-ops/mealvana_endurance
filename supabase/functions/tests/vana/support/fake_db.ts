@@ -158,6 +158,8 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
     const { data, error } = await this.run();
     if (error) return { data: null, error };
     const rows = data as Row[];
+    // PostgREST answers several rows with an error (PGRST116) and no data, not the first row.
+    if (rows.length > 1) return { data: null, error: { message: `fake db: expected at most 1 row from ${this.table}, got ${rows.length}` } };
     return { data: rows.length ? rows[0] : null, error: null };
   }
   // deno-lint-ignore no-explicit-any

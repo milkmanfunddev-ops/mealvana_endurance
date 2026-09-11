@@ -284,6 +284,66 @@ const CASES: EvalCase[] = [
     },
   },
   {
+    name: 'long-conversation-remembers-its-start', ticket: 'mealplanning 03',
+    about: 'Past the 20-message history cap, Vana still knows something said in the first turn',
+    async run(c) {
+      // Something said once, at the very front, that no Fact or Memory would carry: who the ride is
+      // with and how long it is. The filler turns never mention it, so by the last question the only
+      // thing that can still carry it is the episode written when the cap first bit.
+      const opening = "I'm riding four hours on Saturday with my friend Marco, and he's bringing a camping stove for a mid-ride stop. Help me plan the food.";
+      // Everyday questions with no ride in them, so Vana has no reason to bring Saturday back up.
+      const filler = [
+        'What is a good everyday breakfast for someone who trains a lot?',
+        'How much protein should I get at lunch?',
+        'Is oatmeal or toast better on a normal workday?',
+        'What is a quick weeknight dinner with lentils?',
+        'Are frozen vegetables as good as fresh?',
+        'How much coffee a day is too much?',
+        'What is a good afternoon snack at my desk?',
+        'Should I eat differently on a rest day?',
+        'Is it fine to eat the same lunch every day?',
+      ];
+      const cap = 20;   // HISTORY_CAP in supabase/functions/_shared/vana/chat.ts
+      type Msg = { role: string; content: string | null };
+      type Ep = { id: string; fact: string };
+      const episodes = (id: string) => c.rows<Ep>(c.s, `user_memories?select=id,fact&kind=eq.episode&key=eq.${id}&is_deleted=eq.false`);
+      const stored = (id: string) => c.rows<Msg>(c.s, `vana_messages?select=role,content&conversation_id=eq.${id}&order=created_at`);
+
+      const first = await c.say(opening, { kind: 'general' });
+      const id = first.conversationId;
+      if (!id) { c.fail('no conversation id came back'); return; }
+      // Ten exchanges store twenty rows. The eleventh question is the twenty-first message: the cap bites.
+      for (const q of filler) await c.say(q, { kind: 'general', conversationId: id });
+      await new Promise((r) => setTimeout(r, 3000));
+      const beforeCrossing = await stored(id);
+      c.log(`${beforeCrossing.length} stored message(s) before the crossing turn`);
+      if ((await episodes(id)).length) c.fail('an episode existed before the conversation crossed the cap');
+
+      await c.say('What is a good snack before bed?', { kind: 'general', conversationId: id });
+      await new Promise((r) => setTimeout(r, 8000));   // the episode is written in the background of that turn
+      const written = await episodes(id);
+      c.log(`episode after crossing: ${written.map((e) => `"${e.fact}"`).join(' | ') || '(none)'}`);
+      if (written.length !== 1) { c.fail(`expected exactly one episode row after crossing the cap, found ${written.length}`); return; }
+
+      const question = 'Remind me — who am I riding with on Saturday, and for how long?';
+      // What the final turn replays besides the episode: the last cap-1 stored rows plus the question.
+      // If a recent turn still carries the ride, the answer proves nothing about the episode.
+      const replayWindow = (await stored(id)).slice(-(cap - 1));
+      if (replayWindow.some((m) => mentions(m.content ?? '', 'Marco') || /\b(four|4)[- ]?hours?\b/i.test(m.content ?? ''))) {
+        c.fail('inconclusive: a recent turn still mentions the ride, so this run cannot tell the episode from the replay window');
+        return;
+      }
+      const { ex } = await c.say(question, { kind: 'general', conversationId: id });
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      if (!mentions(ex.text, 'Marco')) c.fail(`forgot who the ride is with: "${ex.text}"`);
+      if (!/\b(four|4)[- ]?(hours?|hrs?|h)\b/i.test(ex.text)) c.fail(`forgot how long the ride is: "${ex.text}"`);
+
+      await new Promise((r) => setTimeout(r, 3000));
+      const after = await episodes(id);
+      if (after.length !== 1 || after[0].id !== written[0].id) c.fail(`later turns wrote another episode (${after.length} row(s))`);
+    },
+  },
+  {
     name: 'feedback-lands', ticket: '01',
     about: 'A complaint typed at Vana becomes a feedback row with negative sentiment about Vana',
     async run(c) {

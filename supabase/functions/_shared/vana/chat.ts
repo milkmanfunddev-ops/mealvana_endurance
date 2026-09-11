@@ -12,7 +12,7 @@ import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { episodeFor } from './memory.ts';
-import { readBackPrevious } from './extract.ts';
+import { readBackPrevious, writeOpenEpisode, defaultEpisodeDeps, type EpisodeDeps } from './extract.ts';
 import { resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
@@ -57,6 +57,22 @@ export function capHistory(messages: UIMessage[], episode: string | null): UIMes
   const kept = messages.slice(-HISTORY_CAP);
   if (!episode?.trim()) return kept;
   return [{ id: 'episode', role: 'user', parts: [{ type: 'text', text: `Earlier in this conversation: ${episode.trim()}` }] } as UIMessage, ...kept];
+}
+export interface ReplayDeps {
+  episode: EpisodeDeps;
+  /** Where the episode write runs. EdgeRuntime.waitUntil in production; a test records it. */
+  background: (p: Promise<unknown>) => void;
+}
+const defaultReplayDeps: ReplayDeps = { episode: defaultEpisodeDeps, background: waitUntil };
+/** The history a turn replays, and the episode that keeps it honest. When the cap bites and the
+ *  conversation has no episode yet, one is written in the background and the NEXT turn prepends it;
+ *  this turn never waits for a model call it did not need. Once the episode exists nothing more is
+ *  written — lazy extraction rewrites the same row when the athlete leaves. */
+export async function replayHistory(v: VanaCtx, conversationId: string, messages: UIMessage[], deps: ReplayDeps = defaultReplayDeps): Promise<UIMessage[]> {
+  if (messages.length <= HISTORY_CAP || !conversationId) return capHistory(messages, null);
+  const episode = await episodeFor(v, conversationId);
+  if (!episode) deps.background(writeOpenEpisode(v, conversationId, deps.episode));
+  return capHistory(messages, episode);
 }
 
 /** Keeps the first `n` sentences of a text block. Planning turns use it only as the RUNAWAY_SENTENCES guard. */
@@ -226,11 +242,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
-  // KNOWN GAP (2026-09-09): the episode prepend cannot fire yet. An episode is written by lazy
-  // extraction, which only ever reads a conversation the athlete is NOT in, so a conversation still
-  // in progress never has one. Past the cap the front is simply dropped. Closing it means writing an
-  // episode for a long, still-open conversation — see .scratch/mealplanning/issues/03.
-  const replayed = opener ? messages : capHistory(messages, messages.length > HISTORY_CAP && convId ? await episodeFor(v, convId) : null);
+  const replayed = opener ? messages : await replayHistory(v, convId, messages);
   const modelMessages = opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
