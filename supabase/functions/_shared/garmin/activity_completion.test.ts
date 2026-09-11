@@ -62,6 +62,32 @@ describe("garmin activity completion helpers", () => {
     assertExists(update.last_synced_at);
   });
 
+  it("carries multisport lineage when Garmin sends it; omits it otherwise (Q-INT23)", () => {
+    const base = {
+      startTimeInSeconds: 1711612800,
+      startTimeOffsetInSeconds: -18000,
+      durationInSeconds: 2700,
+    };
+
+    const withLineage = buildGarminCompletionUpdate(base, {
+      duration_minutes: 45,
+      parent_summary_id: "activity-005",
+      is_parent: false,
+    });
+    assertEquals(withLineage.parent_summary_id, "activity-005");
+    assertEquals(withLineage.is_parent, false);
+
+    // A plain single-sport completion (mapper emits null lineage) must not
+    // write the columns at all, so lineage stamped earlier survives.
+    const withoutLineage = buildGarminCompletionUpdate(base, {
+      duration_minutes: 45,
+      parent_summary_id: null,
+      is_parent: null,
+    });
+    assertEquals("parent_summary_id" in withoutLineage, false);
+    assertEquals("is_parent" in withoutLineage, false);
+  });
+
   it("overwrites planned distance with a zero actual distance (start/stop run)", () => {
     // A run that was started and immediately stopped: Garmin reports 0 distance.
     // The planned activity showed 12 mi; completion must reconcile it to 0 so

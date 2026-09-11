@@ -48,7 +48,10 @@ import {
   buildGarminProviderLabel,
   sendActivityUploadedPush,
 } from "../_shared/garmin/onesignal.ts";
-import type { GarminPushNotification } from "../_shared/garmin/types.ts";
+import type {
+  GarminGenericWellnessSummary,
+  GarminPushNotification,
+} from "../_shared/garmin/types.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -306,6 +309,23 @@ async function logInboundGarminPayload(
     // Swallow deliberately — see the contract above.
     console.warn("[garmin-push] inbound payload log failed (non-fatal):", err);
   }
+}
+
+/**
+ * garmin_health_data.calendar_date is NOT NULL; the generic wellness types
+ * don't all carry calendarDate, so fall back through the timestamps they do
+ * carry (UTC date) before defaulting to today.
+ */
+function resolveWellnessCalendarDate(
+  summary: GarminGenericWellnessSummary,
+): string {
+  if (summary.calendarDate) return summary.calendarDate;
+  const seconds =
+    summary.startTimeInSeconds ?? summary.measurementTimeInSeconds;
+  if (typeof seconds === "number" && Number.isFinite(seconds)) {
+    return new Date(seconds * 1000).toISOString().slice(0, 10);
+  }
+  return new Date().toISOString().slice(0, 10);
 }
 
 async function processPushBody(body: GarminPushNotification): Promise<void> {
@@ -1166,6 +1186,79 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
         }
       }
       results.userMetrics = stats;
+    }
+
+    // Process previously-unhandled wellness types (data-integrations@v1
+    // capture, Q-INT26 item 8): hrv, pulseOx, respiration, healthSnapshot,
+    // bloodPressures, skinTemp -> garmin_health_data, payload stored
+    // verbatim minus the user token (lose-nothing direction). data_type is
+    // free text on the table, so no schema change rides with this.
+    const genericWellnessTypes: Array<
+      [
+        keyof Pick<
+          GarminPushNotification,
+          | "hrv"
+          | "pulseOx"
+          | "respiration"
+          | "healthSnapshot"
+          | "bloodPressures"
+          | "skinTemp"
+        >,
+        string,
+      ]
+    > = [
+      ["hrv", "hrv"],
+      ["pulseOx", "pulse_ox"],
+      ["respiration", "respiration"],
+      ["healthSnapshot", "health_snapshot"],
+      ["bloodPressures", "blood_pressures"],
+      ["skinTemp", "skin_temp"],
+    ];
+    for (const [bodyKey, dataType] of genericWellnessTypes) {
+      const summaries = body[bodyKey];
+      if (!summaries || summaries.length === 0) continue;
+      const stats = { processed: 0, errors: 0 };
+      for (const summary of summaries) {
+        try {
+          const { data: mapping } = await supabase
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", summary.userId)
+            .single();
+
+          if (!mapping) {
+            stats.errors++;
+            continue;
+          }
+
+          // Never persist the user token; everything else is kept as sent.
+          const { userAccessToken: _token, ...payload } = summary;
+
+          const record = {
+            user_id: mapping.user_id,
+            garmin_user_id: summary.userId,
+            summary_id: summary.summaryId,
+            data_type: dataType,
+            calendar_date: resolveWellnessCalendarDate(summary),
+            data: payload,
+          };
+
+          const { error } = await supabase
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
+
+          if (error) {
+            console.error(`[garmin-push] ${dataType} upsert error:`, error);
+            stats.errors++;
+          } else {
+            stats.processed++;
+          }
+        } catch (err) {
+          console.error(`[garmin-push] ${dataType} processing error:`, err);
+          stats.errors++;
+        }
+      }
+      results[dataType] = stats;
     }
 
     // Process user permissions changes (just acknowledge - no data to store)

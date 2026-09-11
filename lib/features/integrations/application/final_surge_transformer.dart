@@ -208,6 +208,13 @@ class FinalSurgeTransformer {
       lastSyncedAt: now,
       createdAt: now,
       updatedAt: now,
+      // data-integrations@v1 capture (Q-INT26/Q-INT13): the subtype and pace
+      // range were computed here and then discarded on the result object —
+      // persist them on the row so consumers (CarbsPerHourService speed-work
+      // exclusion, display) stop being blind to FS.
+      workoutSubtype: isWalk ? 'Walk' : workout['WorkoutSubTypeName'] as String?,
+      paceMinMinutesPerMile: paceResult.minPace,
+      paceMaxMinutesPerMile: paceResult.maxPace,
     );
 
     if (kDebugMode) {

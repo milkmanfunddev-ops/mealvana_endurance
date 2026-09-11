@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../../../shared/services/analytics/analytics_tracker.dart';
@@ -64,6 +66,13 @@ class TrainingPeaksSyncService {
   /// How often to re-fetch athlete zones (24 hours)
   static const _zonesStalenessThreshold = Duration(hours: 24);
 
+  /// How often to re-fetch TP body metrics (same 24 h clock as zones —
+  /// data-integrations@v1, Q-INT26 shortlist item 4)
+  static const _metricsStalenessThreshold = Duration(hours: 24);
+
+  /// How far back the metrics range read looks (daily body metrics)
+  static const _metricsWindowDays = 7;
+
   /// Max upcoming workout range (TrainingPeaks API limit)
   static const _maxWorkoutDays = 45;
 
@@ -108,6 +117,16 @@ class TrainingPeaksSyncService {
     } catch (e) {
       if (kDebugMode) {
         print('⚠️ Zone fetch failed (non-blocking): $e');
+      }
+    }
+
+    // 3b. Fetch body metrics if stale (non-blocking; premium-gated —
+    // data-integrations@v1 capture, the TP weight-staleness fix)
+    try {
+      await _fetchMetricsIfStale(integration);
+    } catch (e) {
+      if (kDebugMode) {
+        print('⚠️ Metrics fetch failed (non-blocking): $e');
       }
     }
 
@@ -674,6 +693,78 @@ class TrainingPeaksSyncService {
     }
 
     return zones;
+  }
+
+  /// Fetch TP body metrics if stale (data-integrations@v1, Q-INT26 item 4).
+  ///
+  /// Range reads of `/v2/metrics` are PREMIUM ONLY, so this is gated on the
+  /// stored IsPremium flag (captured at connect). The cache carries its own
+  /// `fetchedAt` marker inside `athlete_metrics_json` because
+  /// `integration.updatedAt` is shared with the zones write and would read
+  /// as always-fresh right after a zones fetch. The newest metric carrying
+  /// `WeightInKilograms` also refreshes `provider_athlete_weight_kg` —
+  /// ongoing TP weight without Garmin.
+  Future<void> _fetchMetricsIfStale(IntegrationModel integration) async {
+    if (integration.providerIsPremium != true) return;
+
+    final cached = integration.athleteMetricsJson;
+    if (cached != null && cached.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(cached) as Map<String, dynamic>;
+        final fetchedAt = DateTime.tryParse(
+          decoded['fetchedAt'] as String? ?? '',
+        );
+        if (fetchedAt != null &&
+            DateTime.now().difference(fetchedAt) <
+                _metricsStalenessThreshold) {
+          if (kDebugMode) {
+            print('   ✅ Athlete metrics are fresh');
+          }
+          return;
+        }
+      } catch (_) {
+        // Malformed cache — fall through and refetch.
+      }
+    }
+
+    final now = DateTime.now();
+    final metrics = await _apiClient.getAthleteMetrics(
+      integration.accessToken,
+      startDate: now.subtract(const Duration(days: _metricsWindowDays)),
+      endDate: now,
+    );
+
+    // Newest metric that carries a weight refreshes the profile mirror.
+    double? weightKg;
+    DateTime? weightSeenAt;
+    for (final metric in metrics) {
+      final w = (metric['WeightInKilograms'] as num?)?.toDouble();
+      if (w == null) continue;
+      final at =
+          DateTime.tryParse(metric['DateTime'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+      if (weightSeenAt == null || at.isAfter(weightSeenAt)) {
+        weightSeenAt = at;
+        weightKg = w;
+      }
+    }
+
+    await _integrationsRepository.updateAthleteMetrics(
+      integration.userId,
+      'training_peaks',
+      metricsJson: jsonEncode({
+        'fetchedAt': now.toIso8601String(),
+        'metrics': metrics,
+      }),
+      weightKg: weightKg,
+    );
+
+    if (kDebugMode) {
+      print(
+        '   ✅ Athlete metrics fetched (${metrics.length} days'
+        '${weightKg != null ? ', weight ${weightKg.toStringAsFixed(1)} kg' : ''})',
+      );
+    }
   }
 
   /// Ensure the token is valid, refreshing if needed

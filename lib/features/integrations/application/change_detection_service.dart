@@ -332,6 +332,27 @@ class ChangeDetectionService {
       return true;
     }
 
+    // data-integrations@v1 capture (Q-INT26): a changed TP load metric or
+    // session energy is a real provider edit — without these comparisons a
+    // resync that only updates TSS/IF/calories (e.g. the workout completed
+    // on TP) would never reach the row. Pace ranges ride along for FS.
+    if (oldActivity.tssPlanned != newActivity.tssPlanned) return true;
+    if (oldActivity.tssActual != newActivity.tssActual) return true;
+    if (oldActivity.ifPlanned != newActivity.ifPlanned) return true;
+    if (oldActivity.ifActual != newActivity.ifActual) return true;
+    if (oldActivity.tpCalories != newActivity.tpCalories) return true;
+    if (oldActivity.tpCaloriesPlanned != newActivity.tpCaloriesPlanned) {
+      return true;
+    }
+    if (oldActivity.paceMinMinutesPerMile !=
+        newActivity.paceMinMinutesPerMile) {
+      return true;
+    }
+    if (oldActivity.paceMaxMinutesPerMile !=
+        newActivity.paceMaxMinutesPerMile) {
+      return true;
+    }
+
     return false;
   }
 

@@ -781,7 +781,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// backfill, weight from a manual Garmin Connect entry sits on Garmin's
   /// side until the user's device organically syncs and triggers a push.
   /// This call asks Garmin to deliver the last 90 days of body comp +
-  /// user metrics to us right now.
+  /// user metrics, plus the last 30 days of activities (Q-INT27), right now.
   ///
   /// Returns true if at least one summary type was queued successfully.
   /// Returns false (and surfaces an error via snackbar in the caller) on
@@ -809,7 +809,12 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         'garmin-backfill',
         headers: {'Authorization': 'Bearer $supabaseAccessToken'},
         body: {
-          'summary_types': ['body_composition', 'user_metrics'],
+          // Q-INT27 (RULED 2026-09-11): connect-time backfill also requests
+          // `activities` — ONE window at Garmin's 30-day Activity max (the
+          // edge function clamps activities to 30 days per-type; the health
+          // types keep the 90-day window). No chaining — that stays a future
+          // option pending the insight-engine live test.
+          'summary_types': ['body_composition', 'user_metrics', 'activities'],
           'window_days': 90,
         },
       );

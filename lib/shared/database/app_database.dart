@@ -285,7 +285,20 @@ class AppDatabase extends _$AppDatabase {
   /// dependency, food-recommendation@v1 §6(e); Supabase migration
   /// 20260903120000). Supabase app_config.current_schema_version must be
   /// bumped to 19 when the build carrying this ships.
-  int get schemaVersion => 19;
+  ///
+  /// v20: data-integrations@v1 capture columns (Q-INT26 per-source typed
+  /// convention). activities gains the TP load metrics (tss_planned,
+  /// tss_actual, if_planned, if_actual), the record-only TP session energy
+  /// (tp_calories, tp_calories_planned — beside calories_burned, never into
+  /// it), and the Garmin multisport lineage (parent_summary_id, is_parent —
+  /// Q-INT23, brick verification B-2/B-5). integrations gains
+  /// provider_is_premium (TP IsPremium) and athlete_metrics_json (TP
+  /// /v2/metrics body-metrics cache). All nullable — a provider omitting a
+  /// field never errors and never fabricates (DI-13). Supabase
+  /// app_config.current_schema_version must be bumped to 20 when the build
+  /// carrying this ships. NOTE: on develop, Vana holds v21 — nothing of Vana
+  /// may live at or below v20.
+  int get schemaVersion => 20;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -567,6 +580,21 @@ class AppDatabase extends _$AppDatabase {
             'INTEGER NOT NULL DEFAULT 0',
           );
           await addColumn('template_foods', 'solvent_min_ml', 'REAL');
+        }
+
+        // v20: data-integrations@v1 capture columns — all nullable, additive.
+        // addColumn is idempotent for web user_version replays.
+        if (from < 20) {
+          await addColumn('activities', 'tss_planned', 'REAL');
+          await addColumn('activities', 'tss_actual', 'REAL');
+          await addColumn('activities', 'if_planned', 'REAL');
+          await addColumn('activities', 'if_actual', 'REAL');
+          await addColumn('activities', 'tp_calories', 'REAL');
+          await addColumn('activities', 'tp_calories_planned', 'REAL');
+          await addColumn('activities', 'parent_summary_id', 'TEXT');
+          await addColumn('activities', 'is_parent', 'INTEGER');
+          await addColumn('integrations', 'provider_is_premium', 'INTEGER');
+          await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
         }
       },
 

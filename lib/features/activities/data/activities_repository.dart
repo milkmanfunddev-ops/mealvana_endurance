@@ -1475,6 +1475,21 @@ class ActivitiesRepository with SyncableRepository {
       garminSummaryId: incoming.garminSummaryId ?? existing.garminSummaryId,
       garminDeviceName: incoming.garminDeviceName ?? existing.garminDeviceName,
 
+      // data-integrations@v1 capture (Q-INT26): planned load metrics are
+      // provider-owned (null overwrite allowed, like the other planner
+      // columns); measured values follow the actual_time rule — adopt when
+      // the provider sends them, never wipe them on a planned re-sync.
+      tssPlanned: incoming.tssPlanned,
+      ifPlanned: incoming.ifPlanned,
+      tpCaloriesPlanned: incoming.tpCaloriesPlanned,
+      tssActual: incoming.tssActual ?? existing.tssActual,
+      ifActual: incoming.ifActual ?? existing.ifActual,
+      tpCalories: incoming.tpCalories ?? existing.tpCalories,
+      // Garmin multisport lineage is completion-side state (Q-INT23): FS/TP
+      // planned imports never carry it.
+      parentSummaryId: incoming.parentSummaryId ?? existing.parentSummaryId,
+      isParent: incoming.isParent ?? existing.isParent,
+
       // preserve local metadata
       createdAt: existing.createdAt,
       updatedAt: existing.updatedAt,

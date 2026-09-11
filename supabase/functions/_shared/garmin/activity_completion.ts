@@ -402,6 +402,15 @@ export function buildGarminCompletionUpdate(
     updateFields.garmin_device_name = mappedActivity.garmin_device_name;
   }
 
+  // Multisport lineage (Q-INT23): only write when Garmin sent it — a plain
+  // single-sport completion must not null out lineage stamped earlier.
+  if (typeof mappedActivity.parent_summary_id === "string") {
+    updateFields.parent_summary_id = mappedActivity.parent_summary_id;
+  }
+  if (typeof mappedActivity.is_parent === "boolean") {
+    updateFields.is_parent = mappedActivity.is_parent;
+  }
+
   return updateFields;
 }
 

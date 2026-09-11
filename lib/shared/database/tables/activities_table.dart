@@ -183,6 +183,27 @@ class ActivitiesTable extends Table {
   // Training Stress Score (from external providers or calculated)
   RealColumn get tss => real().nullable()();
 
+  // --- data-integrations@v1 capture columns (Q-INT26, per-source typed) ---
+  // TP planned/actual load metrics (basic TP athletes: null — never fabricate,
+  // null != 0). The engine's derived IF stays computed at read, never stored.
+  RealColumn get tssPlanned => real().nullable().named('tss_planned')();
+  RealColumn get tssActual => real().nullable().named('tss_actual')();
+  RealColumn get ifPlanned => real().nullable().named('if_planned')();
+  RealColumn get ifActual => real().nullable().named('if_actual')();
+
+  // TP session energy, record-only (F4 stays authoritative): lands beside
+  // Garmin's calories_burned, never into it — precedence is a read-time rule.
+  RealColumn get tpCalories => real().nullable().named('tp_calories')();
+  RealColumn get tpCaloriesPlanned =>
+      real().nullable().named('tp_calories_planned')();
+
+  // Garmin multisport lineage (Q-INT23): child legs point at the parent
+  // session's summary id; the parent row is flagged. Enables brick
+  // verification B-2/B-5 (matching.md M-5).
+  TextColumn get parentSummaryId =>
+      text().nullable().named('parent_summary_id')();
+  BoolColumn get isParent => boolean().nullable().named('is_parent')();
+
   // Garmin completion linkage — set when a Garmin push provides the activity's
   // completion data (distance, duration, HR, etc.). Authoritative signal that
   // this activity displays Garmin-sourced data, regardless of which provider

@@ -10926,6 +10926,98 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tssPlannedMeta = const VerificationMeta(
+    'tssPlanned',
+  );
+  @override
+  late final GeneratedColumn<double> tssPlanned = GeneratedColumn<double>(
+    'tss_planned',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tssActualMeta = const VerificationMeta(
+    'tssActual',
+  );
+  @override
+  late final GeneratedColumn<double> tssActual = GeneratedColumn<double>(
+    'tss_actual',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ifPlannedMeta = const VerificationMeta(
+    'ifPlanned',
+  );
+  @override
+  late final GeneratedColumn<double> ifPlanned = GeneratedColumn<double>(
+    'if_planned',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ifActualMeta = const VerificationMeta(
+    'ifActual',
+  );
+  @override
+  late final GeneratedColumn<double> ifActual = GeneratedColumn<double>(
+    'if_actual',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tpCaloriesMeta = const VerificationMeta(
+    'tpCalories',
+  );
+  @override
+  late final GeneratedColumn<double> tpCalories = GeneratedColumn<double>(
+    'tp_calories',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tpCaloriesPlannedMeta = const VerificationMeta(
+    'tpCaloriesPlanned',
+  );
+  @override
+  late final GeneratedColumn<double> tpCaloriesPlanned =
+      GeneratedColumn<double>(
+        'tp_calories_planned',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _parentSummaryIdMeta = const VerificationMeta(
+    'parentSummaryId',
+  );
+  @override
+  late final GeneratedColumn<String> parentSummaryId = GeneratedColumn<String>(
+    'parent_summary_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isParentMeta = const VerificationMeta(
+    'isParent',
+  );
+  @override
+  late final GeneratedColumn<bool> isParent = GeneratedColumn<bool>(
+    'is_parent',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_parent" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _garminSummaryIdMeta = const VerificationMeta(
     'garminSummaryId',
   );
@@ -11047,6 +11139,14 @@ class $ActivitiesTableTable extends ActivitiesTable
     brickMetadata,
     brickId,
     tss,
+    tssPlanned,
+    tssActual,
+    ifPlanned,
+    ifActual,
+    tpCalories,
+    tpCaloriesPlanned,
+    parentSummaryId,
+    isParent,
     garminSummaryId,
     garminDeviceName,
     notes,
@@ -11542,6 +11642,60 @@ class $ActivitiesTableTable extends ActivitiesTable
         tss.isAcceptableOrUnknown(data['tss']!, _tssMeta),
       );
     }
+    if (data.containsKey('tss_planned')) {
+      context.handle(
+        _tssPlannedMeta,
+        tssPlanned.isAcceptableOrUnknown(data['tss_planned']!, _tssPlannedMeta),
+      );
+    }
+    if (data.containsKey('tss_actual')) {
+      context.handle(
+        _tssActualMeta,
+        tssActual.isAcceptableOrUnknown(data['tss_actual']!, _tssActualMeta),
+      );
+    }
+    if (data.containsKey('if_planned')) {
+      context.handle(
+        _ifPlannedMeta,
+        ifPlanned.isAcceptableOrUnknown(data['if_planned']!, _ifPlannedMeta),
+      );
+    }
+    if (data.containsKey('if_actual')) {
+      context.handle(
+        _ifActualMeta,
+        ifActual.isAcceptableOrUnknown(data['if_actual']!, _ifActualMeta),
+      );
+    }
+    if (data.containsKey('tp_calories')) {
+      context.handle(
+        _tpCaloriesMeta,
+        tpCalories.isAcceptableOrUnknown(data['tp_calories']!, _tpCaloriesMeta),
+      );
+    }
+    if (data.containsKey('tp_calories_planned')) {
+      context.handle(
+        _tpCaloriesPlannedMeta,
+        tpCaloriesPlanned.isAcceptableOrUnknown(
+          data['tp_calories_planned']!,
+          _tpCaloriesPlannedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parent_summary_id')) {
+      context.handle(
+        _parentSummaryIdMeta,
+        parentSummaryId.isAcceptableOrUnknown(
+          data['parent_summary_id']!,
+          _parentSummaryIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_parent')) {
+      context.handle(
+        _isParentMeta,
+        isParent.isAcceptableOrUnknown(data['is_parent']!, _isParentMeta),
+      );
+    }
     if (data.containsKey('garmin_summary_id')) {
       context.handle(
         _garminSummaryIdMeta,
@@ -11817,6 +11971,38 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.double,
         data['${effectivePrefix}tss'],
       ),
+      tssPlanned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tss_planned'],
+      ),
+      tssActual: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tss_actual'],
+      ),
+      ifPlanned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}if_planned'],
+      ),
+      ifActual: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}if_actual'],
+      ),
+      tpCalories: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tp_calories'],
+      ),
+      tpCaloriesPlanned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tp_calories_planned'],
+      ),
+      parentSummaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_summary_id'],
+      ),
+      isParent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_parent'],
+      ),
       garminSummaryId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}garmin_summary_id'],
@@ -11906,6 +12092,14 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String? brickMetadata;
   final String? brickId;
   final double? tss;
+  final double? tssPlanned;
+  final double? tssActual;
+  final double? ifPlanned;
+  final double? ifActual;
+  final double? tpCalories;
+  final double? tpCaloriesPlanned;
+  final String? parentSummaryId;
+  final bool? isParent;
   final String? garminSummaryId;
   final String? garminDeviceName;
   final String? notes;
@@ -11968,6 +12162,14 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.brickMetadata,
     this.brickId,
     this.tss,
+    this.tssPlanned,
+    this.tssActual,
+    this.ifPlanned,
+    this.ifActual,
+    this.tpCalories,
+    this.tpCaloriesPlanned,
+    this.parentSummaryId,
+    this.isParent,
     this.garminSummaryId,
     this.garminDeviceName,
     this.notes,
@@ -12133,6 +12335,30 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || tss != null) {
       map['tss'] = Variable<double>(tss);
     }
+    if (!nullToAbsent || tssPlanned != null) {
+      map['tss_planned'] = Variable<double>(tssPlanned);
+    }
+    if (!nullToAbsent || tssActual != null) {
+      map['tss_actual'] = Variable<double>(tssActual);
+    }
+    if (!nullToAbsent || ifPlanned != null) {
+      map['if_planned'] = Variable<double>(ifPlanned);
+    }
+    if (!nullToAbsent || ifActual != null) {
+      map['if_actual'] = Variable<double>(ifActual);
+    }
+    if (!nullToAbsent || tpCalories != null) {
+      map['tp_calories'] = Variable<double>(tpCalories);
+    }
+    if (!nullToAbsent || tpCaloriesPlanned != null) {
+      map['tp_calories_planned'] = Variable<double>(tpCaloriesPlanned);
+    }
+    if (!nullToAbsent || parentSummaryId != null) {
+      map['parent_summary_id'] = Variable<String>(parentSummaryId);
+    }
+    if (!nullToAbsent || isParent != null) {
+      map['is_parent'] = Variable<bool>(isParent);
+    }
     if (!nullToAbsent || garminSummaryId != null) {
       map['garmin_summary_id'] = Variable<String>(garminSummaryId);
     }
@@ -12296,6 +12522,30 @@ class Activity extends DataClass implements Insertable<Activity> {
           ? const Value.absent()
           : Value(brickId),
       tss: tss == null && nullToAbsent ? const Value.absent() : Value(tss),
+      tssPlanned: tssPlanned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tssPlanned),
+      tssActual: tssActual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tssActual),
+      ifPlanned: ifPlanned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ifPlanned),
+      ifActual: ifActual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ifActual),
+      tpCalories: tpCalories == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tpCalories),
+      tpCaloriesPlanned: tpCaloriesPlanned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tpCaloriesPlanned),
+      parentSummaryId: parentSummaryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentSummaryId),
+      isParent: isParent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isParent),
       garminSummaryId: garminSummaryId == null && nullToAbsent
           ? const Value.absent()
           : Value(garminSummaryId),
@@ -12416,6 +12666,16 @@ class Activity extends DataClass implements Insertable<Activity> {
       brickMetadata: serializer.fromJson<String?>(json['brickMetadata']),
       brickId: serializer.fromJson<String?>(json['brickId']),
       tss: serializer.fromJson<double?>(json['tss']),
+      tssPlanned: serializer.fromJson<double?>(json['tssPlanned']),
+      tssActual: serializer.fromJson<double?>(json['tssActual']),
+      ifPlanned: serializer.fromJson<double?>(json['ifPlanned']),
+      ifActual: serializer.fromJson<double?>(json['ifActual']),
+      tpCalories: serializer.fromJson<double?>(json['tpCalories']),
+      tpCaloriesPlanned: serializer.fromJson<double?>(
+        json['tpCaloriesPlanned'],
+      ),
+      parentSummaryId: serializer.fromJson<String?>(json['parentSummaryId']),
+      isParent: serializer.fromJson<bool?>(json['isParent']),
       garminSummaryId: serializer.fromJson<String?>(json['garminSummaryId']),
       garminDeviceName: serializer.fromJson<String?>(json['garminDeviceName']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -12493,6 +12753,14 @@ class Activity extends DataClass implements Insertable<Activity> {
       'brickMetadata': serializer.toJson<String?>(brickMetadata),
       'brickId': serializer.toJson<String?>(brickId),
       'tss': serializer.toJson<double?>(tss),
+      'tssPlanned': serializer.toJson<double?>(tssPlanned),
+      'tssActual': serializer.toJson<double?>(tssActual),
+      'ifPlanned': serializer.toJson<double?>(ifPlanned),
+      'ifActual': serializer.toJson<double?>(ifActual),
+      'tpCalories': serializer.toJson<double?>(tpCalories),
+      'tpCaloriesPlanned': serializer.toJson<double?>(tpCaloriesPlanned),
+      'parentSummaryId': serializer.toJson<String?>(parentSummaryId),
+      'isParent': serializer.toJson<bool?>(isParent),
       'garminSummaryId': serializer.toJson<String?>(garminSummaryId),
       'garminDeviceName': serializer.toJson<String?>(garminDeviceName),
       'notes': serializer.toJson<String?>(notes),
@@ -12558,6 +12826,14 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<String?> brickMetadata = const Value.absent(),
     Value<String?> brickId = const Value.absent(),
     Value<double?> tss = const Value.absent(),
+    Value<double?> tssPlanned = const Value.absent(),
+    Value<double?> tssActual = const Value.absent(),
+    Value<double?> ifPlanned = const Value.absent(),
+    Value<double?> ifActual = const Value.absent(),
+    Value<double?> tpCalories = const Value.absent(),
+    Value<double?> tpCaloriesPlanned = const Value.absent(),
+    Value<String?> parentSummaryId = const Value.absent(),
+    Value<bool?> isParent = const Value.absent(),
     Value<String?> garminSummaryId = const Value.absent(),
     Value<String?> garminDeviceName = const Value.absent(),
     Value<String?> notes = const Value.absent(),
@@ -12694,6 +12970,18 @@ class Activity extends DataClass implements Insertable<Activity> {
         : this.brickMetadata,
     brickId: brickId.present ? brickId.value : this.brickId,
     tss: tss.present ? tss.value : this.tss,
+    tssPlanned: tssPlanned.present ? tssPlanned.value : this.tssPlanned,
+    tssActual: tssActual.present ? tssActual.value : this.tssActual,
+    ifPlanned: ifPlanned.present ? ifPlanned.value : this.ifPlanned,
+    ifActual: ifActual.present ? ifActual.value : this.ifActual,
+    tpCalories: tpCalories.present ? tpCalories.value : this.tpCalories,
+    tpCaloriesPlanned: tpCaloriesPlanned.present
+        ? tpCaloriesPlanned.value
+        : this.tpCaloriesPlanned,
+    parentSummaryId: parentSummaryId.present
+        ? parentSummaryId.value
+        : this.parentSummaryId,
+    isParent: isParent.present ? isParent.value : this.isParent,
     garminSummaryId: garminSummaryId.present
         ? garminSummaryId.value
         : this.garminSummaryId,
@@ -12858,6 +13146,22 @@ class Activity extends DataClass implements Insertable<Activity> {
           : this.brickMetadata,
       brickId: data.brickId.present ? data.brickId.value : this.brickId,
       tss: data.tss.present ? data.tss.value : this.tss,
+      tssPlanned: data.tssPlanned.present
+          ? data.tssPlanned.value
+          : this.tssPlanned,
+      tssActual: data.tssActual.present ? data.tssActual.value : this.tssActual,
+      ifPlanned: data.ifPlanned.present ? data.ifPlanned.value : this.ifPlanned,
+      ifActual: data.ifActual.present ? data.ifActual.value : this.ifActual,
+      tpCalories: data.tpCalories.present
+          ? data.tpCalories.value
+          : this.tpCalories,
+      tpCaloriesPlanned: data.tpCaloriesPlanned.present
+          ? data.tpCaloriesPlanned.value
+          : this.tpCaloriesPlanned,
+      parentSummaryId: data.parentSummaryId.present
+          ? data.parentSummaryId.value
+          : this.parentSummaryId,
+      isParent: data.isParent.present ? data.isParent.value : this.isParent,
       garminSummaryId: data.garminSummaryId.present
           ? data.garminSummaryId.value
           : this.garminSummaryId,
@@ -12929,6 +13233,14 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('brickMetadata: $brickMetadata, ')
           ..write('brickId: $brickId, ')
           ..write('tss: $tss, ')
+          ..write('tssPlanned: $tssPlanned, ')
+          ..write('tssActual: $tssActual, ')
+          ..write('ifPlanned: $ifPlanned, ')
+          ..write('ifActual: $ifActual, ')
+          ..write('tpCalories: $tpCalories, ')
+          ..write('tpCaloriesPlanned: $tpCaloriesPlanned, ')
+          ..write('parentSummaryId: $parentSummaryId, ')
+          ..write('isParent: $isParent, ')
           ..write('garminSummaryId: $garminSummaryId, ')
           ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
@@ -12996,6 +13308,14 @@ class Activity extends DataClass implements Insertable<Activity> {
     brickMetadata,
     brickId,
     tss,
+    tssPlanned,
+    tssActual,
+    ifPlanned,
+    ifActual,
+    tpCalories,
+    tpCaloriesPlanned,
+    parentSummaryId,
+    isParent,
     garminSummaryId,
     garminDeviceName,
     notes,
@@ -13062,6 +13382,14 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.brickMetadata == this.brickMetadata &&
           other.brickId == this.brickId &&
           other.tss == this.tss &&
+          other.tssPlanned == this.tssPlanned &&
+          other.tssActual == this.tssActual &&
+          other.ifPlanned == this.ifPlanned &&
+          other.ifActual == this.ifActual &&
+          other.tpCalories == this.tpCalories &&
+          other.tpCaloriesPlanned == this.tpCaloriesPlanned &&
+          other.parentSummaryId == this.parentSummaryId &&
+          other.isParent == this.isParent &&
           other.garminSummaryId == this.garminSummaryId &&
           other.garminDeviceName == this.garminDeviceName &&
           other.notes == this.notes &&
@@ -13126,6 +13454,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String?> brickMetadata;
   final Value<String?> brickId;
   final Value<double?> tss;
+  final Value<double?> tssPlanned;
+  final Value<double?> tssActual;
+  final Value<double?> ifPlanned;
+  final Value<double?> ifActual;
+  final Value<double?> tpCalories;
+  final Value<double?> tpCaloriesPlanned;
+  final Value<String?> parentSummaryId;
+  final Value<bool?> isParent;
   final Value<String?> garminSummaryId;
   final Value<String?> garminDeviceName;
   final Value<String?> notes;
@@ -13189,6 +13525,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.brickMetadata = const Value.absent(),
     this.brickId = const Value.absent(),
     this.tss = const Value.absent(),
+    this.tssPlanned = const Value.absent(),
+    this.tssActual = const Value.absent(),
+    this.ifPlanned = const Value.absent(),
+    this.ifActual = const Value.absent(),
+    this.tpCalories = const Value.absent(),
+    this.tpCaloriesPlanned = const Value.absent(),
+    this.parentSummaryId = const Value.absent(),
+    this.isParent = const Value.absent(),
     this.garminSummaryId = const Value.absent(),
     this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
@@ -13253,6 +13597,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.brickMetadata = const Value.absent(),
     this.brickId = const Value.absent(),
     this.tss = const Value.absent(),
+    this.tssPlanned = const Value.absent(),
+    this.tssActual = const Value.absent(),
+    this.ifPlanned = const Value.absent(),
+    this.ifActual = const Value.absent(),
+    this.tpCalories = const Value.absent(),
+    this.tpCaloriesPlanned = const Value.absent(),
+    this.parentSummaryId = const Value.absent(),
+    this.isParent = const Value.absent(),
     this.garminSummaryId = const Value.absent(),
     this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
@@ -13322,6 +13674,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? brickMetadata,
     Expression<String>? brickId,
     Expression<double>? tss,
+    Expression<double>? tssPlanned,
+    Expression<double>? tssActual,
+    Expression<double>? ifPlanned,
+    Expression<double>? ifActual,
+    Expression<double>? tpCalories,
+    Expression<double>? tpCaloriesPlanned,
+    Expression<String>? parentSummaryId,
+    Expression<bool>? isParent,
     Expression<String>? garminSummaryId,
     Expression<String>? garminDeviceName,
     Expression<String>? notes,
@@ -13402,6 +13762,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (brickMetadata != null) 'brick_metadata': brickMetadata,
       if (brickId != null) 'brick_id': brickId,
       if (tss != null) 'tss': tss,
+      if (tssPlanned != null) 'tss_planned': tssPlanned,
+      if (tssActual != null) 'tss_actual': tssActual,
+      if (ifPlanned != null) 'if_planned': ifPlanned,
+      if (ifActual != null) 'if_actual': ifActual,
+      if (tpCalories != null) 'tp_calories': tpCalories,
+      if (tpCaloriesPlanned != null) 'tp_calories_planned': tpCaloriesPlanned,
+      if (parentSummaryId != null) 'parent_summary_id': parentSummaryId,
+      if (isParent != null) 'is_parent': isParent,
       if (garminSummaryId != null) 'garmin_summary_id': garminSummaryId,
       if (garminDeviceName != null) 'garmin_device_name': garminDeviceName,
       if (notes != null) 'notes': notes,
@@ -13468,6 +13836,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String?>? brickMetadata,
     Value<String?>? brickId,
     Value<double?>? tss,
+    Value<double?>? tssPlanned,
+    Value<double?>? tssActual,
+    Value<double?>? ifPlanned,
+    Value<double?>? ifActual,
+    Value<double?>? tpCalories,
+    Value<double?>? tpCaloriesPlanned,
+    Value<String?>? parentSummaryId,
+    Value<bool?>? isParent,
     Value<String?>? garminSummaryId,
     Value<String?>? garminDeviceName,
     Value<String?>? notes,
@@ -13540,6 +13916,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       brickMetadata: brickMetadata ?? this.brickMetadata,
       brickId: brickId ?? this.brickId,
       tss: tss ?? this.tss,
+      tssPlanned: tssPlanned ?? this.tssPlanned,
+      tssActual: tssActual ?? this.tssActual,
+      ifPlanned: ifPlanned ?? this.ifPlanned,
+      ifActual: ifActual ?? this.ifActual,
+      tpCalories: tpCalories ?? this.tpCalories,
+      tpCaloriesPlanned: tpCaloriesPlanned ?? this.tpCaloriesPlanned,
+      parentSummaryId: parentSummaryId ?? this.parentSummaryId,
+      isParent: isParent ?? this.isParent,
       garminSummaryId: garminSummaryId ?? this.garminSummaryId,
       garminDeviceName: garminDeviceName ?? this.garminDeviceName,
       notes: notes ?? this.notes,
@@ -13740,6 +14124,30 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (tss.present) {
       map['tss'] = Variable<double>(tss.value);
     }
+    if (tssPlanned.present) {
+      map['tss_planned'] = Variable<double>(tssPlanned.value);
+    }
+    if (tssActual.present) {
+      map['tss_actual'] = Variable<double>(tssActual.value);
+    }
+    if (ifPlanned.present) {
+      map['if_planned'] = Variable<double>(ifPlanned.value);
+    }
+    if (ifActual.present) {
+      map['if_actual'] = Variable<double>(ifActual.value);
+    }
+    if (tpCalories.present) {
+      map['tp_calories'] = Variable<double>(tpCalories.value);
+    }
+    if (tpCaloriesPlanned.present) {
+      map['tp_calories_planned'] = Variable<double>(tpCaloriesPlanned.value);
+    }
+    if (parentSummaryId.present) {
+      map['parent_summary_id'] = Variable<String>(parentSummaryId.value);
+    }
+    if (isParent.present) {
+      map['is_parent'] = Variable<bool>(isParent.value);
+    }
     if (garminSummaryId.present) {
       map['garmin_summary_id'] = Variable<String>(garminSummaryId.value);
     }
@@ -13822,6 +14230,14 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('brickMetadata: $brickMetadata, ')
           ..write('brickId: $brickId, ')
           ..write('tss: $tss, ')
+          ..write('tssPlanned: $tssPlanned, ')
+          ..write('tssActual: $tssActual, ')
+          ..write('ifPlanned: $ifPlanned, ')
+          ..write('ifActual: $ifActual, ')
+          ..write('tpCalories: $tpCalories, ')
+          ..write('tpCaloriesPlanned: $tpCaloriesPlanned, ')
+          ..write('parentSummaryId: $parentSummaryId, ')
+          ..write('isParent: $isParent, ')
           ..write('garminSummaryId: $garminSummaryId, ')
           ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
@@ -21232,6 +21648,31 @@ class $IntegrationsTableTable extends IntegrationsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _providerIsPremiumMeta = const VerificationMeta(
+    'providerIsPremium',
+  );
+  @override
+  late final GeneratedColumn<bool> providerIsPremium = GeneratedColumn<bool>(
+    'provider_is_premium',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("provider_is_premium" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _athleteMetricsJsonMeta =
+      const VerificationMeta('athleteMetricsJson');
+  @override
+  late final GeneratedColumn<String> athleteMetricsJson =
+      GeneratedColumn<String>(
+        'athlete_metrics_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -21333,6 +21774,8 @@ class $IntegrationsTableTable extends IntegrationsTable
     providerAthleteGender,
     providerAthleteBodyFatPct,
     athleteZonesJson,
+    providerIsPremium,
+    athleteMetricsJson,
     isActive,
     lastSyncAt,
     lastSyncStatus,
@@ -21475,6 +21918,24 @@ class $IntegrationsTableTable extends IntegrationsTable
         ),
       );
     }
+    if (data.containsKey('provider_is_premium')) {
+      context.handle(
+        _providerIsPremiumMeta,
+        providerIsPremium.isAcceptableOrUnknown(
+          data['provider_is_premium']!,
+          _providerIsPremiumMeta,
+        ),
+      );
+    }
+    if (data.containsKey('athlete_metrics_json')) {
+      context.handle(
+        _athleteMetricsJsonMeta,
+        athleteMetricsJson.isAcceptableOrUnknown(
+          data['athlete_metrics_json']!,
+          _athleteMetricsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -21598,6 +22059,14 @@ class $IntegrationsTableTable extends IntegrationsTable
         DriftSqlType.string,
         data['${effectivePrefix}athlete_zones_json'],
       ),
+      providerIsPremium: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}provider_is_premium'],
+      ),
+      athleteMetricsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}athlete_metrics_json'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -21652,6 +22121,8 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String? providerAthleteGender;
   final double? providerAthleteBodyFatPct;
   final String? athleteZonesJson;
+  final bool? providerIsPremium;
+  final String? athleteMetricsJson;
   final bool isActive;
   final DateTime? lastSyncAt;
   final String? lastSyncStatus;
@@ -21674,6 +22145,8 @@ class Integration extends DataClass implements Insertable<Integration> {
     this.providerAthleteGender,
     this.providerAthleteBodyFatPct,
     this.athleteZonesJson,
+    this.providerIsPremium,
+    this.athleteMetricsJson,
     required this.isActive,
     this.lastSyncAt,
     this.lastSyncStatus,
@@ -21722,6 +22195,12 @@ class Integration extends DataClass implements Insertable<Integration> {
     }
     if (!nullToAbsent || athleteZonesJson != null) {
       map['athlete_zones_json'] = Variable<String>(athleteZonesJson);
+    }
+    if (!nullToAbsent || providerIsPremium != null) {
+      map['provider_is_premium'] = Variable<bool>(providerIsPremium);
+    }
+    if (!nullToAbsent || athleteMetricsJson != null) {
+      map['athlete_metrics_json'] = Variable<String>(athleteMetricsJson);
     }
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || lastSyncAt != null) {
@@ -21775,6 +22254,12 @@ class Integration extends DataClass implements Insertable<Integration> {
       athleteZonesJson: athleteZonesJson == null && nullToAbsent
           ? const Value.absent()
           : Value(athleteZonesJson),
+      providerIsPremium: providerIsPremium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerIsPremium),
+      athleteMetricsJson: athleteMetricsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(athleteMetricsJson),
       isActive: Value(isActive),
       lastSyncAt: lastSyncAt == null && nullToAbsent
           ? const Value.absent()
@@ -21823,6 +22308,10 @@ class Integration extends DataClass implements Insertable<Integration> {
         json['providerAthleteBodyFatPct'],
       ),
       athleteZonesJson: serializer.fromJson<String?>(json['athleteZonesJson']),
+      providerIsPremium: serializer.fromJson<bool?>(json['providerIsPremium']),
+      athleteMetricsJson: serializer.fromJson<String?>(
+        json['athleteMetricsJson'],
+      ),
       isActive: serializer.fromJson<bool>(json['isActive']),
       lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
       lastSyncStatus: serializer.fromJson<String?>(json['lastSyncStatus']),
@@ -21858,6 +22347,8 @@ class Integration extends DataClass implements Insertable<Integration> {
         providerAthleteBodyFatPct,
       ),
       'athleteZonesJson': serializer.toJson<String?>(athleteZonesJson),
+      'providerIsPremium': serializer.toJson<bool?>(providerIsPremium),
+      'athleteMetricsJson': serializer.toJson<String?>(athleteMetricsJson),
       'isActive': serializer.toJson<bool>(isActive),
       'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
       'lastSyncStatus': serializer.toJson<String?>(lastSyncStatus),
@@ -21883,6 +22374,8 @@ class Integration extends DataClass implements Insertable<Integration> {
     Value<String?> providerAthleteGender = const Value.absent(),
     Value<double?> providerAthleteBodyFatPct = const Value.absent(),
     Value<String?> athleteZonesJson = const Value.absent(),
+    Value<bool?> providerIsPremium = const Value.absent(),
+    Value<String?> athleteMetricsJson = const Value.absent(),
     bool? isActive,
     Value<DateTime?> lastSyncAt = const Value.absent(),
     Value<String?> lastSyncStatus = const Value.absent(),
@@ -21921,6 +22414,12 @@ class Integration extends DataClass implements Insertable<Integration> {
     athleteZonesJson: athleteZonesJson.present
         ? athleteZonesJson.value
         : this.athleteZonesJson,
+    providerIsPremium: providerIsPremium.present
+        ? providerIsPremium.value
+        : this.providerIsPremium,
+    athleteMetricsJson: athleteMetricsJson.present
+        ? athleteMetricsJson.value
+        : this.athleteMetricsJson,
     isActive: isActive ?? this.isActive,
     lastSyncAt: lastSyncAt.present ? lastSyncAt.value : this.lastSyncAt,
     lastSyncStatus: lastSyncStatus.present
@@ -21971,6 +22470,12 @@ class Integration extends DataClass implements Insertable<Integration> {
       athleteZonesJson: data.athleteZonesJson.present
           ? data.athleteZonesJson.value
           : this.athleteZonesJson,
+      providerIsPremium: data.providerIsPremium.present
+          ? data.providerIsPremium.value
+          : this.providerIsPremium,
+      athleteMetricsJson: data.athleteMetricsJson.present
+          ? data.athleteMetricsJson.value
+          : this.athleteMetricsJson,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       lastSyncAt: data.lastSyncAt.present
           ? data.lastSyncAt.value
@@ -22006,6 +22511,8 @@ class Integration extends DataClass implements Insertable<Integration> {
           ..write('providerAthleteGender: $providerAthleteGender, ')
           ..write('providerAthleteBodyFatPct: $providerAthleteBodyFatPct, ')
           ..write('athleteZonesJson: $athleteZonesJson, ')
+          ..write('providerIsPremium: $providerIsPremium, ')
+          ..write('athleteMetricsJson: $athleteMetricsJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
@@ -22033,6 +22540,8 @@ class Integration extends DataClass implements Insertable<Integration> {
     providerAthleteGender,
     providerAthleteBodyFatPct,
     athleteZonesJson,
+    providerIsPremium,
+    athleteMetricsJson,
     isActive,
     lastSyncAt,
     lastSyncStatus,
@@ -22059,6 +22568,8 @@ class Integration extends DataClass implements Insertable<Integration> {
           other.providerAthleteGender == this.providerAthleteGender &&
           other.providerAthleteBodyFatPct == this.providerAthleteBodyFatPct &&
           other.athleteZonesJson == this.athleteZonesJson &&
+          other.providerIsPremium == this.providerIsPremium &&
+          other.athleteMetricsJson == this.athleteMetricsJson &&
           other.isActive == this.isActive &&
           other.lastSyncAt == this.lastSyncAt &&
           other.lastSyncStatus == this.lastSyncStatus &&
@@ -22083,6 +22594,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
   final Value<String?> providerAthleteGender;
   final Value<double?> providerAthleteBodyFatPct;
   final Value<String?> athleteZonesJson;
+  final Value<bool?> providerIsPremium;
+  final Value<String?> athleteMetricsJson;
   final Value<bool> isActive;
   final Value<DateTime?> lastSyncAt;
   final Value<String?> lastSyncStatus;
@@ -22106,6 +22619,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteGender = const Value.absent(),
     this.providerAthleteBodyFatPct = const Value.absent(),
     this.athleteZonesJson = const Value.absent(),
+    this.providerIsPremium = const Value.absent(),
+    this.athleteMetricsJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
@@ -22130,6 +22645,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteGender = const Value.absent(),
     this.providerAthleteBodyFatPct = const Value.absent(),
     this.athleteZonesJson = const Value.absent(),
+    this.providerIsPremium = const Value.absent(),
+    this.athleteMetricsJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
@@ -22159,6 +22676,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Expression<String>? providerAthleteGender,
     Expression<double>? providerAthleteBodyFatPct,
     Expression<String>? athleteZonesJson,
+    Expression<bool>? providerIsPremium,
+    Expression<String>? athleteMetricsJson,
     Expression<bool>? isActive,
     Expression<DateTime>? lastSyncAt,
     Expression<String>? lastSyncStatus,
@@ -22189,6 +22708,9 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       if (providerAthleteBodyFatPct != null)
         'provider_athlete_body_fat_pct': providerAthleteBodyFatPct,
       if (athleteZonesJson != null) 'athlete_zones_json': athleteZonesJson,
+      if (providerIsPremium != null) 'provider_is_premium': providerIsPremium,
+      if (athleteMetricsJson != null)
+        'athlete_metrics_json': athleteMetricsJson,
       if (isActive != null) 'is_active': isActive,
       if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
       if (lastSyncStatus != null) 'last_sync_status': lastSyncStatus,
@@ -22215,6 +22737,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Value<String?>? providerAthleteGender,
     Value<double?>? providerAthleteBodyFatPct,
     Value<String?>? athleteZonesJson,
+    Value<bool?>? providerIsPremium,
+    Value<String?>? athleteMetricsJson,
     Value<bool>? isActive,
     Value<DateTime?>? lastSyncAt,
     Value<String?>? lastSyncStatus,
@@ -22243,6 +22767,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       providerAthleteBodyFatPct:
           providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
       athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
+      providerIsPremium: providerIsPremium ?? this.providerIsPremium,
+      athleteMetricsJson: athleteMetricsJson ?? this.athleteMetricsJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
@@ -22311,6 +22837,12 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     if (athleteZonesJson.present) {
       map['athlete_zones_json'] = Variable<String>(athleteZonesJson.value);
     }
+    if (providerIsPremium.present) {
+      map['provider_is_premium'] = Variable<bool>(providerIsPremium.value);
+    }
+    if (athleteMetricsJson.present) {
+      map['athlete_metrics_json'] = Variable<String>(athleteMetricsJson.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -22355,6 +22887,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
           ..write('providerAthleteGender: $providerAthleteGender, ')
           ..write('providerAthleteBodyFatPct: $providerAthleteBodyFatPct, ')
           ..write('athleteZonesJson: $athleteZonesJson, ')
+          ..write('providerIsPremium: $providerIsPremium, ')
+          ..write('athleteMetricsJson: $athleteMetricsJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
@@ -46417,6 +46951,14 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String?> brickMetadata,
       Value<String?> brickId,
       Value<double?> tss,
+      Value<double?> tssPlanned,
+      Value<double?> tssActual,
+      Value<double?> ifPlanned,
+      Value<double?> ifActual,
+      Value<double?> tpCalories,
+      Value<double?> tpCaloriesPlanned,
+      Value<String?> parentSummaryId,
+      Value<bool?> isParent,
       Value<String?> garminSummaryId,
       Value<String?> garminDeviceName,
       Value<String?> notes,
@@ -46482,6 +47024,14 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String?> brickMetadata,
       Value<String?> brickId,
       Value<double?> tss,
+      Value<double?> tssPlanned,
+      Value<double?> tssActual,
+      Value<double?> ifPlanned,
+      Value<double?> ifActual,
+      Value<double?> tpCalories,
+      Value<double?> tpCaloriesPlanned,
+      Value<String?> parentSummaryId,
+      Value<bool?> isParent,
       Value<String?> garminSummaryId,
       Value<String?> garminDeviceName,
       Value<String?> notes,
@@ -46772,6 +47322,46 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<double> get tss => $composableBuilder(
     column: $table.tss,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tssPlanned => $composableBuilder(
+    column: $table.tssPlanned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tssActual => $composableBuilder(
+    column: $table.tssActual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ifPlanned => $composableBuilder(
+    column: $table.ifPlanned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ifActual => $composableBuilder(
+    column: $table.ifActual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tpCalories => $composableBuilder(
+    column: $table.tpCalories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tpCaloriesPlanned => $composableBuilder(
+    column: $table.tpCaloriesPlanned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parentSummaryId => $composableBuilder(
+    column: $table.parentSummaryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isParent => $composableBuilder(
+    column: $table.isParent,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -47090,6 +47680,46 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get tssPlanned => $composableBuilder(
+    column: $table.tssPlanned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tssActual => $composableBuilder(
+    column: $table.tssActual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ifPlanned => $composableBuilder(
+    column: $table.ifPlanned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ifActual => $composableBuilder(
+    column: $table.ifActual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tpCalories => $composableBuilder(
+    column: $table.tpCalories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tpCaloriesPlanned => $composableBuilder(
+    column: $table.tpCaloriesPlanned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parentSummaryId => $composableBuilder(
+    column: $table.parentSummaryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isParent => $composableBuilder(
+    column: $table.isParent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get garminSummaryId => $composableBuilder(
     column: $table.garminSummaryId,
     builder: (column) => ColumnOrderings(column),
@@ -47391,6 +48021,38 @@ class $$ActivitiesTableTableAnnotationComposer
   GeneratedColumn<double> get tss =>
       $composableBuilder(column: $table.tss, builder: (column) => column);
 
+  GeneratedColumn<double> get tssPlanned => $composableBuilder(
+    column: $table.tssPlanned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get tssActual =>
+      $composableBuilder(column: $table.tssActual, builder: (column) => column);
+
+  GeneratedColumn<double> get ifPlanned =>
+      $composableBuilder(column: $table.ifPlanned, builder: (column) => column);
+
+  GeneratedColumn<double> get ifActual =>
+      $composableBuilder(column: $table.ifActual, builder: (column) => column);
+
+  GeneratedColumn<double> get tpCalories => $composableBuilder(
+    column: $table.tpCalories,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get tpCaloriesPlanned => $composableBuilder(
+    column: $table.tpCaloriesPlanned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parentSummaryId => $composableBuilder(
+    column: $table.parentSummaryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isParent =>
+      $composableBuilder(column: $table.isParent, builder: (column) => column);
+
   GeneratedColumn<String> get garminSummaryId => $composableBuilder(
     column: $table.garminSummaryId,
     builder: (column) => column,
@@ -47502,6 +48164,14 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> brickMetadata = const Value.absent(),
                 Value<String?> brickId = const Value.absent(),
                 Value<double?> tss = const Value.absent(),
+                Value<double?> tssPlanned = const Value.absent(),
+                Value<double?> tssActual = const Value.absent(),
+                Value<double?> ifPlanned = const Value.absent(),
+                Value<double?> ifActual = const Value.absent(),
+                Value<double?> tpCalories = const Value.absent(),
+                Value<double?> tpCaloriesPlanned = const Value.absent(),
+                Value<String?> parentSummaryId = const Value.absent(),
+                Value<bool?> isParent = const Value.absent(),
                 Value<String?> garminSummaryId = const Value.absent(),
                 Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -47565,6 +48235,14 @@ class $$ActivitiesTableTableTableManager
                 brickMetadata: brickMetadata,
                 brickId: brickId,
                 tss: tss,
+                tssPlanned: tssPlanned,
+                tssActual: tssActual,
+                ifPlanned: ifPlanned,
+                ifActual: ifActual,
+                tpCalories: tpCalories,
+                tpCaloriesPlanned: tpCaloriesPlanned,
+                parentSummaryId: parentSummaryId,
+                isParent: isParent,
                 garminSummaryId: garminSummaryId,
                 garminDeviceName: garminDeviceName,
                 notes: notes,
@@ -47630,6 +48308,14 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> brickMetadata = const Value.absent(),
                 Value<String?> brickId = const Value.absent(),
                 Value<double?> tss = const Value.absent(),
+                Value<double?> tssPlanned = const Value.absent(),
+                Value<double?> tssActual = const Value.absent(),
+                Value<double?> ifPlanned = const Value.absent(),
+                Value<double?> ifActual = const Value.absent(),
+                Value<double?> tpCalories = const Value.absent(),
+                Value<double?> tpCaloriesPlanned = const Value.absent(),
+                Value<String?> parentSummaryId = const Value.absent(),
+                Value<bool?> isParent = const Value.absent(),
                 Value<String?> garminSummaryId = const Value.absent(),
                 Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -47693,6 +48379,14 @@ class $$ActivitiesTableTableTableManager
                 brickMetadata: brickMetadata,
                 brickId: brickId,
                 tss: tss,
+                tssPlanned: tssPlanned,
+                tssActual: tssActual,
+                ifPlanned: ifPlanned,
+                ifActual: ifActual,
+                tpCalories: tpCalories,
+                tpCaloriesPlanned: tpCaloriesPlanned,
+                parentSummaryId: parentSummaryId,
+                isParent: isParent,
                 garminSummaryId: garminSummaryId,
                 garminDeviceName: garminDeviceName,
                 notes: notes,
@@ -51108,6 +51802,8 @@ typedef $$IntegrationsTableTableCreateCompanionBuilder =
       Value<String?> providerAthleteGender,
       Value<double?> providerAthleteBodyFatPct,
       Value<String?> athleteZonesJson,
+      Value<bool?> providerIsPremium,
+      Value<String?> athleteMetricsJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
@@ -51133,6 +51829,8 @@ typedef $$IntegrationsTableTableUpdateCompanionBuilder =
       Value<String?> providerAthleteGender,
       Value<double?> providerAthleteBodyFatPct,
       Value<String?> athleteZonesJson,
+      Value<bool?> providerIsPremium,
+      Value<String?> athleteMetricsJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
@@ -51219,6 +51917,16 @@ class $$IntegrationsTableTableFilterComposer
 
   ColumnFilters<String> get athleteZonesJson => $composableBuilder(
     column: $table.athleteZonesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get providerIsPremium => $composableBuilder(
+    column: $table.providerIsPremium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get athleteMetricsJson => $composableBuilder(
+    column: $table.athleteMetricsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -51337,6 +52045,16 @@ class $$IntegrationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get providerIsPremium => $composableBuilder(
+    column: $table.providerIsPremium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get athleteMetricsJson => $composableBuilder(
+    column: $table.athleteMetricsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -51446,6 +52164,16 @@ class $$IntegrationsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get providerIsPremium => $composableBuilder(
+    column: $table.providerIsPremium,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get athleteMetricsJson => $composableBuilder(
+    column: $table.athleteMetricsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -51526,6 +52254,8 @@ class $$IntegrationsTableTableTableManager
                 Value<String?> providerAthleteGender = const Value.absent(),
                 Value<double?> providerAthleteBodyFatPct = const Value.absent(),
                 Value<String?> athleteZonesJson = const Value.absent(),
+                Value<bool?> providerIsPremium = const Value.absent(),
+                Value<String?> athleteMetricsJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
@@ -51549,6 +52279,8 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteGender: providerAthleteGender,
                 providerAthleteBodyFatPct: providerAthleteBodyFatPct,
                 athleteZonesJson: athleteZonesJson,
+                providerIsPremium: providerIsPremium,
+                athleteMetricsJson: athleteMetricsJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,
@@ -51574,6 +52306,8 @@ class $$IntegrationsTableTableTableManager
                 Value<String?> providerAthleteGender = const Value.absent(),
                 Value<double?> providerAthleteBodyFatPct = const Value.absent(),
                 Value<String?> athleteZonesJson = const Value.absent(),
+                Value<bool?> providerIsPremium = const Value.absent(),
+                Value<String?> athleteMetricsJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
@@ -51597,6 +52331,8 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteGender: providerAthleteGender,
                 providerAthleteBodyFatPct: providerAthleteBodyFatPct,
                 athleteZonesJson: athleteZonesJson,
+                providerIsPremium: providerIsPremium,
+                athleteMetricsJson: athleteMetricsJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,

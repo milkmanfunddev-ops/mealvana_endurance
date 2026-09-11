@@ -65,6 +65,12 @@ const GARMIN_BACKFILL_PATH: Record<string, string> = {
 
 const DEFAULT_SUMMARY_TYPES = ['body_composition', 'user_metrics'];
 const MAX_WINDOW_DAYS = 90;
+// Garmin's Activity-summaries backfill max is 30 days per request — smaller
+// than the 90-day Health/Women's window. The old single clamp let an
+// `activities` request through at up to 90 days, which Garmin rejects
+// upstream (Q-INT18 recorded bug; fixed for the Q-INT27 connect-time
+// activities backfill). Health types keep the 90-day window.
+const MAX_ACTIVITY_WINDOW_DAYS = 30;
 const GARMIN_BACKFILL_BASE = 'https://apis.garmin.com/wellness-api/rest/backfill';
 
 interface BackfillRequest {
@@ -272,8 +278,13 @@ serve(withSentry(async (req: Request) => {
 
     for (const summaryType of summaryTypes) {
       const path = GARMIN_BACKFILL_PATH[summaryType];
+      // Per-type clamp: `activities` is capped at Garmin's 30-day Activity
+      // max; everything else keeps the requested (<=90 day) window.
+      const typeStartSec = summaryType === 'activities'
+        ? endSec - Math.min(windowDays, MAX_ACTIVITY_WINDOW_DAYS) * 86400
+        : startSec;
       const url =
-        `${GARMIN_BACKFILL_BASE}/${path}?summaryStartTimeInSeconds=${startSec}&summaryEndTimeInSeconds=${endSec}`;
+        `${GARMIN_BACKFILL_BASE}/${path}?summaryStartTimeInSeconds=${typeStartSec}&summaryEndTimeInSeconds=${endSec}`;
 
       try {
         // Garmin's backfill API rejects empty body (502) AND missing
