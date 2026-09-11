@@ -9,6 +9,10 @@
 /// [VanaCompanionObserver], and tells the Situation which route is on top.
 /// [VanaCompanionSheet] is the conversation inside the sheet: today's ambient
 /// general conversation, the same Vana as the chat route.
+///
+/// When Vana has something to say first (vana-moment spec), the launcher
+/// rings, shows its pill and stays tinted ([VanaMomentController] holds the
+/// moment), and a tap opens the sheet on the moment (VM-1).
 library;
 
 import 'package:flutter/material.dart';
@@ -18,6 +22,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
@@ -26,11 +31,13 @@ import '../../../subscription/application/pro_gate.dart';
 import '../../../subscription/presentation/pro_gate_redirect.dart';
 import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_chat_controller.dart';
+import '../../application/vana_moment_controller.dart';
 import '../../application/vana_situation_controller.dart';
 import '../../domain/vana_conversation_kind.dart';
 import '../../domain/vana_exchange.dart';
 import '../../domain/vana_launcher_rule.dart';
 import '../../domain/vana_message.dart';
+import '../../domain/vana_moment.dart';
 import 'part_entrance.dart';
 import 'streamed_text.dart';
 import 'vana_part_renderer.dart';
@@ -127,6 +134,9 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   /// land on it; it must not open a second sheet.
   bool _opening = false;
 
+  /// The moment a ring has been asked for, so a rebuild does not ask twice.
+  String? _ringing;
+
   @override
   void initState() {
     super.initState();
@@ -202,11 +212,17 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     if (!mounted) return;
     if (conversationId == null) _awaitNaming();
     final content = ref.read(contentServiceProvider);
+    // VM-1: a live moment is what the sheet opens on.
+    final moment = ref.read(vanaMomentControllerProvider).value;
     // Completes when the sheet closes.
     await navigator.push(
       VanaSheetRoute<void>(
         barrierLabel: content.getValue(ContentKeys.mpCompanionClose),
-        builder: (_) => VanaCompanionSheet(conversationId: conversationId),
+        builder: (_) => VanaCompanionSheet(
+          conversationId: conversationId,
+          moment: moment?.moment,
+          momentStart: moment?.exchangeStart,
+        ),
       ),
     );
   }
@@ -230,9 +246,28 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     });
   }
 
+  /// A raised moment rings on a launcher the athlete can see, never on one
+  /// that is hidden (its one ring would be spent where nobody saw it).
+  void _ringWhenShown(VanaMomentState? moment, bool shown) {
+    final key = moment?.moment?.key;
+    if (!shown || key == null || moment!.phase != VanaMomentPhase.waiting) {
+      return;
+    }
+    if (_ringing == key) return;
+    _ringing = key;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(vanaMomentControllerProvider.notifier).ring();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final shown = vanaLauncherShownOn(_path) && !_popupOnTop;
+    final moment = ref.watch(vanaMomentControllerProvider).value;
+    _ringWhenShown(moment, shown);
+    final live = moment?.moment;
+    final content = ref.read(contentServiceProvider);
+    final pill = live == null ? null : vanaMomentPillLine(content, live);
     return Stack(
       children: [
         widget.child,
@@ -241,15 +276,48 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
             right: VanaLauncher.rightInset,
             bottom: VanaLauncher.bottomInset,
             child: VanaLauncher(
-              semanticLabel: ref
-                  .read(contentServiceProvider)
-                  .getValue(ContentKeys.mpCompanionLauncher),
+              semanticLabel: pill == null
+                  ? content.getValue(ContentKeys.mpCompanionLauncher)
+                  : ContentKeys.format(
+                      content.getValue(ContentKeys.mpCompanionLauncherMoment),
+                      {'line': pill},
+                    ),
+              state: live == null
+                  ? VanaLauncherState.quiet
+                  : switch (moment!.phase) {
+                      VanaMomentPhase.waiting => VanaLauncherState.quiet,
+                      VanaMomentPhase.ring => VanaLauncherState.ring,
+                      VanaMomentPhase.pill => VanaLauncherState.pill,
+                      VanaMomentPhase.tinted => VanaLauncherState.tinted,
+                    },
+              // Both moments so far are to-dos.
+              tone: VanaLauncherTone.toDo,
+              pill: pill,
               onTap: _open,
             ),
           ),
       ],
     );
   }
+}
+
+/// The pill's one line for [moment]: "Fuel tonight's run?".
+String vanaMomentPillLine(ContentService content, VanaMoment moment) {
+  final hour = moment.startsAt.hour;
+  final line = hour < 12
+      ? ContentKeys.mpCompanionMomentPreWorkoutMorning
+      : hour < 17
+      ? ContentKeys.mpCompanionMomentPreWorkoutAfternoon
+      : ContentKeys.mpCompanionMomentPreWorkoutEvening;
+  final session = switch (moment.activityType) {
+    ActivityType.running => ContentKeys.mpCompanionSessionRun,
+    ActivityType.cycling => ContentKeys.mpCompanionSessionRide,
+    ActivityType.swimming => ContentKeys.mpCompanionSessionSwim,
+    _ => ContentKeys.mpCompanionSessionOther,
+  };
+  return ContentKeys.format(content.getValue(line), {
+    'session': content.getValue(session),
+  });
 }
 
 /// The conversation inside the sheet: today's ambient general conversation
@@ -263,10 +331,23 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 /// the typing indicator, and the composer. Planning actions a part offers
 /// (picking a meal, accepting a rule, the pantry) open the full-screen chat on
 /// the same conversation, where the plan bar lives.
+///
+/// Opened on a live [moment] (VM-1), the sheet writes the moment's opener
+/// into the conversation, even one with a thread, and reads the exchange from
+/// there: its two quick replies and the orange to-do chip. [momentStart] is
+/// where an earlier sheet already wrote it; a dismiss (VM-2) leaves it there
+/// for the next sheet, and anything the athlete sends answers it (VM-3).
 class VanaCompanionSheet extends ConsumerStatefulWidget {
-  const VanaCompanionSheet({super.key, this.conversationId});
+  const VanaCompanionSheet({
+    super.key,
+    this.conversationId,
+    this.moment,
+    this.momentStart,
+  });
 
   final String? conversationId;
+  final VanaMoment? moment;
+  final int? momentStart;
 
   @override
   ConsumerState<VanaCompanionSheet> createState() => _VanaCompanionSheetState();
@@ -288,6 +369,10 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   /// Set by the athlete's first send, so the quick replies stay retired even
   /// if that turn fails and leaves the transcript (VS-8).
   bool _repliesRetired = false;
+
+  /// Where the exchange on show starts: the moment's opening, or the
+  /// conversation's first message.
+  late int _exchangeStart = widget.momentStart ?? 0;
 
   /// Whether the sheet rests at `auto`: it opened on one message and a
   /// dismiss, and still is one. Decided by the first transcript the sheet
@@ -324,8 +409,20 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   /// and an empty conversation opens to the opener.
   Future<void> _openToOpener() async {
     final state = await ref.read(_provider.future);
-    if (!mounted || state.messages.isNotEmpty || state.isStreaming) return;
-    if (state.error != null) return;
+    if (!mounted || state.isStreaming || state.error != null) return;
+    final moment = widget.moment;
+    // A moment already written (and still there) is opened on, not repeated.
+    if (moment != null &&
+        (widget.momentStart ?? state.messages.length) >=
+            state.messages.length) {
+      final start = state.messages.length;
+      setState(() => _exchangeStart = start);
+      ref.read(vanaMomentControllerProvider.notifier).opened(start);
+      _lastAttempt = () => _controller.loadOpener(moment: moment);
+      await _controller.loadOpener(moment: moment);
+      return;
+    }
+    if (state.messages.isNotEmpty) return;
     _lastAttempt = _controller.loadOpener;
     await _controller.loadOpener();
   }
@@ -335,6 +432,10 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     if (text.isEmpty) return;
     if (label == null) _text.clear();
     setState(() => _repliesRetired = true);
+    // VM-3: anything sent in the moment's exchange answers it.
+    if (widget.moment != null) {
+      ref.read(vanaMomentControllerProvider.notifier).answer();
+    }
     _lastAttempt = () => _controller.send(text);
     _controller.send(text);
   }
@@ -383,8 +484,13 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
         : VanaExchange.of(
             state.messages,
             isStreaming: state.isStreaming,
+            start: _exchangeStart,
             situationRoute: _situationRoute,
             repliesRetired: _repliesRetired,
+            raisedFor: switch (widget.moment?.kind) {
+              VanaMomentKind.preWorkout => VanaExchangeTopic.fuelPlan,
+              null => null,
+            },
           );
     if (exchange != null) {
       _restsAtAuto = (_restsAtAuto ?? true) && exchange.oneMessage;

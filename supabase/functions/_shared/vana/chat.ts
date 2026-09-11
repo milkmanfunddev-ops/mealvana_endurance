@@ -20,6 +20,7 @@ import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } 
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
+import { generalOpener } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
 import { ndjsonFromFullStream, ndjsonHeaders } from './stream.ts';
 
@@ -156,7 +157,11 @@ export function partsFromSteps(text: string, steps: any[], maxSentences: number 
   const clamp = (t: string) => (maxSentences == null ? t.replace(/\s+/g, ' ').trim() : clampSentences(t, maxSentences));
   for (const s of steps) {
     // Unclamped (general) mode: drop the model's pre-tool narration ("I'll pull up your plan.") — only the step that answers keeps its text.
-    const narration = maxSentences == null && (s.toolCalls?.length ?? 0) > 0 && String(s.text ?? '').length < 160;
+    // A step whose only tool is askChoice is not narrating: its text is what the question is about (a moment's opener names the
+    // session there), and the stream already showed it.
+    const calls = (s.toolCalls ?? []) as { toolName?: string }[];
+    const asking = calls.length > 0 && calls.every((c) => c.toolName === 'askChoice');
+    const narration = maxSentences == null && calls.length > 0 && !asking && String(s.text ?? '').length < 160;
     const t = narration || (filed && silenceFeedback) ? '' : clamp(String(s.text ?? '')); if (t) { parts.push({ type: 'text', text: t }); anyText = true; }
     for (const r of s.toolResults ?? []) {
       const out = (r as { output?: unknown; toolName?: string; toolCallId?: string; input?: unknown }).output;
@@ -174,7 +179,9 @@ export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayI
 
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
-export interface ChatBody { message?: string; conversation_id?: string | null; kind?: ConversationKind | string; timezone?: string; opener?: boolean; anchor_date?: string; situation?: Situation | null }
+export interface ChatBody { message?: string; conversation_id?: string | null; kind?: ConversationKind | string; timezone?: string; opener?: boolean; anchor_date?: string; situation?: Situation | null;
+  /** With `opener`: the device raised a moment (vana-moment spec VM-1) — `{ kind, activity_id, window_minutes }`. */
+  moment?: unknown }
 export interface ChatRunOpts {
   /** `ai_usage.function_name` / log tag: 'vana-chat' | 'jade-chat'. */
   functionName: string;
@@ -220,7 +227,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
-  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] = 'plan'; let extraContext = '';
+  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | 'moment' = 'plan'; let extraContext = '';
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
@@ -234,6 +241,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const firstTurn = opener || messages.length <= 1;
   if (firstTurn && persist && convId) waitUntil(readBackPrevious(v, convId));
   const trailingParts: VanaPart[] = firstConversation ? [{ kind: 'feedback_prompt' }] : [];
+  // A moment's opener goes into the day's conversation even when it already has a thread (VM-1).
+  if (convKind === 'general' && opener) ({ text: openerText, variant: openerVariant } = await generalOpener(v, body));
   if (convKind === 'meal_planning') {
     const openerInput = await loadOpenerInput(v, anchorDate);
     // The opener's synthetic user message is never stored, so later turns need the pending debrief restated in the context.

@@ -9,6 +9,7 @@ import '../../../shared/services/logging_service.dart';
 import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
 import '../domain/vana_message.dart';
+import '../domain/vana_moment.dart';
 import '../domain/vana_part.dart';
 import '../domain/vana_situation.dart';
 import '../domain/vana_stream_event.dart';
@@ -104,6 +105,9 @@ class VanaChatRepository {
   /// [situation] says which screen the athlete is on and what is in view, so
   /// "what should I eat before this" means the session in front of them.
   ///
+  /// [moment], with [opener], is what the launcher raised (vana-moment spec
+  /// VM-1): the server writes that moment's opener into [conversationId].
+  ///
   /// Throws [VanaUnauthenticatedException], [ProRequiredException],
   /// [VanaRateLimitedException], [VanaOfflineException],
   /// [VanaServerException] (and `InsufficientCreditsException` on
@@ -116,6 +120,7 @@ class VanaChatRepository {
     String? anchorDate,
     String? timezone,
     VanaSituation? situation,
+    VanaMoment? moment,
   }) async {
     final body = <String, dynamic>{
       'kind': kind.wire,
@@ -126,6 +131,7 @@ class VanaChatRepository {
       if (anchorDate != null) 'anchor_date': anchorDate,
       // Ids only — the server resolves them into one sentence and stores nothing.
       if (situation != null) 'situation': situation.toJson(),
+      if (moment != null) 'moment': moment.toWire(),
       'timezone': timezone ?? resolveTimezone(),
     };
 

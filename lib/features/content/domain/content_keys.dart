@@ -553,6 +553,25 @@ class ContentKeys {
       'meal_planning.companion_topic_fuel_plan';
   static const String mpCompanionTopicMealPlan =
       'meal_planning.companion_topic_meal_plan';
+  // The launcher when Vana speaks first (vana-moment spec): its label with a
+  // moment live, the pre-workout pill by time of day, and the session nouns
+  // the pill names.
+  static const String mpCompanionLauncherMoment =
+      'meal_planning.companion_launcher_moment';
+  static const String mpCompanionMomentPreWorkoutMorning =
+      'meal_planning.companion_moment_pre_workout_morning';
+  static const String mpCompanionMomentPreWorkoutAfternoon =
+      'meal_planning.companion_moment_pre_workout_afternoon';
+  static const String mpCompanionMomentPreWorkoutEvening =
+      'meal_planning.companion_moment_pre_workout_evening';
+  static const String mpCompanionSessionRun =
+      'meal_planning.companion_session_run';
+  static const String mpCompanionSessionRide =
+      'meal_planning.companion_session_ride';
+  static const String mpCompanionSessionSwim =
+      'meal_planning.companion_session_swim';
+  static const String mpCompanionSessionOther =
+      'meal_planning.companion_session_other';
 
   // What's new sheet — lib/shared/widgets/whats_new_sheet.dart. `version`
   // gates the sheet (shows once per value, on installs/updates at or above

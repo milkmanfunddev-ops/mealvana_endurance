@@ -23,6 +23,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
@@ -38,6 +39,7 @@ import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/container.dart';
+import '../../helpers/vana_moment_inputs.dart';
 import '../helpers/test_content.dart';
 
 const _launcher = ValueKey('vana_sheet.launcher');
@@ -75,6 +77,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? anchorDate,
     String? timezone,
     VanaSituation? situation,
+    VanaMoment? moment,
   }) async {
     calls.add({
       'message': message,
@@ -219,6 +222,7 @@ Future<_Harness> _pump(
   final container = ProviderContainer(
     overrides: [
       ...baseOverrides(),
+      ...vanaMomentInputs(),
       sharedPreferencesProvider.overrideWithValue(prefs),
       contentServiceProvider.overrideWith(testContentService),
       proUnlockedProvider.overrideWithValue(pro),

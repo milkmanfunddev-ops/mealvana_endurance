@@ -112,6 +112,18 @@ class AppMaterials {
   /// sheet's value, carried by the Vana sheet so the two share it).
   static final Color sheetGrabber = AppColors.cream.withValues(alpha: 0.30);
 
+  // ---- the launcher's moment tint (vana-moment spec, TINTED; PROPOSED
+  // 2026-09-11, app-side) ----
+  /// Over the tone fill, a cream highlight from the top: 22 % fading to
+  /// nothing at 55 % of the height (the companion export's `chBtnBg`).
+  static final Color momentTintHighlight = AppColors.cream.withValues(
+    alpha: 0.22,
+  );
+  static const double momentTintHighlightStop = 0.55;
+
+  /// The ring's trace glow: the export's `feGaussianBlur` deviation.
+  static const double momentTraceGlowSigma = 3.5;
+
   // ---- liquid-glass bubble (tab-bar active highlight; PROPOSED Xuan
   // 2026-09-06, Bevel recording — intake
   // 2026-09-06-tab-bar-liquid-bubble, pending ratification) ----

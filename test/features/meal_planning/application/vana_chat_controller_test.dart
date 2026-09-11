@@ -21,6 +21,8 @@ import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
+import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
@@ -49,6 +51,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? anchorDate,
     String? timezone,
     VanaSituation? situation,
+    VanaMoment? moment,
   }) async {
     calls.add({
       'message': message,
@@ -56,6 +59,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
       'opener': opener,
       'anchorDate': anchorDate,
       'situation': situation?.toJson(),
+      'moment': moment?.toWire(),
     });
     if (throwOnStream != null) throw throwOnStream!;
     return VanaChatResponse(
@@ -201,6 +205,58 @@ void main() {
       expect(seen.any((st) => st.statusTool == 'suggestMeals'), isTrue);
     },
   );
+
+  test('a moment\'s opener is written into a conversation that already has '
+      'turns, and carries the moment', () async {
+    repo.history = [
+      VanaMessage(
+        id: 'm1',
+        conversationId: 'conv-today',
+        role: VanaMessageRole.user,
+        content: 'What should I eat today?',
+        createdAt: DateTime(2026, 9, 11, 9),
+      ),
+      VanaMessage(
+        id: 'm2',
+        conversationId: 'conv-today',
+        role: VanaMessageRole.assistant,
+        content: 'Oats at breakfast.',
+        createdAt: DateTime(2026, 9, 11, 9),
+      ),
+    ];
+    repo.events = const [VanaTextEvent('Your tempo run is at 5:30.')];
+    final (:notifier, seen: _) = make(
+      kind: VanaConversationKind.general,
+      conversationId: 'conv-today',
+    );
+    await notifier.future;
+
+    // Without a moment an opener never lands on a conversation with turns.
+    await notifier.loadOpener();
+    expect(repo.calls, isEmpty);
+
+    final moment = VanaMoment(
+      kind: VanaMomentKind.preWorkout,
+      activityId: 'act-run',
+      title: 'Tempo run',
+      activityType: ActivityType.running,
+      startsAt: DateTime(2026, 9, 11, 17, 30),
+      windowOpensAt: DateTime(2026, 9, 11, 16, 30),
+      rings: false,
+    );
+    await notifier.loadOpener(moment: moment);
+
+    expect(repo.calls.single['opener'], isTrue);
+    expect(repo.calls.single['conversationId'], 'conv-today');
+    expect(repo.calls.single['moment'], {
+      'kind': 'pre_workout',
+      'activity_id': 'act-run',
+      'window_minutes': 60,
+    });
+    final messages = notifier.state.value!.messages;
+    expect(messages, hasLength(3));
+    expect(messages.last.content, 'Your tempo run is at 5:30.');
+  });
 
   test(
     'send: text deltas accumulate, batch folds into the plan, memory_saved stored',

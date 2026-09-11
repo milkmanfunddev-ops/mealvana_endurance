@@ -25,6 +25,9 @@
 /// the bar collapses past [tabBarCollapseThresholdPx] and re-expands below
 /// [tabBarExpandThresholdPx] (hysteresis = the band between them); the
 /// header compacts past [headerCompactThresholdPx].
+///
+/// The bar also retracts while the Vana launcher's pill shows (vana-moment
+/// spec, PILL), so the two never overlap; it comes back when the pill goes.
 library;
 
 import 'package:flutter/material.dart';
@@ -34,6 +37,7 @@ import '../../../shared/core/guarded_navigation.dart';
 import '../../../shared/widgets/kyle_design/navigation/kyle_date_header.dart';
 import '../../../shared/widgets/kyle_design/navigation/kyle_tab_bar.dart';
 import '../../calendar/presentation/providers/calendar_selected_date_provider.dart';
+import '../../meal_planning/application/vana_moment_controller.dart';
 import 'widgets/home_shell_calendar_host.dart';
 
 class HomeShellChrome extends ConsumerStatefulWidget {
@@ -98,6 +102,9 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
   @override
   Widget build(BuildContext context) {
     final selectedDate = ref.watch(calendarSelectedDateProvider);
+    // The launcher's pill borrows the bar's retract while it speaks.
+    final pillShows =
+        ref.watch(vanaMomentControllerProvider).value?.pillShows ?? false;
     final media = MediaQuery.of(context);
     // Q2 geometry: the expanded pill may grow up to the utility slot's
     // clearance, never into it.
@@ -147,8 +154,8 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
               ),
             ),
           ),
-          // Tab bar — left-anchored (Q2); the bottom-right utility slot
-          // stays EMPTY in v1 (nothing composes there, deliberately).
+          // Tab bar — left-anchored (Q2); the Vana launcher fills the
+          // bottom-right utility slot from above the router.
           Positioned(
             left: 14,
             bottom: 28,
@@ -157,7 +164,7 @@ class _HomeShellChromeState extends ConsumerState<HomeShellChrome> {
               child: KyleTabBar(
                 destinations: widget.destinations,
                 activeId: widget.activeTabId,
-                collapsed: _tabBarCollapsed,
+                collapsed: _tabBarCollapsed || pillShows,
                 maxWidth: barMaxWidth,
                 onSelect: widget.onSelectTab,
                 onCollapsedTap: () => setState(() => _tabBarCollapsed = false),

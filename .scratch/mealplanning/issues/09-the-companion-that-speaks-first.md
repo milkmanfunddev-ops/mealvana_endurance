@@ -1,8 +1,8 @@
 # 09: The companion that speaks first — the pre-workout moment, end to end
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-11)
 **Blocked by:** None
-**Next:** `/mattpocock-skills:implement .scratch/mealplanning/issues/09-the-companion-that-speaks-first.md`
+**Next:** ticket 10 (the recovery moment and the two-a-day cap).
 
 **Spec:** `docs/ssot/spec/design/components/vana-moment.md` (PROPOSED v1, authored app-side). Read
 it first; this ticket builds its M-1 and every state and gesture M-1 needs. M-2 (recovery) and the
@@ -84,14 +84,39 @@ Answering retires it, and so does eating something or the run starting.
 
 ## Done when
 
-- [ ] M-1 is raised and retired by the resolver, proven over producer-shaped rows
-- [ ] It rings once per workout window, across restarts
-- [ ] RING → PILL → TINTED on the launcher, the tab bar stepping aside for the pill
-- [ ] Tapping opens the sheet on Vana naming the session, with two quick replies and an orange to-do chip, mid-thread included
-- [ ] Dismissing keeps it tinted; answering, logging or the start retires it
-- [ ] Server change deployed to dev and seen answering on the simulator: plan a workout starting
+- [x] M-1 is raised and retired by the resolver, proven over producer-shaped rows
+- [x] It rings once per workout window, across restarts
+- [x] RING → PILL → TINTED on the launcher, the tab bar stepping aside for the pill
+- [x] Tapping opens the sheet on Vana naming the session, with two quick replies and an orange to-do chip, mid-thread included
+- [x] Dismissing keeps it tinted; answering, logging or the start retires it
+- [x] Server change deployed to dev and seen answering on the simulator: plan a workout starting
       within its window on the dev account, and nothing logged
-- [ ] Goldens for the two launcher states
+- [x] Goldens for the two launcher states
 
 **Full history:** `../archive/issues-2026-09-10/13-companion-speaks-first.md` (the deferred version, with
 the three candidate trigger sets).
+
+## Notes (build, 2026-09-11)
+
+- **Window.** The resolver takes the workout's stored `time_before_minutes` (the create flow's
+  `defaultFuelingWindowMinutes`, or the athlete's own adjustment) and falls back to
+  `defaultFuelingWindowMinutes` from the row's duration and intensity, clamped to the minutes since
+  midnight. The device sends that window in `moment.window_minutes`, so Vana names the same one.
+  A workout created close to its start has its window clamped to the time left, so it opens the
+  minute it is created.
+- **Phases.** Strict sequence ring (2 s, glass, drop + trace) → pill (4 s, tinted capsule) → tinted.
+  The export opens the pill during the ring; the spec's table reads as a sequence, so the build
+  follows the spec. A raised moment waits for a launcher on screen before it rings.
+- **Import-only workouts** (`ActivityType.other`) raise nothing: they carry no fuel plan.
+- **Server find.** `partsFromSteps` dropped a general turn's sentence when the same step called
+  `askChoice` (the pre-tool "narration" rule), so the stored opener lost its prose while the live
+  stream showed it. Fixed: a step whose only tool is `askChoice` keeps its text. The general opener
+  had the same loss before this ticket.
+- **Seen on the iPhone 17 Pro simulator (dev):** the launcher tinted orange with the label "Ask Vana:
+  Fuel this morning's run?", VM-1 on a new conversation and mid-thread (the second moment opened
+  under the first exchange's thread), the orange `Fuel plan · to do` chip, VM-2 (one stored opener
+  after a dismiss and a reopen), VM-3 (answering retired it). The ring and the pill were not caught
+  in a device screenshot: the dev build's debug buttons sit over the launcher. They are held by the
+  widget tests and the goldens.
+- Only a VM-3 send in the sheet answers the moment; a send from the full-screen chat on the same
+  conversation does not.

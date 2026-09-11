@@ -16,6 +16,7 @@ import '../domain/meal_plan.dart';
 import '../domain/ui_action.dart';
 import '../domain/vana_conversation_kind.dart';
 import '../domain/vana_message.dart';
+import '../domain/vana_moment.dart';
 import '../domain/vana_part.dart';
 import '../domain/vana_stream_event.dart';
 import '../domain/week_start.dart';
@@ -211,14 +212,25 @@ class VanaChatController extends _$VanaChatController {
   /// dinners) or the general greeting. Creates the conversation server-side
   /// when there is none. Failures leave the empty state (an opener is a
   /// nicety, except `pro_required`, which is surfaced).
-  Future<void> loadOpener({String? anchorDate}) async {
+  ///
+  /// With a [moment] it is the moment's opener (vana-moment spec VM-1), and
+  /// it lands even on a conversation that already has turns: the moment
+  /// starts a new exchange there.
+  Future<void> loadOpener({String? anchorDate, VanaMoment? moment}) async {
     // The opener can be requested in the screen's first post-frame callback,
     // before this notifier's async build() has resolved — writes made before
     // initialization completes are clobbered by the initializer's return.
     await future;
     final current = state.value ?? VanaChatState(kind: kind);
-    if (current.isStreaming || current.messages.isNotEmpty) return;
-    await _turn(current, message: null, opener: true, anchorDate: anchorDate);
+    if (current.isStreaming) return;
+    if (moment == null && current.messages.isNotEmpty) return;
+    await _turn(
+      current,
+      message: null,
+      opener: true,
+      anchorDate: anchorDate,
+      moment: moment,
+    );
   }
 
   /// Send a user message.
@@ -435,6 +447,7 @@ class VanaChatController extends _$VanaChatController {
     required String? message,
     required bool opener,
     String? anchorDate,
+    VanaMoment? moment,
   }) async {
     final now = DateTime.now();
     final convId = before.conversationId ?? '';
@@ -475,6 +488,7 @@ class VanaChatController extends _$VanaChatController {
             anchorDate ?? (opener && before.isPlanning ? todayIso() : null),
         // Whatever screen is underneath — read at send time, never stored.
         situation: ref.read(vanaSituationControllerProvider.notifier).current(),
+        moment: moment,
       );
       final resolvedId = response.conversationId.isNotEmpty
           ? response.conversationId

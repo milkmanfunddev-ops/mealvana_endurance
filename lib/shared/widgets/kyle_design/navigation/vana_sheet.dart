@@ -17,7 +17,8 @@
 /// filled additively ([VanaLauncher.size] is [KyleTabBar.utilitySlotSize]).
 ///
 /// Contracts held here:
-/// * **Launcher** — ~52 px circular glass, Vana's mark, no label.
+/// * **Launcher** — ~52 px circular glass, Vana's mark, no label; with the
+///   moment states it takes when Vana speaks first, in `vana_launcher.dart`.
 /// * **Rise** 360 ms from the bottom edge; **condense** 470 ms back into the
 ///   launcher, transform origin at the launcher's own centre, rounding into a
 ///   circle as it shrinks. Every pop of [VanaSheetRoute] — scrim tap (VS-2),
@@ -51,116 +52,10 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_materials.dart';
 import '../../../../theme/kyle_design/app_theme.dart';
 import '../materials/glass.dart';
-import 'kyle_tab_bar.dart';
+import 'vana_launcher.dart';
 
+export 'vana_launcher.dart';
 export 'vana_sheet_conversation.dart';
-
-/// The launcher in the bottom-right utility slot. Place it with
-/// [VanaLauncher.rightInset] / [VanaLauncher.bottomInset] in a screen-sized
-/// [Stack] so it lines up with the tab bar and with the sheet's condense.
-class VanaLauncher extends StatelessWidget {
-  const VanaLauncher({
-    super.key,
-    required this.semanticLabel,
-    required this.onTap,
-  });
-
-  /// "Ask Vana" — the launcher has no visible label.
-  final String semanticLabel;
-  final VoidCallback onTap;
-
-  /// The utility slot's diameter (tab-bar.md Q2).
-  static const double size = KyleTabBar.utilitySlotSize;
-
-  /// Mirrors the tab bar's 14 px left anchor on the opposite corner.
-  static const double rightInset = 14;
-
-  /// Centred on the expanded tab bar, which sits 28 px off the bottom edge
-  /// (home_shell_chrome.dart).
-  static const double bottomInset = 28 + (KyleTabBar.expandedHeight - size) / 2;
-
-  /// The launcher's centre on a screen of [screen] size — where the sheet
-  /// condenses to.
-  static Offset centerOn(Size screen) => Offset(
-    screen.width - rightInset - size / 2,
-    screen.height - bottomInset - size / 2,
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      // Its own node: without it the label merges up into the app's root and
-      // the whole screen reads as the launcher.
-      container: true,
-      button: true,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: GestureDetector(
-        key: const ValueKey('vana_sheet.launcher'),
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
-        child: GlassSurface(
-          borderRadius: BorderRadius.circular(size / 2),
-          lift: true,
-          dimmed: true,
-          child: const SizedBox.square(
-            dimension: size,
-            child: Center(
-              child: CustomPaint(
-                size: Size.square(30),
-                painter: VanaMarkPainter(color: AppColors.cream),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Vana's mark (Q-VS2): a speech-bubble outline drawn as a path, the first
-/// branded glyph on the shell. Geometry is the export's, a 52 × 52 bubble in a
-/// −8…60 view box stroked at 4.
-class VanaMarkPainter extends CustomPainter {
-  const VanaMarkPainter({required this.color});
-
-  final Color color;
-
-  static const double _viewBoxOrigin = -8;
-  static const double _viewBoxSize = 68;
-  static const double _strokeWidth = 4;
-
-  static Path bubble() => Path()
-    ..moveTo(26, 0)
-    ..cubicTo(40.4, 0, 52, 10.3, 52, 23)
-    ..cubicTo(52, 35.7, 40.4, 46, 26, 46)
-    ..cubicTo(22.6, 46, 19.4, 45.4, 16.4, 44.4)
-    ..lineTo(5, 52)
-    ..lineTo(8.6, 40.2)
-    ..cubicTo(3.3, 36, 0, 29.9, 0, 23)
-    ..cubicTo(0, 10.3, 11.6, 0, 26, 0)
-    ..close();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scale = math.min(size.width, size.height) / _viewBoxSize;
-    canvas.save();
-    canvas.scale(scale);
-    canvas.translate(-_viewBoxOrigin, -_viewBoxOrigin);
-    canvas.drawPath(
-      bubble(),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = _strokeWidth
-        ..strokeJoin = StrokeJoin.round
-        ..color = color,
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(VanaMarkPainter oldDelegate) => oldDelegate.color != color;
-}
 
 /// The sheet's three heights (Q-VS1). The page stays visible at the two
 /// rest heights; that is the contract.

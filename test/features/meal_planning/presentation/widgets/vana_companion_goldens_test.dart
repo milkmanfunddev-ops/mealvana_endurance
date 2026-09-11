@@ -22,6 +22,12 @@
 // ticket 06 drew a placeholder interior, knowingly short of the spec's
 // "Inside the sheet", and these are the first goldens of the spec's own.
 //
+// The launcher when Vana speaks first (vana-moment spec, Conformance L1):
+// PILL — the to-do's line out beside the tinted launcher, the tab bar
+// retracted to its button — and TINTED orange at rest, each light and dark.
+// The bar's retract is the home chrome's rule (home_shell_chrome.dart), which
+// the mock ground mirrors; the widget test holds it on the real chrome.
+//
 // The ERROR state and the suppression rule are held by widget tests
 // (vana_companion_test.dart): the suppression is "no node", which a picture
 // cannot show.
@@ -37,19 +43,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mealvana_endurance/features/activities/data/activity_mapper.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/vana_moment_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_tab_bar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
@@ -59,6 +69,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../home_shell/home_shell_test_fonts.dart';
 import '../../helpers/container.dart';
+import '../../helpers/vana_moment_inputs.dart';
 import '../helpers/test_content.dart';
 
 /// iPhone SE (1st gen) — the narrowest layout the app supports.
@@ -77,6 +88,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? anchorDate,
     String? timezone,
     VanaSituation? situation,
+    VanaMoment? moment,
   }) async {
     final hold = this.hold;
     Stream<VanaStreamEvent> events() async* {
@@ -120,13 +132,13 @@ class _FakeActionClient extends Fake implements VanaActionClient {
 
 /// Mock shell content: timeline and fuel-window blocks, so the glass has
 /// something recognizable behind it.
-class _Ground extends StatelessWidget {
+class _Ground extends ConsumerWidget {
   const _Ground({required this.dark});
 
   final bool dark;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ink = dark ? AppColors.cream : AppColors.blackberry;
     return Scaffold(
       backgroundColor: dark ? AppColors.blackberry : AppColors.cream,
@@ -157,6 +169,10 @@ class _Ground extends StatelessWidget {
                 ),
               ],
               activeId: 'timeline',
+              // The chrome's rule: the bar retracts while the pill shows.
+              collapsed:
+                  ref.watch(vanaMomentControllerProvider).value?.pillShows ??
+                  false,
               maxWidth:
                   _size.width -
                   14 -
@@ -201,10 +217,29 @@ class _Ground extends StatelessWidget {
   );
 }
 
+/// Tonight's run, its window open since 16:30, as the Supabase row has it.
+final _run = ActivityMapper(logger: NoopAppLogger()).fromJson({
+  'id': 'act-run',
+  'user_id': 'user-1',
+  'activity_type': 'running',
+  'title': 'Tempo run',
+  'scheduled_date_time': '2026-09-11T17:30:00',
+  'status': 'planned',
+  'duration_minutes': 60,
+  'time_before_minutes': 60,
+  'created_at': '2026-09-01T12:00:00+00:00',
+  'updated_at': '2026-09-01T12:00:00+00:00',
+});
+
+/// The last pump's container, for a test that must dispose it before it ends
+/// (a moment keeps a resolve timer while its workout is ahead).
+late ProviderContainer _container;
+
 Future<_FakeChatRepo> _pump(
   WidgetTester tester, {
   required bool dark,
   double textScale = 1,
+  bool moment = false,
 }) async {
   tester.view.physicalSize = _size;
   tester.view.devicePixelRatio = 1.0;
@@ -233,14 +268,20 @@ Future<_FakeChatRepo> _pump(
   final container = ProviderContainer(
     overrides: [
       ...baseOverrides(),
+      ...vanaMomentInputs(activities: moment ? [_run] : const []),
       sharedPreferencesProvider.overrideWithValue(prefs),
       contentServiceProvider.overrideWith(testContentService),
       proUnlockedProvider.overrideWithValue(true),
       vanaChatRepositoryProvider.overrideWithValue(repo),
       vanaActionClientProvider.overrideWithValue(_FakeActionClient()),
-      vanaClockProvider.overrideWithValue(() => DateTime(2026, 9, 10, 9)),
+      vanaClockProvider.overrideWithValue(
+        moment
+            ? () => DateTime(2026, 9, 11, 16, 45)
+            : () => DateTime(2026, 9, 10, 9),
+      ),
     ],
   );
+  _container = container;
   addTearDown(container.dispose);
 
   await tester.pumpWidget(
@@ -331,6 +372,30 @@ void main() {
     });
   }
 
+  for (final dark in [true, false]) {
+    final mode = dark ? 'dark' : 'light';
+
+    testWidgets('PILL — the to-do\'s line beside the tinted launcher, the '
+        'tab bar retracted ($mode)', (tester) async {
+      await _pump(tester, dark: dark, moment: true);
+      await tester.pump(vanaMomentRingDuration);
+      await tester.pump(const Duration(milliseconds: 600));
+      await _golden(tester, 'moment_pill_$mode');
+      await _dispose(tester);
+    });
+
+    testWidgets('TINTED — orange, the mark in blackberry ($mode)', (
+      tester,
+    ) async {
+      await _pump(tester, dark: dark, moment: true);
+      await tester.pump(vanaMomentRingDuration);
+      await tester.pump(vanaMomentPillDuration);
+      await tester.pump(const Duration(milliseconds: 600));
+      await _golden(tester, 'moment_tinted_$mode');
+      await _dispose(tester);
+    });
+  }
+
   testWidgets('THREAD at large text — iPhone-SE width, text at 200 %', (
     tester,
   ) async {
@@ -339,6 +404,11 @@ void main() {
     await _sendAndLand(tester);
     await _golden(tester, 'thread_large_text_dark');
   });
+}
+
+Future<void> _dispose(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  _container.dispose();
 }
 
 Future<void> _sendAndLand(WidgetTester tester) async {

@@ -707,6 +707,14 @@
     "companion_status_to_do_bare": "To do",
     "companion_status_update": "Update",
     "companion_topic_fuel_plan": "Fuel plan",
-    "companion_topic_meal_plan": "Meal plan"
+    "companion_topic_meal_plan": "Meal plan",
+    "companion_launcher_moment": "Ask Vana: {line}",
+    "companion_moment_pre_workout_morning": "Fuel this morning's {session}?",
+    "companion_moment_pre_workout_afternoon": "Fuel this afternoon's {session}?",
+    "companion_moment_pre_workout_evening": "Fuel tonight's {session}?",
+    "companion_session_run": "run",
+    "companion_session_ride": "ride",
+    "companion_session_swim": "swim",
+    "companion_session_other": "session"
   }
 }

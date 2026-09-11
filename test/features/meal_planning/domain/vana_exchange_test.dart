@@ -38,6 +38,8 @@ bool _one(
 ).oneMessage;
 
 void main() {
+  exchangeStartTests();
+
   final picker = VanaMealPickerPart(
     title: 'Dinners that fit',
     meals: [
@@ -77,7 +79,12 @@ void main() {
   });
 
   test('a card is not one message', () {
-    expect(_one([_vana('These fit.', [picker])]), isFalse);
+    expect(
+      _one([
+        _vana('These fit.', [picker]),
+      ]),
+      isFalse,
+    );
   });
 
   test('two of Vana\'s turns are not one message', () {
@@ -92,5 +99,82 @@ void main() {
   test('nothing yet, or a turn in flight, is not one message', () {
     expect(_one(const []), isFalse);
     expect(_one([_vana('Morn')], streaming: true), isFalse);
+  });
+}
+
+/// A moment starts a new exchange mid-thread (vana-moment spec VM-1): the
+/// exchange is read from where it starts, and a raised opening is a to-do.
+void exchangeStartTests() {
+  const offers = VanaChoicesPart(
+    options: ['What should I eat today?', 'Start a meal plan'],
+  );
+  const momentOffers = VanaChoicesPart(
+    options: ['Walk me through it', "I'll handle it"],
+  );
+  final thread = [
+    _vana('Morning.', const [offers]),
+    _athlete('What should I eat today?'),
+    _vana('Oats and a banana at breakfast.'),
+  ];
+  final moment = _vana('Your tempo run is at 5:30.', const [momentOffers]);
+
+  group('an exchange that starts mid-thread', () {
+    test('its opening offers are the quick replies', () {
+      final exchange = VanaExchange.of(
+        [...thread, moment],
+        isStreaming: false,
+        start: 3,
+      );
+      expect(exchange.quickReplies, ['Walk me through it', "I'll handle it"]);
+    });
+
+    test('read from the start, the old thread keeps the replies away', () {
+      final exchange = VanaExchange.of([...thread, moment], isStreaming: false);
+      expect(exchange.quickReplies, isEmpty);
+    });
+
+    test('its opening is drawn as an opening: offers never inline', () {
+      final exchange = VanaExchange.of(
+        [...thread, moment],
+        isStreaming: false,
+        start: 3,
+      );
+      expect(exchange.inlineParts(3, moment), isEmpty);
+      // The earlier exchange's opening stays an opening too.
+      expect(exchange.inlineParts(0, thread[0]), isEmpty);
+    });
+
+    test('the athlete answering retires the replies', () {
+      final exchange = VanaExchange.of(
+        [...thread, moment, _athlete('Walk me through it')],
+        isStreaming: false,
+        start: 3,
+      );
+      expect(exchange.quickReplies, isEmpty);
+    });
+
+    test('a raised opening is a to-do about what raised it', () {
+      final raised = VanaExchange.of(
+        [...thread, moment],
+        isStreaming: false,
+        start: 3,
+        raisedFor: VanaExchangeTopic.fuelPlan,
+      );
+      expect(raised.status, VanaExchangeStatus.toDo);
+      expect(raised.topic, VanaExchangeTopic.fuelPlan);
+
+      final asked = VanaExchange.of([moment], isStreaming: false);
+      expect(asked.status, VanaExchangeStatus.update);
+    });
+
+    test('once the athlete answers, the chip reads Vana\'s latest turn', () {
+      final exchange = VanaExchange.of(
+        [...thread, moment, _athlete('Walk me through it'), _vana('A bagel.')],
+        isStreaming: false,
+        start: 3,
+        raisedFor: VanaExchangeTopic.fuelPlan,
+      );
+      expect(exchange.status, VanaExchangeStatus.update);
+    });
   });
 }

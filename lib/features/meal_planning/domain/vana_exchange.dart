@@ -26,35 +26,59 @@ enum VanaExchangeTopic {
 /// The sheet's reading of one exchange (vana-sheet spec, "Inside the sheet"):
 /// the status chip, the quick replies, and where the typing indicator goes.
 ///
-/// The **opening** is Vana's turns before the athlete's first. A `choices`
+/// An exchange starts at a message: the conversation's first, or a later one
+/// when Vana raises something mid-thread (vana-moment spec VM-1). Its
+/// **opening** is Vana's turns from there to the athlete's next. A `choices`
 /// part in the opening is offered as quick replies — at most two — and never
-/// drawn inline. The **thread** is the athlete's first turn and everything
-/// after; the moment it has anything in it the quick replies retire, and they
-/// do not come back in that exchange (VS-8).
+/// drawn inline. The **thread** is the athlete's first turn in the exchange
+/// and everything after; the moment it has anything in it the quick replies
+/// retire, and they do not come back in that exchange (VS-8).
 class VanaExchange {
   const VanaExchange._({
     required this.status,
     required this.topic,
     required this.quickReplies,
-    required this.openingLength,
+    required List<(int, int)> openings,
     required this.typing,
     required this.oneMessage,
-  });
+  }) : _openings = openings;
 
-  /// Derives the exchange from the transcript. [situationRoute] is the route
-  /// of the screen underneath (a [VanaScreen] route, or any other route),
-  /// used to name a to-do the transcript does not name itself. Pass
-  /// [repliesRetired] once the thread has had anything in it, so a thread
-  /// that is later emptied (a rewind) does not bring the replies back.
+  /// Derives the exchange from the transcript. [start] is the index of the
+  /// exchange's first message. [situationRoute] is the route of the screen
+  /// underneath (a [VanaScreen] route, or any other route), used to name a
+  /// to-do the transcript does not name itself. Pass [repliesRetired] once
+  /// the thread has had anything in it, so a thread that is later emptied (a
+  /// rewind) does not bring the replies back.
+  ///
+  /// [raisedFor] says Vana raised this exchange herself, about that topic (a
+  /// moment): its opening's offers answer a question she asked, so they are
+  /// a to-do rather than a menu.
   factory VanaExchange.of(
     List<VanaMessage> messages, {
     required bool isStreaming,
+    int start = 0,
     String? situationRoute,
     bool repliesRetired = false,
+    VanaExchangeTopic? raisedFor,
   }) {
-    final firstAthlete = messages.indexWhere((m) => m.isUser);
-    final openingLength = firstAthlete < 0 ? messages.length : firstAthlete;
-    final threadStarted = firstAthlete >= 0 || repliesRetired;
+    start = start.clamp(0, messages.length);
+    int athleteFrom(int from) {
+      for (var i = from; i < messages.length; i++) {
+        if (messages[i].isUser) return i;
+      }
+      return messages.length;
+    }
+
+    // The conversation's own opening, and this exchange's when it starts
+    // later: both are drawn as openings.
+    final openings = <(int, int)>[
+      (0, athleteFrom(0)),
+      if (start > 0) (start, athleteFrom(start)),
+    ];
+    final threadStarted =
+        athleteFrom(start) < messages.length || repliesRetired;
+    bool raisedOpening(int i) =>
+        raisedFor != null && i >= start && i < athleteFrom(start);
 
     // The in-flight turn is not settled until the stream ends; the athlete's
     // turns say nothing about what Vana is waiting for.
@@ -65,9 +89,13 @@ class VanaExchange {
         .take(settled)
         .toList()
         .lastIndexWhere((m) => !m.isUser);
+    final opening = openings.any((o) => lastVana >= o.$1 && lastVana < o.$2);
     final ask = lastVana < 0
         ? null
-        : _ask(messages[lastVana].parts, opening: lastVana < openingLength);
+        : _ask(
+            messages[lastVana].parts,
+            opening: opening && !raisedOpening(lastVana),
+          );
     final status = lastVana < 0
         ? null
         : ask == null
@@ -76,7 +104,7 @@ class VanaExchange {
 
     final replies = <String>[];
     if (!threadStarted && !isStreaming) {
-      for (final message in messages.reversed) {
+      for (final message in messages.skip(start).toList().reversed) {
         if (_offer(message) case final offer?) {
           replies.addAll(offer.options.take(maxQuickReplies));
           break;
@@ -88,6 +116,7 @@ class VanaExchange {
     final oneMessage =
         !threadStarted &&
         !isStreaming &&
+        start == 0 &&
         vanaTurns.length == 1 &&
         replies.length <= 1 &&
         vanaTurns.single.parts.every((p) => p is VanaChoicesPart);
@@ -96,9 +125,11 @@ class VanaExchange {
       status: status,
       topic: ask == null
           ? null
+          : raisedOpening(lastVana)
+          ? raisedFor
           : _topicOfPart(ask) ?? _topicOfRoute(situationRoute),
       quickReplies: List.unmodifiable(replies),
-      openingLength: openingLength,
+      openings: openings,
       typing:
           isStreaming &&
           messages.isNotEmpty &&
@@ -121,8 +152,11 @@ class VanaExchange {
   /// is in flight — never alongside the typing indicator.
   final List<String> quickReplies;
 
-  /// How many leading messages are the opening.
-  final int openingLength;
+  /// The openings' index ranges, start inclusive, end exclusive.
+  final List<(int, int)> _openings;
+
+  bool _inOpening(int index) =>
+      _openings.any((o) => index >= o.$1 && index < o.$2);
 
   /// A turn is in flight and Vana has not said anything in it yet.
   final bool typing;
@@ -135,7 +169,7 @@ class VanaExchange {
   /// that the opening's offers are the quick replies and never drawn, so they
   /// cannot come back once the thread has started.
   List<VanaPart> inlineParts(int index, VanaMessage message) =>
-      index < openingLength
+      _inOpening(index)
       ? [
           for (final part in message.parts)
             if (part is! VanaChoicesPart) part,
@@ -145,7 +179,7 @@ class VanaExchange {
   /// The prose of the message at [index]: its text, and in the opening the
   /// offers' question, which would otherwise go undrawn with them.
   String prose(int index, VanaMessage message) {
-    final question = index < openingLength ? _offer(message)?.question : null;
+    final question = _inOpening(index) ? _offer(message)?.question : null;
     return [
       if (message.content.isNotEmpty) message.content,
       if (question != null && question.isNotEmpty) question,
