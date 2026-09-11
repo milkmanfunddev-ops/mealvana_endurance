@@ -2441,6 +2441,18 @@ class ActivitiesRepository with SyncableRepository {
           throw StateError('Brick activity not found: $brickId');
         }
 
+        // GUARD (2026-09-11 prod data loss): ungroup restores-then-deletes,
+        // so pointing it at a NON-brick silently hard-deleted that activity
+        // while restoring nothing (the create-undo was armed with a leg id).
+        // A non-brick target is always a caller bug — refuse loudly.
+        final brickDomain = _mapper.fromDriftRow(brickActivity);
+        if (brickDomain.activityType != ActivityType.brick) {
+          throw StateError(
+            'Refusing to ungroup: $brickId is a '
+            '${brickDomain.activityType.name}, not a brick',
+          );
+        }
+
         // Store userId for Supabase deletion after transaction completes
         userIdForSupabaseDelete = brickActivity.userId;
 
@@ -2448,6 +2460,15 @@ class ActivitiesRepository with SyncableRepository {
         final archivedActivities = await getArchivedActivitiesForBrick(brickId);
 
         if (archivedActivities.isEmpty) {
+          // A brick built FROM existing activities must have archived legs
+          // to give back — restoring nothing and deleting the brick would
+          // lose the originals. Integrity error, not a proceed.
+          if (brickDomain.brickMetadata?.createdFromExisting ?? false) {
+            throw StateError(
+              'Refusing to ungroup $brickId: created from existing '
+              'activities but no archived legs found to restore',
+            );
+          }
           _logger.debug(
             'No archived activities found for brick',
             context: 'ACTIVITIES_REPOSITORY',
@@ -2460,7 +2481,6 @@ class ActivitiesRepository with SyncableRepository {
         for (final activity in archivedActivities) {
           final restoredActivity = activity.copyWith(
             status: domain.ActivityStatus.planned,
-            brickId: null,
             needsUpload: true,
             localUpdatedAt: now,
             updatedAt: now,
@@ -2468,6 +2488,18 @@ class ActivitiesRepository with SyncableRepository {
 
           await _saveToDrift(restoredActivity);
         }
+
+        // copyWith(brickId: null) is a no-op (`brickId ?? this.brickId`), so
+        // the legs above still point at the brick being ungrouped — clear it
+        // with an explicit write. (Historically this dangled forever and the
+        // uploader's orphan-repair happened to paper over it because the
+        // hard-deleted parent looked missing; the tombstoned parent below
+        // would keep the repair from ever firing.)
+        await (_database.update(_database.activitiesTable)..where(
+              (tbl) =>
+                  tbl.id.isIn(archivedActivities.map((a) => a.id).toList()),
+            ))
+            .write(const ActivitiesTableCompanion(brickId: Value(null)));
 
         _logger.info(
           'Restored archived activities',
@@ -2478,13 +2510,26 @@ class ActivitiesRepository with SyncableRepository {
           },
         );
 
-        // Step 4: Hard delete the brick activity from Drift
-        await (_database.delete(
+        // Step 4: Tombstone the brick activity (2026-09-11: this was a HARD
+        // delete, and _uploadActivityDeletion builds its payload by reading
+        // the local row — so the server delete was a silent no-op and every
+        // ungrouped brick lived on remotely, waiting to be resurrected by a
+        // full pull). Same tombstone shape as deleteActivity: deleted_at
+        // filters it from every query, status='deleted' is what the sync
+        // matcher looks for, needs_upload queues the upload.
+        await (_database.update(
           _database.activitiesTable,
-        )..where((tbl) => tbl.id.equals(brickId))).go();
+        )..where((tbl) => tbl.id.equals(brickId))).write(
+          ActivitiesTableCompanion(
+            status: const Value('deleted'),
+            deletedAt: Value(now),
+            needsUpload: const Value(true),
+            localUpdatedAt: Value(now),
+          ),
+        );
 
         _logger.info(
-          'Hard deleted brick activity from Drift',
+          'Tombstoned brick activity in Drift',
           context: 'ACTIVITIES_REPOSITORY',
           data: {'brickId': brickId},
         );

@@ -922,7 +922,13 @@ class MacroDashboardScreen extends ConsumerWidget {
     }
 
     try {
-      await ref
+      // The create call RETURNS the brick — the undo below must be armed
+      // with ITS id and nothing else. (2026-09-11 prod data loss: this used
+      // to re-derive the id by searching a provider it had invalidated one
+      // line earlier; the stale list never contained the brick, and the
+      // orElse silently handed back `selected.first` — a LEG id — so Undo
+      // ran ungroup against a real workout and hard-deleted it.)
+      final createdBrick = await ref
           .read(brickActionsControllerProvider.notifier)
           .createBrickFromSelection(
             activities: selected,
@@ -935,30 +941,23 @@ class MacroDashboardScreen extends ConsumerWidget {
       ref.invalidate(activitiesControllerProvider);
       dismiss();
       final legs = selected.map((a) => a.activityType.displayName).join(' → ');
-      final createdBrickId = ref
-          .read(activitiesControllerProvider)
-          .value
-          ?.firstWhere(
-            (a) =>
-                a.isBrick &&
-                (a.brickMetadata?.originalActivityIds ?? const []).contains(
-                  selected.first.id,
-                ),
-            orElse: () => selected.first,
-          )
-          .id;
       MealvanaSnackbar.showSuccess(
         context,
         'Brick created · $legs',
         duration: const Duration(seconds: 5),
         actionLabel: 'Undo',
         onAction: () async {
-          if (createdBrickId == null) return;
           try {
             await ref
                 .read(brickActionsControllerProvider.notifier)
-                .ungroupBrick(createdBrickId);
+                .ungroupBrick(createdBrick.id);
             ref.invalidate(activitiesControllerProvider);
+            if (context.mounted) {
+              MealvanaSnackbar.showSuccess(
+                context,
+                'Brick undone — legs restored',
+              );
+            }
           } catch (_) {
             if (context.mounted) {
               MealvanaSnackbar.showError(context, 'Could not undo the brick');
