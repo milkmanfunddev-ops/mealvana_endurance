@@ -676,6 +676,105 @@ class $UserProfilesTableTable extends UserProfilesTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _cyclingFtpWattsMeta = const VerificationMeta(
+    'cyclingFtpWatts',
+  );
+  @override
+  late final GeneratedColumn<int> cyclingFtpWatts = GeneratedColumn<int>(
+    'cycling_ftp_watts',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _swimmingCssSecondsPer100mMeta =
+      const VerificationMeta('swimmingCssSecondsPer100m');
+  @override
+  late final GeneratedColumn<int> swimmingCssSecondsPer100m =
+      GeneratedColumn<int>(
+        'swimming_css_seconds_per_100m',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _giSensitivityMeta = const VerificationMeta(
+    'giSensitivity',
+  );
+  @override
+  late final GeneratedColumn<bool> giSensitivity = GeneratedColumn<bool>(
+    'gi_sensitivity',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("gi_sensitivity" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _typicalBikeBottlesMeta =
+      const VerificationMeta('typicalBikeBottles');
+  @override
+  late final GeneratedColumn<int> typicalBikeBottles = GeneratedColumn<int>(
+    'typical_bike_bottles',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hasAeroBottleMeta = const VerificationMeta(
+    'hasAeroBottle',
+  );
+  @override
+  late final GeneratedColumn<bool> hasAeroBottle = GeneratedColumn<bool>(
+    'has_aero_bottle',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_aero_bottle" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _hasBentoBoxMeta = const VerificationMeta(
+    'hasBentoBox',
+  );
+  @override
+  late final GeneratedColumn<bool> hasBentoBox = GeneratedColumn<bool>(
+    'has_bento_box',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_bento_box" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _typicalWetsuitMeta = const VerificationMeta(
+    'typicalWetsuit',
+  );
+  @override
+  late final GeneratedColumn<bool> typicalWetsuit = GeneratedColumn<bool>(
+    'typical_wetsuit',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("typical_wetsuit" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _typicalSwimCapTypeMeta =
+      const VerificationMeta('typicalSwimCapType');
+  @override
+  late final GeneratedColumn<String> typicalSwimCapType =
+      GeneratedColumn<String>(
+        'typical_swim_cap_type',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
   );
@@ -749,6 +848,14 @@ class $UserProfilesTableTable extends UserProfilesTable
     sweatTestSource,
     weightPoundsUpdatedAt,
     bodyFatPctUpdatedAt,
+    cyclingFtpWatts,
+    swimmingCssSecondsPer100m,
+    giSensitivity,
+    typicalBikeBottles,
+    hasAeroBottle,
+    hasBentoBox,
+    typicalWetsuit,
+    typicalSwimCapType,
     needsUpload,
   ];
   @override
@@ -1211,6 +1318,78 @@ class $UserProfilesTableTable extends UserProfilesTable
         ),
       );
     }
+    if (data.containsKey('cycling_ftp_watts')) {
+      context.handle(
+        _cyclingFtpWattsMeta,
+        cyclingFtpWatts.isAcceptableOrUnknown(
+          data['cycling_ftp_watts']!,
+          _cyclingFtpWattsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('swimming_css_seconds_per_100m')) {
+      context.handle(
+        _swimmingCssSecondsPer100mMeta,
+        swimmingCssSecondsPer100m.isAcceptableOrUnknown(
+          data['swimming_css_seconds_per_100m']!,
+          _swimmingCssSecondsPer100mMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gi_sensitivity')) {
+      context.handle(
+        _giSensitivityMeta,
+        giSensitivity.isAcceptableOrUnknown(
+          data['gi_sensitivity']!,
+          _giSensitivityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('typical_bike_bottles')) {
+      context.handle(
+        _typicalBikeBottlesMeta,
+        typicalBikeBottles.isAcceptableOrUnknown(
+          data['typical_bike_bottles']!,
+          _typicalBikeBottlesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_aero_bottle')) {
+      context.handle(
+        _hasAeroBottleMeta,
+        hasAeroBottle.isAcceptableOrUnknown(
+          data['has_aero_bottle']!,
+          _hasAeroBottleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_bento_box')) {
+      context.handle(
+        _hasBentoBoxMeta,
+        hasBentoBox.isAcceptableOrUnknown(
+          data['has_bento_box']!,
+          _hasBentoBoxMeta,
+        ),
+      );
+    }
+    if (data.containsKey('typical_wetsuit')) {
+      context.handle(
+        _typicalWetsuitMeta,
+        typicalWetsuit.isAcceptableOrUnknown(
+          data['typical_wetsuit']!,
+          _typicalWetsuitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('typical_swim_cap_type')) {
+      context.handle(
+        _typicalSwimCapTypeMeta,
+        typicalSwimCapType.isAcceptableOrUnknown(
+          data['typical_swim_cap_type']!,
+          _typicalSwimCapTypeMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_upload')) {
       context.handle(
         _needsUploadMeta,
@@ -1456,6 +1635,38 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}body_fat_pct_updated_at'],
       ),
+      cyclingFtpWatts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycling_ftp_watts'],
+      ),
+      swimmingCssSecondsPer100m: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}swimming_css_seconds_per_100m'],
+      ),
+      giSensitivity: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}gi_sensitivity'],
+      ),
+      typicalBikeBottles: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}typical_bike_bottles'],
+      ),
+      hasAeroBottle: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_aero_bottle'],
+      ),
+      hasBentoBox: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_bento_box'],
+      ),
+      typicalWetsuit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}typical_wetsuit'],
+      ),
+      typicalSwimCapType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}typical_swim_cap_type'],
+      ),
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
@@ -1626,6 +1837,30 @@ class UserProfileEntry extends DataClass
   /// Timestamp of last body_fat_pct update (for Garmin precedence resolution)
   final DateTime? bodyFatPctUpdatedAt;
 
+  /// FTP in watts (Supabase twin: users.cycling_ftp_watts)
+  final int? cyclingFtpWatts;
+
+  /// Critical Swim Speed, seconds per 100m (Supabase twin of the same name)
+  final int? swimmingCssSecondsPer100m;
+
+  /// GI sensitivity flag (local-only)
+  final bool? giSensitivity;
+
+  /// Typical bike bottle count (local-only)
+  final int? typicalBikeBottles;
+
+  /// Rides with an aero bottle (local-only)
+  final bool? hasAeroBottle;
+
+  /// Rides with a bento box (local-only)
+  final bool? hasBentoBox;
+
+  /// Typically swims in a wetsuit (local-only)
+  final bool? typicalWetsuit;
+
+  /// Typical swim cap type (local-only)
+  final String? typicalSwimCapType;
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
@@ -1686,6 +1921,14 @@ class UserProfileEntry extends DataClass
     this.sweatTestSource,
     this.weightPoundsUpdatedAt,
     this.bodyFatPctUpdatedAt,
+    this.cyclingFtpWatts,
+    this.swimmingCssSecondsPer100m,
+    this.giSensitivity,
+    this.typicalBikeBottles,
+    this.hasAeroBottle,
+    this.hasBentoBox,
+    this.typicalWetsuit,
+    this.typicalSwimCapType,
     required this.needsUpload,
   });
   @override
@@ -1821,6 +2064,32 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || bodyFatPctUpdatedAt != null) {
       map['body_fat_pct_updated_at'] = Variable<DateTime>(bodyFatPctUpdatedAt);
     }
+    if (!nullToAbsent || cyclingFtpWatts != null) {
+      map['cycling_ftp_watts'] = Variable<int>(cyclingFtpWatts);
+    }
+    if (!nullToAbsent || swimmingCssSecondsPer100m != null) {
+      map['swimming_css_seconds_per_100m'] = Variable<int>(
+        swimmingCssSecondsPer100m,
+      );
+    }
+    if (!nullToAbsent || giSensitivity != null) {
+      map['gi_sensitivity'] = Variable<bool>(giSensitivity);
+    }
+    if (!nullToAbsent || typicalBikeBottles != null) {
+      map['typical_bike_bottles'] = Variable<int>(typicalBikeBottles);
+    }
+    if (!nullToAbsent || hasAeroBottle != null) {
+      map['has_aero_bottle'] = Variable<bool>(hasAeroBottle);
+    }
+    if (!nullToAbsent || hasBentoBox != null) {
+      map['has_bento_box'] = Variable<bool>(hasBentoBox);
+    }
+    if (!nullToAbsent || typicalWetsuit != null) {
+      map['typical_wetsuit'] = Variable<bool>(typicalWetsuit);
+    }
+    if (!nullToAbsent || typicalSwimCapType != null) {
+      map['typical_swim_cap_type'] = Variable<String>(typicalSwimCapType);
+    }
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1938,6 +2207,31 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(bodyFatPctUpdatedAt),
+      cyclingFtpWatts: cyclingFtpWatts == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingFtpWatts),
+      swimmingCssSecondsPer100m:
+          swimmingCssSecondsPer100m == null && nullToAbsent
+          ? const Value.absent()
+          : Value(swimmingCssSecondsPer100m),
+      giSensitivity: giSensitivity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(giSensitivity),
+      typicalBikeBottles: typicalBikeBottles == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typicalBikeBottles),
+      hasAeroBottle: hasAeroBottle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasAeroBottle),
+      hasBentoBox: hasBentoBox == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasBentoBox),
+      typicalWetsuit: typicalWetsuit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typicalWetsuit),
+      typicalSwimCapType: typicalSwimCapType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typicalSwimCapType),
       needsUpload: Value(needsUpload),
     );
   }
@@ -2048,6 +2342,18 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: serializer.fromJson<DateTime?>(
         json['bodyFatPctUpdatedAt'],
       ),
+      cyclingFtpWatts: serializer.fromJson<int?>(json['cyclingFtpWatts']),
+      swimmingCssSecondsPer100m: serializer.fromJson<int?>(
+        json['swimmingCssSecondsPer100m'],
+      ),
+      giSensitivity: serializer.fromJson<bool?>(json['giSensitivity']),
+      typicalBikeBottles: serializer.fromJson<int?>(json['typicalBikeBottles']),
+      hasAeroBottle: serializer.fromJson<bool?>(json['hasAeroBottle']),
+      hasBentoBox: serializer.fromJson<bool?>(json['hasBentoBox']),
+      typicalWetsuit: serializer.fromJson<bool?>(json['typicalWetsuit']),
+      typicalSwimCapType: serializer.fromJson<String?>(
+        json['typicalSwimCapType'],
+      ),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -2129,6 +2435,16 @@ class UserProfileEntry extends DataClass
         weightPoundsUpdatedAt,
       ),
       'bodyFatPctUpdatedAt': serializer.toJson<DateTime?>(bodyFatPctUpdatedAt),
+      'cyclingFtpWatts': serializer.toJson<int?>(cyclingFtpWatts),
+      'swimmingCssSecondsPer100m': serializer.toJson<int?>(
+        swimmingCssSecondsPer100m,
+      ),
+      'giSensitivity': serializer.toJson<bool?>(giSensitivity),
+      'typicalBikeBottles': serializer.toJson<int?>(typicalBikeBottles),
+      'hasAeroBottle': serializer.toJson<bool?>(hasAeroBottle),
+      'hasBentoBox': serializer.toJson<bool?>(hasBentoBox),
+      'typicalWetsuit': serializer.toJson<bool?>(typicalWetsuit),
+      'typicalSwimCapType': serializer.toJson<String?>(typicalSwimCapType),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -2190,6 +2506,14 @@ class UserProfileEntry extends DataClass
     Value<String?> sweatTestSource = const Value.absent(),
     Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
     Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+    Value<int?> cyclingFtpWatts = const Value.absent(),
+    Value<int?> swimmingCssSecondsPer100m = const Value.absent(),
+    Value<bool?> giSensitivity = const Value.absent(),
+    Value<int?> typicalBikeBottles = const Value.absent(),
+    Value<bool?> hasAeroBottle = const Value.absent(),
+    Value<bool?> hasBentoBox = const Value.absent(),
+    Value<bool?> typicalWetsuit = const Value.absent(),
+    Value<String?> typicalSwimCapType = const Value.absent(),
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -2274,6 +2598,28 @@ class UserProfileEntry extends DataClass
     bodyFatPctUpdatedAt: bodyFatPctUpdatedAt.present
         ? bodyFatPctUpdatedAt.value
         : this.bodyFatPctUpdatedAt,
+    cyclingFtpWatts: cyclingFtpWatts.present
+        ? cyclingFtpWatts.value
+        : this.cyclingFtpWatts,
+    swimmingCssSecondsPer100m: swimmingCssSecondsPer100m.present
+        ? swimmingCssSecondsPer100m.value
+        : this.swimmingCssSecondsPer100m,
+    giSensitivity: giSensitivity.present
+        ? giSensitivity.value
+        : this.giSensitivity,
+    typicalBikeBottles: typicalBikeBottles.present
+        ? typicalBikeBottles.value
+        : this.typicalBikeBottles,
+    hasAeroBottle: hasAeroBottle.present
+        ? hasAeroBottle.value
+        : this.hasAeroBottle,
+    hasBentoBox: hasBentoBox.present ? hasBentoBox.value : this.hasBentoBox,
+    typicalWetsuit: typicalWetsuit.present
+        ? typicalWetsuit.value
+        : this.typicalWetsuit,
+    typicalSwimCapType: typicalSwimCapType.present
+        ? typicalSwimCapType.value
+        : this.typicalSwimCapType,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -2423,6 +2769,30 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: data.bodyFatPctUpdatedAt.present
           ? data.bodyFatPctUpdatedAt.value
           : this.bodyFatPctUpdatedAt,
+      cyclingFtpWatts: data.cyclingFtpWatts.present
+          ? data.cyclingFtpWatts.value
+          : this.cyclingFtpWatts,
+      swimmingCssSecondsPer100m: data.swimmingCssSecondsPer100m.present
+          ? data.swimmingCssSecondsPer100m.value
+          : this.swimmingCssSecondsPer100m,
+      giSensitivity: data.giSensitivity.present
+          ? data.giSensitivity.value
+          : this.giSensitivity,
+      typicalBikeBottles: data.typicalBikeBottles.present
+          ? data.typicalBikeBottles.value
+          : this.typicalBikeBottles,
+      hasAeroBottle: data.hasAeroBottle.present
+          ? data.hasAeroBottle.value
+          : this.hasAeroBottle,
+      hasBentoBox: data.hasBentoBox.present
+          ? data.hasBentoBox.value
+          : this.hasBentoBox,
+      typicalWetsuit: data.typicalWetsuit.present
+          ? data.typicalWetsuit.value
+          : this.typicalWetsuit,
+      typicalSwimCapType: data.typicalSwimCapType.present
+          ? data.typicalSwimCapType.value
+          : this.typicalSwimCapType,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -2494,6 +2864,14 @@ class UserProfileEntry extends DataClass
           ..write('sweatTestSource: $sweatTestSource, ')
           ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
           ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
+          ..write('cyclingFtpWatts: $cyclingFtpWatts, ')
+          ..write('swimmingCssSecondsPer100m: $swimmingCssSecondsPer100m, ')
+          ..write('giSensitivity: $giSensitivity, ')
+          ..write('typicalBikeBottles: $typicalBikeBottles, ')
+          ..write('hasAeroBottle: $hasAeroBottle, ')
+          ..write('hasBentoBox: $hasBentoBox, ')
+          ..write('typicalWetsuit: $typicalWetsuit, ')
+          ..write('typicalSwimCapType: $typicalSwimCapType, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -2557,6 +2935,14 @@ class UserProfileEntry extends DataClass
     sweatTestSource,
     weightPoundsUpdatedAt,
     bodyFatPctUpdatedAt,
+    cyclingFtpWatts,
+    swimmingCssSecondsPer100m,
+    giSensitivity,
+    typicalBikeBottles,
+    hasAeroBottle,
+    hasBentoBox,
+    typicalWetsuit,
+    typicalSwimCapType,
     needsUpload,
   ]);
   @override
@@ -2622,6 +3008,14 @@ class UserProfileEntry extends DataClass
           other.sweatTestSource == this.sweatTestSource &&
           other.weightPoundsUpdatedAt == this.weightPoundsUpdatedAt &&
           other.bodyFatPctUpdatedAt == this.bodyFatPctUpdatedAt &&
+          other.cyclingFtpWatts == this.cyclingFtpWatts &&
+          other.swimmingCssSecondsPer100m == this.swimmingCssSecondsPer100m &&
+          other.giSensitivity == this.giSensitivity &&
+          other.typicalBikeBottles == this.typicalBikeBottles &&
+          other.hasAeroBottle == this.hasAeroBottle &&
+          other.hasBentoBox == this.hasBentoBox &&
+          other.typicalWetsuit == this.typicalWetsuit &&
+          other.typicalSwimCapType == this.typicalSwimCapType &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -2682,6 +3076,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String?> sweatTestSource;
   final Value<DateTime?> weightPoundsUpdatedAt;
   final Value<DateTime?> bodyFatPctUpdatedAt;
+  final Value<int?> cyclingFtpWatts;
+  final Value<int?> swimmingCssSecondsPer100m;
+  final Value<bool?> giSensitivity;
+  final Value<int?> typicalBikeBottles;
+  final Value<bool?> hasAeroBottle;
+  final Value<bool?> hasBentoBox;
+  final Value<bool?> typicalWetsuit;
+  final Value<String?> typicalSwimCapType;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -2741,6 +3143,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.sweatTestSource = const Value.absent(),
     this.weightPoundsUpdatedAt = const Value.absent(),
     this.bodyFatPctUpdatedAt = const Value.absent(),
+    this.cyclingFtpWatts = const Value.absent(),
+    this.swimmingCssSecondsPer100m = const Value.absent(),
+    this.giSensitivity = const Value.absent(),
+    this.typicalBikeBottles = const Value.absent(),
+    this.hasAeroBottle = const Value.absent(),
+    this.hasBentoBox = const Value.absent(),
+    this.typicalWetsuit = const Value.absent(),
+    this.typicalSwimCapType = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2801,6 +3211,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.sweatTestSource = const Value.absent(),
     this.weightPoundsUpdatedAt = const Value.absent(),
     this.bodyFatPctUpdatedAt = const Value.absent(),
+    this.cyclingFtpWatts = const Value.absent(),
+    this.swimmingCssSecondsPer100m = const Value.absent(),
+    this.giSensitivity = const Value.absent(),
+    this.typicalBikeBottles = const Value.absent(),
+    this.hasAeroBottle = const Value.absent(),
+    this.hasBentoBox = const Value.absent(),
+    this.typicalWetsuit = const Value.absent(),
+    this.typicalSwimCapType = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2862,6 +3280,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<String>? sweatTestSource,
     Expression<DateTime>? weightPoundsUpdatedAt,
     Expression<DateTime>? bodyFatPctUpdatedAt,
+    Expression<int>? cyclingFtpWatts,
+    Expression<int>? swimmingCssSecondsPer100m,
+    Expression<bool>? giSensitivity,
+    Expression<int>? typicalBikeBottles,
+    Expression<bool>? hasAeroBottle,
+    Expression<bool>? hasBentoBox,
+    Expression<bool>? typicalWetsuit,
+    Expression<String>? typicalSwimCapType,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -2944,6 +3370,17 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         'weight_pounds_updated_at': weightPoundsUpdatedAt,
       if (bodyFatPctUpdatedAt != null)
         'body_fat_pct_updated_at': bodyFatPctUpdatedAt,
+      if (cyclingFtpWatts != null) 'cycling_ftp_watts': cyclingFtpWatts,
+      if (swimmingCssSecondsPer100m != null)
+        'swimming_css_seconds_per_100m': swimmingCssSecondsPer100m,
+      if (giSensitivity != null) 'gi_sensitivity': giSensitivity,
+      if (typicalBikeBottles != null)
+        'typical_bike_bottles': typicalBikeBottles,
+      if (hasAeroBottle != null) 'has_aero_bottle': hasAeroBottle,
+      if (hasBentoBox != null) 'has_bento_box': hasBentoBox,
+      if (typicalWetsuit != null) 'typical_wetsuit': typicalWetsuit,
+      if (typicalSwimCapType != null)
+        'typical_swim_cap_type': typicalSwimCapType,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3006,6 +3443,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<String?>? sweatTestSource,
     Value<DateTime?>? weightPoundsUpdatedAt,
     Value<DateTime?>? bodyFatPctUpdatedAt,
+    Value<int?>? cyclingFtpWatts,
+    Value<int?>? swimmingCssSecondsPer100m,
+    Value<bool?>? giSensitivity,
+    Value<int?>? typicalBikeBottles,
+    Value<bool?>? hasAeroBottle,
+    Value<bool?>? hasBentoBox,
+    Value<bool?>? typicalWetsuit,
+    Value<String?>? typicalSwimCapType,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -3078,6 +3523,15 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       weightPoundsUpdatedAt:
           weightPoundsUpdatedAt ?? this.weightPoundsUpdatedAt,
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt ?? this.bodyFatPctUpdatedAt,
+      cyclingFtpWatts: cyclingFtpWatts ?? this.cyclingFtpWatts,
+      swimmingCssSecondsPer100m:
+          swimmingCssSecondsPer100m ?? this.swimmingCssSecondsPer100m,
+      giSensitivity: giSensitivity ?? this.giSensitivity,
+      typicalBikeBottles: typicalBikeBottles ?? this.typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle ?? this.hasAeroBottle,
+      hasBentoBox: hasBentoBox ?? this.hasBentoBox,
+      typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -3284,6 +3738,32 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         bodyFatPctUpdatedAt.value,
       );
     }
+    if (cyclingFtpWatts.present) {
+      map['cycling_ftp_watts'] = Variable<int>(cyclingFtpWatts.value);
+    }
+    if (swimmingCssSecondsPer100m.present) {
+      map['swimming_css_seconds_per_100m'] = Variable<int>(
+        swimmingCssSecondsPer100m.value,
+      );
+    }
+    if (giSensitivity.present) {
+      map['gi_sensitivity'] = Variable<bool>(giSensitivity.value);
+    }
+    if (typicalBikeBottles.present) {
+      map['typical_bike_bottles'] = Variable<int>(typicalBikeBottles.value);
+    }
+    if (hasAeroBottle.present) {
+      map['has_aero_bottle'] = Variable<bool>(hasAeroBottle.value);
+    }
+    if (hasBentoBox.present) {
+      map['has_bento_box'] = Variable<bool>(hasBentoBox.value);
+    }
+    if (typicalWetsuit.present) {
+      map['typical_wetsuit'] = Variable<bool>(typicalWetsuit.value);
+    }
+    if (typicalSwimCapType.present) {
+      map['typical_swim_cap_type'] = Variable<String>(typicalSwimCapType.value);
+    }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
     }
@@ -3358,6 +3838,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('sweatTestSource: $sweatTestSource, ')
           ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
           ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
+          ..write('cyclingFtpWatts: $cyclingFtpWatts, ')
+          ..write('swimmingCssSecondsPer100m: $swimmingCssSecondsPer100m, ')
+          ..write('giSensitivity: $giSensitivity, ')
+          ..write('typicalBikeBottles: $typicalBikeBottles, ')
+          ..write('hasAeroBottle: $hasAeroBottle, ')
+          ..write('hasBentoBox: $hasBentoBox, ')
+          ..write('typicalWetsuit: $typicalWetsuit, ')
+          ..write('typicalSwimCapType: $typicalSwimCapType, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -42733,6 +43221,14 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<String?> sweatTestSource,
       Value<DateTime?> weightPoundsUpdatedAt,
       Value<DateTime?> bodyFatPctUpdatedAt,
+      Value<int?> cyclingFtpWatts,
+      Value<int?> swimmingCssSecondsPer100m,
+      Value<bool?> giSensitivity,
+      Value<int?> typicalBikeBottles,
+      Value<bool?> hasAeroBottle,
+      Value<bool?> hasBentoBox,
+      Value<bool?> typicalWetsuit,
+      Value<String?> typicalSwimCapType,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -42794,6 +43290,14 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<String?> sweatTestSource,
       Value<DateTime?> weightPoundsUpdatedAt,
       Value<DateTime?> bodyFatPctUpdatedAt,
+      Value<int?> cyclingFtpWatts,
+      Value<int?> swimmingCssSecondsPer100m,
+      Value<bool?> giSensitivity,
+      Value<int?> typicalBikeBottles,
+      Value<bool?> hasAeroBottle,
+      Value<bool?> hasBentoBox,
+      Value<bool?> typicalWetsuit,
+      Value<String?> typicalSwimCapType,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -43090,6 +43594,46 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<DateTime> get bodyFatPctUpdatedAt => $composableBuilder(
     column: $table.bodyFatPctUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cyclingFtpWatts => $composableBuilder(
+    column: $table.cyclingFtpWatts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get swimmingCssSecondsPer100m => $composableBuilder(
+    column: $table.swimmingCssSecondsPer100m,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get giSensitivity => $composableBuilder(
+    column: $table.giSensitivity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get typicalBikeBottles => $composableBuilder(
+    column: $table.typicalBikeBottles,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasAeroBottle => $composableBuilder(
+    column: $table.hasAeroBottle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasBentoBox => $composableBuilder(
+    column: $table.hasBentoBox,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get typicalWetsuit => $composableBuilder(
+    column: $table.typicalWetsuit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get typicalSwimCapType => $composableBuilder(
+    column: $table.typicalSwimCapType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -43390,6 +43934,46 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cyclingFtpWatts => $composableBuilder(
+    column: $table.cyclingFtpWatts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get swimmingCssSecondsPer100m => $composableBuilder(
+    column: $table.swimmingCssSecondsPer100m,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get giSensitivity => $composableBuilder(
+    column: $table.giSensitivity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get typicalBikeBottles => $composableBuilder(
+    column: $table.typicalBikeBottles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasAeroBottle => $composableBuilder(
+    column: $table.hasAeroBottle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasBentoBox => $composableBuilder(
+    column: $table.hasBentoBox,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get typicalWetsuit => $composableBuilder(
+    column: $table.typicalWetsuit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get typicalSwimCapType => $composableBuilder(
+    column: $table.typicalSwimCapType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => ColumnOrderings(column),
@@ -43664,6 +44248,46 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get cyclingFtpWatts => $composableBuilder(
+    column: $table.cyclingFtpWatts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get swimmingCssSecondsPer100m => $composableBuilder(
+    column: $table.swimmingCssSecondsPer100m,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get giSensitivity => $composableBuilder(
+    column: $table.giSensitivity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get typicalBikeBottles => $composableBuilder(
+    column: $table.typicalBikeBottles,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasAeroBottle => $composableBuilder(
+    column: $table.hasAeroBottle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasBentoBox => $composableBuilder(
+    column: $table.hasBentoBox,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get typicalWetsuit => $composableBuilder(
+    column: $table.typicalWetsuit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get typicalSwimCapType => $composableBuilder(
+    column: $table.typicalSwimCapType,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => column,
@@ -43769,6 +44393,14 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> sweatTestSource = const Value.absent(),
                 Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
                 Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+                Value<int?> cyclingFtpWatts = const Value.absent(),
+                Value<int?> swimmingCssSecondsPer100m = const Value.absent(),
+                Value<bool?> giSensitivity = const Value.absent(),
+                Value<int?> typicalBikeBottles = const Value.absent(),
+                Value<bool?> hasAeroBottle = const Value.absent(),
+                Value<bool?> hasBentoBox = const Value.absent(),
+                Value<bool?> typicalWetsuit = const Value.absent(),
+                Value<String?> typicalSwimCapType = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -43829,6 +44461,14 @@ class $$UserProfilesTableTableTableManager
                 sweatTestSource: sweatTestSource,
                 weightPoundsUpdatedAt: weightPoundsUpdatedAt,
                 bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
+                cyclingFtpWatts: cyclingFtpWatts,
+                swimmingCssSecondsPer100m: swimmingCssSecondsPer100m,
+                giSensitivity: giSensitivity,
+                typicalBikeBottles: typicalBikeBottles,
+                hasAeroBottle: hasAeroBottle,
+                hasBentoBox: hasBentoBox,
+                typicalWetsuit: typicalWetsuit,
+                typicalSwimCapType: typicalSwimCapType,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -43893,6 +44533,14 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> sweatTestSource = const Value.absent(),
                 Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
                 Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+                Value<int?> cyclingFtpWatts = const Value.absent(),
+                Value<int?> swimmingCssSecondsPer100m = const Value.absent(),
+                Value<bool?> giSensitivity = const Value.absent(),
+                Value<int?> typicalBikeBottles = const Value.absent(),
+                Value<bool?> hasAeroBottle = const Value.absent(),
+                Value<bool?> hasBentoBox = const Value.absent(),
+                Value<bool?> typicalWetsuit = const Value.absent(),
+                Value<String?> typicalSwimCapType = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -43953,6 +44601,14 @@ class $$UserProfilesTableTableTableManager
                 sweatTestSource: sweatTestSource,
                 weightPoundsUpdatedAt: weightPoundsUpdatedAt,
                 bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
+                cyclingFtpWatts: cyclingFtpWatts,
+                swimmingCssSecondsPer100m: swimmingCssSecondsPer100m,
+                giSensitivity: giSensitivity,
+                typicalBikeBottles: typicalBikeBottles,
+                hasAeroBottle: hasAeroBottle,
+                hasBentoBox: hasBentoBox,
+                typicalWetsuit: typicalWetsuit,
+                typicalSwimCapType: typicalSwimCapType,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),

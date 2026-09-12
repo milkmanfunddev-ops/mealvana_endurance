@@ -105,9 +105,12 @@ void main() {
 }
 
 /// Bump both of these together, deliberately, whenever the schema changes.
+/// 2026-09-11 re-pin at the SAME version: v20 is unreleased (this branch owns
+/// it; Vana holds v21 on develop) and gained the eight users sport-preference
+/// columns after the Stage E walk found saves silently dropping them.
 const _pinnedVersion = 20;
 const _pinnedFingerprint =
-    '1008c942fcf905c7def0e266e35b6dae52629b66a472fdee84d78a274ae40f51';
+    'baf82b771b985da2163739fe00f1d2be779dad1df3e97a424fbfe3341ea4ded0';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.

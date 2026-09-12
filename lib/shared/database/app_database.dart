@@ -293,8 +293,11 @@ class AppDatabase extends _$AppDatabase {
   /// it), and the Garmin multisport lineage (parent_summary_id, is_parent —
   /// Q-INT23, brick verification B-2/B-5). integrations gains
   /// provider_is_premium (TP IsPremium) and athlete_metrics_json (TP
-  /// /v2/metrics body-metrics cache). All nullable — a provider omitting a
-  /// field never errors and never fabricates (DI-13). Supabase
+  /// /v2/metrics body-metrics cache). users gains the eight sport-preference
+  /// columns (cycling_ftp_watts + swimming_css_seconds_per_100m Supabase
+  /// twins, plus six local-only gear/tolerance fields) that the domain model
+  /// carried but the local table never stored. All nullable — a provider
+  /// omitting a field never errors and never fabricates (DI-13). Supabase
   /// app_config.current_schema_version must be bumped to 20 when the build
   /// carrying this ships. NOTE: on develop, Vana holds v21 — nothing of Vana
   /// may live at or below v20.
@@ -597,6 +600,19 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('integrations', 'provider_is_premium', 'INTEGER');
           await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
           await addColumn('events', 'origin', 'TEXT');
+          // Sport preferences: UserProfile carried these since ~v1.9 but the
+          // local users table never stored them (every save silently dropped
+          // them — caught in the 2026-09-11 Stage E walk). FTP/CSS mirror the
+          // production Supabase columns; the gear/tolerance fields are
+          // local-only by design.
+          await addColumn('users', 'cycling_ftp_watts', 'INTEGER');
+          await addColumn('users', 'swimming_css_seconds_per_100m', 'INTEGER');
+          await addColumn('users', 'gi_sensitivity', 'INTEGER');
+          await addColumn('users', 'typical_bike_bottles', 'INTEGER');
+          await addColumn('users', 'has_aero_bottle', 'INTEGER');
+          await addColumn('users', 'has_bento_box', 'INTEGER');
+          await addColumn('users', 'typical_wetsuit', 'INTEGER');
+          await addColumn('users', 'typical_swim_cap_type', 'TEXT');
         }
       },
 

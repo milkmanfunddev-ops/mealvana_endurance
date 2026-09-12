@@ -34,6 +34,19 @@ const _newActivityColumns = {
 
 const _newIntegrationColumns = {'provider_is_premium', 'athlete_metrics_json'};
 
+/// Sport preferences added to users in v20 (Stage E find: UserDao dropped
+/// every one of these on save because the columns never existed locally).
+const _newUserColumns = {
+  'cycling_ftp_watts',
+  'swimming_css_seconds_per_100m',
+  'gi_sensitivity',
+  'typical_bike_bottles',
+  'has_aero_bottle',
+  'has_bento_box',
+  'typical_wetsuit',
+  'typical_swim_cap_type',
+};
+
 /// Rewind a fresh (v20) in-memory database to the v19 shape: SQLite 3.35+
 /// supports DROP COLUMN for these plain nullable columns.
 Future<void> _rewindToV19(AppDatabase db) async {
@@ -42,6 +55,9 @@ Future<void> _rewindToV19(AppDatabase db) async {
   }
   for (final col in _newIntegrationColumns) {
     await db.customStatement('ALTER TABLE integrations DROP COLUMN $col');
+  }
+  for (final col in _newUserColumns) {
+    await db.customStatement('ALTER TABLE users DROP COLUMN $col');
   }
 }
 
@@ -62,6 +78,7 @@ void main() {
         await _columns(db, 'integrations'),
         containsAll(_newIntegrationColumns),
       );
+      expect(await _columns(db, 'users'), containsAll(_newUserColumns));
     });
 
     test('a v19 install gets every column from the from < 20 step', () async {
@@ -77,6 +94,7 @@ void main() {
         await _columns(db, 'integrations'),
         isNot(contains('provider_is_premium')),
       );
+      expect(await _columns(db, 'users'), isNot(contains('cycling_ftp_watts')));
 
       await db.migration.onUpgrade(db.createMigrator(), 19, db.schemaVersion);
 
@@ -85,6 +103,7 @@ void main() {
         await _columns(db, 'integrations'),
         containsAll(_newIntegrationColumns),
       );
+      expect(await _columns(db, 'users'), containsAll(_newUserColumns));
     });
 
     test('re-running the ladder when the columns exist is a no-op', () async {
