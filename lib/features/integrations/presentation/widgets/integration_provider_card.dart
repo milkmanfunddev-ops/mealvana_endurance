@@ -435,7 +435,9 @@ class _SyncButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onSync,
-      onLongPress: () => _showDisconnectDialog(context),
+      // Confirmation is the owner's job: the screen's Q-INT2 dialog
+      // (hide vs delete). No second dialog here.
+      onLongPress: onDisconnect,
       child: Container(
         padding: specStyle
             ? const EdgeInsets.symmetric(vertical: 9, horizontal: 20)
@@ -477,49 +479,6 @@ class _SyncButton extends StatelessWidget {
     );
   }
 
-  void _showDisconnectDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.blackberryLight,
-        title: Text(
-          'Disconnect?',
-          style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
-        ),
-        content: Text(
-          'This removes the workouts imported from this platform, along with '
-          'any profile details it filled in for you. Anything you entered '
-          'yourself is kept.\n\nTip: Long-press Sync Now to disconnect.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textDarkSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.buttonTertiary.copyWith(
-                color: AppColors.textDarkSecondary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onDisconnect?.call();
-            },
-            child: Text(
-              'Disconnect',
-              style: AppTextStyles.buttonTertiary.copyWith(
-                color: AppColors.dragonfruit,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Connect button for unconnected providers
@@ -619,36 +578,12 @@ class _ConnectedBadge extends StatelessWidget {
     if (onDisconnect == null) return badge;
 
     return GestureDetector(
-      onLongPress: () => _showDisconnectDialog(context),
+      // Same deferral: the owner shows the Q-INT2 hide-vs-delete dialog.
+      onLongPress: onDisconnect,
       child: badge,
     );
   }
 
-  void _showDisconnectDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Disconnect'),
-        content: const Text('Are you sure you want to disconnect?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onDisconnect?.call();
-            },
-            child: Text(
-              'Disconnect',
-              style: TextStyle(color: AppColors.dragonfruit),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Notify Me button for coming soon providers

@@ -12,6 +12,8 @@ import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/constants/bottle_constants.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import 'package:mealvana_endurance/features/integrations/presentation/providers/athlete_zones_provider.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/data/kyle_source_chip.dart';
 
 /// Cycling Details Screen - Unified for both onboarding and settings
 ///
@@ -69,6 +71,9 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
   bool get _isOnboarding => widget.mode == ScreenMode.onboarding;
   bool get _isSettings => widget.mode == ScreenMode.settings;
 
+  /// For the D-2 provenance row (settings mode only).
+  String? _userId;
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +99,7 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
       if (mounted) {
         setState(() {
+          _userId = user?.id;
           // Load FTP from user profile (if available)
           if (user?.ftpWatts != null) {
             _ftpController.text = user!.ftpWatts.toString();
@@ -319,6 +325,37 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
                             'cycling_prefs.ftp_field',
                           ),
                         ),
+
+                        // D-2 source provenance (integrations-data-display.md
+                        // D-2, RATIFIED 2026-09-11; Q-DID2 variant A) — the
+                        // ONE shared chip family, composed on the surface the
+                        // settings hub actually routes to.
+                        if (_isSettings && _userId != null) ...[
+                          const SizedBox(height: 12),
+                          ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: _ftpController,
+                            builder: (context, ftpText, _) {
+                              final manual = int.tryParse(ftpText.text.trim());
+                              return KyleSourceProvenanceRow(
+                                manualValue:
+                                    (manual == null || manual == 0)
+                                        ? null
+                                        : manual,
+                                providerValue: ref
+                                    .watch(tpFtpWattsProvider(_userId!))
+                                    .value,
+                                stale: ref
+                                        .watch(tpZonesStaleProvider(_userId!))
+                                        .value ??
+                                    false,
+                                unit: 'W',
+                                onAdoptProvider: (v) => setState(
+                                  () => _ftpController.text = v.toString(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
 
                         const SizedBox(height: 28),
 

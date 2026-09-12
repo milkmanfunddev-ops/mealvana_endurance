@@ -420,6 +420,9 @@ class EventsService {
       actualFinishTimeMinutes: event.actualFinishTimeMinutes,
       finalPlacement: event.finalPlacement,
       ageGroupPlacement: event.ageGroupPlacement,
+      // D-2c: origin must survive every mapper — the list card's chip
+      // reads it (a dropped origin renders every row as legacy).
+      origin: event.origin,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     );

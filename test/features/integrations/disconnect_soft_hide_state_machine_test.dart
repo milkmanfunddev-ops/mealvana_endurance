@@ -9,11 +9,16 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
+import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart'
     as domain;
 import 'package:mealvana_endurance/features/integrations/application/change_detection_service.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+
+import '../../helpers/fakes/fake_supabase_client.dart';
+import '../../helpers/widget_test_harness.dart';
 
 void main() {
   late AppDatabase db;
@@ -91,6 +96,35 @@ void main() {
         .getSingle();
     expect(fs1.status, isNot('deleted'));
     expect(fs1.deletedAt, isNull);
+  });
+
+  test('the DISPLAY query excludes hidden rows — the timeline path, through '
+      'the real repository', () async {
+    await seed('fs1', provider: 'final_surge', hidden: true);
+    await seed('manual1');
+
+    final repository = ActivitiesRepository(
+      supabase: fakeSupabaseClient(),
+      database: db,
+      logger: MockAppLogger(),
+      sentry: mockSentryReporter(),
+      deduplicationService: ActivityDeduplicationService(
+        logger: MockAppLogger(),
+      ),
+    );
+
+    final visible = await repository.getActivitiesForDateRange(
+      userId,
+      DateTime(2026, 9, 12),
+      DateTime(2026, 9, 13),
+    );
+    expect(
+      visible.map((a) => a.id),
+      ['manual1'],
+      reason: 'a soft-hidden row must leave the timeline/calendar display '
+          '(Q-INT2) — only the id-keyed and sync/matching lookups still '
+          'see it, so revive keeps working',
+    );
   });
 
   test('DI-9: deactivating an integration clears every token field', () async {

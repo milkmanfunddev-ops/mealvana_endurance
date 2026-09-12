@@ -4,9 +4,26 @@
 ///  * a dedupe-match flips a LEGACY (null-origin) row to the provider
 ///  * a local edit of a provider row flips it 'manual' and exempts it from
 ///    re-sync overwrite — a later dedupe-match must NOT flip it back
+import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+import 'package:mealvana_endurance/features/activities/application/activities_service.dart';
+import 'package:mealvana_endurance/features/coach_mode/data/coach_repository.dart';
+import 'package:mealvana_endurance/features/events/application/events_service.dart';
+import 'package:mealvana_endurance/features/events/data/events_repository.dart';
 import 'package:mealvana_endurance/features/events/domain/event.dart';
+import 'package:mealvana_endurance/shared/database/app_database.dart' hide Event;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
+
+import '../../helpers/widget_test_harness.dart';
+
+class _MockEventsRepository extends Mock implements EventsRepository {}
+
+class _MockActivitiesService extends Mock implements ActivitiesService {}
+
+class _MockCoachRepository extends Mock implements CoachRepository {}
 
 Event _event({String? origin}) => Event(
       id: 'e1',
@@ -59,5 +76,36 @@ void main() {
   test('origin round-trips through copyWith untouched by other edits', () {
     final e = _event(origin: 'final_surge').copyWith(eventName: 'Renamed');
     expect(e.origin, 'final_surge');
+  });
+
+  test('origin survives the SERVICE mapper — the events-list read path '
+      '(caught 2026-09-11: a second mapper dropped it and every card '
+      'rendered as legacy)', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(db.close);
+
+    await db.into(db.eventsTable).insert(
+          EventsTableCompanion.insert(
+            id: const Value('ev-fs'),
+            userId: 'u1',
+            eventType: 'triathlon',
+            eventName: const Value('Lakeside Tri'),
+            eventDate: Value(DateTime(2026, 10, 11)),
+            origin: const Value('final_surge'),
+            createdAt: DateTime(2026, 9, 1),
+            updatedAt: DateTime(2026, 9, 1),
+          ),
+        );
+
+    final service = EventsService(
+      db,
+      MockAppLogger(),
+      _MockEventsRepository(),
+      _MockActivitiesService(),
+      _MockCoachRepository(),
+    );
+
+    final events = await service.getAllEvents('u1');
+    expect(events.single.origin, 'final_surge');
   });
 }

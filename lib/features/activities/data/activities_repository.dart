@@ -1118,6 +1118,10 @@ class ActivitiesRepository with SyncableRepository {
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
               tbl.deletedAt.isNull() &
+              // Q-INT2: rows soft-hidden by a provider disconnect are
+              // excluded from display (they revive on a matching re-sync).
+              (tbl.hiddenByDisconnect.isNull() |
+                  tbl.hiddenByDisconnect.equals(false)) &
               (tbl.status.equals('archivedForBrick') |
                       tbl.status.equals('archived_for_brick'))
                   .not(),
@@ -1156,6 +1160,9 @@ class ActivitiesRepository with SyncableRepository {
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.activityType.equals(activityType.name) &
               tbl.status.equals('completed') &
+              // Q-INT2: disconnected-provider rows leave the baseline too.
+              (tbl.hiddenByDisconnect.isNull() |
+                  tbl.hiddenByDisconnect.equals(false)) &
               tbl.deletedAt.isNull(),
         )
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.completedAt)])
@@ -1199,6 +1206,10 @@ class ActivitiesRepository with SyncableRepository {
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.status.equals('completed') &
             tbl.deletedAt.isNull() &
+            // Q-INT2: hidden rows leave the engine — their fuel does not
+            // count as eaten while their demand is excluded.
+            (tbl.hiddenByDisconnect.isNull() |
+                tbl.hiddenByDisconnect.equals(false)) &
             tbl.brickId.isNull() &
             tbl.scheduledDateTime.isBiggerOrEqualValue(dayStart) &
             tbl.scheduledDateTime.isSmallerThanValue(dayEnd),
