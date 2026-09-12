@@ -93,6 +93,43 @@ void main() {
     expect(fs1.deletedAt, isNull);
   });
 
+  test('DI-9: deactivating an integration clears every token field', () async {
+    await db.into(db.integrationsTable).insert(
+          IntegrationsTableCompanion.insert(
+            id: const Value('int-1'),
+            userId: userId,
+            provider: 'final_surge',
+            accessToken: 'tok-live',
+            refreshToken: const Value('refresh-live'),
+            tokenExpiresAt: Value(DateTime(2026, 9, 13)),
+            providerAthleteId: 'ath-1',
+            createdAt: DateTime(2026, 9, 1),
+            updatedAt: DateTime(2026, 9, 1),
+          ),
+        );
+
+    // The repository write disconnect funnels through (Q-INT8: tokens
+    // cleared; integrations is the sole custodian).
+    await (db.update(db.integrationsTable)
+          ..where(
+            (t) => t.userId.equals(userId) & t.provider.equals('final_surge'),
+          ))
+        .write(const IntegrationsTableCompanion(
+          isActive: Value(false),
+          accessToken: Value(''),
+          refreshToken: Value(null),
+          tokenExpiresAt: Value(null),
+        ));
+
+    final row = await (db.select(db.integrationsTable)
+          ..where((t) => t.id.equals('int-1')))
+        .getSingle();
+    expect(row.isActive, isFalse);
+    expect(row.accessToken, isEmpty);
+    expect(row.refreshToken, isNull);
+    expect(row.tokenExpiresAt, isNull);
+  });
+
   test('a matching re-sync REVIVES a hidden row (id-keyed), while a '
       'tombstone still drops', () {
     final detection = ChangeDetectionService();

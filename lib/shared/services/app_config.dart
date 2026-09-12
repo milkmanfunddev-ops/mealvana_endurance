@@ -265,8 +265,17 @@ class AppConfig {
       ),
       // Use sandbox unless explicitly set to 'false' in .env
       // This allows prod builds to use sandbox during testing
+      // Q-INT14 (data-integrations@v1): the TP host stays env-driven, but a
+      // RELEASE build missing the key must default to PRODUCTION — the old
+      // blanket 'true' fallback would silently point a shipped build at the
+      // sandbox (whose data resets weekly). Debug/dev keeps the sandbox
+      // default.
       trainingPeaksUseSandbox:
-          dotenv.get('TRAININGPEAKS_USE_SANDBOX', fallback: 'true') == 'true',
+          dotenv.get(
+            'TRAININGPEAKS_USE_SANDBOX',
+            fallback: kReleaseMode ? 'false' : 'true',
+          ) ==
+          'true',
 
       // Final Surge integration
       finalSurgeClientId: dotenv.get(

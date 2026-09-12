@@ -306,11 +306,19 @@ class IntegrationsRepository with SyncableRepository {
 
   /// Deactivate an integration (soft delete)
   Future<void> deactivateIntegration(String userId, String provider) async {
+    // DI-9 (L-8/Q-INT8, RULED 2026-09-10): disconnect clears the tokens
+    // from EVERY store. The integrations row is the sole custodian, so the
+    // deactivate write empties them here (access_token is NOT NULL — the
+    // empty string is the cleared state) and the upload propagates the
+    // clearing to the server row. Reconnect writes fresh tokens.
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
         .write(
           IntegrationsTableCompanion(
             isActive: const Value(false),
+            accessToken: const Value(''),
+            refreshToken: const Value(null),
+            tokenExpiresAt: const Value(null),
             needsUpload: const Value(true),
             updatedAt: Value(DateTime.now()),
           ),
