@@ -912,7 +912,7 @@ Deno.test('Pipeline Iter1: Rest day (no sessions)', () => {
   assertWithinPercent(result.fat_g, 83, 5);
   assertWithinPercent(result.tdee, 2501, 5);
   assertEquals(result.mode, 'prospective');
-  assertEquals(result.algorithm_version, 'v6.0.0');
+  assertEquals(result.algorithm_version, 'v6.1.0');
 });
 
 Deno.test('Pipeline Iter1: 90-min run', () => {
@@ -1190,7 +1190,7 @@ Deno.test('Edge: Output includes all required fields', () => {
   // Delta is always present: null on every path except a retrospective
   // recalculation with a prior prospective plan.
   assertEquals(result.delta, null);
-  assertEquals(result.algorithm_version, 'v6.0.0');
+  assertEquals(result.algorithm_version, 'v6.1.0');
 });
 
 Deno.test('Edge: Clamp ceiling - carb capped at 12g/kg', () => {

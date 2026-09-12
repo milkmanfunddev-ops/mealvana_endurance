@@ -62,7 +62,7 @@ void main() {
     mode: 'retrospective',
     ea: 31.4,
     eaStatus: EaStatus.softWarning,
-    algorithmVersion: 'v6.0.0',
+    algorithmVersion: 'v6.1.0',
     createdAt: createdAt,
     updatedAt: updatedAt,
     weightKg: 49.9,
@@ -98,7 +98,7 @@ void main() {
     expect(r.mode, 'retrospective');
     expect(r.ea, 31.4);
     expect(r.eaStatus, EaStatus.softWarning);
-    expect(r.algorithmVersion, 'v6.0.0');
+    expect(r.algorithmVersion, 'v6.1.0');
     expect(r.createdAt, createdAt);
     expect(r.updatedAt, updatedAt);
 
@@ -173,7 +173,7 @@ void main() {
         1600.0,
         600.0,
         'prospective',
-        'v6.0.0',
+        'v6.1.0',
         0,
         createdAt.millisecondsSinceEpoch,
         updatedAt.millisecondsSinceEpoch,
@@ -211,7 +211,7 @@ void main() {
         600.0,
         'prospective',
         '{not valid json',
-        'v6.0.0',
+        'v6.1.0',
         0,
         createdAt.millisecondsSinceEpoch,
         updatedAt.millisecondsSinceEpoch,
@@ -242,7 +242,7 @@ void main() {
             rmr: 1500,
             sessionKcal: 700,
             mode: 'prospective',
-            algorithmVersion: 'v6.0.0',
+            algorithmVersion: 'v6.1.0',
             createdAt: DateTime(2026, 8, 20),
             updatedAt: DateTime(2026, 8, 20),
             weightKg: 49.9,
