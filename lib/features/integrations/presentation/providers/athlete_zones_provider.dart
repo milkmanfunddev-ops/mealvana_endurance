@@ -46,3 +46,31 @@ Future<double?> thresholdPaceMinPerMile(Ref ref, String userId) async {
   final zones = await ref.watch(athleteZonesProvider(userId).future);
   return zones?.thresholdPaceMinPerMile;
 }
+
+/// D-2 provenance feed: the TP-sourced FTP (watts), or null when TP is not
+/// connected / carries no power zones.
+@riverpod
+Future<int?> tpFtpWatts(Ref ref, String userId) async {
+  final zones = await ref.watch(athleteZonesProvider(userId).future);
+  return zones?.ftpWatts;
+}
+
+/// D-2 provenance feed: the TP-derived swim CSS (sec/100m).
+@riverpod
+Future<int?> tpCssSecondsPer100m(Ref ref, String userId) async {
+  final zones = await ref.watch(athleteZonesProvider(userId).future);
+  return zones?.cssSecondsPer100m;
+}
+
+/// D-2 staleness: true when the TP zones cache is older than the ruled
+/// 24 h window (the zones clock — integration.updatedAt tracks the fetch).
+@riverpod
+Future<bool> tpZonesStale(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final tp = await repository.getIntegration(userId, 'training_peaks');
+  if (tp == null || !tp.isActive || tp.athleteZonesJson == null) return false;
+  final updatedAt = tp.updatedAt;
+  if (updatedAt == null) return true;
+  return DateTime.now().difference(updatedAt) > const Duration(hours: 24);
+}
+

@@ -596,6 +596,7 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'hidden_by_disconnect', 'INTEGER');
           await addColumn('integrations', 'provider_is_premium', 'INTEGER');
           await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
+          await addColumn('events', 'origin', 'TEXT');
         }
       },
 

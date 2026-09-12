@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
@@ -39,6 +40,11 @@ class _NutritionProfileScreenState
   bool _hasChanges = false;
   bool _weightFromGarmin = false;
   bool _bodyFatFromGarmin = false;
+
+  /// D-2b (integrations-data-display.md, RATIFIED 2026-09-11): the latest
+  /// Garmin body-comp reading, kept even when NOT authoritative so the
+  /// provenance row can offer the older-Garmin/newer-manual tap-to-use.
+  GarminBodyCompData? _garminBodyComp;
   bool _isSaving = false;
 
   // Mirrors the user's unitSystemProvider preference. Kept as local state
@@ -148,6 +154,7 @@ class _NutritionProfileScreenState
         garminLastBodyCompProvider(profile.id).future,
       );
       if (!mounted || garminData == null) return;
+      setState(() => _garminBodyComp = garminData);
 
       final userWeightKg = profile.weightPounds * 0.453592;
       final weightAuthoritative = isGarminAuthoritativeForWeight(
@@ -350,6 +357,28 @@ class _NutritionProfileScreenState
               ],
               const SizedBox(height: AppSpacing.sm),
               _buildWeightInput(context),
+              const SizedBox(height: 6),
+              _buildBodyCompProvenanceRow(
+                fromGarmin: _weightFromGarmin,
+                garminValueLabel: _garminBodyComp?.weightKg == null
+                    ? null
+                    : (_useMetric
+                        ? '${_garminBodyComp!.weightKg!.toStringAsFixed(1)} kg'
+                        : '${UnitFormatter.kgToPounds(_garminBodyComp!.weightKg!).round()} lb'),
+                onAdoptGarmin: _garminBodyComp?.weightKg == null
+                    ? null
+                    : () {
+                        setState(() {
+                          _weightController.text = _useMetric
+                              ? _garminBodyComp!.weightKg!.toStringAsFixed(1)
+                              : UnitFormatter.kgToPounds(
+                                  _garminBodyComp!.weightKg!,
+                                ).round().toString();
+                          _weightFromGarmin = true;
+                        });
+                        _markChanged();
+                      },
+              ),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -381,6 +410,23 @@ class _NutritionProfileScreenState
               ],
               const SizedBox(height: AppSpacing.sm),
               _buildBodyFatInput(context),
+              const SizedBox(height: 6),
+              _buildBodyCompProvenanceRow(
+                fromGarmin: _bodyFatFromGarmin,
+                garminValueLabel: _garminBodyComp?.bodyFatPct == null
+                    ? null
+                    : '${_garminBodyComp!.bodyFatPct!.toStringAsFixed(1)} %',
+                onAdoptGarmin: _garminBodyComp?.bodyFatPct == null
+                    ? null
+                    : () {
+                        setState(() {
+                          _bodyFatController.text =
+                              _garminBodyComp!.bodyFatPct!.toStringAsFixed(1);
+                          _bodyFatFromGarmin = true;
+                        });
+                        _markChanged();
+                      },
+              ),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -449,6 +495,38 @@ class _NutritionProfileScreenState
         color: Theme.of(context).colorScheme.onSurface,
         fontSize: 18,
       ),
+    );
+  }
+
+  /// D-2b provenance row — the SAME chip family as FTP/CSS (one
+  /// implementation, parameterized): Manual · Garmin sources, 30-day stale
+  /// window, tap-to-use for the older-Garmin/newer-manual case.
+  /// Newest-wins precedence itself is preserved as built (the autofill
+  /// above); the chips only SAY what happened.
+  Widget _buildBodyCompProvenanceRow({
+    required bool fromGarmin,
+    required String? garminValueLabel,
+    required VoidCallback? onAdoptGarmin,
+  }) {
+    final garminStale = _garminBodyComp != null &&
+        DateTime.now().difference(_garminBodyComp!.measurementTime) >
+            const Duration(days: 30);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        KyleSourceChip(source: fromGarmin ? 'Garmin' : 'Manual'),
+        if (fromGarmin && garminStale) const KyleStaleChip(),
+        // Older-Garmin/newer-manual: the manual value stands, the Garmin
+        // reading stays one tap away (never a modal).
+        if (!fromGarmin && garminValueLabel != null && onAdoptGarmin != null)
+          KyleTapToUseChip(
+            source: 'Garmin',
+            value: garminValueLabel,
+            onTap: onAdoptGarmin,
+          ),
+      ],
     );
   }
 

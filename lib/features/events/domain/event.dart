@@ -47,6 +47,7 @@ class Event {
     // Sync tracking (offline-first architecture)
     this.needsUpload,
     this.localUpdatedAt,
+    this.origin,
   });
 
   final String id;
@@ -96,6 +97,12 @@ class Event {
   // Sync tracking (offline-first architecture)
   final bool? needsUpload;
   final DateTime? localUpdatedAt;
+
+  /// D-2c origin (integrations-data-display.md, RATIFIED 2026-09-11):
+  /// 'manual' | 'training_peaks' | 'final_surge'; null = legacy row. A
+  /// local edit of a provider row flips it 'manual' and exempts it from
+  /// re-sync overwrite.
+  final String? origin;
 
   /// Serialize event to JSON for edge function payload
   Map<String, dynamic> toJson() {
@@ -158,6 +165,7 @@ class Event {
     DateTime? updatedAt,
     bool? needsUpload,
     DateTime? localUpdatedAt,
+    String? origin,
   }) {
     return Event(
       id: id ?? this.id,
@@ -190,6 +198,7 @@ class Event {
       updatedAt: updatedAt ?? this.updatedAt,
       needsUpload: needsUpload ?? this.needsUpload,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      origin: origin ?? this.origin,
     );
   }
 

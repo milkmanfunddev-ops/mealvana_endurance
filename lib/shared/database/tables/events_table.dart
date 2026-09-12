@@ -69,6 +69,13 @@ class EventsTable extends Table {
       integer().nullable().named('age_group_placement')();
 
   // Metadata
+  // D-2c (integrations-data-display.md, RATIFIED 2026-09-11): one origin
+  // per event row — 'manual' | 'training_peaks' | 'final_surge'. A
+  // dedupe-match flips a null (legacy) origin to the provider; a local edit
+  // of a provider row flips it 'manual' and exempts it from re-sync
+  // overwrite.
+  TextColumn get origin => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime().named('created_at')();
   DateTimeColumn get updatedAt => dateTime().named('updated_at')();
 

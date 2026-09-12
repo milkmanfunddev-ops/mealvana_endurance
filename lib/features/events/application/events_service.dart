@@ -207,6 +207,7 @@ class EventsService {
       final event = domain.Event(
         id: '', // Empty string - repository will assign actual ID
         userId: ownerId, // Use ownerId (athlete if coach is creating for them)
+        origin: 'manual', // D-2c: athlete-created rows are manual-origin
         activityId: activityId,
         eventType: eventType,
         eventSubtype: eventSubtype,
@@ -288,7 +289,18 @@ class EventsService {
         }
       }
 
-      final updatedEvent = event.copyWith(updatedAt: DateTime.now());
+      // D-2c (RATIFIED 2026-09-11): a local edit of a provider-origin event
+      // flips it 'manual' — the athlete now owns the row, and it becomes
+      // exempt from re-sync overwrite (the import's dedupe-flip skips
+      // 'manual' rows). Manual/legacy rows keep their origin.
+      final flippedOrigin =
+          (event.origin == 'training_peaks' || event.origin == 'final_surge')
+              ? 'manual'
+              : event.origin;
+      final updatedEvent = event.copyWith(
+        updatedAt: DateTime.now(),
+        origin: flippedOrigin,
+      );
 
       _logger.info(
         'Resolved write consistency',

@@ -14575,6 +14575,15 @@ class $EventsTableTable extends EventsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _originMeta = const VerificationMeta('origin');
+  @override
+  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
+    'origin',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -14648,6 +14657,7 @@ class $EventsTableTable extends EventsTable
     actualFinishTimeMinutes,
     finalPlacement,
     ageGroupPlacement,
+    origin,
     createdAt,
     updatedAt,
     needsUpload,
@@ -14846,6 +14856,12 @@ class $EventsTableTable extends EventsTable
         ),
       );
     }
+    if (data.containsKey('origin')) {
+      context.handle(
+        _originMeta,
+        origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -14981,6 +14997,10 @@ class $EventsTableTable extends EventsTable
         DriftSqlType.int,
         data['${effectivePrefix}age_group_placement'],
       ),
+      origin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -15030,6 +15050,7 @@ class Event extends DataClass implements Insertable<Event> {
   final int? actualFinishTimeMinutes;
   final int? finalPlacement;
   final int? ageGroupPlacement;
+  final String? origin;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool? needsUpload;
@@ -15058,6 +15079,7 @@ class Event extends DataClass implements Insertable<Event> {
     this.actualFinishTimeMinutes,
     this.finalPlacement,
     this.ageGroupPlacement,
+    this.origin,
     required this.createdAt,
     required this.updatedAt,
     this.needsUpload,
@@ -15130,6 +15152,9 @@ class Event extends DataClass implements Insertable<Event> {
     }
     if (!nullToAbsent || ageGroupPlacement != null) {
       map['age_group_placement'] = Variable<int>(ageGroupPlacement);
+    }
+    if (!nullToAbsent || origin != null) {
+      map['origin'] = Variable<String>(origin);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -15204,6 +15229,9 @@ class Event extends DataClass implements Insertable<Event> {
       ageGroupPlacement: ageGroupPlacement == null && nullToAbsent
           ? const Value.absent()
           : Value(ageGroupPlacement),
+      origin: origin == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origin),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       needsUpload: needsUpload == null && nullToAbsent
@@ -15252,6 +15280,7 @@ class Event extends DataClass implements Insertable<Event> {
       ),
       finalPlacement: serializer.fromJson<int?>(json['finalPlacement']),
       ageGroupPlacement: serializer.fromJson<int?>(json['ageGroupPlacement']),
+      origin: serializer.fromJson<String?>(json['origin']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
@@ -15293,6 +15322,7 @@ class Event extends DataClass implements Insertable<Event> {
       ),
       'finalPlacement': serializer.toJson<int?>(finalPlacement),
       'ageGroupPlacement': serializer.toJson<int?>(ageGroupPlacement),
+      'origin': serializer.toJson<String?>(origin),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'needsUpload': serializer.toJson<bool?>(needsUpload),
@@ -15324,6 +15354,7 @@ class Event extends DataClass implements Insertable<Event> {
     Value<int?> actualFinishTimeMinutes = const Value.absent(),
     Value<int?> finalPlacement = const Value.absent(),
     Value<int?> ageGroupPlacement = const Value.absent(),
+    Value<String?> origin = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<bool?> needsUpload = const Value.absent(),
@@ -15374,6 +15405,7 @@ class Event extends DataClass implements Insertable<Event> {
     ageGroupPlacement: ageGroupPlacement.present
         ? ageGroupPlacement.value
         : this.ageGroupPlacement,
+    origin: origin.present ? origin.value : this.origin,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
@@ -15436,6 +15468,7 @@ class Event extends DataClass implements Insertable<Event> {
       ageGroupPlacement: data.ageGroupPlacement.present
           ? data.ageGroupPlacement.value
           : this.ageGroupPlacement,
+      origin: data.origin.present ? data.origin.value : this.origin,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       needsUpload: data.needsUpload.present
@@ -15473,6 +15506,7 @@ class Event extends DataClass implements Insertable<Event> {
           ..write('actualFinishTimeMinutes: $actualFinishTimeMinutes, ')
           ..write('finalPlacement: $finalPlacement, ')
           ..write('ageGroupPlacement: $ageGroupPlacement, ')
+          ..write('origin: $origin, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('needsUpload: $needsUpload, ')
@@ -15506,6 +15540,7 @@ class Event extends DataClass implements Insertable<Event> {
     actualFinishTimeMinutes,
     finalPlacement,
     ageGroupPlacement,
+    origin,
     createdAt,
     updatedAt,
     needsUpload,
@@ -15538,6 +15573,7 @@ class Event extends DataClass implements Insertable<Event> {
           other.actualFinishTimeMinutes == this.actualFinishTimeMinutes &&
           other.finalPlacement == this.finalPlacement &&
           other.ageGroupPlacement == this.ageGroupPlacement &&
+          other.origin == this.origin &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.needsUpload == this.needsUpload &&
@@ -15568,6 +15604,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   final Value<int?> actualFinishTimeMinutes;
   final Value<int?> finalPlacement;
   final Value<int?> ageGroupPlacement;
+  final Value<String?> origin;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool?> needsUpload;
@@ -15597,6 +15634,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.actualFinishTimeMinutes = const Value.absent(),
     this.finalPlacement = const Value.absent(),
     this.ageGroupPlacement = const Value.absent(),
+    this.origin = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
@@ -15627,6 +15665,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.actualFinishTimeMinutes = const Value.absent(),
     this.finalPlacement = const Value.absent(),
     this.ageGroupPlacement = const Value.absent(),
+    this.origin = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.needsUpload = const Value.absent(),
@@ -15660,6 +15699,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Expression<int>? actualFinishTimeMinutes,
     Expression<int>? finalPlacement,
     Expression<int>? ageGroupPlacement,
+    Expression<String>? origin,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? needsUpload,
@@ -15694,6 +15734,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
         'actual_finish_time_minutes': actualFinishTimeMinutes,
       if (finalPlacement != null) 'final_placement': finalPlacement,
       if (ageGroupPlacement != null) 'age_group_placement': ageGroupPlacement,
+      if (origin != null) 'origin': origin,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (needsUpload != null) 'needs_upload': needsUpload,
@@ -15726,6 +15767,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Value<int?>? actualFinishTimeMinutes,
     Value<int?>? finalPlacement,
     Value<int?>? ageGroupPlacement,
+    Value<String?>? origin,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool?>? needsUpload,
@@ -15759,6 +15801,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
           actualFinishTimeMinutes ?? this.actualFinishTimeMinutes,
       finalPlacement: finalPlacement ?? this.finalPlacement,
       ageGroupPlacement: ageGroupPlacement ?? this.ageGroupPlacement,
+      origin: origin ?? this.origin,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       needsUpload: needsUpload ?? this.needsUpload,
@@ -15847,6 +15890,9 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     if (ageGroupPlacement.present) {
       map['age_group_placement'] = Variable<int>(ageGroupPlacement.value);
     }
+    if (origin.present) {
+      map['origin'] = Variable<String>(origin.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -15891,6 +15937,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
           ..write('actualFinishTimeMinutes: $actualFinishTimeMinutes, ')
           ..write('finalPlacement: $finalPlacement, ')
           ..write('ageGroupPlacement: $ageGroupPlacement, ')
+          ..write('origin: $origin, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('needsUpload: $needsUpload, ')
@@ -48527,6 +48574,7 @@ typedef $$EventsTableTableCreateCompanionBuilder =
       Value<int?> actualFinishTimeMinutes,
       Value<int?> finalPlacement,
       Value<int?> ageGroupPlacement,
+      Value<String?> origin,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<bool?> needsUpload,
@@ -48558,6 +48606,7 @@ typedef $$EventsTableTableUpdateCompanionBuilder =
       Value<int?> actualFinishTimeMinutes,
       Value<int?> finalPlacement,
       Value<int?> ageGroupPlacement,
+      Value<String?> origin,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool?> needsUpload,
@@ -48686,6 +48735,11 @@ class $$EventsTableTableFilterComposer
 
   ColumnFilters<int> get ageGroupPlacement => $composableBuilder(
     column: $table.ageGroupPlacement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origin => $composableBuilder(
+    column: $table.origin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -48834,6 +48888,11 @@ class $$EventsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -48963,6 +49022,9 @@ class $$EventsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -49031,6 +49093,7 @@ class $$EventsTableTableTableManager
                 Value<int?> actualFinishTimeMinutes = const Value.absent(),
                 Value<int?> finalPlacement = const Value.absent(),
                 Value<int?> ageGroupPlacement = const Value.absent(),
+                Value<String?> origin = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool?> needsUpload = const Value.absent(),
@@ -49060,6 +49123,7 @@ class $$EventsTableTableTableManager
                 actualFinishTimeMinutes: actualFinishTimeMinutes,
                 finalPlacement: finalPlacement,
                 ageGroupPlacement: ageGroupPlacement,
+                origin: origin,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 needsUpload: needsUpload,
@@ -49091,6 +49155,7 @@ class $$EventsTableTableTableManager
                 Value<int?> actualFinishTimeMinutes = const Value.absent(),
                 Value<int?> finalPlacement = const Value.absent(),
                 Value<int?> ageGroupPlacement = const Value.absent(),
+                Value<String?> origin = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<bool?> needsUpload = const Value.absent(),
@@ -49120,6 +49185,7 @@ class $$EventsTableTableTableManager
                 actualFinishTimeMinutes: actualFinishTimeMinutes,
                 finalPlacement: finalPlacement,
                 ageGroupPlacement: ageGroupPlacement,
+                origin: origin,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 needsUpload: needsUpload,

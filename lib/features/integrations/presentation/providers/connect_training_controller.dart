@@ -1779,6 +1779,14 @@ class ConnectTrainingController extends _$ConnectTrainingController {
         eventDate: candidate.scheduledAt,
       );
       if (existingByName != null) {
+        // D-2c dedupe-match: a legacy (null-origin) row flips to the
+        // provider; 'manual' rows are athlete-owned and exempt.
+        if (existingByName.origin == null) {
+          await eventsRepository.updateEvent(
+            deviceId: _currentUserId!,
+            event: existingByName.copyWith(origin: 'final_surge'),
+          );
+        }
         continue;
       }
 
@@ -1796,6 +1804,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             startTime: candidate.scheduledAt.toIso8601String(),
             goalTimeMinutes: candidate.goalTimeMinutes,
             goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
+            origin: 'final_surge', // D-2c
             createdAt: now,
             updatedAt: now,
           ),
@@ -1830,6 +1839,16 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       );
 
       if (existingEvent != null) {
+        // D-2c dedupe-match: a LEGACY row (null origin) flips to the
+        // provider — the import recognized it as the same event. A
+        // 'manual' origin is athlete-owned (created or locally edited) and
+        // is exempt from re-sync overwrite, origin included.
+        if (existingEvent.origin == null) {
+          await eventsRepository.updateEvent(
+            deviceId: _currentUserId!,
+            event: existingEvent.copyWith(origin: 'training_peaks'),
+          );
+        }
         skippedEventsCount++;
         if (kDebugMode) {
           print('   ⏭️ Event already exists, skipping: ${event.eventName}');
@@ -1852,6 +1871,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
             goalTimeMinutes: event.goalTimeHours != null
                 ? (event.goalTimeHours! * 60).round()
                 : null,
+            origin: 'training_peaks', // D-2c
             createdAt: now,
             updatedAt: now,
           ),

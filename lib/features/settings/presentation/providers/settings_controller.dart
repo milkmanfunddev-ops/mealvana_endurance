@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:mealvana_endurance/shared/database/database_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show HttpMethod;
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../activities/data/activities_repository.dart';
@@ -181,6 +182,35 @@ class SettingsController extends _$SettingsController {
         if (freshProfile != null) {
           displayProfile = freshProfile;
         }
+      }
+    }
+
+    // Q-INT19 FTP/CSS prefill (RULED with D-2, 2026-09-11): an EMPTY
+    // performance field adopts the TrainingPeaks value at load — the field
+    // then reads TP-sourced (the ftp-tp-sourced golden state). Manual-wins
+    // stands: a non-empty field is never overwritten (that's the inline
+    // conflict + tap-to-use instead). Persisted through the normal update
+    // path after this build settles; the next build converges (manual ==
+    // TP -> no further write).
+    if (displayProfile?.id != null) {
+      final zones = await ref.read(
+        athleteZonesProvider(displayProfile!.id).future,
+      );
+      final tpFtp = zones?.ftpWatts;
+      final tpCss = zones?.cssSecondsPer100m;
+      final ftpEmpty =
+          displayProfile.ftpWatts == null || displayProfile.ftpWatts == 0;
+      final cssEmpty = displayProfile.cssPacePer100mSeconds == null ||
+          displayProfile.cssPacePer100mSeconds == 0;
+      if ((ftpEmpty && tpFtp != null) || (cssEmpty && tpCss != null)) {
+        Future.microtask(() async {
+          if (ftpEmpty && tpFtp != null) {
+            await updateCyclingPreferences(ftpWatts: tpFtp);
+          }
+          if (cssEmpty && tpCss != null) {
+            await updateSwimmingPreferences(cssPacePer100mSeconds: tpCss);
+          }
+        });
       }
     }
 

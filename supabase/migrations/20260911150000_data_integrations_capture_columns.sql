@@ -79,3 +79,13 @@ COMMENT ON COLUMN public.integrations.provider_is_premium IS
   'TP IsPremium at last profile fetch — predicts null completed-workout fields and write-back 403s';
 COMMENT ON COLUMN public.integrations.athlete_metrics_json IS
   'Latest TP /v2/metrics body-metrics fetch ({fetchedAt, metrics[]}); premium-gated, 24 h staleness';
+
+-- D-2c events origin (integrations-data-display.md, RATIFIED 2026-09-11):
+-- one origin per event row. Null = legacy row (a dedupe-match may flip it
+-- to the provider); 'manual' is athlete-owned and exempt from re-sync
+-- overwrite.
+ALTER TABLE public.events
+  ADD COLUMN IF NOT EXISTS origin text;
+COMMENT ON COLUMN public.events.origin IS
+  'D-2c: manual | training_peaks | final_surge; local edit of a provider row flips it manual and exempts it from re-sync overwrite';
+
