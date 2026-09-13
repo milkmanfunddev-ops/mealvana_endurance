@@ -729,3 +729,91 @@ final class TpAthleteIdentityFamily extends $Family
   @override
   String toString() => r'tpAthleteIdentityProvider';
 }
+
+/// FS-reported athlete name (from the OAuth token response at connect) —
+/// null when FS is not connected. Joins the identity badges per Xuan's
+/// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+
+@ProviderFor(fsAthleteName)
+const fsAthleteNameProvider = FsAthleteNameFamily._();
+
+/// FS-reported athlete name (from the OAuth token response at connect) —
+/// null when FS is not connected. Joins the identity badges per Xuan's
+/// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+
+final class FsAthleteNameProvider
+    extends $FunctionalProvider<AsyncValue<String?>, String?, FutureOr<String?>>
+    with $FutureModifier<String?>, $FutureProvider<String?> {
+  /// FS-reported athlete name (from the OAuth token response at connect) —
+  /// null when FS is not connected. Joins the identity badges per Xuan's
+  /// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+  const FsAthleteNameProvider._({
+    required FsAthleteNameFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'fsAthleteNameProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$fsAthleteNameHash();
+
+  @override
+  String toString() {
+    return r'fsAthleteNameProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<String?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<String?> create(Ref ref) {
+    final argument = this.argument as String;
+    return fsAthleteName(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is FsAthleteNameProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$fsAthleteNameHash() => r'ce4bdb0c007804fa723b2c2b11149975c0da01d4';
+
+/// FS-reported athlete name (from the OAuth token response at connect) —
+/// null when FS is not connected. Joins the identity badges per Xuan's
+/// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+
+final class FsAthleteNameFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<String?>, String> {
+  const FsAthleteNameFamily._()
+    : super(
+        retry: null,
+        name: r'fsAthleteNameProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// FS-reported athlete name (from the OAuth token response at connect) —
+  /// null when FS is not connected. Joins the identity badges per Xuan's
+  /// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+
+  FsAthleteNameProvider call(String userId) =>
+      FsAthleteNameProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'fsAthleteNameProvider';
+}

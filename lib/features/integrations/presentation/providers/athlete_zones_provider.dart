@@ -102,3 +102,15 @@ Future<({String? name, String? birthMonth, String? gender})?>
     gender: tp.providerAthleteGender,
   );
 }
+
+/// FS-reported athlete name (from the OAuth token response at connect) —
+/// null when FS is not connected. Joins the identity badges per Xuan's
+/// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+@riverpod
+Future<String?> fsAthleteName(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final fs = await repository.getIntegration(userId, 'final_surge');
+  if (fs == null || !fs.isActive) return null;
+  final name = fs.providerAthleteName?.trim();
+  return (name == null || name.isEmpty) ? null : name;
+}

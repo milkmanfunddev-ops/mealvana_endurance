@@ -385,37 +385,52 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
           ? null
           : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
 
-  /// D-2 identity badges (Xuan 2026-09-13): when TrainingPeaks reports a
-  /// DIFFERENT value than the manual field, surface it as the shared
-  /// tap-to-use chip — never overwrite, never a modal. Agreement or absence
-  /// renders nothing (identity fields are manual-owned by default).
+  String? get _fsName => _userId == null
+      ? null
+      : ref.watch(fsAthleteNameProvider(_userId!)).value;
+
+  /// Identity badges (Xuan rulings 2026-09-13): EVERY provider with a
+  /// non-null value shows its badge, primary first (TP, then FS for name).
+  /// A differing value renders the tap-to-use pill; a value equal to the
+  /// manual field renders the plain source pill (no pointless affordance).
+  /// Never overwrite, never a modal.
   Widget _buildTpNameBadge() {
-    final tpName = _tpIdentity?.name?.trim();
-    if (tpName == null || tpName.isEmpty) return const SizedBox.shrink();
     final manual =
         '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
             .trim();
-    if (manual.toLowerCase() == tpName.toLowerCase()) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: KyleTapToUseChip(
-        source: 'TrainingPeaks',
-        value: tpName,
+
+    Widget? badgeFor(String source, String? rawName) {
+      final name = rawName?.trim();
+      if (name == null || name.isEmpty) return null;
+      if (manual.toLowerCase() == name.toLowerCase()) {
+        return KyleSourceChip(source: source);
+      }
+      return KyleTapToUseChip(
+        source: source,
+        value: name,
         onTap: () {
-          final space = tpName.lastIndexOf(' ');
+          final space = name.lastIndexOf(' ');
           setState(() {
             if (space > 0) {
-              _firstNameController.text = tpName.substring(0, space);
-              _lastNameController.text = tpName.substring(space + 1);
+              _firstNameController.text = name.substring(0, space);
+              _lastNameController.text = name.substring(space + 1);
             } else {
-              _firstNameController.text = tpName;
+              _firstNameController.text = name;
             }
           });
           _markChanged();
         },
-      ),
+      );
+    }
+
+    final badges = <Widget>[
+      ?badgeFor('TrainingPeaks', _tpIdentity?.name),
+      ?badgeFor('Final Surge', _fsName),
+    ];
+    if (badges.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(spacing: 8, runSpacing: 6, children: badges),
     );
   }
 

@@ -396,14 +396,14 @@ class _NutritionProfileScreenState
                         });
                         _markChanged();
                       },
-                // TP fallback badge — only offered when Garmin carries no
-                // reading (Garmin is the ruled D-2b primary).
-                tpValueLabel:
-                    (_garminBodyComp?.weightKg != null || _tpWeightKg == null)
-                        ? null
-                        : (_useMetric
-                            ? '${_tpWeightKg!.toStringAsFixed(1)} kg'
-                            : '${UnitFormatter.kgToPounds(_tpWeightKg!).round()} lb'),
+                // TP badge — shown whenever TP reported a weight (Xuan
+                // ruling 2026-09-13: every non-null provider value badges,
+                // even beside Garmin's; Garmin pill renders first).
+                tpValueLabel: _tpWeightKg == null
+                    ? null
+                    : (_useMetric
+                        ? '${_tpWeightKg!.toStringAsFixed(1)} kg'
+                        : '${UnitFormatter.kgToPounds(_tpWeightKg!).round()} lb'),
                 onAdoptTp: _tpWeightKg == null
                     ? null
                     : () {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/onboarding_widgets.dart';
 import '../providers/onboarding_controller.dart';
+import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/core/screen_mode.dart';
@@ -210,6 +211,11 @@ class _CyclingDetailsScreenState extends ConsumerState<CyclingDetailsScreen> {
 
           if (!mounted) return;
 
+          // The hub's summary line (and any other settings reader) shows
+          // the saved value immediately — the save path runs through the
+          // onboarding controller and never touches settings state
+          // (Xuan, 2026-09-13: "the page prior doesn't get updated").
+          ref.invalidate(settingsControllerProvider);
           MealvanaSnackbar.showSuccess(context, 'Cycling details updated');
           context.pop();
         } else {
