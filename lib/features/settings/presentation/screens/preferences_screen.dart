@@ -440,19 +440,22 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       'f' || 'female' => Gender.female,
       _ => null,
     };
-    if (tpGender == null || tpGender == _gender) {
-      return const SizedBox.shrink();
-    }
+    if (tpGender == null) return const SizedBox.shrink();
+    // Match = the value is TP-sourced; show the plain pill so the
+    // provenance stays visible (consistent with the name badge). Differ =
+    // tap-to-use.
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: KyleTapToUseChip(
-        source: 'TrainingPeaks',
-        value: tpGender == Gender.male ? 'Male' : 'Female',
-        onTap: () {
-          setState(() => _gender = tpGender);
-          _markChanged();
-        },
-      ),
+      child: tpGender == _gender
+          ? const KyleSourceChip(source: 'TrainingPeaks')
+          : KyleTapToUseChip(
+              source: 'TrainingPeaks',
+              value: tpGender == Gender.male ? 'Male' : 'Female',
+              onTap: () {
+                setState(() => _gender = tpGender);
+                _markChanged();
+              },
+            ),
     );
   }
 
@@ -464,30 +467,31 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
     final year = int.tryParse(birthMonth.substring(0, 4));
     final month = int.tryParse(birthMonth.substring(5, 7));
     if (year == null || month == null) return const SizedBox.shrink();
-    if (_birthday != null &&
+    final matches = _birthday != null &&
         _birthday!.year == year &&
-        _birthday!.month == month) {
-      return const SizedBox.shrink();
-    }
+        _birthday!.month == month;
     const monthNames = [
       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return Padding(
       padding: const EdgeInsets.only(top: 8),
-      child: KyleTapToUseChip(
-        source: 'TrainingPeaks',
-        // TP only reports month precision; adopting keeps the manually-set
-        // day (or the 15th when none) — day-level semantics await a ruling
-        // (qa intake 2026-09-13).
-        value: '${monthNames[month - 1]} $year',
-        onTap: () {
-          setState(() {
-            _birthday = DateTime(year, month, _birthday?.day ?? 15);
-          });
-          _markChanged();
-        },
-      ),
+      // Match = TP-sourced, plain pill (provenance stays visible after
+      // applying). Differ = tap-to-use. TP only reports month precision;
+      // adopting keeps the manually-set day (or the 15th) — day-level
+      // semantics await a ruling (qa intake 2026-09-13).
+      child: matches
+          ? const KyleSourceChip(source: 'TrainingPeaks')
+          : KyleTapToUseChip(
+              source: 'TrainingPeaks',
+              value: '${monthNames[month - 1]} $year',
+              onTap: () {
+                setState(() {
+                  _birthday = DateTime(year, month, _birthday?.day ?? 15);
+                });
+                _markChanged();
+              },
+            ),
     );
   }
 
