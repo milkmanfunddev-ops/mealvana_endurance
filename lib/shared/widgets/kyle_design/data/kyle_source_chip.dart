@@ -92,7 +92,9 @@ class KyleStaleChip extends StatelessWidget {
 
 /// The tap-to-use affordance for a conflict: adopts the provider's value in
 /// a single tap ("TrainingPeaks · 240 W — tap to use"). NEVER a modal —
-/// the ruled conflict treatment is inline (variant A).
+/// the ruled conflict treatment is inline (variant A). Rendered in the same
+/// pill outline as [KyleSourceChip] (Xuan amendment 2026-09-13: the
+/// affordance reads as a tappable pill, not bare text).
 class KyleTapToUseChip extends StatelessWidget {
   const KyleTapToUseChip({
     super.key,
@@ -109,14 +111,22 @@ class KyleTapToUseChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Text(
-        '$source · $value — tap to use',
-        style: const TextStyle(
-          fontFamily: AppTextStyles.apercu,
-          fontSize: 12,
-          fontStyle: FontStyle.italic,
-          fontWeight: FontWeight.w600,
-          color: AppColors.electrolyte,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(color: AppColors.electrolyte),
+        ),
+        child: Text(
+          '$source · $value — tap to use',
+          style: const TextStyle(
+            fontFamily: AppTextStyles.apercu,
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w600,
+            color: AppColors.electrolyte,
+          ),
         ),
       ),
     );
