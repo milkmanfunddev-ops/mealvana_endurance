@@ -7,7 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/integrations/application/integration_sync_coordinator.dart';
+import 'package:mealvana_endurance/features/integrations/application/provider_event_import_service.dart';
 import 'package:mealvana_endurance/features/integrations/application/runna_sync_service.dart';
+import 'package:mealvana_endurance/features/integrations/application/training_peaks_sync_service.dart';
+import 'package:mealvana_endurance/features/integrations/application/training_peaks_transformer.dart';
 import 'package:mealvana_endurance/features/integrations/data/integrations_repository.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration.dart';
 import 'package:mealvana_endurance/features/integrations/presentation/providers/connect_training_controller.dart';
@@ -37,6 +40,12 @@ class _MockIntegrationsRepository extends Mock
 class _MockActivitiesRepository extends Mock implements ActivitiesRepository {}
 
 class _MockRunnaSyncService extends Mock implements RunnaSyncService {}
+
+class _MockTrainingPeaksSyncService extends Mock
+    implements TrainingPeaksSyncService {}
+
+class _MockProviderEventImportService extends Mock
+    implements ProviderEventImportService {}
 
 class _FakeSyncCoordinator extends SyncCoordinator {
   @override
@@ -218,4 +227,70 @@ void main() {
       verify(() => activitiesRepo.uploadDirtyRecords(_userId)).called(1);
     });
   });
+
+  group('provider event persistence (background path)', () {
+    test('a coordinator TP sync persists fetched events — the background '
+        'path used to discard them (2026-09-13 probe find)', () async {
+      final tpSync = _MockTrainingPeaksSyncService();
+      final eventImport = _MockProviderEventImportService();
+      final tpEvent = TrainingPeaksEventResult(
+        eventId: 'tp-1',
+        eventDate: DateTime(2026, 10, 17),
+        eventType: 'Triathlon',
+        eventName: 'IM NC 70.3',
+      );
+
+      when(() => tpSync.syncAll(any())).thenAnswer(
+        (_) async => TrainingPeaksFullSyncResult(
+          workoutResult: const TrainingPeaksSyncResult(success: true),
+          eventResult: TrainingPeaksEventSyncResult(
+            success: true,
+            events: [tpEvent],
+          ),
+        ),
+      );
+      when(
+        () => eventImport.importTrainingPeaksEvents(any(), any()),
+      ).thenAnswer((_) async => 1);
+      when(
+        () => integrationsRepo.getActiveIntegrationsForUser(any()),
+      ).thenAnswer(
+        (_) async => [
+          const IntegrationModel(
+            id: 'int-tp',
+            userId: _userId,
+            provider: 'training_peaks',
+            accessToken: 'tok',
+            providerAthleteId: 'ath-1',
+          ),
+        ],
+      );
+
+      final tpContainer = ProviderContainer(
+        overrides: [
+          integrationsRepositoryProvider.overrideWithValue(integrationsRepo),
+          activitiesRepositoryProvider.overrideWithValue(activitiesRepo),
+          trainingPeaksSyncServiceProvider.overrideWith((ref) async => tpSync),
+          providerEventImportServiceProvider.overrideWithValue(eventImport),
+          appLoggerProvider.overrideWithValue(_SilentLogger()),
+          syncCoordinatorProvider.overrideWith(() => _FakeSyncCoordinator()),
+          connectTrainingControllerProvider.overrideWith(
+            () => _FakeConnectTrainingController(),
+          ),
+        ],
+      );
+      addTearDown(tpContainer.dispose);
+
+      await tpContainer
+          .read(integrationSyncCoordinatorProvider.notifier)
+          .ensureIntegrationsSynced(_userId);
+
+      final captured = verify(
+        () => eventImport.importTrainingPeaksEvents(_userId, captureAny()),
+      ).captured;
+      expect(captured.single, [tpEvent],
+          reason: 'the background sync must persist what it fetched');
+    });
+  });
+
 }

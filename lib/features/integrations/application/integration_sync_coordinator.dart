@@ -5,7 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
+import '../../calendar/presentation/providers/calendar_controller.dart'
+    show allEventsControllerProvider, nextUpcomingEventProvider;
+import '../../events/presentation/providers/events_controller.dart'
+    show eventsControllerProvider;
 import '../presentation/providers/connect_training_controller.dart';
+import 'final_surge_sync_service.dart';
+import 'provider_event_import_service.dart';
+import 'training_peaks_transformer.dart';
 import '../presentation/providers/integrations_providers.dart';
 
 part 'integration_sync_coordinator.g.dart';
@@ -183,6 +190,8 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       // retries for the 4h staleness window and never arming the 5m cooldown.
       final bool succeeded;
       final String? failure;
+      List<TrainingPeaksEventResult> tpEvents = const [];
+      List<FinalSurgeRaceCandidate> fsRaceCandidates = const [];
 
       switch (provider) {
         case 'final_surge':
@@ -190,6 +199,7 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           final result = await service.syncWorkouts(userId);
           succeeded = result.success;
           failure = result.error;
+          fsRaceCandidates = result.raceCandidates;
           break;
         case 'training_peaks':
           final service = await ref.read(
@@ -198,6 +208,7 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
           final result = await service.syncAll(userId);
           succeeded = result.success;
           failure = result.workoutResult.error;
+          tpEvents = result.eventResult?.events ?? const [];
           break;
         case 'vdot':
           final service = ref.read(vdotSyncServiceProvider);
@@ -247,6 +258,45 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       // Success: update timestamp, clear failure tracking
       await _setLastSyncTime(provider, DateTime.now());
       _lastFailedAttempt.remove(provider);
+
+      // Persist provider events found by THIS sync. Without this the
+      // background path fetched events and silently discarded them — races
+      // only imported on a manual Sync Now (found live 2026-09-13; ops bug
+      // tp-background-sync-discards-imported-events). Same dedupe/D-2c
+      // rules as the manual path — one shared application-layer save site.
+      if (tpEvents.isNotEmpty || fsRaceCandidates.isNotEmpty) {
+        try {
+          final importService = ref.read(providerEventImportServiceProvider);
+          var imported = 0;
+          if (tpEvents.isNotEmpty) {
+            imported += await importService.importTrainingPeaksEvents(
+              userId,
+              tpEvents,
+            );
+          }
+          if (fsRaceCandidates.isNotEmpty) {
+            imported += await importService.importFinalSurgeRaceCandidates(
+              userId,
+              fsRaceCandidates,
+            );
+          }
+          if (imported > 0 && ref.mounted) {
+            // Events providers are future-based, not streams — refresh them
+            // so an imported race appears without a manual reload.
+            ref.invalidate(eventsControllerProvider);
+            ref.invalidate(allEventsControllerProvider);
+            ref.invalidate(nextUpcomingEventProvider);
+          }
+        } catch (e, stackTrace) {
+          _logger.warning(
+            'Post-sync event import failed for $provider (best-effort)',
+            context: 'INTEGRATION_SYNC',
+            error: e,
+            stackTrace: stackTrace,
+            data: {'userId': userId, 'provider': provider},
+          );
+        }
+      }
 
       // Immediately push freshly-synced dirty activities to Supabase.
       // Only applies to client-side-writing providers; Garmin is push-only

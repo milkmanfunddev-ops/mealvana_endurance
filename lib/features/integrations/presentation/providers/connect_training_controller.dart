@@ -16,12 +16,12 @@ import 'tp_writeback_providers.dart';
 import '../../../activities/presentation/providers/activities_controller.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../calendar/presentation/providers/calendar_controller.dart';
-import '../../../events/data/events_repository.dart';
-import '../../../events/domain/event.dart' as domain;
 import '../../../events/presentation/providers/events_controller.dart'
     hide nextUpcomingEventProvider;
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
+import '../../application/provider_event_import_service.dart';
+import '../../application/training_peaks_transformer.dart';
 import '../../application/garmin_oauth_service.dart';
 import '../../application/integration_sync_coordinator.dart';
 import '../../application/runna_sync_service.dart';
@@ -1753,147 +1753,25 @@ class ConnectTrainingController extends _$ConnectTrainingController {
 
   /// Save Final Surge race candidates as events
   Future<int> _saveRaceCandidates(List<dynamic> raceCandidates) async {
-    int savedEventsCount = 0;
-    final eventsRepository = ref.read(eventsRepositoryProvider);
-
-    for (final candidate in raceCandidates) {
-      final activityId = candidate.activityId;
-      if (activityId == null || activityId.isEmpty) {
-        continue;
-      }
-
-      // Skip if an event already exists for this activity
-      final existingByActivity = await eventsRepository.getEventForActivity(
-        activityId,
-      );
-      if (existingByActivity != null) {
-        continue;
-      }
-
-      final eventName = candidate.eventName.trim().isNotEmpty
-          ? candidate.eventName
-          : 'Race';
-      final existingByName = await eventsRepository.findExistingEvent(
-        userId: _currentUserId!,
-        eventName: eventName,
-        eventDate: candidate.scheduledAt,
-      );
-      if (existingByName != null) {
-        // D-2c dedupe-match: a legacy (null-origin) row flips to the
-        // provider; 'manual' rows are athlete-owned and exempt.
-        if (existingByName.origin == null) {
-          await eventsRepository.updateEvent(
-            deviceId: _currentUserId!,
-            event: existingByName.copyWith(origin: 'final_surge'),
-          );
-        }
-        continue;
-      }
-
-      try {
-        final now = DateTime.now();
-        await eventsRepository.createEvent(
-          deviceId: _currentUserId!,
-          event: domain.Event(
-            id: '', // Let DB auto-generate
-            userId: _currentUserId!,
-            activityId: activityId,
-            eventType: candidate.eventType,
-            eventName: eventName,
-            eventDate: candidate.scheduledAt,
-            startTime: candidate.scheduledAt.toIso8601String(),
-            goalTimeMinutes: candidate.goalTimeMinutes,
-            goalPaceMinutesPerMile: candidate.goalPaceMinutesPerMile,
-            origin: 'final_surge', // D-2c
-            createdAt: now,
-            updatedAt: now,
-          ),
+    // Persistence (dedupe + D-2c origin rules) lives in the application
+    // layer so the coordinator's background sync saves the same way.
+    return ref
+        .read(providerEventImportServiceProvider)
+        .importFinalSurgeRaceCandidates(
+          _currentUserId!,
+          raceCandidates.cast<FinalSurgeRaceCandidate>(),
         );
-        savedEventsCount++;
-      } catch (e) {
-        if (kDebugMode) {
-          print('⚠️ Failed to save Final Surge race event: $e');
-        }
-      }
-    }
-
-    return savedEventsCount;
   }
 
   /// Save TrainingPeaks events
   Future<int> _saveTrainingPeaksEvents(List<dynamic> eventData) async {
-    int savedEventsCount = 0;
-    int skippedEventsCount = 0;
-    final eventsRepository = ref.read(eventsRepositoryProvider);
-
-    for (final event in eventData) {
-      if (kDebugMode) {
-        print('💾 Checking TrainingPeaks event: ${event.eventName}');
-      }
-
-      // Check for existing event (same user + name + date) to prevent duplicates
-      final existingEvent = await eventsRepository.findExistingEvent(
-        userId: _currentUserId!,
-        eventName: event.eventName,
-        eventDate: event.eventDate,
-      );
-
-      if (existingEvent != null) {
-        // D-2c dedupe-match: a LEGACY row (null origin) flips to the
-        // provider — the import recognized it as the same event. A
-        // 'manual' origin is athlete-owned (created or locally edited) and
-        // is exempt from re-sync overwrite, origin included.
-        if (existingEvent.origin == null) {
-          await eventsRepository.updateEvent(
-            deviceId: _currentUserId!,
-            event: existingEvent.copyWith(origin: 'training_peaks'),
-          );
-        }
-        skippedEventsCount++;
-        if (kDebugMode) {
-          print('   ⏭️ Event already exists, skipping: ${event.eventName}');
-        }
-        continue;
-      }
-
-      try {
-        final now = DateTime.now();
-        final savedEvent = await eventsRepository.createEvent(
-          deviceId: _currentUserId!,
-          event: domain.Event(
-            id: '', // Let DB auto-generate
-            userId: _currentUserId!,
-            eventType: event.activityType,
-            eventSubtype: null,
-            eventName: event.eventName,
-            eventDate: event.eventDate,
-            startTime: event.eventDate.toIso8601String(),
-            goalTimeMinutes: event.goalTimeHours != null
-                ? (event.goalTimeHours! * 60).round()
-                : null,
-            origin: 'training_peaks', // D-2c
-            createdAt: now,
-            updatedAt: now,
-          ),
+    // Same application-layer funnel as _saveRaceCandidates.
+    return ref
+        .read(providerEventImportServiceProvider)
+        .importTrainingPeaksEvents(
+          _currentUserId!,
+          eventData.cast<TrainingPeaksEventResult>(),
         );
-        savedEventsCount++;
-        if (kDebugMode) {
-          print('✅ Event saved with ID: ${savedEvent.id}');
-        }
-      } catch (e) {
-        if (kDebugMode) {
-          print('⚠️ Failed to save event: $e');
-        }
-      }
-    }
-
-    if (kDebugMode) {
-      print(
-        '✅ Event sync complete: $savedEventsCount new, $skippedEventsCount existing',
-      );
-    }
-
-    return savedEventsCount;
   }
 
   Future<SyncResult> importFinalSurgeWorkouts() async {
