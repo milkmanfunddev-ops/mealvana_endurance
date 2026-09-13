@@ -12,6 +12,7 @@ import '../../../integrations/presentation/providers/tp_writeback_providers.dart
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
+import '../../../onboarding/presentation/widgets/garmin_historical_primer_sheet.dart';
 import '../../../onboarding/presentation/widgets/onboarding_multi_select_step.dart';
 import '../../../onboarding/presentation/widgets/onboarding_week_chart_card.dart';
 import '../../../../shared/services/app_external_deps.dart';
@@ -913,6 +914,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   Future<void> _connectGarmin(BuildContext context, WidgetRef ref) async {
+    // Onboarding only: prime the athlete to switch on Garmin's default-off
+    // "Historical Data" toggle before the consent screen opens, so their
+    // first plan is built on real training history. "Not now" cancels the
+    // connect. No settings-side variant — history insight is onboarding-only.
+    if (isOnboarding) {
+      final proceed = await showGarminHistoricalPrimer(context);
+      if (proceed != true || !context.mounted) return;
+    }
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectGarmin();
 

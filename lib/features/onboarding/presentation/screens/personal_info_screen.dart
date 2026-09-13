@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../../../auth/domain/user_preferences.dart';
 import '../../domain/onboarding_integration_profile.dart';
 import '../providers/onboarding_controller.dart';
@@ -320,16 +321,41 @@ class _PersonalInfoScreenState extends ConsumerState<PersonalInfoScreen> {
       continueButtonKey: const ValueKey('personal_info.continue_button'),
       backButtonKey: const ValueKey('personal_info.back_button'),
       children: [
-        if (_autofillSource != null) ...[
-          _AutofillNotice(source: _autofillSource!, fields: _autofilledFields),
-          const SizedBox(height: 12),
-        ],
         _buildOptionalInfoCard(),
+        _provenancePillAny(const ['Name', 'Email']),
         const SizedBox(height: 20),
         _buildGenderSelector(),
+        _provenancePill('Gender'),
         const SizedBox(height: 20),
         _buildBirthYearSelector(),
+        _provenancePill('Birth year'),
       ],
+    );
+  }
+
+  /// D-2 provenance pill: shows which connected platform supplied a
+  /// pre-filled field (KyleSourceChip, the ratified chip family). Hidden
+  /// once the athlete edits the field (autofill state clears).
+  Widget _provenancePill(String field) {
+    if (_autofillSource == null || !_autofilledFields.contains(field)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: KyleSourceChip(source: _autofillSource!),
+    );
+  }
+
+  /// Same pill, shown when ANY of [fields] was pre-filled — used for the
+  /// name/email card, which holds two fields under one pill.
+  Widget _provenancePillAny(List<String> fields) {
+    if (_autofillSource == null ||
+        !fields.any(_autofilledFields.contains)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: KyleSourceChip(source: _autofillSource!),
     );
   }
 
@@ -698,57 +724,3 @@ class _GenderCard extends StatelessWidget {
 /// `prefillNote`. Says which platform the values came from, because
 /// silently pre-filled personal details are worse than none: the athlete
 /// needs to know these are claims to check, not answers they gave.
-class _AutofillNotice extends StatelessWidget {
-  const _AutofillNotice({required this.source, required this.fields});
-
-  final String source;
-
-  /// The fields that were actually filled, in screen order. Naming them
-  /// makes the gaps legible too — Final Surge sends a name and email but
-  /// no gender or birth year, and the athlete should be able to see that
-  /// rather than wonder whether those were filled and wrong.
-  final List<String> fields;
-
-  /// 'Name', 'Name and email', 'Name, email and birth year' — subsequent
-  /// items lowercased so the sentence reads naturally.
-  String get _fieldList {
-    final items = [fields.first, ...fields.skip(1).map((f) => f.toLowerCase())];
-    if (items.length == 1) return items.single;
-    return '${items.sublist(0, items.length - 1).join(', ')} '
-        'and ${items.last}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('personal_info.autofill_notice'),
-      decoration: BoxDecoration(
-        color: OnbTokens.teal.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(OnbTokens.rCard),
-        border: Border.all(color: OnbTokens.teal30),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(top: 1),
-            child: Icon(Icons.check, size: 15, color: OnbTokens.teal),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '$_fieldList filled in from $source — check and adjust.',
-              style: TextStyle(
-                fontFamily: OnbTokens.fontBody,
-                fontSize: 12.5,
-                height: 1.45,
-                color: OnbTokens.creamA(0.82),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
