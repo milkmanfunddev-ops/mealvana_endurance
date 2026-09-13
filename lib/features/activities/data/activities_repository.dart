@@ -2582,6 +2582,61 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Ungroup a brick workout
+  /// Build a standalone [domain.Activity] from a fresh brick's inline
+  /// [BrickSegment] — the inverse of brick creation, used by [ungroupBrick]
+  /// to give a fresh brick's legs back instead of destroying them. Empty id
+  /// so Drift mints the UUID on insert.
+  domain.Activity _activityFromBrickSegment({
+    required domain.Activity brick,
+    required BrickSegment segment,
+    required DateTime scheduledDateTime,
+    required DateTime now,
+  }) {
+    final type = ActivityType.fromDbValue(segment.sport);
+    // Swimming carries distance in meters; running/cycling in miles.
+    final distanceMiles = type == ActivityType.swimming
+        ? (segment.distanceMeters != null
+            ? segment.distanceMeters! / 1609.34
+            : null)
+        : segment.distanceMiles;
+    return domain.Activity(
+      id: '',
+      userId: brick.userId,
+      activityType: type,
+      title: type.displayName,
+      scheduledDateTime: scheduledDateTime,
+      status: domain.ActivityStatus.planned,
+      distanceMiles: distanceMiles,
+      durationMinutes: segment.durationMinutes,
+      intensityLevel: domain.IntensityLevel.values
+          .where((l) => l.name == segment.intensity)
+          .firstOrNull,
+      // Running
+      paceTargetMinutesPerMile:
+          type == ActivityType.running ? segment.paceMinutesPerMile : null,
+      // Cycling
+      cyclingSpeedMph:
+          type == ActivityType.cycling ? segment.speedMph : null,
+      cyclingTerrain:
+          type == ActivityType.cycling ? segment.terrain : null,
+      cyclingIndoorOutdoor:
+          type == ActivityType.cycling ? segment.indoorOutdoor : null,
+      cyclingElevationGainFt:
+          type == ActivityType.cycling ? segment.elevationGainFt : null,
+      // Swimming
+      swimmingPacePer100mSeconds:
+          type == ActivityType.swimming ? segment.pacePer100mSeconds : null,
+      swimmingPoolOrOpenWater:
+          type == ActivityType.swimming ? segment.poolOrOpenWater : null,
+      swimmingWaterTempC:
+          type == ActivityType.swimming ? segment.waterTempC : null,
+      createdAt: now,
+      updatedAt: now,
+      needsUpload: true,
+      localUpdatedAt: now,
+    );
+  }
+
   Future<void> ungroupBrick(String brickId) async {
     String? userIdForSupabaseDelete;
 
@@ -2614,6 +2669,7 @@ class ActivitiesRepository with SyncableRepository {
 
         // Step 2: Get archived activities
         final archivedActivities = await getArchivedActivitiesForBrick(brickId);
+        final now = DateTime.now();
 
         if (archivedActivities.isEmpty) {
           // A brick built FROM existing activities must have archived legs
@@ -2625,15 +2681,45 @@ class ActivitiesRepository with SyncableRepository {
               'activities but no archived legs found to restore',
             );
           }
-          _logger.debug(
-            'No archived activities found for brick',
-            context: 'ACTIVITIES_REPOSITORY',
-            data: {'brickId': brickId},
-          );
+          // A FRESH brick (created in the brick builder) has no archived leg
+          // rows — its legs live only as inline brick_metadata.segments.
+          // Ungroup must give those legs back as standalone activities
+          // (2026-09-13 data-loss fix: previously the brick was tombstoned
+          // and both legs vanished with it). Synthesize one activity per
+          // segment; if there are none, there is genuinely nothing to
+          // ungroup and we fall through to tombstone the empty brick.
+          final segments = brickDomain.brickMetadata?.segments ?? const [];
+          if (segments.isNotEmpty) {
+            final sorted = [...segments]
+              ..sort((a, b) => a.order.compareTo(b.order));
+            var legStart = brickDomain.scheduledDateTime;
+            for (final segment in sorted) {
+              final leg = _activityFromBrickSegment(
+                brick: brickDomain,
+                segment: segment,
+                scheduledDateTime: legStart,
+                now: now,
+              );
+              await _saveToDrift(leg);
+              legStart = legStart.add(
+                Duration(minutes: segment.durationMinutes),
+              );
+            }
+            _logger.info(
+              'Decomposed fresh brick into standalone legs',
+              context: 'ACTIVITIES_REPOSITORY',
+              data: {'brickId': brickId, 'legCount': sorted.length},
+            );
+          } else {
+            _logger.debug(
+              'No archived activities or segments found for brick',
+              context: 'ACTIVITIES_REPOSITORY',
+              data: {'brickId': brickId},
+            );
+          }
         }
 
         // Step 3: Restore archived activities
-        final now = DateTime.now();
         for (final activity in archivedActivities) {
           final restoredActivity = activity.copyWith(
             status: domain.ActivityStatus.planned,
