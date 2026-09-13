@@ -73,6 +73,7 @@ class OnboardingService {
   /// Complete sport preferences step
   Future<void> saveSportPreferences(
     String userId, {
+    bool? runsWithWaterBottle,
     bool? giSensitivity,
     int? ftpWatts,
     int? typicalBikeBottles,
@@ -88,6 +89,7 @@ class OnboardingService {
     await _authService.updateSportPreferences(
       userId,
       currentUser: currentUser,
+      runsWithWaterBottle: runsWithWaterBottle,
       giSensitivity: giSensitivity,
       ftpWatts: ftpWatts,
       typicalBikeBottles: typicalBikeBottles,

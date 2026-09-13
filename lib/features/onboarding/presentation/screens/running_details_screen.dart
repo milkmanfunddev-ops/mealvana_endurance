@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/onboarding_widgets.dart';
 import '../providers/onboarding_controller.dart';
+import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_toggle_card.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
@@ -142,6 +143,7 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
       } else {
         // SETTINGS MODE: Save to database
         final success = await controller.saveSportPreferences(
+          runsWithWaterBottle: _runsWithWaterBottle,
           giSensitivity: giSensitivity,
           ftpWatts: null,
           typicalBikeBottles: null,
@@ -169,6 +171,11 @@ class _RunningDetailsScreenState extends ConsumerState<RunningDetailsScreen> {
 
           if (!mounted) return;
 
+          // Refresh settings state so the Sport Preferences hub summary
+          // ("Water bottle: …") reflects the save immediately — the save
+          // runs through the onboarding controller and never touches
+          // settings state otherwise (Xuan, 2026-09-13).
+          ref.invalidate(settingsControllerProvider);
           MealvanaSnackbar.showSuccess(context, 'Running details updated');
           context.pop();
         } else {
