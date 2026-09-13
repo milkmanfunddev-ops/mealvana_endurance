@@ -535,3 +535,197 @@ final class TpZonesStaleFamily extends $Family
   @override
   String toString() => r'tpZonesStaleProvider';
 }
+
+/// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
+/// on the basic profile, or null when TP is not connected. Garmin remains
+/// the ruled primary body-comp source; this fills the badge when Garmin has
+/// no reading (Xuan, 2026-09-13: every field a provider carries shows its
+/// badge).
+
+@ProviderFor(tpAthleteWeightKg)
+const tpAthleteWeightKgProvider = TpAthleteWeightKgFamily._();
+
+/// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
+/// on the basic profile, or null when TP is not connected. Garmin remains
+/// the ruled primary body-comp source; this fills the badge when Garmin has
+/// no reading (Xuan, 2026-09-13: every field a provider carries shows its
+/// badge).
+
+final class TpAthleteWeightKgProvider
+    extends $FunctionalProvider<AsyncValue<double?>, double?, FutureOr<double?>>
+    with $FutureModifier<double?>, $FutureProvider<double?> {
+  /// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
+  /// on the basic profile, or null when TP is not connected. Garmin remains
+  /// the ruled primary body-comp source; this fills the badge when Garmin has
+  /// no reading (Xuan, 2026-09-13: every field a provider carries shows its
+  /// badge).
+  const TpAthleteWeightKgProvider._({
+    required TpAthleteWeightKgFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'tpAthleteWeightKgProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$tpAthleteWeightKgHash();
+
+  @override
+  String toString() {
+    return r'tpAthleteWeightKgProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<double?> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<double?> create(Ref ref) {
+    final argument = this.argument as String;
+    return tpAthleteWeightKg(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TpAthleteWeightKgProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$tpAthleteWeightKgHash() => r'cb979d623a9c32e50e304052901768dde8222312';
+
+/// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
+/// on the basic profile, or null when TP is not connected. Garmin remains
+/// the ruled primary body-comp source; this fills the badge when Garmin has
+/// no reading (Xuan, 2026-09-13: every field a provider carries shows its
+/// badge).
+
+final class TpAthleteWeightKgFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<double?>, String> {
+  const TpAthleteWeightKgFamily._()
+    : super(
+        retry: null,
+        name: r'tpAthleteWeightKgProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
+  /// on the basic profile, or null when TP is not connected. Garmin remains
+  /// the ruled primary body-comp source; this fills the badge when Garmin has
+  /// no reading (Xuan, 2026-09-13: every field a provider carries shows its
+  /// badge).
+
+  TpAthleteWeightKgProvider call(String userId) =>
+      TpAthleteWeightKgProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'tpAthleteWeightKgProvider';
+}
+
+/// TP-reported identity fields for profile provenance badges (name, birth
+/// month "YYYY-MM", gender) — null when TP is not connected.
+
+@ProviderFor(tpAthleteIdentity)
+const tpAthleteIdentityProvider = TpAthleteIdentityFamily._();
+
+/// TP-reported identity fields for profile provenance badges (name, birth
+/// month "YYYY-MM", gender) — null when TP is not connected.
+
+final class TpAthleteIdentityProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<({String? birthMonth, String? gender, String? name})?>,
+          ({String? birthMonth, String? gender, String? name})?,
+          FutureOr<({String? birthMonth, String? gender, String? name})?>
+        >
+    with
+        $FutureModifier<({String? birthMonth, String? gender, String? name})?>,
+        $FutureProvider<({String? birthMonth, String? gender, String? name})?> {
+  /// TP-reported identity fields for profile provenance badges (name, birth
+  /// month "YYYY-MM", gender) — null when TP is not connected.
+  const TpAthleteIdentityProvider._({
+    required TpAthleteIdentityFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'tpAthleteIdentityProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$tpAthleteIdentityHash();
+
+  @override
+  String toString() {
+    return r'tpAthleteIdentityProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<({String? birthMonth, String? gender, String? name})?>
+  $createElement($ProviderPointer pointer) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<({String? birthMonth, String? gender, String? name})?> create(
+    Ref ref,
+  ) {
+    final argument = this.argument as String;
+    return tpAthleteIdentity(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is TpAthleteIdentityProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$tpAthleteIdentityHash() => r'e3461f932bb41ebda30e2e7a30316800e660a6ef';
+
+/// TP-reported identity fields for profile provenance badges (name, birth
+/// month "YYYY-MM", gender) — null when TP is not connected.
+
+final class TpAthleteIdentityFamily extends $Family
+    with
+        $FunctionalFamilyOverride<
+          FutureOr<({String? birthMonth, String? gender, String? name})?>,
+          String
+        > {
+  const TpAthleteIdentityFamily._()
+    : super(
+        retry: null,
+        name: r'tpAthleteIdentityProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// TP-reported identity fields for profile provenance badges (name, birth
+  /// month "YYYY-MM", gender) — null when TP is not connected.
+
+  TpAthleteIdentityProvider call(String userId) =>
+      TpAthleteIdentityProvider._(argument: userId, from: this);
+
+  @override
+  String toString() => r'tpAthleteIdentityProvider';
+}

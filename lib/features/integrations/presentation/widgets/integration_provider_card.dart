@@ -33,10 +33,16 @@ class IntegrationProviderCard extends StatelessWidget {
     this.isNotified = false,
     this.specStyle = false,
     this.windowCaption,
+    this.footer,
   });
 
   /// Provider name (used for placeholder if no logo, not displayed as text)
   final String name;
+
+  /// Optional widget rendered INSIDE the card, under the connection info —
+  /// e.g. the TP write-back consent toggle, which the design places within
+  /// the connected card's border (settings style only).
+  final Widget? footer;
 
   /// Path to provider logo image (PNG or SVG with wordmark)
   final String? iconPath;
@@ -220,6 +226,11 @@ class IntegrationProviderCard extends StatelessWidget {
               (athleteName != null || lastSyncAt != null)) ...[
             const SizedBox(height: AppSpacing.sm),
             _buildConnectionInfo(context),
+          ],
+
+          if (!specStyle && isConnected && footer != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            footer!,
           ],
         ],
       ),

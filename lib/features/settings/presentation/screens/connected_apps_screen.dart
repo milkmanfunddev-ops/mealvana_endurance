@@ -366,6 +366,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
           onSync: () => _syncTrainingPeaksWithState(context, ref),
           hasSynced: _trainingPeaksSynced,
+          // Design: the write-back consent toggle lives INSIDE the
+          // connected card (Xuan, 2026-09-13 smoke test).
+          footer: _buildTpWritebackToggle(context, ref),
         ),
 
         // Show last sync info and event when connected
@@ -395,12 +398,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               ),
             ),
           ],
-        ],
-
-        // TP Write-Back toggle (only when TP is connected)
-        if (data.isTrainingPeaksConnected) ...[
-          const SizedBox(height: AppSpacing.md),
-          _buildTpWritebackToggle(context, ref),
         ],
 
         const SizedBox(height: AppSpacing.lg),

@@ -15,6 +15,7 @@ import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/data/user_repository.dart';
 import '../../../integrations/presentation/providers/integrations_providers.dart';
+import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
 
 class NutritionProfileScreen extends ConsumerStatefulWidget {
@@ -45,6 +46,11 @@ class _NutritionProfileScreenState
   /// Garmin body-comp reading, kept even when NOT authoritative so the
   /// provenance row can offer the older-Garmin/newer-manual tap-to-use.
   GarminBodyCompData? _garminBodyComp;
+
+  /// TP-reported weight (kg) — the D-2b badge fallback when Garmin has no
+  /// reading (Xuan 2026-09-13: every field a provider carries shows its
+  /// badge). Garmin stays the ruled primary source.
+  double? _tpWeightKg;
   bool _isSaving = false;
 
   // Mirrors the user's unitSystemProvider preference. Kept as local state
@@ -149,6 +155,18 @@ class _NutritionProfileScreenState
     // (newer than the user's manual entry, within 30-day staleness window),
     // overwrite weight + body-fat fields. User edits clear the corresponding
     // _fromGarmin flag and hide the chip.
+    // TP weight fallback for the provenance badge (best-effort).
+    try {
+      final tpWeight = await ref.read(
+        tpAthleteWeightKgProvider(profile.id).future,
+      );
+      if (mounted && tpWeight != null) {
+        setState(() => _tpWeightKg = tpWeight);
+      }
+    } catch (_) {
+      // Non-fatal — badge simply stays absent.
+    }
+
     try {
       final garminData = await ref.read(
         garminLastBodyCompProvider(profile.id).future,
@@ -378,6 +396,26 @@ class _NutritionProfileScreenState
                         });
                         _markChanged();
                       },
+                // TP fallback badge — only offered when Garmin carries no
+                // reading (Garmin is the ruled D-2b primary).
+                tpValueLabel:
+                    (_garminBodyComp?.weightKg != null || _tpWeightKg == null)
+                        ? null
+                        : (_useMetric
+                            ? '${_tpWeightKg!.toStringAsFixed(1)} kg'
+                            : '${UnitFormatter.kgToPounds(_tpWeightKg!).round()} lb'),
+                onAdoptTp: _tpWeightKg == null
+                    ? null
+                    : () {
+                        setState(() {
+                          _weightController.text = _useMetric
+                              ? _tpWeightKg!.toStringAsFixed(1)
+                              : UnitFormatter.kgToPounds(_tpWeightKg!)
+                                  .round()
+                                  .toString();
+                        });
+                        _markChanged();
+                      },
               ),
 
               const SizedBox(height: AppSpacing.xl),
@@ -507,6 +545,8 @@ class _NutritionProfileScreenState
     required bool fromGarmin,
     required String? garminValueLabel,
     required VoidCallback? onAdoptGarmin,
+    String? tpValueLabel,
+    VoidCallback? onAdoptTp,
   }) {
     final garminStale = _garminBodyComp != null &&
         DateTime.now().difference(_garminBodyComp!.measurementTime) >
@@ -525,6 +565,15 @@ class _NutritionProfileScreenState
             source: 'Garmin',
             value: garminValueLabel,
             onTap: onAdoptGarmin,
+          ),
+        // TP fallback (2026-09-13): when Garmin carries nothing but TP
+        // reported a value, the badge still shows — same one-tap adopt,
+        // never a modal.
+        if (!fromGarmin && tpValueLabel != null && onAdoptTp != null)
+          KyleTapToUseChip(
+            source: 'TrainingPeaks',
+            value: tpValueLabel,
+            onTap: onAdoptTp,
           ),
       ],
     );

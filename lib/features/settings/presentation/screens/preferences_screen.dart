@@ -6,6 +6,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -25,6 +27,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   // Local state for editing
   Gender? _gender;
   DateTime? _birthday;
+
+  /// For the TP identity provenance badges (Xuan 2026-09-13: every field a
+  /// provider carries shows its badge when the values differ).
+  String? _userId;
   bool? _runsWithWaterBottle;
   UnitSystem? _unitSystem;
   GutTraining? _gutTraining;
@@ -48,6 +54,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       final settingsState = ref.read(settingsControllerProvider).value;
       if (settingsState != null && mounted) {
         setState(() {
+          _userId = settingsState.userId;
           _gender = settingsState.gender;
           _birthday = settingsState.birthday;
           _runsWithWaterBottle = settingsState.runsWithWaterBottle;
@@ -340,6 +347,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ],
           ),
 
+          _buildTpNameBadge(),
+
           const SizedBox(height: AppSpacing.md),
 
           // Email field
@@ -359,12 +368,110 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           // Gender selector (matching onboarding style)
           _buildGenderSelector(context),
+          _buildTpGenderBadge(),
 
           const SizedBox(height: AppSpacing.md),
 
           // Birthday selector
           _buildBirthdaySelector(context),
+          _buildTpBirthdayBadge(),
         ],
+      ),
+    );
+  }
+
+  ({String? name, String? birthMonth, String? gender})? get _tpIdentity =>
+      _userId == null
+          ? null
+          : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
+
+  /// D-2 identity badges (Xuan 2026-09-13): when TrainingPeaks reports a
+  /// DIFFERENT value than the manual field, surface it as the shared
+  /// tap-to-use chip — never overwrite, never a modal. Agreement or absence
+  /// renders nothing (identity fields are manual-owned by default).
+  Widget _buildTpNameBadge() {
+    final tpName = _tpIdentity?.name?.trim();
+    if (tpName == null || tpName.isEmpty) return const SizedBox.shrink();
+    final manual =
+        '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+            .trim();
+    if (manual.toLowerCase() == tpName.toLowerCase()) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: KyleTapToUseChip(
+        source: 'TrainingPeaks',
+        value: tpName,
+        onTap: () {
+          final space = tpName.lastIndexOf(' ');
+          setState(() {
+            if (space > 0) {
+              _firstNameController.text = tpName.substring(0, space);
+              _lastNameController.text = tpName.substring(space + 1);
+            } else {
+              _firstNameController.text = tpName;
+            }
+          });
+          _markChanged();
+        },
+      ),
+    );
+  }
+
+  Widget _buildTpGenderBadge() {
+    final tpGender = switch (_tpIdentity?.gender?.toLowerCase()) {
+      'm' || 'male' => Gender.male,
+      'f' || 'female' => Gender.female,
+      _ => null,
+    };
+    if (tpGender == null || tpGender == _gender) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: KyleTapToUseChip(
+        source: 'TrainingPeaks',
+        value: tpGender == Gender.male ? 'Male' : 'Female',
+        onTap: () {
+          setState(() => _gender = tpGender);
+          _markChanged();
+        },
+      ),
+    );
+  }
+
+  Widget _buildTpBirthdayBadge() {
+    final birthMonth = _tpIdentity?.birthMonth; // 'YYYY-MM' (month precision)
+    if (birthMonth == null || birthMonth.length < 7) {
+      return const SizedBox.shrink();
+    }
+    final year = int.tryParse(birthMonth.substring(0, 4));
+    final month = int.tryParse(birthMonth.substring(5, 7));
+    if (year == null || month == null) return const SizedBox.shrink();
+    if (_birthday != null &&
+        _birthday!.year == year &&
+        _birthday!.month == month) {
+      return const SizedBox.shrink();
+    }
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: KyleTapToUseChip(
+        source: 'TrainingPeaks',
+        // TP only reports month precision; adopting keeps the manually-set
+        // day (or the 15th when none) — day-level semantics await a ruling
+        // (qa intake 2026-09-13).
+        value: '${monthNames[month - 1]} $year',
+        onTap: () {
+          setState(() {
+            _birthday = DateTime(year, month, _birthday?.day ?? 15);
+          });
+          _markChanged();
+        },
       ),
     );
   }
