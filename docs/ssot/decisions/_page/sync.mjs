@@ -11,6 +11,7 @@
 //   node sync.mjs apply <verdicts.json> <proposals.md> <ssot.md>
 //   node sync.mjs pending <decisions.md>                -> count of proposed/amended
 //   node sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>
+//   node sync.mjs questions <proposals.md> [<ssot.md>]      -> the open questions as JSON, file order
 //   node sync.mjs triage <verdicts.json> --out <dir>   -> clear.json (apply now), words.json (synthesise first), rewrites.json (apply after yes)
 //   node sync.mjs next-id <proposals.md> <ssot.md>     -> the next free id
 //   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing)
@@ -350,6 +351,18 @@ export function answers(questionId, decisionId, proposals, ssot, today = new Dat
   return { applied: [{ question: questionId, decision: decisionId }], refused: [] };
 }
 
+/**
+ * The open questions, proposals first then the record, each in file order.
+ * A grill walks these one at a time; everything the question carries is here
+ * so the skill never re-reads the files to ask it.
+ */
+export function openQuestions(proposals, ssot = { decisions: [] }) {
+  const keep = ['id', 'title', 'category', 'linked', 'screen', 'source', 'context', 'question', 'why', 'touches'];
+  return [...toDocuments({ head: {}, decisions: proposals.decisions }), ...toDocuments({ head: {}, decisions: ssot.decisions })]
+    .filter(d => d.kind === 'question' && d.status === 'open')
+    .map(d => Object.fromEntries(keep.map(k => [k, d[k]])));
+}
+
 // ---- CLI ----
 
 /**
@@ -474,6 +487,12 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (r.applied.length) { writeFileSync(pf, serialize(proposals)); if (existsSync(sf)) writeFileSync(sf, serialize(ssot)); }
     console.log(JSON.stringify(r, null, 2));
     if (r.refused.length) process.exit(1);
+  } else if (cmd === 'questions') {
+    // questions <proposals.md> [<ssot.md>]: the open questions as JSON, nothing written.
+    const [pf, sf] = args;
+    const proposals = parse(readFileSync(pf, 'utf8'));
+    const ssot = sf && existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { decisions: [] };
+    process.stdout.write(JSON.stringify(openQuestions(proposals, ssot), null, 2));
   } else if (cmd === 'pending') {
     const d = parse(readFileSync(args[0], 'utf8'));
     console.log(d.decisions.filter(x => ['proposed', 'amended'].includes(x.meta.status)).length);
@@ -527,6 +546,6 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     recordAsset(assets, path, id);
     writeFileSync(af, JSON.stringify(assets, null, 2) + '\n');
   } else {
-    console.error('usage: sync.mjs export|apply|answers|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset ...'); process.exit(2);
   }
 }

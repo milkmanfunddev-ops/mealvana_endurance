@@ -58,7 +58,7 @@ Last extracted: <git sha>
 - image: <repo path> | none
 - caption: <one line, optional>
 - screen: <which app screen shows this, or "none (algorithm/data)">
-- source: <spec path; ticket NN; ADR; commit>
+- source: <spec path; ticket NN; ADR; commit; grill <date>; Lee on the page <date>>
 
 **Context.** Two to four sentences: what the thing is, where it shows up, what was true before.
 
@@ -132,6 +132,10 @@ becomes its own section. His words are never pasted into a decision as-is.
 
 Every `>` line is a dated history entry. They are never removed.
 
+A ruling that reverses an approved decision (in a grill or on the page) is a new proposal whose
+Context names the id it reverses. The old card stays approved until a ratifier withdraws it on
+the page; nothing in the tooling withdraws it for them.
+
 ## Vocabulary
 
 The page's Vocabulary section mirrors the glossary in `CONTEXT.md` (seeded into the `vocab`
@@ -155,13 +159,17 @@ mines a feature's spec, tickets, ADRs and docs into proposals. Its `prologue.md`
 are the steps every -lee skill runs before and after Matt Pocock's skill of the same name, and
 `matt.mjs <name>` prints the path of Matt's skill in the plugin cache (newest version; a missing
 file exits 1 with the path it looked for). Tests: `node --test .claude/skills/ssot/matt.test.mjs`.
-The -lee skills themselves (`/grill-with-docs-lee`, `/to-spec-lee`, `/to-tickets-lee`,
-`/implement-lee`) arrive with tickets 04, 05, 06 and 10 in `.scratch/ssot/issues/`.
+`/grill-with-docs-lee <feature> [<question id>]` in `.claude/skills/grill-with-docs-lee/` runs the
+prologue, follows Matt's grill-with-docs, and walks the feature's open questions first, one per
+round, in the ratifier's order; on `done` every ruling becomes a proposal, every answered question
+is closed through `answers`, and a ruling that fits no card becomes an open question in their
+words. The other -lee skills (`/to-spec-lee`, `/to-tickets-lee`, `/implement-lee`) arrive with
+tickets 05, 06 and 10 in `.scratch/ssot/issues/`.
 
 ## Sync module
 
 `_page/sync.mjs` exports `parse`, `serialize` (byte-identical round trip), `apply` (verdicts from
-the page into the two files), `answers` (close an open question with a decision), `questionFirst`,
+the page into the two files), `answers` (close an open question with a decision), `openQuestions`, `questionFirst`,
 `fold`, `clauses` and `ticketDocument`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture and checks the markdown that comes out, and the last case
 round-trips the real mealplanning record and proposals. CLI:
@@ -170,6 +178,7 @@ round-trips the real mealplanning record and proposals. CLI:
 node docs/ssot/decisions/_page/sync.mjs export <decisions.md>...   # page documents as JSON
 node docs/ssot/decisions/_page/sync.mjs apply <verdicts.json> <proposals.md> <ssot.md>
 node docs/ssot/decisions/_page/sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>
+node docs/ssot/decisions/_page/sync.mjs questions <proposals.md> [<ssot.md>]   # the open questions as JSON, file order, nothing written
 node docs/ssot/decisions/_page/sync.mjs pending <decisions.md>
 node docs/ssot/decisions/_page/sync.mjs question-first <decisions.md>...   # lift "The question was X." into Question
 node docs/ssot/decisions/_page/sync.mjs fold <plan.json> <proposals.md> <ssot.md>   # combine proposals per the plan

@@ -9,7 +9,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset } from './sync.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, 'sync.mjs');
@@ -228,6 +228,30 @@ test('answers refuses a question that is not open, and unknown ids', () => {
   const again = answers('sm-010', 'sm-011', proposals, ssot, '2026-09-15');
   assert.equal(again.refused[0].why, 'not an open question');
   assert.equal(serialize(proposals).match(/^> /gm).length, 1);
+});
+
+test('openQuestions lists only open questions, in file order, across both files', () => {
+  const proposals = parse(questionFixture), ssot = emptySsot();
+  ssot.decisions.push({ ...parse(questionFixture).decisions[0], id: 'sm-005', title: 'An older question in the record' });
+  const qs = openQuestions(proposals, ssot);
+  assert.deepEqual(qs.map(q => q.id), ['sm-010', 'sm-005']);
+  assert.equal(qs[0].title, 'Which entry points continue a conversation');
+  assert.equal(qs[0].linked, 'sm-002');
+  assert.equal(qs[0].question, 'Which entry points continue and which start fresh?');
+  assert.equal(qs[0].touches, 'Vana chat.');
+  answers('sm-010', 'sm-011', proposals, ssot, '2026-09-14');
+  assert.deepEqual(openQuestions(proposals, ssot).map(q => q.id), ['sm-005']);
+});
+
+test('the questions CLI prints open questions as JSON and writes nothing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const pf = join(dir, 'decisions.md'), sf = join(dir, 'ssot.md');
+  writeFileSync(pf, questionFixture); writeFileSync(sf, serialize(emptySsot()));
+  const out = JSON.parse(execFileSync('node', [cli, 'questions', pf, sf], { encoding: 'utf8' }));
+  assert.deepEqual(out.map(q => q.id), ['sm-010']);
+  assert.equal(readFileSync(pf, 'utf8'), questionFixture);
+  const none = JSON.parse(execFileSync('node', [cli, 'questions', pf, join(dir, 'missing.md')], { encoding: 'utf8' }));
+  assert.equal(none.length, 1);
 });
 
 test('the answers CLI writes the link both ways and leaves other files alone', () => {
