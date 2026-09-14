@@ -103,8 +103,14 @@ class IntegrationProviderCard extends StatelessWidget {
   /// the settings screen keeps its existing pixels.
   final bool specStyle;
 
-  /// Small history-window note tucked under the logo (spec style only),
-  /// e.g. 'Imports ~7 days of history'.
+  /// Small history-window note tucked under the logo (spec style only).
+  ///
+  /// Retired by ruling D-4 (integrations-data-display.md, 2026-09-13): the
+  /// provider connect cards no longer carry a history/window sublabel on
+  /// either surface — the shipped captions inverted the Q-INT27 window
+  /// contract, and window numbers are the family's most volatile bit. No
+  /// card passes this today; the history story lives in the Garmin
+  /// historical-data primer. Do not reintroduce a window caption here.
   final String? windowCaption;
 
   @override
