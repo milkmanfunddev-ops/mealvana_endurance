@@ -914,14 +914,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   }
 
   Future<void> _connectGarmin(BuildContext context, WidgetRef ref) async {
-    // Onboarding only: prime the athlete to switch on Garmin's default-off
-    // "Historical Data" toggle before the consent screen opens, so their
-    // first plan is built on real training history. "Not now" cancels the
-    // connect. No settings-side variant — history insight is onboarding-only.
-    if (isOnboarding) {
-      final proceed = await showGarminHistoricalPrimer(context);
-      if (proceed != true || !context.mounted) return;
-    }
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectGarmin();
 
@@ -1095,6 +1087,13 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    // Prime the athlete to switch on Garmin's default-off "Historical Data"
+    // toggle before the consent screen opens, so their first plan is built on
+    // real training history (the insight is computed during onboarding).
+    // "Not now" cancels the connect. Onboarding-only — this is the onboarding
+    // connect path (the settings path is _connectGarmin, no primer).
+    final proceed = await showGarminHistoricalPrimer(context);
+    if (proceed != true || !context.mounted) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     // Onboarding: defer the garmin_user_mappings upsert until the user's `users`
     // row exists (created at onboarding completion). See connectGarmin docs /
