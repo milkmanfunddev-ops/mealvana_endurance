@@ -12,6 +12,8 @@
 //   node sync.mjs pending <decisions.md>                -> count of proposed/amended
 //   node sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>
 //   node sync.mjs questions <proposals.md> [<ssot.md>]      -> the open questions as JSON, file order
+//   node sync.mjs linked <proposals.md> [<ssot.md>]         -> decisions that answered a question, as JSON
+//   node sync.mjs cite <spec.md> <proposals.md> [<ssot.md>]  -> what the spec's decision sections cite, as JSON
 //   node sync.mjs triage <verdicts.json> --out <dir>   -> clear.json (apply now), words.json (synthesise first), rewrites.json (apply after yes)
 //   node sync.mjs next-id <proposals.md> <ssot.md>     -> the next free id
 //   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing)
@@ -345,7 +347,7 @@ export function answers(questionId, decisionId, proposals, ssot, today = new Dat
   if (q.meta.kind !== 'question' || q.meta.status !== 'open') return { applied: [], refused: [{ id: questionId, why: 'not an open question' }] };
   q.meta.status = 'answered';
   q.history.push({ date: today, note: `answered by ${decisionId}` });
-  const links = (d.meta.linked || '').split(';').map(s => s.trim()).filter(Boolean);
+  const links = splitLinks(d.meta.linked);
   if (!links.includes(questionId)) links.push(questionId);
   d.meta.linked = links.join('; ');
   return { applied: [{ question: questionId, decision: decisionId }], refused: [] };
@@ -361,6 +363,85 @@ export function openQuestions(proposals, ssot = { decisions: [] }) {
   return [...toDocuments({ head: {}, decisions: proposals.decisions }), ...toDocuments({ head: {}, decisions: ssot.decisions })]
     .filter(d => d.kind === 'question' && d.status === 'open')
     .map(d => Object.fromEntries(keep.map(k => [k, d[k]])));
+}
+
+const GONE = ['rejected', 'withdrawn'];
+const PENDING = ['proposed', 'amended'];
+const splitLinks = linked => String(linked || '').split(';').map(s => s.trim()).filter(Boolean);
+
+/**
+ * Decisions that answered a question (`linked:` names a question whose status is
+ * `answered`), proposals first then the record, each in file order. `/to-spec-lee`
+ * states these in the spec before anything else. `stale` marks a decision that was
+ * rejected or withdrawn after it answered: the question then points at a ruling that
+ * no longer stands, and the ratifier decides whether to reopen it.
+ */
+export function answeredLinks(proposals, ssot = { decisions: [] }) {
+  const all = [...toDocuments({ head: {}, decisions: proposals.decisions }), ...toDocuments({ head: {}, decisions: ssot.decisions })];
+  const byId = new Map(all.map(d => [d.id, d]));
+  const out = [];
+  for (const d of all) {
+    if (d.kind === 'question') continue;
+    for (const qid of splitLinks(d.linked)) {
+      const q = byId.get(qid);
+      if (!q || q.kind !== 'question' || q.status !== 'answered') continue;
+      out.push({ id: d.id, title: d.title, category: d.category, status: d.status, stale: GONE.includes(d.status), question: q.id, questionTitle: q.title });
+    }
+  }
+  return out;
+}
+
+/**
+ * What the spec's Implementation Decisions and Testing Decisions sections cite.
+ * Each paragraph (blank-line separated; a list item is its own paragraph) carries the
+ * ids it names, matched on the id prefix the two files use (`mp` in `mp-042`). `rejected` are
+ * paragraphs naming any id that was rejected or withdrawn (`gone` says which ids; the
+ * paragraph or the clause goes), `uncited` name no id (backfill candidates), `unknown`
+ * are ids in neither file, `pending` are cited ids still proposed or amended, and
+ * `pendingSpec` the subset in the Spec category (the `/to-tickets-lee` gate).
+ * `unstated` are decisions that answered a question but appear nowhere in the spec.
+ * Nothing is written.
+ */
+export function specCitations(spec, proposals, ssot = { decisions: [] }) {
+  const all = [...proposals.decisions, ...ssot.decisions];
+  const known = new Map(all.map(d => [d.id, d.meta.status || 'proposed']));
+  const category = new Map(all.map(d => [d.id, d.meta.category || 'Other']));
+  const first = all.find(d => d.id);
+  const prefix = first ? first.id.slice(0, first.id.lastIndexOf('-')) : '[a-z][a-z0-9]*';
+  const idRe = new RegExp(`\\b(${prefix}-\\d{3})\\b`, 'g');
+  const sections = ['Implementation Decisions', 'Testing Decisions'];
+  const paragraphs = [];
+  let section = '', buf = [];
+  const flush = () => {
+    const text = buf.join('\n').trim();
+    buf = [];
+    if (!section || !text) return;
+    paragraphs.push({ section, text, ids: [...new Set([...text.matchAll(idRe)].map(m => m[1]))] });
+  };
+  for (const line of spec.split('\n')) {
+    const h = line.match(/^## (.*)$/);
+    if (h) { flush(); section = sections.includes(h[1].trim()) ? h[1].trim() : ''; continue; }
+    if (!section) continue;
+    const startsParagraph = line.trim() === '' || /^\s*([-*]|\d+\.)\s/.test(line);
+    if (startsParagraph) flush();
+    if (line.trim() !== '') buf.push(line);
+  }
+  flush();
+  const statuses = {};
+  for (const p of paragraphs) for (const id of p.ids) statuses[id] = known.get(id) || 'unknown';
+  const gone = id => GONE.includes(statuses[id]);
+  const cited = new Set(Object.keys(statuses));
+  const pending = Object.keys(statuses).filter(id => PENDING.includes(statuses[id]));
+  return {
+    paragraphs,
+    statuses,
+    rejected: paragraphs.filter(p => p.ids.some(gone)).map(p => ({ ...p, gone: p.ids.filter(gone) })),
+    uncited: paragraphs.filter(p => !p.ids.length),
+    unknown: Object.keys(statuses).filter(id => statuses[id] === 'unknown'),
+    pending,
+    pendingSpec: pending.filter(id => category.get(id) === 'Spec'),
+    unstated: answeredLinks(proposals, ssot).filter(l => !l.stale && !cited.has(l.id)).map(l => l.id),
+  };
 }
 
 // ---- CLI ----
@@ -406,6 +487,8 @@ export function staleImages(assets, paths) {
 }
 export function recordAsset(assets, path, id) { assets[path] = { id, sha256: sha256(path) }; return assets; }
 const loadAssets = path => path && existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
+// The proposals file and the record; a record that does not exist yet reads as empty.
+const readPair = (pf, sf) => [parse(readFileSync(pf, 'utf8')), sf && existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { head: {}, decisions: [] }];
 
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
   const [cmd, ...args] = process.argv.slice(2);
@@ -490,12 +573,21 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   } else if (cmd === 'questions') {
     // questions <proposals.md> [<ssot.md>]: the open questions as JSON, nothing written.
     const [pf, sf] = args;
-    const proposals = parse(readFileSync(pf, 'utf8'));
-    const ssot = sf && existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { decisions: [] };
+    const [proposals, ssot] = readPair(pf, sf);
     process.stdout.write(JSON.stringify(openQuestions(proposals, ssot), null, 2));
+  } else if (cmd === 'linked') {
+    // linked <proposals.md> [<ssot.md>]: decisions that answered a question, nothing written.
+    const [pf, sf] = args;
+    const [proposals, ssot] = readPair(pf, sf);
+    process.stdout.write(JSON.stringify(answeredLinks(proposals, ssot), null, 2));
+  } else if (cmd === 'cite') {
+    // cite <spec.md> <proposals.md> [<ssot.md>]: what the spec's decision sections cite, nothing written.
+    const [specf, pf, sf] = args;
+    const [proposals, ssot] = readPair(pf, sf);
+    process.stdout.write(JSON.stringify(specCitations(readFileSync(specf, 'utf8'), proposals, ssot), null, 2));
   } else if (cmd === 'pending') {
     const d = parse(readFileSync(args[0], 'utf8'));
-    console.log(d.decisions.filter(x => ['proposed', 'amended'].includes(x.meta.status)).length);
+    console.log(d.decisions.filter(x => PENDING.includes(x.meta.status)).length);
   } else if (cmd === 'question-first') {
     // question-first <decisions.md>...: lift the closing question out of every Context.
     for (const f of args) { const d = parse(readFileSync(f, 'utf8')); const n = questionFirst(d); writeFileSync(f, serialize(d)); console.log(`${f}: ${n} questions lifted`); }
@@ -531,8 +623,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     console.log(`${n(t.clear)} clear, ${n(t.words)} with words, ${n(t.other)} other` + (n(t.other) ? ` (${Object.keys(t.other).join(', ')})` : ''));
   } else if (cmd === 'next-id') {
     const [pf, sf] = args;
-    const proposals = parse(readFileSync(pf, 'utf8'));
-    const ssot = sf && existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { decisions: [] };
+    const [proposals, ssot] = readPair(pf, sf);
     console.log(nextId(proposals, ssot));
   } else if (cmd === 'images') {
     // images <assets.json> <_images.json>: which images prepare found that still need an upload.
@@ -546,6 +637,6 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     recordAsset(assets, path, id);
     writeFileSync(af, JSON.stringify(assets, null, 2) + '\n');
   } else {
-    console.error('usage: sync.mjs export|apply|answers|questions|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset ...'); process.exit(2);
   }
 }

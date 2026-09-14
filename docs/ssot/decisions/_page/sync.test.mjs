@@ -9,7 +9,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset } from './sync.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, 'sync.mjs');
@@ -445,4 +445,87 @@ test('an image uploads once and again only when the file changes', () => {
   writeFileSync(join(dir, 'p.md'), md);
   execFileSync('node', [cli, 'prepare', join(dir, 'p.md'), '--assets', af, '--out', join(dir, 'out')]);
   assert.equal(JSON.parse(readFileSync(join(dir, 'out', 'sm-001.json'), 'utf8')).imageAssetId, '00000000000000000000000000000000');
+});
+
+test('answeredLinks lists decisions that answered a question, and flags ones later ruled out', () => {
+  const proposals = parse(questionFixture), ssot = emptySsot();
+  assert.deepEqual(answeredLinks(proposals, ssot), []);           // sm-010 is still open
+  answers('sm-010', 'sm-011', proposals, ssot, '2026-09-14');
+  const links = answeredLinks(proposals, ssot);
+  assert.deepEqual(links.map(l => [l.id, l.question, l.status, l.stale]), [['sm-011', 'sm-010', 'proposed', false]]);
+  assert.equal(links[0].title, 'New meal plan starts a new conversation');
+  assert.equal(links[0].questionTitle, 'Which entry points continue a conversation');
+  apply({ 'sm-011': { verdict: 'reject', text: 'not yet', at } }, proposals, ssot);
+  const after = answeredLinks(proposals, ssot);
+  assert.deepEqual(after.map(l => [l.id, l.status, l.stale]), [['sm-011', 'rejected', true]]);
+});
+
+const specFixture = `# Sample
+
+## Problem Statement
+
+People lose track.
+
+## Implementation Decisions
+
+**One height.** The sheet has one height. (sm-001)
+
+**Drags.** Thresholds come from the export. (sm-002)
+
+- A bullet with no id behind it.
+
+**Two ids.** One good, one nobody knows. (sm-001, sm-999)
+
+**Mixed.** One that stands and one that fell, plus prose with a sha-256 in it. (sm-001, sm-002)
+
+## Testing Decisions
+
+- Seam: the sync module. (sm-011)
+
+## Out of Scope
+
+Nothing here counts. (sm-002)
+`;
+
+test('specCitations reads the two decision sections and sorts paragraphs by what they cite', () => {
+  const proposals = parse(questionFixture), ssot = emptySsot();
+  ssot.decisions.push({ ...parse(fixture).decisions[0], meta: { ...parse(fixture).decisions[0].meta, status: 'approved' } });
+  ssot.decisions.push({ ...parse(fixture).decisions[1], meta: { ...parse(fixture).decisions[1].meta, status: 'rejected' } });
+  const r = specCitations(specFixture, proposals, ssot);
+  assert.deepEqual(r.paragraphs.map(p => [p.section, p.ids]), [
+    ['Implementation Decisions', ['sm-001']],
+    ['Implementation Decisions', ['sm-002']],
+    ['Implementation Decisions', []],
+    ['Implementation Decisions', ['sm-001', 'sm-999']],
+    ['Implementation Decisions', ['sm-001', 'sm-002']],
+    ['Testing Decisions', ['sm-011']],
+  ]);
+  assert.deepEqual(r.statuses, { 'sm-001': 'approved', 'sm-002': 'rejected', 'sm-011': 'proposed', 'sm-999': 'unknown' });
+  assert.deepEqual(r.rejected.map(p => [p.text.slice(0, 9), p.gone]), [['**Drags.*', ['sm-002']], ['**Mixed.*', ['sm-002']]]);
+  assert.deepEqual(r.uncited.map(p => p.text), ['- A bullet with no id behind it.']);
+  assert.deepEqual(r.unknown, ['sm-999']);
+  assert.deepEqual(r.pending, ['sm-011']);
+  assert.deepEqual(r.pendingSpec, []);
+  proposals.decisions[1].meta.category = 'Spec';
+  assert.deepEqual(specCitations(specFixture, proposals, ssot).pendingSpec, ['sm-011']);
+});
+
+test('specCitations names answered-question decisions the spec never states', () => {
+  const proposals = parse(questionFixture), ssot = emptySsot();
+  answers('sm-010', 'sm-011', proposals, ssot, '2026-09-14');
+  assert.deepEqual(specCitations(specFixture, proposals, ssot).unstated, []);
+  assert.deepEqual(specCitations(specFixture.replace('(sm-011)', ''), proposals, ssot).unstated, ['sm-011']);
+});
+
+test('the linked and cite CLIs print JSON and write nothing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const pf = join(dir, 'decisions.md'), sf = join(dir, 'ssot.md'), spec = join(dir, 'spec.md');
+  writeFileSync(pf, questionFixture); writeFileSync(sf, serialize(emptySsot())); writeFileSync(spec, specFixture);
+  execFileSync('node', [cli, 'answers', 'sm-010', 'sm-011', pf, sf]);
+  const linked = JSON.parse(execFileSync('node', [cli, 'linked', pf, sf], { encoding: 'utf8' }));
+  assert.deepEqual(linked.map(l => l.id), ['sm-011']);
+  const cite = JSON.parse(execFileSync('node', [cli, 'cite', spec, pf, sf], { encoding: 'utf8' }));
+  assert.deepEqual(cite.pending, ['sm-011']);
+  assert.deepEqual(cite.unknown, ['sm-001', 'sm-002', 'sm-999']);
+  assert.equal(readFileSync(spec, 'utf8'), specFixture);
 });

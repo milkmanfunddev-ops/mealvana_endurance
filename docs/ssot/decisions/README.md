@@ -78,6 +78,11 @@ A clause list lets Lee tick the clauses he wants dropped in Rewrite instead of r
 > 2026-09-13 approved
 ```
 
+The `Spec` category holds what a spec decides: its test seams and its implementation and
+testing decisions, written by `/to-spec-lee` with `source: spec <feature> <date>`. The spec cites
+each card's id in parentheses at the end of the paragraph it came from, so `sync.mjs cite` can
+say which paragraphs stand, which were rejected, and which name no decision.
+
 Two optional meta lines: `- detail: yes` marks a card as implementation detail (the page sinks it
 into a collapsed "Implementation details" block with its own Accept all), and `- work: pending`
 marks a decision that reverses or extends what is built and has no ticket yet (the page's Work
@@ -94,6 +99,12 @@ An open question is a section with `- kind: question`, `- status: open`, and
 `- linked: <id>` naming the decision it came from. Its parts are `**Context.**`,
 `**Question.**` (Lee's words), `**Why.**` (why it matters), `**What it touches.**`.
 It has no Approve button. The next `/to-spec-lee` or grill picks open questions up first.
+
+A decision that answers a question (`linked:` to a question that is `answered`) is what
+`sync.mjs linked` lists; `/to-spec-lee` states these in the spec first. A decision rejected or
+withdrawn after it answered leaves the question pointing at a ruling that no longer stands;
+`linked` marks it `stale` and the skills report it. There is no reopen path yet: the ratifier
+re-asks it on the page or in a grill.
 
 A question is closed by `sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>`.
 The question becomes `- status: answered` with a history line `> <date> answered by <decision id>`,
@@ -163,14 +174,20 @@ file exits 1 with the path it looked for). Tests: `node --test .claude/skills/ss
 prologue, follows Matt's grill-with-docs, and walks the feature's open questions first, one per
 round, in the ratifier's order; on `done` every ruling becomes a proposal, every answered question
 is closed through `answers`, and a ruling that fits no card becomes an open question in their
-words. The other -lee skills (`/to-spec-lee`, `/to-tickets-lee`, `/implement-lee`) arrive with
-tickets 05, 06 and 10 in `.scratch/ssot/issues/`.
+words. `/to-spec-lee <feature>` in `.claude/skills/to-spec-lee/` runs the prologue, follows
+Matt's to-spec, and puts the spec's test seams and every new implementation and testing decision
+on the page as `Spec` category cards (Context opens with the spec's problem statement) instead of
+confirming them in the terminal; the spec cites each card's id from the start, and after the
+ratifier's Finish the prologue drops the rejected paragraphs. It ends with `Next: /to-tickets-lee`
+only when no `Spec` card is pending. The other -lee skills (`/to-tickets-lee`, `/implement-lee`)
+arrive with tickets 06 and 10 in `.scratch/ssot/issues/`.
 
 ## Sync module
 
 `_page/sync.mjs` exports `parse`, `serialize` (byte-identical round trip), `apply` (verdicts from
 the page into the two files), `answers` (close an open question with a decision), `openQuestions`, `questionFirst`,
-`fold`, `clauses` and `ticketDocument`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+`answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
+sections cite), `fold`, `clauses` and `ticketDocument`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture and checks the markdown that comes out, and the last case
 round-trips the real mealplanning record and proposals. CLI:
 
@@ -179,6 +196,8 @@ node docs/ssot/decisions/_page/sync.mjs export <decisions.md>...   # page docume
 node docs/ssot/decisions/_page/sync.mjs apply <verdicts.json> <proposals.md> <ssot.md>
 node docs/ssot/decisions/_page/sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>
 node docs/ssot/decisions/_page/sync.mjs questions <proposals.md> [<ssot.md>]   # the open questions as JSON, file order, nothing written
+node docs/ssot/decisions/_page/sync.mjs linked <proposals.md> [<ssot.md>]   # decisions that answered a question, as JSON; `stale` when later rejected or withdrawn
+node docs/ssot/decisions/_page/sync.mjs cite <spec.md> <proposals.md> [<ssot.md>]   # what the spec's Implementation and Testing Decisions cite: statuses, paragraphs naming a rejected id, uncited paragraphs, unknown, pending and pendingSpec ids, unstated answers
 node docs/ssot/decisions/_page/sync.mjs pending <decisions.md>
 node docs/ssot/decisions/_page/sync.mjs question-first <decisions.md>...   # lift "The question was X." into Question
 node docs/ssot/decisions/_page/sync.mjs fold <plan.json> <proposals.md> <ssot.md>   # combine proposals per the plan

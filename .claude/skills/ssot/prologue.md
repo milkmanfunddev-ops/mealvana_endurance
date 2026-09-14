@@ -63,11 +63,23 @@ stays unapplied and is named in the report.
 ## 6. Make the spec cite the record
 
 If this run changed `docs/ssot/decisions/<feature>.md`, or `.scratch/<feature>/spec.md` cites no
-decision id yet, rewrite the spec's Implementation Decisions section: every paragraph that states
-an approved decision ends with its id in parentheses, `(mp-042)`; a paragraph whose decision was
-rejected is removed; a paragraph with no decision behind it stays as it is and is listed in the
-report as a backfill candidate. `SYNC export docs/ssot/decisions/<feature>.md` gives ids, titles,
-statuses and decision text to match against. Change nothing else in the spec.
+decision id yet, bring the spec's Implementation Decisions and Testing Decisions sections in line
+with the record. `SYNC cite .scratch/<feature>/spec.md .scratch/<feature>/decisions.md
+docs/ssot/decisions/<feature>.md` reads both sections and says what each paragraph cites:
+
+- a paragraph in `rejected` names an id that was rejected or withdrawn (`gone`): remove the
+  paragraph, or only the clause that stated that id when the paragraph also cites ids that stand;
+- a cited id that is approved stays, and the paragraph says what the record's **Decision** says;
+  an approved decision that was amended on the page keeps its id and the paragraph is rewritten
+  to the amended text (`SYNC export docs/ssot/decisions/<feature>.md` gives the text);
+- a paragraph that states an approved decision without citing it gets the id in parentheses at
+  the end, `(mp-042)`;
+- `pending` ids are left as they are; `unknown` ids are a mistake to fix; `uncited` paragraphs
+  with no decision behind them stay as they are and are listed in the report as backfill
+  candidates; `unstated` ids (decisions that answered a question but appear nowhere in the spec)
+  are listed in the report for the next `/to-spec-lee`.
+
+Run `cite` again: `rejected` and `unknown` must be empty. Change nothing else in the spec.
 
 ## 7. Report
 
