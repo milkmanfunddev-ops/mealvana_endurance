@@ -180,7 +180,7 @@ integrationTest('Integration Iter1: Rest day (no sessions)', async () => {
   assertWithinPercent(data.tdee as number, 2501, 5);
   assertEquals(data.session_kcal, 0);
   assertEquals(data.mode, 'prospective');
-  assertEquals(data.algorithm_version, 'v6.0.0');
+  assertEquals(data.algorithm_version, 'v6.1.0');
 });
 
 integrationTest('Integration Iter1: 90-min run', async () => {
@@ -229,7 +229,7 @@ integrationTest('Integration Iter1: Swimming session', async () => {
 
   assert((data.carb_g as number) > 300, 'Carbs should exceed baseline');
   assert((data.session_kcal as number) > 0);
-  assertEquals(data.algorithm_version, 'v6.0.0');
+  assertEquals(data.algorithm_version, 'v6.1.0');
 });
 
 // ============================================================================
@@ -460,7 +460,7 @@ integrationTest('Integration: Response includes all required fields', async () =
   assertEquals(data.energy_basis, 'as_computed');
   // Delta is always present: null outside retrospective recalculation.
   assertEquals(data.delta, null);
-  assertEquals(data.algorithm_version, 'v6.0.0');
+  assertEquals(data.algorithm_version, 'v6.1.0');
 });
 
 integrationTest('Integration: Mode passes through', async () => {
