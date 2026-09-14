@@ -200,6 +200,10 @@
     "GlassSurface": {
       "cardMode": "column",
       "viewport": "520x800"
+    },
+    "SourceChip": {
+      "cardMode": "column",
+      "viewport": "520x900"
     }
   },
   "readmeHeader": ".design-sync/conventions.md"

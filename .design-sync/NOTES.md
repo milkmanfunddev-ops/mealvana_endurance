@@ -134,3 +134,20 @@ rendering's stroke path verbatim (`fueling_glyphs.dart`); the dashed Add Food pi
 - Compadre demo fonts may be replaced; re-check `extraFonts` paths after.
 - `docs/ssot/spec/design/renderings/` is the pixel reference for the macro-dashboard surface only;
   components without a ratified rendering are graded on the absolute rubric, not against a reference.
+
+## D-2 source-chip family port (2026-09-13)
+- Mirrored per the drift rule after the data-integrations bundle added the ratified
+  D-2 provenance chips: `SourceChip` (new — Data group; exports SourceChip / StaleChip /
+  TapToUseChip / SourceProvenanceRow in one file, matching the Dart
+  `kyle_design/data/kyle_source_chip.dart`). Includes the 2026-09-13 pill-outline
+  amendment to TapToUseChip. Only SourceChip carries a preview card; the other three
+  exports ride under it. 51 unchanged, 4 added, graded good (8 story cells) against
+  renderings/ftp-source-provenance@v1.
+- DEFERRED (Xuan scoped this sync to the D-2 family only): the TP write-back consent
+  sheet, the DottedBorder material, and the PrimaryButton/SecondaryButton spec-style
+  tweaks are NOT yet mirrored — twin is stale for those until a later pass.
+- Anchor trap: the resync `--remote` sidecar MUST carry `sourceHashes` (the per-file
+  map) or `validSidecar` rejects it as malformed and re-verifies ALL components. When
+  hand-reconstructing the anchor from `DesignSync get_file`, include every field:
+  shape, styleSha, renderHashes, sourceKeys, keyRecipe, scriptsSha, sourceHashes,
+  auxSha, bundleSha12.
