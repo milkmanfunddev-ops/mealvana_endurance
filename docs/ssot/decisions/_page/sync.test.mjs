@@ -328,3 +328,27 @@ Cites mp-082 and mp-083, and mp-082 again.
   const w = ticketDocument('kd', 'x/09-legacy.md', '# 09: A draft\n\n**What to build:** x\n');
   assert.equal(w.state, 'proposed');
 });
+
+test('a page document says who ruled and when, from its last verdict line', () => {
+  const ssot = emptySsot();
+  const proposals = parse(fixture);
+  apply({ 'sm-001': { verdict: 'approve', at, by: 'Xuan' }, 'sm-002': { verdict: 'reject', text: 'too early', at } }, proposals, ssot);
+  const [a, b] = toDocuments(ssot);
+  assert.deepEqual(a.ruled, { status: 'approved', by: 'Xuan', date: '2026-09-14' });
+  assert.deepEqual(b.ruled, { status: 'rejected', by: '', date: '2026-09-14' });
+  // A fold line is history but not a ruling; a proposal with no verdict has no ruling.
+  const folded = parse(fixture.replace('**What it touches.** VanaSheet.\n\n## sm-002', '**What it touches.** VanaSheet.\n\n> 2026-09-13 folded from sm-090, sm-091\n\n## sm-002'));
+  assert.equal(toDocuments(folded)[0].ruled, null);
+  assert.equal(toDocuments(folded)[1].ruled, null);
+  // The latest ruling wins: approved then withdrawn shows withdrawn.
+  apply({ 'sm-001': { verdict: 'approve', at: '2026-09-15T10:00:00Z', by: 'Lee' } }, proposals, ssot, '2026-09-15');
+  assert.deepEqual(toDocuments(ssot)[0].ruled, { status: 'withdrawn', by: 'Lee', date: '2026-09-15' });
+  // Change cards name their acceptor too; the reason after ':' never leaks into the name.
+  const p2 = parse(fixture), s2 = emptySsot();
+  apply({ c1: { verdict: 'change', accepted: true, by: 'Xuan', at, change: { op: 'edit', id: 'sm-001', title: 'Two heights' } },
+          c2: { verdict: 'change', accepted: true, by: 'Xuan', at, change: { op: 'delete', id: 'sm-002', reason: 'stale: numbers moved' } } }, p2, s2);
+  assert.match(serialize(p2), /^> 2026-09-14 edited from the category discussion on 2026-09-14 by Xuan$/m);
+  assert.match(serialize(s2), /^> 2026-09-14 removed from the category discussion on 2026-09-14 by Xuan: stale: numbers moved$/m);
+  assert.deepEqual(toDocuments(p2)[0].ruled, { status: 'edited', by: 'Xuan', date: '2026-09-14' });
+  assert.deepEqual(toDocuments(s2)[0].ruled, { status: 'removed', by: 'Xuan', date: '2026-09-14' });
+});

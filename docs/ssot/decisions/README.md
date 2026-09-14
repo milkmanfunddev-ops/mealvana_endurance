@@ -1,11 +1,32 @@
 # Decisions
 
 The single source of truth for product decisions. One markdown file per feature.
-Nothing enters a file here except on Lee's verdict, given on the decisions page.
+Nothing enters a file here except on a ratifier's verdict (Lee or Xuan), given on the decisions page.
 Agents never edit these files by hand; the sync module in `_page/` applies verdicts.
 
 This folder is app-owned. It sits outside the QA mirror's rsync scope, so a sync
 from `../mealvana_endurance_qa` never touches it.
+
+## Fresh clone
+
+Everything here runs from a checkout of this repo. Nothing reads a home directory, a user
+name or a session id; every path is repo-relative, and the page's data lives in the artifact's
+own database, not on anyone's laptop.
+
+1. Install Node 20 or newer. The sync module is plain ESM with no dependencies.
+2. Test: `node --test docs/ssot/decisions/_page/sync.test.mjs` (all cases must pass).
+3. Apply verdicts: `node docs/ssot/decisions/_page/sync.mjs apply <verdicts.json> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md`.
+   `verdicts.json` is the page's queued verdicts: a Claude Code session reads the `verdicts`
+   collection with `read_db` (where `applied` is false) and saves it as that file. The Finish
+   button only wakes the watching session. `apply` writes only the two named files.
+4. Open the page: the artifact link below. Lee shares it with each ratifier from the page's
+   share menu. Whoever opens it picks their name in the header once per browser, and every
+   verdict they give carries it as `by`. The platform tells the page nothing about the viewer,
+   so that chooser is the identity.
+5. Reseed the page after the files change:
+   `node docs/ssot/decisions/_page/sync.mjs prepare docs/ssot/decisions/<feature>.md .scratch/<feature>/decisions.md --assets docs/ssot/decisions/_page/assets.json --tickets <feature>=.scratch/<feature>/issues --out <dir>`,
+   then `write_db` the batches in `<dir>/_batches.json`. Redeploy `_page/index.html` only when
+   the page's design changes, always to the same artifact URL.
 
 ## Where things live
 
@@ -80,7 +101,10 @@ file is written.
 
 Every verdict may carry `by`, the name of who gave it. The history line then ends with the
 name: `> 2026-09-14 approved by Lee`, `> 2026-09-14 rejected by Xuan: too early`. A verdict
-without `by` still applies and writes the bare line. Pressing Approve on an approved decision
+without `by` still applies and writes the bare line. The page always sets `by` from the name
+chosen in its header and refuses a verdict while no name is chosen. A ruled card shows its
+newest verdict line as `approved by Lee, 09-14` (page documents carry a `ruled` summary from
+`sync.mjs`). Pressing Approve on an approved decision
 withdraws it (`> <date> withdrawn`); the earlier `approved` line stays.
 
 Each category has a "Talk this category through" thread. "Suggest changes" asks in-page Claude

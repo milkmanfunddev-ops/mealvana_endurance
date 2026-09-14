@@ -125,8 +125,27 @@ export function toDocuments(doc, { order = 0 } = {}) {
     details: d.parts.details || '',
     original: d.parts.original || '',
     leeSaid: d.parts.leeSaid || '',
+    ruled: ruling(d.history),
     order: order + n,
   }));
+}
+
+/**
+ * Who ruled last, and when. Reads the newest history line that is a verdict
+ * (`approved`, `rejected`, `withdrawn`, `amended`, `approved again`, and the
+ * `added`/`edited`/`removed` lines a change card writes) and returns
+ * `{status, by, date}`; `by` is the name after the last " by " ahead of any
+ * reason (`: …`), or '' when the line names nobody. Fold and answered lines are
+ * history, not rulings, so a card with only those has none.
+ */
+export function ruling(history) {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const m = /^(approved again|approved|rejected|withdrawn|amended|added|edited|removed)\b([^:]*)(?::.*)?$/.exec(history[i].note);
+    if (!m) continue;
+    const by = /(?:^| )by (.+)$/.exec(m[2].trim());
+    return { status: m[1] === 'approved again' ? 'approved' : m[1], by: by ? by[1].trim() : '', date: history[i].date };
+  }
+  return null;
 }
 
 /** A Decision written as numbered lines is a list of clauses Lee can keep or drop one by one. */
@@ -267,7 +286,7 @@ export function apply(verdicts, proposals, ssot, today = new Date().toISOString(
       const note = 'from the category discussion on ' + date;
       if (c.op === 'add') {
         const nid = nextId(proposals, ssot);
-        proposals.decisions.push({ id: nid, title: c.title || 'Untitled', meta: { category: v.category || 'Other', status: 'proposed', image: 'none', caption: '', screen: c.screen || '', source: `Lee, ${note}` }, parts: { context: c.context || '', decision: c.decision || '', why: c.why || '', alternatives: c.alternatives || 'none recorded', touches: c.touches || '' }, history: [{ date, note: 'added ' + note }] });
+        proposals.decisions.push({ id: nid, title: c.title || 'Untitled', meta: { category: v.category || 'Other', status: 'proposed', image: 'none', caption: '', screen: c.screen || '', source: `${v.by ? v.by + ', ' : ''}${note}` }, parts: { context: c.context || '', decision: c.decision || '', why: c.why || '', alternatives: c.alternatives || 'none recorded', touches: c.touches || '' }, history: [{ date, note: 'added ' + note + by }] });
         applied.push({ id, to: 'added as ' + nid });
       } else if (c.op === 'edit') {
         const d = proposals.decisions.find(x => x.id === c.id) || inSsot(c.id);
@@ -279,13 +298,13 @@ export function apply(verdicts, proposals, ssot, today = new Date().toISOString(
         if (c.context) d.parts.context = c.context;
         if (c.decision) d.parts.decision = c.decision;
         if (c.why) d.parts.why = c.why;
-        d.history.push({ date, note: 'edited ' + note });
+        d.history.push({ date, note: 'edited ' + note + by });
         applied.push({ id, to: 'amended ' + c.id });
       } else if (c.op === 'delete') {
         const d = take(c.id) || (inSsot(c.id) && inSsot(c.id).meta.status !== 'rejected' ? inSsot(c.id) : null);
         if (!d) { refused.push({ id, why: `unknown id ${c.id}` }); continue; }
         d.meta.status = 'rejected';
-        d.history.push({ date, note: 'removed ' + note + (c.reason ? `: ${c.reason}` : '') });
+        d.history.push({ date, note: 'removed ' + note + by + (c.reason ? `: ${c.reason}` : '') });
         if (!inSsot(c.id)) ssot.decisions.push(d);
         applied.push({ id, to: 'rejected ' + c.id });
       } else refused.push({ id, why: `unknown change op ${c.op}` });

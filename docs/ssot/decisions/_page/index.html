@@ -1,0 +1,698 @@
+<title>Mealvana Decisions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sansita:wght@700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+  :root {
+    --ground: #F8F6EB; --ground-2: #EFECDF; --line: #DDD8C8; --ink: #381633; --ink-2: #5E4A5C; --muted: #8A7A8C;
+    --accent: #F78B14; --accent-ink: #2B1305; --ok: #2FB9A6; --ok-soft: #DDF5F0; --no: #DC2597; --no-soft: #FBE1EF;
+    --pending: #D9730A; --pending-soft: #FDEBD9; --amend: #7A5AA6; --amend-soft: #EDE6F7; --card: #FFFFFF; --focus: #F78B14;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --ground: #2D1535; --ground-2: #381633; --line: #4E2E4C; --ink: #F8F6EB; --ink-2: #D9CFD8; --muted: #9B8AA3;
+    --accent: #FFA05A; --accent-ink: #2B1305; --ok: #3FD4C0; --ok-soft: #22453F; --no: #F060A8; --no-soft: #4A1F3A;
+    --pending: #FFA05A; --pending-soft: #4A2E1B; --amend: #B9A0E0; --amend-soft: #3B2C52; --card: #4A2143; --focus: #FFA05A;
+  } }
+  :root[data-theme="dark"] {
+    --ground: #2D1535; --ground-2: #381633; --line: #4E2E4C; --ink: #F8F6EB; --ink-2: #D9CFD8; --muted: #9B8AA3;
+    --accent: #FFA05A; --accent-ink: #2B1305; --ok: #3FD4C0; --ok-soft: #22453F; --no: #F060A8; --no-soft: #4A1F3A;
+    --pending: #FFA05A; --pending-soft: #4A2E1B; --amend: #B9A0E0; --amend-soft: #3B2C52; --card: #4A2143; --focus: #FFA05A;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 16px/1.5 "Source Sans 3", "Helvetica Neue", Arial, sans-serif; }
+  h1, h2, h3 { font-family: "Sansita", Georgia, serif; font-weight: 700; margin: 0; text-wrap: balance; }
+  button { font: inherit; cursor: pointer; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 12px; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+  .app { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  nav { border-right: 1px solid var(--line); background: var(--ground-2); position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 18px 14px; }
+  nav h1 { font-size: 22px; letter-spacing: .01em; }
+  nav .sub { color: var(--muted); font-size: 13px; margin: 2px 0 16px; }
+  nav .feat { margin-top: 14px; }
+  nav .feat > .fname { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 6px 6px; }
+  nav .cat { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border-radius: 6px; color: var(--ink-2); text-decoration: none; font-size: 15px; cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+  nav .cat:hover { background: var(--card); }
+  nav .cat.active { background: var(--card); color: var(--ink); font-weight: 600; }
+  nav .cat .n { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+  nav .cat .n.pend { color: var(--pending); font-weight: 600; }
+  nav .cat .n .q { color: var(--amend); font-weight: 600; }
+  nav .cat .n .done { color: var(--ok); font-weight: 600; }
+  nav .legend { margin-top: 24px; font-size: 12px; color: var(--muted); line-height: 1.9; }
+  header { position: sticky; top: 0; z-index: 5; background: color-mix(in srgb, var(--ground) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); padding: 12px 28px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  header input[type=search] { flex: 1 1 260px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font: inherit; }
+  header select { padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font: inherit; }
+  .toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+  .status-line { width: 100%; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  main { padding: 20px 28px 80px; max-width: 1180px; }
+  .cat-head { margin: 10px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .cat-head .fname { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .cat-head h2 { font-size: 28px; }
+  .cat-head .tools { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; align-items: center; }
+  .cat-head .tools .hint { flex-basis: 100%; }
+  .discuss { background: var(--ground-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin: 14px 0 20px; }
+  .discuss summary { cursor: pointer; font-weight: 600; }
+  .discuss .thread { max-width: 70ch; }
+  .change { border: 1px solid var(--amend); border-radius: 8px; padding: 10px 14px; margin: 8px 0; max-width: 70ch; background: var(--card); }
+  .change .op { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--amend); }
+  .change h4 { margin: 2px 0 6px; font-size: 17px; }
+  .change p { margin: 4px 0; font-size: 15px; white-space: pre-wrap; }
+  .change .acts { margin-top: 8px; }
+  section.d { display: grid; grid-template-columns: minmax(220px, 5fr) 7fr; gap: 22px; padding: 18px 0 22px; border-bottom: 1px solid var(--line); scroll-margin-top: 90px; }
+  .figwrap { display: flex; flex-direction: column; gap: 6px; }
+  .fig { background: var(--ground-2); border: 1px solid var(--line); border-radius: 10px; min-height: 220px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 10px; }
+  .fig img { max-height: 520px; max-width: 100%; border-radius: 6px; object-fit: contain; }
+  .fig svg { max-width: 100%; height: auto; }
+  .fig .none { color: var(--muted); font-size: 13px; text-align: center; padding: 20px; }
+  .fig .none b { display: block; font-size: 32px; font-family: "Sansita", serif; color: var(--line); }
+  .cap { font-size: 12px; color: var(--muted); }
+  .txt h3 { font-size: 20px; margin-bottom: 4px; }
+  .ruled { color: var(--ink); }
+  #who { font: inherit; font-size: 13px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); color: var(--ink); max-width: 9em; }
+  .meta { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.proposed { background: var(--pending-soft); color: var(--pending); }
+  .pill.approved { background: var(--ok-soft); color: var(--ok); }
+  .pill.rejected { background: var(--no-soft); color: var(--no); }
+  .pill.withdrawn { background: var(--ground-2); color: var(--muted); }
+  .pill.amended, .pill.open { background: var(--amend-soft); color: var(--amend); }
+  .pill.queued { background: var(--card); border: 1px dashed var(--muted); color: var(--ink-2); }
+  section.d.question .txt h3 { color: var(--amend); }
+  .part { margin: 8px 0; max-width: 62ch; }
+  .part .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .part p { margin: 2px 0 0; white-space: pre-wrap; }
+  .amendbox { background: var(--amend-soft); border-left: 3px solid var(--amend); padding: 8px 12px; margin: 10px 0; border-radius: 0 6px 6px 0; max-width: 62ch; }
+  .amendbox .k { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--amend); }
+  .amendbox p { margin: 2px 0 0; white-space: pre-wrap; }
+  .acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
+  .acts .approve { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+  .acts .approve.on { background: var(--ok-soft); color: var(--ok); }
+  .acts .reject.on { background: var(--no-soft); color: var(--no); }
+  .sub-form { margin-top: 10px; display: none; gap: 8px; flex-direction: column; max-width: 62ch; }
+  .sub-form.open { display: flex; }
+  textarea { width: 100%; min-height: 70px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font: inherit; resize: vertical; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .explain { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 10px; max-width: 62ch; }
+  .explain summary { cursor: pointer; color: var(--ink-2); font-size: 14px; }
+  .thread { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+  .turn { padding: 8px 12px; border-radius: 8px; font-size: 15px; white-space: pre-wrap; }
+  .turn.user { background: var(--ground-2); align-self: flex-end; max-width: 90%; }
+  .turn.assistant { background: var(--card); border: 1px solid var(--line); }
+  .hint { font-size: 12px; color: var(--muted); }
+  abbr.term { text-decoration: underline dotted var(--amend); text-underline-offset: 3px; cursor: help; }
+  .vocab .entry { padding: 12px 0; border-bottom: 1px solid var(--line); max-width: 70ch; }
+  .vocab .entry b { font-family: "Sansita", serif; font-size: 18px; }
+  .vocab .entry .area { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-left: 8px; }
+  .vocab .entry p { margin: 4px 0; }
+  .vocab .entry .avoid { font-size: 13px; color: var(--muted); }
+  .vocab form { display: grid; gap: 8px; max-width: 70ch; margin: 16px 0 24px; }
+  .vocab input { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); font: inherit; }
+  .words { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 0; }
+  .words abbr { font-size: 13px; padding: 1px 8px; border-radius: 999px; background: var(--amend-soft); color: var(--amend); text-decoration: none; cursor: help; }
+  .qline { margin: 0 0 10px; max-width: 62ch; color: var(--ink-2); font-style: italic; }
+  .qline b { font-style: normal; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 8px; }
+  ol.clauses { margin: 2px 0 0; padding-left: 22px; max-width: 62ch; }
+  ol.clauses li { margin: 3px 0; padding-left: 4px; }
+  ol.clauses li.dropped { color: var(--muted); text-decoration: line-through; }
+  ol.clauses label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+  ol.clauses input { margin-top: 5px; }
+  details.more { margin-top: 10px; max-width: 62ch; }
+  details.more summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  details.more .part { margin-top: 8px; }
+  section.d.detail { padding: 12px 0 14px; }
+  section.d.detail .txt h3 { font-size: 17px; }
+  section.d.detail .fig { min-height: 120px; }
+  .detail-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 26px 0 4px; padding: 10px 0; border-top: 2px solid var(--line); }
+  .detail-head h3 { font-size: 18px; color: var(--ink-2); }
+  details.detail-block > summary { list-style: none; cursor: pointer; }
+  details.detail-block > summary::-webkit-details-marker { display: none; }
+  .work h3 { font-size: 20px; margin: 26px 0 8px; }
+  .work .t { display: grid; grid-template-columns: 44px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); max-width: 80ch; }
+  .work .t .num { font-family: "Sansita", serif; font-size: 20px; color: var(--muted); }
+  .work .t .name { font-weight: 600; }
+  .work .t .st { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .work .t .st.owed { color: var(--pending); }
+  .work .t .cites { margin-top: 4px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .work .t .cites button, .work .d-row button { font-size: 12px; padding: 1px 8px; border-radius: 999px; }
+  .work .d-row { padding: 8px 0; border-bottom: 1px solid var(--line); max-width: 80ch; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .work .lead { color: var(--ink-2); max-width: 70ch; margin: 0 0 6px; }
+  .empty { color: var(--muted); padding: 60px 0; text-align: center; }
+  .pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; flex-wrap: wrap; }
+  .pager button { padding: 10px 16px; }
+  .toast { position: fixed; bottom: 20px; right: 20px; background: var(--ink); color: var(--ground); padding: 10px 14px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 360px; }
+  .toast.show { opacity: 1; }
+  #menu { display: none; }
+  .scrim { display: none; }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    nav { position: fixed; inset: 0 auto 0 0; width: min(86vw, 320px); z-index: 20; transform: translateX(-104%); transition: transform .2s; box-shadow: 4px 0 24px rgba(0,0,0,.25); padding-top: 22px; }
+    body.nav-open nav { transform: none; }
+    body.nav-open .scrim { display: block; position: fixed; inset: 0; z-index: 19; background: rgba(0,0,0,.35); }
+    #menu { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; }
+    header { padding: 8px 12px; gap: 8px; }
+    header input[type=search] { flex-basis: 140px; min-width: 0; }
+    header select { max-width: 40vw; }
+    #finishAll { min-height: 40px; }
+    main { padding: 12px 12px 90px; }
+    .cat-head h2 { font-size: 22px; }
+    section.d { grid-template-columns: 1fr; gap: 12px; padding: 14px 0 18px; }
+    .fig { min-height: 0; max-height: 240px; }
+    .fig img { max-height: 220px; }
+    .fig .none { padding: 10px; }
+    section.d.detail .fig { display: none; }
+    .fig:has(> .none) { display: none; }
+    button { min-height: 40px; padding: 8px 14px; }
+    .acts { gap: 10px; }
+    .acts button { flex: 1 1 auto; }
+    .acts button[data-act="undo"] { flex: 0 0 auto; }
+    textarea, input, select { font-size: 16px; }
+    .pager button { flex: 1 1 100%; }
+    .part, .qline, ol.clauses, details.more, .amendbox, .sub-form, .explain { max-width: none; }
+    .toast { left: 12px; right: 12px; bottom: 12px; max-width: none; text-align: center; }
+    .detail-head { gap: 8px; }
+    .work .t .cites button, .work .d-row button { min-height: 28px; padding: 2px 10px; }
+  }
+  @media (max-width: 860px) and (prefers-reduced-motion: reduce) { nav { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+
+<div class="app">
+  <nav id="nav">
+    <h1>Mealvana Decisions</h1>
+    <div id="navlist"><div class="hint">Loading decisions.</div></div>
+    <div class="legend">
+      <span class="pill proposed">proposed</span> <span class="pill queued">queued</span> <span class="pill approved">approved</span><br>
+      <span class="pill rejected">rejected</span> <span class="pill amended">amended</span> <span class="pill open">open</span>
+    </div>
+  </nav>
+  <div>
+    <header>
+      <button id="menu" aria-label="Categories" aria-controls="nav" aria-expanded="false">☰ <span id="menuCount"></span></button>
+      <input id="q" type="search" placeholder="Search" aria-label="Search">
+      <select id="feat" aria-label="Feature"><option value="">All features</option></select>
+      <label class="toggle"><input id="pendingOnly" type="checkbox"> pending only</label>
+      <select id="who" aria-label="Who is ruling"><option value="">Who are you?</option><option>Lee</option><option>Xuan</option></select>
+      <button id="finishAll" class="primary" disabled>Finish all</button>
+      <div class="status-line" id="status">Connecting.</div>
+    </header>
+    <main id="main"><div class="empty">Loading.</div></main>
+  </div>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const state = { decisions: new Map(), verdicts: new Map(), chats: new Map(), tickets: new Map(), meta: {}, q: '', feat: '', pendingOnly: false, cat: '', db: null, sample: null, artifact: null, open: new Set(), inflight: new Map(), changes: new Map(), vocab: new Map(), termRe: null, sending: null, sentFlash: null, lastSent: null };
+  const featName = f => (state.meta.featureNames && state.meta.featureNames[f]) || f;
+  const catKey = d => d.feature + '|' + d.category;
+  const chatDocId = id => id.replace(/[^A-Za-z0-9_\-.~:@+]/g, '_').slice(0, 180);
+
+  function terms() {
+    if (!state.termRe) { const names = [...state.vocab.values()].map(v => v.term).filter(Boolean).sort((a, b) => b.length - a.length); state.termRe = names.length ? new RegExp('\\b(' + names.map(n => n.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&')).join('|') + ')\\b', 'g') : /$^/; }
+    return state.termRe;
+  }
+  const defOf = name => { for (const v of state.vocab.values()) if (v.term === name) return v.definition; return ''; };
+  const mark = text => esc(text).replace(terms(), m => `<abbr class="term" title="${esc(defOf(m))}">${m}</abbr>`);
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+
+  // A queued verdict overlays the file status until the skill applies it.
+  function eff(d) {
+    const v = state.verdicts.get(d.id);
+    if (v && !v.applied) return { status: v.verdict === 'approve' ? 'approved' : v.verdict === 'withdraw' ? 'withdrawn' : v.verdict === 'reject' ? 'rejected' : 'amended', queued: true, text: v.text };
+    return { status: d.status, queued: false };
+  }
+  const isQuestion = d => d.kind === 'question';
+  const isPending = d => { if (isQuestion(d)) return false; const e = eff(d); return !e.queued && (e.status === 'proposed' || e.status === 'amended'); };
+  const isChangeVerdict = v => v.verdict === 'change';
+
+  function matchesSearch(d) {
+    if (!state.q) return true;
+    const hay = [d.id, d.title, d.category, d.context, d.question, d.decision, d.why, d.alternatives, d.touches, d.details, d.original, d.leeSaid].join(' ').toLowerCase();
+    return state.q.split(/\s+/).every(w => hay.includes(w));
+  }
+  function visible(d) {
+    if (state.feat && d.feature !== state.feat) return false;
+    if (state.pendingOnly && !isPending(d) && !isQuestion(d)) return false;
+    return matchesSearch(d);
+  }
+
+  function sorted() {
+    const co = state.meta.categoryOrder || [];
+    const ci = c => { const i = co.indexOf(c); return i < 0 ? 999 : i; };
+    return [...state.decisions.values()].sort((a, b) =>
+      (a.feature || '').localeCompare(b.feature || '') || (ci(a.category) - ci(b.category)) ||
+      (a.category || '').localeCompare(b.category || '') || ((a.order || 0) - (b.order || 0)) || a.id.localeCompare(b.id));
+  }
+  function groups() {
+    const g = new Map();
+    for (const d of sorted()) {
+      if (state.feat && d.feature !== state.feat) continue;
+      const k = catKey(d);
+      if (!g.has(k)) g.set(k, { key: k, feature: d.feature, category: d.category, n: 0, pend: 0, open: 0, queued: 0, detailPend: 0, items: [] });
+      const x = g.get(k); x.n++; if (isPending(d)) { x.pend++; if (d.detail) x.detailPend++; } if (isQuestion(d)) x.open++; const v = state.verdicts.get(d.id); if (v && !v.applied) x.queued++; x.items.push(d);
+    }
+    for (const [id, v] of state.verdicts) if (isChangeVerdict(v) && !v.applied && g.has(v.scope)) g.get(v.scope).queued++;
+    return [...g.values()];
+  }
+
+  function figure(d) {
+    const cap = d.imageCaption ? `<div class="cap">${esc(d.imageCaption)}</div>` : '';
+    if (d.imageAssetId) return `<div class="figwrap"><div class="fig"><img src="/_blob/${esc(d.imageAssetId)}" alt="${esc(d.imageCaption || d.title)}" loading="lazy"></div>${cap}</div>`;
+    if (d.svg && /^\s*<svg[\s>]/i.test(d.svg)) return `<div class="figwrap"><div class="fig">${d.svg}</div>${cap}</div>`;
+    return `<div class="fig"><div class="none"><b>?</b>No picture yet.<br>${esc(d.screen || 'Nothing on screen shows this one.')}</div></div>`;
+  }
+
+  function thread(id, placeholder) {
+    const chat = state.chats.get(id) || { turns: [] };
+    return `<div class="thread">${chat.turns.map(t => `<div class="turn ${esc(t.role)}">${esc(t.text)}</div>`).join('')}${state.inflight.has(id) ? `<div class="turn assistant">${esc(state.inflight.get(id))}</div>` : ''}</div>
+          <div class="row"><textarea data-chat placeholder="${esc(placeholder)}" style="min-height:44px"></textarea><button data-act="ask" ${state.sample ? '' : 'disabled'}>Ask</button></div>`;
+  }
+
+  function section(d) {
+    const e = eff(d);
+    const v = state.verdicts.get(d.id);
+    const approved = e.status === 'approved';
+    const open = state.open.has(d.id);
+    const ctx = d.context ? `<div class="part"><div class="k">Context</div><p>${mark(d.context)}</p></div>` : '';
+    if (isQuestion(d)) {
+      return `<section class="d question" id="${esc(d.id)}" data-id="${esc(d.id)}">
+      ${figure(d)}
+      <div class="txt">
+        <h3>${esc(d.title)}</h3>
+        <div class="meta"><span class="pill open">open question</span><span>${esc(d.id)}</span>${d.linked ? `<span>from ${esc(d.linked)}</span>` : ''}<span>${esc(d.source || '')}</span></div>
+        ${ctx}
+        <div class="amendbox"><div class="k">The question, in Lee's words</div><p>${mark(d.question)}</p></div>
+        ${d.why ? `<div class="part"><div class="k">Why it matters</div><p>${mark(d.why)}</p></div>` : ''}
+        ${d.touches ? `<div class="part"><div class="k">What it touches</div><p>${mark(d.touches)}</p></div>` : ''}
+        <details class="explain" ${open ? 'open' : ''}><summary>Discuss</summary>${thread(d.id, '')}</details>
+      </div>
+    </section>`;
+    }
+    const cl = Array.isArray(d.clauses) ? d.clauses : [];
+    const droppedQ = v && !v.applied && Array.isArray(v.dropped) ? v.dropped : [];
+    const decisionHtml = cl.length
+      ? `<ol class="clauses">${cl.map((c, i) => `<li class="${droppedQ.includes(i + 1) ? 'dropped' : ''}">${mark(c)}</li>`).join('')}</ol>`
+      : `<p>${mark(d.decision)}</p>`;
+    const body = d.original
+      ? `<div class="amendbox"><div class="k">Original</div><p>${mark(d.original)}</p></div><div class="amendbox"><div class="k">You said</div><p>${mark(d.leeSaid)}</p></div><div class="part"><div class="k">Rewrite, awaiting your approval</div>${decisionHtml}</div>`
+      : `<div class="part"><div class="k">Decision</div>${decisionHtml}</div>`;
+    const qline = d.question ? `<p class="qline"><b>The question</b>${mark(d.question)}</p>` : '';
+    const more = [
+      d.context ? `<div class="part"><div class="k">Context</div><p>${mark(d.context)}</p></div>` : '',
+      d.alternatives ? `<div class="part"><div class="k">What else was considered</div><p>${mark(d.alternatives)}</p></div>` : '',
+      d.details ? `<div class="part"><div class="k">Details</div><p>${mark(d.details)}</p></div>` : '',
+      d.touches ? `<div class="part"><div class="k">What it touches</div><p>${mark(d.touches)}</p></div>` : '',
+    ].join('');
+    const amendForm = cl.length
+      ? `<div class="k" style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Tick what to drop</div><ol class="clauses">${cl.map((c, i) => `<li><label><input type="checkbox" name="drop" value="${i + 1}"><span>${esc(c)}</span></label></li>`).join('')}</ol><textarea placeholder="What you want instead, or nothing if dropping is enough"></textarea>`
+      : `<textarea placeholder="What you want instead"></textarea>`;
+    return `<section class="d ${d.detail ? 'detail' : ''}" id="${esc(d.id)}" data-id="${esc(d.id)}">
+      ${figure(d)}
+      <div class="txt">
+        <h3>${esc(d.title)}</h3>
+        <div class="meta"><span class="pill ${e.status}">${e.status}</span>${e.queued ? `<span class="pill queued">${byLine('queued', v && v.by)}</span>` : ruledLine(d)}${d.work === 'pending' ? '<span class="pill amended">work pending</span>' : ''}<span>${esc(d.id)}</span><span>${esc(d.source || '')}</span></div>
+        ${qline}
+        ${body}
+        <div class="part"><div class="k">Why</div><p>${mark(d.why)}</p></div>
+        <details class="more" ${state.open.has('more:' + d.id) ? 'open' : ''}><summary>More</summary>${more}</details>
+        ${v && !v.applied && (v.text || droppedQ.length) ? `<div class="amendbox"><div class="k">${v.verdict === 'reject' ? 'Your reason' : 'Your words'} (queued)</div><p>${droppedQ.length ? `Drop ${droppedQ.join(', ')}. ` : ''}${esc(v.text)}</p></div>` : ''}
+        <div class="acts">
+          <button class="approve ${approved ? 'on' : ''}" data-act="approve">${approved ? 'Approved' : 'Approve'}</button>
+          <button class="reject ${e.status === 'rejected' ? 'on' : ''}" data-act="reject">${e.status === 'rejected' ? 'Rejected' : 'Reject'}</button>
+          <button data-act="amend">Rewrite</button>
+          ${e.queued ? '<button data-act="undo">Undo</button>' : ''}
+        </div>
+        <div class="sub-form" data-form="reject"><textarea placeholder="Reason"></textarea><div class="row"><button data-act="reject-send" class="approve">Reject</button><button data-act="close">Cancel</button></div></div>
+        <div class="sub-form" data-form="amend">${amendForm}<div class="row"><button data-act="amend-send" class="approve">Send</button><button data-act="close">Cancel</button></div></div>
+        <details class="explain" ${open ? 'open' : ''}><summary>Explain</summary>
+          ${thread(d.id, '')}
+        </details>
+      </div>
+    </section>`;
+  }
+
+  function changeCard(id, v) {
+    const c = v.change || {};
+    const op = c.op || 'edit';
+    return `<div class="change" data-change="${esc(id)}">
+      <div class="op">${op === 'add' ? 'Add a decision' : op === 'delete' ? 'Remove a decision' : 'Edit a decision'}${c.id ? ` · ${esc(c.id)}` : ''}${v.accepted ? ' · accepted' : ''}</div>
+      <h4>${esc(c.title || '')}</h4>
+      ${c.context ? `<p><b>Context.</b> ${esc(c.context)}</p>` : ''}
+      ${c.decision ? `<p><b>Decision.</b> ${esc(c.decision)}</p>` : ''}
+      ${c.why ? `<p><b>Why.</b> ${esc(c.why)}</p>` : ''}
+      ${c.reason ? `<p><b>Reason.</b> ${esc(c.reason)}</p>` : ''}
+      <div class="acts">${v.accepted ? '<button data-act="change-drop">Undo</button>' : '<button class="approve" data-act="change-accept">Accept</button><button data-act="change-drop">Dismiss</button>'}</div>
+    </div>`;
+  }
+
+  function vocabPage() {
+    const all = [...state.vocab.values()].sort((a, b) => (a.order || 0) - (b.order || 0));
+    const q = state.q; const vis = all.filter(v => !q || (v.term + ' ' + v.definition + ' ' + v.avoid).toLowerCase().includes(q));
+    const queued = [...state.verdicts].filter(([, v]) => v.verdict === 'term' && !v.applied);
+    let html = `<div class="cat-head"><div class="fname">CONTEXT.md</div><h2>Vocabulary</h2><div class="tools"><span class="hint">${all.length} terms${queued.length ? ` · ${queued.length} queued` : ''}</span></div></div>`;
+    html += `<div class="vocab"><form data-form="term"><input name="term" placeholder="Term" required><input name="area" placeholder="Area (optional)"><textarea name="definition" placeholder="What it means" required></textarea><input name="avoid" placeholder="Words to avoid (optional)"><div class="row"><button class="primary" type="submit">Add term</button></div></form>`;
+    html += queued.map(([id, v]) => `<div class="entry" data-term="${esc(id)}"><b>${esc(v.term)}</b><span class="area">${esc(v.area || '')}</span> <span class="pill queued">queued</span><p>${esc(v.definition)}</p>${v.avoid ? `<p class="avoid">Avoid: ${esc(v.avoid)}</p>` : ''}<div class="acts"><button data-act="term-drop">Undo</button></div></div>`).join('');
+    let lastArea = null;
+    for (const v of vis) {
+      if (v.area !== lastArea) { html += `<h3 style="margin-top:22px">${esc(v.area)}</h3>`; lastArea = v.area; }
+      html += `<div class="entry"><b>${esc(v.term)}</b><p>${esc(v.definition)}</p>${v.avoid ? `<p class="avoid">Avoid: ${esc(v.avoid)}</p>` : ''}</div>`;
+    }
+    return html + '</div>';
+  }
+  function wordsIn(g) {
+    const hay = g.items.map(d => [d.context, d.decision, d.why, d.question].join(' ')).join(' ');
+    const found = new Set(); const re = terms(); re.lastIndex = 0; let m; while ((m = re.exec(hay))) found.add(m[1]);
+    return found.size ? `<div class="words">${[...found].map(n => `<abbr title="${esc(defOf(n))}">${esc(n)}</abbr>`).join('')}</div>` : '';
+  }
+  function categoryPage(g) {
+    const finished = state.meta.finished && state.meta.finished[g.key];
+    const catId = 'cat:' + g.key;
+    const changes = [...state.verdicts].filter(([, v]) => isChangeVerdict(v) && !v.applied && v.scope === g.key);
+    const vis = g.items.filter(visible);
+    let html = `<div class="cat-head"><div class="fname">${esc(featName(g.feature))}</div><h2>${esc(g.category)}</h2>
+      <div class="tools">
+        <span class="hint">${g.pend} waiting · ${g.queued} queued${g.open ? ` · ${g.open} open` : ''}${finished ? ` · finished ${finished.slice(0, 10)}` : ''}</span>
+        ${g.pend ? `<button data-approve-all="${esc(g.key)}">Approve all ${g.pend}</button>` : ''}
+        <button class="primary" data-finish-cat="${esc(g.key)}" ${g.queued && state.artifact && !state.sending ? '' : 'disabled'}>${finishLabel(g.key, 'Finish category')}</button>
+      </div>${wordsIn(g)}</div>`;
+    html += `<details class="discuss" ${state.open.has(catId) ? 'open' : ''} data-cat="${esc(g.key)}"><summary>Discuss this category</summary>
+      ${thread(catId, '')}
+      <div class="row"><button data-act="suggest" ${state.sample ? '' : 'disabled'}>Suggest changes</button></div>
+      ${changes.map(([id, v]) => changeCard(id, v)).join('')}
+    </details>`;
+    const main = vis.filter(d => !d.detail), det = vis.filter(d => d.detail);
+    html += main.length ? main.map(section).join('') : (det.length ? '' : '<div class="empty">Nothing here matches the pending filter or search.</div>');
+    if (det.length) {
+      const detPend = det.filter(isPending).length;
+      html += `<details class="detail-block" ${state.open.has('det:' + g.key) ? 'open' : ''} data-det="${esc(g.key)}"><summary><div class="detail-head"><h3>Implementation details · ${det.length}</h3><span class="hint">${detPend ? `${detPend} waiting. ` : ''}How things are built, not what the athlete sees. Open to read them.</span>${detPend ? `<button data-approve-details="${esc(g.key)}">Accept all ${detPend}</button>` : ''}</div></summary>${det.map(section).join('')}</details>`;
+    }
+    return html;
+  }
+
+  function workPage(feature) {
+    const feat = feature || (state.feat || [...state.decisions.values()][0]?.feature || '');
+    const tickets = [...state.tickets.values()].filter(t => !feat || t.feature === feat).sort((a, b) => (a.order || 0) - (b.order || 0));
+    const done = tickets.filter(t => t.state === 'done'), dropped = tickets.filter(t => t.state === 'dropped');
+    const next = tickets.filter(t => t.state !== 'done' && t.state !== 'dropped');
+    const all = sorted().filter(d => !feat || d.feature === feat);
+    const pendingWork = all.filter(d => d.work === 'pending' && !['rejected', 'withdrawn'].includes(eff(d).status));
+    const questions = all.filter(isQuestion);
+    const goto = d => `<button data-goto-id="${esc(d.id)}">${esc(d.id)}</button>`;
+    const row = t => `<div class="t"><div class="num">${esc(t.number)}</div><div><div class="name">${esc(t.title)}</div><div class="st ${t.owed ? 'owed' : ''}">${esc(t.status || t.state)}${t.blockedBy && !/^none/i.test(t.blockedBy) ? ` · blocked by ${esc(t.blockedBy)}` : ''}</div>${(t.cites || []).length ? `<div class="cites">${t.cites.map(id => { const d = state.decisions.get(id); return d ? goto(d) : `<span class="hint">${esc(id)}</span>`; }).join('')}</div>` : ''}</div></div>`;
+    let html = `<div class="cat-head"><div class="fname">${esc(featName(feat))}</div><h2>Work</h2><div class="tools"><span class="hint">${done.length} done · ${next.length} ahead · ${pendingWork.length} not yet ticketed · ${questions.length} open question${questions.length === 1 ? '' : 's'}</span></div></div><div class="work">`;
+    html += `<h3>Not yet ticketed</h3><p class="lead">Decisions that reverse or extend what is built. Each becomes a ticket when the tooling cuts the next batch.</p>`;
+    html += pendingWork.length ? pendingWork.map(d => `<div class="d-row">${goto(d)}<span>${esc(d.title)}</span><span class="pill ${eff(d).status}">${eff(d).status}</span></div>`).join('') : '<p class="hint">Nothing waiting.</p>';
+    if (questions.length) { html += `<h3>Open questions</h3><p class="lead">Each needs a grilling before it can become work.</p>` + questions.map(d => `<div class="d-row">${goto(d)}<span>${esc(d.title)}</span></div>`).join(''); }
+    html += `<h3>Ahead</h3>` + (next.length ? next.map(row).join('') : '<p class="hint">No tickets waiting.</p>');
+    html += `<h3>Done</h3>` + (done.length ? done.map(row).join('') : '<p class="hint">Nothing yet.</p>');
+    if (dropped.length) html += `<h3>Dropped</h3>` + dropped.map(row).join('');
+    return html + '</div>';
+  }
+
+  function render() {
+    const main = $('#main'), nav = $('#navlist'), featSel = $('#feat');
+    const all = sorted();
+    const feats = [...new Set(all.map(d => d.feature))];
+    if (featSel.options.length !== feats.length + 1) { featSel.innerHTML = '<option value="">All features</option>' + feats.map(f => `<option value="${esc(f)}">${esc(featName(f))}</option>`).join(''); featSel.value = state.feat; }
+    const gs = groups();
+    if (!gs.length) { nav.innerHTML = '<div class="hint">No decisions loaded yet.</div>'; main.innerHTML = '<div class="empty">Loading.</div>'; return; }
+    if (state.cat !== 'vocab' && state.cat !== 'work' && !gs.some(g => g.key === state.cat)) state.cat = (gs.find(g => g.pend) || gs[0]).key;
+    let navHtml = '', lastF = null;
+    for (const g of gs) {
+      if (g.feature !== lastF) { navHtml += `${lastF !== null ? '</div>' : ''}<div class="feat"><div class="fname">${esc(featName(g.feature))}</div>`; lastF = g.feature; }
+      const done = !g.pend && !g.queued && (state.meta.finished && state.meta.finished[g.key]);
+      navHtml += `<button class="cat ${g.key === state.cat ? 'active' : ''}" data-goto="${esc(g.key)}"><span>${esc(g.category)}</span><span class="n ${g.pend ? 'pend' : ''}">${done ? '<span class="done">done</span> ' : ''}${g.open ? '<span class="q">' + g.open + '?</span> ' : ''}${g.pend ? g.pend + ' / ' : ''}${g.n}</span></button>`;
+    }
+    const workPend = all.filter(d => d.work === 'pending' && !['rejected', 'withdrawn'].includes(eff(d).status)).length;
+    nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'work' ? 'active' : ''}" data-goto="work"><span>Work</span><span class="n ${workPend ? 'pend' : ''}">${workPend ? workPend + ' / ' : ''}${state.tickets.size}</span></button><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>`;
+    if (state.cat === 'vocab') {
+      main.innerHTML = vocabPage();
+    } else if (state.cat === 'work') {
+      main.innerHTML = workPage(state.feat);
+    } else if (state.q) {
+      const hits = all.filter(visible);
+      main.innerHTML = `<div class="cat-head"><div class="fname">Search</div><h2>${hits.length} match${hits.length === 1 ? '' : 'es'} for "${esc(state.q)}"</h2></div>` + (hits.map(section).join('') || '<div class="empty">Nothing matches.</div>');
+    } else {
+      const i = gs.findIndex(g => g.key === state.cat);
+      const g = gs[i], prev = gs[i - 1], next = gs[i + 1];
+      main.innerHTML = categoryPage(g) + `<div class="pager">
+        ${prev ? `<button data-goto="${esc(prev.key)}">Previous: ${esc(prev.category)}</button>` : '<span></span>'}
+        ${next ? `<button data-goto="${esc(next.key)}" class="primary">Next: ${esc(next.category)}</button>` : '<span class="hint">Last category.</span>'}
+      </div>`;
+    }
+    const pendTotal = all.filter(isPending).length, openQ = all.filter(isQuestion).length, queued = [...state.verdicts.values()].filter(v => !v.applied).length;
+    const sent = state.lastSent ? ` · sent ${state.lastSent.n} to the terminal at ${state.lastSent.at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${queued ? ', waiting for it to apply' : ', applied'}` : '';
+    $('#status').textContent = `${pendTotal} waiting · ${queued} queued${openQ ? ` · ${openQ} open` : ''}${state.db ? '' : ' · offline'}${sent}`;
+    $('#menuCount').textContent = pendTotal ? String(pendTotal) : '';
+    const fa = $('#finishAll'); fa.textContent = finishLabel('all', 'Finish all'); fa.disabled = !!state.sending || !queued || !state.artifact;
+  }
+
+  // Who is ruling. The platform tells the page nothing about the viewer, so each
+  // ratifier picks their name once per browser; every verdict carries it as `by`.
+  function who() { try { return (localStorage.getItem('ssot-who') || '').trim(); } catch { return ''; } }
+  // Blocks a verdict while no name is chosen: toasts, moves focus, and returns true.
+  function needWho() { if (who()) return false; toast('Pick your name first'); $('#who').focus(); return true; }
+  const stamp = doc => ({ ...doc, at: new Date().toISOString(), applied: false, by: who() });
+  const monthDay = iso => String(iso || '').slice(5, 10);
+  const byLine = (status, by, date) => `${esc(status)}${by ? ' by ' + esc(by) : ''}${date ? ', ' + esc(monthDay(date)) : ''}`;
+  const ruledLine = d => d.ruled ? `<span class="ruled">${byLine(d.ruled.status, d.ruled.by, d.ruled.date)}</span>` : '';
+
+  async function verdict(id, kind, text, dropped) {
+    if (!state.db) return toast('Not connected: verdict not saved');
+    if (needWho()) return;
+    const doc = stamp({ verdict: kind, text: text || '' });
+    if (Array.isArray(dropped) && dropped.length) doc.dropped = dropped;
+    state.verdicts.set(id, doc); render();
+    try { await state.db.doc('verdicts/' + id).set(doc); toast(kind === 'approve' ? 'Approved' : kind === 'withdraw' ? 'Withdrawn' : kind === 'reject' ? 'Rejected' : 'Sent for a rewrite'); }
+    catch (e) { toast('Could not save: ' + (e.code || e.message)); }
+  }
+  async function undo(id) {
+    state.verdicts.delete(id); render();
+    try { await state.db.doc('verdicts/' + id).delete(); toast('Verdict removed'); } catch (e) { toast('Could not undo: ' + (e.code || e.message)); }
+  }
+
+  function rulesFor(d, g) {
+    const problem = (state.meta.specs && state.meta.specs[d ? d.feature : g.feature]) || '';
+    if (d) {
+      const sib = sorted().filter(x => x.feature === d.feature && x.category === d.category && x.id !== d.id).map(x => `- ${x.id} ${x.title}: ${x.decision}`).join('\n');
+      return `You are explaining one product decision from the Mealvana Endurance app to Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging, no bullet lists unless he asks for options. Keep it under 200 words unless he asks for more. Do not invent facts beyond the material below. If the material does not say, say so and suggest what to check.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nTHE DECISION (${d.id}, category ${d.category}):\nTitle: ${d.title}\nContext: ${d.context}\n${d.kind === 'question' ? `Open question in Lee's words: ${d.question}\n` : d.question ? `The question it answers: ${d.question}\n` : ''}Decision: ${d.decision}\nWhy: ${d.why}\nWhat else was considered: ${d.alternatives}\nWhat it touches: ${d.touches}\n${d.details ? `Implementation details: ${d.details}\n` : ''}${d.original ? `Original text before Lee's amendment: ${d.original}\nWhat Lee said: ${d.leeSaid}\n` : ''}\nSIBLING DECISIONS IN THE SAME CATEGORY:\n${sib}`;
+    }
+    const list = g.items.map(x => `- ${x.id} ${x.title} [${eff(x).status}]${x.kind === 'question' ? ' (open question: ' + x.question + ')' : ': ' + x.decision}`).join('\n');
+    return `You are discussing one category of product decisions from the Mealvana Endurance app with Lee, the product owner. Answer in plain words, short sentences, no em-dashes, no hedging. Keep answers under 250 words unless he asks for more. Refer to decisions by their id. Do not invent facts beyond the material below. If the material does not say, say so.\n\nFEATURE PROBLEM STATEMENT:\n${problem}\n\nCATEGORY: ${g.category}\nDECISIONS:\n${list}`;
+  }
+
+  async function ask(id, question, d, g) {
+    const prior = state.chats.get(id);
+    const chat = { turns: [...((prior && prior.turns) || []), { role: 'user', text: question, at: new Date().toISOString() }] };
+    state.chats.set(id, chat); state.open.add(id); state.inflight.set(id, 'Thinking.'); render();
+    const turns = [{ role: 'user', content: rulesFor(d, g) }, ...chat.turns.slice(-12).map(t => ({ role: t.role, content: t.text }))];
+    let finalText = '';
+    try {
+      const { text } = await state.sample(turns, { cache: false, modelTier: 'quick', onText: ({ text }) => { state.inflight.set(id, text); const sec = document.getElementById(id) || document.querySelector(`[data-cat="${CSS.escape(id.slice(4))}"]`); const b = sec && sec.querySelector('.thread .turn:last-child'); if (b && state.inflight.has(id)) b.textContent = text; } });
+      finalText = text;
+    } catch (e) {
+      finalText = e.text || (e.code === 'not_granted' ? 'You declined in-page Claude for this visit.' : 'Could not answer (' + (e.code || 'error') + ').');
+    }
+    state.inflight.delete(id);
+    const done = { turns: [...chat.turns, { role: 'assistant', text: finalText, at: new Date().toISOString() }] };
+    state.chats.set(id, done);
+    render();
+    if (state.db) state.db.doc('chats/' + chatDocId(id)).set({ key: id, turns: done.turns }).catch(() => {});
+  }
+
+  async function suggest(g) {
+    const id = 'cat:' + g.key;
+    const chat = state.chats.get(id);
+    if (!chat || !chat.turns.length) return toast('Nothing to work from yet');
+    state.inflight.set(id, 'Drafting changes.'); render();
+    const convo = chat.turns.map(t => `${t.role === 'user' ? 'LEE' : 'CLAUDE'}: ${t.text}`).join('\n\n');
+    const prompt = `${rulesFor(null, g)}\n\nBelow is the conversation Lee had about this category. Turn it into a list of concrete changes to the decision record. Reply with only a JSON array. Each item is an object with: "op" ("add", "edit" or "delete"), "id" (the decision id for edit or delete, omit for add), "title" (plain words), and for add or edit: "context" (2 to 4 sentences), "decision" (1 to 3 sentences), "why" (1 to 2 sentences); for delete: "reason" (one sentence). Only include changes Lee asked for or clearly agreed to. If nothing changed, reply with []. Short sentences, no em-dashes, no hedging.\n\nCONVERSATION:\n${convo}`;
+    try {
+      const items = await state.sample.json(prompt, { cache: false, modelTier: 'quick' });
+      const arr = Array.isArray(items) ? items : [];
+      if (!arr.length) toast('No changes found');
+      const now = new Date().toISOString();
+      for (const c of arr.slice(0, 20)) {
+        const vid = 'change-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+        const doc = stamp({ verdict: 'change', scope: g.key, feature: g.feature, category: g.category, change: c, accepted: false });
+        state.verdicts.set(vid, doc);
+        if (state.db) state.db.doc('verdicts/' + vid).set(doc).catch(() => {});
+      }
+    } catch (e) { toast('Could not draft changes (' + (e.code || 'error') + ').'); }
+    state.inflight.delete(id); render();
+  }
+
+  async function send(scope, queued) {
+    const n = Object.keys(queued).length;
+    const payload = JSON.stringify({ sentAt: new Date().toISOString(), scope, verdicts: queued }, null, 2);
+    try { sessionStorage.setItem('ssot-open', JSON.stringify([...state.open])); } catch {}
+    state.sending = scope; render();
+    let ok = false;
+    try {
+      await state.artifact.publish({ 'verdicts.json': { content: payload, contentType: 'application/json' } });
+      ok = true;
+      state.lastSent = { n, at: new Date(), scope };
+      toast(`Sent ${n} verdict${n === 1 ? '' : 's'} to the terminal`);
+    } catch (e) {
+      if (e.code === 'conflict') toast('Someone published first. The page will reload.');
+      else toast('Saved, but could not reach the terminal. Say "done" there.');
+    }
+    state.sending = null; state.sentFlash = ok ? scope : null; render();
+    if (ok) setTimeout(() => { if (state.sentFlash === scope) { state.sentFlash = null; render(); } }, 4000);
+    return ok;
+  }
+  function finishLabel(scope, idle) {
+    if (state.sending === scope) return 'Sending…';
+    if (state.sentFlash === scope) return 'Sent ✓';
+    return idle;
+  }
+  async function finish() {
+    const queued = Object.fromEntries([...state.verdicts].filter(([, v]) => !v.applied));
+    if (!Object.keys(queued).length) return toast('Nothing queued');
+    return send('all', queued);
+  }
+  function queuedForScope(scope) {
+    const out = {};
+    for (const [id, v] of state.verdicts) {
+      if (v.applied) continue;
+      if (isChangeVerdict(v)) { if (v.scope === scope) out[id] = v; continue; }
+      const d = state.decisions.get(id); if (d && catKey(d) === scope) out[id] = v;
+    }
+    return out;
+  }
+
+  $('#main').addEventListener('click', ev => {
+    const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.goto) { state.cat = b.dataset.goto; render(); window.scrollTo({ top: 0 }); return; }
+    if (b.dataset.gotoId) {
+      const d = state.decisions.get(b.dataset.gotoId); if (!d) return;
+      state.cat = catKey(d); state.q = ''; $('#q').value = ''; if (d.detail) state.open.add('det:' + catKey(d)); render();
+      document.getElementById(d.id)?.scrollIntoView({ block: 'start' }); return;
+    }
+    if (b.dataset.approveAll !== undefined) {
+      groups().find(g => g.key === b.dataset.approveAll)?.items.filter(d => isPending(d) && visible(d) && !d.detail).forEach(d => verdict(d.id, 'approve'));
+      return;
+    }
+    if (b.dataset.approveDetails !== undefined) {
+      ev.preventDefault();
+      groups().find(g => g.key === b.dataset.approveDetails)?.items.filter(d => isPending(d) && visible(d) && d.detail).forEach(d => verdict(d.id, 'approve'));
+      return;
+    }
+    if (b.dataset.finishCat !== undefined) return finishScope(b.dataset.finishCat);
+    const te = b.closest('.entry[data-term]');
+    if (te && b.dataset.act === 'term-drop') { const vid = te.dataset.term; state.verdicts.delete(vid); render(); state.db.doc('verdicts/' + vid).delete().catch(() => {}); return; }
+    const chg = b.closest('.change');
+    if (chg) {
+      const vid = chg.dataset.change, v = state.verdicts.get(vid); if (!v) return;
+      if (b.dataset.act === 'change-accept') { if (needWho()) return; const patch = { accepted: true, by: who() }; state.verdicts.set(vid, { ...v, ...patch }); render(); state.db.doc('verdicts/' + vid).update(patch).catch(() => {}); }
+      if (b.dataset.act === 'change-drop') { state.verdicts.delete(vid); render(); state.db.doc('verdicts/' + vid).delete().catch(() => {}); }
+      return;
+    }
+    const disc = b.closest('.discuss');
+    if (disc) {
+      const g = groups().find(x => x.key === disc.dataset.cat); if (!g) return;
+      if (b.dataset.act === 'ask') { const ta = disc.querySelector('textarea[data-chat]'); const q = ta.value.trim(); if (!q) return; ta.value = ''; return ask('cat:' + g.key, q, null, g); }
+      if (b.dataset.act === 'suggest') return suggest(g);
+      return;
+    }
+    const sec = b.closest('section.d'); if (!sec) return;
+    const d = state.decisions.get(sec.dataset.id); if (!d) return;
+    const e = eff(d), act = b.dataset.act;
+    if (act === 'approve') return verdict(d.id, e.status === 'approved' ? 'withdraw' : 'approve');
+    if (act === 'reject' || act === 'amend') { sec.querySelectorAll('.sub-form').forEach(f => f.classList.toggle('open', f.dataset.form === act && !f.classList.contains('open'))); const ta = sec.querySelector(`.sub-form[data-form=${act}] textarea`); if (ta) ta.focus(); return; }
+    if (act === 'close') { sec.querySelectorAll('.sub-form').forEach(f => f.classList.remove('open')); return; }
+    if (act === 'reject-send') return verdict(d.id, 'reject', sec.querySelector('.sub-form[data-form=reject] textarea').value.trim());
+    if (act === 'amend-send') {
+      const form = sec.querySelector('.sub-form[data-form=amend]');
+      const t = form.querySelector('textarea').value.trim();
+      const dropped = [...form.querySelectorAll('input[name=drop]:checked')].map(i => parseInt(i.value, 10));
+      if (!t && !dropped.length) return toast('Tick a clause or type something first');
+      return verdict(d.id, 'amend', t, dropped);
+    }
+    if (act === 'undo') return undo(d.id);
+    if (act === 'ask') { const ta = sec.querySelector('textarea[data-chat]'); const q = ta.value.trim(); if (!q) return; ta.value = ''; return ask(d.id, q, d, null); }
+  });
+  async function finishScope(scope) {
+    const queued = queuedForScope(scope);
+    if (!Object.keys(queued).length) return toast('Nothing queued here');
+    const ok = await send(scope, queued);
+    if (ok && state.db) { const f = { ...(state.meta.finished || {}), [scope]: new Date().toISOString() }; state.db.doc('meta/state').update({ finished: f }).catch(() => {}); }
+  }
+  $('#main').addEventListener('submit', async ev => {
+    const f = ev.target.closest('form[data-form=term]'); if (!f) return; ev.preventDefault();
+    const fd = new FormData(f); const term = String(fd.get('term') || '').trim(); const definition = String(fd.get('definition') || '').trim();
+    if (!term || !definition || !state.db) return;
+    const vid = 'term-' + Date.now().toString(36);
+    if (needWho()) return;
+    const doc = stamp({ verdict: 'term', term, area: String(fd.get('area') || '').trim(), definition, avoid: String(fd.get('avoid') || '').trim() });
+    state.verdicts.set(vid, doc); f.reset(); render();
+    try { await state.db.doc('verdicts/' + vid).set(doc); toast('Queued'); } catch (e) { toast('Could not save: ' + (e.code || e.message)); }
+  });
+  $('#main').addEventListener('toggle', ev => {
+    const t = ev.target; if (!t.closest) return;
+    let id = null;
+    if (t.classList.contains('more')) id = 'more:' + t.closest('section.d').dataset.id;
+    else if (t.classList.contains('detail-block')) id = 'det:' + t.dataset.det;
+    else { const s = t.closest('section.d') || t.closest('.discuss'); if (!s) return; id = s.dataset.id || ('cat:' + s.dataset.cat); }
+    if (t.open) state.open.add(id); else state.open.delete(id);
+  }, true);
+  function setNav(open) { document.body.classList.toggle('nav-open', open); $('#menu').setAttribute('aria-expanded', open ? 'true' : 'false'); }
+  $('#menu').addEventListener('click', () => setNav(!document.body.classList.contains('nav-open')));
+  $('#scrim').addEventListener('click', () => setNav(false));
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') setNav(false); });
+  $('#nav').addEventListener('click', ev => { const b = ev.target.closest('button[data-goto]'); if (!b) return; state.cat = b.dataset.goto; state.q = ''; $('#q').value = ''; setNav(false); render(); window.scrollTo({ top: 0 }); });
+  $('#q').addEventListener('input', e => { state.q = e.target.value.trim().toLowerCase(); render(); });
+  $('#feat').addEventListener('change', e => { state.feat = e.target.value; render(); });
+  $('#pendingOnly').addEventListener('change', e => { state.pendingOnly = e.target.checked; try { localStorage.setItem('ssot-pending', e.target.checked ? '1' : ''); } catch {} render(); });
+  $('#finishAll').addEventListener('click', () => finish());
+  try { state.pendingOnly = !!localStorage.getItem('ssot-pending'); $('#pendingOnly').checked = state.pendingOnly; } catch {}
+  try { (JSON.parse(sessionStorage.getItem('ssot-open') || '[]')).forEach(id => state.open.add(id)); } catch {}
+  try { state.cat = localStorage.getItem('ssot-cat') || ''; } catch {}
+  // Every database change re-renders the column. Drafts, open forms, ticked clauses, focus and
+  // scroll must survive that, or Lee loses what he was typing.
+  function formKey(el) {
+    const sec = el.closest('section.d, .discuss, form[data-form=term]');
+    const scope = sec ? (sec.dataset.id || sec.dataset.cat || 'term') : 'page';
+    const form = el.closest('.sub-form'); const inForm = form ? form.dataset.form : (el.closest('.row') ? 'chat' : el.name || '');
+    return `${scope}|${inForm}|${el.name || ''}`;
+  }
+  function snapshotDrafts() {
+    const drafts = new Map(), open = [], ticked = [];
+    for (const el of document.querySelectorAll('#main textarea, #main input[type=text], #main input:not([type])')) if (el.value) drafts.set(formKey(el), el.value);
+    for (const f of document.querySelectorAll('#main .sub-form.open')) open.push(f.closest('section.d').dataset.id + '|' + f.dataset.form);
+    for (const c of document.querySelectorAll('#main input[name=drop]:checked')) ticked.push(c.closest('section.d').dataset.id + '|' + c.value);
+    const a = document.activeElement; const focus = a && a.closest && a.closest('#main') && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT') ? { key: formKey(a), start: a.selectionStart, end: a.selectionEnd } : null;
+    return { drafts, open, ticked, focus, scrollY: window.scrollY };
+  }
+  function restoreDrafts(s) {
+    for (const el of document.querySelectorAll('#main textarea, #main input[type=text], #main input:not([type])')) { const v = s.drafts.get(formKey(el)); if (v !== undefined) el.value = v; }
+    for (const k of s.open) { const [id, form] = k.split('|'); const f = document.querySelector(`#main section.d[data-id="${CSS.escape(id)}"] .sub-form[data-form="${form}"]`); if (f) f.classList.add('open'); }
+    for (const k of s.ticked) { const [id, n] = k.split('|'); const c = document.querySelector(`#main section.d[data-id="${CSS.escape(id)}"] input[name=drop][value="${n}"]`); if (c) c.checked = true; }
+    if (s.focus) { for (const el of document.querySelectorAll('#main textarea, #main input')) if (formKey(el) === s.focus.key) { el.focus({ preventScroll: true }); try { el.setSelectionRange(s.focus.start, s.focus.end); } catch {} break; } }
+    window.scrollTo({ top: s.scrollY });
+  }
+  const _render = render; render = function () { const s = snapshotDrafts(); _render(); restoreDrafts(s); try { localStorage.setItem('ssot-cat', state.cat); } catch {} };
+
+  (function wireWho() {
+    const sel = $('#who');
+    const saved = who();
+    if ([...sel.options].some(o => o.value === saved)) sel.value = saved; else if (saved) { try { localStorage.removeItem('ssot-who'); } catch {} }
+    sel.addEventListener('change', () => { try { sel.value ? localStorage.setItem('ssot-who', sel.value) : localStorage.removeItem('ssot-who'); } catch {} });
+  })();
+
+  render();
+
+  (async () => {
+    const [db, sample, artifact] = await Promise.all([claude.use('db'), claude.use('sample'), claude.use('artifact')]);
+    state.sample = sample; state.artifact = artifact; state.db = db;
+    if (!db) { $('#status').textContent = 'No database in this view. Nothing can be saved here.'; render(); return; }
+    db.doc('meta/state').onSnapshot(s => { state.meta = s.data() || {}; render(); }, () => {});
+    db.collection('decisions').onSnapshot(s => { state.decisions = new Map(s.docs.map(x => [x.id, { id: x.id, ...x.data() }])); render(); }, e => { $('#status').textContent = 'Lost the decisions stream: ' + e.code; });
+    db.collection('vocab').onSnapshot(s => { state.vocab = new Map(s.docs.map(x => [x.id, x.data()])); state.termRe = null; render(); }, () => {});
+    db.collection('tickets').onSnapshot(s => { state.tickets = new Map(s.docs.map(x => [x.id, { id: x.id, ...x.data() }])); render(); }, () => {});
+    db.collection('verdicts').onSnapshot(s => { state.verdicts = new Map(s.docs.map(x => [x.id, x.data()])); render(); }, () => {});
+    db.collection('chats').onSnapshot(s => { const next = new Map(s.docs.map(x => { const d = x.data(); return [d.key || x.id, d]; })); for (const id of state.inflight.keys()) if (state.chats.has(id)) next.set(id, state.chats.get(id)); state.chats = next; render(); }, () => {});
+  })();
+})();
+</script>
