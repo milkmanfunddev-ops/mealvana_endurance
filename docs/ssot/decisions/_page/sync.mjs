@@ -11,8 +11,13 @@
 //   node sync.mjs apply <verdicts.json> <proposals.md> <ssot.md>
 //   node sync.mjs pending <decisions.md>                -> count of proposed/amended
 //   node sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>
+//   node sync.mjs triage <verdicts.json> --out <dir>   -> clear.json (apply now), words.json (synthesise first), rewrites.json (apply after yes)
+//   node sync.mjs next-id <proposals.md> <ssot.md>     -> the next free id
+//   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing)
+//   node sync.mjs asset <assets.json> <path> <asset id> -> record one upload with the file's hash
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const HEAD_KEYS = ['feature', 'feature name', 'last extracted', 'artifact'];
 const PARTS = [
@@ -229,7 +234,7 @@ export function ticketDocument(feature, file, text, idPrefix = '') {
   return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: line('Blocked by'), next: line('Next'), cites, file, order: parseInt(num, 10) || 0 };
 }
 
-function nextId(proposals, ssot) {
+export function nextId(proposals, ssot) {
   const ids = [...proposals.decisions, ...ssot.decisions].map(d => d.id);
   const prefix = (ids[0] || 'x-000').split('-')[0];
   const max = ids.reduce((m, id) => Math.max(m, parseInt(id.split('-')[1], 10) || 0), 0);
@@ -346,6 +351,49 @@ export function answers(questionId, decisionId, proposals, ssot, today = new Dat
 }
 
 // ---- CLI ----
+
+/**
+ * Split the page's verdicts into what a skill applies at once and what it must
+ * first say back in the terminal. Clear-cut: approve, withdraw, reject with a
+ * plain reason. With words: amend, an accepted change card, a new term, and a
+ * rejection whose reason is really a question. Anything else (a change card
+ * that was dismissed, an unknown verdict) is `other` and is only reported.
+ */
+export function triage(verdicts) {
+  const clear = {}, words = {}, other = {};
+  const withWords = (id, v, pile) => { words[id] = { ...v, pile }; };
+  for (const [id, v] of Object.entries(verdicts)) {
+    const asksQuestion = String(v.text || '').includes('?');
+    if (v.verdict === 'approve' || v.verdict === 'withdraw') clear[id] = v;
+    else if (v.verdict === 'reject' && !asksQuestion) clear[id] = v;
+    else if (v.verdict === 'reject') withWords(id, v, 'a rejection that asks a question');
+    else if (v.verdict === 'amend') withWords(id, v, 'a rewrite in the ratifier\'s words');
+    else if (v.verdict === 'change' && v.accepted) withWords(id, v, 'an accepted change card');
+    else if (v.verdict === 'term') withWords(id, v, 'a new glossary term');
+    else other[id] = v;
+  }
+  return { clear, words, other };
+}
+
+// The assets map (`_page/assets.json`) keys a repo image path to the artifact
+// asset it was uploaded as. New entries are {id, sha256}; the first entries
+// were bare ids and still resolve. An image is uploaded again only when its
+// hash no longer matches.
+const sha256 = path => createHash('sha256').update(readFileSync(path)).digest('hex');
+export function assetId(assets, path) { const a = assets[path]; return !a ? '' : typeof a === 'string' ? a : a.id || ''; }
+export function staleImages(assets, paths) {
+  const out = [];
+  for (const path of paths) {
+    if (!existsSync(path)) { out.push({ path, why: 'file missing' }); continue; }
+    const a = assets[path];
+    if (!a) out.push({ path, why: 'new' });
+    else if (typeof a === 'object' && a.sha256 && a.sha256 !== sha256(path)) out.push({ path, why: 'changed' });
+  }
+  return out;
+}
+export function recordAsset(assets, path, id) { assets[path] = { id, sha256: sha256(path) }; return assets; }
+const loadAssets = path => path && existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
+
 if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop())) {
   const [cmd, ...args] = process.argv.slice(2);
   if (cmd === 'export') {
@@ -368,14 +416,14 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const { mkdirSync } = await import('node:fs');
     const files = [], opts = {};
     for (let k = 0; k < args.length; k++) { if (args[k].startsWith('--')) { opts[args[k].slice(2)] = args[++k]; } else files.push(args[k]); }
-    const assets = opts.assets && existsSync(opts.assets) ? JSON.parse(readFileSync(opts.assets, 'utf8')) : {};
+    const assets = loadAssets(opts.assets);
     const { resolve } = await import('node:path'); const out = resolve(opts.out || 'docs-out'); mkdirSync(out, { recursive: true });
     let order = 0; const entries = [];
     for (const f of files) {
       const d = parse(readFileSync(f, 'utf8'));
       for (const doc of toDocuments(d, { order })) {
         const { id, ...body } = doc;
-        body.imageAssetId = body.image && assets[body.image] ? assets[body.image] : '';
+        body.imageAssetId = body.image ? assetId(assets, body.image) : '';
         writeFileSync(`${out}/${id}.json`, JSON.stringify(body, null, 2));
         entries.push({ op: 'set', collection: 'decisions', doc_id: id, file_path: `${out}/${id}.json` });
       }
@@ -396,7 +444,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     writeFileSync(`${out}/_batches.json`, JSON.stringify(batches, null, 2));
     const images = [...new Set(entries.map(e => JSON.parse(readFileSync(e.file_path, 'utf8')).image).filter(Boolean))];
     writeFileSync(`${out}/_images.json`, JSON.stringify(images, null, 2));
-    console.log(`${entries.length} documents in ${batches.length} batches; ${images.length} distinct images (${images.filter(i => !assets[i]).length} not yet uploaded)`);
+    console.log(`${entries.length} documents in ${batches.length} batches; ${images.length} distinct images (${staleImages(assets, images).length} to upload)`);
   } else if (cmd === 'terms') {
     // terms <verdicts.json> <CONTEXT.md>: append accepted `term` verdicts to the glossary
     // under their area heading (created at the end of ## Language if missing).
@@ -446,7 +494,39 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const [feature, dir] = args; const { readdirSync } = await import('node:fs');
     const docs = readdirSync(dir).filter(x => /^\d+-.*\.md$/.test(x)).sort().map(f => ticketDocument(feature, `${dir}/${f}`, readFileSync(`${dir}/${f}`, 'utf8')));
     process.stdout.write(JSON.stringify(docs, null, 2));
+  } else if (cmd === 'triage') {
+    // triage <verdicts.json> --out <dir>: clear.json for apply, words.json for the terminal.
+    const [vf, flag, dir] = args;
+    const raw = JSON.parse(readFileSync(vf, 'utf8')); const verdicts = raw.verdicts || raw;
+    const t = triage(verdicts);
+    if (flag !== '--out' || !dir) { console.error('usage: sync.mjs triage <verdicts.json> --out <dir>'); process.exit(2); }
+    const out = dir;
+    const { mkdirSync } = await import('node:fs'); mkdirSync(out, { recursive: true });
+    writeFileSync(`${out}/clear.json`, JSON.stringify({ sentAt: raw.sentAt || null, verdicts: t.clear }, null, 2));
+    writeFileSync(`${out}/words.json`, JSON.stringify({ sentAt: raw.sentAt || null, verdicts: t.words }, null, 2));
+    // rewrites.json is the part of words.json that `apply` may take after the ratifier's yes:
+    // amend and accepted change verdicts. A question-shaped reject or a term never goes to apply.
+    const rewrites = Object.fromEntries(Object.entries(t.words).filter(([, v]) => v.verdict === 'amend' || v.verdict === 'change'));
+    writeFileSync(`${out}/rewrites.json`, JSON.stringify({ sentAt: raw.sentAt || null, verdicts: rewrites }, null, 2));
+    const n = o => Object.keys(o).length;
+    console.log(`${n(t.clear)} clear, ${n(t.words)} with words, ${n(t.other)} other` + (n(t.other) ? ` (${Object.keys(t.other).join(', ')})` : ''));
+  } else if (cmd === 'next-id') {
+    const [pf, sf] = args;
+    const proposals = parse(readFileSync(pf, 'utf8'));
+    const ssot = sf && existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { decisions: [] };
+    console.log(nextId(proposals, ssot));
+  } else if (cmd === 'images') {
+    // images <assets.json> <_images.json>: which images prepare found that still need an upload.
+    const [af, imf] = args;
+    const assets = loadAssets(af);
+    process.stdout.write(JSON.stringify(staleImages(assets, JSON.parse(readFileSync(imf, 'utf8'))), null, 2));
+  } else if (cmd === 'asset') {
+    // asset <assets.json> <path> <asset id>: record one upload, keyed by path and hash.
+    const [af, path, id] = args;
+    const assets = loadAssets(af);
+    recordAsset(assets, path, id);
+    writeFileSync(af, JSON.stringify(assets, null, 2) + '\n');
   } else {
-    console.error('usage: sync.mjs export|apply|answers|pending|prepare|terms|question-first|fold|tickets ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset ...'); process.exit(2);
   }
 }

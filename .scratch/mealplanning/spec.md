@@ -90,86 +90,81 @@ row the team reads.
 
 **The Doll is a view, never a copy.** A single server-side builder assembles it per request from
 the canonical records. The only persistence it owns is the existing memory table. No profile
-field is stored twice.
+field is stored twice. (mp-020)
 
 **Both modes read the full Doll.** The context block meal-planning mode already injects every
 turn is injected in general mode too, extended with three lines: LIKES from Meal feedback, GOALS
-from the onboarding survey, and SITUATION. Cost is roughly 1.5k input tokens per turn on Haiku
-and is accepted.
+from the onboarding survey, and SITUATION. (mp-021)
 
 **One persona, Intent per exchange, no classifier.** The two conversation kinds remain as a tag
 for history and for the opener logic. All tools are available in both kinds; the prompt carries
-Intent-specific sections. No pre-turn classification call.
+Intent-specific sections. No pre-turn classification call. (mp-002, mp-003)
 
 **History is capped.** Each turn replays at most the last 20 messages. When the cap bites, the
 conversation's episode Memory is prepended once so earlier context survives in one sentence.
 
 **Memory has three writers.** (1) The person says "remember this" and the existing remember tool
 fires; the prompt is sharpened so this is reliable. (2) The model calls the remember tool on its
-own when the margin-note rule is met. (3) Lazy extraction: when a conversation opens, the
-previous conversation of that person that has not yet been read back is fed to one Haiku call
-with the margin-note rule and a strict schema of zero to three sentences plus one episode
-sentence; the sentences are written as Memories and the episode as an episode Memory. A
-conversation is marked as read back so it is never extracted twice. No scheduler.
+own when the margin-note rule is met. (3) A background extraction after a conversation ends.
+(mp-024, mp-025)
 
 **The margin-note rule is the definition of a Memory** and the literal instruction to the
 extractor: one sentence a good dietitian would write in the margin of the person's file, only
 if it changes how Vana plans for them next time. Not what was asked, not this week's plan, not
-anything already a Fact.
+anything already a Fact. (mp-022)
 
 **Dedupe on write, no contradiction handling.** Before inserting, the new sentence's embedding
 is compared with the person's existing Memories; above a near-identical threshold the write is
 skipped and the existing row's confirmed date is refreshed. Conflicting Memories both stay;
 each carries its date in the prompt and the model weighs recency. A supersedes mechanism is
-deferred until a real user hits a real contradiction.
+deferred until a real user hits a real contradiction. (mp-028, mp-029)
 
 **Nothing is announced.** Extracted Memories produce no card and no mention. The in-chat
 "remembered" card stays for the explicit tool. The flat list in Vana settings is the audit
-trail.
+trail. (mp-027)
 
 **Kinds stay in code, not in the product.** The memory table's kinds remain for the keyed
 setting mechanism (batch cooking, coverage scope, budget, pantry) and for the episode summary.
 The person sees one flat list of sentences with source and date. The glossary word "Decision"
-is retired; a keyed Memory is simply a Memory Vana honours without asking.
+is retired; a keyed Memory is simply a Memory Vana honours without asking. (mp-037)
 
 **Meal feedback is read, not moved.** The existing thumbs table is the LIKES source. No new
 preferences table. Anything the person says about food in words is a Memory. The fuelling-product
-preferences table and its screens are untouched.
+preferences table and its screens are untouched. (mp-023)
 
 **No inference from behaviour.** Swaps, skips, and repeated logs do not write Memories. The
 weekly debrief, which already distils learnings with the person in the loop, is the only
-behaviour-derived writer.
+behaviour-derived writer. (mp-030)
 
 **Home location becomes a Fact.** Three fields on the user record: home city, coordinates,
 timezone. A profile tool lets Vana set them when the person mentions where they live. Weather
-and Kroger coverage key off home location when present and fall back to race location.
+and Kroger coverage key off home location when present and fall back to race location. (mp-257)
 
 **Situation travels with each message and is never stored.** The client sends the route and the
 primary entity id and date for that screen. The server resolves ids into one sentence. The
 screen-to-entity table is: Plan tab (date, plan), meal detail (meal), fuel log and current plan
 (activity), event screens (event), meal-log screens (date, slot), main tabs (date); every other
-screen sends route only.
+screen sends route only. (mp-043, mp-044)
 
 **The sheet is a design-bearing widget.** A component spec is drafted in the QA repo from the
 existing glass surface and tab-bar tokens, synced with the design-sync process, then implemented
 once under its spec name and composed by the shell. It opens over the current screen, keeps one
 ambient general conversation per person per day, and offers a full-screen affordance that opens
-the existing chat route. It is hidden on auth, onboarding, privacy consent, paywall, force
-upgrade, and all Vana routes.
+the existing chat route. (mp-259, mp-058, mp-265)
 
 **Gating follows the app.** No Vana-specific gate. The free-trial change is a separate effort;
-until it lands the existing Pro gate applies to the sheet as it does to the chat routes.
+until it lands the existing Pro gate applies to the sheet as it does to the chat routes. (mp-266)
 
 **Feedback is already a tool.** The save-feedback tool writes sentiment, an about-field, the
 message, and the conversation to the feedback table. This spec's only feedback work is verifying
 it live on dev and fixing what that finds. The bug-report card into Wiredash stays for anything
-needing a screenshot.
+needing a screenshot. (mp-248)
 
 **Model stays Haiku.** Every eval case records input and output tokens so a model comparison can
-be made later with numbers.
+be made later with numbers. (mp-018)
 
 **No new machine learning.** Embedding recall is the retrieval pattern already in place. No
-trained preference model, no orchestration framework change.
+trained preference model, no orchestration framework change. (mp-040)
 
 ## Testing Decisions
 

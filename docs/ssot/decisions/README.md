@@ -9,9 +9,11 @@ from `../mealvana_endurance_qa` never touches it.
 
 ## Fresh clone
 
-Everything here runs from a checkout of this repo. Nothing reads a home directory, a user
-name or a session id; every path is repo-relative, and the page's data lives in the artifact's
-own database, not on anyone's laptop.
+Everything here runs from a checkout of this repo. Nothing reads a user name or a session id;
+every path is repo-relative, and the page's data lives in the artifact's own database, not on
+anyone's laptop. The one thing read from the home directory is Matt Pocock's skills plugin in
+Claude Code's plugin cache, which the -lee skills follow at run time (`MATT_SKILLS_ROOT`
+points elsewhere if the cache lives elsewhere).
 
 1. Install Node 20 or newer. The sync module is plain ESM with no dependencies.
 2. Test: `node --test docs/ssot/decisions/_page/sync.test.mjs` (all cases must pass).
@@ -146,6 +148,16 @@ seeded into the `tickets` collection by `prepare --tickets <feature>=<issues dir
 blockers and next line come from the three header lines every ticket carries, and every `mp-NNN`
 mentioned in a ticket becomes a link back to the decision.
 
+## Skills
+
+`/ssot` in `.claude/skills/ssot/` opens the page and applies verdicts; `/ssot backfill <feature>`
+mines a feature's spec, tickets, ADRs and docs into proposals. Its `prologue.md` and `epilogue.md`
+are the steps every -lee skill runs before and after Matt Pocock's skill of the same name, and
+`matt.mjs <name>` prints the path of Matt's skill in the plugin cache (newest version; a missing
+file exits 1 with the path it looked for). Tests: `node --test .claude/skills/ssot/matt.test.mjs`.
+The -lee skills themselves (`/grill-with-docs-lee`, `/to-spec-lee`, `/to-tickets-lee`,
+`/implement-lee`) arrive with tickets 04, 05, 06 and 10 in `.scratch/ssot/issues/`.
+
 ## Sync module
 
 `_page/sync.mjs` exports `parse`, `serialize` (byte-identical round trip), `apply` (verdicts from
@@ -163,7 +175,23 @@ node docs/ssot/decisions/_page/sync.mjs question-first <decisions.md>...   # lif
 node docs/ssot/decisions/_page/sync.mjs fold <plan.json> <proposals.md> <ssot.md>   # combine proposals per the plan
 node docs/ssot/decisions/_page/sync.mjs tickets <feature> <issues dir>   # ticket documents as JSON
 node docs/ssot/decisions/_page/sync.mjs prepare <decisions.md>... --assets <assets.json> --tickets <feature>=<dir> --out <dir>
+node docs/ssot/decisions/_page/sync.mjs triage <verdicts.json> --out <dir>   # clear.json to apply now, words.json to synthesise first, rewrites.json to apply after the yes
+node docs/ssot/decisions/_page/sync.mjs next-id <proposals.md> <ssot.md>     # the next free id across both files
+node docs/ssot/decisions/_page/sync.mjs images <assets.json> <_images.json>  # images still to upload: new, changed, file missing
+node docs/ssot/decisions/_page/sync.mjs asset <assets.json> <path> <asset id> # record one upload, keyed by path and hash
 ```
+
+`triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with
+a plain reason go to `clear.json`; a rewrite, an accepted change card, a new term, and a rejection
+whose reason contains a question mark go to `words.json`; anything else (a dismissed change card)
+is only counted. `rewrites.json` is the amend and change subset of `words.json`, the only part
+`apply` ever takes, and only after the ratifier has said yes to the synthesis.
+
+`_page/assets.json` maps a repo image path to the artifact asset it was uploaded as. Entries are
+`{"id", "sha256"}` (the first entries are bare ids and still resolve). `prepare` writes
+`_images.json` beside its output; `images` lists which of those need an upload, and `asset`
+records one after `upload_asset` returns its id. An image is uploaded again only when its hash
+changed.
 
 A fold plan is `[{from: [ids], into: {title, question, context, decision, why, alternatives, touches, details?, detail?, work?}}]`.
 Only proposed or amended cards fold; anything with a verdict is refused. After a fold, delete the

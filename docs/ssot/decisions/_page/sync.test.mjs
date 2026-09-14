@@ -9,7 +9,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, questionFirst, fold, clauses, toDocuments, ticketDocument } from './sync.mjs';
+import { parse, serialize, apply, answers, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset } from './sync.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, 'sync.mjs');
@@ -351,4 +351,74 @@ test('a page document says who ruled and when, from its last verdict line', () =
   assert.match(serialize(s2), /^> 2026-09-14 removed from the category discussion on 2026-09-14 by Xuan: stale: numbers moved$/m);
   assert.deepEqual(toDocuments(p2)[0].ruled, { status: 'edited', by: 'Xuan', date: '2026-09-14' });
   assert.deepEqual(toDocuments(s2)[0].ruled, { status: 'removed', by: 'Xuan', date: '2026-09-14' });
+});
+
+test('triage splits verdicts into clear-cut ones and ones carrying the ratifier\'s words', () => {
+  const verdicts = {
+    'sm-001': { verdict: 'approve', at, by: 'Lee' },
+    'sm-002': { verdict: 'withdraw', at, by: 'Lee' },
+    'sm-003': { verdict: 'reject', text: 'too early', at, by: 'Lee' },
+    'sm-004': { verdict: 'reject', text: 'why not the other way?', at, by: 'Lee' },
+    'sm-005': { verdict: 'amend', text: 'one height only', dropped: [2], at, by: 'Lee' },
+    'change-1': { verdict: 'change', accepted: true, change: { op: 'add', title: 'X' }, at, by: 'Lee' },
+    'change-2': { verdict: 'change', accepted: false, change: { op: 'add', title: 'Y' }, at, by: 'Lee' },
+    'term-1': { verdict: 'term', term: 'Moment', definition: 'A time Vana speaks first.', at, by: 'Lee' },
+  };
+  const t = triage(verdicts);
+  assert.deepEqual(Object.keys(t.clear), ['sm-001', 'sm-002', 'sm-003']);
+  assert.deepEqual(Object.keys(t.words), ['sm-004', 'sm-005', 'change-1', 'term-1']);
+  assert.deepEqual(Object.keys(t.other), ['change-2']);
+  assert.equal(t.words['sm-004'].pile, 'a rejection that asks a question');
+  // The CLI writes the two piles as files apply and terms can take as they are.
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  writeFileSync(join(dir, 'verdicts.json'), JSON.stringify({ sentAt: at, verdicts }));
+  const out = execFileSync('node', [cli, 'triage', join(dir, 'verdicts.json'), '--out', dir], { encoding: 'utf8' });
+  assert.match(out, /3 clear, 4 with words, 1 other/);
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(dir, 'clear.json'), 'utf8')).verdicts), ['sm-001', 'sm-002', 'sm-003']);
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(dir, 'words.json'), 'utf8')).verdicts), ['sm-004', 'sm-005', 'change-1', 'term-1']);
+  // Only rewrites reach apply after the yes; a question-shaped reject never lands in the record.
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(dir, 'rewrites.json'), 'utf8')).verdicts), ['sm-005', 'change-1']);
+});
+
+test('next-id counts past both files and never reuses a number', () => {
+  const proposals = parse(fixture), ssot = emptySsot();
+  assert.equal(nextId(proposals, ssot), 'sm-003');
+  apply({ 'sm-002': { verdict: 'approve', at } }, proposals, ssot);
+  assert.equal(nextId(proposals, ssot), 'sm-003');
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  writeFileSync(join(dir, 'p.md'), serialize(proposals)); writeFileSync(join(dir, 's.md'), serialize(ssot));
+  assert.equal(execFileSync('node', [cli, 'next-id', join(dir, 'p.md'), join(dir, 's.md')], { encoding: 'utf8' }).trim(), 'sm-003');
+  // A feature with no record yet counts from its proposals alone.
+  assert.equal(execFileSync('node', [cli, 'next-id', join(dir, 'p.md'), join(dir, 'missing.md')], { encoding: 'utf8' }).trim(), 'sm-002');
+});
+
+test('an image uploads once and again only when the file changes', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const a = join(dir, 'a.png'), b = join(dir, 'b.png');
+  writeFileSync(a, 'AAA'); writeFileSync(b, 'BBB');
+  // The old shape (path -> id) still resolves and is never re-uploaded on its own.
+  const assets = { [a]: '0123456789abcdef0123456789abcdef' };
+  assert.equal(assetId(assets, a), '0123456789abcdef0123456789abcdef');
+  assert.deepEqual(staleImages(assets, [a, b, join(dir, 'gone.png')]), [
+    { path: b, why: 'new' },
+    { path: join(dir, 'gone.png'), why: 'file missing' },
+  ]);
+  recordAsset(assets, b, 'fedcba9876543210fedcba9876543210');
+  assert.equal(assetId(assets, b), 'fedcba9876543210fedcba9876543210');
+  assert.match(assets[b].sha256, /^[0-9a-f]{64}$/);
+  assert.deepEqual(staleImages(assets, [b]), []);
+  writeFileSync(b, 'BBB2');
+  assert.deepEqual(staleImages(assets, [b]), [{ path: b, why: 'changed' }]);
+  // CLI: images lists what to upload; asset records one upload.
+  const af = join(dir, 'assets.json'); writeFileSync(af, JSON.stringify(assets));
+  const imgs = join(dir, '_images.json'); writeFileSync(imgs, JSON.stringify([a, b]));
+  assert.deepEqual(JSON.parse(execFileSync('node', [cli, 'images', af, imgs], { encoding: 'utf8' })), [{ path: b, why: 'changed' }]);
+  execFileSync('node', [cli, 'asset', af, b, '00000000000000000000000000000000']);
+  assert.deepEqual(JSON.parse(execFileSync('node', [cli, 'images', af, imgs], { encoding: 'utf8' })), []);
+  assert.equal(JSON.parse(readFileSync(af, 'utf8'))[b].id, '00000000000000000000000000000000');
+  // prepare resolves imageAssetId through either shape.
+  const md = fixture.replace('- image: none\n- caption:\n- screen: Vana sheet\n- source: ticket 08\n', `- image: ${b}\n- caption:\n- screen: Vana sheet\n- source: ticket 08\n`);
+  writeFileSync(join(dir, 'p.md'), md);
+  execFileSync('node', [cli, 'prepare', join(dir, 'p.md'), '--assets', af, '--out', join(dir, 'out')]);
+  assert.equal(JSON.parse(readFileSync(join(dir, 'out', 'sm-001.json'), 'utf8')).imageAssetId, '00000000000000000000000000000000');
 });

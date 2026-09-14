@@ -113,8 +113,9 @@ tool/.training_peaks_token.json
 .vercel
 .env*.local
 
-# Claude Code
-.claude/
+# Claude Code (local state stays out; project skills are part of the repo)
+.claude/*
+!.claude/skills/
 CLAUDE.md
 
 # Patrol regenerates this on every `patrol test` run and the file itself
