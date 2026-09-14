@@ -106,7 +106,11 @@ class TpWritebackFormatter {
     if (carbs != null && carbs > 0) parts.add('${carbs}g carb');
     if (fluidsOz != null && fluidsOz > 0) parts.add('${fluidsOz}oz water');
 
-    final timing = section.timing ?? section.subtitle;
+    // Minimal copy (Xuan, 2026-09-14): the Pre line stays bare — carbs +
+    // water only. The old `?? section.subtitle` fallback leaked the section
+    // label ("Pre-workout nutrition") in as a fake timing annotation, which
+    // was never ratified. Only a genuine `timing` value earns a parenthetical.
+    final timing = section.timing;
     final timingStr = timing != null ? ' ($timing)' : '';
     return 'Pre: ${parts.join(', ')}$timingStr';
   }

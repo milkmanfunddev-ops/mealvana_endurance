@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/secondary_button.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/sheets/kyle_sheet_header.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_text_styles.dart';
@@ -45,13 +46,18 @@ class TpWritebackConsentSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardLine = AppColors.cream.withValues(alpha: 0.12);
-    return SafeArea(
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.blackberry,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    // The ratified glass sheet material (home-shell@v1 §Materials) — backdrop
+    // blur + veil + gradient + specular rim, not a flat blackberry fill
+    // (Xuan, 2026-09-14). GlassSheetSurface owns the top radius; the bottom
+    // safe-area inset is folded into the padding.
+    return GlassSheetSurface(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          8,
+          20,
+          20 + MediaQuery.of(context).padding.bottom,
         ),
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
