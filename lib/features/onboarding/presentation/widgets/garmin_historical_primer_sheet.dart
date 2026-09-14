@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/kyle_design/materials/glass.dart';
 import '../theme/onboarding_design_tokens.dart';
 
 /// Onboarding-only primer shown the moment a user taps "Connect" on the
@@ -32,21 +33,20 @@ class _GarminHistoricalPrimerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: OnbTokens.cardRaised,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(OnbTokens.rLarge)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        24,
-        12,
-        24,
-        24 + MediaQuery.of(context).padding.bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    // The ratified glass sheet material (home-shell@v1 §Materials) — backdrop
+    // blur + veil + gradient fill + specular rim, not a flat card fill.
+    return GlassSheetSurface(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          24,
+          12,
+          24,
+          24 + MediaQuery.of(context).padding.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // Grabber.
           Center(
             child: Container(
@@ -141,7 +141,8 @@ class _GarminHistoricalPrimerSheet extends StatelessWidget {
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
