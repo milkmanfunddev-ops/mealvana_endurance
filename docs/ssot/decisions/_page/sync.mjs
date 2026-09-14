@@ -9,7 +9,9 @@
 // CLI:
 //   node sync.mjs export <decisions.md> [more.md...]   -> JSON docs on stdout
 //   node sync.mjs apply <verdicts.json> <proposals.md> <ssot.md>
-//   node sync.mjs pending <decisions.md>                -> count of proposed/amended
+//   node sync.mjs pending <decisions.md> [<category>]   -> count of proposed/amended; with a category, {category, count, ids}
+//   node sync.mjs ticket-plan <feature> <proposals.md> [<ssot.md>]   -> the ticket cards with their blocking edges (declared + touches overlap)
+//   node sync.mjs publish-tickets <feature> <proposals.md> <ssot.md> <issues dir> --next <cmd>   -> writes one file per approved ticket card; refuses while one is pending, blocked by a later ticket, or built on a rejected id
 //   node sync.mjs answers <question id> <decision id> <proposals.md> <ssot.md>
 //   node sync.mjs questions <proposals.md> [<ssot.md>]      -> the open questions as JSON, file order
 //   node sync.mjs linked <proposals.md> [<ssot.md>]         -> decisions that answered a question, as JSON
@@ -19,7 +21,7 @@
 //   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing)
 //   node sync.mjs asset <assets.json> <path> <asset id> -> record one upload with the file's hash
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const HEAD_KEYS = ['feature', 'feature name', 'last extracted', 'artifact'];
@@ -121,11 +123,14 @@ export function toDocuments(doc, { order = 0 } = {}) {
     screen: d.meta.screen || '',
     detail: d.meta.detail === 'yes',
     work: d.meta.work || '',
+    ticket: d.meta.ticket || '',
+    blocked: d.meta.blocked || '',
+    depends: d.meta.depends || '',
     image: d.meta.image && d.meta.image !== 'none' ? d.meta.image : '',
     imageCaption: d.meta.caption || '',
     context: d.parts.context || '',
     question: d.parts.question || '',
-    decision: d.parts.decision || '',
+    decision: ticketDecision(d),
     clauses: clauses(d.parts.decision || ''),
     why: d.parts.why || '',
     alternatives: d.parts.alternatives || '',
@@ -137,6 +142,14 @@ export function toDocuments(doc, { order = 0 } = {}) {
     order: order + n,
   }));
 }
+
+/** A ticket card's Decision on the page ends with its blockers, so the ratifier approves the edges, not only the prose. */
+const ticketDecision = d => {
+  const decision = d.parts.decision || '';
+  if (d.meta.ticket === undefined || d.meta.ticket === '') return decision;
+  const blocked = splitList(d.meta.blocked).map(num2);
+  return `${decision}\n\nBlocked by: ${blocked.length ? blocked.join(', ') : 'nothing, it can start at once'}.`;
+};
 
 /**
  * Who ruled last, and when. Reads the newest history line that is a verdict
@@ -229,12 +242,12 @@ export function ticketDocument(feature, file, text, idPrefix = '') {
   const num = (name.match(/^(\d+)/) || [])[1] || '';
   const title = (text.match(/^# (.+)$/m) || [, name])[1].replace(/^\d+:\s*/, '').trim();
   const line = k => { const m = text.match(new RegExp(`^\\*\\*${k}:\\*\\*\\s*(.*)$`, 'mi')); return m ? m[1].trim() : ''; };
-  const statusLine = line('Status');
+  const [statusLine, blockedLine, nextLine] = TICKET_HEADERS.map(line);
   const s = statusLine.toLowerCase();
   const state = /wontfix/.test(s) ? 'dropped' : /^(done|built|verified|typed-postcode|send,|partly verified)/.test(s) ? 'done' : /needs-grilling|needs grilling/.test(s) ? 'needs grilling' : /ready/.test(s) ? 'ready' : /after|blocked/.test(s) ? 'waiting' : s ? 'other' : 'proposed';
   const owed = /owed|not yet (seen|looked)|awaiting a look|untested|unverified|not exercised|fails/.test(s);
   const cites = [...new Set((text.match(new RegExp(`\\b${idPrefix || '[a-z]+'}-\\d{3}\\b`, 'g')) || []))].sort();
-  return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: line('Blocked by'), next: line('Next'), cites, file, order: parseInt(num, 10) || 0 };
+  return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, cites, file, order: parseInt(num, 10) || 0 };
 }
 
 export function nextId(proposals, ssot) {
@@ -444,6 +457,115 @@ export function specCitations(spec, proposals, ssot = { decisions: [] }) {
   };
 }
 
+
+/** The proposed and amended cards of one category: `{category, count, ids}`. The `/to-tickets-lee` gate reads `Spec`. */
+export function pendingIn(doc, category) {
+  const ids = doc.decisions.filter(d => (d.meta.category || 'Other') === category && PENDING.includes(d.meta.status)).map(d => d.id);
+  return { category, count: ids.length, ids };
+}
+
+const splitList = s => String(s || '').split(/[,\n]/).map(x => x.trim().replace(/\.$/, '')).filter(Boolean);
+const num2 = n => String(n).padStart(2, '0');
+/** The header lines a ticket file carries and the Work page reads (`ticketDocument`). */
+export const TICKET_HEADERS = ['Status', 'Blocked by', 'Next'];
+const touchKey = t => t.replace(/\/+$/, '').toLowerCase();
+/** Two touches overlap when they name the same thing or one is a directory the other sits in. */
+const overlap = (a, b) => { const x = touchKey(a), y = touchKey(b); return x === y || x.startsWith(y + '/') || y.startsWith(x + '/'); };
+
+/**
+ * The ticket breakdown a `/to-tickets-lee` run put on the page: every card in
+ * either file with a `ticket:` meta line, in ticket-number order. Each comes
+ * back with `declared` (its `blocked:` line), `overlaps` (the earlier tickets
+ * whose touches it shares, and on what), and `blockedBy`, the union of the two,
+ * lower numbers blocking higher ones. A declared blocker that is not a lower
+ * number is listed in `forward` (a later or same-numbered ticket cannot block an
+ * earlier one). `pending` and `approved` name the cards by status; a rejected
+ * or withdrawn card is listed but never published.
+ */
+export function ticketPlan(feature, proposals, ssot = { decisions: [] }) {
+  const cards = [...proposals.decisions, ...ssot.decisions].filter(d => d.meta.ticket !== undefined && d.meta.ticket !== '');
+  const tickets = cards.map(d => ({
+    id: d.id,
+    number: num2(d.meta.ticket),
+    title: d.title.replace(/^Ticket \d+:\s*/i, '').trim(),
+    status: d.meta.status || 'proposed',
+    declared: splitList(d.meta.blocked).map(num2),
+    touches: splitList(d.parts.touches),
+    depends: splitList(d.meta.depends),
+    decision: d.parts.decision || '',
+    details: d.parts.details || '',
+    overlaps: [],
+    blockedBy: [],
+  })).sort((a, b) => a.number.localeCompare(b.number));
+  const live = tickets.filter(t => !GONE.includes(t.status));
+  for (let j = 0; j < live.length; j++) {
+    for (let i = 0; i < j; i++) {
+      const on = live[j].touches.find(t => live[i].touches.some(u => overlap(t, u)));
+      if (on !== undefined) live[j].overlaps.push({ with: live[i].number, on });
+    }
+    live[j].blockedBy = [...new Set([...live[j].declared, ...live[j].overlaps.map(o => o.with)])].sort();
+  }
+  return {
+    feature,
+    tickets,
+    forward: live.flatMap(t => t.declared.filter(n => n >= t.number).map(n => ({ ticket: t.number, blockedBy: n }))),
+    pending: tickets.filter(t => PENDING.includes(t.status)).map(t => t.id),
+    approved: tickets.filter(t => t.status === 'approved').map(t => t.id),
+  };
+}
+
+const slug = s => s.toLowerCase().replace(/`/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60).replace(/-$/, '');
+
+/**
+ * Write the approved ticket cards of a feature as one file each under `dir`,
+ * in the local ticket template with the three header lines the Work page reads
+ * (Status, Blocked by, Next), a Decisions line citing the ids the card depends
+ * on and the card's own id, the touches, the Details as acceptance criteria,
+ * and a closing `Next:` line. Refuses (writes nothing) while any ticket card
+ * is still proposed or amended, a declared blocker is not a lower number, or
+ * a card depends on a rejected or withdrawn id; `why` says which. A number that
+ * already has a file is skipped.
+ */
+export function publishTickets(feature, proposals, ssot, dir, { next }) {
+  if (!next) throw new Error('publishTickets needs the Next: command the files will carry');
+  const plan = ticketPlan(feature, proposals, ssot);
+  const status = new Map([...proposals.decisions, ...ssot.decisions].map(d => [d.id, d.meta.status || 'proposed']));
+  const why = {};
+  for (const id of plan.pending) why[id] = 'still pending on the page';
+  for (const f of plan.forward) { const t = plan.tickets.find(x => x.number === f.ticket); why[t.id] = `blocked by ${f.blockedBy}, which is not a lower number`; }
+  for (const t of plan.tickets) { const gone = t.depends.filter(id => GONE.includes(status.get(id))); if (gone.length) why[t.id] = `depends on ${gone.join(', ')}, which no longer stands`; }
+  const refused = Object.keys(why);
+  if (refused.length) return { written: [], skipped: [], refused, why };
+  const written = [], skipped = [];
+  const present = existsSync(dir) ? readdirSync(dir) : [];
+  for (const t of plan.tickets) {
+    if (t.status !== 'approved') continue;
+    const clash = present.find(f => f.startsWith(t.number + '-'));
+    if (clash) { skipped.push({ id: t.id, file: `${dir}/${clash}` }); continue; }
+    const file = `${dir}/${t.number}-${slug(t.title)}.md`;
+    const blockedBy = t.blockedBy.length
+      ? t.blockedBy.map(n => { const o = t.overlaps.find(x => x.with === n); return o ? `${n} (touches ${o.on})` : n; }).join(', ') + '.'
+      : 'None (can start immediately).';
+    const ids = t.depends.length ? `${t.depends.join(', ')}; approved as ${t.id}.` : `approved as ${t.id}.`;
+    const criteria = t.details.split('\n').map(l => l.trim()).filter(Boolean).map(l => /^- \[[ x]\]/.test(l) ? l : `- [ ] ${l.replace(/^[-*]\s+|^\d+\.\s+/, '')}`);
+    const out = [
+      `# ${t.number}: ${t.title}`, '',
+      `**${TICKET_HEADERS[0]}:** ready-for-agent`,
+      `**${TICKET_HEADERS[1]}:** ${blockedBy}`,
+      `**${TICKET_HEADERS[2]}:** \`${next}\``, '',
+      `**What to build:** ${t.decision}`, '',
+      `**Decisions:** ${ids}`, '',
+      `**Touches:** ${t.touches.join(', ')}`, '',
+      ...criteria, '',
+      `Next: ${next}`, '',
+    ];
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    writeFileSync(file, out.join('\n'));
+    written.push({ id: t.id, file, blockedBy: t.blockedBy });
+  }
+  return { written, skipped, refused: [], why };
+}
+
 // ---- CLI ----
 
 /**
@@ -586,8 +708,22 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const [proposals, ssot] = readPair(pf, sf);
     process.stdout.write(JSON.stringify(specCitations(readFileSync(specf, 'utf8'), proposals, ssot), null, 2));
   } else if (cmd === 'pending') {
+    // pending <decisions.md> [<category>]: a bare count, or {category, count, ids} for one category.
     const d = parse(readFileSync(args[0], 'utf8'));
-    console.log(d.decisions.filter(x => PENDING.includes(x.meta.status)).length);
+    if (args[1]) process.stdout.write(JSON.stringify(pendingIn(d, args[1]), null, 2) + '\n');
+    else console.log(d.decisions.filter(x => PENDING.includes(x.meta.status)).length);
+  } else if (cmd === 'ticket-plan') {
+    // ticket-plan <feature> <proposals.md> [<ssot.md>]: the ticket cards with their edges, nothing written.
+    const [feature, pf, sf] = args;
+    const [proposals, ssot] = readPair(pf, sf);
+    process.stdout.write(JSON.stringify(ticketPlan(feature, proposals, ssot), null, 2));
+  } else if (cmd === 'publish-tickets') {
+    // publish-tickets <feature> <proposals.md> <ssot.md> <issues dir> --next <cmd>
+    const [feature, pf, sf, dir, flag, next] = args;
+    if (flag !== '--next' || !next) { console.error('usage: publish-tickets <feature> <proposals.md> <ssot.md> <issues dir> --next <command>'); process.exit(2); }
+    const [proposals, ssot] = readPair(pf, sf);
+    const r = publishTickets(feature, proposals, ssot, dir, { next });
+    process.stdout.write(JSON.stringify(r, null, 2));
   } else if (cmd === 'question-first') {
     // question-first <decisions.md>...: lift the closing question out of every Context.
     for (const f of args) { const d = parse(readFileSync(f, 'utf8')); const n = questionFirst(d); writeFileSync(f, serialize(d)); console.log(`${f}: ${n} questions lifted`); }

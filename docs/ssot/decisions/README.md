@@ -83,6 +83,22 @@ testing decisions, written by `/to-spec-lee` with `source: spec <feature> <date>
 each card's id in parentheses at the end of the paragraph it came from, so `sync.mjs cite` can
 say which paragraphs stand, which were rejected, and which name no decision.
 
+The `Tickets` category holds a ticket breakdown waiting for approval, written by
+`/to-tickets-lee` with `source: tickets <feature> <date>`. Each card carries three more meta
+lines: `- ticket: NN` (the number its file will get), `- blocked: NN, NN` (the blockers the
+breakdown declared, optional) and `- depends: <id>, <id>` (the decision ids the ticket relies
+on). Its **What it touches** line is a comma-separated list of repo paths; `sync.mjs ticket-plan`
+turns two tickets that touch the same path (or a directory one sits in) into a blocking edge,
+the lower number blocking the higher; the page shows the card's `blocked:` numbers as a
+"Blocked by" line under the Decision. `sync.mjs publish-tickets` writes the approved cards as
+ticket files under `.scratch/<feature>/issues/`: the local ticket template with the three header
+lines the Work page reads (`**Status:** ready-for-agent`, `**Blocked by:**` with each overlap
+edge annotated `(touches <path>)`, `**Next:**`), a `**Decisions:**` line citing the `depends:`
+ids and the card's own id, a `**Touches:**` line, the Details as `- [ ]` acceptance criteria,
+and a closing `Next:` line. It refuses while a ticket card is pending, a declared blocker is not
+a lower number, or a `depends:` id was rejected or withdrawn, and skips a number that already
+has a file.
+
 Two optional meta lines: `- detail: yes` marks a card as implementation detail (the page sinks it
 into a collapsed "Implementation details" block with its own Accept all), and `- work: pending`
 marks a decision that reverses or extends what is built and has no ticket yet (the page's Work
@@ -179,15 +195,24 @@ Matt's to-spec, and puts the spec's test seams and every new implementation and 
 on the page as `Spec` category cards (Context opens with the spec's problem statement) instead of
 confirming them in the terminal; the spec cites each card's id from the start, and after the
 ratifier's Finish the prologue drops the rejected paragraphs. It ends with `Next: /to-tickets-lee`
-only when no `Spec` card is pending. The other -lee skills (`/to-tickets-lee`, `/implement-lee`)
-arrive with tickets 06 and 10 in `.scratch/ssot/issues/`.
+only when no `Spec` card is pending. `/to-tickets-lee <feature>` in `.claude/skills/to-tickets-lee/`
+runs the prologue, stops while any `Spec` card is proposed or amended (`sync.mjs pending
+<proposals.md> Spec`), follows Matt's to-tickets, and puts the breakdown on the page as one
+`Tickets` card per ticket with its blockers, its touches and the decision ids it depends on,
+instead of quizzing in the terminal; touches that overlap become blocking edges
+(`ticket-plan`), and the ticket files are written (`publish-tickets`) only once every card is
+approved, each with the three header lines the Work page reads, a `**Decisions:**` line citing
+its ids, and a closing `Next:` line. `/implement-lee` arrives with ticket 10 in
+`.scratch/ssot/issues/`.
 
 ## Sync module
 
 `_page/sync.mjs` exports `parse`, `serialize` (byte-identical round trip), `apply` (verdicts from
 the page into the two files), `answers` (close an open question with a decision), `openQuestions`, `questionFirst`,
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
-sections cite), `fold`, `clauses` and `ticketDocument`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
+their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
+`ticketDocument`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture and checks the markdown that comes out, and the last case
 round-trips the real mealplanning record and proposals. CLI:
 
@@ -198,7 +223,9 @@ node docs/ssot/decisions/_page/sync.mjs answers <question id> <decision id> <pro
 node docs/ssot/decisions/_page/sync.mjs questions <proposals.md> [<ssot.md>]   # the open questions as JSON, file order, nothing written
 node docs/ssot/decisions/_page/sync.mjs linked <proposals.md> [<ssot.md>]   # decisions that answered a question, as JSON; `stale` when later rejected or withdrawn
 node docs/ssot/decisions/_page/sync.mjs cite <spec.md> <proposals.md> [<ssot.md>]   # what the spec's Implementation and Testing Decisions cite: statuses, paragraphs naming a rejected id, uncited paragraphs, unknown, pending and pendingSpec ids, unstated answers
-node docs/ssot/decisions/_page/sync.mjs pending <decisions.md>
+node docs/ssot/decisions/_page/sync.mjs pending <decisions.md> [<category>]   # a count; with a category, {category, count, ids} of its proposed and amended cards
+node docs/ssot/decisions/_page/sync.mjs ticket-plan <feature> <proposals.md> [<ssot.md>]   # the ticket cards with declared blockers, touches overlaps and the resulting edges, as JSON; nothing written
+node docs/ssot/decisions/_page/sync.mjs publish-tickets <feature> <proposals.md> <ssot.md> <issues dir> --next <command>   # one file per approved ticket card; refuses (with why) while one is pending, blocked by a later number, or built on a rejected id; skips numbers that have a file
 node docs/ssot/decisions/_page/sync.mjs question-first <decisions.md>...   # lift "The question was X." into Question
 node docs/ssot/decisions/_page/sync.mjs fold <plan.json> <proposals.md> <ssot.md>   # combine proposals per the plan
 node docs/ssot/decisions/_page/sync.mjs tickets <feature> <issues dir>   # ticket documents as JSON

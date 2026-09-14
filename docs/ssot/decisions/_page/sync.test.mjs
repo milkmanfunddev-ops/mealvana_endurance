@@ -5,11 +5,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets } from './sync.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, 'sync.mjs');
@@ -528,4 +528,231 @@ test('the linked and cite CLIs print JSON and write nothing', () => {
   assert.deepEqual(cite.pending, ['sm-011']);
   assert.deepEqual(cite.unknown, ['sm-001', 'sm-002', 'sm-999']);
   assert.equal(readFileSync(spec, 'utf8'), specFixture);
+});
+
+const ticketFixture = `# Proposed decisions: Sample
+
+Feature: sm
+Feature name: Sample
+
+## sm-020 · Ticket 03: The sync module learns the plan
+- category: Tickets
+- status: proposed
+- image: none
+- screen: none (tooling)
+- source: tickets sm 2026-09-14
+- ticket: 03
+- depends: sm-001, sm-004
+
+**Context.** The problem statement. Slice 1 of 3.
+
+**Question.** Is this the right first slice?
+
+**Decision.** An agent runs the plan command and sees edges. Blocked by nothing.
+
+**Why.** Everything else reads the plan.
+
+**What else was considered.** Folding it into 04.
+
+**What it touches.** docs/ssot/decisions/_page/sync.mjs, docs/ssot/decisions/README.md
+
+**Details.** - [ ] The plan lists every ticket
+- [ ] Overlaps are edges
+
+## sm-021 · Ticket 04: The skill publishes the files
+- category: Tickets
+- status: proposed
+- image: none
+- screen: none (tooling)
+- source: tickets sm 2026-09-14
+- ticket: 04
+- depends: sm-001
+
+**Context.** The problem statement. Slice 2 of 3.
+
+**Question.** Is this the right second slice?
+
+**Decision.** Lee runs the skill and files appear.
+
+**Why.** The files are what implement reads.
+
+**What else was considered.** none recorded
+
+**What it touches.** .claude/skills/to-tickets-lee/, docs/ssot/decisions/_page/sync.mjs
+
+**Details.** - [ ] Files carry the header lines
+
+## sm-022 · Ticket 05: The page shows the edges
+- category: Tickets
+- status: proposed
+- image: none
+- screen: Work page
+- source: tickets sm 2026-09-14
+- ticket: 05
+- blocked: 03
+- depends: sm-004
+
+**Context.** The problem statement. Slice 3 of 3.
+
+**Question.** Is this the right third slice?
+
+**Decision.** The Work page draws the edges.
+
+**Why.** Lee sees them.
+
+**What else was considered.** none recorded
+
+**What it touches.** docs/ssot/decisions/_page/index.html
+
+**Details.** - [ ] Edges drawn
+
+## sm-023 · A rule that is not a ticket
+- category: Spec
+- status: proposed
+- image: none
+- screen: none
+- source: spec sm 2026-09-14
+
+**Context.** c
+
+**Question.** q
+
+**Decision.** d
+
+**Why.** w
+
+**What else was considered.** none recorded
+
+**What it touches.** t
+`;
+
+test('pendingIn counts the proposed and amended cards of one category, with their ids', () => {
+  const proposals = parse(ticketFixture);
+  assert.deepEqual(pendingIn(proposals, 'Spec'), { category: 'Spec', count: 1, ids: ['sm-023'] });
+  assert.deepEqual(pendingIn(proposals, 'Tickets').ids, ['sm-020', 'sm-021', 'sm-022']);
+  const ssot = emptySsot();
+  apply({ 'sm-023': { verdict: 'amend', text: 'shorter', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  assert.equal(pendingIn(proposals, 'Spec').count, 1);
+  apply({ 'sm-023': { verdict: 'approve', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  assert.equal(pendingIn(proposals, 'Spec').count, 0);
+  assert.deepEqual(pendingIn(proposals, 'Nothing'), { category: 'Nothing', count: 0, ids: [] });
+});
+
+test('ticketPlan turns overlapping touches into blocking edges, lower number first', () => {
+  const proposals = parse(ticketFixture), ssot = emptySsot();
+  const plan = ticketPlan('sm', proposals, ssot);
+  assert.deepEqual(plan.tickets.map(t => t.number), ['03', '04', '05']);
+  const [t3, t4, t5] = plan.tickets;
+  assert.deepEqual(t3.blockedBy, []);
+  assert.deepEqual(t4.blockedBy, ['03']);
+  assert.deepEqual(t4.overlaps, [{ with: '03', on: 'docs/ssot/decisions/_page/sync.mjs' }]);
+  assert.deepEqual(t5.blockedBy, ['03']);
+  assert.deepEqual(t5.declared, ['03']);
+  assert.deepEqual(t5.overlaps, []);
+  assert.deepEqual(t3.depends, ['sm-001', 'sm-004']);
+  assert.deepEqual(t3.touches, ['docs/ssot/decisions/_page/sync.mjs', 'docs/ssot/decisions/README.md']);
+  assert.deepEqual(plan.pending, ['sm-020', 'sm-021', 'sm-022']);
+  assert.deepEqual(plan.approved, []);
+  assert.deepEqual(plan.forward, []);
+  const docs = toDocuments(proposals);
+  assert.equal(docs[2].decision, 'The Work page draws the edges.\n\nBlocked by: 03.');
+  assert.equal(docs[0].decision, 'An agent runs the plan command and sees edges. Blocked by nothing.\n\nBlocked by: nothing, it can start at once.');
+  assert.equal(docs[3].decision, 'd');
+  assert.deepEqual([docs[2].ticket, docs[2].blocked, docs[2].depends], ['05', '03', 'sm-004']);
+});
+
+test('ticketPlan flags a declared blocker that is not a lower number, and publishTickets refuses it', () => {
+  const proposals = parse(ticketFixture.replace('- blocked: 03', '- blocked: 05')), ssot = emptySsot();
+  assert.deepEqual(ticketPlan('sm', proposals, ssot).forward, [{ ticket: '05', blockedBy: '05' }]);
+  for (const id of ['sm-020', 'sm-021', 'sm-022', 'sm-023']) apply({ [id]: { verdict: 'approve', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const r = publishTickets('sm', proposals, ssot, dir, { next: '/implement-lee sm' });
+  assert.deepEqual(r.refused, ['sm-022']);
+  assert.match(r.why['sm-022'], /not a lower number/);
+  assert.equal(readdirSync(dir).length, 0);
+});
+
+test('publishTickets refuses a ticket that depends on a rejected decision', () => {
+  const proposals = parse(ticketFixture + `
+## sm-004 · A rule the tickets lean on
+- category: Sheet
+- status: proposed
+
+**Decision.** d
+`), ssot = emptySsot();
+  for (const id of ['sm-020', 'sm-021', 'sm-022', 'sm-023']) apply({ [id]: { verdict: 'approve', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  apply({ 'sm-004': { verdict: 'reject', text: 'no', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const r = publishTickets('sm', proposals, ssot, dir, { next: '/implement-lee sm' });
+  assert.deepEqual(r.refused, ['sm-020', 'sm-022']);
+  assert.equal(r.why['sm-020'], 'depends on sm-004, which no longer stands');
+  assert.equal(readdirSync(dir).length, 0);
+});
+
+test('ticketPlan treats a directory as touching everything under it', () => {
+  const proposals = parse(ticketFixture.replace('**What it touches.** .claude/skills/to-tickets-lee/, docs/ssot/decisions/_page/sync.mjs', '**What it touches.** docs/ssot/decisions/_page/'));
+  const plan = ticketPlan('sm', proposals, emptySsot());
+  assert.deepEqual(plan.tickets[1].overlaps, [{ with: '03', on: 'docs/ssot/decisions/_page/' }]);
+  assert.deepEqual(plan.tickets[2].overlaps, [{ with: '04', on: 'docs/ssot/decisions/_page/index.html' }]);
+  assert.deepEqual(plan.tickets[2].blockedBy, ['03', '04']);
+});
+
+test('publishTickets refuses while any ticket card is pending and writes nothing', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const proposals = parse(ticketFixture), ssot = emptySsot();
+  apply({ 'sm-020': { verdict: 'approve', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  const r = publishTickets('sm', proposals, ssot, dir, { next: '/implement-lee sm' });
+  assert.deepEqual(r.refused, ['sm-021', 'sm-022']);
+  assert.deepEqual(r.written, []);
+  assert.equal(existsSync(join(dir, '03-the-sync-module-learns-the-plan.md')), false);
+});
+
+test('publishTickets writes one file per approved card with the header lines, the edges, the ids and a Next line', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const proposals = parse(ticketFixture), ssot = emptySsot();
+  const ok = (id) => ({ verdict: 'approve', at: 't', by: 'Lee' });
+  apply({ 'sm-020': ok(), 'sm-021': ok(), 'sm-022': ok(), 'sm-023': { verdict: 'reject', text: 'no', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  const r = publishTickets('sm', proposals, ssot, dir, { next: '/implement-lee sm' });
+  assert.deepEqual(r.refused, []);
+  assert.deepEqual(r.written.map(w => w.file.split('/').pop()), ['03-the-sync-module-learns-the-plan.md', '04-the-skill-publishes-the-files.md', '05-the-page-shows-the-edges.md']);
+  const t4 = readFileSync(join(dir, '04-the-skill-publishes-the-files.md'), 'utf8');
+  assert.match(t4, /^# 04: The skill publishes the files\n\n\*\*Status:\*\* ready-for-agent\n\*\*Blocked by:\*\* 03 \(touches docs\/ssot\/decisions\/_page\/sync.mjs\)\.\n\*\*Next:\*\* `\/implement-lee sm`\n/);
+  assert.match(t4, /\*\*What to build:\*\* Lee runs the skill and files appear\./);
+  assert.match(t4, /\*\*Decisions:\*\* sm-001; approved as sm-021\./);
+  assert.match(t4, /\*\*Touches:\*\* \.claude\/skills\/to-tickets-lee\/, docs\/ssot\/decisions\/_page\/sync\.mjs/);
+  assert.match(t4, /- \[ \] Files carry the header lines\n/);
+  assert.match(t4, /\nNext: \/implement-lee sm\n$/);
+  const t3 = readFileSync(join(dir, '03-the-sync-module-learns-the-plan.md'), 'utf8');
+  assert.match(t3, /\*\*Blocked by:\*\* None \(can start immediately\)\.\n/);
+  assert.match(t3, /\*\*Decisions:\*\* sm-001, sm-004; approved as sm-020\./);
+  const t5 = readFileSync(join(dir, '05-the-page-shows-the-edges.md'), 'utf8');
+  assert.match(t5, /\*\*Blocked by:\*\* 03\.\n/);
+  // a declared edge that is also an overlap keeps the overlap evidence
+  const both = parse(ticketFixture.replace('- ticket: 04\n- depends: sm-001', '- ticket: 04\n- blocked: 03\n- depends: sm-001')), bothSsot = emptySsot();
+  for (const id of ['sm-020', 'sm-021', 'sm-022', 'sm-023']) apply({ [id]: { verdict: 'approve', at: 't', by: 'Lee' } }, both, bothSsot, '2026-09-14');
+  const dir2 = mkdtempSync(join(tmpdir(), 'ssot-'));
+  publishTickets('sm', both, bothSsot, dir2, { next: '/implement-lee sm' });
+  assert.match(readFileSync(join(dir2, '04-the-skill-publishes-the-files.md'), 'utf8'), /\*\*Blocked by:\*\* 03 \(touches docs\/ssot\/decisions\/_page\/sync\.mjs\)\.\n/);
+  // the Work page reads what was written
+  const doc = ticketDocument('sm', join(dir, '04-the-skill-publishes-the-files.md'), t4, 'sm');
+  assert.equal(doc.state, 'ready');
+  assert.deepEqual(doc.cites, ['sm-001', 'sm-021']);
+  assert.equal(doc.next, '`/implement-lee sm`');
+  // a second run writes nothing over an existing file
+  const again = publishTickets('sm', proposals, ssot, dir, { next: '/implement-lee sm' });
+  assert.deepEqual(again.written, []);
+  assert.deepEqual(again.skipped.map(s => s.id), ['sm-020', 'sm-021', 'sm-022']);
+});
+
+test('the pending, ticket-plan and publish-tickets CLIs', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const pf = join(dir, 'decisions.md'), sf = join(dir, 'ssot.md'), issues = join(dir, 'issues');
+  writeFileSync(pf, ticketFixture); writeFileSync(sf, serialize(emptySsot()));
+  assert.equal(execFileSync('node', [cli, 'pending', pf], { encoding: 'utf8' }).trim(), '4');
+  assert.deepEqual(JSON.parse(execFileSync('node', [cli, 'pending', pf, 'Spec'], { encoding: 'utf8' })), { category: 'Spec', count: 1, ids: ['sm-023'] });
+  const plan = JSON.parse(execFileSync('node', [cli, 'ticket-plan', 'sm', pf, sf], { encoding: 'utf8' }));
+  assert.deepEqual(plan.tickets.map(t => t.blockedBy), [[], ['03'], ['03']]);
+  const refused = JSON.parse(execFileSync('node', [cli, 'publish-tickets', 'sm', pf, sf, issues, '--next', '/implement-lee sm'], { encoding: 'utf8' }));
+  assert.equal(refused.refused.length, 3);
+  assert.equal(existsSync(issues), false);
 });
