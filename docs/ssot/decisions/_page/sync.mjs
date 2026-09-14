@@ -20,9 +20,13 @@
 //   node sync.mjs next-id <proposals.md> <ssot.md>     -> the next free id
 //   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing)
 //   node sync.mjs asset <assets.json> <path> <asset id> -> record one upload with the file's hash
+//   node sync.mjs undrawn <proposals.md> [<ssot.md>]   -> screenless cards with no drawn picture yet
+//   node sync.mjs draw <spec.json> [<out.svg>]         -> draw a diagram from a spec (diagram.mjs), checked
+//   node sync.mjs attach-svg <decisions.md> <id> <svg path>  -> check the file and set the card's `svg:` line
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { draw, TOKENS } from './diagram.mjs';
 
 const HEAD_KEYS = ['feature', 'feature name', 'last extracted', 'artifact'];
 const PARTS = [
@@ -109,14 +113,15 @@ export function serialize(doc) {
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Page documents for the `decisions` collection, keyed by id. */
-export function toDocuments(doc, { order = 0 } = {}) {
+export function toDocuments(doc, { order = 0, readSvg = () => '' } = {}) {
+  // readSvg(path) returns the drawn picture's markup for the page, or '' to leave the box empty.
   const feature = doc.head.feature;
   return doc.decisions.map((d, n) => ({
     id: d.id,
     feature,
     category: d.meta.category || 'Other',
     title: d.title,
-    kind: d.meta.kind || 'decision',
+    kind: kindOf(d),
     status: d.meta.status || 'proposed',
     linked: d.meta.linked || '',
     source: d.meta.source || '',
@@ -128,6 +133,8 @@ export function toDocuments(doc, { order = 0 } = {}) {
     depends: d.meta.depends || '',
     image: d.meta.image && d.meta.image !== 'none' ? d.meta.image : '',
     imageCaption: d.meta.caption || '',
+    svgPath: d.meta.svg || '',
+    svg: d.meta.svg ? readSvg(d.meta.svg) : '',
     context: d.parts.context || '',
     question: d.parts.question || '',
     decision: ticketDecision(d),
@@ -591,6 +598,63 @@ export function triage(verdicts) {
   return { clear, words, other };
 }
 
+// Drawn pictures. A screenless card (`screen:` starts with "none") carries
+// `- svg: <repo path>` to a file diagram.mjs drew; `prepare` inlines it. The
+// check keeps them plain: an svg root, no raster or stock link, and no colour
+// that is not a page token (`var(--token, fallback)`; the fallback is free).
+const isScreenless = d => /^none\b/i.test(d.meta.screen || '');
+const kindOf = d => d.meta.kind || 'decision';
+const isQuestion = d => kindOf(d) === 'question';
+export function svgCheck(text) {
+  const problems = [];
+  const t = String(text || '');
+  if (!/^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i.test(t)) problems.push('does not start with <svg');
+  if (/<image\b/i.test(t)) problems.push('<image> element (raster)');
+  if (/<foreignObject\b/i.test(t)) problems.push('<foreignObject> element');
+  if (/url\(\s*["']?data:/i.test(t)) problems.push('data: url');
+  if (/(?:xlink:)?href\s*=\s*["'](?!#)/i.test(t)) problems.push('href to something outside the file');
+  for (const m of t.matchAll(/var\(\s*--([a-z0-9-]+)/gi)) if (!TOKENS.includes(m[1])) problems.push(`--${m[1]} is not a page token`);
+  // Strip the token references (with their fallbacks) and look for what is left.
+  const rest = t.replace(/var\(\s*--[a-z0-9-]+\s*(?:,[^)]*)?\)/gi, 'var()');
+  for (const m of rest.matchAll(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/gi)) problems.push(`colour ${m[0]} outside the page tokens`);
+  for (const m of rest.matchAll(/(?:fill|stroke|stop-color|color|flood-color|lighting-color)\s*[:=]\s*["']?\s*([a-z]+)/gi)) {
+    if (!['none', 'currentcolor', 'inherit', 'transparent', 'var', 'url'].includes(m[1].toLowerCase())) problems.push(`colour ${m[1]} outside the page tokens`);
+  }
+  return { ok: problems.length === 0, problems: [...new Set(problems)] };
+}
+
+/** Read a drawn picture and check it: {svg, problems}. A missing file is a problem, not a throw. */
+export function checkedSvg(path) {
+  if (!existsSync(path)) return { svg: '', problems: ['file missing'] };
+  const svg = readFileSync(path, 'utf8');
+  return { svg, problems: svgCheck(svg).problems };
+}
+
+/** Screenless decisions with no drawn picture, proposals then record, file order. Questions and ruled-out cards are not drawn. */
+export function undrawn(proposals, ssot = { decisions: [] }) {
+  const out = [];
+  for (const [file, doc] of [['proposals', proposals], ['record', ssot]]) {
+    for (const d of doc.decisions) {
+      if (isQuestion(d) || GONE.includes(d.meta.status)) continue;
+      if (isScreenless(d) && !d.meta.svg) out.push({ id: d.id, title: d.title, file });
+    }
+  }
+  return out;
+}
+
+/** Set a card's `svg:` line (after `caption:`, else after `image:`, else last); false when the id is not in the doc. */
+export function attachSvg(doc, id, path) {
+  const d = doc.decisions.find(x => x.id === id);
+  if (!d) return false;
+  if (d.meta.svg !== undefined) { d.meta.svg = path; return true; }
+  const keys = Object.keys(d.meta);
+  const after = keys.includes('caption') ? 'caption' : keys.includes('image') ? 'image' : keys[keys.length - 1];
+  const meta = {};
+  for (const k of keys) { meta[k] = d.meta[k]; if (k === after) meta.svg = path; }
+  d.meta = meta;
+  return true;
+}
+
 // The assets map (`_page/assets.json`) keys a repo image path to the artifact
 // asset it was uploaded as. New entries are {id, sha256}; the first entries
 // were bare ids and still resolve. An image is uploaded again only when its
@@ -639,7 +703,9 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     let order = 0; const entries = [];
     for (const f of files) {
       const d = parse(readFileSync(f, 'utf8'));
-      for (const doc of toDocuments(d, { order })) {
+      // A drawn picture that fails the check is reported and left out; the page shows the empty box.
+      const readSvg = path => { const c = checkedSvg(path); if (c.problems.length) { console.error(`svg ${path} left out: ${c.problems.join('; ')}`); return ''; } return c.svg; };
+      for (const doc of toDocuments(d, { order, readSvg })) {
         const { id, ...body } = doc;
         body.imageAssetId = body.image ? assetId(assets, body.image) : '';
         writeFileSync(`${out}/${id}.json`, JSON.stringify(body, null, 2));
@@ -772,7 +838,29 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const assets = loadAssets(af);
     recordAsset(assets, path, id);
     writeFileSync(af, JSON.stringify(assets, null, 2) + '\n');
+  } else if (cmd === 'undrawn') {
+    // undrawn <proposals.md> [<ssot.md>]: screenless cards with no drawn picture, nothing written.
+    const [pf, sf] = args;
+    const [proposals, ssot] = readPair(pf, sf);
+    process.stdout.write(JSON.stringify(undrawn(proposals, ssot), null, 2));
+  } else if (cmd === 'draw') {
+    // draw <spec.json> [<out.svg>]: diagram.mjs draws it; the result is checked before it is written.
+    const [specf, outf] = args;
+    const svg = draw(JSON.parse(readFileSync(specf, 'utf8')));
+    const check = svgCheck(svg);
+    if (check.problems.length) { console.error(`drawn svg fails the check: ${check.problems.join('; ')}`); process.exit(1); }
+    if (outf) writeFileSync(outf, svg); else process.stdout.write(svg);
+  } else if (cmd === 'attach-svg') {
+    // attach-svg <decisions.md> <id> <svg path>: check the file, then set the card's svg line.
+    const [df, id, path] = args;
+    if (!df || !id || !path) { console.error('usage: sync.mjs attach-svg <decisions.md> <id> <svg path>'); process.exit(2); }
+    const check = checkedSvg(path);
+    if (check.problems.length) { console.error(`${path}: ${check.problems.join('; ')}`); process.exit(1); }
+    const doc = parse(readFileSync(df, 'utf8'));
+    if (!attachSvg(doc, id, path)) { console.error(`${id} is not in ${df}`); process.exit(1); }
+    writeFileSync(df, serialize(doc));
+    console.log(`${id}: svg ${path}`);
   } else {
-    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg ...'); process.exit(2);
   }
 }

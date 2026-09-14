@@ -4,6 +4,25 @@ Every -lee skill and `/ssot` ends with this, unchanged. It puts what the run pro
 and tells the ratifier what waits on them. Same conventions as `prologue.md` (`SYNC`, `URL`,
 `<feature>`, README first).
 
+## 0. Draw the screenless cards
+
+```
+SYNC undrawn .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+```
+
+For every card it lists (a decision whose `screen:` starts with `none` and that has no `svg:`
+line), draw its mechanism: write a spec to `<scratch dir>/diagrams/<id>.json` in the shape at
+the top of `docs/ssot/decisions/_page/diagram.mjs` (a `flow` of boxes and arrows, or a
+`timeline`), with one worked example that uses the card's own numbers, then
+
+```
+SYNC draw <scratch dir>/diagrams/<id>.json docs/ssot/decisions/images/<feature>/<id>.svg
+SYNC attach-svg <file the card is in> <id> docs/ssot/decisions/images/<feature>/<id>.svg
+```
+
+The README's Drawn pictures section has the rules. A card that names a screen is not drawn. Run `undrawn` again: it must print
+`[]`. The SVG files are committed with the run.
+
 ## 1. Prepare the page documents
 
 For every feature whose record, proposals, glossary or tickets changed in this run:

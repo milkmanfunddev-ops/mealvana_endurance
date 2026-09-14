@@ -1,8 +1,9 @@
 # Decisions
 
 The single source of truth for product decisions. One markdown file per feature.
-Nothing enters a file here except on a ratifier's verdict (Lee or Xuan), given on the decisions page.
-Agents never edit these files by hand; the sync module in `_page/` applies verdicts.
+No ruling enters a file here except on a ratifier's verdict (Lee or Xuan), given on the decisions page.
+Agents never edit these files by hand; the sync module in `_page/` applies verdicts, and its
+`attach-svg` command sets a card's drawn picture (Drawn pictures below), which changes no ruling.
 
 This folder is app-owned. It sits outside the QA mirror's rsync scope, so a sync
 from `../mealvana_endurance_qa` never touches it.
@@ -20,7 +21,8 @@ points elsewhere if the cache lives elsewhere).
 3. Apply verdicts: `node docs/ssot/decisions/_page/sync.mjs apply <verdicts.json> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md`.
    `verdicts.json` is the page's queued verdicts: a Claude Code session reads the `verdicts`
    collection with `read_db` (where `applied` is false) and saves it as that file. The Finish
-   button only wakes the watching session. `apply` writes only the two named files.
+   button only wakes the watching session. `apply` writes only the two named files; the only
+   other command that writes a record is `attach-svg`, and it touches one `svg:` line.
 4. Open the page: the artifact link below. Lee shares it with each ratifier from the page's
    share menu. Whoever opens it picks their name in the header once per browser, and every
    verdict they give carries it as `by`. The platform tells the page nothing about the viewer,
@@ -57,6 +59,7 @@ Last extracted: <git sha>
 - status: proposed | approved | rejected | withdrawn | amended | open | answered
 - image: <repo path> | none
 - caption: <one line, optional>
+- svg: <repo path of a drawn diagram; every screenless card has one, see Drawn pictures>
 - screen: <which app screen shows this, or "none (algorithm/data)">
 - source: <spec path; ticket NN; ADR; commit; grill <date>; Lee on the page <date>>
 
@@ -163,6 +166,22 @@ A ruling that reverses an approved decision (in a grill or on the page) is a new
 Context names the id it reverses. The old card stays approved until a ratifier withdraws it on
 the page; nothing in the tooling withdraws it for them.
 
+## Drawn pictures
+
+A card whose `screen:` starts with `none` has nothing to screenshot, so it gets a drawn picture
+of its mechanism instead: boxes and arrows, or a timeline, and one worked example with real
+numbers. The skill that proposes the card draws it (epilogue step 0) and `/ssot backfill` draws
+one for every screenless card that has none. Nothing draws by hand: a spec in JSON goes through
+`sync.mjs draw` (`_page/diagram.mjs`, spec shapes at the top of the file), which writes
+`docs/ssot/decisions/images/<feature>/<id>.svg` and refuses anything that is not inline SVG in
+the page's colour tokens (`var(--token, fallback)`, no raster, no stock art, no other colour).
+`sync.mjs attach-svg` checks the file again and sets the card's `svg:` line; `prepare` inlines
+the file into the page document, where the page shows it in the picture box in both themes.
+The spec files live beside the run that drew them (`.scratch/ssot/diagrams/`) and are not the
+source of truth; the SVG is. `sync.mjs undrawn` lists what still needs one. A card that names a
+screen is captured, not drawn (ticket 08), unless the ratifier asks for a drawing of its
+mechanism as well (mp-266, the trial timeline).
+
 ## Vocabulary
 
 The page's Vocabulary section mirrors the glossary in `CONTEXT.md` (seeded into the `vocab`
@@ -212,9 +231,9 @@ the page into the two files), `answers` (close an open question with a decision)
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
-`ticketDocument`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
-every case feeds a markdown fixture and checks the markdown that comes out, and the last case
-round-trips the real mealplanning record and proposals. CLI:
+`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn` and `attachSvg`; `_page/diagram.mjs` exports `draw` and the token list. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+every case feeds a markdown fixture, a spec or an svg string and checks what comes out, never
+how the parser walks lines; one case round-trips the real mealplanning record and proposals. CLI:
 
 ```
 node docs/ssot/decisions/_page/sync.mjs export <decisions.md>...   # page documents as JSON
@@ -234,6 +253,9 @@ node docs/ssot/decisions/_page/sync.mjs triage <verdicts.json> --out <dir>   # c
 node docs/ssot/decisions/_page/sync.mjs next-id <proposals.md> <ssot.md>     # the next free id across both files
 node docs/ssot/decisions/_page/sync.mjs images <assets.json> <_images.json>  # images still to upload: new, changed, file missing
 node docs/ssot/decisions/_page/sync.mjs asset <assets.json> <path> <asset id> # record one upload, keyed by path and hash
+node docs/ssot/decisions/_page/sync.mjs undrawn <proposals.md> [<ssot.md>]   # screenless cards with no drawn picture, as JSON; questions and ruled-out cards are skipped
+node docs/ssot/decisions/_page/sync.mjs draw <spec.json> [<out.svg>]         # draw a diagram from a spec; refuses one that fails the check
+node docs/ssot/decisions/_page/sync.mjs attach-svg <decisions.md> <id> <svg path>  # check the file, set the card's svg line
 ```
 
 `triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with

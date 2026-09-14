@@ -43,13 +43,15 @@ first, then:
    (a clause list when several small rulings answer one question), Why, What else was considered,
    What it touches, and a `source:` line naming where it came from. A screen decision names its
    screen and references an existing capture by repo path if one fits; otherwise `image: none`
-   (later skills draw and capture). Numbers go in Details. Write every card through `unslop`.
+   (ticket 08 captures it). A card with no screen says `screen: none (algorithm/data)` and
+   gets a drawn picture in the epilogue's step 0. Numbers go in Details. Write every card through `unslop`.
 4. Ids come from `sync.mjs next-id .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md`,
    one at a time as you write. Status `proposed`. A ruling you cannot state as a decision becomes
    an open question in the source's words (`kind: question`, `status: open`), never a dropped
    fact. If `.scratch/<feature>/decisions.md` does not exist, create it with the README's header
    block (`Feature:`, `Feature name:`, `Last extracted: <current commit>`).
-5. Run `epilogue.md`. The `Next:` line is `Next: approve N decisions on the page, then
+5. Run `epilogue.md`; its step 0 draws a picture for every screenless card the backfill wrote
+   and for any older one still without. The `Next:` line is `Next: approve N decisions on the page, then
    /grill-with-docs-lee <feature>`.
 
 ## For the -lee skills

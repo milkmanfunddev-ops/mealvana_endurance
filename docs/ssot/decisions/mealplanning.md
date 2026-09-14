@@ -53,6 +53,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-003.svg
 - screen: none (algorithm/data)
 - source: spec.md
 
@@ -98,6 +99,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-005.svg
 - screen: none (algorithm/data)
 - source: synthesis-and-recommendations.md
 
@@ -256,6 +258,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-012.svg
 - screen: none (algorithm/data)
 - source: memory 09-03
 
@@ -278,6 +281,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-013.svg
 - screen: none (algorithm/data)
 - source: 02-contract.md; walkthrough.md
 
@@ -389,6 +393,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-018.svg
 - screen: none (algorithm/data)
 - source: 03-backend.md; walkthrough.md; spec.md
 
@@ -433,6 +438,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-020.svg
 - screen: none (algorithm/data)
 - source: spec.md; memory 09-09
 
@@ -500,6 +506,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-023.svg
 - screen: none (algorithm/data)
 - source: spec.md; memory 09-09
 
@@ -522,6 +529,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-024.svg
 - screen: none (algorithm/data)
 - source: spec.md
 
@@ -610,6 +618,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-028.svg
 - screen: none (algorithm/data)
 - source: spec.md; archive ticket 05
 
@@ -632,6 +641,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-029.svg
 - screen: none (algorithm/data)
 - source: spec.md
 
@@ -654,6 +664,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-030.svg
 - screen: none (algorithm/data)
 - source: spec.md; memory 09-09
 
@@ -720,6 +731,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-039.svg
 - screen: none (algorithm/data)
 - source: vana-chatbot-update-plan.md
 
@@ -742,6 +754,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-040.svg
 - screen: none (algorithm/data)
 - source: spec.md; memory 09-09
 
@@ -764,6 +777,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-041.svg
 - screen: none (algorithm/data)
 - source: spec.md
 
@@ -786,6 +800,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-042.svg
 - screen: none (algorithm/data)
 - source: spec.md
 
@@ -808,6 +823,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-043.svg
 - screen: none (algorithm/data)
 - source: spec.md; archive ticket 04
 
@@ -830,6 +846,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-044.svg
 - screen: none (algorithm/data)
 - source: spec.md; archive ticket 04
 
@@ -852,6 +869,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-045.svg
 - screen: none (algorithm/data)
 - source: archive ticket 04; memory 09-09
 
@@ -918,6 +936,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-048.svg
 - screen: none (algorithm/data)
 - source: archive ticket 04
 
@@ -1488,6 +1507,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-218.svg
 - screen: none (algorithm/data)
 - source: Lee on the page 2026-09-14, amending mp-020
 
@@ -1642,6 +1662,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-226.svg
 - screen: none (algorithm/data)
 - source: ticket 09; vana-moment.md; ticket 10
 
@@ -2179,6 +2200,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-257.svg
 - screen: none (algorithm/data)
 - source: spec.md; ticket 02; memory 09-10
 
@@ -2206,6 +2228,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-258.svg
 - screen: none (algorithm/data)
 - source: spec.md; ticket 02; README; 06-sync-schema-envs.md
 
@@ -2313,6 +2336,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-263.svg
 - screen: none (algorithm/data)
 - source: spec.md; 07-verification-release.md; memory 09-02
 - detail: yes
@@ -2395,6 +2419,7 @@ Feature name: Meal planning and Vana
 - status: approved
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-266.svg
 - screen: Paywall
 - source: Lee on the page 2026-09-14, on mp-052
 - work: pending

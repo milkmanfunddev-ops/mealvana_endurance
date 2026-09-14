@@ -9,7 +9,8 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } fro
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg } from './sync.mjs';
+import { draw, TOKENS } from './diagram.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const cli = join(here, 'sync.mjs');
@@ -755,4 +756,85 @@ test('the pending, ticket-plan and publish-tickets CLIs', () => {
   const refused = JSON.parse(execFileSync('node', [cli, 'publish-tickets', 'sm', pf, sf, issues, '--next', '/implement-lee sm'], { encoding: 'utf8' }));
   assert.equal(refused.refused.length, 3);
   assert.equal(existsSync(issues), false);
+});
+
+// Drawn pictures: a screenless card carries `- svg: <path>` to a file the generator drew.
+const screenless = fixture.replace('- screen: Vana sheet\n- source: ticket 08\n', '- screen: none (algorithm/data)\n- source: ticket 08\n');
+const paywallSpec = { kind: 'timeline', title: 'A new account', steps: [{ at: 'Day 1', label: 'Whole app open', tone: 'ok' }, { at: 'Day 7', label: 'Last trial day', tone: 'pending' }, { at: 'Day 8', label: 'Launcher opens the paywall', tone: 'no' }], example: ['Signed up 1 Sep: trial ends 7 Sep, paywall from 8 Sep.'] };
+
+test('an svg meta line round-trips byte-identical and reaches the page document', () => {
+  const md = screenless.replace('- image: none\n- caption:\n- screen: none (algorithm/data)\n', '- image: none\n- caption:\n- svg: docs/ssot/decisions/images/sm/sm-001.svg\n- screen: none (algorithm/data)\n');
+  assert.equal(serialize(parse(md)), md);
+  const [d1, d2] = toDocuments(parse(md));
+  assert.equal(d1.svgPath, 'docs/ssot/decisions/images/sm/sm-001.svg');
+  assert.equal(d1.svg, '');
+  assert.equal(d2.svgPath, '');
+  const [r1] = toDocuments(parse(md), { readSvg: p => `<svg data-from="${p}"></svg>` });
+  assert.equal(r1.svg, '<svg data-from="docs/ssot/decisions/images/sm/sm-001.svg"></svg>');
+});
+
+test('svgCheck refuses raster, stock links and colour outside the page tokens', () => {
+  assert.deepEqual(svgCheck('<svg xmlns="http://www.w3.org/2000/svg"><rect fill="var(--card, #FFFFFF)" stroke="var(--line, #DDD8C8)"/><text fill="var(--ink)">x</text></svg>').problems, []);
+  assert.match(svgCheck('<svg><rect fill="#FF0000"/></svg>').problems.join(' '), /#FF0000/);
+  assert.match(svgCheck('<svg><rect style="fill:rgb(1,2,3)"/></svg>').problems.join(' '), /rgb\(/);
+  assert.match(svgCheck('<svg><text fill="red">x</text></svg>').problems.join(' '), /red/);
+  assert.match(svgCheck('<svg><rect fill="var(--brand)"/></svg>').problems.join(' '), /--brand/);
+  assert.match(svgCheck('<svg><image href="a.png"/></svg>').problems.join(' '), /image/);
+  assert.match(svgCheck('<svg><rect fill="url(data:image/png;base64,AAA)"/></svg>').problems.join(' '), /data:/);
+  assert.match(svgCheck('<div>not an svg</div>').problems.join(' '), /<svg/);
+  assert.ok(TOKENS.includes('accent') && TOKENS.includes('ground-2'));
+});
+
+test('draw turns a timeline spec into an svg that passes the check and carries every label', () => {
+  const svg = draw(paywallSpec);
+  assert.deepEqual(svgCheck(svg).problems, []);
+  for (const s of ['A new account', 'Day 1', 'Day 7', 'Day 8', 'Whole app open', 'Launcher opens the paywall', 'Signed up 1 Sep']) assert.ok(svg.includes(s), s);
+  assert.doesNotMatch(svg, /<image|<foreignObject/);
+});
+
+test('draw lays out a flow of boxes and arrows with a worked example', () => {
+  const svg = draw({ kind: 'flow', title: 'Sync', rows: [[{ id: 'a', label: 'Local write' }, { id: 'b', label: 'Upload\nqueue', tone: 'accent' }], [{ id: 'c', label: 'Remote ack', tone: 'ok' }]], edges: [{ from: 'a', to: 'b', label: 'dirty' }, { from: 'b', to: 'c' }], example: ['Athlete logs 3 meals offline: 3 dirty rows, one upload, 3 acks.'] });
+  assert.deepEqual(svgCheck(svg).problems, []);
+  for (const s of ['Local write', 'Upload', 'queue', 'Remote ack', 'dirty', '3 dirty rows']) assert.ok(svg.includes(s), s);
+  assert.equal((svg.match(/<rect class="dg-box/g) || []).length, 3);
+  assert.equal((svg.match(/marker-end/g) || []).length, 2);
+  assert.throws(() => draw({ kind: 'flow', rows: [[{ id: 'a', label: 'A' }]], edges: [{ from: 'a', to: 'zz' }] }), /zz/);
+});
+
+test('undrawn lists screenless cards without a picture, skipping questions and ruled-out ones', () => {
+  const proposals = parse(screenless);
+  const ssot = parse(screenless.replace('sm-001', 'sm-003').replace('sm-002', 'sm-004').replace('- status: proposed\n- image: none\n- caption:\n- screen: none (algorithm/data)', '- status: rejected\n- image: none\n- caption:\n- screen: none (algorithm/data)'));
+  ssot.decisions[1].meta.screen = 'none (algorithm/data)'; ssot.decisions[1].meta.status = 'approved'; ssot.decisions[1].meta.svg = 'x.svg';
+  const q = parse(questionFixture); q.decisions[0].meta.screen = 'none (algorithm/data)'; proposals.decisions.push(q.decisions[0]);
+  assert.deepEqual(undrawn(proposals, ssot), [{ id: 'sm-001', title: 'The sheet has one height', file: 'proposals' }]);
+});
+
+test('attach-svg checks the file, sets the meta line after caption, and prepare inlines it', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const md = join(dir, 'p.md'); writeFileSync(md, screenless);
+  const good = join(dir, 'sm-001.svg'); writeFileSync(good, draw(paywallSpec));
+  const bad = join(dir, 'bad.svg'); writeFileSync(bad, '<svg><rect fill="#123456"/></svg>');
+  assert.throws(() => execFileSync('node', [cli, 'attach-svg', md, 'sm-001', bad], { stdio: 'pipe' }), /#123456/);
+  assert.equal(readFileSync(md, 'utf8'), screenless);
+  assert.throws(() => execFileSync('node', [cli, 'attach-svg', md, 'sm-009', good], { stdio: 'pipe' }), /sm-009/);
+  execFileSync('node', [cli, 'attach-svg', md, 'sm-001', good]);
+  const after = readFileSync(md, 'utf8');
+  assert.ok(after.includes(`- caption:\n- svg: ${good}\n- screen: none (algorithm/data)`), after);
+  assert.equal(serialize(parse(after)), after);
+  // Attaching again replaces the line rather than adding a second one.
+  execFileSync('node', [cli, 'attach-svg', md, 'sm-001', good]);
+  assert.equal(readFileSync(md, 'utf8'), after);
+  // The pure function on a doc.
+  const doc = parse(screenless); assert.equal(attachSvg(doc, 'sm-002', 'y.svg'), true); assert.equal(attachSvg(doc, 'sm-404', 'y.svg'), false);
+  assert.deepEqual(Object.keys(doc.decisions[1].meta), ['category', 'status', 'image', 'caption', 'svg', 'screen', 'source']);
+  // prepare inlines the file; the undrawn CLI no longer lists the card.
+  execFileSync('node', [cli, 'prepare', md, '--out', join(dir, 'out')]);
+  const body = JSON.parse(readFileSync(join(dir, 'out', 'sm-001.json'), 'utf8'));
+  assert.match(body.svg, /^<svg/); assert.ok(body.svg.includes('Day 8'));
+  assert.equal(body.svgPath, good);
+  assert.deepEqual(JSON.parse(execFileSync('node', [cli, 'undrawn', md], { encoding: 'utf8' })), []);
+  // draw CLI: spec in, svg out, checked.
+  const spec = join(dir, 'spec.json'); writeFileSync(spec, JSON.stringify(paywallSpec));
+  execFileSync('node', [cli, 'draw', spec, join(dir, 'drawn.svg')]);
+  assert.equal(readFileSync(join(dir, 'drawn.svg'), 'utf8'), draw(paywallSpec));
 });
