@@ -26,5 +26,33 @@
   "docs/new_mealplanning/figma/18-all-days-collapsed-confirm.png": "346e3b5278f75f3a3bbd40d106282c32",
   "docs/_archived/uiux/alex_screens/Plan.png": "2a43d7790d9e6b372cd3e94fbccd5fa8",
   "test/features/home_shell/goldens/tab_bar_expanded_5.png": "25f9558e75769b0685d6221533fb31ab",
-  "docs/new_mealplanning/figma/16-plan-detail-modal.png": "712b5bf4ced576aca498ca5352b47c0f"
+  "docs/new_mealplanning/figma/16-plan-detail-modal.png": "712b5bf4ced576aca498ca5352b47c0f",
+  "docs/ssot/decisions/images/mealplanning/vana-chat.png": {
+    "id": "56b799ad95725fd3f5c7fa835382dfaa",
+    "sha256": "5d40302c42c708d0ca82104f8b245d1fb61368a44f1006d8348e0c1f28d58b24"
+  },
+  "docs/ssot/decisions/images/mealplanning/settings.png": {
+    "id": "728554188223ec8634618aaae70cbd0d",
+    "sha256": "7443de21dfbb261faad7961d7d837172c30ef2a95d52d055913dc67d3367f61b"
+  },
+  "docs/ssot/decisions/images/mealplanning/calendar-sheet.png": {
+    "id": "977ed8bc4d877e2b01efcff1225957ca",
+    "sha256": "8dd4a6853737356f11bc6a36f48b920511b58e4e096b5bed8d63f462846c6daa"
+  },
+  "docs/ssot/decisions/images/mealplanning/meal-detail.png": {
+    "id": "1b1d03c892e1c639806ac35131eddfe9",
+    "sha256": "9263398e0c7f598170f7c2f29f90c88e4ca75fafe2da9ae9b6121021ffba5337"
+  },
+  "docs/ssot/decisions/images/mealplanning/timeline.png": {
+    "id": "f6e43fb47588db47668afed45fbf76e7",
+    "sha256": "fa343230c66081f8fb8dc6775a33fa9b919d41d2e83347cf4621f90d2bf3b351"
+  },
+  "docs/ssot/decisions/images/mealplanning/meals-tab.png": {
+    "id": "8918434046f3baf9ce496a907df846be",
+    "sha256": "eb6ae121771ad1ef74a02c79a4dca1546f8346540af8fcbbd0968baa6219869b"
+  },
+  "docs/ssot/decisions/images/mealplanning/cooking-mode.png": {
+    "id": "eb738ddf5cb7b83c64bd0435940c50f9",
+    "sha256": "cba76454ba9c6e88424de6bb5bf71147c109b690d7058546cbe0f8662d20f7b9"
+  }
 }

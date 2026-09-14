@@ -212,7 +212,7 @@ Feature name: Meal planning and Vana
 ## mp-010 · The intro card was removed
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: DEVIATIONS.md
@@ -230,6 +230,7 @@ Feature name: Meal planning and Vana
 **What it touches.** Planning chat screen.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-011 · The voice contract is set per moment, with emoji banned
 - category: Vana's voice and openers
@@ -347,7 +348,7 @@ Feature name: Meal planning and Vana
 ## mp-016 · A choice-only step keeps its sentence in the stored transcript
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: ticket 09; memory 09-11
@@ -365,11 +366,12 @@ Feature name: Meal planning and Vana
 **What it touches.** chat.ts partsFromSteps.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-017 · Unknown part kinds are dropped, not errors
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: 02-contract.md
@@ -387,6 +389,7 @@ Feature name: Meal planning and Vana
 **What it touches.** Part parser, shipped clients.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-018 · The chat model is Haiku, with cost recorded per eval case
 - category: Vana's voice and openers
@@ -460,7 +463,7 @@ Feature name: Meal planning and Vana
 ## mp-021 · Both conversation modes read the full Doll
 - category: Vana's memory
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: spec.md; archive ticket 03
@@ -478,6 +481,7 @@ Feature name: Meal planning and Vana
 **What it touches.** systemPrompt, buildAthleteContext.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-022 · A Memory is one margin-note sentence
 - category: Vana's memory
@@ -550,7 +554,7 @@ Feature name: Meal planning and Vana
 ## mp-025 · An explicit "remember" always calls the tool
 - category: Vana's memory
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: archive ticket 05
@@ -568,6 +572,7 @@ Feature name: Meal planning and Vana
 **What it touches.** Persona, remember tool description.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-026 · Finished conversations are read back silently when the next one opens
 - category: Vana's memory
@@ -685,7 +690,7 @@ Feature name: Meal planning and Vana
 ## mp-031 · Debrief learnings feed the next plan
 - category: Vana's memory
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: DEVIATIONS.md
@@ -703,6 +708,7 @@ Feature name: Meal planning and Vana
 **What it touches.** recordDebrief, context builder.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-037 · "What Vana knows" is one flat list and memory kinds stay in code
 - category: Vana's memory
@@ -890,7 +896,7 @@ Feature name: Meal planning and Vana
 ## mp-046 · A scoped report counts only while its route is on top
 - category: Situation awareness
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/settings.png
 - caption:
 - screen: Settings
 - source: ticket 06
@@ -908,6 +914,7 @@ Feature name: Meal planning and Vana
 **What it touches.** Companion host, situation controller.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-047 · The tab shell speaks for every main tab, and a tab's own scope wins
 - category: Situation awareness
@@ -1001,7 +1008,7 @@ Feature name: Meal planning and Vana
 ## mp-051 · The launcher hides under any dialog or bottom sheet
 - category: The sheet and launcher
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/calendar-sheet.png
 - caption:
 - screen: Calendar sheet over the Plan tab
 - source: ticket 06
@@ -1019,6 +1026,7 @@ Feature name: Meal planning and Vana
 **What it touches.** VanaCompanionObserver.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-053 · Flow screens hide the launcher rather than inset their buttons
 - category: The sheet and launcher
@@ -1309,7 +1317,7 @@ Feature name: Meal planning and Vana
 ## mp-121 · Editing an earlier turn rewinds the conversation and restores the draft
 - category: The planning conversation
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: vana-chatbot-update-plan.md
@@ -1327,6 +1335,7 @@ Feature name: Meal planning and Vana
 **What it touches.** Rewind action, message metadata.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-139 · Day notes are precomputed in one call for seven days and refreshed in the background
 - category: Plan tab
@@ -1353,7 +1362,7 @@ Feature name: Meal planning and Vana
 ## mp-146 · Directions carry a recorded origin and a badge
 - category: Recipes and cooking
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/meal-detail.png
 - caption:
 - screen: Meal detail
 - source: memory 09-01; 05-flutter-feature.md
@@ -1371,11 +1380,12 @@ Feature name: Meal planning and Vana
 **What it touches.** meal_library, meal detail screen, cooking mode.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-165 · The What's New sheet is gated by a content key
 - category: Feedback loop
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/timeline.png
 - caption:
 - screen: Home shell
 - source: memory 09-08
@@ -1393,6 +1403,7 @@ Feature name: Meal planning and Vana
 **What it touches.** WhatsNewSheet, app content.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-197 · MealBuddy's skin is rejected, only its interactions are adopted
 - category: Design system
@@ -1419,7 +1430,7 @@ Feature name: Meal planning and Vana
 ## mp-209 · Jade is retired everywhere, including coach formula feedback
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Coach formula feedback, Vana chat
 - source: Lee on the page 2026-09-13, amending mp-002
@@ -1435,11 +1446,12 @@ Feature name: Meal planning and Vana
 **What it touches.** jade-chat route and alias, jade_* views, persona prompts, coach formula feedback copy, content keys.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-212 · Vana has tools for the athlete's own records
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: Lee on the page 2026-09-13, amending mp-005
@@ -1457,11 +1469,12 @@ Feature name: Meal planning and Vana
 **What it touches.** vana-chat tool set, context builder, event and activity queries.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-213 · A side question gets an answer, then an offer to resume planning
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: Lee on the page 2026-09-13, amending mp-007
@@ -1479,11 +1492,12 @@ Feature name: Meal planning and Vana
 **What it touches.** Persona prompt, planning intent rules, picker chips.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-214 · Vana is short and to the point, without a sentence count
 - category: Vana's voice and openers
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: Lee on the page 2026-09-13, rejecting mp-011
@@ -1501,6 +1515,7 @@ Feature name: Meal planning and Vana
 **What it touches.** Persona prompt core.
 
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-218 · The context block has a token budget and a test that enforces it
 - category: Vana's memory
@@ -1714,7 +1729,7 @@ Feature name: Meal planning and Vana
 ## mp-228 · What the recovery opener says, and its tone
 - category: Moments: Vana speaks first
 - status: approved
-- image: none
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_moment_tinted_light.png
 - caption:
 - screen: Vana sheet on a recovery moment
 - source: ticket 10; memory 09-11
@@ -1734,11 +1749,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-098, mp-099
 > 2026-09-14 approved
+> 2026-09-14 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_moment_tinted_light.png
 
 ## mp-229 · Meal-plan moments are deferred, and the proactive loop runs through the opener
 - category: Moments: Vana speaks first
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: ticket 12; vana-chatbot-update-plan.md
@@ -1759,11 +1775,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-100, mp-101
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-232 · Batch cooking is asked once
 - category: The planning conversation
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: prototype-rebuild-spec.md; 05-flutter-feature.md
@@ -1783,11 +1800,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-109, mp-110
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-233 · What Vana suggests, and what she never invents
 - category: The planning conversation
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: memory 08-31; README; prototype-rebuild-spec.md; 05-flutter-feature.md
@@ -1808,6 +1826,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-112, mp-113, mp-114
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-234 · The plan bar
 - category: The planning conversation
@@ -1863,7 +1882,7 @@ Feature name: Meal planning and Vana
 ## mp-236 · The composer's plus menu: pantry, fridge photo and browse
 - category: The planning conversation
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat
 - source: memory 09-07; vana-chatbot-update-plan.md; memory 09-03
@@ -1886,6 +1905,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-122, mp-123, mp-124, mp-125
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-237 · General mode's empty state, and what each failure shows
 - category: The planning conversation
@@ -2015,7 +2035,7 @@ Feature name: Meal planning and Vana
 ## mp-242 · The Meals tab is for looking
 - category: Meals tab and library
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/meals-tab.png
 - caption:
 - screen: Meals tab
 - source: memory 08-31; 05-flutter-feature.md
@@ -2038,11 +2058,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-141, mp-142, mp-143
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-243 · Cooking mode
 - category: Recipes and cooking
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/cooking-mode.png
 - caption:
 - screen: Cooking mode
 - source: 05-flutter-feature.md; recipe-directions-and-cooking-mode.md; README
@@ -2066,11 +2087,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-147, mp-148, mp-149, mp-150
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-246 · What Vana says after feedback, and the one-time prompt
 - category: Feedback loop
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat after feedback
 - source: ticket 01; memory 09-10; 02-contract.md
@@ -2090,11 +2112,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-156, mp-161
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-248 · Problem reports go through Wiredash, from a card or a shake
 - category: Feedback loop
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
 - caption:
 - screen: Vana chat, shake sheet
 - source: memory 09-08
@@ -2116,6 +2139,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-163, mp-164
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-249 · Pro: what it covers and what it costs
 - category: Pro and paywall
@@ -2173,7 +2197,7 @@ Feature name: Meal planning and Vana
 ## mp-254 · Which writes wait for the server
 - category: Data, sync and backend
 - status: approved
-- image: none
+- image: test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 - caption:
 - screen: Plan tab
 - source: 05-flutter-feature.md; plan-tab-v2.md; memory 09-01
@@ -2194,6 +2218,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-181, mp-182
 > 2026-09-14 approved
+> 2026-09-14 picture reused from test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
 ## mp-257 · Home location is a Fact set in conversation
 - category: Data, sync and backend
@@ -2360,7 +2385,7 @@ Feature name: Meal planning and Vana
 ## mp-264 · Vana lives on three screens for now
 - category: The sheet and launcher
 - status: approved
-- image: none
+- image: docs/ssot/decisions/images/mealplanning/timeline.png
 - caption:
 - screen: Main tabs, Plan tab, coach formulas
 - source: Lee on the page 2026-09-14, on mp-049, mp-050, mp-053 to mp-057
@@ -2383,11 +2408,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-057
 > 2026-09-14 approved
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
 ## mp-265 · One sheet height, and full screen only when its button is pressed
 - category: The sheet and launcher
 - status: approved
-- image: none
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 - caption:
 - screen: Vana sheet, full-screen Vana chat
 - source: Lee on the page 2026-09-14, on mp-059, mp-060, mp-063 to mp-066
@@ -2413,6 +2439,7 @@ Feature name: Meal planning and Vana
 > 2026-09-14 amended by Lee
 > 2026-09-14 clause 4 rewritten from Lee's words
 > 2026-09-14 approved
+> 2026-09-14 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 
 ## mp-266 · A seven-day trial, then purchase: no free tier and no Pro tier
 - category: Pro and paywall

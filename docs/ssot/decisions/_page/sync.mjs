@@ -23,10 +23,16 @@
 //   node sync.mjs undrawn <proposals.md> [<ssot.md>]   -> screenless cards with no drawn picture yet
 //   node sync.mjs draw <spec.json> [<out.svg>]         -> draw a diagram from a spec (diagram.mjs), checked
 //   node sync.mjs attach-svg <decisions.md> <id> <svg path>  -> check the file and set the card's `svg:` line
+//   node sync.mjs uncaptured <proposals.md> [<ssot.md>]  -> cards that name a screen and have no picture, with what would picture them
+//   node sync.mjs capture --check                      -> what stands between this machine and a capture
+//   node sync.mjs capture <feature> <screen>           -> drive the booted simulator to the screen, save the png and its sidecar
+//   node sync.mjs attach-image <decisions.md> <id> <png path> [--caption <text>]  -> set the card's image line, record where it came from
+//   node sync.mjs pictures <feature> <proposals.md> <ssot.md>  -> uncaptured -> reuse or capture -> attach, for every card at once
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { draw, TOKENS } from './diagram.mjs';
+import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor } from './capture.mjs';
 
 const HEAD_KEYS = ['feature', 'feature name', 'last extracted', 'artifact'];
 const PARTS = [
@@ -113,8 +119,9 @@ export function serialize(doc) {
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Page documents for the `decisions` collection, keyed by id. */
-export function toDocuments(doc, { order = 0, readSvg = () => '' } = {}) {
+export function toDocuments(doc, { order = 0, readSvg = () => '', readCaptured = () => null } = {}) {
   // readSvg(path) returns the drawn picture's markup for the page, or '' to leave the box empty.
+  // readCaptured(image path) returns the capture's sidecar ({commit, appVersion, capturedAt, ...}) or null.
   const feature = doc.head.feature;
   return doc.decisions.map((d, n) => ({
     id: d.id,
@@ -133,6 +140,7 @@ export function toDocuments(doc, { order = 0, readSvg = () => '' } = {}) {
     depends: d.meta.depends || '',
     image: d.meta.image && d.meta.image !== 'none' ? d.meta.image : '',
     imageCaption: d.meta.caption || '',
+    captured: d.meta.image && d.meta.image !== 'none' ? readCaptured(d.meta.image) : null,
     svgPath: d.meta.svg || '',
     svg: d.meta.svg ? readSvg(d.meta.svg) : '',
     context: d.parts.context || '',
@@ -646,12 +654,54 @@ export function undrawn(proposals, ssot = { decisions: [] }) {
 export function attachSvg(doc, id, path) {
   const d = doc.decisions.find(x => x.id === id);
   if (!d) return false;
-  if (d.meta.svg !== undefined) { d.meta.svg = path; return true; }
-  const keys = Object.keys(d.meta);
-  const after = keys.includes('caption') ? 'caption' : keys.includes('image') ? 'image' : keys[keys.length - 1];
-  const meta = {};
-  for (const k of keys) { meta[k] = d.meta[k]; if (k === after) meta.svg = path; }
-  d.meta = meta;
+  d.meta = setMeta(d.meta, 'svg', path, ['caption', 'image']);
+  return true;
+}
+/** Set one meta line: in place when the card has it, else inserted after the first key of `after` the card has (or last). */
+function setMeta(meta, key, value, after = []) {
+  if (meta[key] !== undefined) return { ...meta, [key]: value };
+  const keys = Object.keys(meta);
+  const at = after.find(k => keys.includes(k)) || keys[keys.length - 1];
+  const out = {};
+  for (const k of keys) { out[k] = meta[k]; if (k === at) out[key] = value; }
+  return out;
+}
+
+// Captured pictures. A card that names a screen (`screen:` not "none") and has
+// `image: none` is pictured from the simulator (capture.mjs) or from an existing
+// golden or design frame the screen registry names for that screen. Either
+// way `attachImage` sets the card's `image:` line and writes one dated history
+// line saying where the picture came from; the sidecar beside a capture
+// (`<png>.json` with the png's extension swapped) carries the commit and app
+// version it was taken at.
+const sidecarPath = png => png.replace(/\.png$/i, '.json');
+export function readSidecar(png) {
+  const p = sidecarPath(png);
+  if (!existsSync(p)) return null;
+  try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; }
+}
+/** Cards with a screen and no picture, and what would picture each: reuse (a path), capture (a drive), or none. */
+export function uncaptured(proposals, ssot = { decisions: [] }, screens = {}) {
+  const out = [];
+  for (const [file, doc] of [['proposals', proposals], ['record', ssot]]) {
+    for (const d of doc.decisions) {
+      if (isQuestion(d) || GONE.includes(d.meta.status)) continue;
+      if (!d.meta.screen || isScreenless(d) || (d.meta.image && d.meta.image !== 'none')) continue;
+      const m = matchScreen(d.meta.screen, screens);
+      const how = !m ? 'none' : m.reuse ? 'reuse' : m.drive ? 'capture' : 'none';
+      out.push({ id: d.id, title: d.title, file, screen: d.meta.screen, key: m?.key || '', how, path: m?.reuse || '', note: m?.note || (m ? '' : 'no screen in screens.json matches') });
+    }
+  }
+  return out;
+}
+/** Set a card's image (and caption when given) and record the picture's origin as a history line; false when the id is not in the doc. */
+export function attachImage(doc, id, path, { caption, captured = readSidecar(path), today = new Date().toISOString().slice(0, 10) } = {}) {
+  const d = doc.decisions.find(x => x.id === id);
+  if (!d) return false;
+  d.meta = setMeta(d.meta, 'image', path, ['status']);
+  if (caption !== undefined) d.meta = setMeta(d.meta, 'caption', caption, ['image']);
+  const note = captured ? `picture captured at ${captured.appVersion || '?'}, ${captured.commit || '?'}` : `picture reused from ${path}`;
+  d.history.push({ date: today, note });
   return true;
 }
 
@@ -705,7 +755,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
       const d = parse(readFileSync(f, 'utf8'));
       // A drawn picture that fails the check is reported and left out; the page shows the empty box.
       const readSvg = path => { const c = checkedSvg(path); if (c.problems.length) { console.error(`svg ${path} left out: ${c.problems.join('; ')}`); return ''; } return c.svg; };
-      for (const doc of toDocuments(d, { order, readSvg })) {
+      for (const doc of toDocuments(d, { order, readSvg, readCaptured: readSidecar })) {
         const { id, ...body } = doc;
         body.imageAssetId = body.image ? assetId(assets, body.image) : '';
         writeFileSync(`${out}/${id}.json`, JSON.stringify(body, null, 2));
@@ -860,7 +910,75 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (!attachSvg(doc, id, path)) { console.error(`${id} is not in ${df}`); process.exit(1); }
     writeFileSync(df, serialize(doc));
     console.log(`${id}: svg ${path}`);
+  } else if (cmd === 'uncaptured') {
+    // uncaptured <proposals.md> [<ssot.md>]: screen cards with no picture and how each would get one, nothing written.
+    const [pf, sf] = args;
+    const [proposals, ssot] = readPair(pf, sf);
+    process.stdout.write(JSON.stringify(uncaptured(proposals, ssot, loadScreens()), null, 2));
+  } else if (cmd === 'capture') {
+    // capture --check: what is missing on this machine. capture <feature> <screen>: one picture, printed as its sidecar.
+    if (args[0] === '--check') {
+      const r = await doctor();
+      console.log(JSON.stringify(r, null, 2));
+      process.exit(r.ready ? 0 : 1);
+    }
+    const [feature, ...rest] = args; const screen = rest.join(' ');
+    if (!feature || !screen) { console.error('usage: sync.mjs capture --check | capture <feature> <screen>'); process.exit(2); }
+    const entry = matchScreen(screen, loadScreens());
+    if (!entry) { console.error(`no screen in screens.json matches "${screen}"`); process.exit(1); }
+    if (!entry.drive) { console.error(`${entry.key} has no drive${entry.reuse ? `; reuse ${entry.reuse}` : ''}${entry.note ? `. ${entry.note}` : ''}`); process.exit(1); }
+    const booted = bootedUdid();
+    if (!booted) { console.error('no booted simulator'); process.exit(1); }
+    const r = await capture(entry, { dir: `docs/ssot/decisions/images/${feature}`, ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid) });
+    console.log(JSON.stringify(r, null, 2));
+  } else if (cmd === 'attach-image') {
+    // attach-image <decisions.md> <id> <png path> [--caption <text>]: set the image line and record where the picture came from.
+    const [df, id, path] = args; const ci = args.indexOf('--caption'); const caption = ci > 0 ? args[ci + 1] : undefined;
+    if (!df || !id || !path) { console.error('usage: sync.mjs attach-image <decisions.md> <id> <png path> [--caption <text>]'); process.exit(2); }
+    if (!existsSync(path)) { console.error(`${path}: file missing`); process.exit(1); }
+    const doc = parse(readFileSync(df, 'utf8'));
+    if (!attachImage(doc, id, path, { caption })) { console.error(`${id} is not in ${df}`); process.exit(1); }
+    writeFileSync(df, serialize(doc));
+    console.log(`${id}: image ${path}`);
+  } else if (cmd === 'pictures') {
+    // pictures <feature> <proposals.md> <ssot.md>: every uncaptured card gets its picture, one capture per screen.
+    const [feature, pf, sf] = args;
+    if (!feature || !pf || !sf) { console.error('usage: sync.mjs pictures <feature> <proposals.md> <ssot.md>'); process.exit(2); }
+    const screens = loadScreens();
+    const [proposals, ssot] = readPair(pf, sf);
+    const docs = { proposals, record: ssot };
+    const todo = uncaptured(proposals, ssot, screens);
+    const result = { attached: [], skipped: [] };
+    // One capture per screen key per run; the png path (or null after a failed drive) is remembered here.
+    const captures = new Map();
+    let session = null; // the booted simulator, its io and the commit/version stamp, opened on the first capture
+    const dir = `docs/ssot/decisions/images/${feature}`;
+    for (const c of todo) {
+      const doc = docs[c.file];
+      const skip = why => result.skipped.push({ id: c.id, screen: c.screen, why });
+      if (c.how === 'reuse') {
+        if (!existsSync(c.path)) { skip(`${c.path} is missing`); continue; }
+        attachImage(doc, c.id, c.path, { captured: null });
+        result.attached.push({ id: c.id, screen: c.screen, path: c.path, how: 'reused' });
+      } else if (c.how === 'capture') {
+        if (!captures.has(c.key)) {
+          if (!session) {
+            const booted = bootedUdid();
+            if (!booted) { skip('no booted simulator'); continue; }
+            session = { ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid), dir };
+          }
+          try { captures.set(c.key, (await capture({ key: c.key, ...screens[c.key] }, session)).path); }
+          catch (e) { captures.set(c.key, null); console.error(`${c.key}: ${e.message}`); }
+        }
+        const path = captures.get(c.key);
+        if (!path) { skip(`capture of ${c.key} failed`); continue; }
+        attachImage(doc, c.id, path);
+        result.attached.push({ id: c.id, screen: c.screen, path, how: 'captured' });
+      } else skip(c.note || 'nothing pictures this screen');
+    }
+    writeFileSync(pf, serialize(proposals)); if (existsSync(sf)) writeFileSync(sf, serialize(ssot));
+    console.log(JSON.stringify(result, null, 2));
   } else {
-    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures ...'); process.exit(2);
   }
 }

@@ -3,7 +3,8 @@
 The single source of truth for product decisions. One markdown file per feature.
 No ruling enters a file here except on a ratifier's verdict (Lee or Xuan), given on the decisions page.
 Agents never edit these files by hand; the sync module in `_page/` applies verdicts, and its
-`attach-svg` command sets a card's drawn picture (Drawn pictures below), which changes no ruling.
+`attach-svg` and `attach-image` commands set a card's picture (Drawn pictures and Captured
+pictures below), which changes no ruling.
 
 This folder is app-owned. It sits outside the QA mirror's rsync scope, so a sync
 from `../mealvana_endurance_qa` never touches it.
@@ -12,9 +13,10 @@ from `../mealvana_endurance_qa` never touches it.
 
 Everything here runs from a checkout of this repo. Nothing reads a user name or a session id;
 every path is repo-relative, and the page's data lives in the artifact's own database, not on
-anyone's laptop. The one thing read from the home directory is Matt Pocock's skills plugin in
+anyone's laptop. Two things are read from the home directory: Matt Pocock's skills plugin in
 Claude Code's plugin cache, which the -lee skills follow at run time (`MATT_SKILLS_ROOT`
-points elsewhere if the cache lives elsewhere).
+points elsewhere if the cache lives elsewhere), and the `idb` tools the capture command
+looks for in `~/.local/bin` (Captured pictures below).
 
 1. Install Node 20 or newer. The sync module is plain ESM with no dependencies.
 2. Test: `node --test docs/ssot/decisions/_page/sync.test.mjs` (all cases must pass).
@@ -22,7 +24,9 @@ points elsewhere if the cache lives elsewhere).
    `verdicts.json` is the page's queued verdicts: a Claude Code session reads the `verdicts`
    collection with `read_db` (where `applied` is false) and saves it as that file. The Finish
    button only wakes the watching session. `apply` writes only the two named files; the only
-   other command that writes a record is `attach-svg`, and it touches one `svg:` line.
+   other commands that write a record are `attach-svg` (one `svg:` line) and `attach-image`
+   (the `image:` and `caption:` lines plus one dated history line saying where the picture came
+   from); `pictures` runs `attach-image` for every card that needs one.
 4. Open the page: the artifact link below. Lee shares it with each ratifier from the page's
    share menu. Whoever opens it picks their name in the header once per browser, and every
    verdict they give carries it as `by`. The platform tells the page nothing about the viewer,
@@ -38,7 +42,8 @@ points elsewhere if the cache lives elsewhere).
 |---|---|
 | Approved, rejected, withdrawn decisions | `docs/ssot/decisions/<feature>.md` |
 | Proposals waiting on Lee | `.scratch/<feature>/decisions.md` |
-| New screenshots and drawn diagrams | `docs/ssot/decisions/images/<feature>/` |
+| New screenshots and drawn diagrams | `docs/ssot/decisions/images/<feature>/` (a capture is `<screen key>.png` beside a `<screen key>.json` sidecar with the commit and app version) |
+| Which screen a card's `screen:` line means, and how to reach it | `_page/screens.json` |
 | Existing screenshots elsewhere in the repo | referenced by path, never copied |
 | The page template and sync module | `docs/ssot/decisions/_page/` |
 | The published page | see `Artifact:` below |
@@ -182,6 +187,41 @@ source of truth; the SVG is. `sync.mjs undrawn` lists what still needs one. A ca
 screen is captured, not drawn (ticket 08), unless the ratifier asks for a drawing of its
 mechanism as well (mp-266, the trial timeline).
 
+## Captured pictures
+
+A card that names a screen is pictured from the app, not drawn. `sync.mjs pictures <feature>
+<proposals.md> <ssot.md>` (epilogue step 0b) takes every card with a screen and `image: none`,
+looks the screen up in `_page/screens.json`, and either reuses the golden or design frame the
+entry names (story 16: an existing picture of exactly that screen comes first) or drives the
+booted simulator there and photographs it. One capture per screen per run, however many cards
+name it. The image is `docs/ssot/decisions/images/<feature>/<screen key>.png`; its sidecar
+`<screen key>.json` records the screen, the commit, the app version (`pubspec.yaml`), the device
+and the runtime, and `prepare` carries it into the page document as `captured`. `attach-image`
+sets the card's `image:` line and appends one dated history line, `picture captured at
+1.26.0+1, 43496fed` or `picture reused from <path>`, so the record says where every picture came
+from. A screen with no drive and no reuse (the paywall: only a Pro-required error reaches it,
+and the dev account is Pro) is reported and left as it was.
+
+`screens.json` is the registry: one entry per screen with `match` (the phrases a card's
+`screen:` line may use; each comma-separated part is tried, exact first, then the longest
+phrase it contains), optionally `reuse` (a repo path: an existing picture of exactly that screen,
+named by hand, since a golden's file name says nothing certain about what it shows) and `drive` (steps from a fresh launch: `{"tap": "<label>", "type"?}` taps the
+element with that accessibility label, first line exact, then substring; `{"tapAfter":
+"<label>", "type"}` taps the next element of a type after the labelled one; `{"wait": ms}`;
+`settle` on a step overrides the pause after it). Every drive starts from terminate + launch. On
+the simulator the dev wrench overlaps the Vana launcher, so the Vana drives go in through the
+Plan tab's Vana card, not the launcher. `sync.mjs capture <feature> <screen>` takes one picture
+by hand, following the drive even when the entry also names a `reuse` (re-capturing a screen
+rewrites its png and sidecar in place; the cards that point at it need nothing).
+
+Setup, once per machine: `scripts/ssot-capture-setup.sh` installs the `idb` client (pipx) and
+Facebook's prebuilt `idb_companion` under `~/.local` (Homebrew's facebook/fb tap fails to tap
+and its formula wants newer Command Line Tools). `sync.mjs capture --check` (it terminates and relaunches the dev app to ask it) then says what is
+still missing: idb, the companion, a booted simulator, the dev app on it, or an app that
+answers with an empty accessibility tree after a fresh launch. That last one was the 09-14
+blocker: a debug session left from the day before had the app painted but deaf, so every tap
+"succeeded" and nothing moved. Every capture now starts with terminate + launch, which clears it.
+
 ## Vocabulary
 
 The page's Vocabulary section mirrors the glossary in `CONTEXT.md` (seeded into the `vocab`
@@ -231,7 +271,7 @@ the page into the two files), `answers` (close an open question with a decision)
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
-`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn` and `attachSvg`; `_page/diagram.mjs` exports `draw` and the token list. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage` and `readSidecar`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture, a spec or an svg string and checks what comes out, never
 how the parser walks lines; one case round-trips the real mealplanning record and proposals. CLI:
 
@@ -256,6 +296,11 @@ node docs/ssot/decisions/_page/sync.mjs asset <assets.json> <path> <asset id> # 
 node docs/ssot/decisions/_page/sync.mjs undrawn <proposals.md> [<ssot.md>]   # screenless cards with no drawn picture, as JSON; questions and ruled-out cards are skipped
 node docs/ssot/decisions/_page/sync.mjs draw <spec.json> [<out.svg>]         # draw a diagram from a spec; refuses one that fails the check
 node docs/ssot/decisions/_page/sync.mjs attach-svg <decisions.md> <id> <svg path>  # check the file, set the card's svg line
+node docs/ssot/decisions/_page/sync.mjs uncaptured <proposals.md> [<ssot.md>]   # screen cards with no picture and how each would get one (reuse, capture, none), as JSON
+node docs/ssot/decisions/_page/sync.mjs capture --check                        # what stands between this machine and a capture
+node docs/ssot/decisions/_page/sync.mjs capture <feature> <screen>             # drive the booted simulator to the screen; png + sidecar under images/<feature>/
+node docs/ssot/decisions/_page/sync.mjs attach-image <decisions.md> <id> <png> [--caption <text>]  # set the image line, record where the picture came from
+node docs/ssot/decisions/_page/sync.mjs pictures <feature> <proposals.md> <ssot.md>   # uncaptured -> reuse or capture -> attach, one capture per screen
 ```
 
 `triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with

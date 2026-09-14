@@ -9,7 +9,8 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } fro
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar } from './sync.mjs';
+import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName } from './capture.mjs';
 import { draw, TOKENS } from './diagram.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -837,4 +838,105 @@ test('attach-svg checks the file, sets the meta line after caption, and prepare 
   const spec = join(dir, 'spec.json'); writeFileSync(spec, JSON.stringify(paywallSpec));
   execFileSync('node', [cli, 'draw', spec, join(dir, 'drawn.svg')]);
   assert.equal(readFileSync(join(dir, 'drawn.svg'), 'utf8'), draw(paywallSpec));
+});
+
+// Captured pictures (ticket 08). The registry is data, the drive is a list of steps, and the
+// simulator is a fake io here: the tests check what is matched, tapped and written.
+const screens = {
+  timeline: { match: ['Timeline', 'Home shell', 'Main tabs'], drive: [{ tap: 'Timeline', type: 'Button' }] },
+  'meal-detail': { match: ['Meal detail'], drive: [{ tap: 'Food', type: 'Button' }, { tap: 'Meals' }, { tapAfter: 'RECENTS', type: 'GenericElement' }] },
+  'vana-sheet': { match: ['Vana sheet'], reuse: 'goldens/vana_sheet_open_light.png' },
+  paywall: { match: ['Paywall'], note: 'no drive gets there' },
+};
+const el = (type, AXLabel, x, y) => ({ type, AXLabel, frame: { x, y, width: 40, height: 20 } });
+
+test('matchScreen takes the card\'s screen line: exact phrase per comma part first, then a contained one', () => {
+  assert.equal(matchScreen('Home shell', screens).key, 'timeline');
+  assert.equal(matchScreen('Main tabs, Plan tab, coach formulas', screens).key, 'timeline');
+  assert.equal(matchScreen('Vana sheet, full-screen Vana chat', screens).key, 'vana-sheet');
+  assert.equal(matchScreen('Meal detail screen (Recipe)', screens).key, 'meal-detail');
+  assert.equal(matchScreen('none (algorithm/data)', screens), null);
+  assert.equal(matchScreen('Kroger cart', screens), null);
+  // The real registry matches every screen the mealplanning record names today.
+  const real = loadScreens();
+  for (const s of ['Vana chat', 'Settings', 'Calendar sheet over the Plan tab', 'Meal detail', 'Home shell', 'Coach formula feedback, Vana chat', 'Vana sheet on a recovery moment', 'Meals tab', 'Cooking mode', 'Vana chat after feedback', 'Vana chat, shake sheet', 'Plan tab', 'Main tabs, Plan tab, coach formulas', 'Vana sheet, full-screen Vana chat', 'Paywall', 'Any screen with the launcher', 'Vana sheet', 'Settings, Plan tab']) assert.ok(matchScreen(s, real), s);
+  assert.equal(matchScreen('Vana sheet on a recovery moment', real).key, 'vana-sheet-moment');
+  assert.equal(matchScreen('Any screen with the launcher', real).key, 'launcher');
+  // The fallback takes the longest phrase, whatever order the registry lists its screens in.
+  const reversed = Object.fromEntries(Object.entries(real).reverse());
+  assert.equal(matchScreen('Vana settings screen', real).key, 'settings');
+  assert.equal(matchScreen('Vana settings screen', reversed).key, 'settings');
+  assert.equal(matchScreen('Coach formula feedback, Vana chat', real).key, 'vana-chat');
+});
+
+test('findElement prefers the exact first-line label over a substring, honours type, and tapAfter takes the next element of a type', () => {
+  const tree = [el('Application', 'App', 0, 0), el('Button', '+ Add Food', 100, 200), el('Button', 'Food\nFood', 130, 800), el('StaticText', 'RECENTS\nSee all', 10, 300), el('StaticText', 'x', 0, 0), el('GenericElement', 'Rice bowl', 20, 330), el('GenericElement', 'Quinoa bowl', 200, 330)];
+  assert.equal(findElement(tree, { tap: 'Food' }).AXLabel, 'Food\nFood');
+  assert.equal(findElement(tree, { tap: 'add food' }).AXLabel, '+ Add Food');
+  assert.equal(findElement(tree, { tap: 'Food', type: 'StaticText' }), null);
+  assert.equal(findElement(tree, { tapAfter: 'RECENTS', type: 'GenericElement' }).AXLabel, 'Rice bowl');
+  assert.equal(findElement(tree, { tapAfter: 'nowhere' }), null);
+  // An element with an empty frame is off screen and never tapped.
+  assert.equal(findElement([el('Application', '', 0, 0), { type: 'Button', AXLabel: 'Ghost', frame: { x: 0, y: 0, width: 0, height: 0 } }], { tap: 'Ghost' }), null);
+});
+
+test('runDrive launches fresh, taps each step at the element centre, and names the step that found nothing', async () => {
+  const log = [];
+  const io = { launch: async () => log.push('launch'), tree: async () => [el('Button', 'Food\nFood', 100, 800), el('StaticText', 'Meals', 200, 120)], tap: async (x, y) => log.push(`tap ${x},${y}`), wait: async ms => log.push(`wait ${ms}`) };
+  await runDrive([{ tap: 'Food', type: 'Button' }, { wait: 500 }, { tap: 'Meals', settle: 100 }], io, { settle: 10 });
+  assert.deepEqual(log, ['launch', 'tap 120,810', 'wait 10', 'wait 500', 'tap 220,130', 'wait 100']);
+  await assert.rejects(runDrive([{ tap: 'Nope' }], io, { settle: 0 }), /"tap":"Nope"/);
+});
+
+test('capture saves the png beside a sidecar carrying commit and app version, and attach-image records them on the card', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const io = { launch: async () => {}, tree: async () => [el('Button', 'Timeline', 50, 800)], tap: async () => {}, wait: async () => {}, screenshot: p => writeFileSync(p, 'png') };
+  const r = await capture({ key: 'timeline', ...screens.timeline }, { dir, commit: 'abc1234', version: '1.26.0+1', device: 'iPhone 17 Pro', runtime: 'iOS 26.2', io });
+  assert.equal(r.path, join(dir, 'timeline.png'));
+  assert.equal(readFileSync(join(dir, 'timeline.png'), 'utf8'), 'png');
+  const side = JSON.parse(readFileSync(join(dir, 'timeline.json'), 'utf8'));
+  assert.equal(side.commit, 'abc1234'); assert.equal(side.appVersion, '1.26.0+1'); assert.equal(side.screen, 'Timeline'); assert.equal(side.key, 'timeline');
+  assert.equal(runtimeName('com.apple.CoreSimulator.SimRuntime.iOS-26-2'), 'iOS 26.2'); assert.match(side.capturedAt, /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(readSidecar(join(dir, 'timeline.png')), side);
+  assert.equal(readSidecar(join(dir, 'missing.png')), null);
+  await assert.rejects(capture({ key: 'paywall', ...screens.paywall }, { dir, io }), /no drive/);
+  // attach-image on a card: image line set, one dated history line naming the version and commit.
+  const md = join(dir, 'p.md'); writeFileSync(md, fixture);
+  execFileSync('node', [cli, 'attach-image', md, 'sm-001', join(dir, 'timeline.png'), '--caption', 'The timeline']);
+  const after = readFileSync(md, 'utf8');
+  assert.ok(after.includes(`- image: ${join(dir, 'timeline.png')}\n- caption: The timeline\n`), after);
+  assert.match(after, /> \d{4}-\d{2}-\d{2} picture captured at 1\.26\.0\+1, abc1234\n/);
+  assert.equal(serialize(parse(after)), after);
+  assert.throws(() => execFileSync('node', [cli, 'attach-image', md, 'sm-001', join(dir, 'nothing.png')], { stdio: 'pipe' }), /file missing/);
+  // A reused golden has no sidecar: the history line names the file instead.
+  const doc = parse(fixture);
+  assert.equal(attachImage(doc, 'sm-001', 'goldens/vana_sheet_open_light.png', { today: '2026-09-14' }), true);
+  assert.equal(doc.decisions[0].meta.image, 'goldens/vana_sheet_open_light.png');
+  assert.deepEqual(doc.decisions[0].history.at(-1), { date: '2026-09-14', note: 'picture reused from goldens/vana_sheet_open_light.png' });
+  assert.equal(attachImage(doc, 'sm-404', 'x.png'), false);
+  // A card without an image line gets one after status.
+  const bare = parse(fixture); delete bare.decisions[0].meta.image; delete bare.decisions[0].meta.caption;
+  attachImage(bare, 'sm-001', 'x.png', { captured: null, caption: 'c' });
+  assert.deepEqual(Object.keys(bare.decisions[0].meta), ['category', 'status', 'image', 'caption', 'screen', 'source']);
+  // prepare carries the sidecar into the page document.
+  execFileSync('node', [cli, 'prepare', md, '--out', join(dir, 'out')]);
+  const body = JSON.parse(readFileSync(join(dir, 'out', 'sm-001.json'), 'utf8'));
+  assert.equal(body.captured.commit, 'abc1234'); assert.equal(body.image, join(dir, 'timeline.png'));
+});
+
+test('uncaptured lists screen cards with no picture and says how each would get one', () => {
+  const first = () => parse(fixture).decisions[0]; // screen "Vana sheet", image none
+  const card = (id, meta) => ({ ...first(), id, meta: { ...first().meta, ...meta } });
+  const proposals = { decisions: [first()] };
+  const ssot = { decisions: [card('sm-002', { screen: 'Paywall' }), card('sm-003', { screen: 'Home shell', status: 'approved' }), card('sm-004', { screen: 'Home shell', status: 'rejected' }), card('sm-005', { screen: 'Home shell', image: 'have.png' }), card('sm-006', { screen: 'Kroger cart' })] };
+  const q = parse(questionFixture).decisions[0]; q.meta.screen = 'Home shell'; proposals.decisions.push(q);
+  const out = uncaptured(proposals, ssot, screens);
+  assert.deepEqual(out.map(o => [o.id, o.file, o.how, o.key, o.path]), [
+    ['sm-001', 'proposals', 'reuse', 'vana-sheet', 'goldens/vana_sheet_open_light.png'],
+    ['sm-002', 'record', 'none', 'paywall', ''],
+    ['sm-003', 'record', 'capture', 'timeline', ''],
+    ['sm-006', 'record', 'none', '', ''],
+  ]);
+  assert.equal(out[1].note, 'no drive gets there');
+  assert.equal(out[3].note, 'no screen in screens.json matches');
 });

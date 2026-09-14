@@ -23,6 +23,20 @@ SYNC attach-svg <file the card is in> <id> docs/ssot/decisions/images/<feature>/
 The README's Drawn pictures section has the rules. A card that names a screen is not drawn. Run `undrawn` again: it must print
 `[]`. The SVG files are committed with the run.
 
+## 0b. Capture the cards that name a screen
+
+```
+SYNC pictures <feature> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+```
+
+Every card with a screen and no picture gets one: the golden or design frame `screens.json`
+names for that screen, else a capture from the booted simulator (README, Captured pictures). Read
+the `attached` and `skipped` lists it prints; a skip names why (no booted simulator, a screen
+with no drive, a drive that found nothing). `SYNC capture --check` says what to fix when every
+capture skips. A screen the registry does not know is added to `_page/screens.json` with its
+drive, then the command is run again. The png files, their sidecars and the registry are
+committed with the run.
+
 ## 1. Prepare the page documents
 
 For every feature whose record, proposals, glossary or tickets changed in this run:
