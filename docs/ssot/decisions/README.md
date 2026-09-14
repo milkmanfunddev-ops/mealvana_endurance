@@ -3,8 +3,8 @@
 The single source of truth for product decisions. One markdown file per feature.
 No ruling enters a file here except on a ratifier's verdict (Lee or Xuan), given on the decisions page.
 Agents never edit these files by hand; the sync module in `_page/` applies verdicts, and its
-`attach-svg` and `attach-image` commands set a card's picture (Drawn pictures and Captured
-pictures below), which changes no ruling.
+`attach-svg`, `attach-image` and `refresh` commands set a card's picture (Drawn pictures and
+Captured pictures below), which changes no ruling.
 
 This folder is app-owned. It sits outside the QA mirror's rsync scope, so a sync
 from `../mealvana_endurance_qa` never touches it.
@@ -26,7 +26,8 @@ looks for in `~/.local/bin` (Captured pictures below).
    button only wakes the watching session. `apply` writes only the two named files; the only
    other commands that write a record are `attach-svg` (one `svg:` line) and `attach-image`
    (the `image:` and `caption:` lines plus one dated history line saying where the picture came
-   from); `pictures` runs `attach-image` for every card that needs one.
+   from); `pictures` runs `attach-image` for every card that needs one, and `refresh` moves the
+   cards on a stale golden to a fresh capture with one such line (Captured pictures below).
 4. Open the page: the artifact link below. Lee shares it with each ratifier from the page's
    share menu. Whoever opens it picks their name in the header once per browser, and every
    verdict they give carries it as `by`. The platform tells the page nothing about the viewer,
@@ -214,6 +215,29 @@ Plan tab's Vana card, not the launcher. `sync.mjs capture <feature> <screen>` ta
 by hand, following the drive even when the entry also names a `reuse` (re-capturing a screen
 rewrites its png and sidecar in place; the cards that point at it need nothing).
 
+Every picture carries its age. A capture's sidecar says when it was taken; a reused golden or
+design frame has none, so git says instead: the commit that last touched the file, its date, and
+the version `pubspec.yaml` held then. `prepare` puts either into the page document as
+`captured` (`commit`, `appVersion`, `capturedAt`, `how`, `key`, `stale`, `changed`), and the page
+shows "captured at 1.26.0+1, 12 days ago" (or "golden from …") under the picture. Each
+`screens.json` entry lists the `code` its screen is drawn from (the screen file and the widgets
+it imports, or a presentation folder); a picture is **stale** when a file under those paths
+differs between its commit and the working tree (`git diff --name-only <commit> -- <paths>`, so
+uncommitted edits count, since that is what the simulator shows). The page marks a stale picture
+under its box with what changed, and the Work page counts them per feature. A picture whose
+file matches no registry key (a design frame, an old golden named by hand) or whose commit this
+clone never had shows its age with no staleness claim (`stale: null`). `sync.mjs stale` prints
+every picture in use with its age, its cards and whether a refresh could retake it.
+
+`sync.mjs refresh <feature> <proposals.md> <ssot.md>` retakes every stale picture in one pass,
+one capture per screen, for the screens that have a drive: a stale capture is rewritten in place
+(same png and sidecar, the cards need nothing), and the cards on a stale golden move to the new
+capture with one dated history line, `picture refreshed at 1.26.0+1, 43496fed, replacing
+<golden path>`. A stale picture whose screen has no drive is reported and left as it was. The
+old picture never stays beside the new one: the asset map then says which artifact asset was
+replaced or fell out of use (Assets below), and the epilogue deletes it. `/implement-lee` runs
+the same refresh for the screens a ticket touched when it closes, once ticket 10 builds it.
+
 Setup, once per machine: `scripts/ssot-capture-setup.sh` installs the `idb` client (pipx) and
 Facebook's prebuilt `idb_companion` under `~/.local` (Homebrew's facebook/fb tap fails to tap
 and its formula wants newer Command Line Tools). `sync.mjs capture --check` (it terminates and relaunches the dev app to ask it) then says what is
@@ -233,7 +257,8 @@ under their area heading after Lee confirms them in the terminal.
 ## Work page
 
 The page's Work entry lists, per feature: decisions with `work: pending` (not yet ticketed), open
-questions, and the tickets in `.scratch/<feature>/issues/` split into ahead and done. Tickets are
+questions, and the tickets in `.scratch/<feature>/issues/` split into ahead and done. It also counts the
+feature's stale pictures and lists each with its cards (Captured pictures above). Tickets are
 seeded into the `tickets` collection by `prepare --tickets <feature>=<issues dir>`; their status,
 blockers and next line come from the three header lines every ticket carries, and every `mp-NNN`
 mentioned in a ticket becomes a link back to the decision.
@@ -271,7 +296,7 @@ the page into the two files), `answers` (close an open question with a decision)
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
-`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage` and `readSidecar`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture, a spec or an svg string and checks what comes out, never
 how the parser walks lines; one case round-trips the real mealplanning record and proposals. CLI:
 
@@ -291,8 +316,9 @@ node docs/ssot/decisions/_page/sync.mjs tickets <feature> <issues dir>   # ticke
 node docs/ssot/decisions/_page/sync.mjs prepare <decisions.md>... --assets <assets.json> --tickets <feature>=<dir> --out <dir>
 node docs/ssot/decisions/_page/sync.mjs triage <verdicts.json> --out <dir>   # clear.json to apply now, words.json to synthesise first, rewrites.json to apply after the yes
 node docs/ssot/decisions/_page/sync.mjs next-id <proposals.md> <ssot.md>     # the next free id across both files
-node docs/ssot/decisions/_page/sync.mjs images <assets.json> <_images.json>  # images still to upload: new, changed, file missing
-node docs/ssot/decisions/_page/sync.mjs asset <assets.json> <path> <asset id> # record one upload, keyed by path and hash
+node docs/ssot/decisions/_page/sync.mjs images <assets.json> <_images.json>  # images still to upload: new, changed, file missing; plus unreferenced assets under the prepared features' folders
+node docs/ssot/decisions/_page/sync.mjs asset <assets.json> <path> <asset id> # record one upload, keyed by path and hash; prints {path, id, replaced}
+node docs/ssot/decisions/_page/sync.mjs asset <assets.json> <path> --drop     # forget a path; prints {path, dropped} with the asset id to delete
 node docs/ssot/decisions/_page/sync.mjs undrawn <proposals.md> [<ssot.md>]   # screenless cards with no drawn picture, as JSON; questions and ruled-out cards are skipped
 node docs/ssot/decisions/_page/sync.mjs draw <spec.json> [<out.svg>]         # draw a diagram from a spec; refuses one that fails the check
 node docs/ssot/decisions/_page/sync.mjs attach-svg <decisions.md> <id> <svg path>  # check the file, set the card's svg line
@@ -301,6 +327,8 @@ node docs/ssot/decisions/_page/sync.mjs capture --check                        #
 node docs/ssot/decisions/_page/sync.mjs capture <feature> <screen>             # drive the booted simulator to the screen; png + sidecar under images/<feature>/
 node docs/ssot/decisions/_page/sync.mjs attach-image <decisions.md> <id> <png> [--caption <text>]  # set the image line, record where the picture came from
 node docs/ssot/decisions/_page/sync.mjs pictures <feature> <proposals.md> <ssot.md>   # uncaptured -> reuse or capture -> attach, one capture per screen
+node docs/ssot/decisions/_page/sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]   # every picture in use: age, cards, stale and what changed; nothing written
+node docs/ssot/decisions/_page/sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]   # retake every stale picture once, in place; cards on a stale golden move to the capture
 ```
 
 `triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with
@@ -311,9 +339,13 @@ is only counted. `rewrites.json` is the amend and change subset of `words.json`,
 
 `_page/assets.json` maps a repo image path to the artifact asset it was uploaded as. Entries are
 `{"id", "sha256"}` (the first entries are bare ids and still resolve). `prepare` writes
-`_images.json` beside its output; `images` lists which of those need an upload, and `asset`
-records one after `upload_asset` returns its id. An image is uploaded again only when its hash
-changed.
+`_images.json` and `_features.json` beside its output; `images` lists which of those need an
+upload, plus every asset under a prepared feature's image folder that no document references
+any more (`unreferenced`, with its id), and `asset` records one after `upload_asset` returns
+its id, printing the id it replaced (`{path, id, replaced}`; a first upload replaces `""`).
+`asset <assets.json> <path> --drop` forgets a path and prints its id. A replaced or dropped
+asset is deleted from the artifact with `delete_asset`, so no old picture stays behind. An
+image is uploaded again only when its hash changed.
 
 A fold plan is `[{from: [ids], into: {title, question, context, decision, why, alternatives, touches, details?, detail?, work?}}]`.
 Only proposed or amended cards fold; anything with a verdict is refused. After a fold, delete the

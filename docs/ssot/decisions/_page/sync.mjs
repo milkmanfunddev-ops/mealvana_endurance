@@ -18,8 +18,9 @@
 //   node sync.mjs cite <spec.md> <proposals.md> [<ssot.md>]  -> what the spec's decision sections cite, as JSON
 //   node sync.mjs triage <verdicts.json> --out <dir>   -> clear.json (apply now), words.json (synthesise first), rewrites.json (apply after yes)
 //   node sync.mjs next-id <proposals.md> <ssot.md>     -> the next free id
-//   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing)
-//   node sync.mjs asset <assets.json> <path> <asset id> -> record one upload with the file's hash
+//   node sync.mjs images <assets.json> <_images.json>  -> images to upload (new, changed, missing), plus unreferenced assets with the id to delete
+//   node sync.mjs asset <assets.json> <path> <asset id> -> record one upload with the file's hash; prints the id it replaced
+//   node sync.mjs asset <assets.json> <path> --drop     -> forget a path; prints the id to delete
 //   node sync.mjs undrawn <proposals.md> [<ssot.md>]   -> screenless cards with no drawn picture yet
 //   node sync.mjs draw <spec.json> [<out.svg>]         -> draw a diagram from a spec (diagram.mjs), checked
 //   node sync.mjs attach-svg <decisions.md> <id> <svg path>  -> check the file and set the card's `svg:` line
@@ -28,9 +29,13 @@
 //   node sync.mjs capture <feature> <screen>           -> drive the booted simulator to the screen, save the png and its sidecar
 //   node sync.mjs attach-image <decisions.md> <id> <png path> [--caption <text>]  -> set the card's image line, record where it came from
 //   node sync.mjs pictures <feature> <proposals.md> <ssot.md>  -> uncaptured -> reuse or capture -> attach, for every card at once
+//   node sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]  -> every picture in use with its age and whether its screen's code moved on
+//   node sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]  -> retake every stale picture once, in place; cards on a golden move to the capture
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { join, isAbsolute, basename } from 'node:path';
 import { draw, TOKENS } from './diagram.mjs';
 import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor } from './capture.mjs';
 
@@ -675,21 +680,30 @@ function setMeta(meta, key, value, after = []) {
 // (`<png>.json` with the png's extension swapped) carries the commit and app
 // version it was taken at.
 const sidecarPath = png => png.replace(/\.png$/i, '.json');
+const imageDir = feature => `docs/ssot/decisions/images/${feature}`;
+// "at 1.26.0+1, 43496fed": how a history line names the build a picture was taken at.
+const pictureStamp = c => `at ${c?.appVersion || '?'}, ${c?.commit || '?'}`;
 export function readSidecar(png) {
   const p = sidecarPath(png);
   if (!existsSync(p)) return null;
   try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; }
 }
-/** Cards with a screen and no picture, and what would picture each: reuse (a path), capture (a drive), or none. */
-export function uncaptured(proposals, ssot = { decisions: [] }, screens = {}) {
-  const out = [];
+/**
+ * Cards with a screen and no picture, and what would picture each: reuse (a path),
+ * capture (a drive), or none. A registry `reuse` comes first only while it is not
+ * stale (`captureStatus`); a stale golden with a drive is captured instead, so a
+ * picture a refresh already replaced is never attached again.
+ */
+export function uncaptured(proposals, ssot = { decisions: [] }, screens = {}, { root = process.cwd() } = {}) {
+  const out = [], cache = new Map();
+  const freshReuse = m => m.reuse && !(m.drive && captureStatus(m.reuse, screens, { root, cache })?.stale);
   for (const [file, doc] of [['proposals', proposals], ['record', ssot]]) {
     for (const d of doc.decisions) {
       if (isQuestion(d) || GONE.includes(d.meta.status)) continue;
       if (!d.meta.screen || isScreenless(d) || (d.meta.image && d.meta.image !== 'none')) continue;
       const m = matchScreen(d.meta.screen, screens);
-      const how = !m ? 'none' : m.reuse ? 'reuse' : m.drive ? 'capture' : 'none';
-      out.push({ id: d.id, title: d.title, file, screen: d.meta.screen, key: m?.key || '', how, path: m?.reuse || '', note: m?.note || (m ? '' : 'no screen in screens.json matches') });
+      const how = !m ? 'none' : freshReuse(m) ? 'reuse' : m.drive ? 'capture' : 'none';
+      out.push({ id: d.id, title: d.title, file, screen: d.meta.screen, key: m?.key || '', how, path: how === 'reuse' ? m.reuse : '', note: m?.note || (m ? '' : 'no screen in screens.json matches') });
     }
   }
   return out;
@@ -700,9 +714,99 @@ export function attachImage(doc, id, path, { caption, captured = readSidecar(pat
   if (!d) return false;
   d.meta = setMeta(d.meta, 'image', path, ['status']);
   if (caption !== undefined) d.meta = setMeta(d.meta, 'caption', caption, ['image']);
-  const note = captured ? `picture captured at ${captured.appVersion || '?'}, ${captured.commit || '?'}` : `picture reused from ${path}`;
+  const note = captured ? `picture captured ${pictureStamp(captured)}` : `picture reused from ${path}`;
   d.history.push({ date: today, note });
   return true;
+}
+
+// Picture age. A capture's sidecar says when it was taken; a reused golden has
+// none, so git says: the commit that last touched the file, its date, and the
+// version pubspec.yaml held at that commit. Either way the screen's `code`
+// list in screens.json is what may have moved on since: `changedSince` asks
+// git which files under those paths differ between that commit and the working
+// tree, plus untracked files under them (uncommitted edits and new files count,
+// since that is what the simulator shows). A
+// screen with no code list, or a commit this clone never had, says nothing
+// about staleness (`stale: null`) rather than guessing.
+const git = (root, ...a) => { const r = spawnSync('git', a, { cwd: root, encoding: 'utf8' }); return r.status === 0 ? r.stdout : null; };
+const under = (root, p) => isAbsolute(p) ? p : join(root, p);
+export function changedSince(commit, paths, { root = process.cwd() } = {}) {
+  if (!commit || !paths?.length || git(root, 'cat-file', '-e', `${commit}^{commit}`) === null) return null;
+  const out = git(root, 'diff', '--name-only', commit, '--', ...paths);
+  if (out === null) return null;
+  const untracked = git(root, 'ls-files', '--others', '--exclude-standard', '--', ...paths) || '';
+  return [...new Set([...out.split('\n'), ...untracked.split('\n')].filter(Boolean))].sort();
+}
+/** The age of a file with no sidecar, from the commit that last touched it; null when git does not track it. */
+export function imageOrigin(path, { root = process.cwd() } = {}) {
+  const line = (git(root, 'log', '-1', '--format=%h %cI', '--', path) || '').trim();
+  if (!line) return null;
+  const [commit, at] = line.split(' ');
+  const pubspec = git(root, 'show', `${commit}:pubspec.yaml`) || '';
+  return { commit, appVersion: (pubspec.match(/^version:\s*(\S+)/m) || [])[1] || '', capturedAt: new Date(at).toISOString(), how: 'reused' };
+}
+/** What the page shows under a picture: its sidecar or git origin, the screen key, and whether the screen's code changed since. */
+export function captureStatus(path, screens = {}, { root = process.cwd(), cache } = {}) {
+  if (cache?.has(path)) return cache.get(path);
+  const side = readSidecar(under(root, path));
+  const base = side ? { ...side, how: 'captured' } : imageOrigin(path, { root });
+  let status = null;
+  if (base) {
+    const key = side?.key || Object.keys(screens).find(k => screens[k].reuse === path) || basename(path, '.png');
+    const code = screens[key]?.code;
+    const changed = code ? changedSince(base.commit, code, { root }) : null;
+    status = { ...base, key, changed: changed || [], stale: changed === null ? null : changed.length > 0 };
+  }
+  cache?.set(path, status);
+  return status;
+}
+/** Every picture the live cards use, once each, with its age, the cards on it, and whether a refresh could retake it. */
+export function stalePictures(proposals, ssot = { decisions: [] }, screens = {}, { root = process.cwd() } = {}) {
+  const cache = new Map(), byPath = new Map();
+  for (const doc of [proposals, ssot]) {
+    for (const d of doc.decisions) {
+      if (isQuestion(d) || GONE.includes(d.meta.status)) continue;
+      const path = d.meta.image;
+      if (!path || path === 'none') continue;
+      if (!byPath.has(path)) {
+        const s = captureStatus(path, screens, { root, cache });
+        if (!s) continue;
+        byPath.set(path, { path, ...s, cards: [], refresh: screens[s.key]?.drive ? 'capture' : 'none' });
+      }
+      byPath.get(path).cards.push(d.id);
+    }
+  }
+  return [...byPath.values()];
+}
+/**
+ * Retake every stale picture in one pass, one capture per screen. `takePicture(entry)`
+ * drives the simulator and returns `{path}`; a capture lands on `<dir>/<key>.png`,
+ * so a stale capture is rewritten in place and its cards need nothing. A stale
+ * golden cannot be rewritten, so its cards move to the capture with one dated
+ * history line naming what it replaced. A screen with no drive, or a drive that
+ * fails, is skipped and its file left alone.
+ */
+export async function refreshPictures(proposals, ssot, screens, { root = process.cwd(), dir, takePicture, today = new Date().toISOString().slice(0, 10) }) {
+  const result = { refreshed: [], fresh: [], skipped: [] };
+  const took = new Map(); // key -> {path} | null, so a golden and a capture of one screen share a drive
+  for (const p of stalePictures(proposals, ssot, screens, { root })) {
+    if (!p.stale) { result.fresh.push(p.path); continue; }
+    const entry = screens[p.key];
+    if (!entry?.drive) { result.skipped.push({ path: p.path, why: `${p.key} has no drive` }); continue; }
+    if (!took.has(p.key)) {
+      try { took.set(p.key, await takePicture({ key: p.key, ...entry, dir })); }
+      catch (e) { took.set(p.key, null); result.skipped.push({ path: p.path, why: `capture of ${p.key} failed: ${e.message}` }); continue; }
+    }
+    const taken = took.get(p.key);
+    if (!taken) { result.skipped.push({ path: p.path, why: `capture of ${p.key} failed` }); continue; }
+    if (taken.path !== p.path) {
+      const side = readSidecar(under(root, taken.path));
+      const note = `picture refreshed ${pictureStamp(side)}, replacing ${p.path}`;
+      for (const doc of [proposals, ssot]) for (const d of doc.decisions) if (p.cards.includes(d.id)) { d.meta = setMeta(d.meta, 'image', taken.path, ['status']); d.history.push({ date: today, note }); }
+    }
+    result.refreshed.push({ key: p.key, from: p.path, path: taken.path, cards: p.cards });
+  }
+  return result;
 }
 
 // The assets map (`_page/assets.json`) keys a repo image path to the artifact
@@ -721,7 +825,17 @@ export function staleImages(assets, paths) {
   }
   return out;
 }
-export function recordAsset(assets, path, id) { assets[path] = { id, sha256: sha256(path) }; return assets; }
+/** Record an upload; hands back the id it replaced ('' for a first upload) so the old asset can be deleted. */
+export function recordAsset(assets, path, id) { const prev = assetId(assets, path); assets[path] = { id, sha256: sha256(path) }; return prev; }
+/** Forget a path; hands back its asset id ('' when there was none) for the same reason. */
+export function dropAsset(assets, path) { const prev = assetId(assets, path); delete assets[path]; return prev; }
+/** Assets under a prepared feature's image folder that no prepared document references any more. */
+export function unreferencedAssets(assets, paths, features) {
+  const used = new Set(paths);
+  return Object.keys(assets).filter(p => !used.has(p) && features.some(f => p.startsWith(imageDir(f) + '/'))).map(path => ({ path, why: 'unreferenced', id: assetId(assets, path) }));
+}
+// `--flag value` pairs pulled out of a CLI's arguments; what is left is positional.
+const flags = args => { const pos = [], opts = {}; for (let k = 0; k < args.length; k++) { if (args[k].startsWith('--')) opts[args[k].slice(2)] = args[k + 1] === undefined || args[k + 1].startsWith('--') ? true : args[++k]; else pos.push(args[k]); } return [pos, opts]; };
 const loadAssets = path => path && existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
 // The proposals file and the record; a record that does not exist yet reads as empty.
 const readPair = (pf, sf) => [parse(readFileSync(pf, 'utf8')), sf && existsSync(sf) ? parse(readFileSync(sf, 'utf8')) : { head: {}, decisions: [] }];
@@ -746,16 +860,18 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     // the assets map {repoPath: assetId}) and prints the batch entries for the
     // Artifact tool's write_db batch, 50 per batch.
     const { mkdirSync } = await import('node:fs');
-    const files = [], opts = {};
-    for (let k = 0; k < args.length; k++) { if (args[k].startsWith('--')) { opts[args[k].slice(2)] = args[++k]; } else files.push(args[k]); }
+    const [files, opts] = flags(args);
     const assets = loadAssets(opts.assets);
     const { resolve } = await import('node:path'); const out = resolve(opts.out || 'docs-out'); mkdirSync(out, { recursive: true });
-    let order = 0; const entries = [];
+    const screens = loadScreens(opts.screens || undefined), ageCache = new Map();
+    const readCaptured = path => captureStatus(path, screens, { cache: ageCache });
+    let order = 0; const entries = [], features = new Set();
     for (const f of files) {
       const d = parse(readFileSync(f, 'utf8'));
+      if (d.head.feature) features.add(d.head.feature);
       // A drawn picture that fails the check is reported and left out; the page shows the empty box.
       const readSvg = path => { const c = checkedSvg(path); if (c.problems.length) { console.error(`svg ${path} left out: ${c.problems.join('; ')}`); return ''; } return c.svg; };
-      for (const doc of toDocuments(d, { order, readSvg, readCaptured: readSidecar })) {
+      for (const doc of toDocuments(d, { order, readSvg, readCaptured })) {
         const { id, ...body } = doc;
         body.imageAssetId = body.image ? assetId(assets, body.image) : '';
         writeFileSync(`${out}/${id}.json`, JSON.stringify(body, null, 2));
@@ -778,6 +894,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     writeFileSync(`${out}/_batches.json`, JSON.stringify(batches, null, 2));
     const images = [...new Set(entries.map(e => JSON.parse(readFileSync(e.file_path, 'utf8')).image).filter(Boolean))];
     writeFileSync(`${out}/_images.json`, JSON.stringify(images, null, 2));
+    writeFileSync(`${out}/_features.json`, JSON.stringify([...features], null, 2));
     console.log(`${entries.length} documents in ${batches.length} batches; ${images.length} distinct images (${staleImages(assets, images).length} to upload)`);
   } else if (cmd === 'terms') {
     // terms <verdicts.json> <CONTEXT.md>: append accepted `term` verdicts to the glossary
@@ -880,14 +997,21 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   } else if (cmd === 'images') {
     // images <assets.json> <_images.json>: which images prepare found that still need an upload.
     const [af, imf] = args;
+    // Beside _images.json, prepare leaves _features.json; an asset under one of those features' image folders
+    // that no document uses any more is listed as unreferenced, with the id to delete.
     const assets = loadAssets(af);
-    process.stdout.write(JSON.stringify(staleImages(assets, JSON.parse(readFileSync(imf, 'utf8'))), null, 2));
+    const paths = JSON.parse(readFileSync(imf, 'utf8'));
+    const ff = imf.replace(/[^/]*$/, '_features.json');
+    const features = existsSync(ff) ? JSON.parse(readFileSync(ff, 'utf8')) : [];
+    process.stdout.write(JSON.stringify([...staleImages(assets, paths), ...unreferencedAssets(assets, paths, features)], null, 2));
   } else if (cmd === 'asset') {
-    // asset <assets.json> <path> <asset id>: record one upload, keyed by path and hash.
+    // asset <assets.json> <path> <asset id>: record one upload, keyed by path and hash; prints the id it replaced.
+    // asset <assets.json> <path> --drop: forget the path; prints the id to delete.
     const [af, path, id] = args;
     const assets = loadAssets(af);
-    recordAsset(assets, path, id);
+    const printed = id === '--drop' ? { path, dropped: dropAsset(assets, path) } : { path, id, replaced: recordAsset(assets, path, id) };
     writeFileSync(af, JSON.stringify(assets, null, 2) + '\n');
+    console.log(JSON.stringify(printed));
   } else if (cmd === 'undrawn') {
     // undrawn <proposals.md> [<ssot.md>]: screenless cards with no drawn picture, nothing written.
     const [pf, sf] = args;
@@ -929,11 +1053,11 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (!entry.drive) { console.error(`${entry.key} has no drive${entry.reuse ? `; reuse ${entry.reuse}` : ''}${entry.note ? `. ${entry.note}` : ''}`); process.exit(1); }
     const booted = bootedUdid();
     if (!booted) { console.error('no booted simulator'); process.exit(1); }
-    const r = await capture(entry, { dir: `docs/ssot/decisions/images/${feature}`, ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid) });
+    const r = await capture(entry, { dir: imageDir(feature), ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid) });
     console.log(JSON.stringify(r, null, 2));
   } else if (cmd === 'attach-image') {
     // attach-image <decisions.md> <id> <png path> [--caption <text>]: set the image line and record where the picture came from.
-    const [df, id, path] = args; const ci = args.indexOf('--caption'); const caption = ci > 0 ? args[ci + 1] : undefined;
+    const [[df, id, path], opts] = flags(args); const caption = typeof opts.caption === 'string' ? opts.caption : undefined;
     if (!df || !id || !path) { console.error('usage: sync.mjs attach-image <decisions.md> <id> <png path> [--caption <text>]'); process.exit(2); }
     if (!existsSync(path)) { console.error(`${path}: file missing`); process.exit(1); }
     const doc = parse(readFileSync(df, 'utf8'));
@@ -952,7 +1076,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     // One capture per screen key per run; the png path (or null after a failed drive) is remembered here.
     const captures = new Map();
     let session = null; // the booted simulator, its io and the commit/version stamp, opened on the first capture
-    const dir = `docs/ssot/decisions/images/${feature}`;
+    const dir = imageDir(feature);
     for (const c of todo) {
       const doc = docs[c.file];
       const skip = why => result.skipped.push({ id: c.id, screen: c.screen, why });
@@ -978,7 +1102,28 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     }
     writeFileSync(pf, serialize(proposals)); if (existsSync(sf)) writeFileSync(sf, serialize(ssot));
     console.log(JSON.stringify(result, null, 2));
+  } else if (cmd === 'stale') {
+    // stale <proposals.md> [<ssot.md>] [--screens <screens.json>]: every picture in use, its age and staleness; nothing written.
+    const [[pf, sf], opts] = flags(args);
+    if (!pf) { console.error('usage: sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]'); process.exit(2); }
+    const [proposals, ssot] = readPair(pf, sf);
+    process.stdout.write(JSON.stringify(stalePictures(proposals, ssot, loadScreens(opts.screens || undefined)), null, 2));
+  } else if (cmd === 'refresh') {
+    // refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]: retake every stale picture once, in place.
+    const [[feature, pf, sf], opts] = flags(args);
+    if (!feature || !pf || !sf) { console.error('usage: sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]'); process.exit(2); }
+    const screens = loadScreens(opts.screens || undefined);
+    const [proposals, ssot] = readPair(pf, sf);
+    const dir = imageDir(feature);
+    let session = null; // the booted simulator, opened on the first retake
+    const takePicture = async entry => {
+      if (!session) { const booted = bootedUdid(); if (!booted) throw new Error('no booted simulator'); session = { ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid), dir }; }
+      return capture(entry, session);
+    };
+    const r = await refreshPictures(proposals, ssot, screens, { dir, takePicture });
+    if (r.refreshed.some(x => x.from !== x.path)) { writeFileSync(pf, serialize(proposals)); if (existsSync(sf)) writeFileSync(sf, serialize(ssot)); }
+    console.log(JSON.stringify(r, null, 2));
   } else {
-    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures|stale|refresh ...'); process.exit(2);
   }
 }

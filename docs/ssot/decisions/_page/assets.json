@@ -8,7 +8,6 @@
   "test/features/meal_planning/presentation/goldens/vana_sheet_moment_tinted_light.png": "2a7e7f6beab4c83a21d6e86b38bef7f8",
   "test/features/meal_planning/presentation/goldens/plan_bar_minimized_light.png": "1fa84618f3481c93c7df95a0261e45b3",
   "test/features/meal_planning/presentation/goldens/plan_bar_expanded_light.png": "cf27cd41c5bbbc871c5a474d55b278e7",
-  "test/features/meal_planning/presentation/goldens/plan_confirmed_light.png": "0ebff1bf9670e56f08392c1aa10c4b5c",
   "test/features/meal_planning/presentation/goldens/plan_draft_light.png": "6e10429fe0bb40871baf6eaf016332c5",
   "test/features/meal_planning/presentation/goldens/plan_empty_light.png": "a484987a7374ab7f1468d07c935dfc3e",
   "test/features/meal_planning/presentation/goldens/shopping_list_light.png": "68f2583cf84fb817e16431725f550a2e",
@@ -54,5 +53,9 @@
   "docs/ssot/decisions/images/mealplanning/cooking-mode.png": {
     "id": "eb738ddf5cb7b83c64bd0435940c50f9",
     "sha256": "cba76454ba9c6e88424de6bb5bf71147c109b690d7058546cbe0f8662d20f7b9"
+  },
+  "docs/ssot/decisions/images/mealplanning/plan-tab.png": {
+    "id": "29bd68845a26b68c9b18647fd10e13de",
+    "sha256": "2cb6a8a60ccbe2ea4829e666cde6e84fba606da7137038a8fe0c56bf0c43b3fa"
   }
 }

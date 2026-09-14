@@ -37,6 +37,23 @@ capture skips. A screen the registry does not know is added to `_page/screens.js
 drive, then the command is run again. The png files, their sidecars and the registry are
 committed with the run.
 
+## 0c. Refresh the stale pictures
+
+```
+SYNC stale .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+```
+
+Every picture in use with its age and `stale` (the screen's code changed after it was taken;
+README, Captured pictures). When any is stale and a simulator is booted:
+
+```
+SYNC refresh <feature> .scratch/<feature>/decisions.md docs/ssot/decisions/<feature>.md
+```
+
+Read `refreshed` (a retake in place, or cards moved from a golden to the capture) and `skipped`
+(no drive, or a drive that failed). A retake rewrites the png and its sidecar, so step 2 uploads
+it again and deletes the asset it replaced. Nothing stale is left silent: a skip is reported.
+
 ## 1. Prepare the page documents
 
 For every feature whose record, proposals, glossary or tickets changed in this run:
@@ -60,7 +77,11 @@ file path, then record the id it returns:
 SYNC asset docs/ssot/decisions/_page/assets.json <path> <asset id>
 ```
 
-An entry that is `file missing` is reported, not uploaded. If anything was uploaded, run step 1
+It prints `{path, id, replaced}`; when `replaced` is not empty, delete that asset from the
+artifact (`action: "delete_asset"` with `URL` and `asset_id`), so a refreshed picture leaves
+no old one behind. An entry that is `unreferenced` names an asset no card uses any more: delete
+it the same way, then `SYNC asset docs/ssot/decisions/_page/assets.json <path> --drop`. An
+entry that is `file missing` is reported, not uploaded. If anything was uploaded, run step 1
 again so the documents carry the new asset ids. The assets map is committed with the run.
 
 ## 3. Reseed

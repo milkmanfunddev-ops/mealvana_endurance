@@ -6,6 +6,10 @@
       "Main tabs",
       "Home"
     ],
+    "code": [
+      "lib/features/fuel_timeline/presentation",
+      "lib/features/home_shell/presentation"
+    ],
     "drive": [
       {
         "tap": "Timeline",
@@ -20,11 +24,18 @@
       "Launcher"
     ],
     "reuse": "docs/ssot/decisions/images/mealplanning/timeline-launcher.png",
-    "note": "The dev wrench covers the launcher on the simulator, so a capture never shows it; the 09-13 picture does."
+    "note": "The dev wrench covers the launcher on the simulator, so a capture never shows it; the 09-13 picture does.",
+    "code": [
+      "lib/features/meal_planning/presentation/widgets/vana_companion.dart",
+      "lib/features/home_shell/presentation/home_shell_chrome.dart"
+    ]
   },
   "settings": {
     "match": [
       "Settings"
+    ],
+    "code": [
+      "lib/features/settings/presentation"
     ],
     "drive": [
       {
@@ -38,6 +49,10 @@
       "Calendar sheet over the Plan tab",
       "Calendar sheet",
       "Calendar"
+    ],
+    "code": [
+      "lib/features/home_shell/presentation/widgets/home_shell_calendar_host.dart",
+      "lib/features/calendar/presentation"
     ],
     "drive": [
       {
@@ -53,6 +68,18 @@
       "Food"
     ],
     "reuse": "test/features/meal_planning/presentation/goldens/plan_confirmed_light.png",
+    "code": [
+      "lib/features/meal_planning/presentation/screens/food_screen.dart",
+      "lib/features/meal_planning/presentation/screens/plan_tab.dart",
+      "lib/features/meal_planning/presentation/widgets/plan_list.dart",
+      "lib/features/meal_planning/presentation/widgets/plan_summary.dart",
+      "lib/features/meal_planning/presentation/widgets/dashed_box.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_avatar.dart",
+      "lib/features/meal_planning/presentation/widgets/day_card.dart",
+      "lib/features/meal_planning/presentation/widgets/week_card.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_card.dart",
+      "lib/features/meal_planning/presentation/widgets/plan_tile.dart"
+    ],
     "drive": [
       {
         "tap": "Food",
@@ -64,6 +91,13 @@
     "match": [
       "Meals tab",
       "Meals"
+    ],
+    "code": [
+      "lib/features/meal_planning/presentation/screens/food_screen.dart",
+      "lib/features/meal_planning/presentation/screens/meals_tab.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_catalog_browser.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_rail.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_rail_card.dart"
     ],
     "drive": [
       {
@@ -82,6 +116,12 @@
       "Shopping"
     ],
     "reuse": "test/features/meal_planning/presentation/goldens/shopping_list_light.png",
+    "code": [
+      "lib/features/meal_planning/presentation/screens/food_screen.dart",
+      "lib/features/meal_planning/presentation/screens/shopping_tab.dart",
+      "lib/features/meal_planning/presentation/widgets/shopping_list.dart",
+      "lib/features/meal_planning/presentation/widgets/shopping_share_button.dart"
+    ],
     "drive": [
       {
         "tap": "Food",
@@ -97,6 +137,16 @@
       "Meal detail",
       "Recipe detail",
       "Meal detail screen"
+    ],
+    "code": [
+      "lib/features/meal_planning/presentation/screens/meal_detail_screen.dart",
+      "lib/features/meal_planning/presentation/widgets/choice_chip_button.dart",
+      "lib/features/meal_planning/presentation/widgets/dashed_box.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_picture_mapping.dart",
+      "lib/features/meal_planning/presentation/widgets/servings_sheet.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_round_button.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_situation_scope.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_tag.dart"
     ],
     "drive": [
       {
@@ -117,6 +167,13 @@
     "match": [
       "Cooking mode",
       "Cooking"
+    ],
+    "code": [
+      "lib/features/meal_planning/presentation/screens/cooking_mode_screen.dart",
+      "lib/features/meal_planning/presentation/widgets/choice_chip_button.dart",
+      "lib/features/meal_planning/presentation/widgets/step_progress_dots.dart",
+      "lib/features/meal_planning/presentation/widgets/timer_chip.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_situation_scope.dart"
     ],
     "drive": [
       {
@@ -145,13 +202,29 @@
       "Full-screen Vana chat",
       "Vana"
     ],
+    "code": [
+      "lib/features/meal_planning/presentation/screens/vana_chat_screen.dart",
+      "lib/features/meal_planning/presentation/widgets/choice_chip_button.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_sheet.dart",
+      "lib/features/meal_planning/presentation/widgets/picker_chips.dart",
+      "lib/features/meal_planning/presentation/widgets/plan_bar.dart",
+      "lib/features/meal_planning/presentation/widgets/review_sheet.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_attach_sheet.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_avatar.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_date_divider.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_message_card.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_mic_button.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_part_renderer.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_round_button.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_status_copy.dart"
+    ],
     "drive": [
       {
         "tap": "Food",
         "type": "Button"
       },
       {
-        "tap": "Vana \u00b7",
+        "tap": "Vana ·",
         "settle": 3000
       }
     ]
@@ -161,7 +234,14 @@
       "Vana sheet",
       "Vana sheet open"
     ],
-    "reuse": "test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png"
+    "reuse": "test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png",
+    "code": [
+      "lib/features/meal_planning/presentation/widgets/vana_companion.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_bubble.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_message_card.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_status_copy.dart",
+      "lib/features/meal_planning/presentation/widgets/choice_chips.dart"
+    ]
   },
   "vana-sheet-moment": {
     "match": [
@@ -169,12 +249,24 @@
       "Vana sheet on a moment",
       "Recovery moment"
     ],
-    "reuse": "test/features/meal_planning/presentation/goldens/vana_sheet_moment_tinted_light.png"
+    "reuse": "test/features/meal_planning/presentation/goldens/vana_sheet_moment_tinted_light.png",
+    "code": [
+      "lib/features/meal_planning/presentation/widgets/vana_companion.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_bubble.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_message_card.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_status_copy.dart"
+    ]
   },
   "vana-conversations": {
     "match": [
       "Vana conversations",
       "Conversations"
+    ],
+    "code": [
+      "lib/features/meal_planning/presentation/screens/vana_conversations_screen.dart",
+      "lib/features/meal_planning/presentation/widgets/dashed_box.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_avatar.dart",
+      "lib/features/meal_planning/presentation/widgets/vana_round_button.dart"
     ],
     "drive": [
       {
@@ -182,7 +274,7 @@
         "type": "Button"
       },
       {
-        "tap": "Vana \u00b7",
+        "tap": "Vana ·",
         "settle": 3000
       },
       {
@@ -196,6 +288,9 @@
       "Pro paywall",
       "Pro screen"
     ],
-    "note": "Reached only through a Pro-required error or the Pro gate redirect; the dev account is Pro, so no drive gets there. Left unpictured until an account without Pro is on the simulator."
+    "note": "Reached only through a Pro-required error or the Pro gate redirect; the dev account is Pro, so no drive gets there. Left unpictured until an account without Pro is on the simulator.",
+    "code": [
+      "lib/features/subscription/presentation"
+    ]
   }
 }

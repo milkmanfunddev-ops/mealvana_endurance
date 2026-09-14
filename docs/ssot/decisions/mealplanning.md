@@ -75,7 +75,7 @@ Feature name: Meal planning and Vana
 ## mp-004 · The word is "meal" and the week is a "batch"
 - category: Vana's voice and openers
 - status: approved
-- image: test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption: The Plan tab listing this week's meals.
 - screen: Plan tab
 - source: synthesis-and-recommendations.md
@@ -93,6 +93,7 @@ Feature name: Meal planning and Vana
 **What it touches.** All meal-planning copy and content keys.
 
 > 2026-09-14 approved
+> 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
 ## mp-005 · Race fuelling never comes from the model
 - category: Vana's voice and openers
@@ -1340,7 +1341,7 @@ Feature name: Meal planning and Vana
 ## mp-139 · Day notes are precomputed in one call for seven days and refreshed in the background
 - category: Plan tab
 - status: approved
-- image: test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption: The day note card at the top of the Plan tab.
 - screen: Plan tab
 - source: plan-tab-v2.md; 03-backend.md
@@ -1358,6 +1359,7 @@ Feature name: Meal planning and Vana
 **What it touches.** daynotes.ts, vana-day-notes, Plan tab day note card.
 
 > 2026-09-14 approved
+> 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
 ## mp-146 · Directions carry a recorded origin and a badge
 - category: Recipes and cooking
@@ -1959,7 +1961,7 @@ Feature name: Meal planning and Vana
 ## mp-239 · The Plan tab is a tile list
 - category: Plan tab
 - status: approved
-- image: test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption: A confirmed plan as a tile list.
 - screen: Plan tab
 - source: plan-tab-v2.md; 05-flutter-feature.md; 07-verification-release.md; synthesis-and-recommendations.md; 03-backend.md
@@ -1982,6 +1984,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-130, mp-135, mp-136, mp-137, mp-138
 > 2026-09-14 approved
+> 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
 ## mp-240 · The week starts on Sunday and cook days are fixed
 - category: Plan tab
@@ -2197,7 +2200,7 @@ Feature name: Meal planning and Vana
 ## mp-254 · Which writes wait for the server
 - category: Data, sync and backend
 - status: approved
-- image: test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption:
 - screen: Plan tab
 - source: 05-flutter-feature.md; plan-tab-v2.md; memory 09-01
@@ -2219,6 +2222,7 @@ Feature name: Meal planning and Vana
 > 2026-09-14 folded from mp-181, mp-182
 > 2026-09-14 approved
 > 2026-09-14 picture reused from test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+> 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
 ## mp-257 · Home location is a Fact set in conversation
 - category: Data, sync and backend
@@ -2307,7 +2311,7 @@ Feature name: Meal planning and Vana
 ## mp-260 · Feature widgets and slot colours
 - category: Design system
 - status: approved
-- image: test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+- image: docs/ssot/decisions/images/mealplanning/plan-tab.png
 - caption: Slot chips on plan tiles.
 - screen: Food tab, meal cards
 - source: 05-flutter-feature.md; 02-contract.md; plan-tab-v2.md; memory 09-11
@@ -2328,6 +2332,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-198, mp-199, mp-200
 > 2026-09-14 approved
+> 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
 ## mp-261 · How the planning chat and plan present themselves
 - category: Design system

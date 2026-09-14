@@ -9,7 +9,7 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } fro
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset } from './sync.mjs';
 import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName } from './capture.mjs';
 import { draw, TOKENS } from './diagram.mjs';
 
@@ -939,4 +939,164 @@ test('uncaptured lists screen cards with no picture and says how each would get 
   ]);
   assert.equal(out[1].note, 'no drive gets there');
   assert.equal(out[3].note, 'no screen in screens.json matches');
+  // A registry reuse that is stale, on a screen with a drive, is captured instead of reattached.
+  const { root } = repo();
+  const staleGolden = uncaptured({ decisions: [first()] }, { decisions: [] }, agedScreens, { root });
+  assert.deepEqual(staleGolden.map(o => [o.id, o.how, o.key, o.path]), [['sm-001', 'capture', 'vana-sheet', '']]);
+  const noDrive = { ...agedScreens, 'vana-sheet': { ...agedScreens['vana-sheet'], drive: undefined } };
+  assert.equal(uncaptured({ decisions: [first()] }, { decisions: [] }, noDrive, { root })[0].how, 'reuse', 'with no drive the stale golden is still better than nothing');
+});
+
+// A throwaway git repo: pubspec at 1.25.0, a golden and a screen file committed, then the screen edited at 1.26.0.
+function repo() {
+  const root = mkdtempSync(join(tmpdir(), 'ssot-git-'));
+  const git = (...a) => execFileSync('git', a, { cwd: root, encoding: 'utf8', env: { ...process.env, GIT_AUTHOR_DATE: '2026-09-01T10:00:00Z', GIT_COMMITTER_DATE: '2026-09-01T10:00:00Z', GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' } }).trim();
+  git('init', '-q');
+  const put = (p, s) => { execFileSync('mkdir', ['-p', join(root, dirname(p))]); writeFileSync(join(root, p), s); };
+  put('pubspec.yaml', 'name: app\nversion: 1.25.0+3\n');
+  put('goldens/vana_sheet_open_light.png', 'golden v1');
+  put('lib/features/sheet/sheet.dart', 'v1');
+  put('lib/features/timeline/timeline.dart', 'v1');
+  git('add', '-A'); git('commit', '-q', '-m', 'first');
+  const first = git('rev-parse', '--short', 'HEAD');
+  put('pubspec.yaml', 'name: app\nversion: 1.26.0+1\n');
+  put('lib/features/sheet/sheet.dart', 'v2');
+  git('add', '-A'); git('commit', '-q', '-m', 'second');
+  const second = git('rev-parse', '--short', 'HEAD');
+  return { root, git, put, first, second };
+}
+const agedScreens = {
+  timeline: { match: ['Timeline'], code: ['lib/features/timeline'], drive: [{ tap: 'Timeline', type: 'Button' }] },
+  'vana-sheet': { match: ['Vana sheet'], reuse: 'goldens/vana_sheet_open_light.png', code: ['lib/features/sheet/sheet.dart'], drive: [{ tap: 'Vana', type: 'Button' }] },
+  paywall: { match: ['Paywall'], code: ['lib/features/paywall'] },
+};
+
+test('changedSince lists the files under the screen\'s code that changed after the commit, including uncommitted edits', () => {
+  const { root, put, first, second } = repo();
+  assert.deepEqual(changedSince(first, ['lib/features/sheet/sheet.dart'], { root }), ['lib/features/sheet/sheet.dart']);
+  assert.deepEqual(changedSince(first, ['lib/features/timeline'], { root }), []);
+  assert.deepEqual(changedSince(second, ['lib/features/sheet'], { root }), []);
+  put('lib/features/timeline/timeline.dart', 'v2 uncommitted');
+  assert.deepEqual(changedSince(second, ['lib/features/timeline'], { root }), ['lib/features/timeline/timeline.dart']);
+  put('lib/features/timeline/new_widget.dart', 'untracked');
+  assert.deepEqual(changedSince(second, ['lib/features/timeline'], { root }), ['lib/features/timeline/new_widget.dart', 'lib/features/timeline/timeline.dart'], 'a new file under the screen counts');
+  assert.equal(changedSince('0000000', ['lib'], { root }), null, 'a commit this repo never had');
+  assert.equal(changedSince('', ['lib'], { root }), null);
+});
+
+test('captureStatus reads a sidecar for a capture and git for a reused golden, and marks either stale from the screen\'s code', () => {
+  const { root, put, first, second } = repo();
+  // A golden has no sidecar: its age is the commit that last touched it, and the app version pubspec had then.
+  const golden = captureStatus('goldens/vana_sheet_open_light.png', agedScreens, { root });
+  assert.equal(golden.how, 'reused'); assert.equal(golden.key, 'vana-sheet'); assert.equal(golden.commit, first);
+  assert.equal(golden.appVersion, '1.25.0+3'); assert.equal(golden.capturedAt, '2026-09-01T10:00:00.000Z');
+  assert.equal(golden.stale, true); assert.deepEqual(golden.changed, ['lib/features/sheet/sheet.dart']);
+  // A capture carries its sidecar; its screen's code is untouched since, so it is fresh.
+  put('images/f/timeline.png', 'png');
+  put('images/f/timeline.json', JSON.stringify({ screen: 'Timeline', key: 'timeline', commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-14T16:00:00.000Z' }));
+  const cap = captureStatus('images/f/timeline.png', agedScreens, { root });
+  assert.equal(cap.how, 'captured'); assert.equal(cap.commit, second); assert.equal(cap.stale, false); assert.deepEqual(cap.changed, []);
+  // A screen with no code list, or a commit git does not know, says nothing about staleness.
+  put('images/f/other.png', 'png'); put('images/f/other.json', JSON.stringify({ key: 'other', commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-14T16:00:00.000Z' }));
+  assert.equal(captureStatus('images/f/other.png', agedScreens, { root }).stale, null);
+  put('images/f/timeline.json', JSON.stringify({ key: 'timeline', commit: 'abcdef0', appVersion: '1.20.0', capturedAt: '2026-08-01T00:00:00.000Z' }));
+  assert.equal(captureStatus('images/f/timeline.png', agedScreens, { root }).stale, null);
+  // An untracked file with no sidecar has no age at all.
+  put('images/f/loose.png', 'png');
+  assert.equal(captureStatus('images/f/loose.png', agedScreens, { root }), null);
+});
+
+test('stalePictures groups the cards by picture and says which pictures a refresh would retake', () => {
+  const { root, put, second } = repo();
+  put('images/f/timeline.png', 'png');
+  put('images/f/timeline.json', JSON.stringify({ key: 'timeline', commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-14T16:00:00.000Z' }));
+  const first = () => parse(fixture).decisions[0];
+  const card = (id, meta) => ({ ...first(), id, meta: { ...first().meta, ...meta } });
+  const proposals = { decisions: [card('sm-001', { image: 'goldens/vana_sheet_open_light.png' }), card('sm-002', { image: 'goldens/vana_sheet_open_light.png', status: 'rejected' })] };
+  const ssot = { decisions: [card('sm-003', { screen: 'Timeline', image: 'images/f/timeline.png', status: 'approved' }), card('sm-004', { screen: 'Paywall', image: 'none', status: 'approved' }), card('sm-005', { screen: 'none (algorithm)', image: 'none', svg: 'x.svg', status: 'approved' })] };
+  const out = stalePictures(proposals, ssot, agedScreens, { root });
+  assert.deepEqual(out.map(p => [p.path, p.key, p.how, p.stale, p.cards, p.refresh]), [
+    ['goldens/vana_sheet_open_light.png', 'vana-sheet', 'reused', true, ['sm-001'], 'capture'],
+    ['images/f/timeline.png', 'timeline', 'captured', false, ['sm-003'], 'capture'],
+  ]);
+  assert.equal(out[0].appVersion, '1.25.0+3');
+});
+
+test('refreshPictures retakes every stale picture once, in place, re-points cards that used a golden, and leaves fresh ones alone', async () => {
+  const { root, put, first: firstCommit, second } = repo();
+  put('images/f/timeline.png', 'old png');
+  put('images/f/timeline.json', JSON.stringify({ key: 'timeline', commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-14T16:00:00.000Z' }));
+  put('images/f/meal-detail.png', 'old png');
+  put('images/f/meal-detail.json', JSON.stringify({ key: 'meal-detail', commit: firstCommit, appVersion: '1.25.0+3', capturedAt: '2026-09-01T16:00:00.000Z' }));
+  const screens = { ...agedScreens, 'meal-detail': { match: ['Meal detail'], code: ['lib/features/sheet'], drive: [{ tap: 'Meals' }] } };
+  const first = () => parse(fixture).decisions[0];
+  const card = (id, meta) => ({ ...first(), id, meta: { ...first().meta, ...meta } });
+  const proposals = { decisions: [card('sm-001', { image: 'goldens/vana_sheet_open_light.png' })] };
+  const ssot = { decisions: [card('sm-003', { screen: 'Timeline', image: 'images/f/timeline.png', status: 'approved' }), card('sm-006', { screen: 'Meal detail', image: 'images/f/meal-detail.png', status: 'approved' }), card('sm-007', { screen: 'Meal detail', image: 'images/f/meal-detail.png', status: 'approved' })] };
+  const taken = [];
+  const takePicture = async entry => { taken.push(entry.key); const png = join(root, 'images/f', `${entry.key}.png`); writeFileSync(png, `new ${entry.key}`); writeFileSync(png.replace(/\.png$/, '.json'), JSON.stringify({ key: entry.key, commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-15T09:00:00.000Z' })); return { path: `images/f/${entry.key}.png` }; };
+  const r = await refreshPictures(proposals, ssot, screens, { root, dir: 'images/f', takePicture, today: '2026-09-15' });
+  assert.deepEqual(taken, ['vana-sheet', 'meal-detail'], 'one capture per stale screen, the fresh timeline untouched');
+  assert.deepEqual(r.refreshed.map(x => [x.key, x.from, x.path, x.cards]), [
+    ['vana-sheet', 'goldens/vana_sheet_open_light.png', 'images/f/vana-sheet.png', ['sm-001']],
+    ['meal-detail', 'images/f/meal-detail.png', 'images/f/meal-detail.png', ['sm-006', 'sm-007']],
+  ]);
+  assert.deepEqual(r.fresh, ['images/f/timeline.png']);
+  assert.deepEqual(r.skipped, []);
+  assert.equal(readFileSync(join(root, 'images/f/timeline.png'), 'utf8'), 'old png');
+  assert.equal(readFileSync(join(root, 'images/f/meal-detail.png'), 'utf8'), 'new meal-detail');
+  // The golden's cards now point at the capture, with one dated line saying so; in-place retakes write no line.
+  assert.equal(proposals.decisions[0].meta.image, 'images/f/vana-sheet.png');
+  assert.deepEqual(proposals.decisions[0].history.at(-1), { date: '2026-09-15', note: 'picture refreshed at 1.26.0+1, ' + second + ', replacing goldens/vana_sheet_open_light.png' });
+  assert.equal(ssot.decisions[1].meta.image, 'images/f/meal-detail.png');
+  assert.equal(ssot.decisions[1].history.length, first().history.length);
+  // A stale picture whose screen has no drive is reported, not retaken.
+  const noDrive = { decisions: [card('sm-008', { screen: 'Paywall', image: 'goldens/vana_sheet_open_light.png', status: 'approved' })] };
+  const screens2 = { ...screens, 'vana-sheet': { ...screens['vana-sheet'], drive: undefined } };
+  const r2 = await refreshPictures({ decisions: [] }, noDrive, screens2, { root, dir: 'images/f', takePicture, today: '2026-09-15' });
+  assert.deepEqual(r2.skipped.map(s => [s.path, s.why]), [['goldens/vana_sheet_open_light.png', 'vana-sheet has no drive']]);
+  // A failed drive skips too and never touches the file.
+  const r3 = await refreshPictures({ decisions: [card('sm-009', { image: 'goldens/vana_sheet_open_light.png' })] }, { decisions: [] }, screens, { root, dir: 'images/f', takePicture: async () => { throw new Error('nothing matched Vana'); }, today: '2026-09-15' });
+  assert.deepEqual(r3.skipped.map(s => [s.path, s.why]), [['goldens/vana_sheet_open_light.png', 'capture of vana-sheet failed: nothing matched Vana']]);
+});
+
+test('recordAsset hands back the asset it replaced, and dropAsset removes a path nobody references', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const png = join(dir, 'a.png'); writeFileSync(png, 'one');
+  const assets = {};
+  assert.equal(recordAsset(assets, png, 'id1'), '');
+  writeFileSync(png, 'two');
+  assert.equal(recordAsset(assets, png, 'id2'), 'id1');
+  assert.equal(assets[png].id, 'id2');
+  assert.equal(dropAsset(assets, png), 'id2');
+  assert.equal(dropAsset(assets, png), '');
+  assert.deepEqual(assets, {});
+  // The images CLI names assets under a prepared feature's image folder that no document references, with the id to delete;
+  // another feature's pictures and goldens elsewhere in the repo are left alone.
+  const old = 'docs/ssot/decisions/images/sm/old.png';
+  const af = join(dir, 'assets.json'); writeFileSync(af, JSON.stringify({ [png]: { id: 'id9', sha256: 'x' }, [old]: 'bare', 'docs/ssot/decisions/images/other/x.png': 'o', 'goldens/g.png': 'g' }));
+  const imf = join(dir, '_images.json'); writeFileSync(imf, JSON.stringify([png])); writeFileSync(join(dir, '_features.json'), JSON.stringify(['sm']));
+  const out = JSON.parse(execFileSync('node', [cli, 'images', af, imf], { encoding: 'utf8' }));
+  assert.deepEqual(out, [{ path: png, why: 'changed' }, { path: old, why: 'unreferenced', id: 'bare' }]);
+  const printed = JSON.parse(execFileSync('node', [cli, 'asset', af, png, 'id10'], { encoding: 'utf8' }));
+  assert.deepEqual(printed, { path: png, id: 'id10', replaced: 'id9' });
+  const dropped = JSON.parse(execFileSync('node', [cli, 'asset', af, old, '--drop'], { encoding: 'utf8' }));
+  assert.deepEqual(dropped, { path: old, dropped: 'bare' });
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(af, 'utf8'))), [png, 'docs/ssot/decisions/images/other/x.png', 'goldens/g.png']);
+});
+
+test('prepare carries age and staleness into the page document, and the stale and refresh CLIs read the real registry', () => {
+  const { root, put, first } = repo();
+  const md = `# Proposed decisions: Sample\n\nFeature: sm\nFeature name: Sample\n\n## sm-001 · The sheet has one height\n- category: Sheet\n- status: proposed\n- image: goldens/vana_sheet_open_light.png\n- screen: Vana sheet\n\n**Decision.** One.\n`;
+  put('p.md', md); put('_page/screens.json', JSON.stringify(agedScreens));
+  execFileSync('node', [cli, 'prepare', 'p.md', '--screens', '_page/screens.json', '--out', 'out'], { cwd: root });
+  const body = JSON.parse(readFileSync(join(root, 'out', 'sm-001.json'), 'utf8'));
+  assert.equal(body.captured.how, 'reused'); assert.equal(body.captured.commit, first); assert.equal(body.captured.stale, true); assert.equal(body.captured.appVersion, '1.25.0+3');
+  const stale = JSON.parse(execFileSync('node', [cli, 'stale', 'p.md', '--screens', '_page/screens.json'], { cwd: root, encoding: 'utf8' }));
+  assert.deepEqual(stale.map(p => [p.path, p.stale, p.cards]), [['goldens/vana_sheet_open_light.png', true, ['sm-001']]]);
+  assert.equal(readFileSync(join(root, 'p.md'), 'utf8'), md, 'stale writes nothing');
+  // The real registry: every screen with a drive or a reuse names the code it shows.
+  const real = loadScreens();
+  for (const [k, e] of Object.entries(real)) if (e.drive || e.reuse) assert.ok(Array.isArray(e.code) && e.code.length, `${k} names no code`);
+  for (const e of Object.values(real)) for (const p of e.code || []) assert.ok(existsSync(join(here, '../../../..', p)), `${p} is not in the repo`);
 });

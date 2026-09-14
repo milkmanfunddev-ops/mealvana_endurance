@@ -10,7 +10,7 @@ Routing guide for agents in this repo. Keep it short; detail lives in `/docs`.
   `docs/ssot/`. Never edit `docs/ssot/` here; change it in the QA repo and re-sync.
   Exception: `docs/ssot/decisions/` is app-owned and outside the mirror. Its decision records
   (`<feature>.md`) are written only by a skill applying a ratifier's verdict (`_page/sync.mjs
-  apply`) or attaching a picture (`attach-svg`, `attach-image`, `pictures`), never by hand; the README, page template and images there are ordinary files.
+  apply`) or attaching a picture (`attach-svg`, `attach-image`, `pictures`, `refresh`), never by hand; the README, page template and images there are ordinary files.
 
 ## Non-negotiable rules
 - FOA layers: `presentation -> application -> domain <- data`. Screens are UI-only; business
