@@ -49,7 +49,7 @@ returned.
 
 | Param | Type | Range | Default | Notes |
 |---|---|---|---|---|
-| `NumDays` | int (query) | 1–7 | 5 | Number of days to return, **including the current day**. |
+| `NumDays` | int (query) | 1–7 | 5 | Number of days to return, **including the current day**. **Observed live 2026-09-13 (bisection on a real calendar): the server caps the window at 15 days (today + 14) regardless of the requested value — NumDays up to 365 is accepted `Success:true` and silently truncated; a workout N days out needs `NumDays ≥ N+1`.** |
 | `NumWorkouts` | int (query) | 1–21 | 5 | Maximum number of workouts to return. |
 
 Both parameters are optional and are applied together. If neither is provided, the next five

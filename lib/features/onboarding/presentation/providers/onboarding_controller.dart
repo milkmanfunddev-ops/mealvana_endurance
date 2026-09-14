@@ -55,6 +55,7 @@ class OnboardingController extends _$OnboardingController {
 
   /// Save sport preferences (Settings sport-detail screens)
   Future<bool> saveSportPreferences({
+    bool? runsWithWaterBottle,
     bool? giSensitivity,
     int? ftpWatts,
     int? typicalBikeBottles,
@@ -91,6 +92,7 @@ class OnboardingController extends _$OnboardingController {
       DebugLogger.debug('📞 Sport preferences - Calling onboarding service');
       await _onboardingService.saveSportPreferences(
         currentUser.id,
+        runsWithWaterBottle: runsWithWaterBottle,
         giSensitivity: giSensitivity,
         ftpWatts: ftpWatts,
         typicalBikeBottles: typicalBikeBottles,

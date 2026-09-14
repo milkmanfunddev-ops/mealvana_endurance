@@ -170,6 +170,9 @@ class TrainingPeaksOAuthService {
       providerAthleteWeightKg: profile.weight,
       providerAthleteBirthMonth: profile.birthMonth,
       providerAthleteGender: profile.sex,
+      // data-integrations@v1 capture (Q-INT26): IsPremium predicts null
+      // completed-workout fields for basic athletes and write-back 403s.
+      providerIsPremium: profile.isPremium,
       isActive: true,
       lastSyncStatus: 'pending',
       createdAt: now,

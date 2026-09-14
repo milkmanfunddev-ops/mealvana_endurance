@@ -302,10 +302,20 @@ class AppDatabase extends _$AppDatabase {
   /// the v21 step idempotently re-runs both forked sides for dev devices from
   /// either lineage.
   ///
-  /// v20 is RESERVED for the data-integration bundle (ships as 1.27.0 off the
-  /// shipped 1.26.0 tree); its step arrives with the feature/data-integration
-  /// merge. Supabase app_config.current_schema_version must be bumped to 20
-  /// when that build ships.
+  /// v20: data-integrations@v1 capture columns (Q-INT26 per-source typed
+  /// convention). activities gains the TP load metrics (tss_planned,
+  /// tss_actual, if_planned, if_actual), the record-only TP session energy
+  /// (tp_calories, tp_calories_planned — beside calories_burned, never into
+  /// it), and the Garmin multisport lineage (parent_summary_id, is_parent —
+  /// Q-INT23, brick verification B-2/B-5). integrations gains
+  /// provider_is_premium (TP IsPremium) and athlete_metrics_json (TP
+  /// /v2/metrics body-metrics cache). users gains the eight sport-preference
+  /// columns (cycling_ftp_watts + swimming_css_seconds_per_100m Supabase
+  /// twins, plus six local-only gear/tolerance fields) that the domain model
+  /// carried but the local table never stored. All nullable — a provider
+  /// omitting a field never errors and never fabricates (DI-13). Ships as
+  /// 1.27.0 off the shipped 1.26.0 tree; Supabase
+  /// app_config.current_schema_version must be bumped to 20 when it ships.
   ///
   /// v21: meal planning (Vana) — `user_entitlements` (read-only local mirror
   /// of the user's Pro subscription rows,
@@ -600,10 +610,35 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('template_foods', 'solvent_min_ml', 'REAL');
         }
 
-        // v20 is reserved for the data-integration bundle (1.27.0); its
-        // `if (from < 20)` step arrives with the feature/data-integration
-        // merge. Nothing of Vana may live at or below v20 — prod must never
-        // partially run the meal-planning schema.
+        // v20: data-integrations@v1 capture columns — all nullable, additive.
+        // addColumn is idempotent for web user_version replays.
+        if (from < 20) {
+          await addColumn('activities', 'tss_planned', 'REAL');
+          await addColumn('activities', 'tss_actual', 'REAL');
+          await addColumn('activities', 'if_planned', 'REAL');
+          await addColumn('activities', 'if_actual', 'REAL');
+          await addColumn('activities', 'tp_calories', 'REAL');
+          await addColumn('activities', 'tp_calories_planned', 'REAL');
+          await addColumn('activities', 'parent_summary_id', 'TEXT');
+          await addColumn('activities', 'is_parent', 'INTEGER');
+          await addColumn('activities', 'hidden_by_disconnect', 'INTEGER');
+          await addColumn('integrations', 'provider_is_premium', 'INTEGER');
+          await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
+          await addColumn('events', 'origin', 'TEXT');
+          // Sport preferences: UserProfile carried these since ~v1.9 but the
+          // local users table never stored them (every save silently dropped
+          // them — caught in the 2026-09-11 Stage E walk). FTP/CSS mirror the
+          // production Supabase columns; the gear/tolerance fields are
+          // local-only by design.
+          await addColumn('users', 'cycling_ftp_watts', 'INTEGER');
+          await addColumn('users', 'swimming_css_seconds_per_100m', 'INTEGER');
+          await addColumn('users', 'gi_sensitivity', 'INTEGER');
+          await addColumn('users', 'typical_bike_bottles', 'INTEGER');
+          await addColumn('users', 'has_aero_bottle', 'INTEGER');
+          await addColumn('users', 'has_bento_box', 'INTEGER');
+          await addColumn('users', 'typical_wetsuit', 'INTEGER');
+          await addColumn('users', 'typical_swim_cap_type', 'TEXT');
+        }
 
         // v21: meal planning (Vana), consolidated from the former
         // mealplanning-lineage v19 (user_entitlements) and v20 (Phase 4b)

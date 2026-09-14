@@ -7,6 +7,7 @@ import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../activities/domain/activity.dart';
 import '../../domain/event.dart';
 import '../screens/event_detail_screen.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 
 /// A card displaying an event in the events list.
 ///
@@ -152,6 +153,20 @@ class EventListCard extends StatelessWidget {
                           : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
+                  // D-2c origin chip (integrations-data-display.md,
+                  // RATIFIED 2026-09-11): one origin per event row, the
+                  // shared KyleSourceChip family. Legacy (null-origin) rows
+                  // show no chip until a dedupe-match assigns one.
+                  if (event.origin != null) ...[
+                    const SizedBox(height: AppSpacing.xxs),
+                    KyleSourceChip(
+                      source: switch (event.origin) {
+                        'training_peaks' => 'TrainingPeaks',
+                        'final_surge' => 'Final Surge',
+                        _ => 'Manual',
+                      },
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.xxs),
                   if (event.location != null) ...[
                     Row(

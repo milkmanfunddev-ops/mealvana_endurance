@@ -463,6 +463,42 @@ class TrainingPeaksApiClient {
   ///
   /// Zone data is relatively stable - callers should cache and only
   /// re-fetch every 24h or on manual refresh.
+  /// Fetch daily body metrics for a date range (data-integrations@v1,
+  /// Q-INT26 shortlist item 4).
+  ///
+  /// `GET /v2/metrics/{startDate}/{endDate}` — scope `metrics:read`.
+  /// Range reads are PREMIUM ONLY: gate the call on the stored IsPremium
+  /// flag; a 403 for basic athletes is expected, not an error to surface.
+  /// Fields per docs/integration/api-exploration/training-peaks/
+  /// athlete-data.md §3: WeightInKilograms, HRV, Steps, Stress, SleepQuality,
+  /// DateTime, UploadClient — not every field is present on every metric.
+  Future<List<Map<String, dynamic>>> getAthleteMetrics(
+    String accessToken, {
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    return HttpRetryClient.executeWithRetry(
+      request: () => _httpClient.get(
+        Uri.parse(
+          '$_apiBaseUrl/v2/metrics/${_formatDate(startDate)}/${_formatDate(endDate)}',
+        ),
+        headers: _authHeaders(accessToken),
+      ),
+      onResponse: (response) {
+        _handleErrorResponse(response, 'Failed to fetch athlete metrics');
+        final json = jsonDecode(response.body);
+        if (json is List) {
+          return json.cast<Map<String, dynamic>>();
+        }
+        // A single-object response (one day) still counts as one metric.
+        if (json is Map<String, dynamic>) return [json];
+        return const <Map<String, dynamic>>[];
+      },
+      provider: _provider,
+      config: _retryConfig,
+    );
+  }
+
   Future<Map<String, dynamic>> getAthleteZones(String accessToken) async {
     return HttpRetryClient.executeWithRetry(
       request: () => _httpClient.get(

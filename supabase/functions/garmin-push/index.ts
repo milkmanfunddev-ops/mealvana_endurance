@@ -30,25 +30,18 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { validateGarminRequest } from "../_shared/garmin/auth.ts";
 import {
-  garminTimestampToDateString,
   mapGarminActivityToActivity,
   mapGarminDailySummary,
   mapGarminSleepSummary,
-  mapGarminSportType,
 } from "../_shared/garmin/mappers.ts";
 import {
-  buildGarminCompletionUpdate,
-  enrichCompletedGarminActivity,
-  findMatchingPlannedActivity,
-  GARMIN_COMPLETABLE_STATUSES,
-  findMatchingTombstone,
-  insertGarminActivityIfMissing,
-} from "../_shared/garmin/activity_completion.ts";
-import {
-  buildGarminProviderLabel,
-  sendActivityUploadedPush,
-} from "../_shared/garmin/onesignal.ts";
-import type { GarminPushNotification } from "../_shared/garmin/types.ts";
+  processInboundGarminActivity,
+  tallyOutcome,
+} from "../_shared/garmin/matcher_executor.ts";
+import type {
+  GarminGenericWellnessSummary,
+  GarminPushNotification,
+} from "../_shared/garmin/types.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -308,6 +301,23 @@ async function logInboundGarminPayload(
   }
 }
 
+/**
+ * garmin_health_data.calendar_date is NOT NULL; the generic wellness types
+ * don't all carry calendarDate, so fall back through the timestamps they do
+ * carry (UTC date) before defaulting to today.
+ */
+function resolveWellnessCalendarDate(
+  summary: GarminGenericWellnessSummary,
+): string {
+  if (summary.calendarDate) return summary.calendarDate;
+  const seconds =
+    summary.startTimeInSeconds ?? summary.measurementTimeInSeconds;
+  if (typeof seconds === "number" && Number.isFinite(seconds)) {
+    return new Date(seconds * 1000).toISOString().slice(0, 10);
+  }
+  return new Date().toISOString().slice(0, 10);
+}
+
 async function processPushBody(body: GarminPushNotification): Promise<void> {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -358,173 +368,22 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             continue;
           }
 
-          const activityRow = mapGarminActivityToActivity(
-            activity,
-            mapping.user_id,
-          );
-          const sportType = mapGarminSportType(activity.activityType);
-          const scheduledDate = garminTimestampToDateString(
-            activity.startTimeInSeconds,
-            activity.startTimeOffsetInSeconds,
-          );
-
-          // Tombstone gate BEFORE any match or insert: a deleted workout's
-          // row persists precisely so this push cannot resurrect it.
-          const tombstone = await findMatchingTombstone(
+          // Ratified matcher tier (data-integrations@v1): matcher.ts
+          // decides, matcher_executor.ts applies; garmin-ping shares the
+          // exact same pipeline.
+          const outcome = await processInboundGarminActivity(
             supabase,
             mapping.user_id,
-            sportType,
             activity,
-            activity.summaryId != null ? String(activity.summaryId) : null,
+            "[garmin-push]",
           );
-          if (tombstone) {
-            console.log(
-              `[garmin-push] Dropping activity — ${tombstone.reason} (${tombstone.id})`,
+          if (outcome.kind === "error") {
+            console.error(
+              "[garmin-push] Matcher pipeline error:",
+              outcome.error,
             );
-            stats.skipped++;
-            continue;
           }
-
-          // Try to match an existing planned activity from TP/FS
-          const matchedActivity = await findMatchingPlannedActivity(
-            supabase,
-            mapping.user_id,
-            sportType,
-            activity,
-            activity.summaryId != null ? String(activity.summaryId) : null,
-          );
-
-          if (matchedActivity) {
-            // Update the existing planned activity with Garmin completion data
-            // while preserving the original provider identity (TP/FS/etc).
-            // Store Garmin linkage separately for follow-up Garmin updates.
-            const summaryId = activity.summaryId ??
-              (activity as { activityId?: string }).activityId;
-            if (!summaryId) {
-              console.warn(
-                "[garmin-push] Missing activity summary id - skipping",
-              );
-              stats.errors++;
-              continue;
-            }
-            const updateFields = buildGarminCompletionUpdate(
-              activity,
-              activityRow,
-            );
-            updateFields.garmin_summary_id = String(summaryId);
-
-            // Atomic "win-the-race" update: only complete the activity if it
-            // is still planned/draft. Garmin often fires the Activities and
-            // ActivityDetails webhooks for the same workout simultaneously;
-            // whichever request updates the row first gets to notify.
-            const { data: updatedRows, error } = await supabase
-              .from("activities")
-              .update(updateFields)
-              .eq("id", matchedActivity.id)
-              .in("status", GARMIN_COMPLETABLE_STATUSES)
-              .select("id");
-
-            if (error) {
-              console.error(
-                `[garmin-push] Matched activity update error:`,
-                error,
-              );
-              stats.errors++;
-            } else if (!updatedRows || updatedRows.length === 0) {
-              console.log(
-                `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
-              );
-              // The winning push may have carried a preliminary payload
-              // (0 duration / 0 distance) — fill any metric gaps from ours.
-              await enrichCompletedGarminActivity(
-                supabase,
-                mapping.user_id,
-                String(summaryId),
-                activityRow,
-                "[garmin-push]",
-              );
-              stats.skipped++;
-            } else {
-              console.log(
-                `[garmin-push] Matched & completed activity ${matchedActivity.id} (${matchedActivity.title})`,
-              );
-              await sendActivityUploadedPush({
-                userId: mapping.user_id,
-                activityId: String(matchedActivity.id),
-                scheduledDate,
-                provider: buildGarminProviderLabel(activity.deviceName),
-                logPrefix: "[garmin-push]",
-              });
-              stats.matched++;
-              stats.processed++;
-            }
-          } else {
-            // No planned activity matched — try to auto-create one.
-            const outcome = await insertGarminActivityIfMissing(
-              supabase,
-              activity,
-              activityRow,
-            );
-            switch (outcome.kind) {
-              case "inserted":
-                console.log(
-                  `[garmin-push] Auto-created completed activity ${outcome.activityId} for ${sportType} on ${scheduledDate}`,
-                );
-                await sendActivityUploadedPush({
-                  userId: mapping.user_id,
-                  activityId: outcome.activityId,
-                  scheduledDate,
-                  provider: buildGarminProviderLabel(activity.deviceName),
-                  logPrefix: "[garmin-push]",
-                });
-                stats.inserted++;
-                stats.processed++;
-                break;
-              case "duplicate": {
-                console.log(
-                  `[garmin-push] Activity for ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
-                );
-                const dupSummaryId = activity.summaryId ??
-                  (activity as { activityId?: string }).activityId;
-                if (dupSummaryId) {
-                  await enrichCompletedGarminActivity(
-                    supabase,
-                    mapping.user_id,
-                    String(dupSummaryId),
-                    activityRow,
-                    "[garmin-push]",
-                  );
-                }
-                stats.skipped++;
-                break;
-              }
-              case "skipped_non_endurance":
-                console.log(
-                  `[garmin-push] No matching planned activity for non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
-                );
-                stats.skipped++;
-                break;
-              case "skipped_enum_not_ready":
-                console.warn(
-                  `[garmin-push] "other" activity_type not yet migrated on this database — skipping import for ${scheduledDate}`,
-                );
-                stats.skipped++;
-                break;
-              case "skipped_no_summary_id":
-                console.warn(
-                  "[garmin-push] No matching planned activity and missing summaryId — skipping",
-                );
-                stats.errors++;
-                break;
-              case "error":
-                console.error(
-                  "[garmin-push] Auto-create insert error:",
-                  outcome.error,
-                );
-                stats.errors++;
-                break;
-            }
-          }
+          tallyOutcome(outcome, stats);
         } catch (err) {
           console.error(`[garmin-push] Activity processing error:`, err);
           stats.errors++;
@@ -784,14 +643,13 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             average_heart_rate: activityRow.average_heart_rate,
             max_heart_rate: activityRow.max_heart_rate,
             calories_burned: activityRow.calories_burned,
-            duration_minutes: activityRow.duration_minutes,
-            distance_meters: activityRow.distance_meters,
           };
 
-          // Mirror the actual_* and sport-specific fields that
-          // buildGarminCompletionUpdate writes on first completion, so a
-          // later manual Garmin edit overwrites the same metrics. Zero is a
-          // valid value, so guard with typeof === "number", not truthiness.
+          // L-2 split (DI-7): a manual Garmin edit is MEASURED data — it
+          // updates the actual_* family and the measured scalar columns
+          // only; the planner columns (duration_minutes, distance_miles,
+          // distance_meters) keep the plan. Zero is a valid value, so guard
+          // with typeof === "number", not truthiness.
           if (typeof activityRow.duration_minutes === "number") {
             updateFields.actual_duration_minutes = activityRow.duration_minutes;
           }
@@ -807,9 +665,6 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           if (typeof activityRow.average_pace_minutes_per_mile === "number") {
             updateFields.average_pace_minutes_per_mile =
               activityRow.average_pace_minutes_per_mile;
-          }
-          if (typeof activityRow.distance_miles === "number") {
-            updateFields.distance_miles = activityRow.distance_miles;
           }
           if (typeof activityRow.cycling_power_watts === "number") {
             updateFields.cycling_power_watts = activityRow.cycling_power_watts;
@@ -916,148 +771,27 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
             stats.errors++;
             continue;
           }
-          const activityRow = mapGarminActivityToActivity(
-            summary,
-            mapping.user_id,
-          );
-          const sportType = mapGarminSportType(summary.activityType);
-          const scheduledDate = garminTimestampToDateString(
-            summary.startTimeInSeconds,
-            summary.startTimeOffsetInSeconds,
-          );
-
-          const tombstone = await findMatchingTombstone(
+          // Same ratified matcher tier as the activities loop; the detail
+          // payload's summary is a full GarminActivitySummary. The
+          // duplicate/enrich path backfills metric gaps when the summary
+          // push won the race (detail pushes carry the richest data).
+          const detailActivity = {
+            ...summary,
+            summaryId: String(detailSummaryId),
+          };
+          const outcome = await processInboundGarminActivity(
             supabase,
             mapping.user_id,
-            sportType,
-            summary,
-            String(detailSummaryId),
+            detailActivity,
+            "[garmin-push]",
           );
-          if (tombstone) {
-            console.log(
-              `[garmin-push] Dropping detail push — ${tombstone.reason} (${tombstone.id})`,
+          if (outcome.kind === "error") {
+            console.error(
+              "[garmin-push] Matcher pipeline error (detail):",
+              outcome.error,
             );
-            stats.skipped++;
-            continue;
           }
-
-          const matchedActivity = await findMatchingPlannedActivity(
-            supabase,
-            mapping.user_id,
-            sportType,
-            summary,
-            String(detailSummaryId),
-          );
-
-          if (matchedActivity) {
-            const updateFields = buildGarminCompletionUpdate(
-              summary,
-              activityRow,
-            );
-            updateFields.garmin_summary_id = String(detailSummaryId);
-
-            const { data: updatedRows, error } = await supabase
-              .from("activities")
-              .update(updateFields)
-              .eq("id", matchedActivity.id)
-              .in("status", GARMIN_COMPLETABLE_STATUSES)
-              .select("id");
-
-            if (error) {
-              console.error(
-                `[garmin-push] Activity detail matched update error:`,
-                error,
-              );
-              stats.errors++;
-            } else if (!updatedRows || updatedRows.length === 0) {
-              console.log(
-                `[garmin-push] Activity ${matchedActivity.id} already completed by a concurrent push - skipping duplicate notification`,
-              );
-              // Detail pushes usually carry the richest data — backfill any
-              // metric gaps left by the preliminary payload that won the race.
-              await enrichCompletedGarminActivity(
-                supabase,
-                mapping.user_id,
-                String(detailSummaryId),
-                activityRow,
-                "[garmin-push]",
-              );
-              stats.skipped++;
-            } else {
-              console.log(
-                `[garmin-push] Matched & completed activity ${matchedActivity.id} from detail push`,
-              );
-              await sendActivityUploadedPush({
-                userId: mapping.user_id,
-                activityId: String(matchedActivity.id),
-                scheduledDate,
-                provider: buildGarminProviderLabel(summary.deviceName),
-                logPrefix: "[garmin-push]",
-              });
-              stats.matched++;
-              stats.processed++;
-            }
-          } else {
-            const outcome = await insertGarminActivityIfMissing(
-              supabase,
-              summary,
-              activityRow,
-            );
-            switch (outcome.kind) {
-              case "inserted":
-                console.log(
-                  `[garmin-push] Auto-created completed activity ${outcome.activityId} from detail push for ${sportType} on ${scheduledDate}`,
-                );
-                await sendActivityUploadedPush({
-                  userId: mapping.user_id,
-                  activityId: outcome.activityId,
-                  scheduledDate,
-                  provider: buildGarminProviderLabel(summary.deviceName),
-                  logPrefix: "[garmin-push]",
-                });
-                stats.inserted++;
-                stats.processed++;
-                break;
-              case "duplicate":
-                console.log(
-                  `[garmin-push] Activity for detail ${sportType} on ${scheduledDate} already inserted by a concurrent push — skipping duplicate notification`,
-                );
-                await enrichCompletedGarminActivity(
-                  supabase,
-                  mapping.user_id,
-                  String(detailSummaryId),
-                  activityRow,
-                  "[garmin-push]",
-                );
-                stats.skipped++;
-                break;
-              case "skipped_non_endurance":
-                console.log(
-                  `[garmin-push] No matching planned activity for detail non-endurance sport "${outcome.sportType}" on ${scheduledDate} — skipping`,
-                );
-                stats.skipped++;
-                break;
-              case "skipped_enum_not_ready":
-                console.warn(
-                  `[garmin-push] "other" activity_type not yet migrated on this database — skipping detail import for ${scheduledDate}`,
-                );
-                stats.skipped++;
-                break;
-              case "skipped_no_summary_id":
-                console.warn(
-                  "[garmin-push] No matching planned activity for detail and missing summaryId — skipping",
-                );
-                stats.errors++;
-                break;
-              case "error":
-                console.error(
-                  "[garmin-push] Auto-create insert error (detail):",
-                  outcome.error,
-                );
-                stats.errors++;
-                break;
-            }
-          }
+          tallyOutcome(outcome, stats);
         } catch (err) {
           console.error(`[garmin-push] Activity detail processing error:`, err);
           stats.errors++;
@@ -1166,6 +900,79 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
         }
       }
       results.userMetrics = stats;
+    }
+
+    // Process previously-unhandled wellness types (data-integrations@v1
+    // capture, Q-INT26 item 8): hrv, pulseOx, respiration, healthSnapshot,
+    // bloodPressures, skinTemp -> garmin_health_data, payload stored
+    // verbatim minus the user token (lose-nothing direction). data_type is
+    // free text on the table, so no schema change rides with this.
+    const genericWellnessTypes: Array<
+      [
+        keyof Pick<
+          GarminPushNotification,
+          | "hrv"
+          | "pulseOx"
+          | "respiration"
+          | "healthSnapshot"
+          | "bloodPressures"
+          | "skinTemp"
+        >,
+        string,
+      ]
+    > = [
+      ["hrv", "hrv"],
+      ["pulseOx", "pulse_ox"],
+      ["respiration", "respiration"],
+      ["healthSnapshot", "health_snapshot"],
+      ["bloodPressures", "blood_pressures"],
+      ["skinTemp", "skin_temp"],
+    ];
+    for (const [bodyKey, dataType] of genericWellnessTypes) {
+      const summaries = body[bodyKey];
+      if (!summaries || summaries.length === 0) continue;
+      const stats = { processed: 0, errors: 0 };
+      for (const summary of summaries) {
+        try {
+          const { data: mapping } = await supabase
+            .from("garmin_user_mappings")
+            .select("user_id")
+            .eq("garmin_user_id", summary.userId)
+            .single();
+
+          if (!mapping) {
+            stats.errors++;
+            continue;
+          }
+
+          // Never persist the user token; everything else is kept as sent.
+          const { userAccessToken: _token, ...payload } = summary;
+
+          const record = {
+            user_id: mapping.user_id,
+            garmin_user_id: summary.userId,
+            summary_id: summary.summaryId,
+            data_type: dataType,
+            calendar_date: resolveWellnessCalendarDate(summary),
+            data: payload,
+          };
+
+          const { error } = await supabase
+            .from("garmin_health_data")
+            .upsert(record, { onConflict: "summary_id" });
+
+          if (error) {
+            console.error(`[garmin-push] ${dataType} upsert error:`, error);
+            stats.errors++;
+          } else {
+            stats.processed++;
+          }
+        } catch (err) {
+          console.error(`[garmin-push] ${dataType} processing error:`, err);
+          stats.errors++;
+        }
+      }
+      results[dataType] = stats;
     }
 
     // Process user permissions changes (just acknowledge - no data to store)

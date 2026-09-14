@@ -34,6 +34,7 @@ class FinalSurgeTransformResult {
     this.paceMaxMinutesPerMile,
     this.distanceMeters,
     this.intensityDistribution,
+    this.providerReportsCompletion = false,
   });
 
   /// The transformed Activity object
@@ -65,6 +66,12 @@ class FinalSurgeTransformResult {
 
   /// Inferred intensity distribution from workout metadata
   final IntensityDistribution? intensityDistribution;
+
+  /// True when the payload carries provider-reported completion evidence
+  /// (WorkoutCompleted flag or ActualTime). Never observed populated in
+  /// production (FS-2.1) — Xuan's one-time probe settles it; the M-1.3
+  /// revive path is wired and waiting.
+  final bool providerReportsCompletion;
 }
 
 /// Transforms Final Surge workouts to Mealvana Activities
@@ -208,6 +215,13 @@ class FinalSurgeTransformer {
       lastSyncedAt: now,
       createdAt: now,
       updatedAt: now,
+      // data-integrations@v1 capture (Q-INT26/Q-INT13): the subtype and pace
+      // range were computed here and then discarded on the result object —
+      // persist them on the row so consumers (CarbsPerHourService speed-work
+      // exclusion, display) stop being blind to FS.
+      workoutSubtype: isWalk ? 'Walk' : workout['WorkoutSubTypeName'] as String?,
+      paceMinMinutesPerMile: paceResult.minPace,
+      paceMaxMinutesPerMile: paceResult.maxPace,
     );
 
     if (kDebugMode) {
@@ -248,6 +262,8 @@ class FinalSurgeTransformer {
       paceMaxMinutesPerMile: paceResult.maxPace,
       distanceMeters: distanceMeters,
       intensityDistribution: intensityDistribution,
+      providerReportsCompletion: workout['WorkoutCompleted'] == true ||
+          workout['ActualTime'] != null,
     );
   }
 

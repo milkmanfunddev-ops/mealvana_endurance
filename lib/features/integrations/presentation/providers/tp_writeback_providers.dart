@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../../shared/database/database_provider.dart';
 import '../../../../shared/services/preferences_service.dart';
+import '../../../../shared/services/app_external_deps.dart';
 import '../../application/tp_writeback_service.dart';
 import 'integrations_providers.dart';
 
@@ -24,5 +25,8 @@ Future<TpWritebackService> tpWritebackService(Ref ref) async {
     oauthService: oauthService,
     preferencesService: preferencesService,
     database: database,
+    // TP-5: the server-side ledger custodian — a push may not happen
+    // without its ledger row.
+    supabase: ref.watch(appExternalDepsProvider).supabaseClient,
   );
 }

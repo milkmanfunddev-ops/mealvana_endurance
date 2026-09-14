@@ -17,7 +17,7 @@ import type {
 } from '../types.ts';
 import {
   zoneDistributionToIF,
-  sessionCost,
+  sessionCostF4a,
   carbDemand,
 } from './session.ts';
 import { calculateRMR } from './rmr.ts';
@@ -35,6 +35,9 @@ export type ResolveSource =
   | 'TP_CALENDAR'
   | 'ZONE_DIST'
   | 'FORMULA'
+  // F4a (RULED 2026-09-10): the sport was genuinely unknown — the 0 kcal is
+  // an estimate, surfaced sources-style so consumers can badge it.
+  | 'ESTIMATE_ZERO'
   | 'MANUAL'
   | 'NONE';
 
@@ -220,13 +223,14 @@ export function resolveSessionData(
     session_kcal = garmin_activity.activeKilocalories;
     kcal_source = 'GARMIN';
   } else {
-    session_kcal = sessionCost(
+    const cost = sessionCostF4a(
       session.sport,
       duration_hr,
       intensity_factor,
       weight_kg,
     );
-    kcal_source = 'FORMULA';
+    session_kcal = cost.kcal;
+    kcal_source = cost.estimate_flag ? 'ESTIMATE_ZERO' : 'FORMULA';
   }
 
   // Carb demand always uses resolved IF + duration (no platform source for this).

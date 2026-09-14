@@ -142,17 +142,19 @@ serve(withSentry(async (req: Request) => {
     );
     if (verificationError) return verificationError;
 
-    const tokenExpiresAt =
-      body.token_expires_at ??
-      new Date(Date.now() + 60 * 60 * 1000).toISOString();
-
+    // Q-INT8 (RULED 2026-09-10): `integrations` is the sole token
+    // custodian. The mapping row carries ONLY the identity link
+    // (garmin_user_id <-> user_id); the access_token in the request body is
+    // still used above to VERIFY the claimed Garmin user id, but is never
+    // persisted here. Existing copies are stripped by migration
+    // 20260911160000.
     const { error } = await supabase.from('garmin_user_mappings').upsert(
       {
         user_id: user.id,
         garmin_user_id: body.garmin_user_id,
-        access_token: body.access_token,
-        refresh_token: body.refresh_token ?? null,
-        token_expires_at: tokenExpiresAt,
+        access_token: null,
+        refresh_token: null,
+        token_expires_at: null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'garmin_user_id' },

@@ -40,6 +40,7 @@ class TrainingPeaksTransformResult {
     this.elevationGainMeters,
     this.caloriesPlanned,
     this.tags,
+    this.providerReportsCompletion = false,
   });
 
   /// The transformed Activity object
@@ -80,6 +81,12 @@ class TrainingPeaksTransformResult {
 
   /// Tags from the workout (used for intensity inference and user reference)
   final List<String>? tags;
+
+  /// True when the payload carries provider-reported completion evidence
+  /// (actual TotalTime — planned workouts carry TotalTimePlanned only).
+  /// M-1.3: a keyed completion signal pierces a tombstone; a plan
+  /// re-import never does.
+  final bool providerReportsCompletion;
 }
 
 /// Result of transforming a TrainingPeaks event
@@ -309,6 +316,17 @@ class TrainingPeaksTransformer {
     final tagsRaw = workout['Tags'] as List?;
     final tags = tagsRaw?.map((t) => t.toString()).toList();
 
+    // data-integrations@v1 capture (Q-INT26): persist the TP load metrics and
+    // session energy instead of discarding them (Q-INT13). Planned values
+    // arrive on every workout; actuals only once TP marks it completed —
+    // basic (non-premium) athletes return null for all of these, and null is
+    // stored as null (never fabricated, DI-13).
+    final tssPlanned = (workout['TSSPlanned'] as num?)?.toDouble();
+    final ifPlanned = (workout['IFPlanned'] as num?)?.toDouble();
+    final tssActual = (workout['TssActual'] as num?)?.toDouble();
+    final ifActual = (workout['IF'] as num?)?.toDouble();
+    final caloriesActual = (workout['Calories'] as num?)?.toDouble();
+
     // Create the Activity with provider sync fields
     // Use 'planned' status since synced workouts are confirmed by external platform
     final activity = Activity(
@@ -342,6 +360,14 @@ class TrainingPeaksTransformer {
       lastSyncedAt: now,
       createdAt: now,
       updatedAt: now,
+      // data-integrations@v1 capture (Q-INT26/Q-INT13)
+      workoutSubtype: isWalk ? 'Walk' : workout['Title'] as String?,
+      tssPlanned: tssPlanned,
+      tssActual: tssActual,
+      ifPlanned: ifPlanned,
+      ifActual: ifActual,
+      tpCalories: caloriesActual,
+      tpCaloriesPlanned: caloriesPlanned,
     );
 
     // Infer intensity distribution from structured workout or heuristics
@@ -359,12 +385,13 @@ class TrainingPeaksTransformer {
       lastSyncedAt: now,
       workoutSubtype: isWalk ? 'Walk' : workout['Title'] as String?,
       distanceMeters: distanceMeters,
-      tssPlanned: (workout['TSSPlanned'] as num?)?.toDouble(),
-      ifPlanned: (workout['IFPlanned'] as num?)?.toDouble(),
+      tssPlanned: tssPlanned,
+      ifPlanned: ifPlanned,
       intensityDistribution: intensityDistribution,
       elevationGainMeters: elevationGainMeters,
       caloriesPlanned: caloriesPlanned,
       tags: tags,
+      providerReportsCompletion: workout['TotalTime'] != null,
     );
   }
 

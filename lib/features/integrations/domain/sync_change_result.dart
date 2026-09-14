@@ -13,6 +13,8 @@ class SyncChangeResult {
     required this.deletedActivityIds,
     required this.unchangedCount,
     this.tombstoneDroppedCount = 0,
+    this.revivedActivities = const [],
+    this.unhiddenActivities = const [],
   });
 
   /// Activities that exist in remote but not in local (need to be inserted)
@@ -31,6 +33,18 @@ class SyncChangeResult {
   /// status='deleted' tombstone (soft-delete ruling: matched tombstones are
   /// never re-imported)
   final int tombstoneDroppedCount;
+
+  /// M-1.3 provable-fact primacy (matching.md, RULED 2026-09-10): a keyed
+  /// COMPLETION signal on a tombstoned row revives it to completed — the
+  /// platform reports it happened, so it happened. A keyed PLAN re-import
+  /// still drops (tombstoneDroppedCount). Each entry pairs the tombstoned
+  /// local row id with the completion-carrying remote activity.
+  final List<ActivityChange> revivedActivities;
+
+  /// Q-INT2 revive: rows soft-hidden by a provider disconnect that this
+  /// re-sync matched by provider id — they unhide and take the provider
+  /// update (hidden rows match-and-revive, never suppress).
+  final List<ActivityChange> unhiddenActivities;
 
   /// Total number of changes detected (new + updated + deleted)
   int get totalChanges =>
@@ -52,7 +66,9 @@ class SyncChangeResult {
         'updated: ${updatedActivities.length}, '
         'deleted: ${deletedActivityIds.length}, '
         'unchanged: $unchangedCount, '
-        'tombstoneDropped: $tombstoneDroppedCount'
+        'tombstoneDropped: $tombstoneDroppedCount, '
+        'revived: ${revivedActivities.length}, '
+        'unhidden: ${unhiddenActivities.length}'
         ')';
   }
 }

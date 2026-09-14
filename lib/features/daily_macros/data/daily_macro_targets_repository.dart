@@ -54,7 +54,10 @@ class DailyMacroTargetsRepository {
   /// current_schema_version / VersionCheckService) stays the only forced
   /// wipe. Today's pre-v6 installs are served by the frozen legacy function
   /// `calculate-daily-macros`; this build calls `calculate-daily-macros-v6`.
-  static const String _minAlgorithmVersion = 'v6.0.0';
+  /// Raised to v6.1.0 with F4a (data-integrations@v1): this build's cached
+  /// pre-F4a days recalc exactly once; older installs keep accepting newer
+  /// rows (the floor semantics above).
+  static const String _minAlgorithmVersion = 'v6.1.0';
 
   /// Semantic-ish compare of `vN.N.N` strings; anything unparsable is treated
   /// as older than everything (→ recalculated once).

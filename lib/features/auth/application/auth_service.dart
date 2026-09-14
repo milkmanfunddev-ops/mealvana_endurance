@@ -245,6 +245,7 @@ class AuthService {
   Future<void> updateSportPreferences(
     String userId, {
     UserProfile? currentUser,
+    bool? runsWithWaterBottle,
     bool? giSensitivity,
     int? ftpWatts,
     int? typicalBikeBottles,
@@ -262,6 +263,7 @@ class AuthService {
 
     // Update the user profile with sport preferences
     final updatedProfile = user.copyWith(
+      runsWithWaterBottle: runsWithWaterBottle,
       giSensitivity: giSensitivity,
       ftpWatts: ftpWatts,
       typicalBikeBottles: typicalBikeBottles,

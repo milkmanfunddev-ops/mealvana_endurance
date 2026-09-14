@@ -1,0 +1,41 @@
+# Design conformance — workout-card number states (goldens)
+#
+# Written at ship of data-integrations@v1 from the RATIFIED
+# spec/design/surfaces/integrations-data-display.md D-1/D-1b (Q-DID1 RULED
+# 2026-09-11: one row, measured-only when verified) and the ratified rendering
+# spec/design/renderings/workout-card-states@v1.html (state toggles verified
+# interactively at ratification).
+#
+# A golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass. Regeneration commits cite the spec change.
+
+manifest: workout-card-states
+version: v1
+status: ratified                # spec + rendering RATIFIED Xuan 2026-09-11; app suite pending (DI-15)
+spec: spec/design/surfaces/integrations-data-display.md
+rendering: spec/design/renderings/workout-card-states@v1.html
+suite: test/features/nutrition_plan/workout_card_states_golden_test.dart   # to create — handback addendum 3
+
+goldens:
+  - id: card-planned
+    state: planned
+    asserts: planned duration+distance, dashed outline, Planned pill
+  - id: card-skipped
+    state: skipped
+    asserts: planned values, dashed outline, dimmed ink, Skipped pill, no source
+  - id: card-self-reported
+    state: self-reported (done, no summary id)
+    asserts: PLANNED values (mark-done measures nothing), solid outline, self-reported source
+  - id: card-verified
+    state: verified (garmin_summary_id set)
+    asserts: MEASURED values ONLY (actual_*), teal "verified · Garmin" pill, solid outline; NO planned value anywhere on the card
+  - id: brick-planned
+    state: brick day, planned
+    asserts: DASHED outline at creation (D-1b — today's solid-on-create is the divergence under fix); one row per leg, planned values, order badges 1..n
+  - id: brick-verified
+    state: brick day, verified
+    asserts: parent verified pill; one MEASURED row per leg; order badges; no planned values
+
+invariants:
+  - one row of duration+distance per card and per brick leg, always
+  - never a mixed pair: duration and distance resolve from the SAME family (actual ?? planned as a pair)

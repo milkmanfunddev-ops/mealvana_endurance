@@ -48,13 +48,13 @@ describe("garmin activity completion helpers", () => {
     // (1711612800 UTC at -5h = 2024-03-28 03:00:00 local).
     assertEquals(update.scheduled_date_time, "2024-03-28T03:00:00");
     assertEquals(update.completed_at, "2024-03-28T08:45:00.000Z");
-    assertEquals(update.duration_minutes, 45);
+    // L-2 split (DI-7, RULED 2026-09-10): measured values land ONLY in the
+    // actual_* family — the planner columns are never in the update.
+    assertEquals("duration_minutes" in update, false);
+    assertEquals("distance_meters" in update, false);
+    assertEquals("distance_miles" in update, false);
     assertEquals(update.actual_duration_minutes, 45);
-    assertEquals(update.distance_meters, 5200);
     assertEquals(update.actual_distance_miles, 3.231);
-    // Displayed mileage is reconciled to the actual synced distance, not the
-    // planned distance.
-    assertEquals(update.distance_miles, 3.231);
     assertEquals(update.average_heart_rate, 142);
     assertEquals(update.max_heart_rate, 168);
     assertEquals(update.calories_burned, 380);
@@ -62,10 +62,38 @@ describe("garmin activity completion helpers", () => {
     assertExists(update.last_synced_at);
   });
 
-  it("overwrites planned distance with a zero actual distance (start/stop run)", () => {
-    // A run that was started and immediately stopped: Garmin reports 0 distance.
-    // The planned activity showed 12 mi; completion must reconcile it to 0 so
-    // the day's mileage (and distance-derived calories) aren't inflated.
+  it("carries multisport lineage when Garmin sends it; omits it otherwise (Q-INT23)", () => {
+    const base = {
+      startTimeInSeconds: 1711612800,
+      startTimeOffsetInSeconds: -18000,
+      durationInSeconds: 2700,
+    };
+
+    const withLineage = buildGarminCompletionUpdate(base, {
+      duration_minutes: 45,
+      parent_summary_id: "activity-005",
+      is_parent: false,
+    });
+    assertEquals(withLineage.parent_summary_id, "activity-005");
+    assertEquals(withLineage.is_parent, false);
+
+    // A plain single-sport completion (mapper emits null lineage) must not
+    // write the columns at all, so lineage stamped earlier survives.
+    const withoutLineage = buildGarminCompletionUpdate(base, {
+      duration_minutes: 45,
+      parent_summary_id: null,
+      is_parent: null,
+    });
+    assertEquals("parent_summary_id" in withoutLineage, false);
+    assertEquals("is_parent" in withoutLineage, false);
+  });
+
+  it("records a zero actual distance (start/stop run) in the measured family only", () => {
+    // A run that was started and immediately stopped: Garmin reports 0
+    // distance. The zero must land as actual_distance_miles 0 (a real
+    // measured zero — verified display and the engine read the measured
+    // pair, so the planned 12 mi no longer shows), while the PLANNED
+    // distance survives untouched per the L-2 split.
     const update = buildGarminCompletionUpdate(
       {
         startTimeInSeconds: 1711612800,
@@ -81,9 +109,11 @@ describe("garmin activity completion helpers", () => {
       },
     );
 
-    assertEquals(update.distance_meters, 0);
     assertEquals(update.actual_distance_miles, 0);
-    assertEquals(update.distance_miles, 0);
+    assertEquals(update.actual_duration_minutes, 1);
+    assertEquals("distance_meters" in update, false);
+    assertEquals("distance_miles" in update, false);
+    assertEquals("duration_minutes" in update, false);
     assertEquals(update.calories_burned, 2);
   });
 
@@ -200,11 +230,12 @@ describe("enrichCompletedGarminActivity", () => {
     assertEquals(outcome.kind, "enriched");
     const update = stub.capturedUpdate();
     assertExists(update);
-    assertEquals(update!.duration_minutes, 60);
+    // L-2 split (DI-7): the enrich path fills MEASURED gaps only.
     assertEquals(update!.actual_duration_minutes, 60);
-    assertEquals(update!.distance_meters, 16093.4);
-    assertEquals(update!.distance_miles, 10);
     assertEquals(update!.actual_distance_miles, 10);
+    assertEquals("duration_minutes" in update!, false);
+    assertEquals("distance_meters" in update!, false);
+    assertEquals("distance_miles" in update!, false);
     assertEquals(update!.average_heart_rate, 150);
     assertEquals(update!.calories_burned, 700);
     // Enrichment must never flip status or rewrite timing fields.

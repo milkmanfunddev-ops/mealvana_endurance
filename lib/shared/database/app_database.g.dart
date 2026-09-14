@@ -676,6 +676,105 @@ class $UserProfilesTableTable extends UserProfilesTable
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _cyclingFtpWattsMeta = const VerificationMeta(
+    'cyclingFtpWatts',
+  );
+  @override
+  late final GeneratedColumn<int> cyclingFtpWatts = GeneratedColumn<int>(
+    'cycling_ftp_watts',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _swimmingCssSecondsPer100mMeta =
+      const VerificationMeta('swimmingCssSecondsPer100m');
+  @override
+  late final GeneratedColumn<int> swimmingCssSecondsPer100m =
+      GeneratedColumn<int>(
+        'swimming_css_seconds_per_100m',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _giSensitivityMeta = const VerificationMeta(
+    'giSensitivity',
+  );
+  @override
+  late final GeneratedColumn<bool> giSensitivity = GeneratedColumn<bool>(
+    'gi_sensitivity',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("gi_sensitivity" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _typicalBikeBottlesMeta =
+      const VerificationMeta('typicalBikeBottles');
+  @override
+  late final GeneratedColumn<int> typicalBikeBottles = GeneratedColumn<int>(
+    'typical_bike_bottles',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hasAeroBottleMeta = const VerificationMeta(
+    'hasAeroBottle',
+  );
+  @override
+  late final GeneratedColumn<bool> hasAeroBottle = GeneratedColumn<bool>(
+    'has_aero_bottle',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_aero_bottle" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _hasBentoBoxMeta = const VerificationMeta(
+    'hasBentoBox',
+  );
+  @override
+  late final GeneratedColumn<bool> hasBentoBox = GeneratedColumn<bool>(
+    'has_bento_box',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_bento_box" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _typicalWetsuitMeta = const VerificationMeta(
+    'typicalWetsuit',
+  );
+  @override
+  late final GeneratedColumn<bool> typicalWetsuit = GeneratedColumn<bool>(
+    'typical_wetsuit',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("typical_wetsuit" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _typicalSwimCapTypeMeta =
+      const VerificationMeta('typicalSwimCapType');
+  @override
+  late final GeneratedColumn<String> typicalSwimCapType =
+      GeneratedColumn<String>(
+        'typical_swim_cap_type',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _needsUploadMeta = const VerificationMeta(
     'needsUpload',
   );
@@ -749,6 +848,14 @@ class $UserProfilesTableTable extends UserProfilesTable
     sweatTestSource,
     weightPoundsUpdatedAt,
     bodyFatPctUpdatedAt,
+    cyclingFtpWatts,
+    swimmingCssSecondsPer100m,
+    giSensitivity,
+    typicalBikeBottles,
+    hasAeroBottle,
+    hasBentoBox,
+    typicalWetsuit,
+    typicalSwimCapType,
     needsUpload,
   ];
   @override
@@ -1211,6 +1318,78 @@ class $UserProfilesTableTable extends UserProfilesTable
         ),
       );
     }
+    if (data.containsKey('cycling_ftp_watts')) {
+      context.handle(
+        _cyclingFtpWattsMeta,
+        cyclingFtpWatts.isAcceptableOrUnknown(
+          data['cycling_ftp_watts']!,
+          _cyclingFtpWattsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('swimming_css_seconds_per_100m')) {
+      context.handle(
+        _swimmingCssSecondsPer100mMeta,
+        swimmingCssSecondsPer100m.isAcceptableOrUnknown(
+          data['swimming_css_seconds_per_100m']!,
+          _swimmingCssSecondsPer100mMeta,
+        ),
+      );
+    }
+    if (data.containsKey('gi_sensitivity')) {
+      context.handle(
+        _giSensitivityMeta,
+        giSensitivity.isAcceptableOrUnknown(
+          data['gi_sensitivity']!,
+          _giSensitivityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('typical_bike_bottles')) {
+      context.handle(
+        _typicalBikeBottlesMeta,
+        typicalBikeBottles.isAcceptableOrUnknown(
+          data['typical_bike_bottles']!,
+          _typicalBikeBottlesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_aero_bottle')) {
+      context.handle(
+        _hasAeroBottleMeta,
+        hasAeroBottle.isAcceptableOrUnknown(
+          data['has_aero_bottle']!,
+          _hasAeroBottleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('has_bento_box')) {
+      context.handle(
+        _hasBentoBoxMeta,
+        hasBentoBox.isAcceptableOrUnknown(
+          data['has_bento_box']!,
+          _hasBentoBoxMeta,
+        ),
+      );
+    }
+    if (data.containsKey('typical_wetsuit')) {
+      context.handle(
+        _typicalWetsuitMeta,
+        typicalWetsuit.isAcceptableOrUnknown(
+          data['typical_wetsuit']!,
+          _typicalWetsuitMeta,
+        ),
+      );
+    }
+    if (data.containsKey('typical_swim_cap_type')) {
+      context.handle(
+        _typicalSwimCapTypeMeta,
+        typicalSwimCapType.isAcceptableOrUnknown(
+          data['typical_swim_cap_type']!,
+          _typicalSwimCapTypeMeta,
+        ),
+      );
+    }
     if (data.containsKey('needs_upload')) {
       context.handle(
         _needsUploadMeta,
@@ -1456,6 +1635,38 @@ class $UserProfilesTableTable extends UserProfilesTable
         DriftSqlType.dateTime,
         data['${effectivePrefix}body_fat_pct_updated_at'],
       ),
+      cyclingFtpWatts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cycling_ftp_watts'],
+      ),
+      swimmingCssSecondsPer100m: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}swimming_css_seconds_per_100m'],
+      ),
+      giSensitivity: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}gi_sensitivity'],
+      ),
+      typicalBikeBottles: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}typical_bike_bottles'],
+      ),
+      hasAeroBottle: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_aero_bottle'],
+      ),
+      hasBentoBox: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_bento_box'],
+      ),
+      typicalWetsuit: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}typical_wetsuit'],
+      ),
+      typicalSwimCapType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}typical_swim_cap_type'],
+      ),
       needsUpload: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}needs_upload'],
@@ -1626,6 +1837,30 @@ class UserProfileEntry extends DataClass
   /// Timestamp of last body_fat_pct update (for Garmin precedence resolution)
   final DateTime? bodyFatPctUpdatedAt;
 
+  /// FTP in watts (Supabase twin: users.cycling_ftp_watts)
+  final int? cyclingFtpWatts;
+
+  /// Critical Swim Speed, seconds per 100m (Supabase twin of the same name)
+  final int? swimmingCssSecondsPer100m;
+
+  /// GI sensitivity flag (local-only)
+  final bool? giSensitivity;
+
+  /// Typical bike bottle count (local-only)
+  final int? typicalBikeBottles;
+
+  /// Rides with an aero bottle (local-only)
+  final bool? hasAeroBottle;
+
+  /// Rides with a bento box (local-only)
+  final bool? hasBentoBox;
+
+  /// Typically swims in a wetsuit (local-only)
+  final bool? typicalWetsuit;
+
+  /// Typical swim cap type (local-only)
+  final String? typicalSwimCapType;
+
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration
   final bool needsUpload;
@@ -1686,6 +1921,14 @@ class UserProfileEntry extends DataClass
     this.sweatTestSource,
     this.weightPoundsUpdatedAt,
     this.bodyFatPctUpdatedAt,
+    this.cyclingFtpWatts,
+    this.swimmingCssSecondsPer100m,
+    this.giSensitivity,
+    this.typicalBikeBottles,
+    this.hasAeroBottle,
+    this.hasBentoBox,
+    this.typicalWetsuit,
+    this.typicalSwimCapType,
     required this.needsUpload,
   });
   @override
@@ -1821,6 +2064,32 @@ class UserProfileEntry extends DataClass
     if (!nullToAbsent || bodyFatPctUpdatedAt != null) {
       map['body_fat_pct_updated_at'] = Variable<DateTime>(bodyFatPctUpdatedAt);
     }
+    if (!nullToAbsent || cyclingFtpWatts != null) {
+      map['cycling_ftp_watts'] = Variable<int>(cyclingFtpWatts);
+    }
+    if (!nullToAbsent || swimmingCssSecondsPer100m != null) {
+      map['swimming_css_seconds_per_100m'] = Variable<int>(
+        swimmingCssSecondsPer100m,
+      );
+    }
+    if (!nullToAbsent || giSensitivity != null) {
+      map['gi_sensitivity'] = Variable<bool>(giSensitivity);
+    }
+    if (!nullToAbsent || typicalBikeBottles != null) {
+      map['typical_bike_bottles'] = Variable<int>(typicalBikeBottles);
+    }
+    if (!nullToAbsent || hasAeroBottle != null) {
+      map['has_aero_bottle'] = Variable<bool>(hasAeroBottle);
+    }
+    if (!nullToAbsent || hasBentoBox != null) {
+      map['has_bento_box'] = Variable<bool>(hasBentoBox);
+    }
+    if (!nullToAbsent || typicalWetsuit != null) {
+      map['typical_wetsuit'] = Variable<bool>(typicalWetsuit);
+    }
+    if (!nullToAbsent || typicalSwimCapType != null) {
+      map['typical_swim_cap_type'] = Variable<String>(typicalSwimCapType);
+    }
     map['needs_upload'] = Variable<bool>(needsUpload);
     return map;
   }
@@ -1938,6 +2207,31 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(bodyFatPctUpdatedAt),
+      cyclingFtpWatts: cyclingFtpWatts == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cyclingFtpWatts),
+      swimmingCssSecondsPer100m:
+          swimmingCssSecondsPer100m == null && nullToAbsent
+          ? const Value.absent()
+          : Value(swimmingCssSecondsPer100m),
+      giSensitivity: giSensitivity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(giSensitivity),
+      typicalBikeBottles: typicalBikeBottles == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typicalBikeBottles),
+      hasAeroBottle: hasAeroBottle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasAeroBottle),
+      hasBentoBox: hasBentoBox == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hasBentoBox),
+      typicalWetsuit: typicalWetsuit == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typicalWetsuit),
+      typicalSwimCapType: typicalSwimCapType == null && nullToAbsent
+          ? const Value.absent()
+          : Value(typicalSwimCapType),
       needsUpload: Value(needsUpload),
     );
   }
@@ -2048,6 +2342,18 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: serializer.fromJson<DateTime?>(
         json['bodyFatPctUpdatedAt'],
       ),
+      cyclingFtpWatts: serializer.fromJson<int?>(json['cyclingFtpWatts']),
+      swimmingCssSecondsPer100m: serializer.fromJson<int?>(
+        json['swimmingCssSecondsPer100m'],
+      ),
+      giSensitivity: serializer.fromJson<bool?>(json['giSensitivity']),
+      typicalBikeBottles: serializer.fromJson<int?>(json['typicalBikeBottles']),
+      hasAeroBottle: serializer.fromJson<bool?>(json['hasAeroBottle']),
+      hasBentoBox: serializer.fromJson<bool?>(json['hasBentoBox']),
+      typicalWetsuit: serializer.fromJson<bool?>(json['typicalWetsuit']),
+      typicalSwimCapType: serializer.fromJson<String?>(
+        json['typicalSwimCapType'],
+      ),
       needsUpload: serializer.fromJson<bool>(json['needsUpload']),
     );
   }
@@ -2129,6 +2435,16 @@ class UserProfileEntry extends DataClass
         weightPoundsUpdatedAt,
       ),
       'bodyFatPctUpdatedAt': serializer.toJson<DateTime?>(bodyFatPctUpdatedAt),
+      'cyclingFtpWatts': serializer.toJson<int?>(cyclingFtpWatts),
+      'swimmingCssSecondsPer100m': serializer.toJson<int?>(
+        swimmingCssSecondsPer100m,
+      ),
+      'giSensitivity': serializer.toJson<bool?>(giSensitivity),
+      'typicalBikeBottles': serializer.toJson<int?>(typicalBikeBottles),
+      'hasAeroBottle': serializer.toJson<bool?>(hasAeroBottle),
+      'hasBentoBox': serializer.toJson<bool?>(hasBentoBox),
+      'typicalWetsuit': serializer.toJson<bool?>(typicalWetsuit),
+      'typicalSwimCapType': serializer.toJson<String?>(typicalSwimCapType),
       'needsUpload': serializer.toJson<bool>(needsUpload),
     };
   }
@@ -2190,6 +2506,14 @@ class UserProfileEntry extends DataClass
     Value<String?> sweatTestSource = const Value.absent(),
     Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
     Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+    Value<int?> cyclingFtpWatts = const Value.absent(),
+    Value<int?> swimmingCssSecondsPer100m = const Value.absent(),
+    Value<bool?> giSensitivity = const Value.absent(),
+    Value<int?> typicalBikeBottles = const Value.absent(),
+    Value<bool?> hasAeroBottle = const Value.absent(),
+    Value<bool?> hasBentoBox = const Value.absent(),
+    Value<bool?> typicalWetsuit = const Value.absent(),
+    Value<String?> typicalSwimCapType = const Value.absent(),
     bool? needsUpload,
   }) => UserProfileEntry(
     id: id ?? this.id,
@@ -2274,6 +2598,28 @@ class UserProfileEntry extends DataClass
     bodyFatPctUpdatedAt: bodyFatPctUpdatedAt.present
         ? bodyFatPctUpdatedAt.value
         : this.bodyFatPctUpdatedAt,
+    cyclingFtpWatts: cyclingFtpWatts.present
+        ? cyclingFtpWatts.value
+        : this.cyclingFtpWatts,
+    swimmingCssSecondsPer100m: swimmingCssSecondsPer100m.present
+        ? swimmingCssSecondsPer100m.value
+        : this.swimmingCssSecondsPer100m,
+    giSensitivity: giSensitivity.present
+        ? giSensitivity.value
+        : this.giSensitivity,
+    typicalBikeBottles: typicalBikeBottles.present
+        ? typicalBikeBottles.value
+        : this.typicalBikeBottles,
+    hasAeroBottle: hasAeroBottle.present
+        ? hasAeroBottle.value
+        : this.hasAeroBottle,
+    hasBentoBox: hasBentoBox.present ? hasBentoBox.value : this.hasBentoBox,
+    typicalWetsuit: typicalWetsuit.present
+        ? typicalWetsuit.value
+        : this.typicalWetsuit,
+    typicalSwimCapType: typicalSwimCapType.present
+        ? typicalSwimCapType.value
+        : this.typicalSwimCapType,
     needsUpload: needsUpload ?? this.needsUpload,
   );
   UserProfileEntry copyWithCompanion(UserProfilesTableCompanion data) {
@@ -2423,6 +2769,30 @@ class UserProfileEntry extends DataClass
       bodyFatPctUpdatedAt: data.bodyFatPctUpdatedAt.present
           ? data.bodyFatPctUpdatedAt.value
           : this.bodyFatPctUpdatedAt,
+      cyclingFtpWatts: data.cyclingFtpWatts.present
+          ? data.cyclingFtpWatts.value
+          : this.cyclingFtpWatts,
+      swimmingCssSecondsPer100m: data.swimmingCssSecondsPer100m.present
+          ? data.swimmingCssSecondsPer100m.value
+          : this.swimmingCssSecondsPer100m,
+      giSensitivity: data.giSensitivity.present
+          ? data.giSensitivity.value
+          : this.giSensitivity,
+      typicalBikeBottles: data.typicalBikeBottles.present
+          ? data.typicalBikeBottles.value
+          : this.typicalBikeBottles,
+      hasAeroBottle: data.hasAeroBottle.present
+          ? data.hasAeroBottle.value
+          : this.hasAeroBottle,
+      hasBentoBox: data.hasBentoBox.present
+          ? data.hasBentoBox.value
+          : this.hasBentoBox,
+      typicalWetsuit: data.typicalWetsuit.present
+          ? data.typicalWetsuit.value
+          : this.typicalWetsuit,
+      typicalSwimCapType: data.typicalSwimCapType.present
+          ? data.typicalSwimCapType.value
+          : this.typicalSwimCapType,
       needsUpload: data.needsUpload.present
           ? data.needsUpload.value
           : this.needsUpload,
@@ -2494,6 +2864,14 @@ class UserProfileEntry extends DataClass
           ..write('sweatTestSource: $sweatTestSource, ')
           ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
           ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
+          ..write('cyclingFtpWatts: $cyclingFtpWatts, ')
+          ..write('swimmingCssSecondsPer100m: $swimmingCssSecondsPer100m, ')
+          ..write('giSensitivity: $giSensitivity, ')
+          ..write('typicalBikeBottles: $typicalBikeBottles, ')
+          ..write('hasAeroBottle: $hasAeroBottle, ')
+          ..write('hasBentoBox: $hasBentoBox, ')
+          ..write('typicalWetsuit: $typicalWetsuit, ')
+          ..write('typicalSwimCapType: $typicalSwimCapType, ')
           ..write('needsUpload: $needsUpload')
           ..write(')'))
         .toString();
@@ -2557,6 +2935,14 @@ class UserProfileEntry extends DataClass
     sweatTestSource,
     weightPoundsUpdatedAt,
     bodyFatPctUpdatedAt,
+    cyclingFtpWatts,
+    swimmingCssSecondsPer100m,
+    giSensitivity,
+    typicalBikeBottles,
+    hasAeroBottle,
+    hasBentoBox,
+    typicalWetsuit,
+    typicalSwimCapType,
     needsUpload,
   ]);
   @override
@@ -2622,6 +3008,14 @@ class UserProfileEntry extends DataClass
           other.sweatTestSource == this.sweatTestSource &&
           other.weightPoundsUpdatedAt == this.weightPoundsUpdatedAt &&
           other.bodyFatPctUpdatedAt == this.bodyFatPctUpdatedAt &&
+          other.cyclingFtpWatts == this.cyclingFtpWatts &&
+          other.swimmingCssSecondsPer100m == this.swimmingCssSecondsPer100m &&
+          other.giSensitivity == this.giSensitivity &&
+          other.typicalBikeBottles == this.typicalBikeBottles &&
+          other.hasAeroBottle == this.hasAeroBottle &&
+          other.hasBentoBox == this.hasBentoBox &&
+          other.typicalWetsuit == this.typicalWetsuit &&
+          other.typicalSwimCapType == this.typicalSwimCapType &&
           other.needsUpload == this.needsUpload);
 }
 
@@ -2682,6 +3076,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
   final Value<String?> sweatTestSource;
   final Value<DateTime?> weightPoundsUpdatedAt;
   final Value<DateTime?> bodyFatPctUpdatedAt;
+  final Value<int?> cyclingFtpWatts;
+  final Value<int?> swimmingCssSecondsPer100m;
+  final Value<bool?> giSensitivity;
+  final Value<int?> typicalBikeBottles;
+  final Value<bool?> hasAeroBottle;
+  final Value<bool?> hasBentoBox;
+  final Value<bool?> typicalWetsuit;
+  final Value<String?> typicalSwimCapType;
   final Value<bool> needsUpload;
   final Value<int> rowid;
   const UserProfilesTableCompanion({
@@ -2741,6 +3143,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.sweatTestSource = const Value.absent(),
     this.weightPoundsUpdatedAt = const Value.absent(),
     this.bodyFatPctUpdatedAt = const Value.absent(),
+    this.cyclingFtpWatts = const Value.absent(),
+    this.swimmingCssSecondsPer100m = const Value.absent(),
+    this.giSensitivity = const Value.absent(),
+    this.typicalBikeBottles = const Value.absent(),
+    this.hasAeroBottle = const Value.absent(),
+    this.hasBentoBox = const Value.absent(),
+    this.typicalWetsuit = const Value.absent(),
+    this.typicalSwimCapType = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2801,6 +3211,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     this.sweatTestSource = const Value.absent(),
     this.weightPoundsUpdatedAt = const Value.absent(),
     this.bodyFatPctUpdatedAt = const Value.absent(),
+    this.cyclingFtpWatts = const Value.absent(),
+    this.swimmingCssSecondsPer100m = const Value.absent(),
+    this.giSensitivity = const Value.absent(),
+    this.typicalBikeBottles = const Value.absent(),
+    this.hasAeroBottle = const Value.absent(),
+    this.hasBentoBox = const Value.absent(),
+    this.typicalWetsuit = const Value.absent(),
+    this.typicalSwimCapType = const Value.absent(),
     this.needsUpload = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2862,6 +3280,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Expression<String>? sweatTestSource,
     Expression<DateTime>? weightPoundsUpdatedAt,
     Expression<DateTime>? bodyFatPctUpdatedAt,
+    Expression<int>? cyclingFtpWatts,
+    Expression<int>? swimmingCssSecondsPer100m,
+    Expression<bool>? giSensitivity,
+    Expression<int>? typicalBikeBottles,
+    Expression<bool>? hasAeroBottle,
+    Expression<bool>? hasBentoBox,
+    Expression<bool>? typicalWetsuit,
+    Expression<String>? typicalSwimCapType,
     Expression<bool>? needsUpload,
     Expression<int>? rowid,
   }) {
@@ -2944,6 +3370,17 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         'weight_pounds_updated_at': weightPoundsUpdatedAt,
       if (bodyFatPctUpdatedAt != null)
         'body_fat_pct_updated_at': bodyFatPctUpdatedAt,
+      if (cyclingFtpWatts != null) 'cycling_ftp_watts': cyclingFtpWatts,
+      if (swimmingCssSecondsPer100m != null)
+        'swimming_css_seconds_per_100m': swimmingCssSecondsPer100m,
+      if (giSensitivity != null) 'gi_sensitivity': giSensitivity,
+      if (typicalBikeBottles != null)
+        'typical_bike_bottles': typicalBikeBottles,
+      if (hasAeroBottle != null) 'has_aero_bottle': hasAeroBottle,
+      if (hasBentoBox != null) 'has_bento_box': hasBentoBox,
+      if (typicalWetsuit != null) 'typical_wetsuit': typicalWetsuit,
+      if (typicalSwimCapType != null)
+        'typical_swim_cap_type': typicalSwimCapType,
       if (needsUpload != null) 'needs_upload': needsUpload,
       if (rowid != null) 'rowid': rowid,
     });
@@ -3006,6 +3443,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
     Value<String?>? sweatTestSource,
     Value<DateTime?>? weightPoundsUpdatedAt,
     Value<DateTime?>? bodyFatPctUpdatedAt,
+    Value<int?>? cyclingFtpWatts,
+    Value<int?>? swimmingCssSecondsPer100m,
+    Value<bool?>? giSensitivity,
+    Value<int?>? typicalBikeBottles,
+    Value<bool?>? hasAeroBottle,
+    Value<bool?>? hasBentoBox,
+    Value<bool?>? typicalWetsuit,
+    Value<String?>? typicalSwimCapType,
     Value<bool>? needsUpload,
     Value<int>? rowid,
   }) {
@@ -3078,6 +3523,15 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
       weightPoundsUpdatedAt:
           weightPoundsUpdatedAt ?? this.weightPoundsUpdatedAt,
       bodyFatPctUpdatedAt: bodyFatPctUpdatedAt ?? this.bodyFatPctUpdatedAt,
+      cyclingFtpWatts: cyclingFtpWatts ?? this.cyclingFtpWatts,
+      swimmingCssSecondsPer100m:
+          swimmingCssSecondsPer100m ?? this.swimmingCssSecondsPer100m,
+      giSensitivity: giSensitivity ?? this.giSensitivity,
+      typicalBikeBottles: typicalBikeBottles ?? this.typicalBikeBottles,
+      hasAeroBottle: hasAeroBottle ?? this.hasAeroBottle,
+      hasBentoBox: hasBentoBox ?? this.hasBentoBox,
+      typicalWetsuit: typicalWetsuit ?? this.typicalWetsuit,
+      typicalSwimCapType: typicalSwimCapType ?? this.typicalSwimCapType,
       needsUpload: needsUpload ?? this.needsUpload,
       rowid: rowid ?? this.rowid,
     );
@@ -3284,6 +3738,32 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
         bodyFatPctUpdatedAt.value,
       );
     }
+    if (cyclingFtpWatts.present) {
+      map['cycling_ftp_watts'] = Variable<int>(cyclingFtpWatts.value);
+    }
+    if (swimmingCssSecondsPer100m.present) {
+      map['swimming_css_seconds_per_100m'] = Variable<int>(
+        swimmingCssSecondsPer100m.value,
+      );
+    }
+    if (giSensitivity.present) {
+      map['gi_sensitivity'] = Variable<bool>(giSensitivity.value);
+    }
+    if (typicalBikeBottles.present) {
+      map['typical_bike_bottles'] = Variable<int>(typicalBikeBottles.value);
+    }
+    if (hasAeroBottle.present) {
+      map['has_aero_bottle'] = Variable<bool>(hasAeroBottle.value);
+    }
+    if (hasBentoBox.present) {
+      map['has_bento_box'] = Variable<bool>(hasBentoBox.value);
+    }
+    if (typicalWetsuit.present) {
+      map['typical_wetsuit'] = Variable<bool>(typicalWetsuit.value);
+    }
+    if (typicalSwimCapType.present) {
+      map['typical_swim_cap_type'] = Variable<String>(typicalSwimCapType.value);
+    }
     if (needsUpload.present) {
       map['needs_upload'] = Variable<bool>(needsUpload.value);
     }
@@ -3358,6 +3838,14 @@ class UserProfilesTableCompanion extends UpdateCompanion<UserProfileEntry> {
           ..write('sweatTestSource: $sweatTestSource, ')
           ..write('weightPoundsUpdatedAt: $weightPoundsUpdatedAt, ')
           ..write('bodyFatPctUpdatedAt: $bodyFatPctUpdatedAt, ')
+          ..write('cyclingFtpWatts: $cyclingFtpWatts, ')
+          ..write('swimmingCssSecondsPer100m: $swimmingCssSecondsPer100m, ')
+          ..write('giSensitivity: $giSensitivity, ')
+          ..write('typicalBikeBottles: $typicalBikeBottles, ')
+          ..write('hasAeroBottle: $hasAeroBottle, ')
+          ..write('hasBentoBox: $hasBentoBox, ')
+          ..write('typicalWetsuit: $typicalWetsuit, ')
+          ..write('typicalSwimCapType: $typicalSwimCapType, ')
           ..write('needsUpload: $needsUpload, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -10926,6 +11414,111 @@ class $ActivitiesTableTable extends ActivitiesTable
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _tssPlannedMeta = const VerificationMeta(
+    'tssPlanned',
+  );
+  @override
+  late final GeneratedColumn<double> tssPlanned = GeneratedColumn<double>(
+    'tss_planned',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tssActualMeta = const VerificationMeta(
+    'tssActual',
+  );
+  @override
+  late final GeneratedColumn<double> tssActual = GeneratedColumn<double>(
+    'tss_actual',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ifPlannedMeta = const VerificationMeta(
+    'ifPlanned',
+  );
+  @override
+  late final GeneratedColumn<double> ifPlanned = GeneratedColumn<double>(
+    'if_planned',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ifActualMeta = const VerificationMeta(
+    'ifActual',
+  );
+  @override
+  late final GeneratedColumn<double> ifActual = GeneratedColumn<double>(
+    'if_actual',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tpCaloriesMeta = const VerificationMeta(
+    'tpCalories',
+  );
+  @override
+  late final GeneratedColumn<double> tpCalories = GeneratedColumn<double>(
+    'tp_calories',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tpCaloriesPlannedMeta = const VerificationMeta(
+    'tpCaloriesPlanned',
+  );
+  @override
+  late final GeneratedColumn<double> tpCaloriesPlanned =
+      GeneratedColumn<double>(
+        'tp_calories_planned',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _parentSummaryIdMeta = const VerificationMeta(
+    'parentSummaryId',
+  );
+  @override
+  late final GeneratedColumn<String> parentSummaryId = GeneratedColumn<String>(
+    'parent_summary_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isParentMeta = const VerificationMeta(
+    'isParent',
+  );
+  @override
+  late final GeneratedColumn<bool> isParent = GeneratedColumn<bool>(
+    'is_parent',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_parent" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _hiddenByDisconnectMeta =
+      const VerificationMeta('hiddenByDisconnect');
+  @override
+  late final GeneratedColumn<bool> hiddenByDisconnect = GeneratedColumn<bool>(
+    'hidden_by_disconnect',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hidden_by_disconnect" IN (0, 1))',
+    ),
+  );
   static const VerificationMeta _garminSummaryIdMeta = const VerificationMeta(
     'garminSummaryId',
   );
@@ -11047,6 +11640,15 @@ class $ActivitiesTableTable extends ActivitiesTable
     brickMetadata,
     brickId,
     tss,
+    tssPlanned,
+    tssActual,
+    ifPlanned,
+    ifActual,
+    tpCalories,
+    tpCaloriesPlanned,
+    parentSummaryId,
+    isParent,
+    hiddenByDisconnect,
     garminSummaryId,
     garminDeviceName,
     notes,
@@ -11542,6 +12144,69 @@ class $ActivitiesTableTable extends ActivitiesTable
         tss.isAcceptableOrUnknown(data['tss']!, _tssMeta),
       );
     }
+    if (data.containsKey('tss_planned')) {
+      context.handle(
+        _tssPlannedMeta,
+        tssPlanned.isAcceptableOrUnknown(data['tss_planned']!, _tssPlannedMeta),
+      );
+    }
+    if (data.containsKey('tss_actual')) {
+      context.handle(
+        _tssActualMeta,
+        tssActual.isAcceptableOrUnknown(data['tss_actual']!, _tssActualMeta),
+      );
+    }
+    if (data.containsKey('if_planned')) {
+      context.handle(
+        _ifPlannedMeta,
+        ifPlanned.isAcceptableOrUnknown(data['if_planned']!, _ifPlannedMeta),
+      );
+    }
+    if (data.containsKey('if_actual')) {
+      context.handle(
+        _ifActualMeta,
+        ifActual.isAcceptableOrUnknown(data['if_actual']!, _ifActualMeta),
+      );
+    }
+    if (data.containsKey('tp_calories')) {
+      context.handle(
+        _tpCaloriesMeta,
+        tpCalories.isAcceptableOrUnknown(data['tp_calories']!, _tpCaloriesMeta),
+      );
+    }
+    if (data.containsKey('tp_calories_planned')) {
+      context.handle(
+        _tpCaloriesPlannedMeta,
+        tpCaloriesPlanned.isAcceptableOrUnknown(
+          data['tp_calories_planned']!,
+          _tpCaloriesPlannedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('parent_summary_id')) {
+      context.handle(
+        _parentSummaryIdMeta,
+        parentSummaryId.isAcceptableOrUnknown(
+          data['parent_summary_id']!,
+          _parentSummaryIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_parent')) {
+      context.handle(
+        _isParentMeta,
+        isParent.isAcceptableOrUnknown(data['is_parent']!, _isParentMeta),
+      );
+    }
+    if (data.containsKey('hidden_by_disconnect')) {
+      context.handle(
+        _hiddenByDisconnectMeta,
+        hiddenByDisconnect.isAcceptableOrUnknown(
+          data['hidden_by_disconnect']!,
+          _hiddenByDisconnectMeta,
+        ),
+      );
+    }
     if (data.containsKey('garmin_summary_id')) {
       context.handle(
         _garminSummaryIdMeta,
@@ -11817,6 +12482,42 @@ class $ActivitiesTableTable extends ActivitiesTable
         DriftSqlType.double,
         data['${effectivePrefix}tss'],
       ),
+      tssPlanned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tss_planned'],
+      ),
+      tssActual: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tss_actual'],
+      ),
+      ifPlanned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}if_planned'],
+      ),
+      ifActual: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}if_actual'],
+      ),
+      tpCalories: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tp_calories'],
+      ),
+      tpCaloriesPlanned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}tp_calories_planned'],
+      ),
+      parentSummaryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}parent_summary_id'],
+      ),
+      isParent: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_parent'],
+      ),
+      hiddenByDisconnect: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hidden_by_disconnect'],
+      ),
       garminSummaryId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}garmin_summary_id'],
@@ -11906,6 +12607,15 @@ class Activity extends DataClass implements Insertable<Activity> {
   final String? brickMetadata;
   final String? brickId;
   final double? tss;
+  final double? tssPlanned;
+  final double? tssActual;
+  final double? ifPlanned;
+  final double? ifActual;
+  final double? tpCalories;
+  final double? tpCaloriesPlanned;
+  final String? parentSummaryId;
+  final bool? isParent;
+  final bool? hiddenByDisconnect;
   final String? garminSummaryId;
   final String? garminDeviceName;
   final String? notes;
@@ -11968,6 +12678,15 @@ class Activity extends DataClass implements Insertable<Activity> {
     this.brickMetadata,
     this.brickId,
     this.tss,
+    this.tssPlanned,
+    this.tssActual,
+    this.ifPlanned,
+    this.ifActual,
+    this.tpCalories,
+    this.tpCaloriesPlanned,
+    this.parentSummaryId,
+    this.isParent,
+    this.hiddenByDisconnect,
     this.garminSummaryId,
     this.garminDeviceName,
     this.notes,
@@ -12133,6 +12852,33 @@ class Activity extends DataClass implements Insertable<Activity> {
     if (!nullToAbsent || tss != null) {
       map['tss'] = Variable<double>(tss);
     }
+    if (!nullToAbsent || tssPlanned != null) {
+      map['tss_planned'] = Variable<double>(tssPlanned);
+    }
+    if (!nullToAbsent || tssActual != null) {
+      map['tss_actual'] = Variable<double>(tssActual);
+    }
+    if (!nullToAbsent || ifPlanned != null) {
+      map['if_planned'] = Variable<double>(ifPlanned);
+    }
+    if (!nullToAbsent || ifActual != null) {
+      map['if_actual'] = Variable<double>(ifActual);
+    }
+    if (!nullToAbsent || tpCalories != null) {
+      map['tp_calories'] = Variable<double>(tpCalories);
+    }
+    if (!nullToAbsent || tpCaloriesPlanned != null) {
+      map['tp_calories_planned'] = Variable<double>(tpCaloriesPlanned);
+    }
+    if (!nullToAbsent || parentSummaryId != null) {
+      map['parent_summary_id'] = Variable<String>(parentSummaryId);
+    }
+    if (!nullToAbsent || isParent != null) {
+      map['is_parent'] = Variable<bool>(isParent);
+    }
+    if (!nullToAbsent || hiddenByDisconnect != null) {
+      map['hidden_by_disconnect'] = Variable<bool>(hiddenByDisconnect);
+    }
     if (!nullToAbsent || garminSummaryId != null) {
       map['garmin_summary_id'] = Variable<String>(garminSummaryId);
     }
@@ -12296,6 +13042,33 @@ class Activity extends DataClass implements Insertable<Activity> {
           ? const Value.absent()
           : Value(brickId),
       tss: tss == null && nullToAbsent ? const Value.absent() : Value(tss),
+      tssPlanned: tssPlanned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tssPlanned),
+      tssActual: tssActual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tssActual),
+      ifPlanned: ifPlanned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ifPlanned),
+      ifActual: ifActual == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ifActual),
+      tpCalories: tpCalories == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tpCalories),
+      tpCaloriesPlanned: tpCaloriesPlanned == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tpCaloriesPlanned),
+      parentSummaryId: parentSummaryId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentSummaryId),
+      isParent: isParent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(isParent),
+      hiddenByDisconnect: hiddenByDisconnect == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hiddenByDisconnect),
       garminSummaryId: garminSummaryId == null && nullToAbsent
           ? const Value.absent()
           : Value(garminSummaryId),
@@ -12416,6 +13189,19 @@ class Activity extends DataClass implements Insertable<Activity> {
       brickMetadata: serializer.fromJson<String?>(json['brickMetadata']),
       brickId: serializer.fromJson<String?>(json['brickId']),
       tss: serializer.fromJson<double?>(json['tss']),
+      tssPlanned: serializer.fromJson<double?>(json['tssPlanned']),
+      tssActual: serializer.fromJson<double?>(json['tssActual']),
+      ifPlanned: serializer.fromJson<double?>(json['ifPlanned']),
+      ifActual: serializer.fromJson<double?>(json['ifActual']),
+      tpCalories: serializer.fromJson<double?>(json['tpCalories']),
+      tpCaloriesPlanned: serializer.fromJson<double?>(
+        json['tpCaloriesPlanned'],
+      ),
+      parentSummaryId: serializer.fromJson<String?>(json['parentSummaryId']),
+      isParent: serializer.fromJson<bool?>(json['isParent']),
+      hiddenByDisconnect: serializer.fromJson<bool?>(
+        json['hiddenByDisconnect'],
+      ),
       garminSummaryId: serializer.fromJson<String?>(json['garminSummaryId']),
       garminDeviceName: serializer.fromJson<String?>(json['garminDeviceName']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -12493,6 +13279,15 @@ class Activity extends DataClass implements Insertable<Activity> {
       'brickMetadata': serializer.toJson<String?>(brickMetadata),
       'brickId': serializer.toJson<String?>(brickId),
       'tss': serializer.toJson<double?>(tss),
+      'tssPlanned': serializer.toJson<double?>(tssPlanned),
+      'tssActual': serializer.toJson<double?>(tssActual),
+      'ifPlanned': serializer.toJson<double?>(ifPlanned),
+      'ifActual': serializer.toJson<double?>(ifActual),
+      'tpCalories': serializer.toJson<double?>(tpCalories),
+      'tpCaloriesPlanned': serializer.toJson<double?>(tpCaloriesPlanned),
+      'parentSummaryId': serializer.toJson<String?>(parentSummaryId),
+      'isParent': serializer.toJson<bool?>(isParent),
+      'hiddenByDisconnect': serializer.toJson<bool?>(hiddenByDisconnect),
       'garminSummaryId': serializer.toJson<String?>(garminSummaryId),
       'garminDeviceName': serializer.toJson<String?>(garminDeviceName),
       'notes': serializer.toJson<String?>(notes),
@@ -12558,6 +13353,15 @@ class Activity extends DataClass implements Insertable<Activity> {
     Value<String?> brickMetadata = const Value.absent(),
     Value<String?> brickId = const Value.absent(),
     Value<double?> tss = const Value.absent(),
+    Value<double?> tssPlanned = const Value.absent(),
+    Value<double?> tssActual = const Value.absent(),
+    Value<double?> ifPlanned = const Value.absent(),
+    Value<double?> ifActual = const Value.absent(),
+    Value<double?> tpCalories = const Value.absent(),
+    Value<double?> tpCaloriesPlanned = const Value.absent(),
+    Value<String?> parentSummaryId = const Value.absent(),
+    Value<bool?> isParent = const Value.absent(),
+    Value<bool?> hiddenByDisconnect = const Value.absent(),
     Value<String?> garminSummaryId = const Value.absent(),
     Value<String?> garminDeviceName = const Value.absent(),
     Value<String?> notes = const Value.absent(),
@@ -12694,6 +13498,21 @@ class Activity extends DataClass implements Insertable<Activity> {
         : this.brickMetadata,
     brickId: brickId.present ? brickId.value : this.brickId,
     tss: tss.present ? tss.value : this.tss,
+    tssPlanned: tssPlanned.present ? tssPlanned.value : this.tssPlanned,
+    tssActual: tssActual.present ? tssActual.value : this.tssActual,
+    ifPlanned: ifPlanned.present ? ifPlanned.value : this.ifPlanned,
+    ifActual: ifActual.present ? ifActual.value : this.ifActual,
+    tpCalories: tpCalories.present ? tpCalories.value : this.tpCalories,
+    tpCaloriesPlanned: tpCaloriesPlanned.present
+        ? tpCaloriesPlanned.value
+        : this.tpCaloriesPlanned,
+    parentSummaryId: parentSummaryId.present
+        ? parentSummaryId.value
+        : this.parentSummaryId,
+    isParent: isParent.present ? isParent.value : this.isParent,
+    hiddenByDisconnect: hiddenByDisconnect.present
+        ? hiddenByDisconnect.value
+        : this.hiddenByDisconnect,
     garminSummaryId: garminSummaryId.present
         ? garminSummaryId.value
         : this.garminSummaryId,
@@ -12858,6 +13677,25 @@ class Activity extends DataClass implements Insertable<Activity> {
           : this.brickMetadata,
       brickId: data.brickId.present ? data.brickId.value : this.brickId,
       tss: data.tss.present ? data.tss.value : this.tss,
+      tssPlanned: data.tssPlanned.present
+          ? data.tssPlanned.value
+          : this.tssPlanned,
+      tssActual: data.tssActual.present ? data.tssActual.value : this.tssActual,
+      ifPlanned: data.ifPlanned.present ? data.ifPlanned.value : this.ifPlanned,
+      ifActual: data.ifActual.present ? data.ifActual.value : this.ifActual,
+      tpCalories: data.tpCalories.present
+          ? data.tpCalories.value
+          : this.tpCalories,
+      tpCaloriesPlanned: data.tpCaloriesPlanned.present
+          ? data.tpCaloriesPlanned.value
+          : this.tpCaloriesPlanned,
+      parentSummaryId: data.parentSummaryId.present
+          ? data.parentSummaryId.value
+          : this.parentSummaryId,
+      isParent: data.isParent.present ? data.isParent.value : this.isParent,
+      hiddenByDisconnect: data.hiddenByDisconnect.present
+          ? data.hiddenByDisconnect.value
+          : this.hiddenByDisconnect,
       garminSummaryId: data.garminSummaryId.present
           ? data.garminSummaryId.value
           : this.garminSummaryId,
@@ -12929,6 +13767,15 @@ class Activity extends DataClass implements Insertable<Activity> {
           ..write('brickMetadata: $brickMetadata, ')
           ..write('brickId: $brickId, ')
           ..write('tss: $tss, ')
+          ..write('tssPlanned: $tssPlanned, ')
+          ..write('tssActual: $tssActual, ')
+          ..write('ifPlanned: $ifPlanned, ')
+          ..write('ifActual: $ifActual, ')
+          ..write('tpCalories: $tpCalories, ')
+          ..write('tpCaloriesPlanned: $tpCaloriesPlanned, ')
+          ..write('parentSummaryId: $parentSummaryId, ')
+          ..write('isParent: $isParent, ')
+          ..write('hiddenByDisconnect: $hiddenByDisconnect, ')
           ..write('garminSummaryId: $garminSummaryId, ')
           ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
@@ -12996,6 +13843,15 @@ class Activity extends DataClass implements Insertable<Activity> {
     brickMetadata,
     brickId,
     tss,
+    tssPlanned,
+    tssActual,
+    ifPlanned,
+    ifActual,
+    tpCalories,
+    tpCaloriesPlanned,
+    parentSummaryId,
+    isParent,
+    hiddenByDisconnect,
     garminSummaryId,
     garminDeviceName,
     notes,
@@ -13062,6 +13918,15 @@ class Activity extends DataClass implements Insertable<Activity> {
           other.brickMetadata == this.brickMetadata &&
           other.brickId == this.brickId &&
           other.tss == this.tss &&
+          other.tssPlanned == this.tssPlanned &&
+          other.tssActual == this.tssActual &&
+          other.ifPlanned == this.ifPlanned &&
+          other.ifActual == this.ifActual &&
+          other.tpCalories == this.tpCalories &&
+          other.tpCaloriesPlanned == this.tpCaloriesPlanned &&
+          other.parentSummaryId == this.parentSummaryId &&
+          other.isParent == this.isParent &&
+          other.hiddenByDisconnect == this.hiddenByDisconnect &&
           other.garminSummaryId == this.garminSummaryId &&
           other.garminDeviceName == this.garminDeviceName &&
           other.notes == this.notes &&
@@ -13126,6 +13991,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
   final Value<String?> brickMetadata;
   final Value<String?> brickId;
   final Value<double?> tss;
+  final Value<double?> tssPlanned;
+  final Value<double?> tssActual;
+  final Value<double?> ifPlanned;
+  final Value<double?> ifActual;
+  final Value<double?> tpCalories;
+  final Value<double?> tpCaloriesPlanned;
+  final Value<String?> parentSummaryId;
+  final Value<bool?> isParent;
+  final Value<bool?> hiddenByDisconnect;
   final Value<String?> garminSummaryId;
   final Value<String?> garminDeviceName;
   final Value<String?> notes;
@@ -13189,6 +14063,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.brickMetadata = const Value.absent(),
     this.brickId = const Value.absent(),
     this.tss = const Value.absent(),
+    this.tssPlanned = const Value.absent(),
+    this.tssActual = const Value.absent(),
+    this.ifPlanned = const Value.absent(),
+    this.ifActual = const Value.absent(),
+    this.tpCalories = const Value.absent(),
+    this.tpCaloriesPlanned = const Value.absent(),
+    this.parentSummaryId = const Value.absent(),
+    this.isParent = const Value.absent(),
+    this.hiddenByDisconnect = const Value.absent(),
     this.garminSummaryId = const Value.absent(),
     this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
@@ -13253,6 +14136,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     this.brickMetadata = const Value.absent(),
     this.brickId = const Value.absent(),
     this.tss = const Value.absent(),
+    this.tssPlanned = const Value.absent(),
+    this.tssActual = const Value.absent(),
+    this.ifPlanned = const Value.absent(),
+    this.ifActual = const Value.absent(),
+    this.tpCalories = const Value.absent(),
+    this.tpCaloriesPlanned = const Value.absent(),
+    this.parentSummaryId = const Value.absent(),
+    this.isParent = const Value.absent(),
+    this.hiddenByDisconnect = const Value.absent(),
     this.garminSummaryId = const Value.absent(),
     this.garminDeviceName = const Value.absent(),
     this.notes = const Value.absent(),
@@ -13322,6 +14214,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Expression<String>? brickMetadata,
     Expression<String>? brickId,
     Expression<double>? tss,
+    Expression<double>? tssPlanned,
+    Expression<double>? tssActual,
+    Expression<double>? ifPlanned,
+    Expression<double>? ifActual,
+    Expression<double>? tpCalories,
+    Expression<double>? tpCaloriesPlanned,
+    Expression<String>? parentSummaryId,
+    Expression<bool>? isParent,
+    Expression<bool>? hiddenByDisconnect,
     Expression<String>? garminSummaryId,
     Expression<String>? garminDeviceName,
     Expression<String>? notes,
@@ -13402,6 +14303,16 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       if (brickMetadata != null) 'brick_metadata': brickMetadata,
       if (brickId != null) 'brick_id': brickId,
       if (tss != null) 'tss': tss,
+      if (tssPlanned != null) 'tss_planned': tssPlanned,
+      if (tssActual != null) 'tss_actual': tssActual,
+      if (ifPlanned != null) 'if_planned': ifPlanned,
+      if (ifActual != null) 'if_actual': ifActual,
+      if (tpCalories != null) 'tp_calories': tpCalories,
+      if (tpCaloriesPlanned != null) 'tp_calories_planned': tpCaloriesPlanned,
+      if (parentSummaryId != null) 'parent_summary_id': parentSummaryId,
+      if (isParent != null) 'is_parent': isParent,
+      if (hiddenByDisconnect != null)
+        'hidden_by_disconnect': hiddenByDisconnect,
       if (garminSummaryId != null) 'garmin_summary_id': garminSummaryId,
       if (garminDeviceName != null) 'garmin_device_name': garminDeviceName,
       if (notes != null) 'notes': notes,
@@ -13468,6 +14379,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     Value<String?>? brickMetadata,
     Value<String?>? brickId,
     Value<double?>? tss,
+    Value<double?>? tssPlanned,
+    Value<double?>? tssActual,
+    Value<double?>? ifPlanned,
+    Value<double?>? ifActual,
+    Value<double?>? tpCalories,
+    Value<double?>? tpCaloriesPlanned,
+    Value<String?>? parentSummaryId,
+    Value<bool?>? isParent,
+    Value<bool?>? hiddenByDisconnect,
     Value<String?>? garminSummaryId,
     Value<String?>? garminDeviceName,
     Value<String?>? notes,
@@ -13540,6 +14460,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
       brickMetadata: brickMetadata ?? this.brickMetadata,
       brickId: brickId ?? this.brickId,
       tss: tss ?? this.tss,
+      tssPlanned: tssPlanned ?? this.tssPlanned,
+      tssActual: tssActual ?? this.tssActual,
+      ifPlanned: ifPlanned ?? this.ifPlanned,
+      ifActual: ifActual ?? this.ifActual,
+      tpCalories: tpCalories ?? this.tpCalories,
+      tpCaloriesPlanned: tpCaloriesPlanned ?? this.tpCaloriesPlanned,
+      parentSummaryId: parentSummaryId ?? this.parentSummaryId,
+      isParent: isParent ?? this.isParent,
+      hiddenByDisconnect: hiddenByDisconnect ?? this.hiddenByDisconnect,
       garminSummaryId: garminSummaryId ?? this.garminSummaryId,
       garminDeviceName: garminDeviceName ?? this.garminDeviceName,
       notes: notes ?? this.notes,
@@ -13740,6 +14669,33 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
     if (tss.present) {
       map['tss'] = Variable<double>(tss.value);
     }
+    if (tssPlanned.present) {
+      map['tss_planned'] = Variable<double>(tssPlanned.value);
+    }
+    if (tssActual.present) {
+      map['tss_actual'] = Variable<double>(tssActual.value);
+    }
+    if (ifPlanned.present) {
+      map['if_planned'] = Variable<double>(ifPlanned.value);
+    }
+    if (ifActual.present) {
+      map['if_actual'] = Variable<double>(ifActual.value);
+    }
+    if (tpCalories.present) {
+      map['tp_calories'] = Variable<double>(tpCalories.value);
+    }
+    if (tpCaloriesPlanned.present) {
+      map['tp_calories_planned'] = Variable<double>(tpCaloriesPlanned.value);
+    }
+    if (parentSummaryId.present) {
+      map['parent_summary_id'] = Variable<String>(parentSummaryId.value);
+    }
+    if (isParent.present) {
+      map['is_parent'] = Variable<bool>(isParent.value);
+    }
+    if (hiddenByDisconnect.present) {
+      map['hidden_by_disconnect'] = Variable<bool>(hiddenByDisconnect.value);
+    }
     if (garminSummaryId.present) {
       map['garmin_summary_id'] = Variable<String>(garminSummaryId.value);
     }
@@ -13822,6 +14778,15 @@ class ActivitiesTableCompanion extends UpdateCompanion<Activity> {
           ..write('brickMetadata: $brickMetadata, ')
           ..write('brickId: $brickId, ')
           ..write('tss: $tss, ')
+          ..write('tssPlanned: $tssPlanned, ')
+          ..write('tssActual: $tssActual, ')
+          ..write('ifPlanned: $ifPlanned, ')
+          ..write('ifActual: $ifActual, ')
+          ..write('tpCalories: $tpCalories, ')
+          ..write('tpCaloriesPlanned: $tpCaloriesPlanned, ')
+          ..write('parentSummaryId: $parentSummaryId, ')
+          ..write('isParent: $isParent, ')
+          ..write('hiddenByDisconnect: $hiddenByDisconnect, ')
           ..write('garminSummaryId: $garminSummaryId, ')
           ..write('garminDeviceName: $garminDeviceName, ')
           ..write('notes: $notes, ')
@@ -14098,6 +15063,15 @@ class $EventsTableTable extends EventsTable
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _originMeta = const VerificationMeta('origin');
+  @override
+  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
+    'origin',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -14171,6 +15145,7 @@ class $EventsTableTable extends EventsTable
     actualFinishTimeMinutes,
     finalPlacement,
     ageGroupPlacement,
+    origin,
     createdAt,
     updatedAt,
     needsUpload,
@@ -14369,6 +15344,12 @@ class $EventsTableTable extends EventsTable
         ),
       );
     }
+    if (data.containsKey('origin')) {
+      context.handle(
+        _originMeta,
+        origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -14504,6 +15485,10 @@ class $EventsTableTable extends EventsTable
         DriftSqlType.int,
         data['${effectivePrefix}age_group_placement'],
       ),
+      origin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -14553,6 +15538,7 @@ class Event extends DataClass implements Insertable<Event> {
   final int? actualFinishTimeMinutes;
   final int? finalPlacement;
   final int? ageGroupPlacement;
+  final String? origin;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool? needsUpload;
@@ -14581,6 +15567,7 @@ class Event extends DataClass implements Insertable<Event> {
     this.actualFinishTimeMinutes,
     this.finalPlacement,
     this.ageGroupPlacement,
+    this.origin,
     required this.createdAt,
     required this.updatedAt,
     this.needsUpload,
@@ -14653,6 +15640,9 @@ class Event extends DataClass implements Insertable<Event> {
     }
     if (!nullToAbsent || ageGroupPlacement != null) {
       map['age_group_placement'] = Variable<int>(ageGroupPlacement);
+    }
+    if (!nullToAbsent || origin != null) {
+      map['origin'] = Variable<String>(origin);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -14727,6 +15717,9 @@ class Event extends DataClass implements Insertable<Event> {
       ageGroupPlacement: ageGroupPlacement == null && nullToAbsent
           ? const Value.absent()
           : Value(ageGroupPlacement),
+      origin: origin == null && nullToAbsent
+          ? const Value.absent()
+          : Value(origin),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       needsUpload: needsUpload == null && nullToAbsent
@@ -14775,6 +15768,7 @@ class Event extends DataClass implements Insertable<Event> {
       ),
       finalPlacement: serializer.fromJson<int?>(json['finalPlacement']),
       ageGroupPlacement: serializer.fromJson<int?>(json['ageGroupPlacement']),
+      origin: serializer.fromJson<String?>(json['origin']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       needsUpload: serializer.fromJson<bool?>(json['needsUpload']),
@@ -14816,6 +15810,7 @@ class Event extends DataClass implements Insertable<Event> {
       ),
       'finalPlacement': serializer.toJson<int?>(finalPlacement),
       'ageGroupPlacement': serializer.toJson<int?>(ageGroupPlacement),
+      'origin': serializer.toJson<String?>(origin),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'needsUpload': serializer.toJson<bool?>(needsUpload),
@@ -14847,6 +15842,7 @@ class Event extends DataClass implements Insertable<Event> {
     Value<int?> actualFinishTimeMinutes = const Value.absent(),
     Value<int?> finalPlacement = const Value.absent(),
     Value<int?> ageGroupPlacement = const Value.absent(),
+    Value<String?> origin = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<bool?> needsUpload = const Value.absent(),
@@ -14897,6 +15893,7 @@ class Event extends DataClass implements Insertable<Event> {
     ageGroupPlacement: ageGroupPlacement.present
         ? ageGroupPlacement.value
         : this.ageGroupPlacement,
+    origin: origin.present ? origin.value : this.origin,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     needsUpload: needsUpload.present ? needsUpload.value : this.needsUpload,
@@ -14959,6 +15956,7 @@ class Event extends DataClass implements Insertable<Event> {
       ageGroupPlacement: data.ageGroupPlacement.present
           ? data.ageGroupPlacement.value
           : this.ageGroupPlacement,
+      origin: data.origin.present ? data.origin.value : this.origin,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       needsUpload: data.needsUpload.present
@@ -14996,6 +15994,7 @@ class Event extends DataClass implements Insertable<Event> {
           ..write('actualFinishTimeMinutes: $actualFinishTimeMinutes, ')
           ..write('finalPlacement: $finalPlacement, ')
           ..write('ageGroupPlacement: $ageGroupPlacement, ')
+          ..write('origin: $origin, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('needsUpload: $needsUpload, ')
@@ -15029,6 +16028,7 @@ class Event extends DataClass implements Insertable<Event> {
     actualFinishTimeMinutes,
     finalPlacement,
     ageGroupPlacement,
+    origin,
     createdAt,
     updatedAt,
     needsUpload,
@@ -15061,6 +16061,7 @@ class Event extends DataClass implements Insertable<Event> {
           other.actualFinishTimeMinutes == this.actualFinishTimeMinutes &&
           other.finalPlacement == this.finalPlacement &&
           other.ageGroupPlacement == this.ageGroupPlacement &&
+          other.origin == this.origin &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.needsUpload == this.needsUpload &&
@@ -15091,6 +16092,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
   final Value<int?> actualFinishTimeMinutes;
   final Value<int?> finalPlacement;
   final Value<int?> ageGroupPlacement;
+  final Value<String?> origin;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<bool?> needsUpload;
@@ -15120,6 +16122,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.actualFinishTimeMinutes = const Value.absent(),
     this.finalPlacement = const Value.absent(),
     this.ageGroupPlacement = const Value.absent(),
+    this.origin = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.needsUpload = const Value.absent(),
@@ -15150,6 +16153,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     this.actualFinishTimeMinutes = const Value.absent(),
     this.finalPlacement = const Value.absent(),
     this.ageGroupPlacement = const Value.absent(),
+    this.origin = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.needsUpload = const Value.absent(),
@@ -15183,6 +16187,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Expression<int>? actualFinishTimeMinutes,
     Expression<int>? finalPlacement,
     Expression<int>? ageGroupPlacement,
+    Expression<String>? origin,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<bool>? needsUpload,
@@ -15217,6 +16222,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
         'actual_finish_time_minutes': actualFinishTimeMinutes,
       if (finalPlacement != null) 'final_placement': finalPlacement,
       if (ageGroupPlacement != null) 'age_group_placement': ageGroupPlacement,
+      if (origin != null) 'origin': origin,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (needsUpload != null) 'needs_upload': needsUpload,
@@ -15249,6 +16255,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     Value<int?>? actualFinishTimeMinutes,
     Value<int?>? finalPlacement,
     Value<int?>? ageGroupPlacement,
+    Value<String?>? origin,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<bool?>? needsUpload,
@@ -15282,6 +16289,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
           actualFinishTimeMinutes ?? this.actualFinishTimeMinutes,
       finalPlacement: finalPlacement ?? this.finalPlacement,
       ageGroupPlacement: ageGroupPlacement ?? this.ageGroupPlacement,
+      origin: origin ?? this.origin,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       needsUpload: needsUpload ?? this.needsUpload,
@@ -15370,6 +16378,9 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
     if (ageGroupPlacement.present) {
       map['age_group_placement'] = Variable<int>(ageGroupPlacement.value);
     }
+    if (origin.present) {
+      map['origin'] = Variable<String>(origin.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -15414,6 +16425,7 @@ class EventsTableCompanion extends UpdateCompanion<Event> {
           ..write('actualFinishTimeMinutes: $actualFinishTimeMinutes, ')
           ..write('finalPlacement: $finalPlacement, ')
           ..write('ageGroupPlacement: $ageGroupPlacement, ')
+          ..write('origin: $origin, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('needsUpload: $needsUpload, ')
@@ -21232,6 +22244,31 @@ class $IntegrationsTableTable extends IntegrationsTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _providerIsPremiumMeta = const VerificationMeta(
+    'providerIsPremium',
+  );
+  @override
+  late final GeneratedColumn<bool> providerIsPremium = GeneratedColumn<bool>(
+    'provider_is_premium',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("provider_is_premium" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _athleteMetricsJsonMeta =
+      const VerificationMeta('athleteMetricsJson');
+  @override
+  late final GeneratedColumn<String> athleteMetricsJson =
+      GeneratedColumn<String>(
+        'athlete_metrics_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -21333,6 +22370,8 @@ class $IntegrationsTableTable extends IntegrationsTable
     providerAthleteGender,
     providerAthleteBodyFatPct,
     athleteZonesJson,
+    providerIsPremium,
+    athleteMetricsJson,
     isActive,
     lastSyncAt,
     lastSyncStatus,
@@ -21475,6 +22514,24 @@ class $IntegrationsTableTable extends IntegrationsTable
         ),
       );
     }
+    if (data.containsKey('provider_is_premium')) {
+      context.handle(
+        _providerIsPremiumMeta,
+        providerIsPremium.isAcceptableOrUnknown(
+          data['provider_is_premium']!,
+          _providerIsPremiumMeta,
+        ),
+      );
+    }
+    if (data.containsKey('athlete_metrics_json')) {
+      context.handle(
+        _athleteMetricsJsonMeta,
+        athleteMetricsJson.isAcceptableOrUnknown(
+          data['athlete_metrics_json']!,
+          _athleteMetricsJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -21598,6 +22655,14 @@ class $IntegrationsTableTable extends IntegrationsTable
         DriftSqlType.string,
         data['${effectivePrefix}athlete_zones_json'],
       ),
+      providerIsPremium: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}provider_is_premium'],
+      ),
+      athleteMetricsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}athlete_metrics_json'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -21652,6 +22717,8 @@ class Integration extends DataClass implements Insertable<Integration> {
   final String? providerAthleteGender;
   final double? providerAthleteBodyFatPct;
   final String? athleteZonesJson;
+  final bool? providerIsPremium;
+  final String? athleteMetricsJson;
   final bool isActive;
   final DateTime? lastSyncAt;
   final String? lastSyncStatus;
@@ -21674,6 +22741,8 @@ class Integration extends DataClass implements Insertable<Integration> {
     this.providerAthleteGender,
     this.providerAthleteBodyFatPct,
     this.athleteZonesJson,
+    this.providerIsPremium,
+    this.athleteMetricsJson,
     required this.isActive,
     this.lastSyncAt,
     this.lastSyncStatus,
@@ -21722,6 +22791,12 @@ class Integration extends DataClass implements Insertable<Integration> {
     }
     if (!nullToAbsent || athleteZonesJson != null) {
       map['athlete_zones_json'] = Variable<String>(athleteZonesJson);
+    }
+    if (!nullToAbsent || providerIsPremium != null) {
+      map['provider_is_premium'] = Variable<bool>(providerIsPremium);
+    }
+    if (!nullToAbsent || athleteMetricsJson != null) {
+      map['athlete_metrics_json'] = Variable<String>(athleteMetricsJson);
     }
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || lastSyncAt != null) {
@@ -21775,6 +22850,12 @@ class Integration extends DataClass implements Insertable<Integration> {
       athleteZonesJson: athleteZonesJson == null && nullToAbsent
           ? const Value.absent()
           : Value(athleteZonesJson),
+      providerIsPremium: providerIsPremium == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerIsPremium),
+      athleteMetricsJson: athleteMetricsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(athleteMetricsJson),
       isActive: Value(isActive),
       lastSyncAt: lastSyncAt == null && nullToAbsent
           ? const Value.absent()
@@ -21823,6 +22904,10 @@ class Integration extends DataClass implements Insertable<Integration> {
         json['providerAthleteBodyFatPct'],
       ),
       athleteZonesJson: serializer.fromJson<String?>(json['athleteZonesJson']),
+      providerIsPremium: serializer.fromJson<bool?>(json['providerIsPremium']),
+      athleteMetricsJson: serializer.fromJson<String?>(
+        json['athleteMetricsJson'],
+      ),
       isActive: serializer.fromJson<bool>(json['isActive']),
       lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
       lastSyncStatus: serializer.fromJson<String?>(json['lastSyncStatus']),
@@ -21858,6 +22943,8 @@ class Integration extends DataClass implements Insertable<Integration> {
         providerAthleteBodyFatPct,
       ),
       'athleteZonesJson': serializer.toJson<String?>(athleteZonesJson),
+      'providerIsPremium': serializer.toJson<bool?>(providerIsPremium),
+      'athleteMetricsJson': serializer.toJson<String?>(athleteMetricsJson),
       'isActive': serializer.toJson<bool>(isActive),
       'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
       'lastSyncStatus': serializer.toJson<String?>(lastSyncStatus),
@@ -21883,6 +22970,8 @@ class Integration extends DataClass implements Insertable<Integration> {
     Value<String?> providerAthleteGender = const Value.absent(),
     Value<double?> providerAthleteBodyFatPct = const Value.absent(),
     Value<String?> athleteZonesJson = const Value.absent(),
+    Value<bool?> providerIsPremium = const Value.absent(),
+    Value<String?> athleteMetricsJson = const Value.absent(),
     bool? isActive,
     Value<DateTime?> lastSyncAt = const Value.absent(),
     Value<String?> lastSyncStatus = const Value.absent(),
@@ -21921,6 +23010,12 @@ class Integration extends DataClass implements Insertable<Integration> {
     athleteZonesJson: athleteZonesJson.present
         ? athleteZonesJson.value
         : this.athleteZonesJson,
+    providerIsPremium: providerIsPremium.present
+        ? providerIsPremium.value
+        : this.providerIsPremium,
+    athleteMetricsJson: athleteMetricsJson.present
+        ? athleteMetricsJson.value
+        : this.athleteMetricsJson,
     isActive: isActive ?? this.isActive,
     lastSyncAt: lastSyncAt.present ? lastSyncAt.value : this.lastSyncAt,
     lastSyncStatus: lastSyncStatus.present
@@ -21971,6 +23066,12 @@ class Integration extends DataClass implements Insertable<Integration> {
       athleteZonesJson: data.athleteZonesJson.present
           ? data.athleteZonesJson.value
           : this.athleteZonesJson,
+      providerIsPremium: data.providerIsPremium.present
+          ? data.providerIsPremium.value
+          : this.providerIsPremium,
+      athleteMetricsJson: data.athleteMetricsJson.present
+          ? data.athleteMetricsJson.value
+          : this.athleteMetricsJson,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       lastSyncAt: data.lastSyncAt.present
           ? data.lastSyncAt.value
@@ -22006,6 +23107,8 @@ class Integration extends DataClass implements Insertable<Integration> {
           ..write('providerAthleteGender: $providerAthleteGender, ')
           ..write('providerAthleteBodyFatPct: $providerAthleteBodyFatPct, ')
           ..write('athleteZonesJson: $athleteZonesJson, ')
+          ..write('providerIsPremium: $providerIsPremium, ')
+          ..write('athleteMetricsJson: $athleteMetricsJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
@@ -22033,6 +23136,8 @@ class Integration extends DataClass implements Insertable<Integration> {
     providerAthleteGender,
     providerAthleteBodyFatPct,
     athleteZonesJson,
+    providerIsPremium,
+    athleteMetricsJson,
     isActive,
     lastSyncAt,
     lastSyncStatus,
@@ -22059,6 +23164,8 @@ class Integration extends DataClass implements Insertable<Integration> {
           other.providerAthleteGender == this.providerAthleteGender &&
           other.providerAthleteBodyFatPct == this.providerAthleteBodyFatPct &&
           other.athleteZonesJson == this.athleteZonesJson &&
+          other.providerIsPremium == this.providerIsPremium &&
+          other.athleteMetricsJson == this.athleteMetricsJson &&
           other.isActive == this.isActive &&
           other.lastSyncAt == this.lastSyncAt &&
           other.lastSyncStatus == this.lastSyncStatus &&
@@ -22083,6 +23190,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
   final Value<String?> providerAthleteGender;
   final Value<double?> providerAthleteBodyFatPct;
   final Value<String?> athleteZonesJson;
+  final Value<bool?> providerIsPremium;
+  final Value<String?> athleteMetricsJson;
   final Value<bool> isActive;
   final Value<DateTime?> lastSyncAt;
   final Value<String?> lastSyncStatus;
@@ -22106,6 +23215,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteGender = const Value.absent(),
     this.providerAthleteBodyFatPct = const Value.absent(),
     this.athleteZonesJson = const Value.absent(),
+    this.providerIsPremium = const Value.absent(),
+    this.athleteMetricsJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
@@ -22130,6 +23241,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     this.providerAthleteGender = const Value.absent(),
     this.providerAthleteBodyFatPct = const Value.absent(),
     this.athleteZonesJson = const Value.absent(),
+    this.providerIsPremium = const Value.absent(),
+    this.athleteMetricsJson = const Value.absent(),
     this.isActive = const Value.absent(),
     this.lastSyncAt = const Value.absent(),
     this.lastSyncStatus = const Value.absent(),
@@ -22159,6 +23272,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Expression<String>? providerAthleteGender,
     Expression<double>? providerAthleteBodyFatPct,
     Expression<String>? athleteZonesJson,
+    Expression<bool>? providerIsPremium,
+    Expression<String>? athleteMetricsJson,
     Expression<bool>? isActive,
     Expression<DateTime>? lastSyncAt,
     Expression<String>? lastSyncStatus,
@@ -22189,6 +23304,9 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       if (providerAthleteBodyFatPct != null)
         'provider_athlete_body_fat_pct': providerAthleteBodyFatPct,
       if (athleteZonesJson != null) 'athlete_zones_json': athleteZonesJson,
+      if (providerIsPremium != null) 'provider_is_premium': providerIsPremium,
+      if (athleteMetricsJson != null)
+        'athlete_metrics_json': athleteMetricsJson,
       if (isActive != null) 'is_active': isActive,
       if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
       if (lastSyncStatus != null) 'last_sync_status': lastSyncStatus,
@@ -22215,6 +23333,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     Value<String?>? providerAthleteGender,
     Value<double?>? providerAthleteBodyFatPct,
     Value<String?>? athleteZonesJson,
+    Value<bool?>? providerIsPremium,
+    Value<String?>? athleteMetricsJson,
     Value<bool>? isActive,
     Value<DateTime?>? lastSyncAt,
     Value<String?>? lastSyncStatus,
@@ -22243,6 +23363,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
       providerAthleteBodyFatPct:
           providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
       athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
+      providerIsPremium: providerIsPremium ?? this.providerIsPremium,
+      athleteMetricsJson: athleteMetricsJson ?? this.athleteMetricsJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,
@@ -22311,6 +23433,12 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
     if (athleteZonesJson.present) {
       map['athlete_zones_json'] = Variable<String>(athleteZonesJson.value);
     }
+    if (providerIsPremium.present) {
+      map['provider_is_premium'] = Variable<bool>(providerIsPremium.value);
+    }
+    if (athleteMetricsJson.present) {
+      map['athlete_metrics_json'] = Variable<String>(athleteMetricsJson.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -22355,6 +23483,8 @@ class IntegrationsTableCompanion extends UpdateCompanion<Integration> {
           ..write('providerAthleteGender: $providerAthleteGender, ')
           ..write('providerAthleteBodyFatPct: $providerAthleteBodyFatPct, ')
           ..write('athleteZonesJson: $athleteZonesJson, ')
+          ..write('providerIsPremium: $providerIsPremium, ')
+          ..write('athleteMetricsJson: $athleteMetricsJson, ')
           ..write('isActive: $isActive, ')
           ..write('lastSyncAt: $lastSyncAt, ')
           ..write('lastSyncStatus: $lastSyncStatus, ')
@@ -46205,6 +47335,14 @@ typedef $$UserProfilesTableTableCreateCompanionBuilder =
       Value<String?> sweatTestSource,
       Value<DateTime?> weightPoundsUpdatedAt,
       Value<DateTime?> bodyFatPctUpdatedAt,
+      Value<int?> cyclingFtpWatts,
+      Value<int?> swimmingCssSecondsPer100m,
+      Value<bool?> giSensitivity,
+      Value<int?> typicalBikeBottles,
+      Value<bool?> hasAeroBottle,
+      Value<bool?> hasBentoBox,
+      Value<bool?> typicalWetsuit,
+      Value<String?> typicalSwimCapType,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -46266,6 +47404,14 @@ typedef $$UserProfilesTableTableUpdateCompanionBuilder =
       Value<String?> sweatTestSource,
       Value<DateTime?> weightPoundsUpdatedAt,
       Value<DateTime?> bodyFatPctUpdatedAt,
+      Value<int?> cyclingFtpWatts,
+      Value<int?> swimmingCssSecondsPer100m,
+      Value<bool?> giSensitivity,
+      Value<int?> typicalBikeBottles,
+      Value<bool?> hasAeroBottle,
+      Value<bool?> hasBentoBox,
+      Value<bool?> typicalWetsuit,
+      Value<String?> typicalSwimCapType,
       Value<bool> needsUpload,
       Value<int> rowid,
     });
@@ -46562,6 +47708,46 @@ class $$UserProfilesTableTableFilterComposer
 
   ColumnFilters<DateTime> get bodyFatPctUpdatedAt => $composableBuilder(
     column: $table.bodyFatPctUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cyclingFtpWatts => $composableBuilder(
+    column: $table.cyclingFtpWatts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get swimmingCssSecondsPer100m => $composableBuilder(
+    column: $table.swimmingCssSecondsPer100m,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get giSensitivity => $composableBuilder(
+    column: $table.giSensitivity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get typicalBikeBottles => $composableBuilder(
+    column: $table.typicalBikeBottles,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasAeroBottle => $composableBuilder(
+    column: $table.hasAeroBottle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasBentoBox => $composableBuilder(
+    column: $table.hasBentoBox,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get typicalWetsuit => $composableBuilder(
+    column: $table.typicalWetsuit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get typicalSwimCapType => $composableBuilder(
+    column: $table.typicalSwimCapType,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -46862,6 +48048,46 @@ class $$UserProfilesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cyclingFtpWatts => $composableBuilder(
+    column: $table.cyclingFtpWatts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get swimmingCssSecondsPer100m => $composableBuilder(
+    column: $table.swimmingCssSecondsPer100m,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get giSensitivity => $composableBuilder(
+    column: $table.giSensitivity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get typicalBikeBottles => $composableBuilder(
+    column: $table.typicalBikeBottles,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasAeroBottle => $composableBuilder(
+    column: $table.hasAeroBottle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hasBentoBox => $composableBuilder(
+    column: $table.hasBentoBox,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get typicalWetsuit => $composableBuilder(
+    column: $table.typicalWetsuit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get typicalSwimCapType => $composableBuilder(
+    column: $table.typicalSwimCapType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => ColumnOrderings(column),
@@ -47136,6 +48362,46 @@ class $$UserProfilesTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get cyclingFtpWatts => $composableBuilder(
+    column: $table.cyclingFtpWatts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get swimmingCssSecondsPer100m => $composableBuilder(
+    column: $table.swimmingCssSecondsPer100m,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get giSensitivity => $composableBuilder(
+    column: $table.giSensitivity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get typicalBikeBottles => $composableBuilder(
+    column: $table.typicalBikeBottles,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasAeroBottle => $composableBuilder(
+    column: $table.hasAeroBottle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get hasBentoBox => $composableBuilder(
+    column: $table.hasBentoBox,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get typicalWetsuit => $composableBuilder(
+    column: $table.typicalWetsuit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get typicalSwimCapType => $composableBuilder(
+    column: $table.typicalSwimCapType,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get needsUpload => $composableBuilder(
     column: $table.needsUpload,
     builder: (column) => column,
@@ -47241,6 +48507,14 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> sweatTestSource = const Value.absent(),
                 Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
                 Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+                Value<int?> cyclingFtpWatts = const Value.absent(),
+                Value<int?> swimmingCssSecondsPer100m = const Value.absent(),
+                Value<bool?> giSensitivity = const Value.absent(),
+                Value<int?> typicalBikeBottles = const Value.absent(),
+                Value<bool?> hasAeroBottle = const Value.absent(),
+                Value<bool?> hasBentoBox = const Value.absent(),
+                Value<bool?> typicalWetsuit = const Value.absent(),
+                Value<String?> typicalSwimCapType = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion(
@@ -47301,6 +48575,14 @@ class $$UserProfilesTableTableTableManager
                 sweatTestSource: sweatTestSource,
                 weightPoundsUpdatedAt: weightPoundsUpdatedAt,
                 bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
+                cyclingFtpWatts: cyclingFtpWatts,
+                swimmingCssSecondsPer100m: swimmingCssSecondsPer100m,
+                giSensitivity: giSensitivity,
+                typicalBikeBottles: typicalBikeBottles,
+                hasAeroBottle: hasAeroBottle,
+                hasBentoBox: hasBentoBox,
+                typicalWetsuit: typicalWetsuit,
+                typicalSwimCapType: typicalSwimCapType,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -47365,6 +48647,14 @@ class $$UserProfilesTableTableTableManager
                 Value<String?> sweatTestSource = const Value.absent(),
                 Value<DateTime?> weightPoundsUpdatedAt = const Value.absent(),
                 Value<DateTime?> bodyFatPctUpdatedAt = const Value.absent(),
+                Value<int?> cyclingFtpWatts = const Value.absent(),
+                Value<int?> swimmingCssSecondsPer100m = const Value.absent(),
+                Value<bool?> giSensitivity = const Value.absent(),
+                Value<int?> typicalBikeBottles = const Value.absent(),
+                Value<bool?> hasAeroBottle = const Value.absent(),
+                Value<bool?> hasBentoBox = const Value.absent(),
+                Value<bool?> typicalWetsuit = const Value.absent(),
+                Value<String?> typicalSwimCapType = const Value.absent(),
                 Value<bool> needsUpload = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => UserProfilesTableCompanion.insert(
@@ -47425,6 +48715,14 @@ class $$UserProfilesTableTableTableManager
                 sweatTestSource: sweatTestSource,
                 weightPoundsUpdatedAt: weightPoundsUpdatedAt,
                 bodyFatPctUpdatedAt: bodyFatPctUpdatedAt,
+                cyclingFtpWatts: cyclingFtpWatts,
+                swimmingCssSecondsPer100m: swimmingCssSecondsPer100m,
+                giSensitivity: giSensitivity,
+                typicalBikeBottles: typicalBikeBottles,
+                hasAeroBottle: hasAeroBottle,
+                hasBentoBox: hasBentoBox,
+                typicalWetsuit: typicalWetsuit,
+                typicalSwimCapType: typicalSwimCapType,
                 needsUpload: needsUpload,
                 rowid: rowid,
               ),
@@ -50531,6 +51829,15 @@ typedef $$ActivitiesTableTableCreateCompanionBuilder =
       Value<String?> brickMetadata,
       Value<String?> brickId,
       Value<double?> tss,
+      Value<double?> tssPlanned,
+      Value<double?> tssActual,
+      Value<double?> ifPlanned,
+      Value<double?> ifActual,
+      Value<double?> tpCalories,
+      Value<double?> tpCaloriesPlanned,
+      Value<String?> parentSummaryId,
+      Value<bool?> isParent,
+      Value<bool?> hiddenByDisconnect,
       Value<String?> garminSummaryId,
       Value<String?> garminDeviceName,
       Value<String?> notes,
@@ -50596,6 +51903,15 @@ typedef $$ActivitiesTableTableUpdateCompanionBuilder =
       Value<String?> brickMetadata,
       Value<String?> brickId,
       Value<double?> tss,
+      Value<double?> tssPlanned,
+      Value<double?> tssActual,
+      Value<double?> ifPlanned,
+      Value<double?> ifActual,
+      Value<double?> tpCalories,
+      Value<double?> tpCaloriesPlanned,
+      Value<String?> parentSummaryId,
+      Value<bool?> isParent,
+      Value<bool?> hiddenByDisconnect,
       Value<String?> garminSummaryId,
       Value<String?> garminDeviceName,
       Value<String?> notes,
@@ -50886,6 +52202,51 @@ class $$ActivitiesTableTableFilterComposer
 
   ColumnFilters<double> get tss => $composableBuilder(
     column: $table.tss,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tssPlanned => $composableBuilder(
+    column: $table.tssPlanned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tssActual => $composableBuilder(
+    column: $table.tssActual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ifPlanned => $composableBuilder(
+    column: $table.ifPlanned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get ifActual => $composableBuilder(
+    column: $table.ifActual,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tpCalories => $composableBuilder(
+    column: $table.tpCalories,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get tpCaloriesPlanned => $composableBuilder(
+    column: $table.tpCaloriesPlanned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get parentSummaryId => $composableBuilder(
+    column: $table.parentSummaryId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isParent => $composableBuilder(
+    column: $table.isParent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hiddenByDisconnect => $composableBuilder(
+    column: $table.hiddenByDisconnect,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -51204,6 +52565,51 @@ class $$ActivitiesTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get tssPlanned => $composableBuilder(
+    column: $table.tssPlanned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tssActual => $composableBuilder(
+    column: $table.tssActual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ifPlanned => $composableBuilder(
+    column: $table.ifPlanned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get ifActual => $composableBuilder(
+    column: $table.ifActual,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tpCalories => $composableBuilder(
+    column: $table.tpCalories,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get tpCaloriesPlanned => $composableBuilder(
+    column: $table.tpCaloriesPlanned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get parentSummaryId => $composableBuilder(
+    column: $table.parentSummaryId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isParent => $composableBuilder(
+    column: $table.isParent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get hiddenByDisconnect => $composableBuilder(
+    column: $table.hiddenByDisconnect,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get garminSummaryId => $composableBuilder(
     column: $table.garminSummaryId,
     builder: (column) => ColumnOrderings(column),
@@ -51505,6 +52911,43 @@ class $$ActivitiesTableTableAnnotationComposer
   GeneratedColumn<double> get tss =>
       $composableBuilder(column: $table.tss, builder: (column) => column);
 
+  GeneratedColumn<double> get tssPlanned => $composableBuilder(
+    column: $table.tssPlanned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get tssActual =>
+      $composableBuilder(column: $table.tssActual, builder: (column) => column);
+
+  GeneratedColumn<double> get ifPlanned =>
+      $composableBuilder(column: $table.ifPlanned, builder: (column) => column);
+
+  GeneratedColumn<double> get ifActual =>
+      $composableBuilder(column: $table.ifActual, builder: (column) => column);
+
+  GeneratedColumn<double> get tpCalories => $composableBuilder(
+    column: $table.tpCalories,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get tpCaloriesPlanned => $composableBuilder(
+    column: $table.tpCaloriesPlanned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get parentSummaryId => $composableBuilder(
+    column: $table.parentSummaryId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isParent =>
+      $composableBuilder(column: $table.isParent, builder: (column) => column);
+
+  GeneratedColumn<bool> get hiddenByDisconnect => $composableBuilder(
+    column: $table.hiddenByDisconnect,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get garminSummaryId => $composableBuilder(
     column: $table.garminSummaryId,
     builder: (column) => column,
@@ -51616,6 +53059,15 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> brickMetadata = const Value.absent(),
                 Value<String?> brickId = const Value.absent(),
                 Value<double?> tss = const Value.absent(),
+                Value<double?> tssPlanned = const Value.absent(),
+                Value<double?> tssActual = const Value.absent(),
+                Value<double?> ifPlanned = const Value.absent(),
+                Value<double?> ifActual = const Value.absent(),
+                Value<double?> tpCalories = const Value.absent(),
+                Value<double?> tpCaloriesPlanned = const Value.absent(),
+                Value<String?> parentSummaryId = const Value.absent(),
+                Value<bool?> isParent = const Value.absent(),
+                Value<bool?> hiddenByDisconnect = const Value.absent(),
                 Value<String?> garminSummaryId = const Value.absent(),
                 Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -51679,6 +53131,15 @@ class $$ActivitiesTableTableTableManager
                 brickMetadata: brickMetadata,
                 brickId: brickId,
                 tss: tss,
+                tssPlanned: tssPlanned,
+                tssActual: tssActual,
+                ifPlanned: ifPlanned,
+                ifActual: ifActual,
+                tpCalories: tpCalories,
+                tpCaloriesPlanned: tpCaloriesPlanned,
+                parentSummaryId: parentSummaryId,
+                isParent: isParent,
+                hiddenByDisconnect: hiddenByDisconnect,
                 garminSummaryId: garminSummaryId,
                 garminDeviceName: garminDeviceName,
                 notes: notes,
@@ -51744,6 +53205,15 @@ class $$ActivitiesTableTableTableManager
                 Value<String?> brickMetadata = const Value.absent(),
                 Value<String?> brickId = const Value.absent(),
                 Value<double?> tss = const Value.absent(),
+                Value<double?> tssPlanned = const Value.absent(),
+                Value<double?> tssActual = const Value.absent(),
+                Value<double?> ifPlanned = const Value.absent(),
+                Value<double?> ifActual = const Value.absent(),
+                Value<double?> tpCalories = const Value.absent(),
+                Value<double?> tpCaloriesPlanned = const Value.absent(),
+                Value<String?> parentSummaryId = const Value.absent(),
+                Value<bool?> isParent = const Value.absent(),
+                Value<bool?> hiddenByDisconnect = const Value.absent(),
                 Value<String?> garminSummaryId = const Value.absent(),
                 Value<String?> garminDeviceName = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -51807,6 +53277,15 @@ class $$ActivitiesTableTableTableManager
                 brickMetadata: brickMetadata,
                 brickId: brickId,
                 tss: tss,
+                tssPlanned: tssPlanned,
+                tssActual: tssActual,
+                ifPlanned: ifPlanned,
+                ifActual: ifActual,
+                tpCalories: tpCalories,
+                tpCaloriesPlanned: tpCaloriesPlanned,
+                parentSummaryId: parentSummaryId,
+                isParent: isParent,
+                hiddenByDisconnect: hiddenByDisconnect,
                 garminSummaryId: garminSummaryId,
                 garminDeviceName: garminDeviceName,
                 notes: notes,
@@ -51865,6 +53344,7 @@ typedef $$EventsTableTableCreateCompanionBuilder =
       Value<int?> actualFinishTimeMinutes,
       Value<int?> finalPlacement,
       Value<int?> ageGroupPlacement,
+      Value<String?> origin,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<bool?> needsUpload,
@@ -51896,6 +53376,7 @@ typedef $$EventsTableTableUpdateCompanionBuilder =
       Value<int?> actualFinishTimeMinutes,
       Value<int?> finalPlacement,
       Value<int?> ageGroupPlacement,
+      Value<String?> origin,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<bool?> needsUpload,
@@ -52024,6 +53505,11 @@ class $$EventsTableTableFilterComposer
 
   ColumnFilters<int> get ageGroupPlacement => $composableBuilder(
     column: $table.ageGroupPlacement,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origin => $composableBuilder(
+    column: $table.origin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52172,6 +53658,11 @@ class $$EventsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -52301,6 +53792,9 @@ class $$EventsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -52369,6 +53863,7 @@ class $$EventsTableTableTableManager
                 Value<int?> actualFinishTimeMinutes = const Value.absent(),
                 Value<int?> finalPlacement = const Value.absent(),
                 Value<int?> ageGroupPlacement = const Value.absent(),
+                Value<String?> origin = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool?> needsUpload = const Value.absent(),
@@ -52398,6 +53893,7 @@ class $$EventsTableTableTableManager
                 actualFinishTimeMinutes: actualFinishTimeMinutes,
                 finalPlacement: finalPlacement,
                 ageGroupPlacement: ageGroupPlacement,
+                origin: origin,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 needsUpload: needsUpload,
@@ -52429,6 +53925,7 @@ class $$EventsTableTableTableManager
                 Value<int?> actualFinishTimeMinutes = const Value.absent(),
                 Value<int?> finalPlacement = const Value.absent(),
                 Value<int?> ageGroupPlacement = const Value.absent(),
+                Value<String?> origin = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<bool?> needsUpload = const Value.absent(),
@@ -52458,6 +53955,7 @@ class $$EventsTableTableTableManager
                 actualFinishTimeMinutes: actualFinishTimeMinutes,
                 finalPlacement: finalPlacement,
                 ageGroupPlacement: ageGroupPlacement,
+                origin: origin,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 needsUpload: needsUpload,
@@ -55222,6 +56720,8 @@ typedef $$IntegrationsTableTableCreateCompanionBuilder =
       Value<String?> providerAthleteGender,
       Value<double?> providerAthleteBodyFatPct,
       Value<String?> athleteZonesJson,
+      Value<bool?> providerIsPremium,
+      Value<String?> athleteMetricsJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
@@ -55247,6 +56747,8 @@ typedef $$IntegrationsTableTableUpdateCompanionBuilder =
       Value<String?> providerAthleteGender,
       Value<double?> providerAthleteBodyFatPct,
       Value<String?> athleteZonesJson,
+      Value<bool?> providerIsPremium,
+      Value<String?> athleteMetricsJson,
       Value<bool> isActive,
       Value<DateTime?> lastSyncAt,
       Value<String?> lastSyncStatus,
@@ -55333,6 +56835,16 @@ class $$IntegrationsTableTableFilterComposer
 
   ColumnFilters<String> get athleteZonesJson => $composableBuilder(
     column: $table.athleteZonesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get providerIsPremium => $composableBuilder(
+    column: $table.providerIsPremium,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get athleteMetricsJson => $composableBuilder(
+    column: $table.athleteMetricsJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -55451,6 +56963,16 @@ class $$IntegrationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get providerIsPremium => $composableBuilder(
+    column: $table.providerIsPremium,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get athleteMetricsJson => $composableBuilder(
+    column: $table.athleteMetricsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -55560,6 +57082,16 @@ class $$IntegrationsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get providerIsPremium => $composableBuilder(
+    column: $table.providerIsPremium,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get athleteMetricsJson => $composableBuilder(
+    column: $table.athleteMetricsJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get isActive =>
       $composableBuilder(column: $table.isActive, builder: (column) => column);
 
@@ -55640,6 +57172,8 @@ class $$IntegrationsTableTableTableManager
                 Value<String?> providerAthleteGender = const Value.absent(),
                 Value<double?> providerAthleteBodyFatPct = const Value.absent(),
                 Value<String?> athleteZonesJson = const Value.absent(),
+                Value<bool?> providerIsPremium = const Value.absent(),
+                Value<String?> athleteMetricsJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
@@ -55663,6 +57197,8 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteGender: providerAthleteGender,
                 providerAthleteBodyFatPct: providerAthleteBodyFatPct,
                 athleteZonesJson: athleteZonesJson,
+                providerIsPremium: providerIsPremium,
+                athleteMetricsJson: athleteMetricsJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,
@@ -55688,6 +57224,8 @@ class $$IntegrationsTableTableTableManager
                 Value<String?> providerAthleteGender = const Value.absent(),
                 Value<double?> providerAthleteBodyFatPct = const Value.absent(),
                 Value<String?> athleteZonesJson = const Value.absent(),
+                Value<bool?> providerIsPremium = const Value.absent(),
+                Value<String?> athleteMetricsJson = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> lastSyncAt = const Value.absent(),
                 Value<String?> lastSyncStatus = const Value.absent(),
@@ -55711,6 +57249,8 @@ class $$IntegrationsTableTableTableManager
                 providerAthleteGender: providerAthleteGender,
                 providerAthleteBodyFatPct: providerAthleteBodyFatPct,
                 athleteZonesJson: athleteZonesJson,
+                providerIsPremium: providerIsPremium,
+                athleteMetricsJson: athleteMetricsJson,
                 isActive: isActive,
                 lastSyncAt: lastSyncAt,
                 lastSyncStatus: lastSyncStatus,

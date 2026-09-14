@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/application/activity_deduplication_service.dart';
 import 'package:mealvana_endurance/features/activities/data/activities_repository.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
+import 'package:mealvana_endurance/features/activities/domain/brick_metadata.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     as db
     show AppDatabase, ActivitiesTableCompanion, Activity;
@@ -224,6 +225,84 @@ void main() {
       final brickRow = await row(brick.id);
       expect(brickRow, isNotNull, reason: 'brick untouched on refusal');
       expect(brickRow!.deletedAt, isNull);
+    });
+  });
+
+  group('ungroup DECOMPOSES a fresh brick into standalone legs '
+      '(2026-09-13 data-loss fix)', () {
+    Future<db.Activity> seedFreshBrick() async {
+      final now = DateTime.now();
+      final brick = await repository.insertActivity(
+        Activity(
+          id: '',
+          userId: userId,
+          activityType: ActivityType.brick,
+          title: 'SWIMMING/RUNNING BRICK',
+          scheduledDateTime: DateTime(day.year, day.month, day.day, 7),
+          createdAt: now,
+          updatedAt: now,
+          brickMetadata: const BrickMetadata(
+            segmentOrder: ['swimming', 'running'],
+            createdFromExisting: false,
+            totalDurationMinutes: 57,
+            segments: [
+              BrickSegment(
+                sport: 'swimming',
+                order: 1,
+                durationMinutes: 30,
+                intensity: 'moderate',
+                distanceMeters: 1500,
+                pacePer100mSeconds: 120,
+                poolOrOpenWater: 'pool',
+                waterTempC: 24,
+              ),
+              BrickSegment(
+                sport: 'running',
+                order: 2,
+                durationMinutes: 27,
+                intensity: 'moderate',
+                distanceMiles: 3.1,
+                paceMinutesPerMile: 8.7,
+              ),
+            ],
+          ),
+        ),
+      );
+      return row(brick.id).then((r) => r!);
+    }
+
+    test('gives back one standalone activity per segment; the legs SURVIVE',
+        () async {
+      final brick = await seedFreshBrick();
+
+      await repository.ungroupBrick(brick.id);
+
+      // Brick is tombstoned...
+      final brickAfter = await row(brick.id);
+      expect(brickAfter!.status, 'deleted');
+      expect(brickAfter.deletedAt, isNotNull);
+
+      // ...and the two legs now exist as standalone planned activities.
+      final all = await database.select(database.activitiesTable).get();
+      final legs = all
+          .where((a) =>
+              a.activityType != 'brick' &&
+              a.deletedAt == null &&
+              a.status == 'planned')
+          .toList();
+      expect(legs.length, 2, reason: 'both legs must survive the ungroup');
+      final sports = legs.map((l) => l.activityType).toSet();
+      expect(sports, {'swimming', 'running'});
+
+      final swim = legs.firstWhere((l) => l.activityType == 'swimming');
+      expect(swim.durationMinutes, 30);
+      expect(swim.swimmingPacePer100mSeconds, 120);
+      final run = legs.firstWhere((l) => l.activityType == 'running');
+      expect(run.durationMinutes, 27);
+      expect(run.distanceMiles, closeTo(3.1, 0.001));
+      // Legs are their own rows, not still tied to the brick.
+      expect(swim.brickId, isNull);
+      expect(run.brickId, isNull);
     });
   });
 }

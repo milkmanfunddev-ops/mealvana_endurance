@@ -126,11 +126,10 @@ void main() {
     }
   });
 
-  // INTERIM behavior pending the SSOT ruling in
-  // qa/intake/2026-08-20-session-cost-unknown-activity-types.md — see
-  // ops/data/bug-reports/2026-08-20-session-cost-unknown-sport-priced-as-running.md.
-  // Deliberately un-vectored: session-demand.json pins no unmapped-sport case.
-  group('sessionCost unmapped sports (INTERIM, bug 2026-08-20)', () {
+  // F4a (session-demand.md, RULED Xuan 2026-09-10): resolves the 2026-08-20
+  // unknown-sport intake. Vectored by the f4a-* rows of session-demand.json
+  // (match the deno twin's index.test.ts F4a group).
+  group('sessionCost F4a (unknown / mobility / composite)', () {
     List<String> captureDebugPrint(void Function() body) {
       final logs = <String>[];
       final previous = debugPrint;
@@ -145,66 +144,98 @@ void main() {
       return logs;
     }
 
-    test('unmapped sports use the conservative linear strength rate (5) '
-        'and are flagged by name', () {
-      const unmapped = [
-        'other',
-        'triathlon',
-        'duathlon',
-        'multisport',
-        'brick',
-      ];
+    test('unknown sports contribute exactly 0 with the estimate flag', () {
+      const unknowns = ['other', 'zumba', 'esports'];
       final logs = captureDebugPrint(() {
-        for (final sport in unmapped) {
-          final kcal = DailyBaselineCalculator.sessionCost(
+        for (final sport in unknowns) {
+          final r = DailyBaselineCalculator.sessionCostF4a(
             sport: sport,
             durationHr: 1.0,
             intensityFactor: 0.75,
             weightKg: 70,
           );
-          // 5 kcal/kg/hr, linear, IF at reference 0.75: 5 × 1 × 1 × 70.
-          expect(kcal, closeTo(350, 0.001), reason: sport);
+          expect(r.kcal, 0, reason: sport);
+          expect(r.estimateFlag, isTrue, reason: sport);
         }
       });
-      expect(logs, hasLength(unmapped.length));
-      for (final sport in unmapped) {
+      for (final sport in unknowns) {
         expect(logs.any((l) => l.contains('"$sport"')), isTrue, reason: sport);
       }
     });
 
-    test('regression: 60-min foam roll (other, IF 0.74, 70 kg) is no longer '
-        '~750 kcal', () {
-      late final double kcal;
-      captureDebugPrint(() {
-        kcal = DailyBaselineCalculator.sessionCost(
-          sport: 'other',
-          durationHr: 1.0,
-          intensityFactor: 0.74,
-          weightKg: 70,
-        );
-      });
-      expect(kcal, closeTo(5 * (0.74 / 0.75) * 1.0 * 70, 0.001)); // ≈345.3
-      expect(kcal, lessThan(400));
+    test('regression: 60-min foam roll prices at the MOBILITY rate — not '
+        '~750 (running fallback), not ~345 (interim floor)', () {
+      final r = DailyBaselineCalculator.sessionCostF4a(
+        sport: 'foam_rolling',
+        durationHr: 1.0,
+        intensityFactor: 0.74,
+        weightKg: 70,
+      );
+      expect(r.kcal, closeTo(2.5 * (0.74 / 0.75) * 1.0 * 70, 0.001)); // ≈172.7
+      expect(r.estimateFlag, isFalse);
     });
 
-    test('unmapped sport scales linearly with IF, not quadratically', () {
-      late final double low;
-      late final double high;
-      captureDebugPrint(() {
-        low = DailyBaselineCalculator.sessionCost(
-          sport: 'other',
-          durationHr: 1.0,
-          intensityFactor: 0.45,
-          weightKg: 70,
-        );
-        high = DailyBaselineCalculator.sessionCost(
-          sport: 'other',
-          durationHr: 1.0,
-          intensityFactor: 0.90,
-          weightKg: 70,
-        );
-      });
+    test('mobility scales linearly with IF, not quadratically', () {
+      final low = DailyBaselineCalculator.sessionCost(
+        sport: 'mobility',
+        durationHr: 1.0,
+        intensityFactor: 0.45,
+        weightKg: 70,
+      );
+      final high = DailyBaselineCalculator.sessionCost(
+        sport: 'mobility',
+        durationHr: 1.0,
+        intensityFactor: 0.90,
+        weightKg: 70,
+      );
       expect(high / low, closeTo(2.0, 1e-9)); // quadratic would give 4.0
+    });
+
+    test('composites decompose by legs; dominant leg when no legs; unknown '
+        'rung with neither', () {
+      // Brick 2-leg vector shape: bike 9·70·(0.85/0.75)² + run 11·70·(0.80/0.75)²·0.5
+      final legs = DailyBaselineCalculator.sessionCostF4a(
+        sport: 'brick',
+        durationHr: 1.5,
+        intensityFactor: 0.8,
+        weightKg: 70,
+        legs: const [
+          (sport: 'cycling', durationHr: 1.0, intensityFactor: 0.85),
+          (sport: 'running', durationHr: 0.5, intensityFactor: 0.8),
+        ],
+      );
+      expect(legs.kcal, closeTo(1247.244, 0.01));
+      expect(legs.estimateFlag, isFalse);
+
+      final dominant = DailyBaselineCalculator.sessionCostF4a(
+        sport: 'triathlon',
+        durationHr: 2.0,
+        intensityFactor: 0.75,
+        weightKg: 75,
+        dominantSport: 'cycling',
+      );
+      expect(dominant.kcal, closeTo(1350.0, 0.001));
+
+      final bare = captureDebugPrint(() {
+        for (final sport in const [
+          'triathlon',
+          'duathlon',
+          'multisport',
+          'brick',
+        ]) {
+          final r = DailyBaselineCalculator.sessionCostF4a(
+            sport: sport,
+            durationHr: 1.0,
+            intensityFactor: 0.75,
+            weightKg: 70,
+          );
+          expect(r.kcal, 0, reason: sport);
+          expect(r.estimateFlag, isTrue, reason: sport);
+        }
+      });
+      // Composite fall-through hits the unknown rung silently (the flag
+      // carries the signal); no per-sport name logging is required.
+      expect(bare, isA<List<String>>());
     });
 
     test('mapped sports are unchanged and not flagged', () {
@@ -324,4 +355,43 @@ void main() {
       expect(DailyBaselineCalculator.baseNeatForWeeklyHours(18), 0.13);
     });
   });
+
+  group('session-demand kcal vectors (twin parity with the deno runner)', () {
+    // The deno comparator (vectors.conformance.test.ts) is the primary
+    // runner for these rows, incl. the 9 f4a-* additions; this group runs
+    // the SAME kcal rows through the Dart twin so the two implementations
+    // cannot drift (D-005 discipline).
+    final file = File('docs/ssot/vectors/daily-macros/session-demand.json');
+    final data = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+    final vectors = (data['vectors'] as List).cast<Map<String, dynamic>>();
+    final tol = ((data['tolerance'] as num?) ?? 0.5).toDouble();
+
+    for (final v in vectors) {
+      final e = v['expected'] as Map<String, dynamic>;
+      if (!e.containsKey('kcal')) continue;
+      test(v['id'] as String, () {
+        final i = v['inputs'] as Map<String, dynamic>;
+        final legsRaw = i['legs'] as List?;
+        final r = DailyBaselineCalculator.sessionCostF4a(
+          sport: (i['sport'] as String).toLowerCase(),
+          durationHr: ((i['durationHr'] as num?) ?? 0).toDouble(),
+          intensityFactor: ((i['IF'] as num?) ?? 0.75).toDouble(),
+          weightKg: (i['weightKg'] as num).toDouble(),
+          legs: legsRaw
+              ?.map((l) => (
+                    sport: ((l as Map)['sport'] as String).toLowerCase(),
+                    durationHr: (l['durationHr'] as num).toDouble(),
+                    intensityFactor: (l['IF'] as num).toDouble(),
+                  ))
+              .toList(),
+          dominantSport: (i['dominantSport'] as String?)?.toLowerCase(),
+        );
+        expect(r.kcal, closeTo((e['kcal'] as num).toDouble(), tol));
+        if (e.containsKey('estimateFlag')) {
+          expect(r.estimateFlag, e['estimateFlag'] as bool);
+        }
+      });
+    }
+  });
+
 }

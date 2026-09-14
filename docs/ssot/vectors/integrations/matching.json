@@ -1,0 +1,1410 @@
+{
+ "section": "matching",
+ "engine": null,
+ "specVersion": "spec/integrations/matching.md \u2014 RATIFIED (Xuan, 2026-09-10, ruling desk; M-1.2/M-3 clauses ruled same day)",
+ "note": "Gate-verdict conformance vectors for the RATIFIED matching contract (M-0 one-row invariant, M-1 gates, M-1.1 plausibility guard + signature + timezone defense, M-1.2 trigger-based contract, M-3 day-wide upgrade key, M-5 brick B-1..B-5 with B-2' primary). EXPECTED-RED: today's code has no guard, matches earliest-planned not best-fit, cannot reach completed rows (upgrade), has no brick path, and auto-inserts TRANSITION_* variants as 'other'. Conformance target: the app-side matching tier (_shared/garmin/activity_completion.ts + change_detection_service.dart successors); harness co-evolution required \u2014 a matcher-tier runner that feeds candidates+incoming and asserts gate identity AND action (verdict alone is insufficient). CONVENTIONS introduced (challengeable): +/-15 and the 30-min brick gap are INCLUSIVE bounds; guard refuses strictly-below (measured < 20% OR < 2 min); full best-fit tie falls to earliest slot then first-created; dominant-leg and tz whole-hour heuristic per M-1.1/M-1.2 text; times are matcher-resolved instants rendered as naive local (L-9.2 storage untouched). Bundle: data-integrations@v1 (pre-ship; run_dart.sh gains a vectors/integrations arm). DEFERRED items carry NO vectors: Q-INT5 provider_deleted_at, Q-INT6 platform-declared skip. || M-1.3 provable-fact primacy vectors added (Xuan ruling, 2026-09-10): keyed COMPLETION revives a tombstone to completed; keyed PLAN re-import still drops. signalKind distinguishes the two \u2014 harness must assert it.",
+ "vectors": [
+  {
+   "id": "tombstone-t1-summary-id-drop",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g1",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "running",
+      "garminSummaryId": "g1",
+      "slotLocal": "2026-09-10T09:00"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "tombstone-T1",
+    "action": "drop"
+   },
+   "why": "M-1 gate 0 T1: deleted row with equal garmin_summary_id -> DROP, never re-import; id tier needs no time window"
+  },
+  {
+   "id": "tombstone-t2-within-15-drop",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g2",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:14"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "tombstone-T2",
+    "action": "drop"
+   },
+   "why": "M-1 gate 0 T2: same sport, start within +/-15 min (14 < 15) of a tombstone -> DROP"
+  },
+  {
+   "id": "tombstone-t2-outside-15-proceeds",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g3",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:30"
+     },
+     {
+      "rowId": "B",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T06:05",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "B"
+   },
+   "why": "T2 window is deliberately NARROW (30 min away is a genuine second session): tombstone misses, planned gate matches B"
+  },
+  {
+   "id": "tombstone-t1-beats-other-refusal",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "other",
+     "summaryId": "g4",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 30
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "other",
+      "garminSummaryId": "g4",
+      "slotLocal": "2026-09-10T06:00"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "tombstone-T1",
+    "action": "drop"
+   },
+   "why": "Asymmetry ratified in M-1: tombstone's id tier runs BEFORE the 'other' check, so an 'other' re-push of a deleted row still drops"
+  },
+  {
+   "id": "tombstone-t2-skipped-for-other",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "other",
+     "summaryId": "g5",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 30
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "other",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:05"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "insert",
+    "action": "insert",
+    "insertedSport": "other"
+   },
+   "why": "T2 is skipped for sport 'other' (M-1 table); with no id match the activity falls through 1a's refusal to auto-insert"
+  },
+  {
+   "id": "other-refusal-never-completes-planned",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "other",
+     "summaryId": "g6",
+     "startLocal": "2026-09-10T07:00",
+     "durationMin": 40
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "other",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 40
+     }
+    ]
+   },
+   "expected": {
+    "gate": "other-refusal",
+    "action": "insert",
+    "insertedSport": "other"
+   },
+   "why": "M-1 1a: sport 'other' refuses ALL matching (would let any generic plan be silently completed) -> duplicate insert is the ratified consequence (revisit post-guard per intake 2026-09-09)"
+  },
+  {
+   "id": "skipped-t1-unreachable-for-other",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "other",
+     "summaryId": "g7",
+     "startLocal": "2026-09-10T07:00",
+     "durationMin": 40
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "skipped",
+      "sport": "other",
+      "garminSummaryId": "g7",
+      "slotLocal": "2026-09-10T07:00"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "other-refusal",
+    "action": "insert",
+    "insertedSport": "other"
+   },
+   "why": "M-1: 1a sits ABOVE the skipped id tier, so even a summary-id skipped match is unreachable for 'other' \u2014 ratified asymmetry vs tombstone"
+  },
+  {
+   "id": "skipped-t1-summary-id-completes",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "cycling",
+     "summaryId": "g8",
+     "startLocal": "2026-09-10T17:00",
+     "durationMin": 60
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "skipped",
+      "sport": "cycling",
+      "garminSummaryId": "g8",
+      "slotLocal": "2026-09-10T17:30"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "skipped-T1",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "Sync beats skip (G6): id-keyed skipped row completes regardless of window"
+  },
+  {
+   "id": "skipped-t2-boundary-exactly-15-in",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g9",
+     "startLocal": "2026-09-10T06:15",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "skipped",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "skipped-T2",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "CONVENTION: 'within +/-15 min' is inclusive at exactly 15:00 \u2014 pinned here so the implementation cannot pick strict silently"
+  },
+  {
+   "id": "skipped-t2-16min-out-falls-to-insert",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g10",
+     "startLocal": "2026-09-10T06:16",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "skipped",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:00"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "insert",
+    "action": "insert",
+    "insertedSport": "running"
+   },
+   "why": "16 min > 15: the athlete's skip STANDS (the 3pm run vs skipped 5:30pm case) and the measured session imports as its own row"
+  },
+  {
+   "id": "skipped-t2-earliest-wins",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g11",
+     "startLocal": "2026-09-10T06:10",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "skipped",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:05"
+     },
+     {
+      "rowId": "B",
+      "status": "skipped",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T06:00"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "skipped-T2",
+    "action": "complete",
+    "matchedRowId": "B"
+   },
+   "why": "M-1 1b T2: earliest skipped row in the window wins (ordered ascending, limit 1)"
+  },
+  {
+   "id": "planned-daywide-basic-complete",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "swimming",
+     "summaryId": "g12",
+     "startLocal": "2026-09-10T18:45",
+     "durationMin": 40
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "swimming",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "Day-wide window ratified for planned completion: an evening swim completes the 7am-slotted plan (slots are placeholders)"
+  },
+  {
+   "id": "guard-9-second-swim-refused",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "swimming",
+     "summaryId": "g13",
+     "startLocal": "2026-09-10T19:00",
+     "durationMin": 0.15
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "swimming",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "guard-refused",
+    "action": "insert",
+    "insertedSport": "swimming"
+   },
+   "why": "Q-INT21 (the 2026-08-24 prod bug): 9s = 0.15 min < 2 min absolute -> refuse, plan stays open, tiny activity imports standalone"
+  },
+  {
+   "id": "guard-20pct-boundary-passes",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g14",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 9
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T06:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "Guard refuses only when measured < 20% strictly: 9/45 = exactly 20% AND 9 >= 2 min -> passes (inclusive bound pinned)"
+  },
+  {
+   "id": "guard-just-under-20pct-refused",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g15",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 8.9
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T06:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "guard-refused",
+    "action": "insert",
+    "insertedSport": "running"
+   },
+   "why": "8.9/45 = 19.8% < 20% -> refused even though > 2 min: both guard conditions are independent refusals"
+  },
+  {
+   "id": "guard-2min-absolute-beats-percent",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g16",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 1.5
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T06:00",
+      "plannedDurationMin": 5
+     }
+    ]
+   },
+   "expected": {
+    "gate": "guard-refused",
+    "action": "insert",
+    "insertedSport": "running"
+   },
+   "why": "1.5 min is 30% of the 5-min plan (passes percent) but < 2 min absolute -> refused; the absolute floor exists for tiny plans"
+  },
+  {
+   "id": "bestfit-closest-slot-wins",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "swimming",
+     "summaryId": "g17",
+     "startLocal": "2026-09-10T06:10",
+     "durationMin": 30
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "swimming",
+      "slotLocal": "2026-09-10T06:00",
+      "plannedDurationMin": 45
+     },
+     {
+      "rowId": "B",
+      "status": "planned",
+      "sport": "swimming",
+      "slotLocal": "2026-09-10T17:00",
+      "plannedDurationMin": 60
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "M-1.2 best-fit: closest planned slot to measured start decides FIRST (06:00 vs 17:00); duration fit is secondary"
+  },
+  {
+   "id": "bestfit-duration-fit-when-slots-tie",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "swimming",
+     "summaryId": "g18",
+     "startLocal": "2026-09-10T07:00",
+     "durationMin": 30
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "swimming",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45
+     },
+     {
+      "rowId": "B",
+      "status": "planned",
+      "sport": "swimming",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 60
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "Xuan's multi-swim case: slots identical (7am defaults) -> duration fit decides: 30/45 = 67% beats 30/60 = 50%; the 60-min plan stays open"
+  },
+  {
+   "id": "bestfit-true-tie-earliest-slot",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g19",
+     "startLocal": "2026-09-10T12:00",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "B",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45,
+      "createdOrder": 2
+     },
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45,
+      "createdOrder": 1
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "M-1.2: identical plans, identical slots -> tie falls to earliest slot; CONVENTION: on full tie the first-created row wins \u2014 NO manual-resolution UI ever"
+  },
+  {
+   "id": "guard-filters-candidate-set",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g20",
+     "startLocal": "2026-09-10T06:00",
+     "durationMin": 10
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T06:00",
+      "plannedDurationMin": 120
+     },
+     {
+      "rowId": "B",
+      "status": "planned",
+      "sport": "running",
+      "slotLocal": "2026-09-10T09:00",
+      "plannedDurationMin": 30
+     }
+    ]
+   },
+   "expected": {
+    "gate": "planned",
+    "action": "complete",
+    "matchedRowId": "B"
+   },
+   "why": "Guard runs per candidate: 10/120 = 8.3% eliminates A; B (10/30 = 33%) is the only survivor and wins despite the farther slot"
+  },
+  {
+   "id": "platform-keyed-no-threshold",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "platform",
+     "provider": "final_surge",
+     "planId": "FS-77",
+     "sport": "swimming",
+     "startLocal": "2026-09-10T19:00",
+     "durationMin": 0.15
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "planned",
+      "sport": "swimming",
+      "providerWorkoutId": "FS-77",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "platform-keyed",
+    "action": "complete",
+    "matchedRowId": "A"
+   },
+   "why": "M-1.2 trigger 1: a platform signal carrying its plan ID matches by key \u2014 NO plausibility threshold (the ID is certainty), even for a 9s session"
+  },
+  {
+   "id": "late-platform-verify-confirms",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "platform",
+     "provider": "training_peaks",
+     "planId": "TP-5",
+     "sport": "running",
+     "startLocal": "2026-09-10T06:33",
+     "durationMin": 44
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "providerWorkoutId": "TP-5",
+      "garminSummaryId": "g21",
+      "matchedStartLocal": "2026-09-10T06:33",
+      "matchedDurationMin": 44
+     }
+    ]
+   },
+   "expected": {
+    "gate": "verify-confirm",
+    "action": "noop",
+    "matchedRowId": "A"
+   },
+   "why": "M-1.2 trigger 3: same plan ID + same measured signature (start/duration within tolerance) -> the earlier heuristic match is CONFIRMED; no second row (M-0)"
+  },
+  {
+   "id": "late-platform-mismatch-reverts-rebinds",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "platform",
+     "provider": "final_surge",
+     "planId": "FS-60",
+     "sport": "swimming",
+     "startLocal": "2026-09-10T17:05",
+     "durationMin": 58
+    },
+    "candidates": [
+     {
+      "rowId": "P60",
+      "status": "completed",
+      "sport": "swimming",
+      "providerWorkoutId": "FS-60",
+      "garminSummaryId": "g22",
+      "matchedStartLocal": "2026-09-10T07:02",
+      "matchedDurationMin": 30
+     },
+     {
+      "rowId": "P45",
+      "status": "planned",
+      "sport": "swimming",
+      "providerWorkoutId": "FS-45",
+      "slotLocal": "2026-09-10T07:00",
+      "plannedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "revert-rebind",
+    "action": "rebind",
+    "reboundPlanId": "FS-60",
+    "displacedRescoredTo": "P45"
+   },
+   "why": "M-1.2 trigger 3 mismatch: keyed evidence says the 30-min activity was NOT FS-60's workout -> revert, FS-60 takes its true activity, displaced 30-min re-scores to the remaining 45-min plan (Xuan's exact scenario)"
+  },
+  {
+   "id": "upgrade-markdone-daywide",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g23",
+     "startLocal": "2026-09-10T15:10",
+     "durationMin": 44
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T07:00",
+      "recordedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "upgrade",
+    "action": "upgrade",
+    "matchedRowId": "A"
+   },
+   "why": "Q-INT24: summary-id-less completed row (mark-done, actual_time = 7am placeholder) upgrades on same sport + same LOCAL DAY \u2014 8h10m apart, deliberately no +/-15 window"
+  },
+  {
+   "id": "upgrade-closest-start-among-two",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g24",
+     "startLocal": "2026-09-10T15:10",
+     "durationMin": 44
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T07:00",
+      "recordedDurationMin": 45
+     },
+     {
+      "rowId": "B",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T14:30",
+      "recordedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "upgrade",
+    "action": "upgrade",
+    "matchedRowId": "B"
+   },
+   "why": "Q-INT24: multiple summary-id-less completed candidates -> closest start wins (14:30 vs 07:00)"
+  },
+  {
+   "id": "upgrade-blocked-by-existing-summary-id",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g25",
+     "startLocal": "2026-09-10T15:10",
+     "durationMin": 44
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": "gOLD",
+      "slotLocal": "2026-09-10T07:00",
+      "recordedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "insert",
+    "action": "insert",
+    "insertedSport": "running"
+   },
+   "why": "A row already Garmin-stamped is never an upgrade target: a distinct summary id is a genuinely different session -> insert"
+  },
+  {
+   "id": "upgrade-guard-applies",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g26",
+     "startLocal": "2026-09-10T15:10",
+     "durationMin": 1
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T07:00",
+      "recordedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "guard-refused",
+    "action": "insert",
+    "insertedSport": "running"
+   },
+   "why": "M-3: the plausibility guard protects upgrades too \u2014 a 1-min stray never hijacks a marked-done 45-min run"
+  },
+  {
+   "id": "upgrade-wrong-day-no-match",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g27",
+     "startLocal": "2026-09-11T00:10",
+     "durationMin": 44
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T23:30",
+      "recordedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "insert",
+    "action": "insert",
+    "insertedSport": "running"
+   },
+   "why": "Upgrade key is same LOCAL CALENDAR DAY: 00:10 next day is out (midnight boundary pinned) -> insert"
+  },
+  {
+   "id": "tz-whole-hour-drift-still-candidate",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "running",
+     "summaryId": "g28",
+     "startLocal": "2026-09-10T07:00",
+     "durationMin": 45,
+     "tzNote": "resolved instant differs from row by exactly 60 min"
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "garminSummaryId": null,
+      "slotLocal": "2026-09-10T08:00",
+      "recordedDurationMin": 45
+     }
+    ]
+   },
+   "expected": {
+    "gate": "upgrade",
+    "action": "upgrade",
+    "matchedRowId": "A"
+   },
+   "why": "M-1.1 timezone defense: durations match and starts differ by an exact whole-hour multiple -> scored as probable tz drift, matched rather than rejected"
+  },
+  {
+   "id": "signature-confirms-same-workout",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "platform",
+     "provider": "training_peaks",
+     "planId": "TP-9",
+     "sport": "running",
+     "startLocal": "2026-09-10T06:33",
+     "durationMin": 44.25
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "completed",
+      "sport": "running",
+      "providerWorkoutId": "TP-9",
+      "garminSummaryId": "g29",
+      "matchedStartLocal": "2026-09-10T06:34",
+      "matchedDurationMin": 44
+     }
+    ]
+   },
+   "expected": {
+    "gate": "verify-confirm",
+    "action": "noop",
+    "matchedRowId": "A"
+   },
+   "why": "Measured-signature tolerance: start within ~1-2 min and duration within a few percent -> same workout despite hours-apart arrival"
+  },
+  {
+   "id": "brick-b2p-sequential-verified",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sequence": [
+      {
+       "summaryId": "gb1",
+       "sport": "cycling",
+       "startLocal": "2026-09-10T07:00",
+       "durationMin": 58
+      },
+      {
+       "summaryId": "gb2",
+       "sport": "running",
+       "startLocal": "2026-09-10T08:10",
+       "durationMin": 29
+      }
+     ]
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-sequential",
+    "action": "complete",
+    "matchedRowId": "BR1",
+    "parentVerified": true,
+    "legStamps": {
+     "1": "gb1",
+     "2": "gb2"
+    }
+   },
+   "why": "B-2' primary path (Xuan's separate-starts norm): sports in start order = segment order; gap = 08:10 - (07:00+58m) = 12 min <= 30; each leg passes the guard vs its segment; ALL endurance legs matched -> parent VERIFIED (B-3)"
+  },
+  {
+   "id": "brick-b2p-gap-30-boundary-in",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sequence": [
+      {
+       "summaryId": "gb3",
+       "sport": "cycling",
+       "startLocal": "2026-09-10T07:00",
+       "durationMin": 60
+      },
+      {
+       "summaryId": "gb4",
+       "sport": "running",
+       "startLocal": "2026-09-10T08:30",
+       "durationMin": 30
+      }
+     ]
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-sequential",
+    "action": "complete",
+    "matchedRowId": "BR1",
+    "parentVerified": true
+   },
+   "why": "Gap tolerance inclusive at exactly 30 min: leg1 ends 08:00, leg2 starts 08:30 -> still one brick (<= 30, pinned)"
+  },
+  {
+   "id": "brick-b2p-gap-31-breaks-sequence",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sequence": [
+      {
+       "summaryId": "gb5",
+       "sport": "cycling",
+       "startLocal": "2026-09-10T07:00",
+       "durationMin": 60
+      },
+      {
+       "summaryId": "gb6",
+       "sport": "running",
+       "startLocal": "2026-09-10T08:31",
+       "durationMin": 30
+      }
+     ]
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-not-matched",
+    "action": "per-activity-gates",
+    "parentVerified": false
+   },
+   "why": "31 min > 30: not one brick; each activity runs the normal single-activity gates instead (a morning ride + later run stay separate)"
+  },
+  {
+   "id": "brick-b2p-order-mismatch",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sequence": [
+      {
+       "summaryId": "gb7",
+       "sport": "running",
+       "startLocal": "2026-09-10T07:00",
+       "durationMin": 29
+      },
+      {
+       "summaryId": "gb8",
+       "sport": "cycling",
+       "startLocal": "2026-09-10T07:35",
+       "durationMin": 58
+      }
+     ]
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-not-matched",
+    "action": "per-activity-gates",
+    "parentVerified": false
+   },
+   "why": "B-2' requires sports in start order to EQUAL segment order (R8 positional identity): run-then-bike does not match a bike-then-run brick"
+  },
+  {
+   "id": "brick-b3-partial-completed-not-verified",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sequence": [
+      {
+       "summaryId": "gb9",
+       "sport": "cycling",
+       "startLocal": "2026-09-10T07:00",
+       "durationMin": 58
+      }
+     ]
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-partial",
+    "action": "complete",
+    "matchedRowId": "BR1",
+    "parentVerified": false
+   },
+   "why": "B-3 as ruled: verified requires ALL endurance legs matched; one of two legs -> parent completes (confirmed-equivalent) but never shows verified"
+  },
+  {
+   "id": "brick-b1-multisport-parent-completes",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "multisport",
+     "summaryId": "gbP",
+     "isParent": true,
+     "startLocal": "2026-09-10T07:00",
+     "durationMin": 88
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-parent",
+    "action": "complete",
+    "matchedRowId": "BR1",
+    "parentVerified": false
+   },
+   "why": "B-1: MULTI_SPORT parent is a completion candidate via sport equivalence multisport~=brick + duration guard (88 vs 90 planned); verified then awaits B-2 leg matches"
+  },
+  {
+   "id": "brick-b2-children-by-parent-id-positional",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sequence": [
+      {
+       "summaryId": "gbC1",
+       "sport": "cycling",
+       "parentSummaryId": "gbP",
+       "startLocal": "2026-09-10T07:00",
+       "durationMin": 58
+      },
+      {
+       "summaryId": "gbC2",
+       "sport": "running",
+       "parentSummaryId": "gbP",
+       "startLocal": "2026-09-10T08:00",
+       "durationMin": 29
+      }
+     ],
+     "parentMatchedRowId": "BR1"
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "brick-children",
+    "action": "complete",
+    "matchedRowId": "BR1",
+    "parentVerified": true,
+    "legStamps": {
+     "1": "gbC1",
+     "2": "gbC2"
+    }
+   },
+   "why": "B-2: children matched positionally by sport order via parentSummaryId; with all endurance legs stamped the parent flips VERIFIED"
+  },
+  {
+   "id": "brick-b4-transition-folded-never-standalone",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "transition",
+     "activityType": "BIKE_TO_RUN_TRANSITION",
+     "summaryId": "gbT",
+     "parentSummaryId": "gbP",
+     "startLocal": "2026-09-10T07:58",
+     "durationMin": 2
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "transition-folded",
+    "action": "fold-metadata",
+    "matchedRowId": "BR1",
+    "standaloneRow": false
+   },
+   "why": "B-4: ALL TRANSITION_* variants (incl. the unmapped BIKE_TO_RUN_TRANSITION that auto-inserts as 'other' today) fold into brick_metadata positionally; never a standalone row"
+  },
+  {
+   "id": "brick-b5-no-double-import",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "garmin",
+     "sport": "cycling",
+     "summaryId": "gbC1",
+     "parentSummaryId": "gbP",
+     "startLocal": "2026-09-10T07:00",
+     "durationMin": 58,
+     "context": "parent gbP already matched BR1 and leg 1 already stamped gbC1"
+    },
+    "candidates": [
+     {
+      "rowId": "BR1",
+      "status": "planned",
+      "sport": "brick",
+      "totalDurationMin": 90,
+      "segments": [
+       {
+        "order": 1,
+        "sport": "cycling",
+        "durationMin": 60
+       },
+       {
+        "order": 2,
+        "sport": "running",
+        "durationMin": 30
+       }
+      ]
+     }
+    ]
+   },
+   "expected": {
+    "gate": "duplicate",
+    "action": "noop"
+   },
+   "why": "B-5 + M-0 one-row invariant: once the brick owns the leg (summary id stamped), a re-push of the same child is a no-op \u2014 never a standalone insert"
+  },
+  {
+   "id": "keyed-completion-pierces-tombstone",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "platform",
+     "provider": "final_surge",
+     "planId": "FS-90",
+     "signalKind": "completion",
+     "sport": "running",
+     "startLocal": "2026-09-10T06:30",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "running",
+      "providerWorkoutId": "FS-90",
+      "slotLocal": "2026-09-10T06:30"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "keyed-over-tombstone",
+    "action": "revive-complete",
+    "matchedRowId": "A"
+   },
+   "why": "M-1.3 (Xuan, 2026-09-10): a keyed COMPLETION is undeniable fact \u2014 the deleted row revives to completed; fact > the athlete's delete"
+  },
+  {
+   "id": "keyed-plan-reimport-still-tombstoned",
+   "status": "ratified",
+   "inputs": {
+    "incoming": {
+     "source": "platform",
+     "provider": "final_surge",
+     "planId": "FS-90",
+     "signalKind": "planned-import",
+     "sport": "running",
+     "startLocal": "2026-09-10T06:30",
+     "durationMin": 45
+    },
+    "candidates": [
+     {
+      "rowId": "A",
+      "status": "deleted",
+      "sport": "running",
+      "providerWorkoutId": "FS-90",
+      "slotLocal": "2026-09-10T06:30"
+     }
+    ]
+   },
+   "expected": {
+    "gate": "tombstone-T1",
+    "action": "drop"
+   },
+   "why": "M-1.3 boundary: a PLAN re-import (even keyed) is not proof of completion \u2014 deletion sticks; only proven completion pierces the tombstone"
+  }
+ ]
+}

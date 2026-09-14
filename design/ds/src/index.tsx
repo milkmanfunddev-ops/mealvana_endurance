@@ -60,6 +60,8 @@ export { InfoIcon } from './InfoIcon';
 export type { InfoIconProps } from './InfoIcon';
 export { SourceDot, SourceLegend } from './SourceDot';
 export type { SourceDotProps, SourceLegendProps, DataSource } from './SourceDot';
+export { SourceChip, StaleChip, TapToUseChip, SourceProvenanceRow } from './SourceChip';
+export type { SourceChipProps, TapToUseChipProps, SourceProvenanceRowProps } from './SourceChip';
 export { EquationCard } from './EquationCard';
 export type { EquationCardProps } from './EquationCard';
 export { BreakdownTable } from './BreakdownTable';

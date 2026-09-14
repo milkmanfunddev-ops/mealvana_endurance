@@ -134,6 +134,18 @@ class AthleteZones {
   /// Get swim speed zone config
   SpeedZoneConfig? get swimSpeedZones => speedZones?['Swim'];
 
+  /// TP FTP in watts (Q-INT19 consumption — D-2 provenance + prefill).
+  /// Stored since the zones fetch shipped; this is its first reader.
+  int? get ftpWatts => powerZones?.threshold;
+
+  /// TP swim critical speed as seconds per 100 m, derived from the swim
+  /// threshold speed (m/s). D-2's css-inherits application.
+  int? get cssSecondsPer100m {
+    final speed = swimSpeedZones?.threshold;
+    if (speed == null || speed <= 0) return null;
+    return (100 / speed).round();
+  }
+
   /// Get Zone 2 swim pace in seconds per 100m from speed zones
   ///
   /// Speed zones are in m/s. Conversion:

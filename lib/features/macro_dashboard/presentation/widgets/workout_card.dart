@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/dashboard_models.dart';
 import '../me_tokens.dart';
+import '../../../../shared/widgets/kyle_design/materials/dotted_border_decoration.dart';
 
 /// Workout card — component contract: docs/ssot/spec/design/components/
 /// workout-card.md (RATIFIED v2 — Q-D6 unified-skip model). Reference
@@ -152,7 +153,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
     } else if (skipped) {
       fill = const Color.fromRGBO(255, 255, 255, 0.03);
       border = null;
-      dottedEdge = _DottedBorderDecoration(
+      dottedEdge = DottedBorderDecoration(
         color: MeTokens.creamAlpha(0.26),
         strokeWidth: 1.5,
         radius: 14,
@@ -160,7 +161,7 @@ class _WorkoutCardState extends State<WorkoutCard> {
     } else {
       fill = const Color.fromRGBO(55, 31, 57, 1);
       border = null;
-      dottedEdge = _DottedBorderDecoration(
+      dottedEdge = DottedBorderDecoration(
         color: MeTokens.electrolyteAlpha(0.55),
         strokeWidth: 1.5,
         radius: 14,
@@ -519,53 +520,4 @@ class _DottedCirclePainter extends CustomPainter {
   @override
   bool shouldRepaint(_DottedCirclePainter oldDelegate) =>
       oldDelegate.color != color || oldDelegate.strokeWidth != strokeWidth;
-}
-
-/// Dotted rounded-rect border (the planned card's "not yet" edge — Flutter
-/// has no native dotted BorderStyle).
-class _DottedBorderDecoration extends Decoration {
-  const _DottedBorderDecoration({
-    required this.color,
-    required this.strokeWidth,
-    required this.radius,
-  });
-
-  final Color color;
-  final double strokeWidth;
-  final double radius;
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _DottedBorderPainter(this);
-}
-
-class _DottedBorderPainter extends BoxPainter {
-  _DottedBorderPainter(this.decoration);
-
-  final _DottedBorderDecoration decoration;
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final rect = offset & (configuration.size ?? Size.zero);
-    final rrect = RRect.fromRectAndRadius(
-      rect.deflate(decoration.strokeWidth / 2),
-      Radius.circular(decoration.radius),
-    );
-    final paint = Paint()
-      ..color = decoration.color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = decoration.strokeWidth
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()..addRRect(rrect);
-    const dash = 2.0;
-    const gap = 4.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
-        distance += dash + gap;
-      }
-    }
-  }
 }

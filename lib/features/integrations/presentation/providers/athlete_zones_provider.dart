@@ -46,3 +46,71 @@ Future<double?> thresholdPaceMinPerMile(Ref ref, String userId) async {
   final zones = await ref.watch(athleteZonesProvider(userId).future);
   return zones?.thresholdPaceMinPerMile;
 }
+
+/// D-2 provenance feed: the TP-sourced FTP (watts), or null when TP is not
+/// connected / carries no power zones.
+@riverpod
+Future<int?> tpFtpWatts(Ref ref, String userId) async {
+  final zones = await ref.watch(athleteZonesProvider(userId).future);
+  return zones?.ftpWatts;
+}
+
+/// D-2 provenance feed: the TP-derived swim CSS (sec/100m).
+@riverpod
+Future<int?> tpCssSecondsPer100m(Ref ref, String userId) async {
+  final zones = await ref.watch(athleteZonesProvider(userId).future);
+  return zones?.cssSecondsPer100m;
+}
+
+/// D-2 staleness: true when the TP zones cache is older than the ruled
+/// 24 h window (the zones clock — integration.updatedAt tracks the fetch).
+@riverpod
+Future<bool> tpZonesStale(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final tp = await repository.getIntegration(userId, 'training_peaks');
+  if (tp == null || !tp.isActive || tp.athleteZonesJson == null) return false;
+  final updatedAt = tp.updatedAt;
+  if (updatedAt == null) return true;
+  return DateTime.now().difference(updatedAt) > const Duration(hours: 24);
+}
+
+
+/// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
+/// on the basic profile, or null when TP is not connected. Garmin remains
+/// the ruled primary body-comp source; this fills the badge when Garmin has
+/// no reading (Xuan, 2026-09-13: every field a provider carries shows its
+/// badge).
+@riverpod
+Future<double?> tpAthleteWeightKg(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final tp = await repository.getIntegration(userId, 'training_peaks');
+  if (tp == null || !tp.isActive) return null;
+  return tp.providerAthleteWeightKg;
+}
+
+/// TP-reported identity fields for profile provenance badges (name, birth
+/// month "YYYY-MM", gender) — null when TP is not connected.
+@riverpod
+Future<({String? name, String? birthMonth, String? gender})?>
+    tpAthleteIdentity(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final tp = await repository.getIntegration(userId, 'training_peaks');
+  if (tp == null || !tp.isActive) return null;
+  return (
+    name: tp.providerAthleteName,
+    birthMonth: tp.providerAthleteBirthMonth,
+    gender: tp.providerAthleteGender,
+  );
+}
+
+/// FS-reported athlete name (from the OAuth token response at connect) —
+/// null when FS is not connected. Joins the identity badges per Xuan's
+/// 2026-09-13 ruling: every provider with a non-null value shows its badge.
+@riverpod
+Future<String?> fsAthleteName(Ref ref, String userId) async {
+  final repository = ref.watch(integrationsRepositoryProvider);
+  final fs = await repository.getIntegration(userId, 'final_surge');
+  if (fs == null || !fs.isActive) return null;
+  final name = fs.providerAthleteName?.trim();
+  return (name == null || name.isEmpty) ? null : name;
+}

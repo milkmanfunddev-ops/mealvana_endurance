@@ -144,3 +144,16 @@ deviations:
       (production write path + tests) — that is conformance to @v3, not a deviation; the
       test-only TS twin (workout-times.ts applyMarkDone) was held at "= now" and flips with the
       mirror re-sync (handback item 2).
+
+# POST-RATIFICATION RULINGS (2026-09-10, ruling desk · fast-track):
+#   - session-demand.md gains F4a (unknown & mobility sports: MOBILITY 2.5 linear,
+#     composites decompose, unknown -> 0 + flag, RUNNING fallback removed) — class (b)
+#     addition; pinned spec content has moved on the branch. RECOMMEND immutable point
+#     re-tag daily-macros-dashboard@v3.2 (ship-bundle's act, never move @v3/@v3.1).
+#   - engine day-bucketing RULED: actual_time ?? planned_time ?? scheduled_date_time
+#     (intake 2026-08-20-engine-session-bucketing-day-key, option 1) — app fix gated in
+#     the 2026-09-10 data-integrations handback; folded at spec/integrations/lifecycle.md L-9.3.
+#   - STAGED CONTRACT CHANGE (class c, NOT folded): Garmin activity kcal includes BMR —
+#     F22 will resolve session kcal = calories_burned − RMR/24 × duration_hr (floor 0),
+#     raw stored verbatim (intake 2026-09-09-garmin-activity-kcal-includes-bmr, option 1).
+#     Ships with the platform-resolution next version via ship-bundle (@v4 candidate).

@@ -46,6 +46,16 @@ export const GARMIN_ACTIVITY_TYPE_MAP: Record<string, string> = {
   triathlon: 'triathlon',
   duathlon: 'duathlon',
   transition: 'transition',
+  // B-4 (matching.md, RATIFIED): ALL transition variants map to
+  // 'transition' and never become standalone rows. Before this, the
+  // unmapped variants fell to 'other' and auto-imported (M-5.2.4 defect).
+  transition_v2: 'transition',
+  bike_to_run_transition: 'transition',
+  swim_to_bike_transition: 'transition',
+  run_to_bike_transition: 'transition',
+  bike_to_swim_transition: 'transition',
+  run_to_swim_transition: 'transition',
+  swim_to_run_transition: 'transition',
 
   // Everything else → 'other' (we'll handle on the Dart side)
 };
@@ -270,6 +280,24 @@ export interface GarminEpochSummary {
   intensity?: string; // "SEDENTARY", "ACTIVE", "HIGHLY_ACTIVE"
 }
 
+/**
+ * data-integrations@v1 capture (Q-INT26 item 8): the previously-unhandled
+ * wellness push types (hrv, pulseOx, respiration, healthSnapshot,
+ * bloodPressures, skinTemp). Their summaries are heterogeneous across types
+ * and device firmware, and typed narrowing is exactly how vo2MaxCycling got
+ * dropped at this boundary — so these are modeled generically and stored
+ * verbatim (lose-nothing direction, Xuan 2026-09-09).
+ */
+export interface GarminGenericWellnessSummary {
+  userId: string;
+  userAccessToken: string;
+  summaryId: string;
+  calendarDate?: string;
+  startTimeInSeconds?: number;
+  measurementTimeInSeconds?: number;
+  [key: string]: unknown;
+}
+
 // ============================================================================
 // Notification Envelope Types
 // ============================================================================
@@ -285,6 +313,13 @@ export interface GarminPushNotification {
   bodyComps?: GarminBodyComposition[];
   stressDetails?: GarminStressDetail[];
   userMetrics?: GarminUserMetrics[];
+  // data-integrations@v1 capture (Q-INT26 item 8)
+  hrv?: GarminGenericWellnessSummary[];
+  pulseOx?: GarminGenericWellnessSummary[];
+  respiration?: GarminGenericWellnessSummary[];
+  healthSnapshot?: GarminGenericWellnessSummary[];
+  bloodPressures?: GarminGenericWellnessSummary[];
+  skinTemp?: GarminGenericWellnessSummary[];
   // User permissions change notification
   userPermissionsChange?: GarminUserPermissionChange[];
 }

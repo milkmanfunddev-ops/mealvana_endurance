@@ -1118,6 +1118,10 @@ class ActivitiesRepository with SyncableRepository {
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.scheduledDateTime.isBetweenValues(startDate, endDate) &
               tbl.deletedAt.isNull() &
+              // Q-INT2: rows soft-hidden by a provider disconnect are
+              // excluded from display (they revive on a matching re-sync).
+              (tbl.hiddenByDisconnect.isNull() |
+                  tbl.hiddenByDisconnect.equals(false)) &
               (tbl.status.equals('archivedForBrick') |
                       tbl.status.equals('archived_for_brick'))
                   .not(),
@@ -1156,6 +1160,9 @@ class ActivitiesRepository with SyncableRepository {
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.activityType.equals(activityType.name) &
               tbl.status.equals('completed') &
+              // Q-INT2: disconnected-provider rows leave the baseline too.
+              (tbl.hiddenByDisconnect.isNull() |
+                  tbl.hiddenByDisconnect.equals(false)) &
               tbl.deletedAt.isNull(),
         )
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.completedAt)])
@@ -1199,6 +1206,10 @@ class ActivitiesRepository with SyncableRepository {
             tbl.userId.lower().equals(userId.toLowerCase()) &
             tbl.status.equals('completed') &
             tbl.deletedAt.isNull() &
+            // Q-INT2: hidden rows leave the engine — their fuel does not
+            // count as eaten while their demand is excluded.
+            (tbl.hiddenByDisconnect.isNull() |
+                tbl.hiddenByDisconnect.equals(false)) &
             tbl.brickId.isNull() &
             tbl.scheduledDateTime.isBiggerOrEqualValue(dayStart) &
             tbl.scheduledDateTime.isSmallerThanValue(dayEnd),
@@ -1474,6 +1485,24 @@ class ActivitiesRepository with SyncableRepository {
       // existing row already had.
       garminSummaryId: incoming.garminSummaryId ?? existing.garminSummaryId,
       garminDeviceName: incoming.garminDeviceName ?? existing.garminDeviceName,
+
+      // data-integrations@v1 capture (Q-INT26): planned load metrics are
+      // provider-owned (null overwrite allowed, like the other planner
+      // columns); measured values follow the actual_time rule — adopt when
+      // the provider sends them, never wipe them on a planned re-sync.
+      tssPlanned: incoming.tssPlanned,
+      ifPlanned: incoming.ifPlanned,
+      tpCaloriesPlanned: incoming.tpCaloriesPlanned,
+      tssActual: incoming.tssActual ?? existing.tssActual,
+      ifActual: incoming.ifActual ?? existing.ifActual,
+      tpCalories: incoming.tpCalories ?? existing.tpCalories,
+      // Garmin multisport lineage is completion-side state (Q-INT23): FS/TP
+      // planned imports never carry it.
+      parentSummaryId: incoming.parentSummaryId ?? existing.parentSummaryId,
+      isParent: incoming.isParent ?? existing.isParent,
+      // Q-INT2: hidden-by-disconnect is LOCAL state — a provider update
+      // never implicitly unhides (revive is an explicit, id-keyed act).
+      hiddenByDisconnect: existing.hiddenByDisconnect,
 
       // preserve local metadata
       createdAt: existing.createdAt,
@@ -2121,6 +2150,133 @@ class ActivitiesRepository with SyncableRepository {
     }
   }
 
+  /// M-1.3 provable-fact primacy (matching.md, RULED Xuan 2026-09-10):
+  /// revive a tombstoned row that a keyed provider COMPLETION signal
+  /// reports as done. The platform proved it happened — status flips to
+  /// completed, the tombstone clears, and the provider's measured fields
+  /// land. A keyed PLAN re-import never reaches this path (the tombstone
+  /// drop in ChangeDetectionService stands).
+  Future<void> reviveTombstoneFromProvider(
+    String activityId,
+    domain.Activity incoming,
+  ) async {
+    try {
+      _logger.info(
+        'Reviving tombstoned activity from provider completion signal',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {
+          'activityId': activityId,
+          'provider': incoming.syncedFromProvider,
+        },
+      );
+
+      final now = DateTime.now();
+
+      await (_database.update(
+        _database.activitiesTable,
+      )..where((tbl) => tbl.id.equals(activityId))).write(
+        ActivitiesTableCompanion(
+          status: const Value('completed'),
+          deletedAt: const Value(null),
+          completedAt: Value(incoming.completedAt ?? now),
+          // Provider-owned planning fields refresh from the signal.
+          title: Value(incoming.title),
+          durationMinutes: Value(incoming.durationMinutes),
+          distanceMiles: Value(incoming.distanceMiles),
+          lastSyncedAt: Value(incoming.lastSyncedAt ?? now),
+          needsUpload: const Value(true),
+          localUpdatedAt: Value(now),
+          updatedAt: Value(now),
+        ),
+      );
+
+      await _queueImmediateActivityUpsertById(
+        activityId,
+        operation: 'tombstone_revive_completion',
+      );
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to revive tombstoned activity',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'activityId': activityId},
+      );
+      rethrow;
+    }
+  }
+
+  /// Q-INT2 disconnect redesign: soft-hide every activity this provider
+  /// imported. The rows keep their status and metadata — a matching
+  /// re-sync after reconnect REVIVES them (unlike the tombstone, which
+  /// suppresses re-import). Returns the number of rows hidden.
+  Future<int> hideActivitiesForProviderDisconnect({
+    required String userId,
+    required String provider,
+  }) async {
+    try {
+      final now = DateTime.now();
+      final hidden =
+          await (_database.update(_database.activitiesTable)..where(
+                (tbl) =>
+                    tbl.userId.lower().equals(userId.toLowerCase()) &
+                    tbl.syncedFromProvider.equals(provider) &
+                    tbl.deletedAt.isNull(),
+              ))
+              .write(
+                ActivitiesTableCompanion(
+                  hiddenByDisconnect: const Value(true),
+                  needsUpload: const Value(true),
+                  localUpdatedAt: Value(now),
+                  updatedAt: Value(now),
+                ),
+              );
+      _logger.info(
+        'Soft-hid provider activities on disconnect (Q-INT2)',
+        context: 'ACTIVITIES_REPOSITORY',
+        data: {'provider': provider, 'hidden': hidden},
+      );
+      return hidden;
+    } catch (e, stackTrace) {
+      _logger.error(
+        'Failed to hide provider activities on disconnect',
+        context: 'ACTIVITIES_REPOSITORY',
+        error: e,
+        stackTrace: stackTrace,
+        data: {'provider': provider},
+      );
+      rethrow;
+    }
+  }
+
+  /// Q-INT2 revive: a matching re-sync after reconnect unhides the row and
+  /// applies the provider update (id-keyed; never suppresses like a
+  /// tombstone).
+  Future<void> unhideAndUpdateFromProvider(
+    String activityId,
+    domain.Activity incoming,
+  ) async {
+    await updateActivityFromProvider(
+      incoming.copyWith(id: activityId, hiddenByDisconnect: false),
+    );
+    // The L-2 merge preserves the EXISTING hidden state by design, so the
+    // unhide is written explicitly after the merge.
+    final now = DateTime.now();
+    await (_database.update(
+      _database.activitiesTable,
+    )..where((tbl) => tbl.id.equals(activityId))).write(
+      ActivitiesTableCompanion(
+        hiddenByDisconnect: const Value(false),
+        needsUpload: const Value(true),
+        localUpdatedAt: Value(now),
+      ),
+    );
+    await _queueImmediateActivityUpsertById(
+      activityId,
+      operation: 'disconnect_revive',
+    );
+  }
+
   /// Clear nutrition refresh flag after regeneration
   Future<void> clearNutritionRefreshFlag(String activityId) async {
     try {
@@ -2426,6 +2582,61 @@ class ActivitiesRepository with SyncableRepository {
   }
 
   /// Ungroup a brick workout
+  /// Build a standalone [domain.Activity] from a fresh brick's inline
+  /// [BrickSegment] — the inverse of brick creation, used by [ungroupBrick]
+  /// to give a fresh brick's legs back instead of destroying them. Empty id
+  /// so Drift mints the UUID on insert.
+  domain.Activity _activityFromBrickSegment({
+    required domain.Activity brick,
+    required BrickSegment segment,
+    required DateTime scheduledDateTime,
+    required DateTime now,
+  }) {
+    final type = ActivityType.fromDbValue(segment.sport);
+    // Swimming carries distance in meters; running/cycling in miles.
+    final distanceMiles = type == ActivityType.swimming
+        ? (segment.distanceMeters != null
+            ? segment.distanceMeters! / 1609.34
+            : null)
+        : segment.distanceMiles;
+    return domain.Activity(
+      id: '',
+      userId: brick.userId,
+      activityType: type,
+      title: type.displayName,
+      scheduledDateTime: scheduledDateTime,
+      status: domain.ActivityStatus.planned,
+      distanceMiles: distanceMiles,
+      durationMinutes: segment.durationMinutes,
+      intensityLevel: domain.IntensityLevel.values
+          .where((l) => l.name == segment.intensity)
+          .firstOrNull,
+      // Running
+      paceTargetMinutesPerMile:
+          type == ActivityType.running ? segment.paceMinutesPerMile : null,
+      // Cycling
+      cyclingSpeedMph:
+          type == ActivityType.cycling ? segment.speedMph : null,
+      cyclingTerrain:
+          type == ActivityType.cycling ? segment.terrain : null,
+      cyclingIndoorOutdoor:
+          type == ActivityType.cycling ? segment.indoorOutdoor : null,
+      cyclingElevationGainFt:
+          type == ActivityType.cycling ? segment.elevationGainFt : null,
+      // Swimming
+      swimmingPacePer100mSeconds:
+          type == ActivityType.swimming ? segment.pacePer100mSeconds : null,
+      swimmingPoolOrOpenWater:
+          type == ActivityType.swimming ? segment.poolOrOpenWater : null,
+      swimmingWaterTempC:
+          type == ActivityType.swimming ? segment.waterTempC : null,
+      createdAt: now,
+      updatedAt: now,
+      needsUpload: true,
+      localUpdatedAt: now,
+    );
+  }
+
   Future<void> ungroupBrick(String brickId) async {
     String? userIdForSupabaseDelete;
 
@@ -2458,6 +2669,7 @@ class ActivitiesRepository with SyncableRepository {
 
         // Step 2: Get archived activities
         final archivedActivities = await getArchivedActivitiesForBrick(brickId);
+        final now = DateTime.now();
 
         if (archivedActivities.isEmpty) {
           // A brick built FROM existing activities must have archived legs
@@ -2469,15 +2681,45 @@ class ActivitiesRepository with SyncableRepository {
               'activities but no archived legs found to restore',
             );
           }
-          _logger.debug(
-            'No archived activities found for brick',
-            context: 'ACTIVITIES_REPOSITORY',
-            data: {'brickId': brickId},
-          );
+          // A FRESH brick (created in the brick builder) has no archived leg
+          // rows — its legs live only as inline brick_metadata.segments.
+          // Ungroup must give those legs back as standalone activities
+          // (2026-09-13 data-loss fix: previously the brick was tombstoned
+          // and both legs vanished with it). Synthesize one activity per
+          // segment; if there are none, there is genuinely nothing to
+          // ungroup and we fall through to tombstone the empty brick.
+          final segments = brickDomain.brickMetadata?.segments ?? const [];
+          if (segments.isNotEmpty) {
+            final sorted = [...segments]
+              ..sort((a, b) => a.order.compareTo(b.order));
+            var legStart = brickDomain.scheduledDateTime;
+            for (final segment in sorted) {
+              final leg = _activityFromBrickSegment(
+                brick: brickDomain,
+                segment: segment,
+                scheduledDateTime: legStart,
+                now: now,
+              );
+              await _saveToDrift(leg);
+              legStart = legStart.add(
+                Duration(minutes: segment.durationMinutes),
+              );
+            }
+            _logger.info(
+              'Decomposed fresh brick into standalone legs',
+              context: 'ACTIVITIES_REPOSITORY',
+              data: {'brickId': brickId, 'legCount': sorted.length},
+            );
+          } else {
+            _logger.debug(
+              'No archived activities or segments found for brick',
+              context: 'ACTIVITIES_REPOSITORY',
+              data: {'brickId': brickId},
+            );
+          }
         }
 
         // Step 3: Restore archived activities
-        final now = DateTime.now();
         for (final activity in archivedActivities) {
           final restoredActivity = activity.copyWith(
             status: domain.ActivityStatus.planned,

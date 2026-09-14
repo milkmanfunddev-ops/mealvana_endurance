@@ -65,6 +65,12 @@ const GARMIN_BACKFILL_PATH: Record<string, string> = {
 
 const DEFAULT_SUMMARY_TYPES = ['body_composition', 'user_metrics'];
 const MAX_WINDOW_DAYS = 90;
+// Garmin's Activity-summaries backfill max is 30 days per request — smaller
+// than the 90-day Health/Women's window. The old single clamp let an
+// `activities` request through at up to 90 days, which Garmin rejects
+// upstream (Q-INT18 recorded bug; fixed for the Q-INT27 connect-time
+// activities backfill). Health types keep the 90-day window.
+const MAX_ACTIVITY_WINDOW_DAYS = 30;
 const GARMIN_BACKFILL_BASE = 'https://apis.garmin.com/wellness-api/rest/backfill';
 
 interface BackfillRequest {
@@ -103,8 +109,12 @@ async function requireUser(req: Request) {
  * Returns a valid Garmin access token, refreshing it via the refresh_token
  * grant when the stored one is expired (or about to expire). Garmin's backfill
  * endpoint rejects a stale token with "Token is not active", so without this
- * every backfill after the access token's lifetime fails. The refreshed token
- * is persisted back to `garmin_user_mappings` so subsequent calls reuse it.
+ * every backfill after the access token's lifetime fails.
+ *
+ * Q-INT8 (RULED 2026-09-10): `integrations` is the SOLE token custodian —
+ * tokens are read from and refreshed back to the integrations row; the
+ * garmin_user_mappings copies are stripped by migration 20260911160000 and
+ * never written again.
  *
  * Falls back to the existing token (and lets Garmin surface the error) when we
  * have no refresh_token or the refresh call itself fails — this never throws,
@@ -167,14 +177,15 @@ async function ensureFreshGarminToken(
       .toISOString();
 
     const { error: updateErr } = await supabase
-      .from('garmin_user_mappings')
+      .from('integrations')
       .update({
         access_token: newAccessToken,
         refresh_token: newRefreshToken,
         token_expires_at: newExpiresAt,
         updated_at: new Date().toISOString(),
       })
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('provider', 'garmin');
 
     if (updateErr) {
       console.error(
@@ -236,15 +247,17 @@ serve(withSentry(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // Q-INT8: tokens live on the integrations row (sole custodian).
     const { data: mapping, error: mappingErr } = await supabase
-      .from('garmin_user_mappings')
-      .select('garmin_user_id, access_token, refresh_token, token_expires_at')
+      .from('integrations')
+      .select('access_token, refresh_token, token_expires_at')
       .eq('user_id', user.id)
+      .eq('provider', 'garmin')
       .maybeSingle();
 
     if (mappingErr) {
-      console.error('[garmin-backfill] Mapping lookup error:', mappingErr);
-      return errorResponse('Failed to look up Garmin mapping', 500);
+      console.error('[garmin-backfill] Integration lookup error:', mappingErr);
+      return errorResponse('Failed to look up Garmin connection', 500);
     }
     if (!mapping?.access_token) {
       return errorResponse(
@@ -272,8 +285,13 @@ serve(withSentry(async (req: Request) => {
 
     for (const summaryType of summaryTypes) {
       const path = GARMIN_BACKFILL_PATH[summaryType];
+      // Per-type clamp: `activities` is capped at Garmin's 30-day Activity
+      // max; everything else keeps the requested (<=90 day) window.
+      const typeStartSec = summaryType === 'activities'
+        ? endSec - Math.min(windowDays, MAX_ACTIVITY_WINDOW_DAYS) * 86400
+        : startSec;
       const url =
-        `${GARMIN_BACKFILL_BASE}/${path}?summaryStartTimeInSeconds=${startSec}&summaryEndTimeInSeconds=${endSec}`;
+        `${GARMIN_BACKFILL_BASE}/${path}?summaryStartTimeInSeconds=${typeStartSec}&summaryEndTimeInSeconds=${endSec}`;
 
       try {
         // Garmin's backfill API rejects empty body (502) AND missing

@@ -25,6 +25,7 @@ actually granted is expressed as **user permissions**, controlled by the user du
 | Permission _(Garmin spec)_ | Grants |
 |---|---|
 | `ACTIVITY_EXPORT` | Activity API data |
+| `HISTORICAL_DATA_EXPORT` | Backfill of pre-connection / historic data (the consent screen's "Historical Data" toggle, OFF by default). Verified live 2026-09-13: present in `/user/permissions` when the toggle is on, absent when off. Without it, backfill of past workouts is not authorized. |
 | `HEALTH_EXPORT` | Health API data |
 | `WORKOUT_IMPORT` | Training API (workouts/schedules) |
 | `COURSE_IMPORT` | Courses API |
@@ -33,6 +34,9 @@ actually granted is expressed as **user permissions**, controlled by the user du
 A user may opt into fewer permissions than the app requests. Query the user's current set with
 `GET https://apis.garmin.com/wellness-api/rest/user/permissions`, which returns a JSON array, e.g.
 `["ACTIVITY_EXPORT","WORKOUT_IMPORT","HEALTH_EXPORT","COURSE_IMPORT","MCT_EXPORT"]` _(Garmin spec)_.
+Observed live 2026-09-13 the array also carries `HISTORICAL_DATA_EXPORT` when the user
+grants "Historical Data" — a reliable connect-time hook to detect whether historical
+backfill is authorized.
 
 ## Flow
 

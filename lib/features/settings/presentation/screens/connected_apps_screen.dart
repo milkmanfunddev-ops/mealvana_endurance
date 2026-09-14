@@ -12,12 +12,15 @@ import '../../../integrations/presentation/providers/tp_writeback_providers.dart
 import '../../../integrations/presentation/widgets/integration_provider_card.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
+import '../../../onboarding/presentation/widgets/garmin_historical_primer_sheet.dart';
 import '../../../onboarding/presentation/widgets/onboarding_multi_select_step.dart';
 import '../../../onboarding/presentation/widgets/onboarding_week_chart_card.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/notification_service.dart';
 import '../../../../shared/services/preferences_service.dart';
 import '../../../../shared/widgets/content_area.dart';
+import '../../../../shared/widgets/kyle_design/sheets/tp_writeback_consent_sheet.dart';
+import '../widgets/tp_writeback_toggle_row.dart';
 
 /// Connected Apps Screen - Used for both settings and onboarding flows
 ///
@@ -364,6 +367,9 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
           onDisconnect: () => _disconnectTrainingPeaks(context, ref),
           onSync: () => _syncTrainingPeaksWithState(context, ref),
           hasSynced: _trainingPeaksSynced,
+          // Design: the write-back consent toggle lives INSIDE the
+          // connected card (Xuan, 2026-09-13 smoke test).
+          footer: _buildTpWritebackToggle(context, ref),
         ),
 
         // Show last sync info and event when connected
@@ -393,12 +399,6 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
               ),
             ),
           ],
-        ],
-
-        // TP Write-Back toggle (only when TP is connected)
-        if (data.isTrainingPeaksConnected) ...[
-          const SizedBox(height: AppSpacing.md),
-          _buildTpWritebackToggle(context, ref),
         ],
 
         const SizedBox(height: AppSpacing.lg),
@@ -880,6 +880,26 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
+  /// D-3 opt-out NOTICE (Q-INT16 as amended 2026-09-11): fires after every
+  /// successful TP connect. Sharing is ALREADY ON when it appears; dismiss
+  /// leaves it on. "Turn Off Sharing" flips the pref in one tap.
+  Future<void> _showWritebackConsentNotice(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final prefs = ref.read(preferencesServiceProvider);
+    // Suppressed while premium-blocked (goldens: premium-blocked asserts
+    // "consent sheet suppressed while blocked").
+    if (prefs.tpWritebackPremiumBlocked) return;
+    await prefs.ensureTpWritebackDefaultExplicit();
+    if (!context.mounted) return;
+    final choice = await TpWritebackConsentSheet.show(context);
+    if (choice == false) {
+      await prefs.setTpWritebackEnabled(false);
+    }
+    await prefs.setTpWritebackNoticeShown(true);
+  }
+
   Future<void> _connectTrainingPeaks(
     BuildContext context,
     WidgetRef ref,
@@ -889,10 +909,19 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
 
     if (success && context.mounted) {
       MealvanaSnackbar.showSuccess(context, 'TrainingPeaks connected!');
+      await _showWritebackConsentNotice(context, ref);
     }
   }
 
   Future<void> _connectGarmin(BuildContext context, WidgetRef ref) async {
+    // Onboarding only: prime the athlete to switch on Garmin's default-off
+    // "Historical Data" toggle before the consent screen opens, so their
+    // first plan is built on real training history. "Not now" cancels the
+    // connect. No settings-side variant — history insight is onboarding-only.
+    if (isOnboarding) {
+      final proceed = await showGarminHistoricalPrimer(context);
+      if (proceed != true || !context.mounted) return;
+    }
     final controller = ref.read(connectTrainingControllerProvider.notifier);
     final success = await controller.connectGarmin();
 
@@ -1015,6 +1044,10 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
       ref
           .read(onboardingControllerProvider.notifier)
           .recordConnectedProvider('training_peaks');
+      // D-3 onboarding variant: the same opt-out notice, as its own step
+      // right after the connect succeeds.
+      await _showWritebackConsentNotice(context, ref);
+      if (!context.mounted) return;
       MealvanaSnackbar.showSuccess(
         context,
         'TrainingPeaks connected! Importing workouts...',
@@ -1100,12 +1133,52 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // Shared Disconnect Methods
   // ============================================================
 
+  /// Q-INT2 disconnect choice (RULED 2026-09-10): the default disconnect
+  /// clears the connection and HIDES the provider's data — it comes back on
+  /// reconnect. "Also delete my synced data" is the explicit, destructive
+  /// alternative. Returns null when the athlete cancels.
+  Future<bool?> _confirmDisconnect(
+    BuildContext context,
+    String providerName,
+  ) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Disconnect $providerName?'),
+        content: const Text(
+          'Your synced workouts will be hidden and your plan will update. '
+          'They come back if you reconnect.\n\n'
+          'Choose "Delete synced data" to permanently remove them instead.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
+            ),
+            child: const Text('Delete synced data'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Disconnect'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _disconnectFinalSurge(
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final alsoDelete = await _confirmDisconnect(context, 'Final Surge');
+    if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.disconnectFinalSurge();
+    await controller.disconnectFinalSurge(alsoDeleteData: alsoDelete);
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'Final Surge disconnected');
@@ -1116,17 +1189,24 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     BuildContext context,
     WidgetRef ref,
   ) async {
+    final alsoDelete = await _confirmDisconnect(context, 'TrainingPeaks');
+    if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.disconnectTrainingPeaks();
+    await controller.disconnectTrainingPeaks(alsoDeleteData: alsoDelete);
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'TrainingPeaks disconnected');
     }
   }
 
-  Future<void> _disconnectGarmin(BuildContext context, WidgetRef ref) async {
+  Future<void> _disconnectGarmin(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final alsoDelete = await _confirmDisconnect(context, 'Garmin Connect');
+    if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.disconnectGarmin();
+    await controller.disconnectGarmin(alsoDeleteData: alsoDelete);
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'Garmin Connect disconnected');
@@ -1237,9 +1317,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectVdot(BuildContext context, WidgetRef ref) async {
+  Future<void> _disconnectVdot(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final alsoDelete = await _confirmDisconnect(context, 'V.O2');
+    if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.disconnectVdot();
+    await controller.disconnectVdot(alsoDeleteData: alsoDelete);
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'V.O2 disconnected');
@@ -1323,9 +1408,14 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
     }
   }
 
-  Future<void> _disconnectRunna(BuildContext context, WidgetRef ref) async {
+  Future<void> _disconnectRunna(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    final alsoDelete = await _confirmDisconnect(context, 'Runna');
+    if (alsoDelete == null) return;
     final controller = ref.read(connectTrainingControllerProvider.notifier);
-    await controller.disconnectRunna();
+    await controller.disconnectRunna(alsoDeleteData: alsoDelete);
 
     if (context.mounted) {
       MealvanaSnackbar.showInfo(context, 'Runna disconnected');
@@ -1448,65 +1538,8 @@ class _ConnectedAppsScreenState extends ConsumerState<ConnectedAppsScreen> {
   // ============================================================
 
   Widget _buildTpWritebackToggle(BuildContext context, WidgetRef ref) {
-    final prefs = ref.watch(preferencesServiceProvider);
-    final enabled = prefs.tpWritebackEnabled;
-    final premiumBlocked = prefs.tpWritebackPremiumBlocked;
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Write-Back to TrainingPeaks',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: premiumBlocked ? onSurfaceVariant : onSurface,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  premiumBlocked
-                      ? 'Requires TrainingPeaks Premium'
-                      : 'Add nutrition plan summary to workout descriptions',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: onSurfaceVariant,
-                  ),
-                ),
-                if (premiumBlocked) ...[
-                  const SizedBox(height: 4),
-                  GestureDetector(
-                    onTap: () => _recheckTpWritebackEligibility(context, ref),
-                    child: Text(
-                      'Re-check account status',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.dragonfruit,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          KyleSwitch(
-            key: const ValueKey('connected_apps.tp_writeback_toggle'),
-            value: enabled,
-            enabled: !premiumBlocked,
-            onChanged: premiumBlocked
-                ? null
-                : (value) async {
-                    await prefs.setTpWritebackEnabled(value);
-                    // Force rebuild by invalidating the provider
-                    ref.invalidate(preferencesServiceProvider);
-                  },
-            activeTrackColor: AppColors.success,
-          ),
-        ],
-      ),
+    return TpWritebackToggleRow(
+      onRecheck: () => _recheckTpWritebackEligibility(context, ref),
     );
   }
 

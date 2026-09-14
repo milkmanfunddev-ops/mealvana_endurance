@@ -42,6 +42,17 @@ class IntegrationsTable extends Table {
   TextColumn get athleteZonesJson =>
       text().nullable().named('athlete_zones_json')();
 
+  // --- data-integrations@v1 capture columns (Q-INT26) ---
+  // TP IsPremium: predicts null completed-workout fields and write-back 403s.
+  BoolColumn get providerIsPremium =>
+      boolean().nullable().named('provider_is_premium')();
+
+  // Latest TP body-metrics fetch (/v2/metrics — weight, HRV, steps, stress,
+  // sleep quality), refreshed on the 24 h zones staleness clock; premium-gated
+  // (range reads are premium-only).
+  TextColumn get athleteMetricsJson =>
+      text().nullable().named('athlete_metrics_json')();
+
   // Sync metadata (provider sync — when we last pulled workouts from the provider)
   BoolColumn get isActive =>
       boolean().withDefault(const Constant(true)).named('is_active')();

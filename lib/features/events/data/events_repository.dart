@@ -597,6 +597,7 @@ class EventsRepository with SyncableRepository {
         // Sync tracking
         needsUpload: Value(event.needsUpload ?? false),
         localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
+        origin: Value(event.origin),
         // Metadata
         createdAt: event.createdAt,
         updatedAt: event.updatedAt,
@@ -644,6 +645,7 @@ class EventsRepository with SyncableRepository {
         // Sync tracking
         needsUpload: Value(event.needsUpload ?? false),
         localUpdatedAt: Value(event.localUpdatedAt ?? DateTime.now()),
+        origin: Value(event.origin),
         // Metadata
         createdAt: Value(event.createdAt),
         updatedAt: Value(event.updatedAt),
@@ -755,6 +757,7 @@ class EventsRepository with SyncableRepository {
       'age_group_placement': event.ageGroupPlacement,
       'created_at': event.createdAt.toIso8601String(),
       'updated_at': DateTime.now().toIso8601String(),
+      'origin': event.origin,
       // 'needs_upload': false, // Local-only field, do not send to Supabase
       // 'local_updated_at': DateTime.now().toIso8601String(), // Local-only field
     };
@@ -796,6 +799,7 @@ class EventsRepository with SyncableRepository {
       ageGroupPlacement: event.ageGroupPlacement,
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
+      origin: event.origin,
     );
   }
 
@@ -845,6 +849,7 @@ class EventsRepository with SyncableRepository {
       finalPlacement: Value(json['final_placement'] as int?),
       ageGroupPlacement: Value(json['age_group_placement'] as int?),
       needsUpload: const Value(false), // Coming from server, so not dirty
+      origin: Value(json['origin'] as String?),
       localUpdatedAt: Value(DateTime.now()),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),

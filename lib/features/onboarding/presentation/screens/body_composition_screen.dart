@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mealvana_endurance/shared/utils/unit_formatter.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../integrations/presentation/widgets/garmin_attribution_message.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../providers/onboarding_controller.dart';
 import '../providers/onboarding_preview_providers.dart';
 import '../theme/onboarding_design_tokens.dart';
@@ -315,23 +315,14 @@ class _BodyCompositionScreenState extends ConsumerState<BodyCompositionScreen> {
         const Text('Weight', style: _specFieldLabelStyle),
         if (_weightSource != null) ...[
           const SizedBox(height: 8),
-          if (_weightSource == 'Garmin Connect')
-            const Center(
-              key: ValueKey('body_comp.garmin_badge'),
-              child: GarminAttributionMessage(subject: 'Weight', compact: true),
-            )
-          else
-            Center(
-              key: const ValueKey('body_comp.weight_source_note'),
-              child: Text(
-                'Weight filled in from $_weightSource — check and adjust.',
-                style: TextStyle(
-                  fontFamily: OnbTokens.fontBody,
-                  fontSize: 11.5,
-                  color: OnbTokens.creamA(0.5),
-                ),
-              ),
-            ),
+          // D-2 provenance pill (KyleSourceChip, the ratified chip family) —
+          // replaces the old Garmin-specific badge / free-text note so
+          // onboarding matches Settings. Clears when the athlete edits.
+          Align(
+            key: const ValueKey('body_comp.weight_source_pill'),
+            alignment: Alignment.centerLeft,
+            child: KyleSourceChip(source: _weightSource!),
+          ),
         ],
         const SizedBox(height: 4),
         if (_useMetric)

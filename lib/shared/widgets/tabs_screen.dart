@@ -14,6 +14,10 @@ import '../core/guarded_navigation.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/kyle_tab_bar.dart';
 import 'sync_status_indicator.dart';
+import '../providers/user_id_provider.dart';
+import '../services/preferences_service.dart';
+import '../../features/integrations/presentation/providers/integrations_providers.dart';
+import 'kyle_design/sheets/tp_writeback_consent_sheet.dart';
 
 /// The `/main` shell — home-shell@v1, SWITCHED OVER (Xuan, 2026-09-06).
 ///
@@ -47,6 +51,39 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialTabIndex;
+    // DI-10 migration notice (Q-INT16 amended to opt-out, 2026-09-11):
+    // athletes who were ALREADY pushing before the amendment get the same
+    // opt-out notice exactly once, on first launch after the update. No
+    // one's push flow stops — sharing stays on unless they turn it off.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowWritebackMigrationNotice();
+    });
+  }
+
+  Future<void> _maybeShowWritebackMigrationNotice() async {
+    if (!mounted) return;
+    final prefs = ref.read(preferencesServiceProvider);
+    if (prefs.tpWritebackNoticeShown) return;
+    if (prefs.tpWritebackPremiumBlocked) return;
+    try {
+      final userId = await ref.read(userIdProvider.future);
+      final integrationsRepo = ref.read(integrationsRepositoryProvider);
+      final tp = await integrationsRepo.getIntegration(
+        userId,
+        'training_peaks',
+      );
+      if (tp == null || !tp.isActive) return;
+      await prefs.ensureTpWritebackDefaultExplicit();
+      if (!mounted) return;
+      final choice = await TpWritebackConsentSheet.show(context);
+      if (choice == false) {
+        await prefs.setTpWritebackEnabled(false);
+      }
+      await prefs.setTpWritebackNoticeShown(true);
+    } catch (_) {
+      // Never let the notice break the shell; it retries next launch
+      // because the notice-shown flag was not set.
+    }
   }
 
   @override

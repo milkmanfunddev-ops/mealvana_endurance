@@ -60,7 +60,13 @@ import {
   type ResolvedSessionData,
 } from './formulas/resolve.ts';
 
-export const ALGORITHM_VERSION = 'v6.0.0';
+// v6.1.0 (data-integrations@v1): F4a session pricing — MOBILITY 2.5
+// linear, composites decompose by legs / dominant, unknown sports price
+// EXACTLY 0 with the ESTIMATE_ZERO source (the ?? 11 fallback and the
+// interim strength floor are gone). Same name + same interface -> in-place
+// overwrite per playbook §6; the client gate is a floor, so installed
+// builds accept the newer version without a loop.
+export const ALGORITHM_VERSION = 'v6.1.0';
 
 /**
  * Validate input data

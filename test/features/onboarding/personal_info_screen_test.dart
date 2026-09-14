@@ -150,16 +150,13 @@ void main() {
       expect(find.text('Lee'), findsOneWidget);
       expect(find.text('Martin'), findsOneWidget);
       expect(find.text('lee@example.com'), findsOneWidget);
-      expect(
-        find.text(
-          'Name, email, gender and birth year filled in from TrainingPeaks '
-          '— check and adjust.',
-        ),
-        findsOneWidget,
-      );
+      // D-2 provenance pills, one per pre-filled field (name/email card,
+      // gender, birth year) — attributed so the athlete knows these are
+      // claims to check, not answers they gave.
+      expect(find.text('TrainingPeaks'), findsNWidgets(3));
     });
 
-    testWidgets('the notice names only the fields that actually filled', (
+    testWidgets('pills appear only on the fields that actually filled', (
       tester,
     ) async {
       // Final Surge sends a name and email but no gender or birth year.
@@ -176,12 +173,9 @@ void main() {
         ),
       );
 
-      expect(
-        find.text(
-          'Name and email filled in from Final Surge — check and adjust.',
-        ),
-        findsOneWidget,
-      );
+      // Name+email filled (one card pill); gender/birth year untouched, so
+      // no pills there — the gaps stay legible.
+      expect(find.text('Final Surge'), findsOneWidget);
     });
 
     testWidgets('details filled without a name are still attributed', (
@@ -199,13 +193,8 @@ void main() {
         ),
       );
 
-      expect(
-        find.text(
-          'Gender and birth year filled in from TrainingPeaks '
-          '— check and adjust.',
-        ),
-        findsOneWidget,
-      );
+      // Gender + birth year pills (2); no name/email card pill.
+      expect(find.text('TrainingPeaks'), findsNWidgets(2));
     });
 
     testWidgets('a single filled field reads as a singular phrase', (
@@ -219,10 +208,8 @@ void main() {
         ),
       );
 
-      expect(
-        find.text('Email filled in from Final Surge — check and adjust.'),
-        findsOneWidget,
-      );
+      // Email-only fill still shows one attributed pill on the card.
+      expect(find.text('Final Surge'), findsOneWidget);
     });
 
     testWidgets('gender autofill satisfies the Continue gate', (tester) async {
@@ -358,6 +345,7 @@ void main() {
       await tester.pumpAndSettle();
 
       controller.clearIntegrationAutofill();
+      await tester.pump();
 
       // Their edit survives; the untouched platform values are gone.
       expect(controller.draft.firstName, 'Xuan');

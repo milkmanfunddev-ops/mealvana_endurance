@@ -515,15 +515,21 @@ class DailyMacroService {
     final results = await _database
         .customSelect(
           '''SELECT id, activity_type, scheduled_date_time, duration_minutes,
+                actual_duration_minutes, actual_distance_miles,
                 distance_miles, pace_target_minutes_per_mile,
                 cycling_speed_mph, swimming_pace_per_100m_seconds,
                 intensity_z1_z2_pct, intensity_z3_z4_pct, intensity_z5_pct,
-                tss, intensity_level, brick_metadata
+                tss, intensity_level, brick_metadata,
+                COALESCE(actual_time, planned_time, scheduled_date_time)
+                  AS bucket_time
          FROM activities
-         WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
+         WHERE user_id = ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick')
-         ORDER BY scheduled_date_time ASC''',
+         ORDER BY bucket_time ASC''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(rangeStart),
@@ -561,15 +567,21 @@ class DailyMacroService {
     final results = await _database
         .customSelect(
           '''SELECT id, activity_type, scheduled_date_time, duration_minutes,
+                actual_duration_minutes, actual_distance_miles,
                 distance_miles, pace_target_minutes_per_mile,
                 cycling_speed_mph, swimming_pace_per_100m_seconds,
                 intensity_z1_z2_pct, intensity_z3_z4_pct, intensity_z5_pct,
-                tss, intensity_level, brick_metadata
+                tss, intensity_level, brick_metadata,
+                COALESCE(actual_time, planned_time, scheduled_date_time)
+                  AS bucket_time
          FROM activities
-         WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
+         WHERE user_id = ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick')
-         ORDER BY scheduled_date_time ASC''',
+         ORDER BY bucket_time ASC''',
           variables: [
             Variable.withString(userId),
             Variable.withDateTime(startOfDay),
@@ -591,10 +603,16 @@ class DailyMacroService {
 
     final results = await _database
         .customSelect(
-          '''SELECT tss, duration_minutes, intensity_level, scheduled_date_time
+          '''SELECT tss, duration_minutes, actual_duration_minutes,
+                intensity_level, scheduled_date_time,
+                COALESCE(actual_time, planned_time, scheduled_date_time)
+                  AS bucket_time
          FROM activities
-         WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
+         WHERE user_id = ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick') ''',
           variables: [
             Variable.withString(userId),
@@ -619,10 +637,15 @@ class DailyMacroService {
 
     final results = await _database
         .customSelect(
-          '''SELECT COALESCE(SUM(duration_minutes), 0) as total_minutes
+          '''SELECT COALESCE(
+                  SUM(COALESCE(actual_duration_minutes, duration_minutes)), 0
+                ) as total_minutes
          FROM activities
-         WHERE user_id = ? AND scheduled_date_time >= ? AND scheduled_date_time < ?
+         WHERE user_id = ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) >= ?
+         AND COALESCE(actual_time, planned_time, scheduled_date_time) < ?
          AND deleted_at IS NULL
+         AND (hidden_by_disconnect IS NULL OR hidden_by_disconnect = 0)
          AND status NOT IN ('skipped', 'archivedForBrick', 'archived_for_brick') ''',
           variables: [
             Variable.withString(userId),
@@ -665,7 +688,9 @@ class _WeekActivityInputs {
     for (final row in _allRows) {
       final activityDate = _activityDate(row);
       if (!activityDate.isBefore(monday) && activityDate.isBefore(end)) {
-        totalMinutes += row.readNullable<int>('duration_minutes') ?? 0;
+        totalMinutes += row.readNullable<int>('actual_duration_minutes') ??
+            row.readNullable<int>('duration_minutes') ??
+            0;
       }
     }
     return totalMinutes / 60.0;
@@ -675,8 +700,12 @@ class _WeekActivityInputs {
 int _dayKey(DateTime date) =>
     DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
 
+/// The engine day of a row — the RULED bucket (intake 2026-08-20, opt 1,
+/// DI-12): `actual_time ?? planned_time ?? scheduled_date_time`, the same
+/// key the workout card buckets by (Activity.displayTime), so the engine
+/// day and the card day can never disagree about a session.
 DateTime _activityDate(QueryRow row) => DateTime.fromMillisecondsSinceEpoch(
-  row.read<int>('scheduled_date_time') * 1000,
+  row.read<int>('bucket_time') * 1000,
 );
 
 /// The session(s) the engine is fed for one activity row.
@@ -738,15 +767,23 @@ List<Map<String, dynamic>> _sessionsFromActivityRow(QueryRow row) {
     // session — the pre-existing behaviour.
   }
 
-  // The ladder lives in SessionInputResolver so display surfaces price a
-  // session exactly the way the engine is fed. Behaviour here is unchanged —
-  // this call is the same ladder, lifted out of this function so it can be
-  // shared rather than copied (bug 2026-08-22-dashboard-prices-distance-
-  // sessions-at-flat-60min: the dashboard had copied only the last rung).
+  // DI-7 pair rule (L-2 split, RULED 2026-09-10): measured and planned
+  // values are separate families — a session with measured data prices on
+  // the MEASURED pair (actual_duration_minutes, actual_distance_miles),
+  // never a measured duration beside a planned distance (the DI-DEV-1
+  // mixed-pair bug). Without measured data, the planned family feeds the
+  // shared SessionInputResolver ladder exactly as before
+  // (bug 2026-08-22-dashboard-prices-distance-sessions-at-flat-60min).
+  final pair = SessionInputResolver.resolveMetricsPair(
+    actualDurationMinutes: row.readNullable<int>('actual_duration_minutes'),
+    actualDistanceMiles: row.readNullable<double>('actual_distance_miles'),
+    durationMinutes: row.readNullable<int>('duration_minutes'),
+    distanceMiles: row.readNullable<double>('distance_miles'),
+  );
   final durationMinutes = SessionInputResolver.durationMinutes(
     activityType: activityType,
-    explicitMinutes: row.readNullable<int>('duration_minutes'),
-    distanceMiles: row.readNullable<double>('distance_miles'),
+    explicitMinutes: pair.durationMinutes,
+    distanceMiles: pair.distanceMiles,
     paceTargetMinutesPerMile: row.readNullable<double>(
       'pace_target_minutes_per_mile',
     ),
@@ -806,7 +843,11 @@ Map<String, dynamic> _contextFromActivityRows(List<QueryRow> rows) {
     if (tss != null && (maxTss == null || tss > maxTss)) {
       maxTss = tss;
     }
-    totalDurationHr += (row.readNullable<int>('duration_minutes') ?? 0) / 60.0;
+    totalDurationHr +=
+        (row.readNullable<int>('actual_duration_minutes') ??
+            row.readNullable<int>('duration_minutes') ??
+            0) /
+        60.0;
     if (row.readNullable<String>('intensity_level') == 'race') {
       isRace = true;
     }
