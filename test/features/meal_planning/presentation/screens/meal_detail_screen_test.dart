@@ -16,6 +16,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dar
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/meal_detail_screen.dart';
+import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/meal_image_mosaic.dart';
 
 import '../helpers/test_content.dart';
@@ -58,14 +59,16 @@ void main() {
     servings: 2,
   );
 
-  Future<void> pumpScreen(WidgetTester tester) async {
+  late _FixedDetailController controller;
+
+  Future<void> pumpScreen(WidgetTester tester, {bool admin = false}) async {
+    controller = _FixedDetailController(detail);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
-          mealDetailControllerProvider(
-            'D-100',
-          ).overrideWith(() => _FixedDetailController(detail)),
+          isAdminProvider.overrideWith((ref) async => admin),
+          mealDetailControllerProvider('D-100').overrideWith(() => controller),
         ],
         child: const MaterialApp(home: MealDetailScreen(id: 'D-100')),
       ),
@@ -122,6 +125,67 @@ void main() {
       find.byKey(const ValueKey('meal_planning.detail_save_to_mine')),
       findsOneWidget,
     );
+  });
+
+  // ── Admin review box (mp-144 clause 3) ────────────────────────────────
+  group('admin review box', () {
+    final boxKey = const ValueKey('meal_planning.detail_admin_review');
+
+    testWidgets('an athlete never sees the box', (tester) async {
+      await pumpScreen(tester);
+      await tester.pump();
+      expect(find.byKey(boxKey), findsNothing);
+      expect(
+        find.text(content['meal_planning.detail_review_title']!),
+        findsNothing,
+      );
+    });
+
+    testWidgets('an admin sees it under the thumbs and sends one review', (
+      tester,
+    ) async {
+      await pumpScreen(tester, admin: true);
+      await tester.pump();
+      expect(find.byKey(boxKey), findsOneWidget);
+
+      // Box sits below the thumbs row.
+      final thumbsY = tester
+          .getTopLeft(
+            find.byKey(const ValueKey('meal_planning.detail_thumb_up')),
+          )
+          .dy;
+      expect(tester.getTopLeft(find.byKey(boxKey)).dy, greaterThan(thumbsY));
+
+      // Send is disabled until a verdict and a reason are given.
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.detail_review_send')),
+        warnIfMissed: false,
+      );
+      await tester.pump();
+      expect(controller.reviews, isEmpty);
+
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.detail_review_not_good')),
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('meal_planning.detail_review_why')),
+        'Sauce drowns the pasta.',
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.detail_review_send')),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(controller.reviews, [(false, 'Sauce drowns the pasta.')]);
+      expect(
+        find.text(content['meal_planning.detail_review_sent']!),
+        findsOneWidget,
+      );
+      // The box clears for the next comment.
+      expect(find.text('Sauce drowns the pasta.'), findsNothing);
+    });
   });
 
   testWidgets('none of the removed clutter renders', (tester) async {
@@ -368,6 +432,14 @@ class _FixedDetailController extends MealDetailController {
   @override
   Future<void> vote(int vote, {String? reason}) async {
     state = AsyncData(detail.copyWith(vote: vote));
+  }
+
+  /// Reviews the screen asked for, as (isGood, why).
+  final List<(bool, String)> reviews = [];
+
+  @override
+  Future<void> review({required bool isGood, required String why}) async {
+    reviews.add((isGood, why));
   }
 }
 

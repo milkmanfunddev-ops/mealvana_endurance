@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/providers/is_admin_provider.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
@@ -254,6 +255,12 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
             content.getValue(ContentKeys.mpDetailThumbsDownNote),
             style: AppTextStyles.bodySmall.copyWith(color: secondary),
           ),
+        ],
+
+        // ── Admin review box (mp-144 clause 3) — admins only ──────────────
+        if (ref.watch(isAdminProvider).value == true) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _AdminReviewBox(mealId: meal.id),
         ],
 
         // ── Macro pills (kcal · C · P · F as the server sent them) ────────
@@ -936,6 +943,139 @@ class _YourDirections extends ConsumerWidget {
             color: textColor.withValues(alpha: 0.6),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The admin-only review box under the thumbs (mp-144 clause 3): good
+/// recipe or not, plus why, sent as one `meal_reviews` row (remote-ack).
+/// Rendered only when `isAdminProvider` is true; athletes never see it.
+class _AdminReviewBox extends ConsumerStatefulWidget {
+  const _AdminReviewBox({required this.mealId});
+
+  final String mealId;
+
+  @override
+  ConsumerState<_AdminReviewBox> createState() => _AdminReviewBoxState();
+}
+
+class _AdminReviewBoxState extends ConsumerState<_AdminReviewBox> {
+  final _why = TextEditingController();
+
+  /// null until the admin picks Good / Not good.
+  bool? _isGood;
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _why.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final isGood = _isGood;
+    if (isGood == null || _why.text.trim().isEmpty || _sending) return;
+    final content = ref.read(contentServiceProvider);
+    setState(() => _sending = true);
+    try {
+      await ref
+          .read(mealDetailControllerProvider(widget.mealId).notifier)
+          .review(isGood: isGood, why: _why.text);
+      if (!mounted) return;
+      _why.clear();
+      setState(() => _isGood = null);
+      MealvanaSnackbar.showSuccess(
+        context,
+        content.getValue(ContentKeys.mpDetailReviewSent),
+        duration: MealvanaSnackbar.shortDuration,
+      );
+    } on VanaOfflineException {
+      if (!mounted) return;
+      MealvanaSnackbar.showWarning(
+        context,
+        content.getValue(ContentKeys.mpNeedsConnection),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      MealvanaSnackbar.showError(
+        context,
+        content.getValue(ContentKeys.mpServerError),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
+    final canSend = _isGood != null && _why.text.trim().isNotEmpty && !_sending;
+
+    return Container(
+      key: const ValueKey('meal_planning.detail_admin_review'),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SectionLabel(content.getValue(ContentKeys.mpDetailReviewTitle)),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              ChoiceChipButton(
+                key: const ValueKey('meal_planning.detail_review_good'),
+                label: content.getValue(ContentKeys.mpDetailReviewGood),
+                selected: _isGood == true,
+                onTap: () => setState(() => _isGood = true),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              ChoiceChipButton(
+                key: const ValueKey('meal_planning.detail_review_not_good'),
+                label: content.getValue(ContentKeys.mpDetailReviewNotGood),
+                selected: _isGood == false,
+                onTap: () => setState(() => _isGood = false),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            key: const ValueKey('meal_planning.detail_review_why'),
+            controller: _why,
+            maxLines: null,
+            minLines: 3,
+            maxLength: 2000,
+            onChanged: (_) => setState(() {}),
+            style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+            decoration: InputDecoration(
+              hintText: content.getValue(ContentKeys.mpDetailReviewWhyHint),
+              counterText: '',
+              filled: true,
+              fillColor: isDark ? AppColors.blackberry : AppColors.cream,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(
+                  color: textColor.withValues(alpha: 0.2),
+                  width: 0.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          KylePrimaryButton(
+            key: const ValueKey('meal_planning.detail_review_send'),
+            text: content.getValue(ContentKeys.mpDetailReviewSend),
+            height: 40,
+            isLoading: _sending,
+            onPressed: canSend ? _send : null,
+          ),
+        ],
       ),
     );
   }

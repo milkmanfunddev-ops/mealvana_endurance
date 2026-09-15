@@ -10,8 +10,8 @@
 
 **Touches:** supabase/migrations/20260916120000_meal_reviews_and_admin_flag.sql, lib/features/meal_planning/presentation/screens/meal_detail_screen.dart, lib/features/meal_planning/application/meal_detail_controller.dart, lib/features/meal_planning/data/meal_review_repository.dart, test/features/meal_planning/application/meal_detail_controller_test.dart
 
-- [ ] Migration: an is_admin boolean on users (default false) and a meal_reviews table whose insert policy requires it.
-- [ ] The box shows only when the signed-in user is an admin; a review writes one row (controller test through the real notifier).
+- [x] Migration: an is_admin boolean on users (default false) and a meal_reviews table whose insert policy requires it.
+- [x] The box shows only when the signed-in user is an admin; a review writes one row (controller test through the real notifier).
 - [ ] The dev account used for captures is set admin by hand and the simulator shows the box; a second dev account does not.
 
 Next: /implement-lee mealplanning
