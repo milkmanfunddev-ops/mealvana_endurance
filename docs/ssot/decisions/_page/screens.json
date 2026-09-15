@@ -146,7 +146,8 @@
       "lib/features/meal_planning/presentation/widgets/servings_sheet.dart",
       "lib/features/meal_planning/presentation/widgets/vana_round_button.dart",
       "lib/features/meal_planning/presentation/widgets/vana_situation_scope.dart",
-      "lib/features/meal_planning/presentation/widgets/vana_tag.dart"
+      "lib/features/meal_planning/presentation/widgets/vana_tag.dart",
+      "lib/features/meal_planning/presentation/widgets/directions_origin_label.dart"
     ],
     "drive": [
       {
@@ -288,10 +289,11 @@
       "Pro paywall",
       "Pro screen"
     ],
-    "note": "Reached only through a Pro-required error or the Pro gate redirect; the dev account is Pro, so no drive gets there. Left unpictured until an account without Pro is on the simulator.",
+    "note": "Reached only through the gate redirect; the dev account holds a RevenueCat grant, so no drive gets there. Pictured from the ticket 19 golden (light) until an account without an entitlement is on the simulator.",
     "code": [
       "lib/features/subscription/presentation"
-    ]
+    ],
+    "reuse": "test/features/subscription/presentation/goldens/paywall_light.png"
   },
   "formula-editor": {
     "match": [

@@ -823,3 +823,341 @@ Last extracted: 1dedc493
 **What it touches.** The feedback filer, the Wiredash console, the pubspec.
 
 > 2026-09-15 opened in wave 1 ticket 26
+
+## mp-333 · How the rolling summary is stored and replayed
+- category: Vana's memory
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-333.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 14
+
+**Context.** mp-277 chunks a conversation's history at forty messages, writes the summary at thirty in the background and keeps it on the conversation row keyed by the message index it covers. The lead write at fifty produces the summary for forty while the summary for twenty is still the one applied until sixty, so one text column has to hold two summaries for ten turns. Ticket 14 settled how.
+
+**Question.** How does one column hold the applied summary and the one waiting, and what does the replay look like between boundaries?
+
+**Decision.** 
+1. The `summary` column holds up to two parts, each opening with `Through message N:`; `summary_index` is the newest part's index. The replay applies the newest part at or under the applied boundary.
+2. Boundaries are fixed multiples of twenty, so the cached prefix changes once per chunk. Between them the verbatim run grows: sixty-one messages replay one rolled summary plus twenty-one verbatim, exactly twenty at forty and sixty.
+3. When nothing was stored by forty (a failed or rate-limited lead write), every message replays verbatim and the turn writes the missing summary as a catch-up. A write re-reads the row first, so a slow write never rolls a newer one back.
+4. The summariser reads picker meal names as well as words, so a meal picked by tap survives the chunk.
+5. The end-of-conversation episode no longer writes the `summary` column; the column belongs to the compaction alone.
+
+**Why.** Two summaries in one column keeps the migration to the index column the ticket allowed; fixed boundaries keep the cache stable; the catch-up makes a missed write cost tokens and never content.
+
+**What else was considered.** Re-summarising into one paragraph at fifty (loses the applied summary for ten turns); a second column (the ticket allowed only the index column); an exact twenty verbatim on every turn (moves the boundary each turn and churns the cache).
+
+**What it touches.** vana-chat and jade-chat (`_shared/vana/chat.ts`, `extract.ts`), the conversation row, the conversation list's preview text.
+
+**Details.** Rate bucket `vana.episode` is now `vana.summary` at 3 a minute. Migration 20260916100000 adds `summary_index integer`. Eval: a 45-message conversation answered "which dinner did I pick for Tuesday, and who is coming over?" from messages 1 to 20 outside the window.
+
+> 2026-09-15 proposed from wave 2 ticket 14
+
+## mp-334 · What the conversation list shows now the episode does not write the summary
+- category: Vana's memory
+- kind: question
+- status: open
+- linked: mp-333
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 14
+
+**Context.** The conversation list reads `vana_conversations.summary` as each row's preview. Under mp-333 that column is the compaction's, holding "Through message 20: …" text for long conversations and nothing for a conversation under thirty messages, since the episode writer no longer fills it.
+
+**Question.** Should the list preview read the episode sentence instead, and may the "Through message N" form ever show on screen?
+
+**Why.** Today a short conversation's preview goes blank and a long one shows the lead-in string.
+
+**What it touches.** The conversation list screen and its repository read.
+
+> 2026-09-15 opened in wave 2 ticket 14
+
+## mp-335 · How the one gate is wired in the client
+- category: Pro and paywall
+- status: proposed
+- image: test/features/subscription/presentation/goldens/paywall_light.png
+- caption:
+- screen: Paywall
+- source: wave mealplanning 2 ticket 19
+
+**Context.** mp-279, mp-280 and mp-284 make RevenueCat's cached entitlement the only gate, lock an unknown answer after a couple of seconds, and put the whole app behind the paywall. Ticket 19 built the client side and made the choices the record left open.
+
+**Question.** What does the client read, when, and how does an unlocked account leave the paywall?
+
+**Decision.** 
+1. The client reads RevenueCat only. The server's entitlement table is never read by the app; the repository that used to read it is now the auth-identity seam alone.
+2. Startup resolves the gate on the critical path, bounded by the two-second cap, so a subscriber's cold start never flashes the paywall.
+3. Before trusting the cache the app checks the SDK's identity: a different app user id logs in first, and if that cannot happen offline the answer is locked.
+4. The paywall route redirects to the app whenever the gate is unlocked, so a purchase, a restore or a background refresh moves the person in without the screen navigating. An entitled account can never view the paywall.
+5. The tester tap-grant, the `users.is_internal` mirror in the gate, the purchase-enabled flag and the gate flag are gone. Testers need a real entitlement: a Test Store purchase or a RevenueCat grant.
+6. The introductory offer shows unless the store says the person is ineligible. "Manage subscription" opens RevenueCat's management URL, else the platform's subscriptions page.
+7. A Pro-required answer from a Vana call warns and refreshes the status; the router alone moves onto the paywall.
+
+**Why.** Each clause follows from "RevenueCat is the only gate": no second source of truth, no bypass, and the router as the one place the gate is enforced.
+
+**What else was considered.** Keeping the tester grant for debug builds (a second gate, and the server dropped its own bypass in ticket 18); letting the paywall pop itself on success (two owners of navigation).
+
+**What it touches.** `lib/features/subscription/`, the router, app startup, the Vana chat screen, the main tabs shell, `codemagic.yaml` (the removed flags and the removed Patrol paywall flow).
+
+**Details.** Seam tests: 17 through the status controller, 9 through the paywall controller, a router redirect test, light and dark goldens of the paywall. The Drift `user_entitlements` table stays in the schema unused until a schema bump.
+
+> 2026-09-15 proposed from wave 2 ticket 19
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
+
+## mp-336 · The purchase half of the paywall check is done by a person on TestFlight
+- category: Pro and paywall
+- status: proposed
+- image: test/features/subscription/presentation/goldens/paywall_light.png
+- caption:
+- screen: Paywall
+- source: wave mealplanning 2 ticket 19
+
+**Context.** Ticket 19's last criterion asks that a sandbox account without an entitlement sees the paywall on launch, and that Restore after a sandbox purchase reopens the app. The first half ran on a pool simulator (the paywall with Test Store prices, Restore leaving it locked). A simulator cannot sign into a sandbox account, so the second half cannot be observed by any wave agent, on this wave or a later one.
+
+**Question.** Who verifies that Restore after a sandbox purchase reopens the app?
+
+**Decision.** The purchase-then-Restore check is the ratifier's, on a TestFlight build with a sandbox account. The ticket is done on the code and the first half of the check; the wave does not rebuild it for a criterion no agent can meet.
+
+**Why.** Rebuilding the ticket against the same impossibility produces the same result; the person with a device and a sandbox account is the one who can see it.
+
+**What else was considered.** Failing the ticket and re-queueing it (no path to the observation); a RevenueCat promotional grant as a stand-in (it proves the gate reacts, not that a store purchase restores).
+
+**What it touches.** The paywall, the release checklist.
+
+> 2026-09-15 proposed from wave 2 ticket 19
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
+
+## mp-337 · What the web build does behind the one gate
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-335
+- image: none
+- caption:
+- screen: Paywall
+- source: wave mealplanning 2 ticket 19
+
+**Context.** The web build has no RevenueCat key, so under the one gate every web user, coaches included, meets the paywall with no store to buy from. Nothing was bypassed, as mp-286 asks; the coach portal is therefore unusable on the web until a rule exists.
+
+**Question.** Does the web build get a RevenueCat web key, a coach grant, or stay closed until Xuan's paywall document?
+
+**Why.** The web coach test login and every coach on the web are locked out today.
+
+**What it touches.** The web build, the coach portal, the gate.
+
+> 2026-09-15 opened in wave 2 ticket 19
+
+## mp-338 · How test accounts hold an entitlement
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-335
+- image: none
+- caption:
+- screen: Paywall
+- source: wave mealplanning 2 ticket 19
+
+**Context.** With the tester grant gone, a debug build opens on the paywall for any account without a RevenueCat entitlement. The dev account had none, so the wave granted it the `pro` entitlement in RevenueCat (promotional, until 2027-09-15, revocable) so the dev simulator can reach the screens behind the gate. The server's dev entitlement table also had no rows until the wave's agents inserted two by hand for the eval user and the dev account.
+
+**Question.** Is a RevenueCat promotional grant the standing way every test account gets in, and who holds the list of grants?
+
+**Why.** Every dev account and every tester on TestFlight is locked out until someone grants or buys.
+
+**What it touches.** RevenueCat customers, the dev entitlement table, the dev simulator login script.
+
+> 2026-09-15 opened in wave 2 ticket 19
+
+## mp-339 · Who writes the internal-device flag now
+- category: Data, sync and backend
+- kind: question
+- status: open
+- linked: mp-335
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 19
+
+**Context.** The app no longer writes `users.is_internal`; the gate stopped reading it and the tester grant that set it is gone. The analytics module on the server still reads the column to exclude internal devices from Mixpanel.
+
+**Question.** Does Mixpanel exclusion need another writer for `is_internal`, or does the column retire?
+
+**Why.** Without a writer, new internal devices count as athletes in analytics.
+
+**What it touches.** The users row, the analytics edge module, Settings' internal-device flag.
+
+> 2026-09-15 opened in wave 2 ticket 19
+
+## mp-340 · The monthly Allowance is 300 credits
+- category: Pro and paywall
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-340.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 20
+
+**Context.** mp-281 §5 leaves the allowance number to the ticket that writes the paywall copy, with the per-call cost log deciding it: enough that a person who plans a week and asks a few questions a day never sees the top-up. Ticket 20 read the dev cost log and set it; this card records the number mp-281 asks to have recorded.
+
+**Question.** How many credits does the subscription grant each month?
+
+**Decision.** 300 credits a month, set in `_shared/ai/allowance.ts` and overridable per project with `AI_MONTHLY_ALLOWANCE`.
+
+**Why.** The mp-281 person spends about 236 a month: one planning conversation a week at about six turns (26), three questions a day (90), up to three meal logs a day (90), one coach insight a day (30). 300 leaves about a quarter of headroom, and spent in full at the worst per-call price costs about $3.60 against the $9.99 subscription.
+
+**What else was considered.** 250 (the large pack's size; too tight against 236) and 500 (dev's old free number, about $6.50 of exposure).
+
+**What it touches.** The webhook grant, the wallet roll, the top-up sheet's allowance line, the prod environment (`AI_MONTHLY_ALLOWANCE` unset means 300).
+
+**Details.** Per-call costs from dev on 2026-09-15: vana-chat turn about $0.015 uncached (14.2k in, 165 out, n=510; planning turns read about 19k cached); describe-meal $0.0077 average, $0.0092 p95 (n=33); analyze-meal-photo $0.0130 average, $0.0166 p95 (n=24); ai-coach $0.0021 (n=7); jade-chat about 12.9k in. Planning conversations: p50 one user turn, p90 four.
+
+> 2026-09-15 proposed from wave 2 ticket 20
+
+## mp-341 · How the Allowance lives in the wallet and rolls
+- category: Pro and paywall
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-341.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 20
+
+**Context.** mp-281 grants the allowance on each RevenueCat renewal event, monthly on the anniversary for annual plans, forfeits a cancelled trial's remainder and never rolls unused allowance over. The webhook gets no monthly event for an annual plan, and RevenueCat's cancellation event keeps access to the period end, so ticket 20 had to choose the mechanism.
+
+**Question.** When is the allowance granted, forfeited and spent, and what does a Vana turn cost?
+
+**Decision.** 
+1. The wallet row carries `allowance` (part of the balance, spent first), `allowance_monthly` (the grant the sheet shows) and `allowance_expires_at`. The ledger records `grant_allowance` (unique per event or window) and `forfeit_allowance`.
+2. The webhook grants on INITIAL_PURCHASE and RENEWAL, keyed on the event id, into a window ending at the period end, or at the next anniversary day for an annual plan.
+3. Annual plans roll monthly by a lazy check, not a scheduler: before every debiting call and at app start, an expired allowance is forfeited and, while the entitlement is active and no window is open, the current window is granted.
+4. Forfeit happens on EXPIRATION, and on the first debit after the window ends, not on CANCELLATION: cancelling keeps access to the period end, and forfeiting on cancel would refill on uncancel.
+5. A Vana message turn debits one credit; the scripted opener does not. The 402 body carries the allowance size and renewal date.
+6. The free monthly grant of 20 credits (50 on dev) is untouched by this ticket.
+
+**Why.** A lazy roll needs no second moving part and keys idempotency on the window; forfeiting at expiry matches RevenueCat's own semantics; the composer could never see a 402 while Vana turns were free.
+
+**What else was considered.** pg_cron or a scheduled function for the anniversary grant; forfeiting on CANCELLATION.
+
+**What it touches.** `revenuecat-webhook`, `_shared/ai/credits.ts`, `ensure-credits`, `vana-chat`, `jade-chat`, `ai-coach`, `describe-meal`, `analyze-meal-photo`; migration 20260916130000; the wallet row.
+
+**Details.** Wallet rules are proved by five scenarios against the real SQL on dev inside a rolled-back transaction (`_shared/ai/wallet_rules.test.ts`), skipped when the management token is absent, so CI does not run them.
+
+> 2026-09-15 proposed from wave 2 ticket 20
+
+## mp-342 · The top-up sheet and the composer strip
+- category: Pro and paywall
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- caption:
+- screen: Vana chat
+- source: wave mealplanning 2 ticket 20
+
+**Context.** mp-282 puts the top-up sheet on the button that would debit, with one line above Vana's composer and one 402 handler in the shared layer. Ticket 20 built the sheet's allowance lines, the strip and the handler.
+
+**Question.** What does the sheet say, where does the handler live, and when does the strip come down?
+
+**Decision.** 
+1. The sheet keeps the word "tokens" and adds "Your plan includes 300 tokens a month · N left · renews <date>" above the two packs, reading the wallet row live rather than the 402 body.
+2. The one handler lives in the credits feature's presentation folder and every debiting call site imports it; a second sheet never stacks on the first.
+3. The strip above Vana's composer reads "Out of tokens for now — top up to keep chatting · Top up", the typed text goes back into the field, and the strip comes down on its own when the wallet rises or a turn goes through.
+4. The AI coach chat rolls a 402 turn back with no line in the thread, as Vana does.
+
+**Why.** One handler keeps a new debiting feature covered for free; the wallet row is one source the sheet already watches; moving the sheet into `lib/shared/` would pull RevenueCat into shared code.
+
+**What else was considered.** A handler under `lib/shared/` (drags purchase controllers into shared); reading the sheet's numbers from the 402 body (a second source).
+
+**What it touches.** The Vana chat screen, the top-up sheet, the describe, log-meal, edit-log, photo-capture, coach insight and AI coach call sites.
+
+**Details.** The sheet's allowance lines render only when `allowance_monthly` is above zero, so a subscriber whose grant has not landed sees the packs alone.
+
+> 2026-09-15 proposed from wave 2 ticket 20
+> 2026-09-15 picture captured at 1.26.0+1, 2656d4b8
+
+## mp-343 · Whether the free monthly grant retires
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-341
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 20
+
+**Context.** Every wallet still receives 20 free credits a month (50 on dev) from the old free tier, non-expiring, subscriber or not. Under mp-266 there is no free tier; the allowance is the subscriber's grant.
+
+**Question.** Does the free monthly grant retire now, and what happens to the free credits already in wallets?
+
+**Why.** Two grants a month blur what the allowance is, and the free one never expires.
+
+**What it touches.** `ensure-credits`, the client's monthly stamp, the wallet SQL.
+
+> 2026-09-15 opened in wave 2 ticket 20
+
+## mp-344 · What a transfer or a plan change does to the allowance
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-341
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 2 ticket 20
+
+**Context.** A RevenueCat TRANSFER moves the entitlement row to another user; the wallet's allowance and packs stay with the old one, as packs did before. A PRODUCT_CHANGE between monthly and annual grants nothing itself; the next window comes from the roll.
+
+**Question.** Should the allowance follow a transfer, and should a plan change open a new window at once?
+
+**Why.** Both are rare, and both leave a subscriber with a wallet that does not match their entitlement for up to a month.
+
+**What it touches.** The webhook, the wallet roll.
+
+> 2026-09-15 opened in wave 2 ticket 20
+
+## mp-345 · Where the origin label sits and what it says
+- category: Recipes and cooking
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/meal-detail.png
+- caption:
+- screen: Meal detail
+- source: wave mealplanning 2 ticket 32
+
+**Context.** mp-146 labels a recipe's steps by origin: verbatim with "as published by X" and a link, an alternate source named, a simple assembly said, AI-generated with the sparkle. Ticket 32 chose the placement, the copy and the fallbacks.
+
+**Question.** Where does each origin's label render, and what does it say when the row lacks a name or a link?
+
+**Decision.** 
+1. AI-generated keeps its sparkle badge on the DIRECTIONS row with the unchanged tooltip. The other three origins render as one line under the row: "As published by {name}" linked to the original, "Steps from {name}" (linked when a url exists), "A simple assembly, no recipe needed".
+2. A verbatim row with no publisher name falls back to the link's host; with neither, nothing renders. No recorded origin renders nothing.
+3. The label is one widget with an open-link callback, so a test records the tap without the url launcher; the screen passes the app's external launcher.
+
+**Why.** A full sentence does not fit beside "DIRECTIONS" at phone width; the fallbacks keep a partial row honest instead of blank or wrong.
+
+**What else was considered.** A badge for every origin (too little room for a name and a link); adding publisher fields to the domain (the row already carried origin, source url and source name).
+
+**What it touches.** The meal detail screen, the directions origin label widget, three content keys.
+
+**Details.** Goldens per origin, light and dark, at 390 px: the existing "See the original recipe" row overflows at 320 and 360 px on the base commit. The Sanity content was not touched; the strings are defaults.
+
+> 2026-09-15 proposed from wave 2 ticket 32
+> 2026-09-15 picture captured at 1.26.0+1, 2656d4b8
+
+## mp-346 · The origin copy, the doubled link and the narrow-width overflow
+- category: Recipes and cooking
+- kind: question
+- status: open
+- linked: mp-345
+- image: none
+- caption:
+- screen: Meal detail
+- source: wave mealplanning 2 ticket 32
+
+**Context.** The wave wrote the alternate-source and assembly wording itself. A verbatim row now links the original twice: from the new label and from the existing "See the original recipe" row. That row overflows by 47 px at 320 and 7 px at 360 on the base commit, outside the ticket.
+
+**Question.** Is "Steps from X" the wording for an alternate source and a sentence right for an assembly, does the verbatim row keep both links, and is the overflow fixed now?
+
+**Why.** Copy is Xuan's to rule; two links to one page and an overflow on small phones are visible to athletes.
+
+**What it touches.** The meal detail screen, the content defaults.
+
+> 2026-09-15 opened in wave 2 ticket 32

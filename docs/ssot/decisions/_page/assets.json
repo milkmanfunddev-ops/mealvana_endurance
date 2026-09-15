@@ -65,5 +65,9 @@
   "docs/ssot/decisions/images/mealplanning/shopping-tab.png": {
     "id": "25a03d03acc7df75478b7d653aa542ca",
     "sha256": "a3cc0891532cb64240d76271952c3d51255595560463d0585039d1b946da6800"
+  },
+  "test/features/subscription/presentation/goldens/paywall_light.png": {
+    "id": "bddc7510e78ac29fa9a7440519b485c5",
+    "sha256": "cfaf0b917555d56b2a26fb94853cabcc1b0c517905c5e11fa88273cd4267f847"
   }
 }

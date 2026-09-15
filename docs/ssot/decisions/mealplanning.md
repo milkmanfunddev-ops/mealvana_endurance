@@ -2875,7 +2875,7 @@ Feature name: Meal planning and Vana
 ## mp-266 · A seven-day trial, then purchase: no free tier and no Pro tier
 - category: Pro and paywall
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - svg: docs/ssot/decisions/images/mealplanning/mp-266.svg
 - screen: Paywall
@@ -2898,6 +2898,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-052
 > 2026-09-14 approved
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-268 · The general conversation opens on the screen underneath
 - status: approved
@@ -2955,7 +2956,7 @@ Feature name: Meal planning and Vana
 
 ## mp-270 · Meal planning ships only with the trial and purchase model
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - work: pending
 - category: Pro and paywall
@@ -2977,6 +2978,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 from Lee's rejection of undefined
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-271 · Testers can switch the dev accessibility buttons off in Settings
 - category: Process and scope
@@ -3203,7 +3205,7 @@ Feature name: Meal planning and Vana
 ## mp-279 · The store runs the seven-day trial, and RevenueCat is the only gate
 - category: Pro and paywall
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - screen: Paywall
 - source: grill 2026-09-15
@@ -3226,11 +3228,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-15 proposed in the grill
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-280 · Everything is behind the one gate
 - category: Pro and paywall
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - screen: Paywall
 - source: grill 2026-09-15
@@ -3252,6 +3255,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-15 proposed in the grill
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-281 · Credits stay as a top-up over a monthly allowance
 - category: Pro and paywall
@@ -3285,7 +3289,7 @@ Feature name: Meal planning and Vana
 ## mp-282 · An empty wallet shows the top-up sheet, never the gate
 - category: Pro and paywall
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - screen: Credits paywall
 - source: grill 2026-09-15
@@ -3307,11 +3311,12 @@ Feature name: Meal planning and Vana
 
 > 2026-09-15 proposed in the grill
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-283 · Existing accounts get no grace period
 - category: Pro and paywall
 - status: approved
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - screen: Paywall
 - source: grill 2026-09-15
@@ -3330,6 +3335,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-15 proposed in the grill
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-284 · An unknown entitlement is locked, and the cache wins when it exists
 - category: Pro and paywall
@@ -3700,7 +3706,7 @@ Feature name: Meal planning and Vana
 - ticket: 19
 - blocked: 18
 - depends: mp-279, mp-280, mp-283, mp-284, mp-286, mp-266, mp-270
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - screen: Paywall
 - source: tickets mealplanning 2026-09-15
@@ -3726,6 +3732,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-15 proposed from the ticket breakdown
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-298 · Ticket 20: The monthly Allowance and the top-up sheet
 - category: Tickets
@@ -3733,7 +3740,7 @@ Feature name: Meal planning and Vana
 - ticket: 20
 - blocked: 18
 - depends: mp-281, mp-282
-- image: none
+- image: test/features/subscription/presentation/goldens/paywall_light.png
 - caption:
 - screen: Credits paywall
 - source: tickets mealplanning 2026-09-15
@@ -3759,6 +3766,7 @@ Feature name: Meal planning and Vana
 
 > 2026-09-15 proposed from the ticket breakdown
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture reused from test/features/subscription/presentation/goldens/paywall_light.png
 
 ## mp-299 · Ticket 21: The sandbox run and the release gate
 - category: Tickets
