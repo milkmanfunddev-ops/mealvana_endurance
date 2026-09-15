@@ -199,3 +199,11 @@ Deno.test('a plan write reaches every conversation of the athlete, and no one el
   assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === MINE)!.context, null);
   assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === THEIRS)!.context, { profile: {} });
 });
+
+Deno.test('the server\'s own read-back write is quiet: it does not rebuild the block mid-conversation', async () => {
+  const CONV = 'cccccccc-0000-4000-8000-000000000004';
+  const v = testCtx({ ...fixture(), vana_conversations: [{ id: CONV, user_id: U, kind: 'general', is_deleted: false, context: { profile: {} }, context_day: ANCHOR }] });
+  await rememberFact(v, { kind: 'pattern', fact: 'Skips fish on weeknights', source: 'conversation' }, { embed: () => Promise.reject(new Error('offline')) }, { quiet: true });
+  assertEquals(v.fake.rows('user_memories').some((r) => r.fact === 'Skips fish on weeknights'), true, 'the note is still written');
+  assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === CONV)!.context, { profile: {} }, 'the stored block is untouched');
+});

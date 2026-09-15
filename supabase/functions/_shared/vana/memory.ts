@@ -65,9 +65,13 @@ async function nearIdentical(v: VanaCtx, embedding: number[]): Promise<any | nul
  * written twice: the existing row's confirmed date is refreshed instead, so recency still moves.
  * Conflicting notes both stay — each carries its date in the prompt and the model weighs them.
  */
-export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps = defaultMemoryDeps): Promise<Memory> {
+/** `quiet`: the write is the server's own bookkeeping (a read-back of the previous conversation, the episode sentence
+ *  written when the history cap bites), not a tool the athlete's turn called. It does not rebuild the context block:
+ *  mp-276 refreshes the block on a tool write or a new day, nothing else, and a background write landing between two
+ *  turns would otherwise churn the cached prefix mid-conversation. The next conversation, tool write or day sees it. */
+export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps = defaultMemoryDeps, opts: { quiet?: boolean } = {}): Promise<Memory> {
   const out = await writeFact(v, m, deps);
-  await invalidateContext(v); // memories, settings and the pantry are all lines of the block
+  if (!opts.quiet) await invalidateContext(v); // memories, settings and the pantry are all lines of the block
   return out;
 }
 async function writeFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps): Promise<Memory> {

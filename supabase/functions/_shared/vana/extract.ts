@@ -118,7 +118,7 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
     for (const m of object.memories.slice(0, 3)) {
       const fact = m.fact.trim();
       if (!fact) continue;
-      await rememberFact(v, { kind: m.kind, fact, confidence: 0.7, source: 'conversation', key: null });
+      await rememberFact(v, { kind: m.kind, fact, confidence: 0.7, source: 'conversation', key: null }, undefined, { quiet: true });
       written++;
     }
     const episode = object.episode.trim() || null;
@@ -179,7 +179,7 @@ export async function athleteWordsFrom(v: VanaCtx, conversationId: string, n = 2
 /** The one place an episode is written, whoever wrote it: keyed by conversation, so the sentence
  *  written mid-conversation is the row lazy extraction later rewrites, never a second one. */
 async function writeEpisode(v: VanaCtx, conversationId: string, episode: string): Promise<void> {
-  await rememberFact(v, { kind: 'episode', key: conversationId, fact: episode, confidence: 0.9, source: 'conversation' });
+  await rememberFact(v, { kind: 'episode', key: conversationId, fact: episode, confidence: 0.9, source: 'conversation' }, undefined, { quiet: true });
   // The summary column is read by client and server and was written by nothing; the episode fills it for list previews.
   await v.db.from('vana_conversations').update({ summary: episode }).eq('id', conversationId).eq('user_id', v.userId);
 }
