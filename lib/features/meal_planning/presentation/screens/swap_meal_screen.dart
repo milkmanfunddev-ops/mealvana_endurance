@@ -14,9 +14,8 @@ import '../../data/vana_exceptions.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/list_pictures.dart';
 import '../../domain/plan_meal.dart';
-import '../../application/meal_icon_classifier.dart';
 import '../widgets/meal_card.dart';
-import '../widgets/meal_icon_glyphs.dart';
+import '../widgets/meal_picture_placeholder.dart';
 import '../widgets/vana_round_button.dart';
 
 /// `/food/swap/:planMealId` (05 §4): the "Replacing X" header card plus the
@@ -142,14 +141,7 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                             ),
                             child: Row(
                               children: [
-                                MealIconTile(
-                                  icon:
-                                      current.icon ??
-                                      MealIconClassifier.classify(
-                                        name: current.name,
-                                      ),
-                                  size: 36,
-                                ),
+                                const MealPicturePlaceholder(size: 36),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(

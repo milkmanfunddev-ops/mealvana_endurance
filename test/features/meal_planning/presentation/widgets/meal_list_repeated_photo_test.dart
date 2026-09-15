@@ -9,7 +9,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/meal_library_remo
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_image.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_catalog_browser.dart';
-import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_icon_glyphs.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picture_placeholder.dart';
 
 import '../helpers/test_content.dart';
 
@@ -66,7 +66,7 @@ void main() {
     await t.pump();
 
     expect(photo(porridge), findsOneWidget);
-    expect(find.byType(MealIconTile), findsOneWidget);
+    expect(find.byType(MealPicturePlaceholder), findsOneWidget);
 
     await t.tap(find.text('Plain porridge with stewed pear'));
     expect(opened.single.id, 'AB-096');

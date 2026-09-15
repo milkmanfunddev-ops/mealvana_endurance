@@ -4,8 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
+import '../../../meal_logging/domain/meal_slot.dart';
+import '../../../meal_logging/presentation/widgets/slot_palette.dart';
 import '../../domain/meal_type.dart';
-import 'meal_icon_glyphs.dart';
+
+/// Accent colour for a [MealType] — shares the Nutrition Diary slot palette
+/// so a "dinner" chip is the same colour on the plan and in the diary.
+Color mealTypeColor(MealType type) =>
+    slotColor(MealSlot.values.firstWhere((s) => s.wireValue == type.wire));
 
 /// Small chip naming a day slot in the meal's slot colour (02 §7):
 /// breakfast orange, lunch electrolyte-dark, dinner violet, snack dragonfruit.

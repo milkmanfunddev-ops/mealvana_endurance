@@ -11,13 +11,12 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
-import '../../application/meal_icon_classifier.dart';
 import '../../domain/cooking_session.dart';
 import '../../domain/meal_plan.dart';
 import '../../domain/meal_plan_status.dart';
 import '../../domain/plan_meal.dart';
 import 'dashed_box.dart';
-import 'meal_icon_glyphs.dart';
+import 'meal_picture_placeholder.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
 
@@ -213,14 +212,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
                             padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                               children: [
-                                MealIconTile(
-                                  icon:
-                                      meal.icon ??
-                                      MealIconClassifier.classify(
-                                        name: meal.name,
-                                      ),
-                                  size: 28,
-                                ),
+                                const MealPicturePlaceholder(size: 28),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: GestureDetector(

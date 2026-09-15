@@ -10,10 +10,9 @@ import '../../../../shared/utils/adaptive_modal.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
 import '../../application/shopping_list_controller.dart';
 import '../../application/shopping_qty_formatter.dart';
-import '../../domain/meal_icon.dart';
 import '../../domain/plan_meal.dart';
 import '../../domain/shopping_item.dart';
-import 'meal_icon_glyphs.dart';
+import 'meal_picture_placeholder.dart';
 import 'slot_chip.dart';
 import 'vana_avatar.dart';
 import 'vana_bubble.dart';
@@ -495,11 +494,7 @@ class _SourceRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            MealIconTile(
-              icon: meal.icon ?? MealIcon.bowl,
-              size: 32,
-              mealType: meal.mealType,
-            ),
+            const MealPicturePlaceholder(size: 32),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

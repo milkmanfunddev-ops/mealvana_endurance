@@ -4,18 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../application/meal_icon_classifier.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/meal_source.dart';
 import 'card_overflow_menu.dart';
-import 'meal_icon_glyphs.dart';
 import '../../domain/meal_image.dart';
 import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
     show MealImageMosaic;
 import 'meal_picture_mapping.dart';
+import 'meal_picture_placeholder.dart';
 import 'vana_tag.dart';
 
-/// A [MealRef] presented as a tappable row: icon tile, name, the why-line,
+/// A [MealRef] presented as a tappable row: picture, name, the why-line,
 /// then the tag strip (Yours · No recipe · Batch · prep · kcal). Mirrors the
 /// prototype's `CatalogRow` on `.v-tile`. Used by the picker carousel,
 /// search results and detail-adjacent lists.
@@ -105,14 +104,12 @@ class MealCard extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // The meal's picture, or its icon in the picture's place: the
-                // same box and corners, so a list mixing the two stays aligned
-                // and a Meal with nothing honest to show reads as designed,
-                // not as failing to load (meal-image-mosaic.md MIM-9). A
-                // photograph that fails to load lands on the icon too. It is
-                // drawn in the card's own ink, at the secondary text's weight,
-                // so it claims no accent's meaning and stays legible in both
-                // themes.
+                // The meal's picture, or the plain placeholder in its place:
+                // the same box and corners, so a list mixing the two stays
+                // aligned and a Meal with nothing honest to show reads as
+                // designed, not as failing to load. A photograph that fails
+                // to load lands on the placeholder too. No icon is drawn
+                // (mp-145); the stored icon key stays on the meal.
                 Semantics(
                   // The licences want the photographer credited wherever the
                   // photo appears, but a 36pt thumbnail in a dense list has
@@ -125,12 +122,9 @@ class MealCard extends ConsumerWidget {
                       mode: kyleImageMode(picture.mode),
                       tiles: kyleImageTiles(picture.tiles),
                       borderRadius: BorderRadius.circular(9),
-                      fallback: MealIconTile(
-                        icon: meal.effectiveIcon,
+                      fallback: MealPicturePlaceholder(
                         size: thumb,
-                        shape: BoxShape.rectangle,
-                        color: textColor,
-                        glyphColor: secondary,
+                        borderRadius: BorderRadius.circular(9),
                       ),
                     ),
                   ),
@@ -211,14 +205,4 @@ class MealCard extends ConsumerWidget {
       ),
     );
   }
-}
-
-extension on MealRef {
-  MealIcon get effectiveIcon =>
-      icon ??
-      MealIconClassifier.classify(
-        name: name,
-        ingredients: ingredients,
-        pattern: pattern,
-      );
 }
