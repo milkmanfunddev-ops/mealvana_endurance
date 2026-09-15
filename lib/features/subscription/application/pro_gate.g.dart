@@ -8,50 +8,72 @@ part of 'pro_gate.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Reactive form of [computeProUnlocked]. keepAlive so the router's
-/// `ref.read` sees the same value the tabs screen is watching.
+/// The app gate, as the router reads it (mp-280: everything is behind it).
+///
+/// Loading while the status is unresolved — the status controller bounds
+/// that wait (mp-284), so awaiting `.future` here answers within a couple of
+/// seconds. keepAlive so the router's `ref.read` sees the same value every
+/// screen watches.
 
-@ProviderFor(proUnlocked)
-const proUnlockedProvider = ProUnlockedProvider._();
+@ProviderFor(AppGate)
+const appGateProvider = AppGateProvider._();
 
-/// Reactive form of [computeProUnlocked]. keepAlive so the router's
-/// `ref.read` sees the same value the tabs screen is watching.
-
-final class ProUnlockedProvider extends $FunctionalProvider<bool, bool, bool>
-    with $Provider<bool> {
-  /// Reactive form of [computeProUnlocked]. keepAlive so the router's
-  /// `ref.read` sees the same value the tabs screen is watching.
-  const ProUnlockedProvider._()
+/// The app gate, as the router reads it (mp-280: everything is behind it).
+///
+/// Loading while the status is unresolved — the status controller bounds
+/// that wait (mp-284), so awaiting `.future` here answers within a couple of
+/// seconds. keepAlive so the router's `ref.read` sees the same value every
+/// screen watches.
+final class AppGateProvider extends $AsyncNotifierProvider<AppGate, bool> {
+  /// The app gate, as the router reads it (mp-280: everything is behind it).
+  ///
+  /// Loading while the status is unresolved — the status controller bounds
+  /// that wait (mp-284), so awaiting `.future` here answers within a couple of
+  /// seconds. keepAlive so the router's `ref.read` sees the same value every
+  /// screen watches.
+  const AppGateProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'proUnlockedProvider',
+        name: r'appGateProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$proUnlockedHash();
+  String debugGetCreateSourceHash() => _$appGateHash();
 
   @$internal
   @override
-  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
-
-  @override
-  bool create(Ref ref) {
-    return proUnlocked(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(bool value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<bool>(value),
-    );
-  }
+  AppGate create() => AppGate();
 }
 
-String _$proUnlockedHash() => r'993bf9a07cea3b38b06b0c25337088bde683e26e';
+String _$appGateHash() => r'8ad711452018e7bf6ca4cd582a758e6a20870e2c';
+
+/// The app gate, as the router reads it (mp-280: everything is behind it).
+///
+/// Loading while the status is unresolved — the status controller bounds
+/// that wait (mp-284), so awaiting `.future` here answers within a couple of
+/// seconds. keepAlive so the router's `ref.read` sees the same value every
+/// screen watches.
+
+abstract class _$AppGate extends $AsyncNotifier<bool> {
+  FutureOr<bool> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<bool>, bool>,
+              AsyncValue<bool>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

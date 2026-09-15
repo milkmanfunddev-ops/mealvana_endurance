@@ -8,56 +8,54 @@ part of 'pro_paywall_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The offering that carries `$rc_monthly` / `$rc_annual`. Null when the SDK
-/// is unconfigured or the store served nothing — the screen renders its
-/// "plans unavailable" state.
+/// The `default` offering's monthly and annual packages plus intro
+/// eligibility, read once per paywall visit.
 
-@ProviderFor(proOffering)
-const proOfferingProvider = ProOfferingProvider._();
+@ProviderFor(paywallPlans)
+const paywallPlansProvider = PaywallPlansProvider._();
 
-/// The offering that carries `$rc_monthly` / `$rc_annual`. Null when the SDK
-/// is unconfigured or the store served nothing — the screen renders its
-/// "plans unavailable" state.
+/// The `default` offering's monthly and annual packages plus intro
+/// eligibility, read once per paywall visit.
 
-final class ProOfferingProvider
+final class PaywallPlansProvider
     extends
         $FunctionalProvider<
-          AsyncValue<Offering?>,
-          Offering?,
-          FutureOr<Offering?>
+          AsyncValue<PaywallPlans>,
+          PaywallPlans,
+          FutureOr<PaywallPlans>
         >
-    with $FutureModifier<Offering?>, $FutureProvider<Offering?> {
-  /// The offering that carries `$rc_monthly` / `$rc_annual`. Null when the SDK
-  /// is unconfigured or the store served nothing — the screen renders its
-  /// "plans unavailable" state.
-  const ProOfferingProvider._()
+    with $FutureModifier<PaywallPlans>, $FutureProvider<PaywallPlans> {
+  /// The `default` offering's monthly and annual packages plus intro
+  /// eligibility, read once per paywall visit.
+  const PaywallPlansProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'proOfferingProvider',
+        name: r'paywallPlansProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$proOfferingHash();
+  String debugGetCreateSourceHash() => _$paywallPlansHash();
 
   @$internal
   @override
-  $FutureProviderElement<Offering?> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
+  $FutureProviderElement<PaywallPlans> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<Offering?> create(Ref ref) {
-    return proOffering(ref);
+  FutureOr<PaywallPlans> create(Ref ref) {
+    return paywallPlans(ref);
   }
 }
 
-String _$proOfferingHash() => r'6f2f80fc8626755f0116bb1c765d2efd1822b918';
+String _$paywallPlansHash() => r'31a85e1e38d3abe4311c6dca793898d736801ff5';
 
-/// Drives purchase and restore for the Pro subscription.
+/// Drives purchase, restore and "manage subscription" for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
@@ -70,7 +68,7 @@ String _$proOfferingHash() => r'6f2f80fc8626755f0116bb1c765d2efd1822b918';
 @ProviderFor(ProPaywallController)
 const proPaywallControllerProvider = ProPaywallControllerProvider._();
 
-/// Drives purchase and restore for the Pro subscription.
+/// Drives purchase, restore and "manage subscription" for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
@@ -81,7 +79,7 @@ const proPaywallControllerProvider = ProPaywallControllerProvider._();
 /// throw — a purchase in flight must outlive the widget that started it.
 final class ProPaywallControllerProvider
     extends $AsyncNotifierProvider<ProPaywallController, void> {
-  /// Drives purchase and restore for the Pro subscription.
+  /// Drives purchase, restore and "manage subscription" for the paywall.
   ///
   /// State is `AsyncValue<void>`: loading while a store call is in flight,
   /// data when idle, error when the last operation failed unexpectedly.
@@ -110,9 +108,9 @@ final class ProPaywallControllerProvider
 }
 
 String _$proPaywallControllerHash() =>
-    r'ced4b436a85b8eb0823b512ddef079d4264caf21';
+    r'ca60377b6f19ec46da5015ce98202965edaa8abc';
 
-/// Drives purchase and restore for the Pro subscription.
+/// Drives purchase, restore and "manage subscription" for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.

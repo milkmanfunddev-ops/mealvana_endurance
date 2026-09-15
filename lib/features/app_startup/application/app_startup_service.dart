@@ -282,13 +282,6 @@ class AppStartupService {
           'deferred.coach_status',
           _syncCoachStatus,
         );
-
-        // 6. Initialize RevenueCat for AI credits.
-        // No-op unless aiCreditsEnabled + a RevenueCat key are configured.
-        await PerformanceTelemetry.measure(
-          'deferred.revenuecat',
-          _initializeRevenueCat,
-        );
       } catch (e, stackTrace) {
         // Skip logging if the scope was disposed mid-chain — `_logger` reads
         // `ref` and would throw over the original error.
@@ -413,13 +406,18 @@ class AppStartupService {
     }
   }
 
-  /// Initialize RevenueCat for the AI-credits feature.
+  /// Configure RevenueCat and resolve the app gate, on the critical path.
   ///
-  /// No-op unless [AppConfig.aiCreditsEnabled] is true and a RevenueCat key is
-  /// configured (see [RevenueCatService.configureIfPossible]). Identifies the
-  /// RevenueCat customer with the Supabase auth user id so purchase webhooks
-  /// credit the correct wallet (token_wallets.user_id == auth.users.id).
-  Future<void> _initializeRevenueCat() async {
+  /// The router sends every signed-in route through the gate (mp-280), so
+  /// the answer must exist before startup hands back its navigation data —
+  /// otherwise a subscriber's cold start would flash the paywall until the
+  /// SDK caught up. `configureIfPossible` is a no-op without a RevenueCat
+  /// key ([RevenueCatService]); `logIn` identifies the customer with the
+  /// Supabase auth user id (the webhook maps `app_user_id` onto it); the
+  /// status controller then answers from the SDK's cache at once or, with
+  /// no cache, within its bounded wait (mp-284), so this adds at most a
+  /// couple of seconds and usually nothing.
+  Future<void> initializeAppGate() async {
     try {
       final revenueCat = ref.read(revenueCatServiceProvider);
       await revenueCat.configureIfPossible();
@@ -427,16 +425,18 @@ class AppStartupService {
       if (userId != null && userId.isNotEmpty) {
         await revenueCat.logIn(userId);
       }
-      // Pro entitlement: prime the status provider now that the SDK is
-      // configured and identified. `refresh()` (re)attaches the CustomerInfo
-      // listener and resolves RevenueCat ∪ server row ∪ tester flag, so a
-      // provider that was first read before this point (router redirect,
-      // tabs) picks up the real answer instead of "not configured".
-      await ref.read(subscriptionStatusProvider.notifier).refresh();
+      // A provider first read before this point (an early redirect) would
+      // have answered "SDK not configured"; re-resolve it. A fresh one
+      // resolves on first read.
+      if (ref.exists(subscriptionStatusProvider)) {
+        await ref.read(subscriptionStatusProvider.notifier).refresh();
+      } else {
+        await ref.read(subscriptionStatusProvider.future);
+      }
     } catch (e, stackTrace) {
       _logger.error(
-        'RevenueCat initialization failed',
-        context: 'DEFERRED_INIT',
+        'App gate initialization failed',
+        context: 'APP_STARTUP',
         error: e,
         stackTrace: stackTrace,
       );

@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../shared/services/app_config.dart';
 import '../../../shared/services/sentry/sentry_reporter.dart';
-import '../../ai_credits/data/revenuecat_service.dart';
 import '../data/subscription_service.dart';
 import '../data/user_entitlements_repository.dart';
 import '../domain/entitlement.dart';
@@ -18,12 +16,12 @@ part 'pro_paywall_controller.g.dart';
 /// [PurchaseOutcome] for credit packs: never tell a charged user nothing
 /// happened).
 enum ProPurchaseOutcome {
-  /// Store confirmed and the status provider now reports Pro.
+  /// Store confirmed and the status provider now reports active.
   activated,
 
   /// Store confirmed but the status had not flipped yet — RevenueCat's push
-  /// or the webhook is late. The money is real; the CustomerInfo listener
-  /// will flip the tab when it lands.
+  /// is late. The money is real; the CustomerInfo listener will open the
+  /// app when it lands.
   purchasedPending,
 
   /// User dismissed the store sheet. Not an error.
@@ -36,23 +34,58 @@ enum ProPurchaseOutcome {
   /// link-in-place upgrade keeps the auth id the webhook will map).
   requiresAccount,
 
-  /// `PRO_PURCHASE_ENABLED` is off for this build; the UI should not have
-  /// offered the button.
-  disabled,
-
   /// Store rejected the purchase or the SDK is unconfigured.
   failed,
 }
 
-/// The offering that carries `$rc_monthly` / `$rc_annual`. Null when the SDK
-/// is unconfigured or the store served nothing — the screen renders its
-/// "plans unavailable" state.
-@riverpod
-Future<Offering?> proOffering(Ref ref) {
-  return ref.read(subscriptionServiceProvider).fetchProOffering();
+/// The two plans the paywall offers, with the store's word on who still
+/// qualifies for the free week. Either package may be missing when the store
+/// served nothing; the screen renders its "plans unavailable" state then.
+class PaywallPlans {
+  const PaywallPlans({
+    this.monthly,
+    this.annual,
+    this.introIneligible = const {},
+  });
+
+  final Package? monthly;
+  final Package? annual;
+
+  /// Product ids whose introductory offer this customer may not use again.
+  final Set<String> introIneligible;
+
+  bool get isEmpty => monthly == null && annual == null;
+
+  /// The free introductory offer to show for [pkg], or null when the product
+  /// carries none or this customer is no longer eligible.
+  IntroOffer? introOfferFor(Package pkg) {
+    if (introIneligible.contains(pkg.storeProduct.identifier)) return null;
+    return SubscriptionService.introOfferOf(pkg.storeProduct);
+  }
 }
 
-/// Drives purchase and restore for the Pro subscription.
+/// The `default` offering's monthly and annual packages plus intro
+/// eligibility, read once per paywall visit.
+@riverpod
+Future<PaywallPlans> paywallPlans(Ref ref) async {
+  final service = ref.read(subscriptionServiceProvider);
+  final offering = await service.fetchProOffering();
+  if (offering == null) return const PaywallPlans();
+  final monthly = offering.monthly ?? offering.getPackage(r'$rc_monthly');
+  final annual = offering.annual ?? offering.getPackage(r'$rc_annual');
+  final ids = [
+    if (monthly != null) monthly.storeProduct.identifier,
+    if (annual != null) annual.storeProduct.identifier,
+  ];
+  final ineligible = await service.introIneligibleProductIds(ids);
+  return PaywallPlans(
+    monthly: monthly,
+    annual: annual,
+    introIneligible: ineligible,
+  );
+}
+
+/// Drives purchase, restore and "manage subscription" for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
 /// data when idle, error when the last operation failed unexpectedly.
@@ -70,27 +103,17 @@ class ProPaywallController extends _$ProPaywallController {
   @override
   FutureOr<void> build() => null;
 
-  /// Purchase [pkg]. Refuses (before touching the store) when purchasing is
-  /// disabled for the build, nobody is signed in, or the session is
-  /// anonymous; re-asserts the RevenueCat identity; then buys and refreshes
-  /// the status provider.
+  /// Purchase [pkg]. Refuses (before touching the store) when nobody is
+  /// signed in or the session is anonymous; re-asserts the RevenueCat
+  /// identity; then buys and refreshes the status provider.
   Future<ProPurchaseOutcome> buy(Package pkg) async {
     final sku = pkg.storeProduct.identifier;
     final sentry = ref.read(sentryReporterProvider);
 
-    if (!ref.read(appConfigProvider).proPurchaseEnabled) {
-      sentry.addBreadcrumb(
-        message: 'pro purchase blocked: PRO_PURCHASE_ENABLED off',
-        category: 'subscription',
-        data: {'sku': sku},
-      );
-      return ProPurchaseOutcome.disabled;
-    }
-
     final userId = _repo.currentUserId;
     if (userId == null || userId.isEmpty) {
       await sentry.reportCriticalError(
-        StateError('Pro purchase attempted with no signed-in user (sku: $sku)'),
+        StateError('Purchase attempted with no signed-in user (sku: $sku)'),
         context: 'subscription',
         tags: {'rc_operation': 'buy_unauthenticated', 'sku': sku},
       );
@@ -98,7 +121,7 @@ class ProPaywallController extends _$ProPaywallController {
     }
     if (_repo.isAnonymousUser) {
       sentry.addBreadcrumb(
-        message: 'pro purchase blocked: anonymous session',
+        message: 'purchase blocked: anonymous session',
         category: 'subscription',
         data: {'sku': sku},
       );
@@ -110,7 +133,7 @@ class ProPaywallController extends _$ProPaywallController {
     state = await AsyncValue.guard(() async {
       // Same idempotent re-login as the credit path: anyone who signed in
       // after launch still carries the anonymous RevenueCat id otherwise.
-      await ref.read(revenueCatServiceProvider).logIn(userId);
+      await _service.logIn(userId);
 
       final success = await _service.purchase(pkg);
       if (!success) {
@@ -125,7 +148,7 @@ class ProPaywallController extends _$ProPaywallController {
           : ProPurchaseOutcome.purchasedPending;
       if (!status.active) {
         sentry.addBreadcrumb(
-          message: 'pro purchase completed but status not yet active',
+          message: 'purchase completed but status not yet active',
           category: 'subscription',
           data: {'sku': sku},
         );
@@ -146,16 +169,23 @@ class ProPaywallController extends _$ProPaywallController {
   }
 
   /// Restore purchases through the store and refresh the status provider.
-  /// Returns whether Pro is active afterwards.
+  /// Returns whether the app is unlocked afterwards.
   Future<bool> restore() async {
     state = const AsyncLoading();
     var active = false;
     state = await AsyncValue.guard(() async {
+      final userId = _repo.currentUserId;
+      if (userId != null && userId.isNotEmpty) await _service.logIn(userId);
       await _service.restore();
       active = (await _refreshStatus()).active;
     });
     return active;
   }
+
+  /// Where "Manage subscription" goes: RevenueCat's management URL for this
+  /// customer, else the platform store's subscriptions page. Null only on a
+  /// platform with no store (web).
+  Future<Uri?> managementUrl() => _service.managementUrl();
 
   Future<SubscriptionStatus> _refreshStatus() async {
     await ref.read(subscriptionStatusProvider.notifier).refresh();

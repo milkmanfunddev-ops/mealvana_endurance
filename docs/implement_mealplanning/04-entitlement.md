@@ -68,6 +68,25 @@ no webhook fires. The deployed function was checked alive (bad secret → 401); 
 on disk, so a hand-delivered RevenueCat-shaped event could not be authenticated. Ticket 21's wizard runs
 the purchase on a device.
 
+## Ticket 19 (2026-09-15) — seven free days, then the paywall, and nothing else
+
+Decisions mp-266, mp-270, mp-279, mp-280, mp-283, mp-284, mp-286 (approved as mp-297). Supersedes the
+Flutter rows of the status table above.
+
+| Piece | Where | State |
+|---|---|---|
+| The gate is RevenueCat's cached entitlement and nothing else: `getCustomerInfo` answers from the SDK cache at once (online or not); no cache and no answer within `entitlementAnswerTimeoutProvider` (2 s) is locked; a CustomerInfo push reopens or closes; a cache under another RevenueCat identity is not an answer (logIn first, locked if it cannot move) | `lib/features/subscription/application/subscription_status_provider.dart` | seam tests through the real notifier in `test/features/subscription/application/` |
+| `appGateProvider` (= status.active) and `readAppGate(ref)`; no build flag, no tester grant, no coach branch | `application/pro_gate.dart` | `pro_gate_test.dart` |
+| One redirect covers every route: `gateRedirect` sends a locked account to `/paywall` from anywhere signed-in, the paywall yields to `/main` once unlocked; the router re-evaluates when the gate flips (`ref.listen(appGateProvider)` → `AuthChangeNotifier`) | `presentation/pro_gate_redirect.dart`, `lib/shared/core/app_router.dart` | `pro_gate_redirect_test.dart` drives a GoRouter with the real notifier |
+| Startup configures RevenueCat, logs in, and resolves the gate on the critical path (`initializeAppGate`), so a subscriber's cold start never flashes the paywall | `app_startup_service.dart`, `app_startup_provider.dart` | |
+| `/paywall` (`PaywallScreen`): monthly + annual from store prices, the free introductory week from `StoreProduct.introductoryPrice` when `checkTrialOrIntroductoryPriceEligibility` does not say ineligible, and exactly Restore purchases, Manage subscription (RevenueCat `managementURL`, else the store's subscriptions page), Sign out and Delete account (the Settings flows). No close button. | `presentation/screens/paywall_screen.dart` | widget tests + light/dark goldens in `test/features/subscription/presentation/` |
+| Gone from the client: `/pro` + `ProVersionScreen`, `AppConfig.proGateEnabled` / `PRO_GATE_ENABLED`, `AppConfig.proPurchaseEnabled` / `PRO_PURCHASE_ENABLED` (a paywall with purchasing off would lock every new account out for good), the `/food` + `/vana` gated-path list, the tabs screen's conditional Food tab, the launcher's own Pro check, the client read of `user_entitlements` and its Drift mirror, the `users.is_internal` mirror | | the Drift `user_entitlements` table stays in the schema, unused (dropping it is a schema bump) |
+| Patrol: `pro_gate_flow_test` is now the app-gate invariant (shell XOR paywall, routes agree, `/paywall` yields to the shell when entitled); `paywall_render_flow_test` removed (the paywall never renders for the entitled dev account) | `integration_test/flows/`, `codemagic.yaml`, `.github/workflows/tests-selfhosted.yml` | |
+
+Known limits: RevenueCat is not configured on the web (`revenueCatApiKey` is empty there), so the web build
+meets the paywall for everyone, coach portal included — an open question for the wave. Content keys moved
+from `pro_version.*` to `paywall.*` (`assets/config/content_defaults.json`).
+
 ## What exists (verified 2026-09-01 via the RevenueCat API)
 - Project `proj77b3c48f` already has entitlement **`pro`** ("Mealvana Endurance Pro", since 2025-11)
   with products `mealvana_pro_monthly` ($9.95/mo, P1M) and `mealvana_pro_annual` ($69/yr, P1Y), in the

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 
-/// Coming soon card matching ProVersionScreen's _FeatureCard pattern
+/// Coming soon card: icon tile, title and description on a BaseCard
 class ComingSoonSectionWidget extends StatelessWidget {
   const ComingSoonSectionWidget({
     super.key,

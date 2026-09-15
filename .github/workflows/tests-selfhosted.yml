@@ -61,10 +61,12 @@ env:
   PATROL_CLI_VERSION: 4.4.0
   # Below this the box swaps hard enough to kill the runner's heartbeat.
   MIN_FREE_DISK_GB: 25
-  # patrolTest() case count across the --target list below. 20 targets, but
+  # patrolTest() case count across the --target list below. 19 targets, but
   # integrations_connect_flow_test declares three cases (garmin, trainingpeaks,
-  # finalsurge) and recommendation_stacking_flow_test declares two, so 23; macro_dashboard_flow_test (added 2026-08-20) declares one, so 24;
-  # pro_gate_flow_test (added 2026-09-02) declares one, so 25.
+  # finalsurge) and recommendation_stacking_flow_test declares two, so 22; macro_dashboard_flow_test (added 2026-08-20) declares one, so 23;
+  # pro_gate_flow_test (added 2026-09-02) declares one, so 24.
+  # paywall_render_flow_test left with ticket 19 (2026-09-15): the paywall no
+  # longer renders for an entitled account, and the dev account is one.
   #
   # meal_plan_build_flow_test is deliberately NOT in the target list: every
   # turn of it calls the vana-chat / vana-action edge functions, the same AI
@@ -272,7 +274,6 @@ jobs:
             --target integration_test/flows/settings_sweep_flow_test.dart \
             --target integration_test/flows/integrations_connect_flow_test.dart \
             --target integration_test/flows/learn_flow_test.dart \
-            --target integration_test/flows/paywall_render_flow_test.dart \
             --target integration_test/flows/recommendation_stacking_flow_test.dart \
             --target integration_test/flows/energy_breakdown_flow_test.dart \
             --target integration_test/flows/macro_dashboard_flow_test.dart \

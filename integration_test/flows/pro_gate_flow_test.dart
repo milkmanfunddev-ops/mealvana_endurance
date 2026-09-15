@@ -1,27 +1,28 @@
-/// Pro gate under **Patrol** — the meal-planning surfaces (`/food`, `/vana`)
-/// are behind the Pro entitlement, and this flow proves the gate is
-/// *consistent* in whichever configuration the build under test has.
+/// The app gate under **Patrol** — everything is behind the one RevenueCat
+/// entitlement (mp-280), and this flow proves the gate and the routes agree
+/// for whatever account the build under test signs in as.
 ///
 /// **Why it is written as an invariant rather than "the locked user sees the
-/// paywall".** `PRO_GATE_ENABLED` is `false` on dev builds (codemagic forces
-/// it), so on dev every athlete is unlocked and a test that demanded the
-/// paywall would be red on every dev run — the only environment where Patrol
-/// actually runs. What is worth pinning either way is that the tab and the
-/// route agree:
+/// paywall".** Patrol runs against the dev account, which holds an
+/// entitlement, so a test demanding the paywall would be red on every run.
+/// What is worth pinning either way is that the gate is one thing:
 ///
-///   * Food tab visible  → pushing `/food` renders the Food screen, and
-///                          `/vana` renders the Vana chat.
-///   * Food tab absent   → pushing `/food` lands on `/pro` instead,
-///                          and so does `/vana`.
+///   * Tabs shell on screen  → the gate is open: `/food` renders the Food
+///                             screen, `/vana` the Vana chat, and pushing
+///                             `/paywall` yields straight back to the shell.
+///   * Paywall on screen     → the gate is closed: `/food` and `/vana` land
+///                             on the paywall too, and it carries its four
+///                             actions.
 ///
-/// A gate that half-applies (tab hidden but the deep link still opens the
-/// feature, or tab shown but the route bounces) fails here in both builds.
+/// A gate that half-applies (shell shown but a route bounces, or paywall
+/// shown but a deep link opens the feature) fails here in both states.
 ///
 /// Flow:
 ///   launchApp → ensureAuthenticated
-///     → read whether `kyle_tab_bar.item.food` exists
-///     → router.push('/food'), assert food screen XOR pro screen accordingly
+///     → read whether the tabs shell or the paywall is up
+///     → router.push('/food'), assert food screen XOR paywall accordingly
 ///     → back out, router.push('/vana'), same assertion
+///     → open state only: router.push('/paywall') lands back on the shell
 ///
 /// Provider-free (no Garmin/TP credentials), so it runs on iOS and Android.
 ///
@@ -40,10 +41,15 @@ import 'package:patrol/patrol.dart';
 
 import '../helpers/flow_launcher.dart';
 
-const _foodTab = ValueKey('kyle_tab_bar.item.food');
 const _foodScreen = ValueKey('meal_planning.food_screen');
 const _vanaScreen = ValueKey('meal_planning.vana_chat_screen');
-const _proScreen = ValueKey('pro_version.screen');
+const _paywallScreen = ValueKey('paywall.screen');
+const _paywallActions = [
+  ValueKey('paywall.restore_button'),
+  ValueKey('paywall.manage_button'),
+  ValueKey('paywall.sign_out_button'),
+  ValueKey('paywall.delete_account_button'),
+];
 
 /// Pushes [path] through the app's own GoRouter (the same redirect chain a
 /// deep link takes) and pumps until one of [keys] shows up.
@@ -77,7 +83,7 @@ Future<void> _popRoute(PatrolIntegrationTester $) async {
 
 void main() {
   patrolTest(
-    'Pro gate — the Food tab and the /food and /vana routes agree',
+    'App gate — the shell, the paywall and the /food and /vana routes agree',
     ($) async {
       await launchApp();
       await $.pump(const Duration(milliseconds: 500));
@@ -87,12 +93,18 @@ void main() {
         return;
       }
 
-      final unlocked = $(_foodTab).exists;
+      final locked = $(_paywallScreen).exists;
+
+      if (locked) {
+        for (final key in _paywallActions) {
+          expect($(key).exists, isTrue, reason: 'paywall carries $key');
+        }
+      }
 
       // ---- /food -------------------------------------------------------
       final foodLanding = await _pushAndSettleOn($, '/food', [
         _foodScreen,
-        _proScreen,
+        _paywallScreen,
       ]);
       expect(
         foodLanding,
@@ -102,10 +114,10 @@ void main() {
       );
       expect(
         foodLanding,
-        unlocked ? _foodScreen : _proScreen,
-        reason: unlocked
-            ? 'Food tab is visible, so /food must open the feature'
-            : 'Food tab is hidden, so /food must redirect to $kProPaywallPathLabel',
+        locked ? _paywallScreen : _foodScreen,
+        reason: locked
+            ? 'the paywall is up, so /food must stay on the paywall'
+            : 'the shell is up, so /food must open the feature',
       );
 
       await _popRoute($);
@@ -113,7 +125,7 @@ void main() {
       // ---- /vana -------------------------------------------------------
       final vanaLanding = await _pushAndSettleOn($, '/vana?mode=general', [
         _vanaScreen,
-        _proScreen,
+        _paywallScreen,
       ]);
       expect(
         vanaLanding,
@@ -123,18 +135,27 @@ void main() {
       );
       expect(
         vanaLanding,
-        unlocked ? _vanaScreen : _proScreen,
-        reason: unlocked
-            ? 'Food tab is visible, so /vana must open the chat'
-            : 'Food tab is hidden, so /vana must redirect to the paywall',
+        locked ? _paywallScreen : _vanaScreen,
+        reason: locked
+            ? 'the paywall is up, so /vana must stay on the paywall'
+            : 'the shell is up, so /vana must open the chat',
       );
 
       await _popRoute($);
+
+      // ---- /paywall while unlocked yields to the shell -------------------
+      if (!locked) {
+        final paywallLanding = await _pushAndSettleOn($, '/paywall', [
+          authSentinel,
+          _paywallScreen,
+        ]);
+        expect(
+          paywallLanding,
+          authSentinel,
+          reason: 'an entitled account pushing /paywall must land on the shell',
+        );
+      }
     },
     timeout: const Timeout(Duration(minutes: 4)),
   );
 }
-
-/// Kept as a literal so the failure message names the route without pulling
-/// the app's routing constants into the test bundle.
-const kProPaywallPathLabel = '/pro';

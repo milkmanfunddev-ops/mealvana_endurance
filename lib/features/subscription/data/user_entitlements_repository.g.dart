@@ -8,15 +8,15 @@ part of 'user_entitlements_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Reads its Supabase client and logger from [appExternalDepsProvider] (the
-/// seam the widget-test harness mocks) rather than `Supabase.instance`.
+/// Reads its Supabase client from [appExternalDepsProvider] (the seam the
+/// widget-test harness mocks) rather than `Supabase.instance`.
 
 @ProviderFor(userEntitlementsRepository)
 const userEntitlementsRepositoryProvider =
     UserEntitlementsRepositoryProvider._();
 
-/// Reads its Supabase client and logger from [appExternalDepsProvider] (the
-/// seam the widget-test harness mocks) rather than `Supabase.instance`.
+/// Reads its Supabase client from [appExternalDepsProvider] (the seam the
+/// widget-test harness mocks) rather than `Supabase.instance`.
 
 final class UserEntitlementsRepositoryProvider
     extends
@@ -26,8 +26,8 @@ final class UserEntitlementsRepositoryProvider
           UserEntitlementsRepository
         >
     with $Provider<UserEntitlementsRepository> {
-  /// Reads its Supabase client and logger from [appExternalDepsProvider] (the
-  /// seam the widget-test harness mocks) rather than `Supabase.instance`.
+  /// Reads its Supabase client from [appExternalDepsProvider] (the seam the
+  /// widget-test harness mocks) rather than `Supabase.instance`.
   const UserEntitlementsRepositoryProvider._()
     : super(
         from: null,
@@ -63,4 +63,4 @@ final class UserEntitlementsRepositoryProvider
 }
 
 String _$userEntitlementsRepositoryHash() =>
-    r'cd841dddbfd31556e75171d12c16eb617079a235';
+    r'a5749864b04a80327e6fbd80f8db211cbea00439';

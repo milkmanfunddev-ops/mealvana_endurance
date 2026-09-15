@@ -8,6 +8,59 @@ part of 'subscription_status_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// How long the gate waits for RevenueCat before an unknown entitlement
+/// counts as locked (mp-284: "no cache and no answer within a couple of
+/// seconds"). A provider so tests can shorten it; the app never overrides it.
+
+@ProviderFor(entitlementAnswerTimeout)
+const entitlementAnswerTimeoutProvider = EntitlementAnswerTimeoutProvider._();
+
+/// How long the gate waits for RevenueCat before an unknown entitlement
+/// counts as locked (mp-284: "no cache and no answer within a couple of
+/// seconds"). A provider so tests can shorten it; the app never overrides it.
+
+final class EntitlementAnswerTimeoutProvider
+    extends $FunctionalProvider<Duration, Duration, Duration>
+    with $Provider<Duration> {
+  /// How long the gate waits for RevenueCat before an unknown entitlement
+  /// counts as locked (mp-284: "no cache and no answer within a couple of
+  /// seconds"). A provider so tests can shorten it; the app never overrides it.
+  const EntitlementAnswerTimeoutProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'entitlementAnswerTimeoutProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$entitlementAnswerTimeoutHash();
+
+  @$internal
+  @override
+  $ProviderElement<Duration> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  Duration create(Ref ref) {
+    return entitlementAnswerTimeout(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Duration value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Duration>(value),
+    );
+  }
+}
+
+String _$entitlementAnswerTimeoutHash() =>
+    r'bce41b6bb23f369a079a34f600da92902d3a1762';
+
 /// Auth identity as a rebuild signal — see [creditsAuthUserId] for the
 /// precedent. A session appearing, changing or ending rebuilds the status.
 
@@ -50,70 +103,82 @@ final class SubscriptionAuthUserIdProvider
 String _$subscriptionAuthUserIdHash() =>
     r'7ea3dc3ddfce16d5f2ac1c09e73eba3c846a6f5b';
 
-/// The current user's Pro status: RevenueCat ∪ server row ∪ tester flag.
+/// The current user's subscription status, from RevenueCat and nothing else
+/// (mp-279, mp-284).
 ///
 /// Exposed as `subscriptionStatusProvider`. keepAlive because the router
-/// redirect, the tabs screen and the Pro screen all read it independently and
-/// the answer must survive between them; the CustomerInfo listener it owns
-/// must also outlive any single widget.
+/// redirect and the paywall read it independently and the answer must
+/// survive between them; the CustomerInfo listener it owns must also outlive
+/// any single widget.
 ///
-/// **[build] never throws.** Like [CreditsController], a keepAlive provider
-/// whose first build errors would leave `.future` uncompleted for anyone
-/// awaiting it (startup priming, the paywall after a purchase). Every source
-/// already swallows its own errors; anything unexpected degrades to "not
-/// Pro" (or the tester grant) rather than an [AsyncError].
+/// The rule:
+/// 1. The SDK's cached entitlement is the answer whenever there is one,
+///    online or not — `getCustomerInfo` serves the cache at once.
+/// 2. No cache and no answer within [entitlementAnswerTimeoutProvider]
+///    counts as locked ([SubscriptionStatus.none]).
+/// 3. RevenueCat refreshes in the background; the listener pushes the new
+///    status and the gate reacts.
+/// 4. A cache that belongs to another RevenueCat identity than the signed-in
+///    user is not an answer: locked until `logIn` has moved the identity.
 ///
-/// Resolution order in [SubscriptionStatus.merge]: RevenueCat first (it sees
-/// the store directly and updates in real time), then the server row (the
-/// paywall the edge functions enforce; also the offline answer via its Drift
-/// cache), then the internal tester flag (client-only, never sent to the
-/// server — `users.is_internal` is the server-side counterpart).
+/// **[build] never throws.** A keepAlive provider whose first build errors
+/// would leave `.future` uncompleted for anyone awaiting it (the router
+/// redirect, the paywall after a purchase); anything unexpected degrades to
+/// locked rather than an [AsyncError].
 
 @ProviderFor(SubscriptionStatusController)
 const subscriptionStatusProvider = SubscriptionStatusControllerProvider._();
 
-/// The current user's Pro status: RevenueCat ∪ server row ∪ tester flag.
+/// The current user's subscription status, from RevenueCat and nothing else
+/// (mp-279, mp-284).
 ///
 /// Exposed as `subscriptionStatusProvider`. keepAlive because the router
-/// redirect, the tabs screen and the Pro screen all read it independently and
-/// the answer must survive between them; the CustomerInfo listener it owns
-/// must also outlive any single widget.
+/// redirect and the paywall read it independently and the answer must
+/// survive between them; the CustomerInfo listener it owns must also outlive
+/// any single widget.
 ///
-/// **[build] never throws.** Like [CreditsController], a keepAlive provider
-/// whose first build errors would leave `.future` uncompleted for anyone
-/// awaiting it (startup priming, the paywall after a purchase). Every source
-/// already swallows its own errors; anything unexpected degrades to "not
-/// Pro" (or the tester grant) rather than an [AsyncError].
+/// The rule:
+/// 1. The SDK's cached entitlement is the answer whenever there is one,
+///    online or not — `getCustomerInfo` serves the cache at once.
+/// 2. No cache and no answer within [entitlementAnswerTimeoutProvider]
+///    counts as locked ([SubscriptionStatus.none]).
+/// 3. RevenueCat refreshes in the background; the listener pushes the new
+///    status and the gate reacts.
+/// 4. A cache that belongs to another RevenueCat identity than the signed-in
+///    user is not an answer: locked until `logIn` has moved the identity.
 ///
-/// Resolution order in [SubscriptionStatus.merge]: RevenueCat first (it sees
-/// the store directly and updates in real time), then the server row (the
-/// paywall the edge functions enforce; also the offline answer via its Drift
-/// cache), then the internal tester flag (client-only, never sent to the
-/// server — `users.is_internal` is the server-side counterpart).
+/// **[build] never throws.** A keepAlive provider whose first build errors
+/// would leave `.future` uncompleted for anyone awaiting it (the router
+/// redirect, the paywall after a purchase); anything unexpected degrades to
+/// locked rather than an [AsyncError].
 final class SubscriptionStatusControllerProvider
     extends
         $AsyncNotifierProvider<
           SubscriptionStatusController,
           SubscriptionStatus
         > {
-  /// The current user's Pro status: RevenueCat ∪ server row ∪ tester flag.
+  /// The current user's subscription status, from RevenueCat and nothing else
+  /// (mp-279, mp-284).
   ///
   /// Exposed as `subscriptionStatusProvider`. keepAlive because the router
-  /// redirect, the tabs screen and the Pro screen all read it independently and
-  /// the answer must survive between them; the CustomerInfo listener it owns
-  /// must also outlive any single widget.
+  /// redirect and the paywall read it independently and the answer must
+  /// survive between them; the CustomerInfo listener it owns must also outlive
+  /// any single widget.
   ///
-  /// **[build] never throws.** Like [CreditsController], a keepAlive provider
-  /// whose first build errors would leave `.future` uncompleted for anyone
-  /// awaiting it (startup priming, the paywall after a purchase). Every source
-  /// already swallows its own errors; anything unexpected degrades to "not
-  /// Pro" (or the tester grant) rather than an [AsyncError].
+  /// The rule:
+  /// 1. The SDK's cached entitlement is the answer whenever there is one,
+  ///    online or not — `getCustomerInfo` serves the cache at once.
+  /// 2. No cache and no answer within [entitlementAnswerTimeoutProvider]
+  ///    counts as locked ([SubscriptionStatus.none]).
+  /// 3. RevenueCat refreshes in the background; the listener pushes the new
+  ///    status and the gate reacts.
+  /// 4. A cache that belongs to another RevenueCat identity than the signed-in
+  ///    user is not an answer: locked until `logIn` has moved the identity.
   ///
-  /// Resolution order in [SubscriptionStatus.merge]: RevenueCat first (it sees
-  /// the store directly and updates in real time), then the server row (the
-  /// paywall the edge functions enforce; also the offline answer via its Drift
-  /// cache), then the internal tester flag (client-only, never sent to the
-  /// server — `users.is_internal` is the server-side counterpart).
+  /// **[build] never throws.** A keepAlive provider whose first build errors
+  /// would leave `.future` uncompleted for anyone awaiting it (the router
+  /// redirect, the paywall after a purchase); anything unexpected degrades to
+  /// locked rather than an [AsyncError].
   const SubscriptionStatusControllerProvider._()
     : super(
         from: null,
@@ -134,26 +199,30 @@ final class SubscriptionStatusControllerProvider
 }
 
 String _$subscriptionStatusControllerHash() =>
-    r'f69a63d5639fb65328f874ce2b5a8682e2fbbb03';
+    r'a89a9b1a6f761ef3be08ddd160ecc602b26dc3b2';
 
-/// The current user's Pro status: RevenueCat ∪ server row ∪ tester flag.
+/// The current user's subscription status, from RevenueCat and nothing else
+/// (mp-279, mp-284).
 ///
 /// Exposed as `subscriptionStatusProvider`. keepAlive because the router
-/// redirect, the tabs screen and the Pro screen all read it independently and
-/// the answer must survive between them; the CustomerInfo listener it owns
-/// must also outlive any single widget.
+/// redirect and the paywall read it independently and the answer must
+/// survive between them; the CustomerInfo listener it owns must also outlive
+/// any single widget.
 ///
-/// **[build] never throws.** Like [CreditsController], a keepAlive provider
-/// whose first build errors would leave `.future` uncompleted for anyone
-/// awaiting it (startup priming, the paywall after a purchase). Every source
-/// already swallows its own errors; anything unexpected degrades to "not
-/// Pro" (or the tester grant) rather than an [AsyncError].
+/// The rule:
+/// 1. The SDK's cached entitlement is the answer whenever there is one,
+///    online or not — `getCustomerInfo` serves the cache at once.
+/// 2. No cache and no answer within [entitlementAnswerTimeoutProvider]
+///    counts as locked ([SubscriptionStatus.none]).
+/// 3. RevenueCat refreshes in the background; the listener pushes the new
+///    status and the gate reacts.
+/// 4. A cache that belongs to another RevenueCat identity than the signed-in
+///    user is not an answer: locked until `logIn` has moved the identity.
 ///
-/// Resolution order in [SubscriptionStatus.merge]: RevenueCat first (it sees
-/// the store directly and updates in real time), then the server row (the
-/// paywall the edge functions enforce; also the offline answer via its Drift
-/// cache), then the internal tester flag (client-only, never sent to the
-/// server — `users.is_internal` is the server-side counterpart).
+/// **[build] never throws.** A keepAlive provider whose first build errors
+/// would leave `.future` uncompleted for anyone awaiting it (the router
+/// redirect, the paywall after a purchase); anything unexpected degrades to
+/// locked rather than an [AsyncError].
 
 abstract class _$SubscriptionStatusController
     extends $AsyncNotifier<SubscriptionStatus> {

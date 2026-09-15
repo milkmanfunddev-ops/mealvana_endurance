@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import '../../features/meal_planning/presentation/screens/food_screen.dart';
 import '../../features/meal_planning/domain/vana_situation.dart';
 import '../../features/meal_planning/presentation/widgets/vana_situation_scope.dart';
-import '../../features/subscription/application/pro_gate.dart';
 import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/content/application/content_service.dart';
@@ -99,7 +98,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final index = switch (name) {
-        'food' => _showFoodTab ? _foodTabIndex : -1,
+        'food' => _foodTabIndex,
         'coach' => kIsWeb ? _coachTabIndex : -1,
         'events' || 'notes' || 'workout-notes' => _eventsTabIndex,
         'learn' || 'survey' => _learnTabIndex,
@@ -110,34 +109,31 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   }
 
   // Tab indices (Activities + Nutrition merged into one Fuel Timeline tab):
-  // FuelTimeline(0) -> Food(1, Pro) -> Coach(web) -> Events -> Learn.
-  // Food exists only while Pro is unlocked; every index after it shifts.
-  bool get _showFoodTab => ref.watch(proUnlockedProvider);
+  // FuelTimeline(0) -> Food(1) -> Coach(web) -> Events -> Learn.
+  // The whole app sits behind the one gate (mp-280), so the Food tab is
+  // always present; only the web coach tab shifts the indices.
   int get _foodTabIndex => 1;
-  int get _coachTabIndex => _showFoodTab ? 2 : 1; // Only on web
-  int get _eventsTabIndex =>
-      kIsWeb ? (_showFoodTab ? 3 : 2) : (_showFoodTab ? 2 : 1);
-  int get _learnTabIndex =>
-      kIsWeb ? (_showFoodTab ? 4 : 3) : (_showFoodTab ? 3 : 2);
+  int get _coachTabIndex => 2; // Only on web
+  int get _eventsTabIndex => kIsWeb ? 3 : 2;
+  int get _learnTabIndex => kIsWeb ? 4 : 3;
 
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
   }
 
-  /// The shell's destination set (Q3: 3–5 — 4 on device with the Pro Food
-  /// tab, 5 on web with the coach).
+  /// The shell's destination set (Q3: 3–5 — 4 on device, 5 on web with the
+  /// coach).
   List<KyleTabBarDestination> get _destinations => [
     KyleTabBarDestination(
       id: 'timeline',
       icon: FontAwesomeIcons.solidHouse.data,
       label: 'Timeline',
     ),
-    if (_showFoodTab)
-      KyleTabBarDestination(
-        id: 'food',
-        icon: FontAwesomeIcons.bowlFood.data,
-        label: 'Food',
-      ),
+    KyleTabBarDestination(
+      id: 'food',
+      icon: FontAwesomeIcons.bowlFood.data,
+      label: 'Food',
+    ),
     if (kIsWeb)
       KyleTabBarDestination(
         id: 'coach',
@@ -158,7 +154,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
   String get _activeTabId => _currentIndex == 0
       ? 'timeline'
-      : _showFoodTab && _currentIndex == _foodTabIndex
+      : _currentIndex == _foodTabIndex
       ? 'food'
       : kIsWeb && _currentIndex == _coachTabIndex
       ? 'coach'
@@ -179,7 +175,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final showCoachTab = kIsWeb;
-    final showFoodTab = _showFoodTab;
     final useRail = context.useNavigationRail;
 
     // Navigate to coach portal route when coach tab is selected on web
@@ -205,8 +200,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
           topInset: HomeShellChrome.headerClearancePx,
         ),
       ),
-      if (showFoodTab)
-        FoodScreen(initialTab: widget.initialFoodTab), // 1: Food (Pro)
+      FoodScreen(initialTab: widget.initialFoodTab), // 1: Food
       if (showCoachTab)
         const SizedBox.shrink(), // placeholder (coach portal rendered above)
       const EventsListScreen(),
@@ -278,7 +272,6 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
               _NavigationRailSection(
                 currentIndex: _currentIndex,
                 showCoachTab: showCoachTab,
-                showFoodTab: showFoodTab,
                 onTabSelected: _onTabSelected,
               ),
               const VerticalDivider(width: 1, thickness: 1),
@@ -318,13 +311,11 @@ class _NavigationRailSection extends StatelessWidget {
   const _NavigationRailSection({
     required this.currentIndex,
     required this.showCoachTab,
-    required this.showFoodTab,
     required this.onTabSelected,
   });
 
   final int currentIndex;
   final bool showCoachTab;
-  final bool showFoodTab;
   final ValueChanged<int> onTabSelected;
 
   @override
@@ -339,12 +330,11 @@ class _NavigationRailSection extends StatelessWidget {
         selectedIcon: FaIcon(FontAwesomeIcons.solidHouse),
         label: Text('Timeline'),
       ),
-      if (showFoodTab)
-        const NavigationRailDestination(
-          icon: FaIcon(FontAwesomeIcons.bowlFood),
-          selectedIcon: FaIcon(FontAwesomeIcons.bowlFood),
-          label: Text('Food'),
-        ),
+      const NavigationRailDestination(
+        icon: FaIcon(FontAwesomeIcons.bowlFood),
+        selectedIcon: FaIcon(FontAwesomeIcons.bowlFood),
+        label: Text('Food'),
+      ),
       if (showCoachTab)
         const NavigationRailDestination(
           icon: FaIcon(FontAwesomeIcons.userTie),

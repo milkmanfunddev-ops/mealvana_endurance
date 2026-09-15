@@ -31,7 +31,6 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/c
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picker_carousel.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
-import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/vana_sheet.dart';
@@ -149,7 +148,7 @@ const _paths = [
   _formulas,
   '/settings',
   '/events',
-  '/pro',
+  '/paywall',
   '/buy-credits',
   '/welcome',
   '/onboarding',
@@ -203,7 +202,6 @@ class _PlanTabPage extends StatelessWidget {
 Future<_Harness> _pump(
   WidgetTester tester, {
   String initial = '/main',
-  bool pro = true,
   _FakeChatRepo? repo,
   DateTime Function()? clock,
 }) async {
@@ -239,7 +237,6 @@ Future<_Harness> _pump(
       ...vanaMomentInputs(),
       sharedPreferencesProvider.overrideWithValue(prefs),
       contentServiceProvider.overrideWith(testContentService),
-      proUnlockedProvider.overrideWithValue(pro),
       vanaChatRepositoryProvider.overrideWithValue(chat),
       vanaActionClientProvider.overrideWithValue(_FakeActionClient()),
       vanaClockProvider.overrideWithValue(
@@ -434,15 +431,6 @@ void main() {
       await tester.pump(VanaSheet.riseDuration);
       await _settleTurn(tester);
       expect(find.byType(VanaSheet), findsOneWidget);
-    });
-
-    testWidgets('without Pro the launcher leads to the paywall, as the chat '
-        'route does', (tester) async {
-      final h = await _pump(tester, pro: false);
-      await tester.tap(find.byKey(_launcher));
-      await tester.pumpAndSettle();
-      expect(h.location, '/pro');
-      expect(find.byType(VanaSheet), findsNothing);
     });
   });
 

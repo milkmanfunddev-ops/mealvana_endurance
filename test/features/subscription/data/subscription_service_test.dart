@@ -2,10 +2,12 @@
 ///
 /// The RevenueCat SDK cannot run in dart:test, so — as with
 /// revenuecat_service_test.dart — these cover the logic layer: the pure
-/// EntitlementInfo → SubscriptionStatus mapping and the not-configured guards
-/// that keep every method a safe no-op.
+/// EntitlementInfo → SubscriptionStatus and StoreProduct → IntroOffer
+/// mappings, the store fallback for "Manage subscription", and the
+/// not-configured guards that keep every method a safe no-op.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -53,6 +55,14 @@ class _FakeOffering extends Fake implements Offering {
   final String identifier;
 }
 
+class _FakeStoreProduct extends Fake implements StoreProduct {
+  _FakeStoreProduct({this.introductoryPrice});
+  @override
+  final String identifier = 'mealvana_pro_monthly';
+  @override
+  final IntroductoryPrice? introductoryPrice;
+}
+
 void main() {
   late _MockRevenueCatService rc;
   late SubscriptionService service;
@@ -73,7 +83,7 @@ void main() {
       );
     });
 
-    test('inactive entitlement → none', () {
+    test('inactive → none', () {
       expect(
         SubscriptionService.statusFromEntitlement(
           _FakeEntitlement(isActive: false),
@@ -82,21 +92,17 @@ void main() {
       );
     });
 
-    test(
-      'active normal entitlement → active, revenuecat, expiry parsed to UTC',
-      () {
-        final s = SubscriptionService.statusFromEntitlement(
-          _FakeEntitlement(expirationDate: '2026-10-01T12:00:00Z'),
-        );
-        expect(s.active, isTrue);
-        expect(s.source, SubscriptionSource.revenuecat);
-        expect(s.expiresAt, DateTime.utc(2026, 10, 1, 12));
-        expect(s.isTrial, isFalse);
-        expect(s.productId, 'mealvana_pro_monthly');
-      },
-    );
+    test('active → revenuecat source with UTC expiry', () {
+      final s = SubscriptionService.statusFromEntitlement(
+        _FakeEntitlement(expirationDate: '2026-10-01T00:00:00Z'),
+      );
+      expect(s.active, isTrue);
+      expect(s.source, SubscriptionSource.revenuecat);
+      expect(s.expiresAt, DateTime.utc(2026, 10, 1));
+      expect(s.isTrial, isFalse);
+    });
 
-    test('trial and intro periods flag isTrial', () {
+    test('trial and intro periods are marked as trial', () {
       expect(
         SubscriptionService.statusFromEntitlement(
           _FakeEntitlement(periodType: PeriodType.trial),
@@ -111,17 +117,88 @@ void main() {
       );
     });
 
-    test('missing expiry → open-ended (null), still active', () {
-      final s = SubscriptionService.statusFromEntitlement(_FakeEntitlement());
-      expect(s.active, isTrue);
-      expect(s.expiresAt, isNull);
-    });
-
     test('carries the granting product id', () {
       final s = SubscriptionService.statusFromEntitlement(
         _FakeEntitlement(productIdentifier: 'mealvana_pro_annual_prod'),
       );
       expect(s.productId, 'mealvana_pro_annual_prod');
+    });
+  });
+
+  group('introOfferOf (the store price is the source, mp-279)', () {
+    test("Apple's free week → seven free days", () {
+      final product = _FakeStoreProduct(
+        introductoryPrice: const IntroductoryPrice(
+          0,
+          r'$0.00',
+          'P1W',
+          1,
+          PeriodUnit.week,
+          1,
+        ),
+      );
+      expect(
+        SubscriptionService.introOfferOf(product),
+        const IntroOffer(freeDays: 7),
+      );
+    });
+
+    test("Google's P7D → seven free days", () {
+      final product = _FakeStoreProduct(
+        introductoryPrice: const IntroductoryPrice(
+          0,
+          r'$0.00',
+          'P7D',
+          1,
+          PeriodUnit.day,
+          7,
+        ),
+      );
+      expect(
+        SubscriptionService.introOfferOf(product),
+        const IntroOffer(freeDays: 7),
+      );
+    });
+
+    test('no introductory price → no offer', () {
+      expect(SubscriptionService.introOfferOf(_FakeStoreProduct()), isNull);
+    });
+
+    test('a paid introductory price is not a free offer', () {
+      final product = _FakeStoreProduct(
+        introductoryPrice: const IntroductoryPrice(
+          4.99,
+          r'$4.99',
+          'P1M',
+          1,
+          PeriodUnit.month,
+          1,
+        ),
+      );
+      expect(SubscriptionService.introOfferOf(product), isNull);
+    });
+  });
+
+  group('storeSubscriptionsUrl (Manage subscription fallback)', () {
+    test('iOS → the App Store subscriptions page', () {
+      expect(
+        SubscriptionService.storeSubscriptionsUrl(TargetPlatform.iOS),
+        Uri.parse(kAppleSubscriptionsUrl),
+      );
+    });
+
+    test('Android → the Play subscriptions page', () {
+      expect(
+        SubscriptionService.storeSubscriptionsUrl(TargetPlatform.android),
+        Uri.parse(kGoogleSubscriptionsUrl),
+      );
+    });
+
+    test('elsewhere → nothing to open', () {
+      expect(
+        SubscriptionService.storeSubscriptionsUrl(TargetPlatform.linux),
+        isNull,
+      );
     });
   });
 
@@ -134,8 +211,23 @@ void main() {
       expect(await service.fetchStatus(), isNull);
     });
 
+    test('currentAppUserId is null: no cache to trust', () async {
+      expect(await service.currentAppUserId(), isNull);
+    });
+
+    test('introIneligibleProductIds is empty (nobody is refused the '
+        'offer on a guess)', () async {
+      expect(await service.introIneligibleProductIds(['a']), isEmpty);
+    });
+
     test('restore returns null without touching the SDK', () async {
       expect(await service.restore(), isNull);
+    });
+
+    test('logIn delegates to RevenueCatService', () async {
+      when(() => rc.logIn(any())).thenAnswer((_) async {});
+      await service.logIn('user-1');
+      verify(() => rc.logIn('user-1')).called(1);
     });
   });
 
