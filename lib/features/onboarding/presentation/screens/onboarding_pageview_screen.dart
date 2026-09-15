@@ -283,20 +283,37 @@ class _OnboardingPageViewScreenState
   Widget build(BuildContext context) {
     final pages = _buildPages();
 
-    // Each screen has its own Scaffold and progress bar, so we just use PageView
-    // Note: ContentArea.narrow is applied within each individual screen's Scaffold
-    return PageView(
-      controller: _pageController,
-      physics: const ClampingScrollPhysics(), // Enable swipe navigation
-      onPageChanged: (index) {
-        // Dismiss keyboard when page changes (e.g., swipe)
-        FocusManager.instance.primaryFocus?.unfocus();
-
-        setState(() {
-          _currentPageIndex = index;
-        });
+    // Onboarding is a single GoRouter route wrapping this internal PageView.
+    // Without a PopScope, a system/predictive back (Android) or the iOS
+    // left-edge back-swipe is handled at the ROUTE layer and pops the whole
+    // /onboarding route out to /welcome — the start of onboarding — instead of
+    // stepping back one question. (Bug: a mid-onboarding back-swipe landed on
+    // the "Get more out of every session" welcome screen.) Gate the route pop
+    // on being at the first page; anywhere else a blocked system back steps
+    // back exactly one page via [_previousPage], matching the on-screen back
+    // chevron (onboarding_step_scaffold's InkWell → onBack). In-content
+    // horizontal drags between pages still work via the PageView itself.
+    return PopScope(
+      canPop: _currentPageIndex == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _previousPage();
       },
-      children: pages,
+      // Each screen has its own Scaffold and progress bar, so we just use
+      // PageView. Note: ContentArea.narrow is applied within each individual
+      // screen's Scaffold.
+      child: PageView(
+        controller: _pageController,
+        physics: const ClampingScrollPhysics(), // Enable swipe navigation
+        onPageChanged: (index) {
+          // Dismiss keyboard when page changes (e.g., swipe)
+          FocusManager.instance.primaryFocus?.unfocus();
+
+          setState(() {
+            _currentPageIndex = index;
+          });
+        },
+        children: pages,
+      ),
     );
   }
 }
