@@ -6,7 +6,13 @@
  * Two paths:
  *   1. Pro subscription events → `public.user_entitlements`, the two-field
  *      cache of RevenueCat (mp-285): `active_until` + `period_type`, written
- *      only here, ordered by `event_at`; a TRANSFER moves the row.
+ *      only here, ordered by `event_at`; a TRANSFER moves the row. The same
+ *      delivery then moves the monthly Allowance (mp-281): INITIAL_PURCHASE
+ *      and RENEWAL grant it into the wallet (`grant_allowance`, idempotent on
+ *      the event id), EXPIRATION forfeits what is left (`forfeit_allowance`),
+ *      CANCELLATION leaves the wallet alone — access and the allowance run
+ *      to the period end. Annual plans get the grant monthly through
+ *      `ensure_allowance` on the AI functions' side (_shared/ai/credits.ts).
  *   2. Credit-pack purchases → `grant_credits` RPC (unchanged).
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
@@ -21,6 +27,11 @@ import {
   TRANSFER_EVENT_TYPE,
   transferParties,
 } from './entitlements.ts';
+import {
+  ALLOWANCE_FORFEIT_EVENT_TYPES,
+  ALLOWANCE_GRANT_EVENT_TYPES,
+  monthlyAllowance,
+} from '../_shared/ai/allowance.ts';
 
 // deno-lint-ignore no-explicit-any
 export type WebhookDb = SupabaseClient<any, 'public', any>;
@@ -73,6 +84,60 @@ function json(body: unknown, status = 200): Response {
 }
 
 type StoredRow = EntitlementRow & { user_id: string };
+
+/** What the allowance step did, echoed in the response for the RC event log. */
+type AllowanceOutcome =
+  | { ok: true; body: Record<string, unknown> }
+  | { ok: false; status: number; body: Record<string, unknown> };
+
+/**
+ * Move the Allowance for a subscription event that has just written the row
+ * (mp-281 §2, §3). Grants are keyed on the RevenueCat event id, so a
+ * redelivery grants once; a failure other than that is a 500 so RevenueCat
+ * retries the delivery (the row upsert is idempotent for the retry).
+ */
+async function applyAllowance(
+  deps: WebhookDeps,
+  client: WebhookDb,
+  type: string,
+  eventId: string,
+  appUserId: string,
+  row: EntitlementRow,
+): Promise<AllowanceOutcome> {
+  if (ALLOWANCE_GRANT_EVENT_TYPES.has(type)) {
+    if (!row.active_until) {
+      console.log(`[rc-webhook] ${type} ${eventId} has no expiry: no allowance window to open`);
+      return { ok: true, body: { skipped: 'no_active_until' } };
+    }
+    const amount = monthlyAllowance(deps.env);
+    const { data, error } = await client.rpc('grant_allowance', {
+      p_user_id: appUserId,
+      p_amount: amount,
+      p_active_until: row.active_until,
+      p_ref: eventId,
+    });
+    if (error) {
+      if (error.code === '23505') {
+        console.log(`[rc-webhook] allowance for event ${eventId} already granted (idempotent)`);
+        return { ok: true, body: { idempotent: true } };
+      }
+      console.error('[rc-webhook] grant_allowance error:', error.message);
+      return { ok: false, status: 500, body: { error: 'allowance grant failed' } };
+    }
+    console.log(`[rc-webhook] ${type}: allowance ${amount} → ${appUserId} (${JSON.stringify(data)})`);
+    return { ok: true, body: (data ?? { granted: true }) as Record<string, unknown> };
+  }
+  if (ALLOWANCE_FORFEIT_EVENT_TYPES.has(type)) {
+    const { data, error } = await client.rpc('forfeit_allowance', { p_user_id: appUserId, p_ref: eventId });
+    if (error) {
+      console.error('[rc-webhook] forfeit_allowance error:', error.message);
+      return { ok: false, status: 500, body: { error: 'allowance forfeit failed' } };
+    }
+    console.log(`[rc-webhook] ${type}: allowance forfeited for ${appUserId} (${JSON.stringify(data)})`);
+    return { ok: true, body: (data ?? { forfeited: 0 }) as Record<string, unknown> };
+  }
+  return { ok: true, body: { untouched: true } };
+}
 
 /**
  * Upsert the row for [appUserId] from a subscription event. Reads the existing
@@ -129,7 +194,14 @@ async function handleProSubscription(
     console.log(
       `[rc-webhook] ${type}: active_until=${row.active_until} period=${row.period_type} for ${appUserId}`,
     );
-    return json({ ok: true, active_until: row.active_until, period_type: row.period_type });
+    const allowance = await applyAllowance(deps, client, type, eventId, appUserId, row);
+    if (!allowance.ok) return json(allowance.body, allowance.status);
+    return json({
+      ok: true,
+      active_until: row.active_until,
+      period_type: row.period_type,
+      allowance: allowance.body,
+    });
   } catch (e) {
     console.error('[rc-webhook] exception:', e);
     return json({ error: 'internal error' }, 500);
