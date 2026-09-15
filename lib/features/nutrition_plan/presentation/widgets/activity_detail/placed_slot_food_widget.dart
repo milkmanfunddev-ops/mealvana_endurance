@@ -36,11 +36,26 @@ class PlacedSlotFoodWidget extends StatelessWidget {
   double get _slotQty =>
       assignment.adjustedQuantity ?? ByHourSyncService.parseQuantity(food);
 
+  double get _originalQty => ByHourSyncService.parseQuantity(food);
+
+  /// Carbs scaled to THIS slot's quantity, for the badge. The widget is handed
+  /// the RAW (unscaled) food and scales off its own slot quantity — sip rows
+  /// used to pass raw food to a badge that read the food's base carbs, so the
+  /// number never moved when the row's quantity changed (Xuan/Claudia,
+  /// 2026-08-31: 3 cups → 2.5 cups still read 52g).
+  int? get _scaledCarbs {
+    final base = food.nutritionalInfo?.carbs;
+    if (base == null) return null;
+    final orig = _originalQty;
+    if (orig <= 0) return base;
+    return (base * (_slotQty / orig)).round();
+  }
+
   double get _stepSize => food.isIndivisible ? 1.0 : 0.5;
 
   @override
   Widget build(BuildContext context) {
-    final carbs = food.nutritionalInfo?.carbs;
+    final carbs = _scaledCarbs;
     final qtyStr = _formatQuantity(_slotQty);
     final displayText = food.displayAtQuantity(qtyStr);
 
