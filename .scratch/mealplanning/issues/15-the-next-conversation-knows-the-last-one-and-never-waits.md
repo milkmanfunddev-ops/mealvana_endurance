@@ -1,6 +1,6 @@
 # 15: The next conversation knows the last one, and never waits
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-15)
 **Blocked by:** 13 (touches supabase/functions/_shared/vana/chat.ts), 14 (touches supabase/functions/_shared/vana/chat.ts).
 **Next:** `/implement-lee mealplanning`
 

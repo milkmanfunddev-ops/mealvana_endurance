@@ -1,6 +1,6 @@
 # 21: The sandbox run and the release gate
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-15)
 **Blocked by:** 19, 20.
 **Next:** `/implement-lee mealplanning`
 
