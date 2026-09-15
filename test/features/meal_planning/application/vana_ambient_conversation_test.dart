@@ -6,6 +6,11 @@
 /// mp-288: the client says when a conversation is idle — the sheet closes, the
 /// app goes to the background, or a new conversation starts — fire-and-forget,
 /// as a flag on the chat call.
+///
+/// mp-275: the launcher, its full-screen button, the Plan tab's note card and
+/// a moment tap all open the day's ambient conversation; New meal plan and the
+/// chat's plus button start a new one, which never moves the day's pointer.
+/// Through the real chat controller, the way the entry points drive it.
 library;
 
 import 'dart:async';
@@ -14,7 +19,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,6 +40,25 @@ class _IdleRepo extends Fake implements VanaChatRepository {
     idle.add(conversationId);
     return reply();
   }
+
+  /// The ids the server gives new conversations, in order.
+  final List<String> names = [];
+
+  @override
+  Future<VanaChatResponse> streamChat({
+    String? message,
+    String? conversationId,
+    required VanaConversationKind kind,
+    bool opener = false,
+    String? anchorDate,
+    String? timezone,
+    VanaSituation? situation,
+    VanaMoment? moment,
+  }) async => VanaChatResponse(
+    conversationId: conversationId ?? names.removeAt(0),
+    kind: kind,
+    events: Stream.fromIterable(const [VanaDoneEvent()]),
+  );
 }
 
 void main() {
@@ -214,6 +243,91 @@ void main() {
       notifier(other).sheetClosed();
 
       expect(repo.idle, ['conv-a']);
+    });
+  });
+
+  group('entry points (mp-275)', () {
+    /// The conversation the day's entry points open when the day holds none
+    /// yet: the unnamed general one (the launcher's sheet, its full-screen
+    /// chat, the note card's chat route).
+    VanaChatController dayChat(ProviderContainer c) => c.read(
+      vanaChatControllerProvider(kind: VanaConversationKind.general).notifier,
+    );
+
+    /// A conversation started new: New meal plan, or the chat's plus button.
+    /// Listened to, the way its screen holds it, so it lives to be named.
+    VanaChatControllerProvider newKey(VanaConversationKind kind) =>
+        vanaChatControllerProvider(
+          kind: kind,
+          conversationId: vanaNewConversationKey,
+        );
+    VanaChatController newChat(
+      ProviderContainer c,
+      VanaConversationKind kind,
+    ) {
+      final sub = c.listen(newKey(kind), (_, _) {});
+      addTearDown(sub.close);
+      return c.read(newKey(kind).notifier);
+    }
+
+    String? named(ProviderContainer c, VanaConversationKind kind) =>
+        c.read(newKey(kind)).value?.conversationId;
+
+    test('the note card opens the conversation the launcher named, not a '
+        'fresh one', () async {
+      final c = containerFor('user-1');
+      repo.names.add('conv-day');
+
+      // The launcher, first thing in the day: nothing held yet.
+      expect(await notifier(c).openToday(), isNull);
+      await dayChat(c).loadOpener();
+
+      // The note card, later: the same conversation.
+      expect(await notifier(c).openToday(), 'conv-day');
+      expect(vanaAmbientChatLocation('conv-day'), '/vana?mode=general&c=conv-day');
+    });
+
+    test('the note card first in the day names the conversation the launcher '
+        'then opens', () async {
+      final c = containerFor('user-1');
+      repo.names.add('conv-day');
+
+      // The note card with nothing held opens the day's unnamed conversation.
+      final id = await notifier(c).openToday();
+      expect(vanaAmbientChatLocation(id), '/vana?mode=general');
+      await dayChat(c).send('what should I eat tonight');
+
+      // The launcher, after: the thread the note card started.
+      expect(await notifier(c).openToday(), 'conv-day');
+    });
+
+    test('a conversation started new never moves the pointer', () async {
+      final c = containerFor('user-1');
+      repo.names.addAll(['conv-plan', 'conv-plus', 'conv-day', 'conv-later']);
+
+      // Armed: the day holds nothing, so the next day's conversation named is
+      // the day's. A new one named first must not take its place.
+      expect(await notifier(c).openToday(), isNull);
+      await newChat(c, VanaConversationKind.mealPlanning).loadOpener();
+      await newChat(c, VanaConversationKind.general).send('something else');
+      await pumpEventQueue();
+      expect(named(c, VanaConversationKind.mealPlanning), 'conv-plan');
+      expect(named(c, VanaConversationKind.general), 'conv-plus');
+      expect(c.read(vanaAmbientConversationProvider).value, isNull);
+
+      await dayChat(c).loadOpener();
+      // Adopting writes the device's pointer; nothing waits on it.
+      await pumpEventQueue();
+      expect(c.read(vanaAmbientConversationProvider).value, 'conv-day');
+
+      // Held: a new conversation later in the day leaves it where it is, and
+      // the launcher comes back to the day's.
+      c.invalidate(newKey(VanaConversationKind.general));
+      await c.read(newKey(VanaConversationKind.general).future);
+      await newChat(c, VanaConversationKind.general).send('another thing');
+      expect(named(c, VanaConversationKind.general), 'conv-later');
+      expect(await notifier(c).openToday(), 'conv-day');
+      expect(repo.idle, isEmpty, reason: 'nothing replaced the day\'s');
     });
   });
 }

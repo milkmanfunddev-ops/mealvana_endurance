@@ -14,6 +14,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_chat_controller.dart';
 import '../../../subscription/application/subscription_status_provider.dart';
 import '../../data/vana_exceptions.dart';
@@ -100,10 +101,17 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   /// instead of losing it with the rolled-back turn.
   String? _lastSent;
 
+  /// The chat controller key. A conversation started new (`c=new`) has its
+  /// own, so it never shares the day's unnamed conversation and never moves
+  /// the launcher's pointer (mp-275 clause 3).
+  String? get _key => widget.startOpener && widget.conversationId == null
+      ? vanaNewConversationKey
+      : widget.conversationId;
+
   VanaChatController get _controller => ref.read(
     vanaChatControllerProvider(
       kind: widget.kind,
-      conversationId: widget.conversationId,
+      conversationId: _key,
     ).notifier,
   );
 
@@ -121,7 +129,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     final chatAsync = ref.watch(
       vanaChatControllerProvider(
         kind: widget.kind,
-        conversationId: widget.conversationId,
+        conversationId: _key,
       ),
     );
     final state = chatAsync.value;
@@ -131,7 +139,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     ref.listen<AsyncValue<VanaChatState>>(
       vanaChatControllerProvider(
         kind: widget.kind,
-        conversationId: widget.conversationId,
+        conversationId: _key,
       ),
       (previous, next) {
         final s = next.value;
@@ -855,7 +863,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
           .read(
             vanaChatControllerProvider(
               kind: widget.kind,
-              conversationId: widget.conversationId,
+              conversationId: _key,
             ),
           )
           .value
