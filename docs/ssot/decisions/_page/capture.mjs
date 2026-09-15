@@ -20,6 +20,13 @@
 //
 // The simulator is reached through `idb` (taps and the accessibility tree) and
 // `xcrun simctl` (launch, screenshot). `doctor()` says what is missing.
+//
+// Which simulator: `bootedUdid(udid)` takes the one named (or `SSOT_SIMULATOR`
+// in the environment), booting it if it is shut down, else the first booted
+// one. A wave gives every ticket its own: `createSimulator` makes a device of
+// the dev simulator's type and runtime, boots it, installs the dev app from
+// the dev simulator's bundle container and copies its data container over, so
+// the copy opens signed in with the same data. `deleteSimulator` removes it.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -55,13 +62,14 @@ export function matchScreen(screenLine, screens) {
 }
 
 // Element lookup over the accessibility tree idb prints: [{type, AXLabel, frame:{x,y,width,height}}].
-const label = e => String(e.AXLabel || '');
+// Apostrophes compare equal whichever way iOS curls them ("Don’t Allow" matches "Don't Allow").
+const label = e => String(e.AXLabel || '').replace(/[\u2018\u2019]/g, "'");
 const centre = e => [Math.round(e.frame.x + e.frame.width / 2), Math.round(e.frame.y + e.frame.height / 2)];
 const onScreen = e => e.frame && (e.frame.width > 0 || e.frame.height > 0);
 export function findElement(tree, step) {
   const els = tree.filter(e => e.type !== 'Application' && onScreen(e));
   if (step.tap !== undefined) {
-    const want = step.tap.toLowerCase();
+    const want = step.tap.replace(/[\u2018\u2019]/g, "'").toLowerCase();
     const typed = e => !step.type || e.type === step.type;
     return els.find(e => typed(e) && label(e).toLowerCase().split('\n')[0] === want)
       || els.find(e => typed(e) && label(e).toLowerCase().includes(want)) || null;
@@ -75,9 +83,15 @@ export function findElement(tree, step) {
   return null;
 }
 
+/** The system prompts a fresh simulator shows on first launch (notifications), dismissed before the drive starts. */
+export const FIRST_LAUNCH_PROMPTS = [{ tap: "Don't Allow", type: 'Button' }];
 /** Run a drive against an io: {launch(), tree(), tap(x, y), wait(ms)}. Throws naming the step that found nothing. */
 export async function runDrive(steps, io, { settle = 1800 } = {}) {
   await io.launch();
+  for (const prompt of FIRST_LAUNCH_PROMPTS) {
+    const el = findElement(await io.tree(), prompt);
+    if (el) { const [x, y] = centre(el); await io.tap(x, y); await io.wait(settle); }
+  }
   for (const step of steps) {
     if (step.wait !== undefined) { await io.wait(step.wait); continue; }
     const el = findElement(await io.tree(), step);
@@ -105,11 +119,54 @@ export function runtimeName(id) {
   const m = String(id).split('.').pop().match(/^([A-Za-z]+)-(\d+)-(\d+)$/);
   return m ? `${m[1]} ${m[2]}.${m[3]}` : String(id).split('.').pop();
 }
-export function bootedUdid() {
-  const out = execFileSync('xcrun', ['simctl', 'list', 'devices', 'booted', '-j'], { encoding: 'utf8' });
-  const j = JSON.parse(out);
-  for (const [runtime, devs] of Object.entries(j.devices)) for (const d of devs) if (d.state === 'Booted') return { udid: d.udid, name: d.name, runtime: runtimeName(runtime) };
-  return null;
+export const simctl = (args, opts = {}) => execFileSync('xcrun', ['simctl', ...args], { encoding: 'utf8', ...opts });
+const devices = run => { const j = JSON.parse(run(['list', 'devices', '-j'])); return Object.entries(j.devices).flatMap(([runtime, devs]) => devs.map(d => ({ ...d, runtimeId: runtime, runtime: runtimeName(runtime) }))); };
+/** The simulator to drive: the one named (a udid or a device name; `SSOT_SIMULATOR` when none is given), booted if need be, else the first booted one. */
+export function bootedUdid(udid = process.env.SSOT_SIMULATOR, { run = simctl } = {}) {
+  const all = devices(run);
+  if (udid) {
+    const d = all.find(x => x.udid === udid || x.name === udid);
+    if (!d) throw new Error(`no simulator is called ${udid}`);
+    if (d.state !== 'Booted') run(['boot', d.udid]);
+    return { udid: d.udid, name: d.name, runtime: d.runtime };
+  }
+  const d = all.find(x => x.state === 'Booted');
+  return d ? { udid: d.udid, name: d.name, runtime: d.runtime } : null;
+}
+/**
+ * A simulator of its own for one agent: same device type and runtime as `from`
+ * (the dev simulator, default the booted one), booted, with the dev app
+ * installed from `from`'s bundle container and `from`'s data container copied
+ * in (login, local database, preferences). Returns {udid, name, from, runtime}.
+ */
+export function createSimulator(name, { from, bundle = BUNDLE, run = simctl, copy = (src, dst) => execFileSync('rsync', ['-a', '--delete', src + '/', dst + '/']) } = {}) {
+  const all = devices(run);
+  const source = from ? all.find(x => x.udid === from || x.name === from) : all.find(x => x.state === 'Booted');
+  if (!source) throw new Error(from ? `no simulator is called ${from}` : 'no booted simulator to copy from');
+  if (all.some(x => x.name === name)) throw new Error(`a simulator called ${name} already exists; drop it first`);
+  const udid = run(['create', name, source.deviceTypeIdentifier, source.runtimeId]).trim();
+  run(['boot', udid]);
+  const app = run(['get_app_container', source.udid, bundle]).trim();
+  run(['install', udid, app]);
+  const data = run(['get_app_container', source.udid, bundle, 'data']).trim();
+  const target = run(['get_app_container', udid, bundle, 'data']).trim();
+  copy(data, target);
+  // Start idb's companion for the new device now, so the first drive does not wait on it.
+  const idb = idbPath();
+  if (idb) spawnSync(idb, ['connect', udid], { stdio: 'ignore' });
+  return { udid, name, from: source.udid, runtime: source.runtime };
+}
+/** Shut a simulator down and delete it. Takes a udid or a name; a device that does not exist is a no-op. */
+export function deleteSimulator(nameOrUdid, { run = simctl } = {}) {
+  const d = devices(run).find(x => x.udid === nameOrUdid || x.name === nameOrUdid);
+  if (!d) return { deleted: false };
+  if (d.state !== 'Shutdown') try { run(['shutdown', d.udid]); } catch {}
+  run(['delete', d.udid]);
+  return { deleted: true, udid: d.udid, name: d.name };
+}
+/** The simulators whose names start with a prefix (`wave-`), with their state. */
+export function listSimulators(prefix, { run = simctl } = {}) {
+  return devices(run).filter(d => d.name.startsWith(prefix)).map(d => ({ udid: d.udid, name: d.name, state: d.state, runtime: d.runtime }));
 }
 export function simulatorIo(udid, { bundle = BUNDLE, idb = idbPath() } = {}) {
   const run = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -119,7 +176,13 @@ export function simulatorIo(udid, { bundle = BUNDLE, idb = idbPath() } = {}) {
       run('xcrun', ['simctl', 'launch', udid, bundle]);
       await sleep(5000);
     },
-    async tree() { try { return JSON.parse(run(idb, ['ui', 'describe-all', '--udid', udid, '--json'])); } catch { return []; } },
+    // idb starts a companion on the first call to a device and answers with nothing until it is up: one retry after a pause.
+    async tree() {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try { return JSON.parse(run(idb, ['ui', 'describe-all', '--udid', udid, '--json'])); } catch { await sleep(3000); }
+      }
+      return [];
+    },
     async tap(x, y) { run(idb, ['ui', 'tap', '--udid', udid, String(x), String(y)]); },
     async wait(ms) { await sleep(ms); },
     screenshot(path) { run('xcrun', ['simctl', 'io', udid, 'screenshot', path]); },
@@ -148,14 +211,14 @@ export function stamp(root = process.cwd()) {
 }
 
 /** What stands between this machine and a capture. Empty means ready. */
-export async function doctor({ bundle = BUNDLE } = {}) {
+export async function doctor({ bundle = BUNDLE, udid } = {}) {
   const problems = [];
   const idb = idbPath();
   if (!idb) problems.push('idb is not installed: run scripts/ssot-capture-setup.sh');
   const companion = IDB_PATHS.some(d => existsSync(join(d, 'idb_companion'))) || spawnSync('which', ['idb_companion']).status === 0;
   if (!companion) problems.push('idb_companion is not installed: run scripts/ssot-capture-setup.sh');
   let booted = null;
-  try { booted = bootedUdid(); } catch { problems.push('xcrun simctl is not available (install Xcode)'); }
+  try { booted = bootedUdid(udid); } catch (e) { problems.push(/no simulator is called/.test(e.message) ? e.message : 'xcrun simctl is not available (install Xcode)'); }
   if (booted === null && !problems.some(p => p.startsWith('xcrun'))) problems.push('no booted simulator: open Simulator.app and boot one');
   if (booted) {
     const apps = spawnSync('xcrun', ['simctl', 'listapps', booted.udid], { encoding: 'utf8' }).stdout || '';

@@ -61,12 +61,19 @@ committed at close.
 
 ## 4. One subagent per ticket, each in its own worktree
 
-For every entry in `wave`, in one message so they run at once, create the worktree and spawn
-the agent:
+For every entry in `wave`, in one message so they run at once, create the worktree and the
+ticket's own simulator, then spawn the agent:
 
 ```
 git worktree add -b <branch> <worktree> <working branch>
+SYNC simulator add <simulator>          # the plan's name, wave-<feature>-NN
 ```
+
+`simulator add` makes a device of the dev simulator's type and runtime, boots it, installs
+the dev app from the dev simulator and copies its data over, so it opens signed in with the
+same data (README, Captured pictures). Every agent drives only its own; the dev simulator is
+left alone. When `simulator add` fails (no booted dev simulator, no dev app on it), the wave
+still runs and every device check is reported as not run.
 
 Spawn with the Agent tool (`subagent_type: "general-purpose"`, `run_in_background`), one per
 ticket, with a prompt that carries, verbatim:
@@ -84,10 +91,10 @@ ticket, with a prompt that carries, verbatim:
   `flutter analyze` regularly, codegen in their own tree when they change a Riverpod or Drift
   annotation, and commits on their branch. The full suite and the code review are the wave's,
   not theirs: they run neither;
-- the simulator rule. Before any device check, `SYNC sim-lock acquire wave-<NN> --wait 900`,
-  after it `SYNC sim-lock release wave-<NN>`, and a `{"ok":false}` after the wait means report
-  "device check skipped, simulator held by <owner>" and go on without it. Device checks in a
-  wave take turns; nothing else changes;
+- the simulator rule. Their device is `<simulator>` and nothing else: `export
+  SSOT_SIMULATOR=<simulator>` (or `--udid <simulator>`) on every capture command, and `-d
+  <simulator>` on `flutter run` when they put their build on it. The dev simulator and the
+  other tickets' simulators are never touched;
 - what never happens. `git stash`, any command in the main clone, a push, a merge, editing
   `docs/ssot/decisions/` (proposals go in their report, never in a file), a `flutter build`;
 - the report shape. The branch and its last commit, the acceptance criteria ticked with how
@@ -96,7 +103,9 @@ ticket, with a prompt that carries, verbatim:
   (an open question), the screens they touched, whether the device check ran, and whether the
   ticket file's criteria were ticked and its status left alone (the wave sets it).
 
-Wait for every agent. Do not merge while one is still running. An agent that reports a stale
+Wait for every agent. Do not merge while one is still running. Drop each agent's simulator
+once its report is in (`SYNC simulator drop <simulator>`), failed or not; a picture the wave
+needs is retaken on the dev simulator in step 8. An agent that reports a stale
 base, a red test it could not fix, or an unfinished criterion is a failed ticket for this wave:
 note it, leave its branch, and go on with the rest.
 
@@ -152,9 +161,9 @@ skill in `~/.claude/skills/visual-parity/`; its "control skill" is `sync.mjs cap
 1. Baseline: render each cited file under `docs/ssot/spec/design/renderings/` in a browser
    sized to the simulator's logical size and screenshot it into
    `<scratch dir>/parity/<NN>/design-<name>.png`. The rendering is the spec; it is never edited.
-2. Target: `SYNC sim-lock acquire wave-parity --wait 900`, then `SYNC capture <feature> <screen>`
-   for the screen the ticket built (its `screens.json` entry; add one with a drive when the
-   screen is new, README Captured pictures), release the lock.
+2. Target: `SYNC capture <feature> <screen>` on the dev simulator (the merged code is what it
+   must show, so the dev app is run on it first) for the screen the ticket built (its
+   `screens.json` entry; add one with a drive when the screen is new, README Captured pictures).
 3. Diff: the repo has no image-diff library, so use the one the machine has (ImageMagick's
    `compare -metric AE`, or Pillow's `ImageChops.difference`) and read the count of differing
    pixels. Zero is parity. Investigate a nonzero count pixel by pixel. The fix goes in the app,

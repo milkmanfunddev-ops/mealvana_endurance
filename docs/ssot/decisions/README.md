@@ -239,6 +239,16 @@ replaced or fell out of use (Assets below), and the epilogue deletes it. `/imple
 the same refresh for the screens a wave touched when it closes (`touched-screens --since
 <base>` names them from the diff, `refresh --only <keys>` retakes them whether stale or not).
 
+Which simulator: every capture command takes `--udid <udid|name>`, or `SSOT_SIMULATOR` in the
+environment, and boots that device if it is shut down; with neither it drives the first booted
+one. Several simulators run at once on one Mac, so a wave gives each ticket its own:
+`sync.mjs simulator add wave-<feature>-NN` creates a device of the dev simulator's type and
+runtime, boots it, installs the dev app from the dev simulator's bundle container and copies its
+data container over (login, local database, preferences), so the copy opens signed in with the
+same data; the first launch shows the notifications prompt, which every drive dismisses before
+its first step. `simulator drop <name>` shuts it down and deletes it; `simulator list` shows the
+`wave-` devices still around. The dev simulator itself is never driven by an agent.
+
 Setup, once per machine: `scripts/ssot-capture-setup.sh` installs the `idb` client (pipx) and
 Facebook's prebuilt `idb_companion` under `~/.local` (Homebrew's facebook/fb tap fails to tap
 and its formula wants newer Command Line Tools). `sync.mjs capture --check` (it terminates and relaunches the dev app to ask it) then says what is
@@ -294,7 +304,7 @@ whose blockers are done); `--open` marks the wave's tickets in progress, commits
 under the issues dir and logs the wave in `.scratch/<feature>/waves.json` with that commit as
 its base. One subagent per ticket follows Matt's implement in its own worktree beside the clone
 (`<clone>-waves/<feature>/NN-<slug>`, branch `wave/<feature>/NN-<slug>`) after checking its
-HEAD is the base, and device checks take turns through `sim-lock`. The branches merge in ticket
+HEAD is the base, and each ticket gets a simulator of its own (`sync.mjs simulator add`). The branches merge in ticket
 order with Matt's merge-conflict skill (generated files are regenerated, never resolved by
 hand); codegen, the full suite and one code review run once for the wave. `--close` records
 what merged, what failed and the elapsed time and sets each ticket's status (a wave ticket on
@@ -309,7 +319,7 @@ the page into the two files), `answers` (close an open question with a decision)
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
-`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures` (with `only` for the screens a wave touched), `ticketFrontier`, `designRenderings`, `touchedScreens`, `setTicketStatus`, `wavePlan`, `waveOpen`, `waveClose`, `elapsed`, `simLock`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures` (with `only` for the screens a wave touched), `ticketFrontier`, `designRenderings`, `touchedScreens`, `setTicketStatus`, `wavePlan`, `waveOpen`, `waveClose`, `elapsed`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `createSimulator`, `deleteSimulator`, `listSimulators`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture, a spec or an svg string and checks what comes out, never
 how the parser walks lines; one case round-trips the real mealplanning record and proposals. CLI:
 
@@ -337,7 +347,7 @@ node docs/ssot/decisions/_page/sync.mjs draw <spec.json> [<out.svg>]         # d
 node docs/ssot/decisions/_page/sync.mjs attach-svg <decisions.md> <id> <svg path>  # check the file, set the card's svg line
 node docs/ssot/decisions/_page/sync.mjs uncaptured <proposals.md> [<ssot.md>]   # screen cards with no picture and how each would get one (reuse, capture, none), as JSON
 node docs/ssot/decisions/_page/sync.mjs capture --check                        # what stands between this machine and a capture
-node docs/ssot/decisions/_page/sync.mjs capture <feature> <screen>             # drive the booted simulator to the screen; png + sidecar under images/<feature>/
+node docs/ssot/decisions/_page/sync.mjs capture <feature> <screen> [--udid <udid|name>]   # drive the simulator to the screen; png + sidecar under images/<feature>/. --udid or SSOT_SIMULATOR names the simulator (booted if shut down), else the first booted one; pictures and refresh take the same
 node docs/ssot/decisions/_page/sync.mjs attach-image <decisions.md> <id> <png> [--caption <text>]  # set the image line, record where the picture came from
 node docs/ssot/decisions/_page/sync.mjs pictures <feature> <proposals.md> <ssot.md>   # uncaptured -> reuse or capture -> attach, one capture per screen
 node docs/ssot/decisions/_page/sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]   # every picture in use: age, cards, stale and what changed; nothing written
@@ -346,7 +356,7 @@ node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> [--branch <b
 node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> --open           # the same, then marks its tickets in-progress, commits the issues dir and logs the wave in <feature>/waves.json with that commit as base
 node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]   # closes the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
 node docs/ssot/decisions/_page/sync.mjs touched-screens --since <commit> [<file>...]   # registry screens drawn from the files changed since the commit (committed, uncommitted or untracked), as JSON
-node docs/ssot/decisions/_page/sync.mjs sim-lock acquire <owner> [--wait <seconds>] | release <owner> | status   # one simulator, one holder; the lock dir sits under the OS temp dir, a hold older than 30 minutes is broken
+node docs/ssot/decisions/_page/sync.mjs simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]   # a simulator per agent: the dev simulator's type and runtime, the dev app installed from it, its data copied over
 ```
 
 `triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with

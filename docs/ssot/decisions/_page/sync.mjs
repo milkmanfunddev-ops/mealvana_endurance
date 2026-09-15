@@ -35,7 +35,7 @@
 //   node sync.mjs wave <feature> <issues dir> --open           -> the same, then commits the ticket files with their in-progress marks and logs the wave (base = that commit)
 //   node sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]  -> close the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
 //   node sync.mjs touched-screens --since <commit> [<file>...]  -> registry screens drawn from the files changed since the commit (committed, uncommitted, untracked)
-//   node sync.mjs sim-lock acquire <owner> [--wait <s>] | release <owner> | status  -> one simulator, one holder at a time
+//   node sync.mjs simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]  -> a simulator per agent, copied from the dev one (app + data); every capture command takes --udid or SSOT_SIMULATOR
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -43,7 +43,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { join, isAbsolute, basename, dirname, resolve } from 'node:path';
 import { draw, TOKENS } from './diagram.mjs';
-import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor } from './capture.mjs';
+import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor, createSimulator, deleteSimulator, listSimulators } from './capture.mjs';
 
 const HEAD_KEYS = ['feature', 'feature name', 'last extracted', 'artifact'];
 const PARTS = [
@@ -882,7 +882,7 @@ export function wavePlan(feature, dir, { root = process.cwd(), branch } = {}) {
     const t = docs.find(d => d.number === n);
     const text = readFileSync(under(root, t.file), 'utf8');
     const name = `${n}-${basename(t.file).replace(/^\d+-/, '').replace(/\.md$/, '')}`;
-    return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), renderings: designRenderings(text), cites: t.cites };
+    return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), simulator: `wave-${feature}-${n}`, renderings: designRenderings(text), cites: t.cites };
   });
   return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, wave, uncommitted };
 }
@@ -906,32 +906,6 @@ export function waveClose(log, number, { merged = [], failed = [], suite = '', n
   Object.assign(entry, { merged, failed, suite, closedAt: now, elapsed: elapsed(entry.startedAt, now) });
   return entry;
 }
-/**
- * One simulator, one holder at a time. The lock is a directory (mkdir is atomic
- * on one machine) holding `owner.json`; it lives under the OS temp dir, outside
- * every worktree, so the agents of one wave share it. A hold older than
- * `staleMs` is broken, since its agent is gone. Acquire is re-entrant for the
- * holder; only the holder releases.
- */
-export const SIM_LOCK = join(tmpdir(), 'mealvana-simulator.lock');
-export function simLock(dir = SIM_LOCK) {
-  const file = join(dir, 'owner.json');
-  const holder = () => { try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return null; } };
-  const take = (owner, now, broke) => { mkdirSync(dir, { recursive: true }); writeFileSync(file, JSON.stringify({ owner, at: now })); return broke ? { ok: true, broke } : { ok: true }; };
-  return {
-    status: () => { const h = existsSync(dir) ? holder() : null; return h ? { held: true, holder: h } : { held: false }; },
-    acquire: (owner, { now = new Date().toISOString(), staleMs = 30 * 60 * 1000 } = {}) => {
-      try { mkdirSync(dir); return take(owner, now); }
-      catch (e) { if (e.code !== 'EEXIST') throw e; }
-      const h = holder();
-      if (!h || h.owner === owner) return take(owner, now);
-      if (new Date(now) - new Date(h.at) > staleMs) return take(owner, now, h);
-      return { ok: false, holder: h };
-    },
-    release: owner => { const h = holder(); if (!h || h.owner !== owner) return { ok: false, holder: h }; rmSync(dir, { recursive: true, force: true }); return { ok: true }; },
-  };
-}
-
 // The assets map (`_page/assets.json`) keys a repo image path to the artifact
 // asset it was uploaded as. New entries are {id, sha256}; the first entries
 // were bare ids and still resolve. An image is uploaded again only when its
@@ -1163,18 +1137,20 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const [proposals, ssot] = readPair(pf, sf);
     process.stdout.write(JSON.stringify(uncaptured(proposals, ssot, loadScreens()), null, 2));
   } else if (cmd === 'capture') {
-    // capture --check: what is missing on this machine. capture <feature> <screen>: one picture, printed as its sidecar.
-    if (args[0] === '--check') {
-      const r = await doctor();
+    // capture --check: what is missing on this machine. capture <feature> <screen>: one picture, printed as its sidecar. --udid (or SSOT_SIMULATOR) names the simulator.
+    const [pos, opts] = flags(args);
+    const udid = typeof opts.udid === 'string' ? opts.udid : undefined;
+    if (opts.check) {
+      const r = await doctor({ udid });
       console.log(JSON.stringify(r, null, 2));
       process.exit(r.ready ? 0 : 1);
     }
-    const [feature, ...rest] = args; const screen = rest.join(' ');
-    if (!feature || !screen) { console.error('usage: sync.mjs capture --check | capture <feature> <screen>'); process.exit(2); }
+    const [feature, ...rest] = pos; const screen = rest.join(' ');
+    if (!feature || !screen) { console.error('usage: sync.mjs capture --check | capture <feature> <screen>  [--udid <udid|name>]'); process.exit(2); }
     const entry = matchScreen(screen, loadScreens());
     if (!entry) { console.error(`no screen in screens.json matches "${screen}"`); process.exit(1); }
     if (!entry.drive) { console.error(`${entry.key} has no drive${entry.reuse ? `; reuse ${entry.reuse}` : ''}${entry.note ? `. ${entry.note}` : ''}`); process.exit(1); }
-    const booted = bootedUdid();
+    const booted = bootedUdid(udid);
     if (!booted) { console.error('no booted simulator'); process.exit(1); }
     const r = await capture(entry, { dir: imageDir(feature), ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid) });
     console.log(JSON.stringify(r, null, 2));
@@ -1188,9 +1164,10 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     writeFileSync(df, serialize(doc));
     console.log(`${id}: image ${path}`);
   } else if (cmd === 'pictures') {
-    // pictures <feature> <proposals.md> <ssot.md>: every uncaptured card gets its picture, one capture per screen.
-    const [feature, pf, sf] = args;
-    if (!feature || !pf || !sf) { console.error('usage: sync.mjs pictures <feature> <proposals.md> <ssot.md>'); process.exit(2); }
+    // pictures <feature> <proposals.md> <ssot.md> [--udid <udid|name>]: every uncaptured card gets its picture, one capture per screen.
+    const [[feature, pf, sf], opts] = flags(args);
+    const udid = typeof opts.udid === 'string' ? opts.udid : undefined;
+    if (!feature || !pf || !sf) { console.error('usage: sync.mjs pictures <feature> <proposals.md> <ssot.md> [--udid <udid|name>]'); process.exit(2); }
     const screens = loadScreens();
     const [proposals, ssot] = readPair(pf, sf);
     const docs = { proposals, record: ssot };
@@ -1210,7 +1187,8 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
       } else if (c.how === 'capture') {
         if (!captures.has(c.key)) {
           if (!session) {
-            const booted = bootedUdid();
+            let booted = null;
+            try { booted = bootedUdid(udid); } catch (e) { skip(e.message); continue; }
             if (!booted) { skip('no booted simulator'); continue; }
             session = { ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid), dir };
           }
@@ -1234,13 +1212,13 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
   } else if (cmd === 'refresh') {
     // refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]: retake every stale picture once, in place.
     const [[feature, pf, sf], opts] = flags(args);
-    if (!feature || !pf || !sf) { console.error('usage: sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]'); process.exit(2); }
+    if (!feature || !pf || !sf) { console.error('usage: sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>] [--only <key,key>] [--udid <udid|name>]'); process.exit(2); }
     const screens = loadScreens(opts.screens || undefined);
     const [proposals, ssot] = readPair(pf, sf);
     const dir = imageDir(feature);
     let session = null; // the booted simulator, opened on the first retake
     const takePicture = async entry => {
-      if (!session) { const booted = bootedUdid(); if (!booted) throw new Error('no booted simulator'); session = { ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid), dir }; }
+      if (!session) { const booted = bootedUdid(typeof opts.udid === 'string' ? opts.udid : undefined); if (!booted) throw new Error('no booted simulator'); session = { ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid), dir }; }
       return capture(entry, session);
     };
     const only = typeof opts.only === 'string' ? commaList(opts.only) : undefined;
@@ -1285,19 +1263,14 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     const changed = typeof opts.since === 'string' ? changedSince(opts.since, ['.']) : [];
     if (changed === null) { console.error(`touched-screens: ${opts.since} is not a commit this clone has`); process.exit(2); }
     process.stdout.write(JSON.stringify(touchedScreens([...new Set([...changed, ...files])], loadScreens(opts.screens || undefined))));
-  } else if (cmd === 'sim-lock') {
-    // sim-lock acquire <owner> [--wait <seconds>] | release <owner> | status   [--dir <lock dir>]
-    const [[op, owner], opts] = flags(args);
-    const lock = simLock(opts.dir || undefined);
-    if (op === 'status') process.stdout.write(JSON.stringify(lock.status()));
-    else if (op === 'release' && owner) process.stdout.write(JSON.stringify(lock.release(owner)));
-    else if (op === 'acquire' && owner) {
-      const until = Date.now() + Number(opts.wait || 0) * 1000;
-      let r = lock.acquire(owner);
-      while (!r.ok && Date.now() < until) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000); r = lock.acquire(owner); }
-      process.stdout.write(JSON.stringify(r)); if (!r.ok) process.exit(1);
-    } else { console.error('usage: sync.mjs sim-lock acquire <owner> [--wait <seconds>] | release <owner> | status  [--dir <lock dir>]'); process.exit(2); }
+  } else if (cmd === 'simulator') {
+    // simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]: a simulator per agent, copied from the dev one (app + data)
+    const [[op, name], opts] = flags(args);
+    if (op === 'add' && name) process.stdout.write(JSON.stringify(createSimulator(name, { from: typeof opts.from === 'string' ? opts.from : undefined })));
+    else if (op === 'drop' && name) process.stdout.write(JSON.stringify(deleteSimulator(name)));
+    else if (op === 'list') process.stdout.write(JSON.stringify(listSimulators(name || 'wave-'), null, 2));
+    else { console.error('usage: sync.mjs simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]'); process.exit(2); }
   } else {
-    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures|stale|refresh|wave|touched-screens|sim-lock ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures|stale|refresh|wave|touched-screens|simulator ...'); process.exit(2);
   }
 }

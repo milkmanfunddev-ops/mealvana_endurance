@@ -9,8 +9,8 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } fro
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed, simLock } from './sync.mjs';
-import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName } from './capture.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed } from './sync.mjs';
+import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName, bootedUdid, createSimulator, deleteSimulator, listSimulators } from './capture.mjs';
 import { draw, TOKENS } from './diagram.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -1222,21 +1222,63 @@ test('waveOpen and waveClose keep one log per feature and elapsed reads as hours
   assert.equal(elapsed('2026-09-15T10:00:00Z', '2026-09-15T12:00:00Z'), '2h 0m');
 });
 
-test('simLock hands the one simulator to one owner at a time, breaks a stale hold, and the CLI reports', () => {
-  const dir = join(mkdtempSync(join(tmpdir(), 'ssot-sim-')), 'sim.lock');
-  const lock = simLock(dir);
-  assert.deepEqual(lock.status(), { held: false });
-  assert.equal(lock.acquire('wave-02', { now: '2026-09-15T10:00:00.000Z' }).ok, true);
-  const second = lock.acquire('wave-04', { now: '2026-09-15T10:01:00.000Z' });
-  assert.equal(second.ok, false); assert.equal(second.holder.owner, 'wave-02');
-  assert.equal(lock.acquire('wave-02', { now: '2026-09-15T10:01:00.000Z' }).ok, true, 're-entrant for the holder');
-  assert.equal(lock.release('wave-04').ok, false, 'only the holder releases');
-  assert.equal(lock.release('wave-02').ok, true);
-  assert.equal(lock.acquire('wave-04', { now: '2026-09-15T10:02:00.000Z' }).ok, true);
-  // A hold older than staleMs is broken: the agent that took it is gone.
-  const late = lock.acquire('wave-06', { now: '2026-09-15T10:40:00.000Z', staleMs: 30 * 60 * 1000 });
-  assert.equal(late.ok, true); assert.equal(late.broke.owner, 'wave-04');
-  assert.equal(JSON.parse(execFileSync('node', [cli, 'sim-lock', 'status', '--dir', dir], { encoding: 'utf8' })).holder.owner, 'wave-06');
-  assert.equal(execFileSync('node', [cli, 'sim-lock', 'release', 'wave-06', '--dir', dir], { encoding: 'utf8' }).trim(), '{"ok":true}');
-  assert.deepEqual(lock.status(), { held: false });
+test('bootedUdid takes the simulator named (booting it), else SSOT_SIMULATOR, else the first booted one', () => {
+  const calls = [];
+  const list = { devices: { 'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
+    { udid: 'AAA', name: 'iPhone 17 Pro', state: 'Booted', deviceTypeIdentifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro' },
+    { udid: 'BBB', name: 'wave-sm-02', state: 'Shutdown', deviceTypeIdentifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro' },
+  ] } };
+  const run = a => { calls.push(a.join(' ')); return a[0] === 'list' ? JSON.stringify(list) : ''; };
+  assert.deepEqual(bootedUdid(undefined, { run }), { udid: 'AAA', name: 'iPhone 17 Pro', runtime: 'iOS 26.2' });
+  assert.deepEqual(bootedUdid('wave-sm-02', { run }), { udid: 'BBB', name: 'wave-sm-02', runtime: 'iOS 26.2' });
+  assert.ok(calls.includes('boot BBB'), 'a shut-down simulator named by the caller is booted');
+  assert.throws(() => bootedUdid('nope', { run }), /no simulator is called nope/);
+  process.env.SSOT_SIMULATOR = 'BBB';
+  try { assert.equal(bootedUdid(undefined, { run }).udid, 'BBB'); } finally { delete process.env.SSOT_SIMULATOR; }
+});
+
+test('createSimulator copies the dev simulator: same type and runtime, app installed from its bundle, data container copied; deleteSimulator removes it', () => {
+  const calls = [], copies = [];
+  const list = { devices: { 'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
+    { udid: 'AAA', name: 'iPhone 17 Pro', state: 'Booted', deviceTypeIdentifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro' },
+    { udid: 'CCC', name: 'wave-sm-04', state: 'Booted', deviceTypeIdentifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro' },
+  ] } };
+  const run = a => {
+    calls.push(a.join(' '));
+    if (a[0] === 'list') return JSON.stringify(list);
+    if (a[0] === 'create') return 'NEW-1\n';
+    if (a[0] === 'get_app_container') return a[3] === 'data' ? `/sims/${a[1]}/data\n` : `/sims/${a[1]}/Runner.app\n`;
+    return '';
+  };
+  const made = createSimulator('wave-sm-02', { run, copy: (s, d) => copies.push([s, d]) });
+  assert.deepEqual(made, { udid: 'NEW-1', name: 'wave-sm-02', from: 'AAA', runtime: 'iOS 26.2' });
+  assert.deepEqual(calls.slice(1), [
+    'create wave-sm-02 com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro com.apple.CoreSimulator.SimRuntime.iOS-26-2',
+    'boot NEW-1',
+    'get_app_container AAA com.milkman.mealvanaendurance.dev',
+    'install NEW-1 /sims/AAA/Runner.app',
+    'get_app_container AAA com.milkman.mealvanaendurance.dev data',
+    'get_app_container NEW-1 com.milkman.mealvanaendurance.dev data',
+  ]);
+  assert.deepEqual(copies, [['/sims/AAA/data', '/sims/NEW-1/data']]);
+  assert.throws(() => createSimulator('wave-sm-04', { run }), /already exists/);
+  assert.throws(() => createSimulator('x', { run, from: 'ZZZ' }), /no simulator is called ZZZ/);
+  calls.length = 0;
+  assert.deepEqual(deleteSimulator('wave-sm-04', { run }), { deleted: true, udid: 'CCC', name: 'wave-sm-04' });
+  assert.deepEqual(calls.slice(1), ['shutdown CCC', 'delete CCC']);
+  assert.deepEqual(deleteSimulator('gone', { run }), { deleted: false });
+  assert.deepEqual(listSimulators('wave-', { run }).map(d => d.name), ['wave-sm-04']);
+});
+
+test('runDrive dismisses the first-launch notification prompt before the first step', async () => {
+  const taps = [];
+  let asked = true;
+  const io = {
+    async launch() {},
+    async tree() { return asked ? [{ type: 'Button', AXLabel: "Don\u2019t Allow", frame: { x: 0, y: 100, width: 100, height: 40 } }, { type: 'Button', AXLabel: 'Allow', frame: { x: 100, y: 100, width: 100, height: 40 } }] : [{ type: 'Button', AXLabel: 'Timeline', frame: { x: 0, y: 0, width: 50, height: 50 } }]; },
+    async tap(x, y) { taps.push([x, y]); asked = false; },
+    async wait() {},
+  };
+  await runDrive([{ tap: 'Timeline', type: 'Button' }], io);
+  assert.deepEqual(taps, [[50, 120], [25, 25]], "Don't Allow first (iOS curls the apostrophe), then the drive's own step");
 });

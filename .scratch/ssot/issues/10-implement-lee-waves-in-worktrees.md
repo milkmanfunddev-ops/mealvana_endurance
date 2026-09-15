@@ -24,7 +24,7 @@ files collide on merge; never git stash in this repo; parallel sessions never sh
 - [x] Visual parity runs for any ticket citing a design rendering and a tolerance becomes a proposed decision
 - [x] Build-time decisions from each agent's report and the diff reach the page after the wave
 - [x] Screens the wave touched are re-captured on close
-- [x] Device checks within a wave take turns on the one simulator
+- [x] Device checks within a wave run at once, one simulator per ticket (Lee's ruling, 09-15; the ticket said turns)
 - [x] Report: wave size, elapsed time, counts, link, `Next:` line
 
 **Done 2026-09-15.** `.claude/skills/implement-lee/SKILL.md` runs the prologue, reads Matt's
@@ -33,8 +33,11 @@ the frontier from the ticket files' Status and Blocked-by lines and names a bran
 beside the clone (`<clone>-waves/<feature>/NN-<slug>`) per ticket; `--open` marks the tickets in
 progress, commits the issues dir and logs the wave in `.scratch/<feature>/waves.json` with that
 commit as the base every agent checks; `--close` records merged, failed (a wave ticket on
-neither list fails), suite colour and elapsed time and sets each ticket's status. `sim-lock` is a mkdir lock
-under the OS temp dir so device checks take turns; a hold older than 30 minutes is broken.
+neither list fails), suite colour and elapsed time and sets each ticket's status. Device checks run in
+parallel, not in turns: `sync.mjs simulator add wave-<feature>-NN` gives each ticket a simulator
+of its own, a copy of the dev one (type, runtime, the dev app, its data container, so it opens
+signed in), and every capture command takes `--udid` or `SSOT_SIMULATOR`; Lee ruled out the
+lock ("we have the capacity to run several different emulators at once").
 `touched-screens --since <base>` maps the wave's diff (committed, uncommitted, untracked) to
 registry screens and `refresh --only <keys>` retakes them whether stale or not. Visual parity
 runs for a ticket citing `docs/ssot/spec/design/renderings/`, with a tolerance proposed as a
