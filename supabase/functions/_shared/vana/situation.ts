@@ -10,7 +10,10 @@
  * which is still worth a line: "they are in settings" changes what a question means.
  */
 import type { VanaCtx } from './env.ts';
-import { dayName } from './env.ts';
+import { dayName, weekStartFor } from './env.ts';
+import { sessionDates } from './opener.ts';
+import { getPlan, getPlanById } from './plan.ts';
+import type { MealPlan } from './contracts.ts';
 
 /** What the client puts on each message. Ids only. */
 export interface Situation {
@@ -27,26 +30,30 @@ export interface Situation {
 /** Which kind of thing the route's `entityId` points at. */
 export type EntityKind = 'plan' | 'meal' | 'activity' | 'event' | null;
 
+/** The one capped section a screen adds for what is in view (mp-273 clause 2). Most screens add none. */
+export type SectionKind = 'events_ahead' | 'day_plan';
+
 /** The screen table, verbatim from the spec. Longest prefix wins.
  *  `exact` rows match only themselves: `/food` is the Plan tab, but `/food/meals/recents` and
- *  `/food/swap/:planMealId` are not, and must not inherit its entity. */
-const SCREENS: { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean; exact?: boolean }[] = [
+ *  `/food/swap/:planMealId` are not, and must not inherit its entity.
+ *  A new entry point adds a row here and nothing else (mp-273 clause 4): the Doll never grows for it. */
+const SCREENS: { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean; exact?: boolean; section?: SectionKind }[] = [
   // The meal-planning Plan tab is /food?tab=plan; /plan and /current-plan are both the activity
   // detail screen (one session's fuel plan), which is why they resolve to an activity, not a plan.
-  { route: '/food', entity: 'plan', wantsDate: true, exact: true },
+  { route: '/food', entity: 'plan', wantsDate: true, exact: true, section: 'day_plan' },
   { route: '/food/meals/:id', entity: 'meal', wantsDate: false },
   { route: '/food/cook/:id', entity: 'meal', wantsDate: false },
   { route: '/fuel-log', entity: 'activity', wantsDate: true },
   { route: '/plan', entity: 'activity', wantsDate: true },
   { route: '/current-plan', entity: 'activity', wantsDate: true },
-  { route: '/events/:eventId/checklist', entity: 'event', wantsDate: false },
-  { route: '/events', entity: 'event', wantsDate: false, exact: true },
+  { route: '/events/:eventId/checklist', entity: 'event', wantsDate: false, section: 'events_ahead' },
+  { route: '/events', entity: 'event', wantsDate: false, exact: true, section: 'events_ahead' },
   { route: '/meal-log', entity: null, wantsDate: true, wantsSlot: true },
   { route: '/main', entity: null, wantsDate: true },
 ];
 
 /** The table row for a route, or null when the route carries nothing but itself. */
-export function screenFor(route: string): { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean } | null {
+export function screenFor(route: string): { route: string; entity: EntityKind; wantsDate: boolean; wantsSlot?: boolean; section?: SectionKind } | null {
   const r = (route ?? '').trim();
   if (!r) return null;
   return SCREENS.filter((s) => (s.exact ? r === s.route : r === s.route || r.startsWith(`${s.route}/`))).sort((a, b) => b.route.length - a.route.length)[0] ?? null;
@@ -104,6 +111,62 @@ export async function resolveSituation(v: VanaCtx, s: Situation | null | undefin
       return `in the app${on(s!.date)}`;
     }
   }
+}
+
+// ---------------------------------------------------------------- the section for what is in view
+/** Every list in a section stops here, then says there is more. A section is a few lines, never a dump of the record;
+ *  anything deeper is a tool (mp-273 clause 3). */
+export const SECTION_CAP = 6;
+/** A day note is Vana's own one-liner; this only stops a runaway one from filling the message. */
+const NOTE_CAP = 240;
+
+const capped = (items: string[], rows: number) => [...items.slice(0, SECTION_CAP), ...(rows > SECTION_CAP ? ['and more'] : [])].join(' | ');
+const daysOut = (from: string, to: string) => Math.round((new Date(`${to}T00:00:00Z`).getTime() - new Date(`${from}T00:00:00Z`).getTime()) / 86400_000);
+const SESSION_LABEL: Record<string, string> = { 'cook-sun': 'batch cook', 'topup-wed': 'top-up', 'fresh-fri': 'fresh cook' };
+
+/**
+ * The one capped section for the entity in view, or null when the route has none (mp-273 clause 2). Like the sentence,
+ * it is built per request from the athlete's own rows and rides on the user message, never in the context block: the
+ * Doll stays the same for every entry point, and the cached prefix stays byte-identical across turns (mp-276).
+ * `todayIso` is the athlete's local day, the one the context block is built for.
+ */
+export async function inViewSection(v: VanaCtx, s: Situation | null | undefined, todayIso: string): Promise<string | null> {
+  const route = typeof s?.route === 'string' ? s.route.trim() : '';
+  if (!route || !ROUTE_SHAPE.test(route)) return null;
+  switch (screenFor(route)?.section) {
+    case 'events_ahead': return await eventsAhead(v, todayIso);
+    case 'day_plan': return await dayPlan(v, s!, todayIso);
+    default: return null;
+  }
+}
+
+async function eventsAhead(v: VanaCtx, todayIso: string): Promise<string> {
+  const { data } = await v.db.from('events').select('event_name, event_date, location').eq('user_id', v.userId).gte('event_date', todayIso).order('event_date').limit(SECTION_CAP + 1);
+  // deno-lint-ignore no-explicit-any
+  const rows = ((data ?? []) as any[]).filter((e) => e.event_date);
+  if (!rows.length) return 'EVENTS AHEAD none';
+  const items = rows.map((e) => `${e.event_name ?? 'Race'} ${e.event_date} (${[`${daysOut(todayIso, String(e.event_date))}d`, e.location].filter(Boolean).join(', ')})`);
+  return `EVENTS AHEAD ${capped(items, rows.length)}`;
+}
+
+async function dayPlan(v: VanaCtx, s: Situation, todayIso: string): Promise<string> {
+  const date = typeof s.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s.date) ? s.date : todayIso;
+  const head = `DAY PLAN ${dayName(date)} ${date}`;
+  const id = s.entityId?.trim() || null;
+  // The id the tab sent, else the week's own plan for that day: an id that does not resolve is not an error.
+  const byId = id ? await getPlanById(v, id) : null;
+  const plan: MealPlan | null = byId ?? (await getPlan(v, weekStartFor(date)));
+  if (!plan) return `${head} · no plan this week`;
+  const bits = [head, `week of ${plan.weekStart} ${plan.status}`];
+  const note = plan.dayNotes?.[date]?.trim();
+  if (note) bits.push(`note: ${note.length > NOTE_CAP ? `${note.slice(0, NOTE_CAP - 1)}…` : note}`);
+  const onDate = sessionDates(plan.weekStart);
+  const cooks = [...new Set(plan.meals.map((m) => m.session).filter((x): x is Exclude<typeof x, null> => !!x && onDate[x] === date))];
+  if (cooks.length) bits.push(`cook: ${cooks.map((c) => SESSION_LABEL[c] ?? c).join(', ')}`);
+  const slots = Object.entries(plan.days?.[date] ?? {}).filter(([, ref]) => ref?.name).map(([slot, ref]) => `${slot} ${ref!.name}`);
+  if (slots.length) bits.push(`today: ${capped(slots, slots.length)}`);
+  bits.push(`meals: ${plan.meals.length ? capped(plan.meals.map((m) => `${m.name} (${m.mealType}, ${m.servingsLeft} of ${m.servings} left)`), plan.meals.length) : 'none yet'}`);
+  return bits.join(' · ');
 }
 
 // ---------------------------------------------------------------- reads (all RLS-scoped)

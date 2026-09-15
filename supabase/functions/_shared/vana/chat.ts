@@ -16,7 +16,7 @@ import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
-import { resolveSituation, type Situation } from './situation.ts';
+import { inViewSection, resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
@@ -217,11 +217,12 @@ export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayI
 /** The Situation (which screen they are on) travels with the message, so it is appended to the last user turn as a
  *  marked line, not written into the system prompt: the prefix stays byte-identical across turns and only the newest
  *  message — never cached anyway — carries what changes per message. */
-export function withSituation<M extends { role: string; content: unknown }>(messages: M[], situation: string | null | undefined): M[] {
+export function withSituation<M extends { role: string; content: unknown }>(messages: M[], situation: string | null | undefined, section?: string | null): M[] {
   if (!situation) return messages;
   const i = messages.map((m) => m.role).lastIndexOf('user');
   if (i < 0) return messages;
-  const m = messages[i]; const note = `[SITUATION right now they are ${situation}]`;
+  // The in-view section (mp-273 clause 2) goes under the note, on the same message, for the same reason.
+  const m = messages[i]; const note = `[SITUATION right now they are ${situation}]${section ? `\n${section}` : ''}`;
   const content = typeof m.content === 'string' ? `${m.content}\n\n${note}` : Array.isArray(m.content) ? [...m.content, { type: 'text', text: note }] : m.content;
   return [...messages.slice(0, i), { ...m, content }, ...messages.slice(i + 1)];
 }
@@ -297,7 +298,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   });
   // The Situation travels with the message and is resolved here from ids; it is never written anywhere, and it rides
   // on the user message rather than the block (see withSituation).
-  const situation = await resolveSituation(v, body.situation);
+  const [situation, inView] = await Promise.all([resolveSituation(v, body.situation), inViewSection(v, body.situation, anchorDate)]);
   const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
@@ -320,7 +321,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
   const replayed = opener ? messages : await replayHistory(v, convId, messages);
-  const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed), situation);
+  const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed), situation, inView);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);

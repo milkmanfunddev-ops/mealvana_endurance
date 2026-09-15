@@ -4,6 +4,10 @@ import { deriveWeekCharacter } from '../../_shared/vana/derive-week-character.ts
 import { coverageOf, defaultSession } from '../../_shared/vana/plan-math.ts';
 import { pickOpener, sessionDates } from '../../_shared/vana/opener.ts';
 import { seasonalProduce } from '../../_shared/vana/season.ts';
+import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
+import { systemPrompt, withSituation } from '../../_shared/vana/chat.ts';
+import { inViewSection, resolveSituation } from '../../_shared/vana/situation.ts';
+import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
 
 const d = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10) + 'T07:00:00';
 
@@ -58,3 +62,38 @@ Deno.test('opener: debrief wins for a finished, undebriefed week (≤14 days aft
   assertEquals(pickOpener({ today: '2026-09-21', current: null, previous: prev }).kind, 'plan');          // too old to nag
 });
 Deno.test('season: every month has produce', () => { for (let m = 1; m <= 12; m++) assert(seasonalProduce(`2026-${String(m).padStart(2, '0')}-10`).length >= 4); });
+
+// ---- mp-273 clause 1 / mp-218: the Doll is the constant every entry point sends
+
+/** The Doll's lines, in order. A new entry point adds a row to the screen table, never a line here (clause 4). */
+const DOLL_LINES = ['ATHLETE', 'WEEK', 'RACE', 'HOLIDAYS', 'TARGETS', 'WEATHER', 'LOGGED TODAY', 'RECENT', 'SEASON', 'LAST WEEK', 'MEMORIES', 'LAST TALKS', 'LIKES', 'GOALS'];
+
+Deno.test('the Doll is the same block, in the same shape, whichever entry point the message comes from', async () => {
+  const U = TEST_USER_ID; const anchor = '2026-09-12';
+  const v = testCtx({
+    users: [{ id: U, first_name: 'Lee', allergies: [] }],
+    events: [
+      { id: 'ev-1', user_id: U, event_name: 'Chattanooga 70.3', event_date: '2026-09-20', location: 'Chattanooga, TN' },
+      { id: 'ev-2', user_id: U, event_name: 'Ironman Florida', event_date: '2026-11-07', location: 'Panama City Beach, FL' },
+    ],
+    meal_plans: [{ id: 'plan-1', user_id: U, week_start: '2026-09-06', status: 'confirmed', is_deleted: false, day_notes: { [anchor]: 'Carbs tonight.' } }],
+    plan_meals: [{ id: 'pm-1', plan_id: 'plan-1', user_id: U, source: 'library', library_meal_id: 'D-048', name: 'Marathon bolognese', meal_type: 'dinner', servings: 5, servings_left: 3, position: 0 }],
+  });
+  const ctx = await buildAthleteContext(v, anchor, offlineDeps());
+  const block = contextBlock(ctx);
+  const system = systemPrompt('general', ctx, anchor);
+  assertEquals(block.split('\n').map((l) => DOLL_LINES.find((p) => l.startsWith(`${p} `)) ?? l), DOLL_LINES, 'the Doll lines, in order');
+
+  const entryPoints = [null, { route: '/main', date: anchor }, { route: '/events' }, { route: '/events/:eventId/checklist', entityId: 'ev-2' }, { route: '/food', entityId: 'plan-1', date: anchor }, { route: '/fuel-log', date: anchor }, { route: '/settings' }];
+  for (const s of entryPoints) {
+    const [sentence, section] = await Promise.all([resolveSituation(v, s), inViewSection(v, s, anchor)]);
+    const messages = withSituation([{ role: 'user', content: 'Which race is next?' }], sentence, section);
+    // The block and the system prompt do not move; what is in view lands on the message alone.
+    assertEquals(contextBlock(ctx), block, `block changed for ${JSON.stringify(s)}`);
+    assertEquals(systemPrompt('general', ctx, anchor), system, `system prompt changed for ${JSON.stringify(s)}`);
+    for (const head of ['EVENTS AHEAD', 'DAY PLAN']) assert(!system.includes(head), `${head} reached the system prompt`);
+    if (section) assert(String(messages[0].content).endsWith(section), `section missing from the message for ${JSON.stringify(s)}`);
+  }
+  // Only the RACE line names a race: the second one lives in the events screens' section, never in the Doll.
+  assert(!block.includes('Ironman Florida'), 'the Doll grew to hold a second race');
+});
