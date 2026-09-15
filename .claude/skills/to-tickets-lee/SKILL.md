@@ -64,6 +64,10 @@ time, `unslop`), with these fixed:
 - `blocked: NN, NN` for the blockers Matt's step 3 gave it, omitted when none;
 - `depends: <id>, <id>`, the decision ids the ticket relies on (approved ones from the record,
   pending ones from `PROPOSALS`); every ticket names at least the ids behind its slice;
+- `model: fable` when the ticket needs judgment beyond following its criteria: it touches the
+  fuelling engine or `docs/ssot/vectors/`, sync or write consistency, or it depends on a pending
+  id or an open question. Otherwise omit the line and the ticket is built on Opus. The page shows
+  it as "Built by", so the ratifier can overrule it with an amend;
 - title `Ticket NN: <title>`;
 - **Context** opens with the spec's problem statement in its words, then says where this slice
   sits in the breakdown (which of how many, what comes before and after);

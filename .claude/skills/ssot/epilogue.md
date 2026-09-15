@@ -107,7 +107,10 @@ The tool skips the push when they are at the terminal; that is fine.
 Report, then end the turn with a `Clear:` line and exactly one `Next:` line. `Clear:` says
 whether the ratifier can `/clear` now (yes when everything is committed and reseeded and
 nothing in this context is needed by the next command; otherwise no, with the one thing still
-open). `Next:` names the command and says in one clause what it does.
+open). `Next:` names the command and says in one clause what it does. When the next command
+is `/grill-with-docs-lee`, `/to-spec-lee`, `/to-tickets-lee` or `/implement-lee`, the line ends
+with `(on Fable: /model fable first)`; these run over many turns, so the ratifier picks the
+model for the session. `/ssot` sets Opus itself.
 
 ```
 Pushed: N proposals, N open questions, N images

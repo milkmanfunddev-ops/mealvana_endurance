@@ -2,6 +2,7 @@
 name: ssot
 description: "Open the decisions page, apply the ratifiers' verdicts, and backfill a feature's history into proposals. `/ssot` or `/ssot backfill <feature>`."
 disable-model-invocation: true
+model: opus
 ---
 
 The decision record and its page: `docs/ssot/decisions/README.md` has the format, the file

@@ -593,6 +593,7 @@ Feature name: Sample
 - ticket: 05
 - blocked: 03
 - depends: sm-004
+- model: fable
 
 **Context.** The problem statement. Slice 3 of 3.
 
@@ -657,8 +658,9 @@ test('ticketPlan turns overlapping touches into blocking edges, lower number fir
   assert.deepEqual(plan.approved, []);
   assert.deepEqual(plan.forward, []);
   const docs = toDocuments(proposals);
-  assert.equal(docs[2].decision, 'The Work page draws the edges.\n\nBlocked by: 03.');
-  assert.equal(docs[0].decision, 'An agent runs the plan command and sees edges. Blocked by nothing.\n\nBlocked by: nothing, it can start at once.');
+  assert.deepEqual(plan.tickets.map(t => t.model), ['opus', 'opus', 'fable'], 'a card without a model line is built on Opus');
+  assert.equal(docs[2].decision, 'The Work page draws the edges.\n\nBlocked by: 03.\n\nBuilt by: Fable.');
+  assert.equal(docs[0].decision, 'An agent runs the plan command and sees edges. Blocked by nothing.\n\nBlocked by: nothing, it can start at once.\n\nBuilt by: Opus.');
   assert.equal(docs[3].decision, 'd');
   assert.deepEqual([docs[2].ticket, docs[2].blocked, docs[2].depends], ['05', '03', 'sm-004']);
 });
@@ -691,6 +693,16 @@ test('publishTickets refuses a ticket that depends on a rejected decision', () =
   assert.equal(readdirSync(dir).length, 0);
 });
 
+test('publishTickets refuses a ticket card whose model is neither opus nor fable', () => {
+  const proposals = parse(ticketFixture.replace('- model: fable', '- model: haiku')), ssot = emptySsot();
+  for (const id of ['sm-020', 'sm-021', 'sm-022', 'sm-023']) apply({ [id]: { verdict: 'approve', at: 't', by: 'Lee' } }, proposals, ssot, '2026-09-14');
+  const dir = mkdtempSync(join(tmpdir(), 'ssot-'));
+  const r = publishTickets('sm', proposals, ssot, dir, { next: '/implement-lee sm' });
+  assert.deepEqual(r.refused, ['sm-022']);
+  assert.equal(r.why['sm-022'], 'model haiku is not one of opus, fable');
+  assert.equal(readdirSync(dir).length, 0);
+});
+
 test('ticketPlan treats a directory as touching everything under it', () => {
   const proposals = parse(ticketFixture.replace('**What it touches.** .claude/skills/to-tickets-lee/, docs/ssot/decisions/_page/sync.mjs', '**What it touches.** docs/ssot/decisions/_page/'));
   const plan = ticketPlan('sm', proposals, emptySsot());
@@ -718,7 +730,7 @@ test('publishTickets writes one file per approved card with the header lines, th
   assert.deepEqual(r.refused, []);
   assert.deepEqual(r.written.map(w => w.file.split('/').pop()), ['03-the-sync-module-learns-the-plan.md', '04-the-skill-publishes-the-files.md', '05-the-page-shows-the-edges.md']);
   const t4 = readFileSync(join(dir, '04-the-skill-publishes-the-files.md'), 'utf8');
-  assert.match(t4, /^# 04: The skill publishes the files\n\n\*\*Status:\*\* ready-for-agent\n\*\*Blocked by:\*\* 03 \(touches docs\/ssot\/decisions\/_page\/sync.mjs\)\.\n\*\*Next:\*\* `\/implement-lee sm`\n/);
+  assert.match(t4, /^# 04: The skill publishes the files\n\n\*\*Status:\*\* ready-for-agent\n\*\*Blocked by:\*\* 03 \(touches docs\/ssot\/decisions\/_page\/sync.mjs\)\.\n\*\*Next:\*\* `\/implement-lee sm`\n\*\*Model:\*\* opus\n/);
   assert.match(t4, /\*\*What to build:\*\* Lee runs the skill and files appear\./);
   assert.match(t4, /\*\*Decisions:\*\* sm-001; approved as sm-021\./);
   assert.match(t4, /\*\*Touches:\*\* \.claude\/skills\/to-tickets-lee\/, docs\/ssot\/decisions\/_page\/sync\.mjs/);
@@ -729,6 +741,8 @@ test('publishTickets writes one file per approved card with the header lines, th
   assert.match(t3, /\*\*Decisions:\*\* sm-001, sm-004; approved as sm-020\./);
   const t5 = readFileSync(join(dir, '05-the-page-shows-the-edges.md'), 'utf8');
   assert.match(t5, /\*\*Blocked by:\*\* 03\.\n/);
+  assert.match(t5, /^\*\*Model:\*\* fable$/m);
+  assert.equal(ticketDocument('sm', join(dir, '05-the-page-shows-the-edges.md'), t5, 'sm').model, 'fable');
   // a declared edge that is also an overlap keeps the overlap evidence
   const both = parse(ticketFixture.replace('- ticket: 04\n- depends: sm-001', '- ticket: 04\n- blocked: 03\n- depends: sm-001')), bothSsot = emptySsot();
   for (const id of ['sm-020', 'sm-021', 'sm-022', 'sm-023']) apply({ [id]: { verdict: 'approve', at: 't', by: 'Lee' } }, both, bothSsot, '2026-09-14');
@@ -1173,7 +1187,7 @@ test('wavePlan reads the ticket files, names a branch and worktree per frontier 
   put('.scratch/sm/issues/02-the-sheet.md', ticketFile('02', 'The sheet', 'ready-for-agent', '01.', 'Match `docs/ssot/spec/design/renderings/pre-workout@v2.html`.\n\n'));
   put('.scratch/sm/issues/03-c.md', ticketFile('03', 'C', 'ready-for-agent', '02.'));
   git('add', '-A'); git('commit', '-q', '-m', 'tickets');
-  put('.scratch/sm/issues/04-d.md', ticketFile('04', 'D', 'ready-for-agent', 'None.'));
+  put('.scratch/sm/issues/04-d.md', ticketFile('04', 'D', 'ready-for-agent', 'None.').replace('\n\n**What to build:**', '\n**Model:** fable\n\n**What to build:**'));
   const base = git('rev-parse', 'HEAD');
   const plan = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
   assert.equal(plan.base, base);
@@ -1184,6 +1198,7 @@ test('wavePlan reads the ticket files, names a branch and worktree per frontier 
     ['02', 'The sheet', 'wave/sm/02-the-sheet', ['docs/ssot/spec/design/renderings/pre-workout@v2.html'], '.scratch/sm/issues/02-the-sheet.md'],
     ['04', 'D', 'wave/sm/04-d', [], '.scratch/sm/issues/04-d.md'],
   ]);
+  assert.deepEqual(plan.wave.map(t => t.model), ['opus', 'fable'], 'a ticket file without a Model line is built on Opus');
   assert.ok(plan.wave.every(t => t.worktree.startsWith(join(dirname(root), basename(root) + '-waves', 'sm', t.number))), 'worktrees sit beside the clone, never inside it');
   assert.deepEqual(plan.uncommitted, ['.scratch/sm/issues/04-d.md'], 'a ticket the worktrees cannot see');
   // The CLI, with --open, records the wave and marks its tickets in progress.

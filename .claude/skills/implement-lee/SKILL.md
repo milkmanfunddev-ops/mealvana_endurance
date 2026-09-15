@@ -37,7 +37,7 @@ SYNC wave <feature> ISSUES
 It reads the ticket files' `Status` and `Blocked by` lines and prints `done`, `building` (a
 wave still open), `blocked` (with what each waits on), `uncommitted` (ticket files a worktree
 could not see) and `wave`: the frontier, one entry per ticket with its `branch`, `worktree`,
-`renderings` and `cites`. Also print `SYNC ticket-plan <feature> PROPOSALS RECORD` when the
+`model`, `renderings` and `cites`. Also print `SYNC ticket-plan <feature> PROPOSALS RECORD` when the
 tickets came from `/to-tickets-lee`: a ticket whose card is not approved never enters a wave.
 
 - `wave` empty and `blocked` empty: everything is done. Report and end with `Next: /ssot`.
@@ -86,8 +86,10 @@ and does not build on. The dev simulator is never a pool device and is left alon
 simulator is booted, `claim` fails, the wave still runs, and every device check is reported as
 not run.
 
-Spawn with the Agent tool (`subagent_type: "general-purpose"`, `run_in_background`), one per
-ticket, with a prompt that carries, verbatim:
+Spawn with the Agent tool (`subagent_type: "general-purpose"`, `run_in_background`, `model`
+set to the entry's `model`), one per ticket. The model comes from the ticket's `**Model:**`
+line, which the ratifier approved on the ticket card; a ticket file without one is `opus`. The
+wave lead never changes it. The prompt carries, verbatim:
 
 - the worktree path, and the rule that every command runs there (`cd <worktree>` in each Bash
   call, or absolute paths under it), never in the main clone;

@@ -169,12 +169,13 @@ export function toDocuments(doc, { order = 0, readSvg = () => '', readCaptured =
   }));
 }
 
-/** A ticket card's Decision on the page ends with its blockers, so the ratifier approves the edges, not only the prose. */
+/** A ticket card's Decision on the page ends with its blockers and the model that builds it, so the ratifier approves both, not only the prose. */
 const ticketDecision = d => {
   const decision = d.parts.decision || '';
   if (d.meta.ticket === undefined || d.meta.ticket === '') return decision;
   const blocked = splitList(d.meta.blocked).map(num2);
-  return `${decision}\n\nBlocked by: ${blocked.length ? blocked.join(', ') : 'nothing, it can start at once'}.`;
+  const model = ticketModel(d.meta.model);
+  return `${decision}\n\nBlocked by: ${blocked.length ? blocked.join(', ') : 'nothing, it can start at once'}.\n\nBuilt by: ${model[0].toUpperCase()}${model.slice(1)}.`;
 };
 
 /**
@@ -273,7 +274,7 @@ export function ticketDocument(feature, file, text, idPrefix = '') {
   const state = /wontfix/.test(s) ? 'dropped' : /^(done|built|verified|typed-postcode|send,|partly verified)/.test(s) ? 'done' : /needs-grilling|needs grilling/.test(s) ? 'needs grilling' : /^(in-progress|building)/.test(s) ? 'building' : /ready/.test(s) ? 'ready' : /after|blocked/.test(s) ? 'waiting' : s ? 'other' : 'proposed';
   const owed = /owed|not yet (seen|looked)|awaiting a look|untested|unverified|not exercised|fails/.test(s);
   const cites = [...new Set((text.match(new RegExp(`\\b${idPrefix || '[a-z]+'}-\\d{3}\\b`, 'g')) || []))].sort();
-  return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, cites, file, order: parseInt(num, 10) || 0 };
+  return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, model: ticketModel(line('Model')), cites, file, order: parseInt(num, 10) || 0 };
 }
 
 /** The ticket files of a feature (`NN-<slug>.md`), sorted, as `<dir>/<file>` paths; an absent dir is empty. */
@@ -497,6 +498,9 @@ const splitList = s => String(s || '').split(/[,\n]/).map(x => x.trim().replace(
 const num2 = n => String(n).padStart(2, '0');
 /** The header lines a ticket file carries and the Work page reads (`ticketDocument`). */
 export const TICKET_HEADERS = ['Status', 'Blocked by', 'Next'];
+/** The models a ticket's build agent may run on; a ticket that names none is built on the first. */
+const TICKET_MODELS = ['opus', 'fable'];
+const ticketModel = m => String(m || '').trim().toLowerCase() || TICKET_MODELS[0];
 const touchKey = t => t.replace(/\/+$/, '').toLowerCase();
 /** Two touches overlap when they name the same thing or one is a directory the other sits in. */
 const overlap = (a, b) => { const x = touchKey(a), y = touchKey(b); return x === y || x.startsWith(y + '/') || y.startsWith(x + '/'); };
@@ -521,6 +525,7 @@ export function ticketPlan(feature, proposals, ssot = { decisions: [] }) {
     declared: splitList(d.meta.blocked).map(num2),
     touches: splitList(d.parts.touches),
     depends: splitList(d.meta.depends),
+    model: ticketModel(d.meta.model),
     decision: d.parts.decision || '',
     details: d.parts.details || '',
     overlaps: [],
@@ -548,12 +553,13 @@ const slug = s => s.toLowerCase().replace(/`/g, '').replace(/[^a-z0-9]+/g, '-').
 /**
  * Write the approved ticket cards of a feature as one file each under `dir`,
  * in the local ticket template with the three header lines the Work page reads
- * (Status, Blocked by, Next), a Decisions line citing the ids the card depends
- * on and the card's own id, the touches, the Details as acceptance criteria,
- * and a closing `Next:` line. Refuses (writes nothing) while any ticket card
- * is still proposed or amended, a declared blocker is not a lower number, or
- * a card depends on a rejected or withdrawn id; `why` says which. A number that
- * already has a file is skipped.
+ * (Status, Blocked by, Next), a Model line (the build agent's model), a
+ * Decisions line citing the ids the card depends on and the card's own id, the
+ * touches, the Details as acceptance criteria, and a closing `Next:` line.
+ * Refuses (writes nothing) while any ticket card is still proposed or amended,
+ * a declared blocker is not a lower number, a card depends on a rejected or
+ * withdrawn id, or a card names a model that is not opus or fable; `why` says
+ * which. A number that already has a file is skipped.
  */
 export function publishTickets(feature, proposals, ssot, dir, { next }) {
   if (!next) throw new Error('publishTickets needs the Next: command the files will carry');
@@ -563,6 +569,7 @@ export function publishTickets(feature, proposals, ssot, dir, { next }) {
   for (const id of plan.pending) why[id] = 'still pending on the page';
   for (const f of plan.forward) { const t = plan.tickets.find(x => x.number === f.ticket); why[t.id] = `blocked by ${f.blockedBy}, which is not a lower number`; }
   for (const t of plan.tickets) { const gone = t.depends.filter(id => GONE.includes(status.get(id))); if (gone.length) why[t.id] = `depends on ${gone.join(', ')}, which no longer stands`; }
+  for (const t of plan.tickets) if (!GONE.includes(t.status) && !TICKET_MODELS.includes(t.model)) why[t.id] = `model ${t.model} is not one of ${TICKET_MODELS.join(', ')}`;
   const refused = Object.keys(why);
   if (refused.length) return { written: [], skipped: [], refused, why };
   const written = [], skipped = [];
@@ -581,7 +588,8 @@ export function publishTickets(feature, proposals, ssot, dir, { next }) {
       `# ${t.number}: ${t.title}`, '',
       `**${TICKET_HEADERS[0]}:** ready-for-agent`,
       `**${TICKET_HEADERS[1]}:** ${blockedBy}`,
-      `**${TICKET_HEADERS[2]}:** \`${next}\``, '',
+      `**${TICKET_HEADERS[2]}:** \`${next}\``,
+      `**Model:** ${t.model}`, '',
       `**What to build:** ${t.decision}`, '',
       `**Decisions:** ${ids}`, '',
       `**Touches:** ${t.touches.join(', ')}`, '',
@@ -882,7 +890,7 @@ export function wavePlan(feature, dir, { root = process.cwd(), branch } = {}) {
     const t = docs.find(d => d.number === n);
     const text = readFileSync(under(root, t.file), 'utf8');
     const name = `${n}-${basename(t.file).replace(/^\d+-/, '').replace(/\.md$/, '')}`;
-    return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), simulator: `wave-${feature}-${n}`, renderings: designRenderings(text), cites: t.cites };
+    return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), simulator: `wave-${feature}-${n}`, model: t.model, renderings: designRenderings(text), cites: t.cites };
   });
   return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, wave, uncommitted };
 }

@@ -93,16 +93,17 @@ each card's id in parentheses at the end of the paragraph it came from, so `sync
 say which paragraphs stand, which were rejected, and which name no decision.
 
 The `Tickets` category holds a ticket breakdown waiting for approval, written by
-`/to-tickets-lee` with `source: tickets <feature> <date>`. Each card carries three more meta
-lines: `- ticket: NN` (the number its file will get), `- blocked: NN, NN` (the blockers the
-breakdown declared, optional) and `- depends: <id>, <id>` (the decision ids the ticket relies
-on). Its **What it touches** line is a comma-separated list of repo paths; `sync.mjs ticket-plan`
+`/to-tickets-lee` with `source: tickets <feature> <date>`. Each card carries up to four more
+meta lines: `- ticket: NN` (the number its file will get), `- blocked: NN, NN` (the blockers the
+breakdown declared, optional), `- depends: <id>, <id>` (the decision ids the ticket relies
+on) and `- model: opus|fable` (the model the ticket's build agent runs on in `/implement-lee`;
+optional, `opus` when absent). The page shows the model as a "Built by" line under the Decision. Its **What it touches** line is a comma-separated list of repo paths; `sync.mjs ticket-plan`
 turns two tickets that touch the same path (or a directory one sits in) into a blocking edge,
 the lower number blocking the higher; the page shows the card's `blocked:` numbers as a
 "Blocked by" line under the Decision. `sync.mjs publish-tickets` writes the approved cards as
 ticket files under `.scratch/<feature>/issues/`: the local ticket template with the three header
 lines the Work page reads (`**Status:** ready-for-agent`, `**Blocked by:**` with each overlap
-edge annotated `(touches <path>)`, `**Next:**`), a `**Decisions:**` line citing the `depends:`
+edge annotated `(touches <path>)`, `**Next:**`), a `**Model:**` line, a `**Decisions:**` line citing the `depends:`
 ids and the card's own id, a `**Touches:**` line, the Details as `- [ ]` acceptance criteria,
 and a closing `Next:` line. It refuses while a ticket card is pending, a declared blocker is not
 a lower number, or a `depends:` id was rejected or withdrawn, and skips a number that already
