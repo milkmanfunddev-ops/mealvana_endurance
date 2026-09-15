@@ -538,9 +538,6 @@ class ContentKeys {
   static const String mpFeedbackSavedRow = 'meal_planning.feedback_saved_row';
   static const String mpLoggedDoneToast = 'meal_planning.logged_done_toast';
   static const String mpAteIt = 'meal_planning.ate_it';
-  static const String mpGeneralExample1 = 'meal_planning.general_example_1';
-  static const String mpGeneralExample2 = 'meal_planning.general_example_2';
-  static const String mpGeneralExample3 = 'meal_planning.general_example_3';
   static const String mpMealTypeBreakfast = 'meal_planning.meal_type_breakfast';
   static const String mpMealTypeLunch = 'meal_planning.meal_type_lunch';
   static const String mpMealTypeDinner = 'meal_planning.meal_type_dinner';

@@ -10,8 +10,8 @@
 
 **Touches:** supabase/functions/_shared/vana/moment.ts, supabase/functions/tests/vana/moment.test.ts, lib/features/meal_planning/presentation/screens/vana_chat_screen.dart
 
-- [ ] The general opener with a Situation naming an event, a meal or a session opens on it; with a bare route it falls back to the personal opener (server seam).
-- [ ] The three example chips are gone from the empty state (golden).
+- [x] The general opener with a Situation naming an event, a meal or a session opens on it; with a bare route it falls back to the personal opener (server seam).
+- [x] The three example chips are gone from the empty state (golden).
 - [ ] Simulator: open the sheet on an event and hear about the event.
 
 Next: /implement-lee mealplanning

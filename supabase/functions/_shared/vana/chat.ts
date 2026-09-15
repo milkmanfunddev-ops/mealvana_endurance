@@ -23,7 +23,7 @@ import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } 
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
-import { generalOpener } from './moment.ts';
+import { generalOpener, type GeneralOpenerVariant } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
 import { ndjsonFromFullStream, ndjsonHeaders, cacheReadTokens } from './stream.ts';
 
@@ -303,7 +303,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
-  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | 'moment' = 'plan'; let extraContext = '';
+  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | GeneralOpenerVariant = 'plan'; let extraContext = '';
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
