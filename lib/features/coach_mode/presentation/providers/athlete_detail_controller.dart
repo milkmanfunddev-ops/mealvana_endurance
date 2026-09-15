@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:meta/meta.dart';
 
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
@@ -202,7 +203,7 @@ class AthleteDetailController extends _$AthleteDetailController {
       id: entry.id,
       userId: entry.userId,
       activityId: entry.activityId,
-      eventType: _parseActivityType(entry.eventType),
+      eventType: parseActivityType(entry.eventType),
       eventSubtype: entry.eventSubtype,
       eventName: entry.eventName,
       location: entry.location,
@@ -232,7 +233,7 @@ class AthleteDetailController extends _$AthleteDetailController {
       id: entry.id,
       userId: entry.userId,
       title: entry.title,
-      activityType: _parseActivityType(entry.activityType),
+      activityType: parseActivityType(entry.activityType),
       scheduledDateTime: entry.scheduledDateTime,
       durationMinutes: entry.durationMinutes,
       distanceMiles: entry.distanceMiles,
@@ -241,11 +242,16 @@ class AthleteDetailController extends _$AthleteDetailController {
     );
   }
 
-  /// Parse activity type from database string
-  ActivityType _parseActivityType(String? type) {
+  /// Parse activity type from database string.
+  ///
+  /// An unrecognized / null / legacy value maps to [ActivityType.other]
+  /// ("Workout"), NEVER to running — telling a coach a strength session is a
+  /// "Run" is false data on the surface she coaches from (Claudia, 2026-09-10).
+  @visibleForTesting
+  static ActivityType parseActivityType(String? type) {
     return ActivityType.values.firstWhere(
       (e) => e.dbValue == type || e.name == type,
-      orElse: () => ActivityType.running,
+      orElse: () => ActivityType.other,
     );
   }
 

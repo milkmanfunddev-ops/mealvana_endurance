@@ -162,8 +162,10 @@ class TrainingPeaksEventResult {
         return ActivityType.multisport;
 
       default:
-        // Default to running for unknown event types
-        return ActivityType.running;
+        // Unknown/unrecognized event type → `other` (imported for
+        // visibility/deletion), never misclassified as a run — matching the
+        // workout mapper `_mapActivityType` in this file (Claudia, 2026-09-10).
+        return ActivityType.other;
     }
   }
 
