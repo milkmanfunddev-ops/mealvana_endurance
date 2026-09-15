@@ -565,7 +565,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     // routing through the servings/time confirm sheet a second time.
     final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
       MaterialPageRoute(
-        settings: LogScannedFoodScreen.routeSettings,
         builder: (_) => LogScannedFoodScreen(food: food),
       ),
     );

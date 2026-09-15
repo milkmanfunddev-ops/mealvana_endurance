@@ -137,10 +137,16 @@ class _FakeActionClient extends Fake implements VanaActionClient {
       const VanaActionResult(parts: [], extras: {});
 }
 
-/// Every path the tests visit. `/fuel-log` is a scoped, scrollable screen;
-/// the rest are plain pages labelled with their path.
+/// Coach formulas: the third of the three screens (mp-264), with no
+/// Situation scope of its own.
+const _formulas = '/settings/food-preferences/formula-library';
+
+/// Every plain page the tests visit, labelled with its path: two of the
+/// three launcher screens, and a sample of everything else (the old
+/// deny-list's routes among them). `/food`, the third, is [_PlanTabPage].
 const _paths = [
   '/main',
+  _formulas,
   '/settings',
   '/events',
   '/pro',
@@ -173,19 +179,20 @@ class _Harness {
   }
 }
 
-class _FuelLogPage extends StatelessWidget {
-  const _FuelLogPage();
+/// The meal-planning screen: scoped and scrollable.
+class _PlanTabPage extends StatelessWidget {
+  const _PlanTabPage();
 
   @override
   Widget build(BuildContext context) => VanaSituationScope(
     situation: VanaSituation.screen(
-      VanaScreen.fuelLog,
+      VanaScreen.planTab,
       entityId: 'act-1',
       date: DateTime(2026, 9, 12),
     ),
     child: Scaffold(
       body: ListView.builder(
-        key: const ValueKey('fuel_log.list'),
+        key: const ValueKey('plan_tab.list'),
         itemCount: 60,
         itemBuilder: (_, i) => SizedBox(height: 60, child: Text('row $i')),
       ),
@@ -212,7 +219,7 @@ Future<_Harness> _pump(
     initialLocation: initial,
     observers: [observer],
     routes: [
-      GoRoute(path: '/fuel-log', builder: (_, _) => const _FuelLogPage()),
+      GoRoute(path: '/food', builder: (_, _) => const _PlanTabPage()),
       GoRoute(
         path: '/food/cook/:id',
         builder: (_, _) => const Scaffold(body: Center(child: Text('cook'))),
@@ -302,40 +309,25 @@ Future<void> _send(WidgetTester tester, String text) async {
 
 void main() {
   group('VS-6: where the launcher renders', () {
-    testWidgets('absent on every excluded route, present elsewhere', (
+    testWidgets('present on the three screens, absent on every other route', (
       tester,
     ) async {
       final h = await _pump(tester);
-      const excluded = {
-        '/pro',
-        '/buy-credits',
-        '/welcome',
-        '/onboarding',
-        '/auth/email-login',
-        '/privacy-consent',
-        '/force-upgrade',
-        '/vana',
-        '/vana/conversations',
-        '/settings/vana',
-        // Flow screens (ticket 11).
-        '/distancepacegut',
-        '/events/create',
-        '/meal-log/review',
-      };
-      for (final path in [..._paths, '/fuel-log']) {
+      const shown = {'/main', '/food', _formulas};
+      for (final path in [..._paths, '/food']) {
         h.router.go(path);
         await tester.pumpAndSettle();
         expect(
           find.byKey(_launcher),
-          excluded.contains(path) ? findsNothing : findsOneWidget,
+          shown.contains(path) ? findsOneWidget : findsNothing,
           reason: path,
         );
       }
     });
 
-    testWidgets('a flow screen with a parameter has no launcher at its '
-        'location; the browsing screen it returns to has one', (tester) async {
-      final h = await _pump(tester, initial: '/events');
+    testWidgets('a route pushed over one of the three has no launcher; the '
+        'screen it returns to has one', (tester) async {
+      final h = await _pump(tester, initial: '/food');
       expect(find.byKey(_launcher), findsOneWidget);
       unawaited(h.router.push('/food/cook/D-048'));
       await tester.pumpAndSettle();
@@ -345,21 +337,20 @@ void main() {
       expect(find.byKey(_launcher), findsOneWidget);
     });
 
-    testWidgets('a flow screen pushed without the router, named by its '
-        'route settings, has no launcher', (tester) async {
-      final h = await _pump(tester, initial: '/events');
+    testWidgets('a page pushed without the router hides the launcher without '
+        'naming itself', (tester) async {
+      final h = await _pump(tester, initial: '/main');
       final navigator = h.router.routerDelegate.navigatorKey.currentState!;
       unawaited(
         navigator.push(
           MaterialPageRoute<void>(
-            settings: const RouteSettings(name: '/events/create'),
             builder: (_) => const Scaffold(body: Text('event form')),
           ),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.byKey(_launcher), findsNothing);
-      // A dialog over it, then gone: still the flow screen underneath.
+      // A dialog over it, then gone: still the pushed page underneath.
       unawaited(
         showDialog<void>(
           context: navigator.context,
@@ -375,27 +366,21 @@ void main() {
       expect(find.byKey(_launcher), findsOneWidget);
     });
 
-    testWidgets('a browsing screen pushed without the router keeps the '
-        'launcher, named or not', (tester) async {
-      final h = await _pump(tester, initial: '/events');
+    testWidgets('a name on a pushed page changes nothing, even one of the '
+        'three', (tester) async {
+      final h = await _pump(tester, initial: '/main');
       final navigator = h.router.routerDelegate.navigatorKey.currentState!;
       unawaited(
         navigator.push(
           MaterialPageRoute<void>(
-            builder: (_) => const Scaffold(body: Text('event detail')),
+            settings: const RouteSettings(name: '/main'),
+            builder: (_) => const Scaffold(body: Text('named page')),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byKey(_launcher), findsOneWidget);
-      unawaited(
-        navigator.push(
-          MaterialPageRoute<void>(
-            settings: const RouteSettings(name: '/events/e1/checklist'),
-            builder: (_) => const Scaffold(body: Text('checklist')),
-          ),
-        ),
-      );
+      expect(find.byKey(_launcher), findsNothing);
+      navigator.pop();
       await tester.pumpAndSettle();
       expect(find.byKey(_launcher), findsOneWidget);
     });
@@ -465,9 +450,9 @@ void main() {
     testWidgets('the sheet rises over the screen without leaving it', (
       tester,
     ) async {
-      final h = await _pump(tester, initial: '/fuel-log');
+      final h = await _pump(tester, initial: '/food');
       await tester.drag(
-        find.byKey(const ValueKey('fuel_log.list')),
+        find.byKey(const ValueKey('plan_tab.list')),
         const Offset(0, -300),
       );
       await tester.pumpAndSettle();
@@ -478,7 +463,7 @@ void main() {
 
       await _open(tester);
       expect(find.byType(VanaSheet), findsOneWidget);
-      expect(h.location, '/fuel-log');
+      expect(h.location, '/food');
       // The page stays mounted and visible above the sheet.
       expect(find.text('row 5', skipOffstage: false), findsOneWidget);
       // The launcher is the sheet now; it is not drawn over the composer.
@@ -491,7 +476,7 @@ void main() {
       await tester.tapAt(const Offset(195, 40));
       await _condensed(tester);
       expect(find.byType(VanaSheet), findsNothing);
-      expect(h.location, '/fuel-log');
+      expect(h.location, '/food');
       expect(
         tester
             .state<ScrollableState>(find.byType(Scrollable).first)
@@ -504,14 +489,14 @@ void main() {
 
     testWidgets('system back closes the sheet, not the screen', (tester) async {
       final h = await _pump(tester, initial: '/main');
-      unawaited(h.router.push('/fuel-log'));
+      unawaited(h.router.push('/food'));
       await tester.pumpAndSettle();
       await _open(tester);
 
       await tester.binding.handlePopRoute();
       await _condensed(tester);
       expect(find.byType(VanaSheet), findsNothing);
-      expect(h.location, '/fuel-log');
+      expect(h.location, '/food');
     });
   });
 
@@ -553,7 +538,7 @@ void main() {
 
     testWidgets('the grabber dragged down closes to the same screen, '
         'condensing', (tester) async {
-      final h = await _pump(tester, initial: '/fuel-log');
+      final h = await _pump(tester, initial: '/food');
       await _open(tester);
       final open = glass(tester);
       await tester.drag(
@@ -567,7 +552,7 @@ void main() {
       expect(glass(tester).width, lessThan(open.width * 0.8));
       await _condensed(tester);
       expect(find.byType(VanaSheet), findsNothing);
-      expect(h.location, '/fuel-log');
+      expect(h.location, '/food');
       expect(find.byKey(_launcher), findsOneWidget);
     });
 
@@ -632,7 +617,7 @@ void main() {
       tester,
     ) async {
       final h = await _pump(tester, initial: '/main');
-      unawaited(h.router.push('/fuel-log'));
+      unawaited(h.router.push('/food'));
       await tester.pumpAndSettle();
       await _open(tester);
       await _send(tester, 'what should I eat before this');
@@ -640,18 +625,19 @@ void main() {
       final sent = h.repo.calls.last;
       expect(sent['message'], 'what should I eat before this');
       expect(sent['situation'], {
-        'route': '/fuel-log',
+        'route': '/food',
         'entityId': 'act-1',
         'date': '2026-09-12',
       });
 
-      // Settings has no scope: it speaks as its route, not as the fuel log.
+      // The formula library has no scope: it speaks as its route, not as the
+      // plan.
       await _close(tester);
-      h.router.go('/settings');
+      h.router.go(_formulas);
       await tester.pumpAndSettle();
       await _open(tester);
       await _send(tester, 'and now?');
-      expect(h.repo.calls.last['situation'], {'route': '/settings'});
+      expect(h.repo.calls.last['situation'], {'route': _formulas});
     });
 
     testWidgets('VS-5: later the same day the sheet continues the same '
@@ -824,7 +810,7 @@ void main() {
           ..openerParts = const [offers]
           ..replyParts = const [followUp];
         final h = await _pump(tester, initial: '/main', repo: repo);
-        unawaited(h.router.push('/fuel-log'));
+        unawaited(h.router.push('/food'));
         await tester.pumpAndSettle();
         await _open(tester);
 
@@ -833,12 +819,12 @@ void main() {
         expect(chip(tester).tone, VanaSheetStatusTone.update);
         expect(chip(tester).label, update);
 
-        await _send(tester, 'help me fuel this');
+        await _send(tester, 'help me plan this');
         expect(chip(tester).tone, VanaSheetStatusTone.toDo);
         expect(
           chip(tester).label,
           ContentKeys.format(content['meal_planning.companion_status_to_do']!, {
-            'topic': content['meal_planning.companion_topic_fuel_plan'],
+            'topic': content['meal_planning.companion_topic_meal_plan'],
           }),
         );
 
@@ -859,7 +845,7 @@ void main() {
     testWidgets('a to-do nothing names is a bare to-do; a meal picker names '
         'the meal plan', (tester) async {
       final repo = _FakeChatRepo()..replyParts = const [followUp];
-      final h = await _pump(tester, initial: '/settings', repo: repo);
+      final h = await _pump(tester, initial: _formulas, repo: repo);
       await _open(tester);
       final content = loadDefaultContent();
 
@@ -879,7 +865,7 @@ void main() {
           'topic': content['meal_planning.companion_topic_meal_plan'],
         }),
       );
-      expect(h.location, '/settings');
+      expect(h.location, _formulas);
     });
 
     testWidgets('quick replies: the opening\'s offers, at most two, the first '
