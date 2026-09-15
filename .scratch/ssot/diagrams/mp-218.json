@@ -1,0 +1,25 @@
+{
+  "kind": "flow",
+  "title": "The context block stays short on purpose",
+  "rows": [
+    [ { "id": "records", "label": "Athlete's records" } ],
+    [ { "id": "builder", "label": "Context builder,\nevery turn" } ],
+    [ { "id": "block", "label": "Context block" } ],
+    [ { "id": "tokens", "label": "Token count\nagainst the budget" }, { "id": "unread", "label": "A field no\nprompt reads?" } ],
+    [ { "id": "pass", "label": "Test passes", "tone": "ok" }, { "id": "fail", "label": "Test fails", "tone": "no" } ]
+  ],
+  "edges": [
+    { "from": "records", "to": "builder" },
+    { "from": "builder", "to": "block" },
+    { "from": "block", "to": "tokens" },
+    { "from": "block", "to": "unread" },
+    { "from": "tokens", "to": "pass", "label": "under" },
+    { "from": "tokens", "to": "fail", "label": "over" },
+    { "from": "unread", "to": "fail", "label": "yes" }
+  ],
+  "example": [
+    "Build the block for 3 representative athletes.",
+    "Over the budget, or a field no prompt reads: fail.",
+    "The budget number is set when the test lands."
+  ]
+}

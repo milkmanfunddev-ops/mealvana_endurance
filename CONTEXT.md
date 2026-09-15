@@ -160,3 +160,16 @@ _Avoid_: Meal preference, like, rating
 What the person is looking at and doing when they speak to Vana: the screen, the entity in view,
 the date. It travels with each message and is never stored.
 _Avoid_: Context (overloaded), screen state
+
+### Paying for the app
+
+**Allowance**:
+The credits a subscription grants into the wallet each billing period. Spent before any pack
+credits, forfeited when the period ends, and the only credits a trial has. The wallet does not
+distinguish where a credit came from except in this order of spending.
+_Avoid_: Free credits, included credits, quota
+
+**Top-up**:
+A pack of credits bought on its own, spent only once the Allowance is empty. Top-up credits never
+expire and are never forfeited, whatever happens to the subscription.
+_Avoid_: Bundle, pack (that is the store product, not the credits)

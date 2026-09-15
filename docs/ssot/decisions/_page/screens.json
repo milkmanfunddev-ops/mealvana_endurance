@@ -292,5 +292,34 @@
     "code": [
       "lib/features/subscription/presentation"
     ]
+  },
+  "formula-editor": {
+    "match": [
+      "Formula editor",
+      "Formula Kit editor",
+      "formula editor"
+    ],
+    "code": [
+      "lib/features/formula_kit/presentation/screens/formula_editor_screen.dart",
+      "lib/features/formula_kit/presentation/widgets/"
+    ],
+    "drive": [
+      {
+        "tap": "Settings",
+        "type": "Button"
+      },
+      {
+        "tap": "Diet, Allergies & Formulas",
+        "settle": 1500
+      },
+      {
+        "tap": "Formula Library",
+        "settle": 2500
+      },
+      {
+        "tap": "New",
+        "settle": 3000
+      }
+    ]
   }
 }

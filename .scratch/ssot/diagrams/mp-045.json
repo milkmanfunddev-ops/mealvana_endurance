@@ -1,0 +1,19 @@
+{
+  "kind": "flow",
+  "title": "Two things called a plan",
+  "rows": [
+    [ { "id": "plan", "label": "Route: plan,\ncurrent plan", "tone": "accent" },
+      { "id": "food", "label": "Route: food,\nplan tab selected", "tone": "accent" } ],
+    [ { "id": "fuel", "label": "An activity's\nfuel plan", "tone": "ok" },
+      { "id": "meal", "label": "The meal plan", "tone": "ok" } ]
+  ],
+  "edges": [
+    { "from": "plan", "to": "fuel", "label": "means" },
+    { "from": "food", "to": "meal", "label": "means" }
+  ],
+  "example": [
+    "Route plan, Sunday's ride open: the ride's fuel plan.",
+    "Food tab, plan segment: this week's meal plan.",
+    "The spec's table had these the wrong way round."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "flow",
+  "title": "Fixed order, cached prefix",
+  "rows": [
+    [ { "id": "tools", "label": "Tools\ncached", "tone": "ok" },
+      { "id": "persona", "label": "Persona\ncached", "tone": "ok" },
+      { "id": "context", "label": "Context block\nbuilt once, cached", "tone": "ok" } ],
+    [ { "id": "messages", "label": "Messages\nchange every turn" } ],
+    [ { "id": "refresh", "label": "Tool write or\nthe day changes", "tone": "pending" } ]
+  ],
+  "edges": [
+    { "from": "tools", "to": "persona" },
+    { "from": "persona", "to": "context" },
+    { "from": "context", "to": "messages" },
+    { "from": "refresh", "to": "context", "label": "rebuild" }
+  ],
+  "example": [
+    "8,800 tokens a turn: $0.010 full price, $0.0023 cached.",
+    "40-turn planning session: about $0.40 down to about $0.11.",
+    "Gap over five minutes: one 1.25x write, then cached again."
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "kind": "flow",
+  "title": "How the server learns what is on screen",
+  "rows": [
+    [
+      {
+        "id": "screen",
+        "label": "Screen the athlete\nasks from"
+      }
+    ],
+    [
+      {
+        "id": "ids",
+        "label": "Client sends route\n+ id, date, slot",
+        "tone": "accent"
+      },
+      {
+        "id": "text",
+        "label": "Client writes names\nor free text",
+        "tone": "no"
+      }
+    ],
+    [
+      {
+        "id": "server",
+        "label": "Server resolves ids\ninto one sentence"
+      },
+      {
+        "id": "table",
+        "label": "Never written\nto a table",
+        "tone": "no"
+      }
+    ],
+    [
+      {
+        "id": "vana",
+        "label": "Vana answers about\nwhat is in front",
+        "tone": "ok"
+      }
+    ]
+  ],
+  "edges": [
+    {
+      "from": "screen",
+      "to": "ids"
+    },
+    {
+      "from": "screen",
+      "to": "text",
+      "label": "never",
+      "tone": "no"
+    },
+    {
+      "from": "ids",
+      "to": "server"
+    },
+    {
+      "from": "server",
+      "to": "vana"
+    },
+    {
+      "from": "server",
+      "to": "table",
+      "tone": "no"
+    }
+  ],
+  "example": [
+    "Fuel log open: route plan, activity id, 14 Sep, no slot.",
+    "Server: 'the fuel plan for Sunday's 90-minute ride'.",
+    "Nothing saved; the next message sends the ids again."
+  ]
+}

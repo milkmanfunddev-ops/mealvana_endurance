@@ -1,0 +1,24 @@
+{
+  "kind": "flow",
+  "title": "Unknown means locked",
+  "rows": [
+    [ { "id": "ask", "label": "Gate asks the\nentitlement" } ],
+    [ { "id": "cache", "label": "Cached answer\nexists", "tone": "ok" },
+      { "id": "none", "label": "No cache, no answer\nin a couple of seconds", "tone": "no" } ],
+    [ { "id": "open", "label": "Cache decides,\nonline or offline", "tone": "ok" },
+      { "id": "locked", "label": "Paywall with\nRestore purchases", "tone": "no" } ],
+    [ { "id": "server", "label": "Server re-checks every\npaid call itself" } ]
+  ],
+  "edges": [
+    { "from": "ask", "to": "cache" },
+    { "from": "ask", "to": "none" },
+    { "from": "cache", "to": "open" },
+    { "from": "none", "to": "locked" },
+    { "from": "open", "to": "server", "label": "still" }
+  ],
+  "example": [
+    "Subscriber on a plane: cache says active, app open.",
+    "Fresh install, no network: paywall; Restore works once online.",
+    "A device lying about its cache buys nothing on the server."
+  ]
+}

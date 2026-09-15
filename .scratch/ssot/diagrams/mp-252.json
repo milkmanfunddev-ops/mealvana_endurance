@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "One backend, one wire",
+  "rows": [
+    [ { "id": "app", "label": "Flutter app" }, { "id": "proto", "label": "Prototype" }, { "id": "vercel", "label": "Vercel service\nnone", "tone": "no" } ],
+    [ { "id": "wire", "label": "NDJSON envelope\ncamelCase, status lines\nfrozen fixtures = truth", "tone": "accent" } ],
+    [ { "id": "chat", "label": "vana-chat", "tone": "ok" }, { "id": "action", "label": "vana-action", "tone": "ok" }, { "id": "notes", "label": "vana-day-notes", "tone": "ok" } ],
+    [ { "id": "db", "label": "Database as the caller\nrow-level security filters", "tone": "ok" }, { "id": "svc", "label": "Service key only for\nlogs, pair refresh,\nmacro fills", "tone": "muted" } ]
+  ],
+  "edges": [
+    { "from": "app", "to": "wire" }, { "from": "proto", "to": "wire" },
+    { "from": "wire", "to": "chat" }, { "from": "wire", "to": "action" }, { "from": "wire", "to": "notes" },
+    { "from": "chat", "to": "db" }, { "from": "action", "to": "db" }, { "from": "notes", "to": "db" },
+    { "from": "chat", "to": "svc" }
+  ],
+  "example": [
+    "Lee asks Vana: the app calls vana-chat as Lee.",
+    "The query sees Lee's rows only; the call log line",
+    "is the one write made with the service key."
+  ]
+}

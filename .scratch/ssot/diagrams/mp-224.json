@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Window length and session end",
+  "rows": [
+    [{ "id": "stored", "label": "Stored pre-workout\nminutes" }, { "id": "def", "label": "Authority default\nduration + intensity" }],
+    [{ "id": "win", "label": "Window length\nclamped if created late", "tone": "accent" }, { "id": "end", "label": "Session end\nstart + duration", "tone": "accent" }],
+    [{ "id": "dev", "label": "Device sends window\nto the server" }, { "id": "vana", "label": "Vana names the\nsame window" }, { "id": "done", "label": "Completed timestamp\nnever read", "tone": "no" }]
+  ],
+  "edges": [
+    { "from": "stored", "to": "win", "label": "first" },
+    { "from": "def", "to": "win", "label": "fallback" },
+    { "from": "win", "to": "dev" },
+    { "from": "dev", "to": "vana" },
+    { "from": "done", "to": "end", "tone": "no" }
+  ],
+  "example": [
+    "Ride created 4:50 pm for 5:00, window 90 min:",
+    "clamped, opens at 4:50 pm, not 3:30.",
+    "Started 5:04, ran 58 min: session ends 6:02 pm."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "flow",
+  "title": "Who can read an athlete's Doll",
+  "rows": [
+    [{ "id": "athlete", "label": "Athlete's Vana", "tone": "ok" },
+     { "id": "coach", "label": "Coach's Vana\n(coach portal)", "tone": "muted" }],
+    [{ "id": "doll", "label": "Athlete's Facts\nand Memories" }]
+  ],
+  "edges": [
+    { "from": "athlete", "to": "doll", "label": "reads", "tone": "ok" },
+    { "from": "coach", "to": "doll", "label": "never", "tone": "no" }
+  ],
+  "example": [
+    "Coach Sam opens the chat with Dana on 14 Sep.",
+    "Sam's Vana sees none of Dana's 12 Memories."
+  ]
+}

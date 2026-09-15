@@ -1,0 +1,23 @@
+{
+  "kind": "flow",
+  "title": "When a moment may ring",
+  "rows": [
+    [ { "id": "raise", "label": "A moment raises\n(pre-workout or recovery)" } ],
+    [ { "id": "cap", "label": "Two rings\nalready today?" }, { "id": "notraised", "label": "Not raised", "tone": "no" } ],
+    [ { "id": "rung", "label": "Rang for this\nworkout and window?" }, { "id": "stays", "label": "Stays live,\nno new ring", "tone": "muted" } ],
+    [ { "id": "wait", "label": "Waits for a\nlauncher on screen", "tone": "pending" }, { "id": "ring", "label": "Rings; stored on\ndevice per user per day", "tone": "ok" } ]
+  ],
+  "edges": [
+    { "from": "raise", "to": "cap" },
+    { "from": "cap", "to": "notraised", "label": "yes", "tone": "no" },
+    { "from": "cap", "to": "rung", "label": "no" },
+    { "from": "rung", "to": "stays", "label": "yes" },
+    { "from": "rung", "to": "wait", "label": "no" },
+    { "from": "wait", "to": "ring" }
+  ],
+  "example": [
+    "Morning ride 7:00, evening run 18:00: four windows.",
+    "Two rang by 8:10, so the evening ones are not raised.",
+    "Overlap: the window that closes sooner speaks."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "kind": "timeline",
+  "title": "A new account: trial, then purchase",
+  "steps": [
+    { "at": "Day 1", "label": "Signs up.\nWhole app open, meal planning included.", "tone": "ok" },
+    { "at": "Day 7", "label": "Last day of the trial.\nEverything still open.", "tone": "pending" },
+    { "at": "Day 8", "label": "Trial over. Tapping the launcher\nopens the paywall: buy or stop.", "tone": "no" }
+  ],
+  "example": [
+    "Signed up 1 Sep: trial runs 1 to 7 Sep, paywall from 8 Sep.",
+    "Buy: $9.99 a month or $69.99 a year. No free tier, no Pro tier."
+  ]
+}

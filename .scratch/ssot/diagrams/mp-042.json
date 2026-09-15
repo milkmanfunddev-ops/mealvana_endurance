@@ -1,0 +1,24 @@
+{
+  "kind": "flow",
+  "title": "Where GOALS and LIKES come from",
+  "rows": [
+    [{ "id": "survey", "label": "Existing survey\nin onboarding", "tone": "ok" },
+     { "id": "votes", "label": "Meal votes\nthumbs up or down", "tone": "ok" },
+     { "id": "step", "label": "New likes step\nin onboarding", "tone": "no" }],
+    [{ "id": "goals", "label": "GOALS line" },
+     { "id": "likes", "label": "LIKES line" }],
+    [{ "id": "context", "label": "Vana's context" }]
+  ],
+  "edges": [
+    { "from": "survey", "to": "goals" },
+    { "from": "votes", "to": "likes" },
+    { "from": "step", "to": "likes", "label": "not added", "tone": "no" },
+    { "from": "goals", "to": "context" },
+    { "from": "likes", "to": "context" }
+  ],
+  "example": [
+    "Dana finished onboarding 1 Sep: GOALS from the survey.",
+    "Her 6 thumbs since then make the LIKES line.",
+    "Vana never asks what she likes."
+  ]
+}

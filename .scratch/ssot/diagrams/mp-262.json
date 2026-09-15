@@ -1,0 +1,74 @@
+{
+  "kind": "flow",
+  "title": "Two ratifiers, one portable record",
+  "rows": [
+    [
+      {
+        "id": "lee",
+        "label": "Lee",
+        "tone": "ok"
+      },
+      {
+        "id": "xuan",
+        "label": "Xuan",
+        "tone": "ok"
+      }
+    ],
+    [
+      {
+        "id": "page",
+        "label": "Decisions page\ndocs/ssot/decisions\nin the app repo",
+        "tone": "accent"
+      }
+    ],
+    [
+      {
+        "id": "settled",
+        "label": "Settled once either\nhas approved",
+        "tone": "ok"
+      },
+      {
+        "id": "qa",
+        "label": "QA repo\nnot touched",
+        "tone": "no"
+      },
+      {
+        "id": "proto",
+        "label": "Prototype repo\nno TypeScript copied",
+        "tone": "muted"
+      }
+    ],
+    [
+      {
+        "id": "laptop",
+        "label": "Any other laptop opens\nthe same page and skills",
+        "tone": "ok"
+      }
+    ]
+  ],
+  "edges": [
+    {
+      "from": "lee",
+      "to": "page",
+      "label": "approve"
+    },
+    {
+      "from": "xuan",
+      "to": "page",
+      "label": "approve"
+    },
+    {
+      "from": "page",
+      "to": "settled"
+    },
+    {
+      "from": "page",
+      "to": "laptop"
+    }
+  ],
+  "example": [
+    "Xuan approves mp-262 from her laptop on 15 Sep: settled.",
+    "Lee's laptop shows the same verdict; QA repo unchanged.",
+    "SQL migrations live in the app repo, not the prototype."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Where past talks go in the context",
+  "rows": [
+    [{ "id": "ep", "label": "Episodes\nconversation summaries" }, { "id": "notes", "label": "Margin notes\nabout the person" }],
+    [{ "id": "last", "label": "LAST TALKS line\nwhat they said last", "tone": "accent" }, { "id": "mem", "label": "MEMORIES block\nnon-episode notes only", "tone": "ok" }],
+    [{ "id": "ctx", "label": "Context block\nthe opener reads" }]
+  ],
+  "edges": [
+    { "from": "ep", "to": "last" },
+    { "from": "ep", "to": "mem", "label": "no longer", "tone": "no" },
+    { "from": "notes", "to": "mem" },
+    { "from": "last", "to": "ctx" },
+    { "from": "mem", "to": "ctx" }
+  ],
+  "example": [
+    "Before: 'last time we planned Tuesday's ride and",
+    "Thursday's swim', a schedule read-out.",
+    "Now, LAST TALKS: 'said weeknight cooking is a chore'."
+  ]
+}

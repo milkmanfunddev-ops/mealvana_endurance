@@ -1,0 +1,24 @@
+{
+  "kind": "flow",
+  "title": "Three ways a Memory is written",
+  "rows": [
+    [{ "id": "say", "label": "Athlete says\n'remember this'", "tone": "ok" },
+     { "id": "model", "label": "Model on its own\nmargin-note rule met", "tone": "ok" },
+     { "id": "extract", "label": "Background extract\nafter the chat ends", "tone": "ok" }],
+    [{ "id": "memory", "label": "Memory table" }],
+    [{ "id": "cron", "label": "Extraction on a timer\n(needs a cron)", "tone": "muted" },
+     { "id": "turn", "label": "Extraction every turn\n(too costly)", "tone": "muted" }]
+  ],
+  "edges": [
+    { "from": "say", "to": "memory" },
+    { "from": "model", "to": "memory" },
+    { "from": "extract", "to": "memory" },
+    { "from": "cron", "to": "memory", "label": "not built", "tone": "muted" },
+    { "from": "turn", "to": "memory", "label": "not built", "tone": "muted" }
+  ],
+  "example": [
+    "Mon 10:02 'remember I race Saturday': written at once.",
+    "Mon 10:05 she mentions hating gels: model notes it.",
+    "Mon 10:20 chat ends: extractor adds 'skips breakfast'."
+  ]
+}

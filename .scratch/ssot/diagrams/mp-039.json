@@ -1,0 +1,25 @@
+{
+  "kind": "flow",
+  "title": "Season and budget, no deals",
+  "rows": [
+    [{ "id": "month", "label": "Month\n(static table)" },
+     { "id": "said", "label": "Athlete once said\n'keep it under N dollars'" },
+     { "id": "prices", "label": "Pricing data\n(none exists)", "tone": "muted" }],
+    [{ "id": "season", "label": "SEASON line", "tone": "ok" },
+     { "id": "budget", "label": "BUDGET clause", "tone": "ok" },
+     { "id": "deals", "label": "Deals, coupons,\nlist cost estimate", "tone": "no" }],
+    [{ "id": "context", "label": "Vana's context" }]
+  ],
+  "edges": [
+    { "from": "month", "to": "season" },
+    { "from": "said", "to": "budget" },
+    { "from": "prices", "to": "deals", "label": "not built", "tone": "no" },
+    { "from": "season", "to": "context" },
+    { "from": "budget", "to": "context" }
+  ],
+  "example": [
+    "14 Sep: the month table gives SEASON for September.",
+    "Dana said 'keep it under 80 dollars' in August: BUDGET 80.",
+    "No coupon step, no price on the shopping list."
+  ]
+}

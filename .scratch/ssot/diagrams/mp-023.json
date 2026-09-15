@@ -1,0 +1,20 @@
+{
+  "kind": "flow",
+  "title": "Where a meal vote lives",
+  "rows": [
+    [{ "id": "vote", "label": "Thumbs up or down\non a meal" }],
+    [{ "id": "table", "label": "Meal feedback table\n(already drives search)", "tone": "ok" },
+     { "id": "prefs", "label": "New meal\npreferences table", "tone": "no" }],
+    [{ "id": "likes", "label": "LIKES line in context\nread every turn", "tone": "accent" }]
+  ],
+  "edges": [
+    { "from": "vote", "to": "table" },
+    { "from": "vote", "to": "prefs", "label": "never", "tone": "no" },
+    { "from": "table", "to": "likes", "label": "read in place" }
+  ],
+  "example": [
+    "Dana: thumbs up salmon bowl, thumbs down oats, 12 Sep.",
+    "Next turn's context: LIKES salmon bowl, not oats.",
+    "Formula Kit's product preferences are untouched."
+  ]
+}

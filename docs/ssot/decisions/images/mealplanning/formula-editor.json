@@ -1,7 +1,7 @@
 {
-  "screen": "Plan tab",
-  "key": "plan-tab",
-  "capturedAt": "2026-09-15T13:09:43.820Z",
+  "screen": "Formula editor",
+  "key": "formula-editor",
+  "capturedAt": "2026-09-15T13:09:34.651Z",
   "commit": "f84827b9",
   "appVersion": "1.26.0+1",
   "device": "grill-mealplanning",

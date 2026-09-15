@@ -1,0 +1,67 @@
+{
+  "kind": "flow",
+  "title": "Numbers come from tools, never Vana",
+  "rows": [
+    [
+      {
+        "id": "ask",
+        "label": "Athlete asks about\nfuelling or races"
+      }
+    ],
+    [
+      {
+        "id": "vana",
+        "label": "Vana\npresents what tools return",
+        "tone": "accent"
+      },
+      {
+        "id": "invent",
+        "label": "Vana invents a\nnumber or a meal",
+        "tone": "no"
+      }
+    ],
+    [
+      {
+        "id": "tools",
+        "label": "Tools: upcoming events,\nactivity history,\nmacro targets, foods",
+        "tone": "ok"
+      }
+    ],
+    [
+      {
+        "id": "module",
+        "label": "Deterministic module\npre, during, post targets",
+        "tone": "ok"
+      },
+      {
+        "id": "records",
+        "label": "The athlete's\nown records",
+        "tone": "ok"
+      }
+    ]
+  ],
+  "edges": [
+    {
+      "from": "ask",
+      "to": "vana"
+    },
+    {
+      "from": "vana",
+      "to": "tools",
+      "label": "calls"
+    },
+    {
+      "from": "tools",
+      "to": "module"
+    },
+    {
+      "from": "tools",
+      "to": "records"
+    }
+  ],
+  "example": [
+    "'What races are coming up?' The events tool answers:",
+    "Birmingham Half, 12 Oct. Its fuelling targets come from",
+    "the module; Vana reads them out and adds nothing."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "flow",
+  "title": "What the praise eval checks",
+  "rows": [
+    [{ "id": "msg", "label": "Test praise sent\nto Vana on dev" }],
+    [{ "id": "row", "label": "Row Vana files\nsentiment, rating, about" }],
+    [{ "id": "sent", "label": "Sentiment positive\nasserted", "tone": "ok" }, { "id": "rating", "label": "Rating\nasserted", "tone": "ok" }, { "id": "about", "label": "About-field\nlogged only", "tone": "muted" }]
+  ],
+  "edges": [
+    { "from": "msg", "to": "row" },
+    { "from": "row", "to": "sent" },
+    { "from": "row", "to": "rating" },
+    { "from": "row", "to": "about" }
+  ],
+  "example": [
+    "'this app planned my week perfectly'",
+    "positive, rating 5: pass.",
+    "about = app or Vana: logged either way, never fails."
+  ]
+}

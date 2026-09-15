@@ -1,0 +1,18 @@
+{
+  "kind": "timeline",
+  "title": "One conversation, start to idle",
+  "steps": [
+    { "at": "Msg 1-39", "label": "Every message kept verbatim." },
+    { "at": "Msg 30", "label": "Summary of the oldest 20 written\nin the background; no turn waits.", "tone": "pending" },
+    { "at": "Msg 40", "label": "Oldest 20 become one summary message,\nlast 20 stay verbatim.", "tone": "accent" },
+    { "at": "Msg 60", "label": "Same again, previous summary rolled in.", "tone": "accent" },
+    { "at": "Any time", "label": "Remember tool saves a durable thing\nthe moment the athlete says it.", "tone": "ok" },
+    { "at": "Idle", "label": "Sheet closes, app backgrounds, or a new\nchat starts: client tells the server.", "tone": "pending" },
+    { "at": "Then", "label": "Server writes the episode once.\nNext opener reads it, never waits.", "tone": "ok" }
+  ],
+  "example": [
+    "Turn 45: one summary of messages 1 to 20, then 21 to 45.",
+    "Sheet closed 21:10: episode written before the 07:00 chat.",
+    "Removed: 3.5 s read-back wait, last-words fallback."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Two episode rows, one read",
+  "rows": [
+    [{ "id": "a", "label": "Turn 21 inserts\nan episode row" }, { "id": "b", "label": "Read-back inserts\nan episode row" }],
+    [{ "id": "two", "label": "Two rows for\none conversation" }],
+    [{ "id": "old", "label": "Expect one row\nerror, episode lost", "tone": "no" }, { "id": "new", "label": "Take the newest row\nepisode kept", "tone": "accent" }, { "id": "idx", "label": "Unique index\nleft out for now", "tone": "muted" }]
+  ],
+  "edges": [
+    { "from": "a", "to": "two" },
+    { "from": "b", "to": "two" },
+    { "from": "two", "to": "old", "label": "before" },
+    { "from": "two", "to": "new", "label": "now" },
+    { "from": "idx", "to": "two", "label": "would block", "tone": "muted" }
+  ],
+  "example": [
+    "Turn 21 and the read-back both insert at 14:02.",
+    "The read takes the 14:02:07 row, the newer one.",
+    "Before: 'expected one row' error, episode gone for good."
+  ]
+}

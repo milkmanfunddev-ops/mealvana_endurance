@@ -1,0 +1,26 @@
+{
+  "kind": "flow",
+  "title": "The opener speaks from what exists",
+  "rows": [
+    [ { "id": "open", "label": "Conversation opens" } ],
+    [ { "id": "mem", "label": "Memory table,\nas it stands", "tone": "ok" },
+      { "id": "ep", "label": "Newest episodes,\nas they stand", "tone": "ok" },
+      { "id": "missing", "label": "Last episode\nnot yet written", "tone": "muted" } ],
+    [ { "id": "says", "label": "Opener speaks at once", "tone": "accent" } ],
+    [ { "id": "wait", "label": "Wait up to 3.5 s\nfor a read-back", "tone": "no" },
+      { "id": "fallback", "label": "Athlete's last\nwords fallback", "tone": "no" } ]
+  ],
+  "edges": [
+    { "from": "open", "to": "mem" },
+    { "from": "open", "to": "ep" },
+    { "from": "open", "to": "missing" },
+    { "from": "mem", "to": "says" },
+    { "from": "ep", "to": "says" },
+    { "from": "missing", "to": "says", "label": "left out" }
+  ],
+  "example": [
+    "07:02, last night's episode not written yet:",
+    "Vana opens from the memory table and older episodes.",
+    "Wait: 0 s. Nothing stretched to cover the gap."
+  ]
+}

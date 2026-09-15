@@ -1,0 +1,22 @@
+{
+  "kind": "flow",
+  "title": "Allowance first, packs when it is empty",
+  "rows": [
+    [ { "id": "renew", "label": "Renewal event,\neach billing month" },
+      { "id": "pack", "label": "Pack bought:\n50 or 250" } ],
+    [ { "id": "allow", "label": "Monthly allowance:\nno roll-over", "tone": "pending" },
+      { "id": "packs", "label": "Pack credits:\nnever expire", "tone": "ok" } ],
+    [ { "id": "call", "label": "One call, one credit\n(six functions)", "tone": "accent" } ]
+  ],
+  "edges": [
+    { "from": "renew", "to": "allow", "label": "grant" },
+    { "from": "pack", "to": "packs" },
+    { "from": "allow", "to": "call", "label": "spent first" },
+    { "from": "packs", "to": "call", "label": "when empty" }
+  ],
+  "example": [
+    "Annual plan bought 3 Sep: grants on 3 Oct, 3 Nov, 3 Dec...",
+    "Trial day one gets the full month; cancel forfeits the rest.",
+    "Number set with the paywall copy, from the per-call cost log."
+  ]
+}

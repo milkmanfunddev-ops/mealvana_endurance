@@ -1,0 +1,20 @@
+{
+  "kind": "flow",
+  "title": "The Doll is assembled, not copied",
+  "rows": [
+    [ { "id": "user", "label": "User record" }, { "id": "cal", "label": "Calendar, events" }, { "id": "votes", "label": "Meal votes, survey" } ],
+    [ { "id": "block", "label": "Assembled on the server\nat request time\nonly this turn's facts", "tone": "accent" }, { "id": "mem", "label": "Memory table\nthe Doll's own", "tone": "ok" } ],
+    [ { "id": "prompt", "label": "Prompt for this turn", "tone": "ok" }, { "id": "tools", "label": "Tools reach\nanything deeper", "tone": "ok" }, { "id": "copy", "label": "Separate profile\ncopy", "tone": "no" } ]
+  ],
+  "edges": [
+    { "from": "user", "to": "block" }, { "from": "cal", "to": "block" }, { "from": "votes", "to": "block" },
+    { "from": "mem", "to": "block" },
+    { "from": "block", "to": "prompt" },
+    { "from": "tools", "to": "prompt", "label": "on request" }
+  ],
+  "example": [
+    "Turn on 14 Sep: the block holds this week's 3 workouts,",
+    "the 12 Oct race and 2 memories. Last year's meal votes",
+    "come through a tool. No field is stored twice."
+  ]
+}

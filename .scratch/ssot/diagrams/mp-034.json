@@ -1,0 +1,20 @@
+{
+  "kind": "flow",
+  "title": "What the open episode reads",
+  "rows": [
+    [{ "id": "t", "label": "Transcript at the cap\n20 messages" }],
+    [{ "id": "first", "label": "Messages 1 to 10\nthe opening half", "tone": "accent" }, { "id": "second", "label": "Messages 11 to 20\nthe recent half", "tone": "muted" }],
+    [{ "id": "prompt", "label": "Prompt asks for\nnames and numbers", "tone": "accent" }, { "id": "ep", "label": "One-sentence\nepisode" }]
+  ],
+  "edges": [
+    { "from": "t", "to": "first" },
+    { "from": "t", "to": "second" },
+    { "from": "first", "to": "prompt" },
+    { "from": "prompt", "to": "ep" }
+  ],
+  "example": [
+    "20 messages: the episode reads messages 1 to 10.",
+    "Whole transcript: recent topics, opening gone (failed).",
+    "Past about 40 messages the front is lost again."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "What each screen names in view",
+  "rows": [
+    [ { "id": "plan", "label": "Plan tab" }, { "id": "meal", "label": "Meal detail" }, { "id": "fuel", "label": "Fuel log,\nsession plan" } ],
+    [ { "id": "plan_s", "label": "date + plan", "tone": "accent" }, { "id": "meal_s", "label": "meal", "tone": "accent" }, { "id": "fuel_s", "label": "activity", "tone": "accent" } ],
+    [ { "id": "event", "label": "Event screens" }, { "id": "log", "label": "Meal-log screens" }, { "id": "tabs", "label": "Main tabs" } ],
+    [ { "id": "event_s", "label": "event", "tone": "accent" }, { "id": "log_s", "label": "date + slot", "tone": "accent" }, { "id": "tabs_s", "label": "date", "tone": "accent" } ],
+    [ { "id": "other", "label": "Every other screen" } ],
+    [ { "id": "other_s", "label": "route alone", "tone": "muted" } ]
+  ],
+  "edges": [
+    { "from": "plan", "to": "plan_s" }, { "from": "meal", "to": "meal_s" }, { "from": "fuel", "to": "fuel_s" },
+    { "from": "event", "to": "event_s" }, { "from": "log", "to": "log_s" }, { "from": "tabs", "to": "tabs_s" },
+    { "from": "other", "to": "other_s" }
+  ],
+  "example": [
+    "15 screens name a thing; Settings sends only its route.",
+    "Meal detail on 14 Sep sends: route + the meal's id."
+  ]
+}

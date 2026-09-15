@@ -55,7 +55,11 @@
     "sha256": "cba76454ba9c6e88424de6bb5bf71147c109b690d7058546cbe0f8662d20f7b9"
   },
   "docs/ssot/decisions/images/mealplanning/plan-tab.png": {
-    "id": "29bd68845a26b68c9b18647fd10e13de",
-    "sha256": "2cb6a8a60ccbe2ea4829e666cde6e84fba606da7137038a8fe0c56bf0c43b3fa"
+    "id": "35c1bff13abe1f2b43e39236fb41cb85",
+    "sha256": "a44c155a024261e87df7bad3850f49df1877a6a3c9a501c0504f324ba05b1600"
+  },
+  "docs/ssot/decisions/images/mealplanning/formula-editor.png": {
+    "id": "1c5f34322e5f4e720c2ec199cc4c1013",
+    "sha256": "13512af7fd15a072a9d24f3b91bccd3cd838ddae101344d362be4b7546cd7d46"
   }
 }

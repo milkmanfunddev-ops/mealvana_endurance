@@ -1,0 +1,14 @@
+{
+  "kind": "timeline",
+  "title": "What reaches prod, and when",
+  "steps": [
+    { "at": "Now", "label": "Meal planning stays on dev.\nNothing pushed to develop or release.", "tone": "pending" },
+    { "at": "Cutover", "label": "Migration runs, schema target 21.\nProd gets pgvector and the home columns.", "tone": "accent" },
+    { "at": "Seed", "label": "Library re-embedded: about 1,922 calls.\nVerify: every row embedded, or not done.", "tone": "pending" },
+    { "at": "Build ships", "label": "The users upsert finds its columns.\nBundled defaults win over a stale cache.", "tone": "ok" }
+  ],
+  "example": [
+    "A build lands before the columns: every sign-in breaks.",
+    "Seed counts as done only when all ~1,922 rows embed."
+  ]
+}

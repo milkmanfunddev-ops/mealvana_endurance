@@ -1,0 +1,23 @@
+{
+  "kind": "flow",
+  "title": "Webhook in, gate reads, nothing else writes",
+  "rows": [
+    [ { "id": "rc", "label": "RevenueCat\n(always wins)", "tone": "accent" } ],
+    [ { "id": "webhook", "label": "Webhook writes\nthe two fields", "tone": "ok" },
+      { "id": "old", "label": "Event older than\nthe row: ignored", "tone": "muted" } ],
+    [ { "id": "table", "label": "user_entitlements:\nactive until, period type" } ],
+    [ { "id": "server", "label": "Server checks each\npaid call against it" },
+      { "id": "app", "label": "App-side grant:\nnever", "tone": "no" } ]
+  ],
+  "edges": [
+    { "from": "rc", "to": "webhook" },
+    { "from": "rc", "to": "old" },
+    { "from": "webhook", "to": "table" },
+    { "from": "table", "to": "server" }
+  ],
+  "example": [
+    "Renewal 3 Oct: active until 3 Nov, period type normal.",
+    "A late event stamped 1 Sep arrives after: ignored.",
+    "Restore on the phone: client refetches, next webhook corrects."
+  ]
+}

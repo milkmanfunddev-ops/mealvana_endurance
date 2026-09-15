@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "One Doll for all, one section in view",
+  "rows": [
+    [ { "id": "entry", "label": "Any entry point\nsends route + id" } ],
+    [ { "id": "doll", "label": "Doll: same digest\nfor everyone, capped", "tone": "ok" },
+      { "id": "section", "label": "One section for\nwhat is in view", "tone": "accent" } ],
+    [ { "id": "tools", "label": "Deeper detail:\na tool, on demand" },
+      { "id": "grow", "label": "Doll grows for\none screen", "tone": "no" } ]
+  ],
+  "edges": [
+    { "from": "entry", "to": "doll", "label": "always" },
+    { "from": "entry", "to": "section", "label": "only in view" },
+    { "from": "section", "to": "tools", "label": "more?" }
+  ],
+  "example": [
+    "Formula screen: Doll + a FORMULA section of a few lines.",
+    "Events screen: Doll + EVENTS AHEAD. Plan tab: the day's plan.",
+    "Doll is 250 to 500 tokens, under a tenth of the prompt."
+  ]
+}

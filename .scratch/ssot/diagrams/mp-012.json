@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Brevity in the prompt, not a clamp",
+  "rows": [
+    [ { "id": "persona", "label": "Persona prompt\nper-moment length rules", "tone": "accent" } ],
+    [ { "id": "model", "label": "Model writes the turn\ntokens already paid" } ],
+    [ { "id": "clamp", "label": "Cut to two sentences\nafter the fact", "tone": "no" }, { "id": "guard", "label": "Eight-sentence\nrunaway guard only", "tone": "ok" } ],
+    [ { "id": "store", "label": "What the athlete sees\nis what is stored", "tone": "ok" } ]
+  ],
+  "edges": [
+    { "from": "persona", "to": "model" },
+    { "from": "model", "to": "clamp", "label": "before", "tone": "muted" },
+    { "from": "model", "to": "guard", "label": "now", "tone": "accent" },
+    { "from": "guard", "to": "store" }
+  ],
+  "example": [
+    "Output cap: 400, then 700, now 900 tokens.",
+    "A five-sentence planning turn is shown and stored whole;",
+    "the old clamp would have kept two and lost three."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "flow",
+  "title": "What the athlete does never writes",
+  "rows": [
+    [{ "id": "swap", "label": "Meal swapped" },
+     { "id": "skip", "label": "Meal skipped" },
+     { "id": "repeat", "label": "Same meal logged\nagain and again" }],
+    [{ "id": "silent", "label": "Silent inference\nfrom patterns", "tone": "no" },
+     { "id": "debrief", "label": "Weekly debrief asks,\nathlete answers", "tone": "ok" }],
+    [{ "id": "memory", "label": "Memory" }]
+  ],
+  "edges": [
+    { "from": "swap", "to": "silent", "tone": "no" },
+    { "from": "skip", "to": "silent", "tone": "no" },
+    { "from": "repeat", "to": "silent", "tone": "no" },
+    { "from": "silent", "to": "memory", "label": "never", "tone": "no" },
+    { "from": "debrief", "to": "memory", "label": "only writer", "tone": "ok" }
+  ],
+  "example": [
+    "Dana swaps oats for eggs on 4 mornings this week.",
+    "No note is written. Sunday's debrief asks; she says why.",
+    "Her answer becomes the Memory."
+  ]
+}

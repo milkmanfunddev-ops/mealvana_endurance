@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Two notes that disagree",
+  "rows": [
+    [{ "id": "veg", "label": "'I'm vegetarian'\nMarch" },
+     { "id": "fish", "label": "'I eat fish now'\nSeptember" }],
+    [{ "id": "store", "label": "Memory store\nboth rows stay, dated", "tone": "ok" }],
+    [{ "id": "model", "label": "Model reads both,\nweighs the newer", "tone": "accent" },
+     { "id": "super", "label": "Mark the older\nas superseded", "tone": "muted" }]
+  ],
+  "edges": [
+    { "from": "veg", "to": "store" },
+    { "from": "fish", "to": "store" },
+    { "from": "store", "to": "model" },
+    { "from": "store", "to": "super", "label": "not built", "tone": "muted" }
+  ],
+  "example": [
+    "Dana: vegetarian (3 Mar), eats fish (9 Sep).",
+    "Plan built 14 Sep leans on the September note."
+  ]
+}

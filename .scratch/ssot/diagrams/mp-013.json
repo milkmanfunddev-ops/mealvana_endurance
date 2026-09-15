@@ -1,0 +1,55 @@
+{
+  "kind": "flow",
+  "title": "Budgets per turn and per athlete",
+  "rows": [
+    [
+      {
+        "id": "send",
+        "label": "Athlete sends\nat most 4 per 10 s",
+        "tone": "pending"
+      }
+    ],
+    [
+      {
+        "id": "plan",
+        "label": "Planning turn\nup to 6 tool steps",
+        "tone": "accent"
+      },
+      {
+        "id": "gen",
+        "label": "General turn\nup to 8 tool steps",
+        "tone": "accent"
+      }
+    ],
+    [
+      {
+        "id": "answer",
+        "label": "Answer\nsystem prompt ~900 tokens\ncompact tool outputs",
+        "tone": "ok"
+      }
+    ]
+  ],
+  "edges": [
+    {
+      "from": "send",
+      "to": "plan"
+    },
+    {
+      "from": "send",
+      "to": "gen"
+    },
+    {
+      "from": "plan",
+      "to": "answer"
+    },
+    {
+      "from": "gen",
+      "to": "answer"
+    }
+  ],
+  "example": [
+    "Sends at 0, 2, 4 and 6 s go through; a fifth at 8 s waits.",
+    "A planning turn stops at its sixth tool step and answers;",
+    "a general turn gets two more."
+  ]
+}

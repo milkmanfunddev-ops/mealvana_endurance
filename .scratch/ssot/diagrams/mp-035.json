@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Open episode beside the read-back",
+  "rows": [
+    [{ "id": "open", "label": "Open episode\nwritten mid-talk", "tone": "accent" }],
+    [{ "id": "row", "label": "Episode row\nan existing one stands" }, { "id": "stamp", "label": "Read-back stamp" }],
+    [{ "id": "rb", "label": "Full read-back\nwhen the talk ends" }, { "id": "notes", "label": "Margin notes\nstill owed" }]
+  ],
+  "edges": [
+    { "from": "open", "to": "row", "label": "if none yet", "tone": "pending" },
+    { "from": "open", "to": "stamp", "label": "never", "tone": "no" },
+    { "from": "rb", "to": "row", "tone": "ok" },
+    { "from": "rb", "to": "stamp", "tone": "ok" },
+    { "from": "rb", "to": "notes", "tone": "ok" }
+  ],
+  "example": [
+    "Message 21: open episode written, stamp untouched.",
+    "Talk ends: read-back keeps that episode,",
+    "writes the margin notes and stamps it read."
+  ]
+}

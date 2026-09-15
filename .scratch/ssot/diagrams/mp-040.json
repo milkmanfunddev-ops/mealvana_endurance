@@ -1,0 +1,20 @@
+{
+  "kind": "flow",
+  "title": "How Vana finds what she knows",
+  "rows": [
+    [{ "id": "msg", "label": "Athlete's message" }],
+    [{ "id": "recall", "label": "Embedding recall\n(similarity search)", "tone": "accent" },
+     { "id": "trained", "label": "Trained preference\nmodel per athlete", "tone": "muted" }],
+    [{ "id": "context", "label": "Memories in context", "tone": "ok" }]
+  ],
+  "edges": [
+    { "from": "msg", "to": "recall" },
+    { "from": "msg", "to": "trained", "label": "not built", "tone": "muted" },
+    { "from": "recall", "to": "context" }
+  ],
+  "example": [
+    "Dana asks 'what's good before a long ride?'",
+    "Recall pulls her 3 closest Memories by similarity.",
+    "Nothing is trained; weeks of data per person do not exist."
+  ]
+}

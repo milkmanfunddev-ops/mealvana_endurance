@@ -1,0 +1,15 @@
+{
+  "kind": "timeline",
+  "title": "The first time the cap bites",
+  "steps": [
+    { "at": "Message 19", "label": "Under the cap. No episode yet,\nnone needed." },
+    { "at": "Message 21", "label": "Cap crossed with no episode.\nThe reply is sent first, no wait.", "tone": "ok" },
+    { "at": "After the reply", "label": "The episode half of the extractor\nruns in the background. One Haiku call.", "tone": "pending" },
+    { "at": "Message 22", "label": "The next turn picks the episode up\nand prepends it.", "tone": "accent" }
+  ],
+  "example": [
+    "Turn 21 answers at once; the Haiku call runs after.",
+    "Turn 22 finds the episode and prepends it.",
+    "Not taken: write it first and make the athlete wait."
+  ]
+}

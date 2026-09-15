@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Three seams, two ways to run them",
+  "rows": [
+    [ { "id": "server", "label": "Server pure functions,\nfake database", "tone": "ok" },
+      { "id": "client", "label": "Client controllers,\nnotifier + goldens", "tone": "ok" } ],
+    [ { "id": "ci", "label": "CI, every push", "tone": "ok" } ],
+    [ { "id": "evals", "label": "Live personalisation\nevals against dev", "tone": "pending" },
+      { "id": "hand", "label": "By hand, on purpose", "tone": "pending" } ]
+  ],
+  "edges": [
+    { "from": "server", "to": "ci" },
+    { "from": "client", "to": "ci" },
+    { "from": "evals", "to": "hand" }
+  ],
+  "example": [
+    "Never in CI: eval scripts and the end-to-end plan build.",
+    "In CI: the Pro-gate flow checks the tab and routes agree.",
+    "Tests feed producer-shaped rows, never prompt wording."
+  ]
+}

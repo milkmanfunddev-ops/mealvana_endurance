@@ -1,0 +1,24 @@
+{
+  "kind": "flow",
+  "title": "Store events and the tester switch",
+  "rows": [
+    [{ "id": "ev", "label": "RevenueCat event\narrives" }],
+    [{ "id": "stale", "label": "Older than stored row\nacknowledged, ignored", "tone": "no" }, { "id": "newer", "label": "Newer: entitlement\nrow updated", "tone": "ok" }, { "id": "xfer", "label": "Transfer: moves\nbetween users", "tone": "accent" }],
+    [{ "id": "ent", "label": "Entitlement row\nthe real paywall" }, { "id": "tap", "label": "Seven-tap switch\nsets internal flag", "tone": "pending" }],
+    [{ "id": "gates", "label": "Tab gate and\nfunction gate" }]
+  ],
+  "edges": [
+    { "from": "ev", "to": "stale" },
+    { "from": "ev", "to": "newer" },
+    { "from": "ev", "to": "xfer" },
+    { "from": "newer", "to": "ent" },
+    { "from": "xfer", "to": "ent" },
+    { "from": "ent", "to": "gates" },
+    { "from": "tap", "to": "gates", "label": "testers" }
+  ],
+  "example": [
+    "A 10:00 renewal arrives after the 10:05 cancel:",
+    "older than the stored row, acknowledged, ignored.",
+    "Tester taps 7 times: flag set, both gates open."
+  ]
+}

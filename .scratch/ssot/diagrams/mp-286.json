@@ -1,0 +1,22 @@
+{
+  "kind": "flow",
+  "title": "Coaches walk through the same gate",
+  "rows": [
+    [ { "id": "coach", "label": "Coach signs in" },
+      { "id": "athlete", "label": "Athlete signs in" } ],
+    [ { "id": "gate", "label": "One gate, one trial,\none subscription", "tone": "accent" } ],
+    [ { "id": "branch", "label": "Coach branch\nin the code", "tone": "no" },
+      { "id": "doc", "label": "Xuan's paywall\ndocument", "tone": "pending" } ],
+    [ { "id": "grant", "label": "Later: RevenueCat grant\non the coach role" } ]
+  ],
+  "edges": [
+    { "from": "coach", "to": "gate" },
+    { "from": "athlete", "to": "gate" },
+    { "from": "doc", "to": "grant", "label": "new proposal" },
+    { "from": "grant", "to": "gate", "label": "gate unchanged" }
+  ],
+  "example": [
+    "Coach Dana signs up 1 Sep, buys nothing: locked on 8 Sep.",
+    "Coach rule arrives: a grant on her role, nothing else changes."
+  ]
+}

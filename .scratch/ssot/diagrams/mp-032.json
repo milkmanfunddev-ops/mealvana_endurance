@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "What one turn replays",
+  "rows": [
+    [{ "id": "conv", "label": "Conversation so far\n34 messages" }],
+    [{ "id": "older", "label": "Messages 1 to 14\nnot replayed", "tone": "muted" }, { "id": "last", "label": "Messages 15 to 34\nreplayed", "tone": "ok" }],
+    [{ "id": "ep", "label": "Episode sentence\nprepended once", "tone": "accent" }, { "id": "model", "label": "What the model sees\nepisode + 20 messages" }]
+  ],
+  "edges": [
+    { "from": "conv", "to": "older" },
+    { "from": "conv", "to": "last" },
+    { "from": "older", "to": "ep", "label": "how it started" },
+    { "from": "ep", "to": "model" },
+    { "from": "last", "to": "model" }
+  ],
+  "example": [
+    "Turn 35 of a 34-message chat: replays 15 to 34.",
+    "The cap bit, so the episode line goes in first.",
+    "Turn 12: all 11 messages, no episode needed."
+  ]
+}

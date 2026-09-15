@@ -1,0 +1,14 @@
+{
+  "kind": "timeline",
+  "title": "Opening Vana keeps the last screen",
+  "steps": [
+    { "at": "10:00", "label": "Fuel log opens.\nIt reports Sunday's ride.", "tone": "ok" },
+    { "at": "10:02", "label": "Launcher tapped, Vana sheet opens.\nVana reports nothing; the ride stands.", "tone": "accent" },
+    { "at": "10:05", "label": "\"Is this enough?\" is about the ride.", "tone": "ok" },
+    { "at": "10:31", "label": "30 minutes since the report.\nThe ride no longer answers.", "tone": "no" }
+  ],
+  "example": [
+    "Fuel log reported at 10:00; opening Vana keeps it.",
+    "At 10:31 the report is stale and Vana has no screen."
+  ]
+}

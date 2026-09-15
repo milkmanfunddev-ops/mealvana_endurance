@@ -1,0 +1,22 @@
+{
+  "kind": "flow",
+  "title": "A new note meets the store",
+  "rows": [
+    [{ "id": "new", "label": "New sentence arrives" }],
+    [{ "id": "embed", "label": "Embed it\n(meaning fingerprint)" }],
+    [{ "id": "refresh", "label": "Match at 0.95 or above:\nrefresh confirmed date", "tone": "ok" },
+     { "id": "insert", "label": "Below 0.95:\ninsert a new row", "tone": "accent" },
+     { "id": "fail", "label": "Embedding call fails:\nwrite it anyway", "tone": "pending" }]
+  ],
+  "edges": [
+    { "from": "new", "to": "embed" },
+    { "from": "embed", "to": "refresh" },
+    { "from": "embed", "to": "insert" },
+    { "from": "embed", "to": "fail" }
+  ],
+  "example": [
+    "Stored: 'Long runs are on Wednesdays' (confirmed 2 Sep).",
+    "'Wednesday is my long run' scores 0.97: confirmed 14 Sep.",
+    "'I hate beetroot' scores 0.12: a second row."
+  ]
+}

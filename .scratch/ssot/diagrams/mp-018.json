@@ -1,0 +1,21 @@
+{
+  "kind": "flow",
+  "title": "Haiku by default, cost on record",
+  "rows": [
+    [ { "id": "turn", "label": "A Vana turn" } ],
+    [ { "id": "haiku", "label": "Claude Haiku 4.5\ndefault", "tone": "accent" }, { "id": "sonnet", "label": "Sonnet\nenvironment override", "tone": "muted" } ],
+    [ { "id": "gw", "label": "AI Gateway", "tone": "ok" }, { "id": "emb", "label": "Embeddings\ntext-embedding-3-small", "tone": "ok" } ],
+    [ { "id": "eval", "label": "Each eval case records\ninput and output tokens", "tone": "ok" } ]
+  ],
+  "edges": [
+    { "from": "turn", "to": "haiku" },
+    { "from": "turn", "to": "sonnet", "label": "only if set", "tone": "muted" },
+    { "from": "haiku", "to": "gw" }, { "from": "sonnet", "to": "gw" },
+    { "from": "gw", "to": "eval", "label": "tokens" }
+  ],
+  "example": [
+    "Dev with no override: every chat turn runs on Haiku 4.5.",
+    "Eval case 'rest-day lunch': 1,480 in, 210 out, pass.",
+    "A move to Sonnet is argued from those columns."
+  ]
+}

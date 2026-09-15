@@ -1,0 +1,20 @@
+{
+  "kind": "flow",
+  "title": "Which plan an action hits",
+  "rows": [
+    [ { "id": "in", "label": "Action arrives\nchat part, Plan tab,\nReview sheet" } ],
+    [ { "id": "q", "label": "Names a plan id?" } ],
+    [ { "id": "named", "label": "That plan", "tone": "accent" }, { "id": "draft", "label": "The conversation's\ndraft", "tone": "accent" }, { "id": "week", "label": "The week's\nactive plan", "tone": "accent" } ]
+  ],
+  "edges": [
+    { "from": "in", "to": "q" },
+    { "from": "q", "to": "named", "label": "yes" },
+    { "from": "q", "to": "draft", "label": "no, a draft exists" },
+    { "from": "q", "to": "week", "label": "no id, no draft" }
+  ],
+  "example": [
+    "Review sheet sends plan 8f2: plan 8f2 changes.",
+    "A chat chip with no id while a draft is open: the draft.",
+    "Plan tab swap, no id, no draft: this week's active plan."
+  ]
+}

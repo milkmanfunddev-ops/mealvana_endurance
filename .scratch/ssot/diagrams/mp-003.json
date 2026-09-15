@@ -1,0 +1,76 @@
+{
+  "kind": "flow",
+  "title": "The kind is a tag, and a fresh start",
+  "rows": [
+    [
+      {
+        "id": "plan",
+        "label": "Tap New meal plan"
+      },
+      {
+        "id": "cold",
+        "label": "Ask Vana cold\nfrom a button"
+      }
+    ],
+    [
+      {
+        "id": "cplan",
+        "label": "New conversation\ntag: meal-planning",
+        "tone": "accent"
+      },
+      {
+        "id": "cgen",
+        "label": "New conversation\ntag: general",
+        "tone": "accent"
+      },
+      {
+        "id": "old",
+        "label": "Continue an\nold conversation",
+        "tone": "no"
+      }
+    ],
+    [
+      {
+        "id": "hist",
+        "label": "History list\nevery past one stays",
+        "tone": "ok"
+      },
+      {
+        "id": "opener",
+        "label": "Opener\nreads the tag",
+        "tone": "ok"
+      }
+    ]
+  ],
+  "edges": [
+    {
+      "from": "plan",
+      "to": "cplan"
+    },
+    {
+      "from": "cold",
+      "to": "cgen"
+    },
+    {
+      "from": "cplan",
+      "to": "hist"
+    },
+    {
+      "from": "cgen",
+      "to": "hist"
+    },
+    {
+      "from": "cplan",
+      "to": "opener"
+    },
+    {
+      "from": "cgen",
+      "to": "opener"
+    }
+  ],
+  "example": [
+    "Mon: New meal plan starts conversation A (meal-planning).",
+    "Wed: a cold question starts conversation B (general).",
+    "History lists A and B; B's opener reads 'general'."
+  ]
+}
