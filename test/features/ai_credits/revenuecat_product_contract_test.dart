@@ -3,7 +3,7 @@
 /// Two maps have to agree about "how many credits does this SKU grant":
 ///   • `kCreditsByProductId` in `lib/features/ai_credits/domain/credit_packs.dart`
 ///     — display only, what the purchase sheet promises the user.
-///   • `RC_PRODUCT_CREDITS` in `supabase/functions/revenuecat-webhook/index.ts`
+///   • `RC_PRODUCT_CREDITS` in `supabase/functions/revenuecat-webhook/handler.ts`
 ///     — authoritative, what `grant_credits` actually writes to the wallet.
 ///
 /// When they drift, the user is charged and shown one number while the wallet
@@ -59,7 +59,7 @@ Map<String, int> parseWebhookCreditMap(String source) {
 }
 
 void main() {
-  final webhookFile = File('supabase/functions/revenuecat-webhook/index.ts');
+  final webhookFile = File('supabase/functions/revenuecat-webhook/handler.ts');
 
   group('credit pack contract', () {
     late Map<String, int> serverMap;
