@@ -334,6 +334,14 @@ class ContentKeys {
   static const String mpChipDraftWeek = 'meal_planning.chip_draft_week';
   static const String mpEditMessage = 'meal_planning.edit_message';
   static const String mpEditingStrip = 'meal_planning.editing_strip';
+
+  /// The one line above the composer when the wallet is empty (mp-282 §2):
+  /// the composer's send raised the top-up sheet; Vana never says it in a
+  /// message. `mpOutOfCreditsAction` is the strip's tappable "Top up".
+  static const String mpOutOfCreditsStrip =
+      'meal_planning.out_of_credits_strip';
+  static const String mpOutOfCreditsAction =
+      'meal_planning.out_of_credits_action';
   static const String mpEditingCancel = 'meal_planning.editing_cancel';
   static const String mpDividerToday = 'meal_planning.divider_today';
   static const String mpDividerYesterday = 'meal_planning.divider_yesterday';
@@ -701,6 +709,12 @@ class ContentKeys {
   /// from [krogerNoProducts], which is a run that searched and found nothing.
   static const String krogerAllSkipped = 'kroger.all_skipped';
   static const String krogerRateLimited = 'kroger.rate_limited';
+
+  // AI credits — the top-up sheet's Allowance lines (mp-281, mp-282):
+  // what the allowance is, what is left and when it renews.
+  static const String aiCreditsAllowanceLine = 'ai_credits.allowance_line';
+  static const String aiCreditsAllowanceRenews = 'ai_credits.allowance_renews';
+  static const String aiCreditsAllowanceLeft = 'ai_credits.allowance_left';
 
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.

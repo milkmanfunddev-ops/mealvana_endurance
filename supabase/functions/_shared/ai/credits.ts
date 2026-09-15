@@ -4,9 +4,13 @@
  * Users hold a balance of app-defined "AI credits" (see the token_wallets /
  * token_ledger schema + grant_credits/debit_credits/ensure_free_credits RPCs).
  * Each AI action costs a fixed number of credits. This module:
- *   1. lazily provisions a wallet + grants the monthly free allotment,
+ *   1. lazily provisions a wallet and rolls the subscription's monthly
+ *      Allowance (mp-281: `ensure_allowance` forfeits an expired allowance
+ *      and grants the current window when the entitlement is active — the
+ *      monthly grant an annual plan gets between the webhook's yearly events),
  *   2. checks the user can afford the action BEFORE the model call,
- *   3. debits the cost AFTER a successful call (failed calls aren't charged).
+ *   3. debits the cost AFTER a successful call (failed calls aren't charged);
+ *      the debit spends the allowance first, then pack credits (SQL rule).
  *
  * Enforcement is OFF by default and gated by the AI_CREDITS_ENFORCED secret, so
  * deploying this is a no-op until you flip the flag per project:
@@ -21,6 +25,7 @@
  */
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { monthlyAllowance } from './allowance.ts';
 
 export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
 
@@ -37,6 +42,9 @@ export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
  * and enough that no user would ever need to buy one.
  */
 export const FREE_MONTHLY_CREDITS = intEnv('AI_FREE_MONTHLY_CREDITS', 20);
+
+/** The subscription's monthly Allowance for this project (mp-281; _shared/ai/allowance.ts). */
+export const MONTHLY_ALLOWANCE = monthlyAllowance((key) => Deno.env.get(key));
 
 /** Per-action credit cost. User-facing credits, NOT raw LLM tokens — the real
  *  token cost is tracked separately in ai_usage. Tune freely. */
@@ -63,11 +71,28 @@ export interface CreditCheck {
   balance: number;
   /** credit cost of this action. */
   cost: number;
+  /** What is left of this period's Allowance (part of `balance`); null when unknown. */
+  allowance?: number | null;
+  /** The size of the monthly Allowance the subscription carries; 0 until first granted. */
+  allowanceMonthly?: number | null;
+  /** ISO end of the current Allowance window — when it renews; null when none is open. */
+  allowanceExpiresAt?: string | null;
+}
+
+/** The `ensure_allowance` RPC's row (SQL: 20260916130000_monthly_allowance.sql). */
+interface EnsureAllowanceRow {
+  balance?: number;
+  allowance?: number;
+  allowance_monthly?: number;
+  allowance_expires_at?: string | null;
+  granted?: boolean;
 }
 
 /**
- * Ensure the wallet exists + monthly free credits are granted, then check
- * (WITHOUT debiting) whether the user can afford `fn`. Fail-open on error.
+ * Ensure the wallet exists and the monthly Allowance is current (`ensure_allowance`:
+ * forfeits an expired allowance, grants the current window when the
+ * entitlement is active and none is open), then check (WITHOUT debiting)
+ * whether the user can afford `fn`. Fail-open on error.
  */
 export async function ensureAndCheckCredits(
   // deno-lint-ignore no-explicit-any
@@ -78,16 +103,24 @@ export async function ensureAndCheckCredits(
   const cost = creditCost(fn);
   if (!CREDITS_ENFORCED) return { allowed: true, balance: -1, cost };
   try {
-    const { data, error } = await client.rpc('ensure_free_credits', {
+    const { data, error } = await client.rpc('ensure_allowance', {
       p_user_id: userId,
-      p_amount: FREE_MONTHLY_CREDITS,
+      p_amount: MONTHLY_ALLOWANCE,
     });
     if (error) {
-      console.error('[credits] ensure_free_credits error (fail-open):', error.message);
+      console.error('[credits] ensure_allowance error (fail-open):', error.message);
       return { allowed: true, balance: -1, cost };
     }
-    const balance = typeof data === 'number' ? data : 0;
-    return { allowed: balance >= cost, balance, cost };
+    const row = (data ?? {}) as EnsureAllowanceRow;
+    const balance = typeof row.balance === 'number' ? row.balance : 0;
+    return {
+      allowed: balance >= cost,
+      balance,
+      cost,
+      allowance: typeof row.allowance === 'number' ? row.allowance : null,
+      allowanceMonthly: typeof row.allowance_monthly === 'number' ? row.allowance_monthly : null,
+      allowanceExpiresAt: row.allowance_expires_at ?? null,
+    };
   } catch (e) {
     console.error('[credits] ensureAndCheckCredits exception (fail-open):', e);
     return { allowed: true, balance: -1, cost };
@@ -133,13 +166,19 @@ export async function debitForUsage(
   }
 }
 
-/** Structured 402 body the client uses to trigger the "buy credits" sheet. */
+/**
+ * Structured 402 body the client's one handler turns into the top-up sheet
+ * (mp-282). Carries the Allowance so the sheet can say what it is and when
+ * it renews without another read.
+ */
 export function insufficientCreditsBody(check: CreditCheck) {
   return {
     error: 'insufficient_credits',
     message: 'You are out of AI credits. Purchase more to continue.',
     balance: check.balance,
     cost: check.cost,
+    allowance_monthly: check.allowanceMonthly ?? null,
+    allowance_expires_at: check.allowanceExpiresAt ?? null,
   };
 }
 

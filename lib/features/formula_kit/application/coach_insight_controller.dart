@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../data/ai_coach_client.dart';
 import '../data/personal_formulas_repository.dart';
@@ -124,7 +124,7 @@ class CoachInsightController extends _$CoachInsightController {
         'latency_ms': sw.elapsedMilliseconds,
         'error_type': result.error.runtimeType.toString(),
       });
-      maybeShowInsufficientCreditsPaywall(result.error);
+      handleInsufficientCredits(result.error);
     }
   }
 

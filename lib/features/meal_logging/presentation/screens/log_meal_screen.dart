@@ -20,7 +20,7 @@ import '../../../barcode_scanning/application/catalog_search_service.dart';
 import '../../../barcode_scanning/application/food_mapping_service.dart';
 import '../../../barcode_scanning/application/product_detail_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../nutrition_plan/data/food_repository.dart';
@@ -1646,7 +1646,7 @@ class _AiTabState extends ConsumerState<_AiTab> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
-      maybeShowInsufficientCreditsPaywall(e);
+      handleInsufficientCredits(e);
     } on MealAiException catch (e) {
       stopwatch.stop();
       analytics.track(

@@ -5,6 +5,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../../features/ai_credits/application/credits_controller.dart';
+import '../../../../features/ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
@@ -46,6 +48,11 @@ import '../widgets/vana_part_renderer.dart';
 /// offline bubble-copy, 429 "Give me N seconds", 402 credits paywall,
 /// 403 → `/pro`.
 ///
+/// An empty wallet (402) is never a gate (mp-282): the send raises the
+/// top-up sheet through the one shared handler, one line rides above the
+/// composer until the balance rises, the typed text goes back in the field,
+/// and no message in the thread ever says "out of credits".
+///
 /// Transcript mechanics (plan §5 Phases 5–7): a one-time intro card heads a
 /// new planning conversation; day dividers split turns that span days;
 /// "Edit" under an athlete turn puts its text back in the composer and the
@@ -83,6 +90,14 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
 
   /// The athlete turn being edited (Phase 6.1) — the next send rewinds.
   String? _editingMessageId;
+
+  /// The last send was refused for an empty wallet: the strip above the
+  /// composer stays until the balance rises or a turn goes through.
+  bool _outOfCredits = false;
+
+  /// What the athlete last sent, so a 402 can put it back in the composer
+  /// instead of losing it with the rolled-back turn.
+  String? _lastSent;
 
   VanaChatController get _controller => ref.read(
     vanaChatControllerProvider(
@@ -126,12 +141,24 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
           setState(() {
             _chipsPicked = false;
             _pickedInCurrentPicker = {};
+            // A turn went through: the wallet is not empty any more.
+            _outOfCredits = false;
           });
         }
         _handleError(s);
         if (s.messages.isNotEmpty || s.isStreaming) _scrollToBottom();
       },
     );
+
+    // While the strip is up, watch the wallet: a top-up (the sheet's purchase,
+    // a webhook landing, a renewal) takes it down without another send.
+    if (_outOfCredits) {
+      ref.listen(creditsControllerProvider, (_, next) {
+        if ((next.value?.balance ?? 0) > 0 && mounted) {
+          setState(() => _outOfCredits = false);
+        }
+      });
+    }
 
     final isPlanning = widget.kind == VanaConversationKind.mealPlanning;
     // A planning conversation builds its OWN draft (meal_plans.conversation_id);
@@ -524,6 +551,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (_outOfCredits)
+            _OutOfCreditsStrip(
+              label: content.getValue(ContentKeys.mpOutOfCreditsStrip),
+              actionLabel: content.getValue(ContentKeys.mpOutOfCreditsAction),
+              onTopUp: () => showInsufficientCreditsSheet(context: context),
+            ),
           if (_editingMessageId != null)
             _EditingStrip(
               label: content.getValue(ContentKeys.mpEditingStrip),
@@ -645,6 +678,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     _textController.clear();
+    _lastSent = text;
     final editing = _editingMessageId;
     if (editing != null) {
       setState(() {
@@ -658,6 +692,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   }
 
   void _send(String text) {
+    _lastSent = text;
     _controller.send(text);
     setState(() => _chipsPicked = false);
   }
@@ -966,6 +1001,18 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
             content.getValue(ContentKeys.mpProRequired),
           );
           ref.read(subscriptionStatusProvider.notifier).refresh();
+        case VanaChatErrorKind.insufficientCredits:
+          // The one 402 handler raises the top-up sheet (mp-282 §2, §3);
+          // the strip says so above the composer, and the text the athlete
+          // typed comes back so the rolled-back turn costs them nothing.
+          showInsufficientCreditsSheet(context: context);
+          final lost = _lastSent;
+          if (lost != null && _textController.text.trim().isEmpty) {
+            _textController
+              ..text = lost
+              ..selection = TextSelection.collapsed(offset: lost.length);
+          }
+          setState(() => _outOfCredits = true);
         case VanaChatErrorKind.rateLimited:
           MealvanaSnackbar.showWarning(
             context,
@@ -1134,6 +1181,78 @@ class _EditingStrip extends StatelessWidget {
                 color: textColor.withValues(alpha: 0.7),
               ),
               onPressed: onCancel,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Out of tokens for now — top up to keep chatting" over the composer with
+/// a "Top up" action (mp-282 §2): the one line Vana shows for an empty
+/// wallet, never a message in the thread.
+class _OutOfCreditsStrip extends StatelessWidget {
+  const _OutOfCreditsStrip({
+    required this.label,
+    required this.actionLabel,
+    required this.onTopUp,
+  });
+
+  final String label;
+  final String actionLabel;
+  final VoidCallback onTopUp;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Container(
+        key: const ValueKey('meal_planning.out_of_credits_strip'),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xxs,
+          AppSpacing.xxs,
+          AppSpacing.xxs,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.orange.withValues(alpha: isDark ? 0.16 : 0.12),
+          borderRadius: BorderRadius.circular(AppSpacing.sm),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.toll_outlined,
+              size: 14,
+              color: textColor.withValues(alpha: 0.7),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: textColor.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+            TextButton(
+              key: const ValueKey('meal_planning.out_of_credits_top_up'),
+              onPressed: onTopUp,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: AppColors.orange,
+              ),
+              child: Text(
+                actionLabel,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.orange,
+                ),
+              ),
             ),
           ],
         ),

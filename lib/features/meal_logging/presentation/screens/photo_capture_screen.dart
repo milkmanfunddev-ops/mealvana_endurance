@@ -11,7 +11,7 @@ import '../../../meal_planning/domain/vana_situation.dart';
 import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
@@ -132,7 +132,7 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
-      maybeShowInsufficientCreditsPaywall(e);
+      handleInsufficientCredits(e);
     } on MealAiException catch (e) {
       stopwatch.stop();
       analytics.track(

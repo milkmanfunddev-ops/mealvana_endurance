@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credits_exception.dart';
 import 'package:mealvana_endurance/features/feedback/data/wiredash_feedback_filer.dart';
 import 'package:mealvana_endurance/features/feedback/domain/typed_feedback.dart';
 import 'package:mealvana_endurance/features/meal_logging/application/meal_ai_service.dart';
@@ -369,19 +370,22 @@ void main() {
       expect(part.about, FeedbackAbout.vana);
     });
 
-    test('a Wiredash failure is logged and never reaches the athlete', () async {
-      repo.events = feedbackTurn();
-      filer.failWith = StateError('wiredash down');
-      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
-      await notifier.future;
+    test(
+      'a Wiredash failure is logged and never reaches the athlete',
+      () async {
+        repo.events = feedbackTurn();
+        filer.failWith = StateError('wiredash down');
+        final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+        await notifier.future;
 
-      await notifier.send('You keep suggesting fish');
+        await notifier.send('You keep suggesting fish');
 
-      final s = notifier.state.value!;
-      expect(s.error, isNull);
-      expect(s.messages.last.parts.single, isA<VanaFeedbackSavedPart>());
-      expect(filer.filed, isEmpty);
-    });
+        final s = notifier.state.value!;
+        expect(s.error, isNull);
+        expect(s.messages.last.parts.single, isA<VanaFeedbackSavedPart>());
+        expect(filer.filed, isEmpty);
+      },
+    );
 
     test('a turn without feedback files nothing', () async {
       repo.events = const [VanaTextEvent('Two dinners left.'), VanaDoneEvent()];
@@ -773,6 +777,41 @@ void main() {
 
         notifier.clearError();
         expect(notifier.state.value!.error, isNull);
+      },
+    );
+
+    test(
+      '402 → insufficientCredits; the turn rolls back and no message says so (mp-282)',
+      () async {
+        // The 402 body as credits.ts sends it, with the Allowance fields.
+        repo.throwOnStream = InsufficientCreditsException.fromMap({
+          'error': 'insufficient_credits',
+          'message': 'You are out of AI credits. Purchase more to continue.',
+          'balance': 0,
+          'cost': 1,
+          'allowance_monthly': 300,
+          'allowance_expires_at': '2026-10-15T12:00:00+00:00',
+        });
+        final (:notifier, :seen) = make();
+        await notifier.future;
+
+        await notifier.send('plan my week');
+
+        final s = notifier.state.value!;
+        expect(s.error, VanaChatErrorKind.insufficientCredits);
+        expect(s.isStreaming, isFalse);
+        expect(
+          s.messages,
+          isEmpty,
+          reason: 'the optimistic pair is rolled back',
+        );
+        // Nothing Vana ever showed mentions credits — the sheet is the answer.
+        for (final state in seen) {
+          for (final m in state.messages) {
+            expect(m.content.toLowerCase(), isNot(contains('credit')));
+          }
+        }
+        expect(repo.calls.single['message'], 'plan my week');
       },
     );
 

@@ -14,6 +14,9 @@
  *   - an event older than the row's event time is ignored;
  *   - a TRANSFER moves the row to the new owner and closes it on the old one;
  *   - nothing else in the payload reaches the table.
+ * What the allowance path must do (mp-281, ticket 20):
+ *   - INITIAL_PURCHASE and RENEWAL grant the monthly Allowance into the wallet;
+ *   - EXPIRATION forfeits what is left; CANCELLATION leaves the wallet alone.
  * The credit-grant path (consumable packs) is unchanged and still covered.
  *
  * Run with:
@@ -322,7 +325,7 @@ describe('B. first event → two-field row', () => {
       period_type: 'TRIAL',
       event_at: iso(T0),
     });
-    assertEquals(db.rpcCalls.length, 0, 'a Pro subscription never reaches grant_credits');
+    assertEquals(db.rpcCalls.filter((c) => c.fn === 'grant_credits').length, 0, 'a Pro subscription never reaches grant_credits');
   });
 
   it('the payload’s other fields (store, product, price, environment) never reach the row', async () => {
@@ -549,6 +552,110 @@ describe('E. credit-pack grant path', () => {
     });
     await bad(rcRequest(body(creditPack())));
     assertEquals(db.rpcCalls[1].args.p_amount, 50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// G. The monthly Allowance (mp-281, ticket 20)
+// ---------------------------------------------------------------------------
+
+describe('G. allowance grants', () => {
+  let db: FakeDb;
+  let handle: (req: Request) => Promise<Response>;
+  beforeEach(() => {
+    ({ db, handle } = setup());
+    db.rpcResult = { data: { granted: true, forfeited: 0, balance: 300, allowance: 300 } };
+  });
+
+  it('the trial’s INITIAL_PURCHASE grants the full Allowance, expiring with the trial, keyed on the event id', async () => {
+    const res = await handle(rcRequest(body(trialStart())));
+    assertEquals(res.status, 200);
+    assertEquals(db.rpcCalls, [{
+      fn: 'grant_allowance',
+      args: { p_user_id: USER_ID, p_amount: 300, p_active_until: iso(T0 + 7 * DAY), p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A1' },
+    }]);
+    // The entitlement row is written first, in the same delivery.
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 7 * DAY));
+    const out = await res.json();
+    assertEquals(out.allowance, { granted: true, forfeited: 0, balance: 300, allowance: 300 });
+  });
+
+  it('RENEWAL grants again, keyed on its own event id, with the new period end', async () => {
+    await handle(rcRequest(body(trialStart())));
+    await handle(rcRequest(body(paidRenewal())));
+    assertEquals(db.rpcCalls.length, 2);
+    assertEquals(db.rpcCalls[1], {
+      fn: 'grant_allowance',
+      args: { p_user_id: USER_ID, p_amount: 300, p_active_until: iso(T0 + 37 * DAY), p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A2' },
+    });
+  });
+
+  it('CANCELLATION touches the wallet not at all (access and the allowance run to the period end)', async () => {
+    await handle(rcRequest(body(trialStart())));
+    await handle(rcRequest(body(trialStart({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000A3',
+      type: 'CANCELLATION',
+      cancel_reason: 'UNSUBSCRIBE',
+      event_timestamp_ms: T0 + 2 * DAY,
+    }))));
+    assertEquals(db.rpcCalls.length, 1, 'only the initial grant');
+  });
+
+  it('EXPIRATION forfeits what is left of the allowance and grants nothing', async () => {
+    await handle(rcRequest(body(trialStart())));
+    db.rpcResult = { data: { forfeited: 280, balance: 50, allowance: 0 } };
+    const res = await handle(rcRequest(body(trialStart({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000A4',
+      type: 'EXPIRATION',
+      expiration_reason: 'UNSUBSCRIBE',
+      event_timestamp_ms: T0 + 7 * DAY,
+    }))));
+    assertEquals(res.status, 200);
+    assertEquals(db.rpcCalls[1], {
+      fn: 'forfeit_allowance',
+      args: { p_user_id: USER_ID, p_ref: 'A1B2C3D4-0000-4000-8000-0000000000A4' },
+    });
+    assertEquals(db.rpcCalls.length, 2);
+    assertEquals((await res.json()).allowance, { forfeited: 280, balance: 50, allowance: 0 });
+  });
+
+  it('a stale event grants nothing', async () => {
+    await handle(rcRequest(body(paidRenewal())));
+    await handle(rcRequest(body(trialStart({ event_timestamp_ms: T0 - DAY }))));
+    assertEquals(db.rpcCalls.length, 1);
+  });
+
+  it('an event without an expiry writes the row but cannot open an allowance window', async () => {
+    const res = await handle(rcRequest(body(trialStart({ expiration_at_ms: null }))));
+    assertEquals(res.status, 200);
+    assertEquals(db.rpcCalls.length, 0);
+    assertEquals((await res.json()).allowance, { skipped: 'no_active_until' });
+  });
+
+  it('AI_MONTHLY_ALLOWANCE overrides the number per project', async () => {
+    const own = new FakeDb();
+    own.rpcResult = { data: { granted: true } };
+    const withEnv = makeWebhookHandler({
+      env: envWith({ AI_MONTHLY_ALLOWANCE: '120' }),
+      db: () => own as unknown as WebhookDb,
+    });
+    await withEnv(rcRequest(body(trialStart())));
+    assertEquals(own.rpcCalls[0].args.p_amount, 120);
+  });
+
+  it('a redelivered grant (23505) is acked; any other grant failure is a 500 so RevenueCat retries', async () => {
+    db.rpcResult = { error: { code: '23505', message: 'dup' } };
+    const dup = await handle(rcRequest(body(trialStart())));
+    assertEquals(dup.status, 200);
+    assertEquals((await dup.json()).allowance, { idempotent: true });
+    db.rpcResult = { error: { message: 'boom' } };
+    assertEquals((await handle(rcRequest(body(paidRenewal())))).status, 500);
+  });
+
+  it('a credit-pack purchase still goes to grant_credits only', async () => {
+    db.rpcResult = { data: 350 };
+    await handle(rcRequest(body(creditPack())));
+    assertEquals(db.rpcCalls.map((c) => c.fn), ['grant_credits']);
   });
 });
 
