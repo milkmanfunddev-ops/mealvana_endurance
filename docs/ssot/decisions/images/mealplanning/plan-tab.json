@@ -1,9 +1,9 @@
 {
   "screen": "Plan tab",
   "key": "plan-tab",
-  "capturedAt": "2026-09-15T13:09:43.820Z",
-  "commit": "f84827b9",
+  "capturedAt": "2026-09-15T15:14:12.900Z",
+  "commit": "f30e3897",
   "appVersion": "1.26.0+1",
-  "device": "grill-mealplanning",
+  "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }

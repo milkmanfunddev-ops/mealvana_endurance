@@ -2267,7 +2267,7 @@ Feature name: Meal planning and Vana
 ## mp-244 · The shopping list
 - category: Shopping list
 - status: approved
-- image: test/features/meal_planning/presentation/goldens/shopping_list_light.png
+- image: docs/ssot/decisions/images/mealplanning/shopping-tab.png
 - caption: The shopping list grouped by aisle.
 - screen: Shopping tab
 - source: plan-tab-v2.md; 05-flutter-feature.md; memory 09-07; memory 09-02
@@ -2295,6 +2295,7 @@ Feature name: Meal planning and Vana
 > 2026-09-14 amended by Lee
 > 2026-09-14 rewritten from Lee's words
 > 2026-09-15 approved by Lee
+> 2026-09-15 picture refreshed at 1.26.0+1, f30e3897, replacing test/features/meal_planning/presentation/goldens/shopping_list_light.png
 
 ## mp-245 · Typing feedback to Vana is the feedback system
 - category: Feedback loop
