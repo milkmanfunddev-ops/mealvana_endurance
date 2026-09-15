@@ -308,6 +308,46 @@ void main() {
           isNot(equals(TpWritebackFormatter.computeHash(logged))),
         );
       });
+
+      test('sequenced completion writes coexist: logged plan replaces '
+          'in-place and the feedback block survives (regression: 2026-09-14 '
+          'prod smoke lost-update race)', () {
+        // Step 0: description after Create Plan — the plan-only block.
+        final planned = TpWritebackFormatter.formatPlanBlock(
+          plan(),
+          durationMinutes: 120,
+        );
+        var desc = TpWritebackFormatter.mergeBlockIntoDescription(
+          'Coach notes.',
+          planned,
+        );
+
+        // Step 1 (completion, first write): logged plan replaces in-place.
+        final logged = TpWritebackFormatter.formatLoggedPlanBlock(
+          plan(),
+          fuelLog(),
+          durationMinutes: 120,
+        );
+        desc = TpWritebackFormatter.mergeBlockIntoDescription(desc, logged);
+
+        // Step 2 (completion, second write): feedback block appended.
+        final feedback = TpWritebackFormatter.formatFeedbackBlock(
+          rating: 4,
+          notes: 'felt good',
+        );
+        desc = TpWritebackFormatter.mergeFeedbackIntoDescription(
+          desc,
+          feedback,
+        );
+
+        // Both coexist; the plan block is the logged form, exactly once.
+        expect('[Mealvana Fuel Plan]'.allMatches(desc).length, 1);
+        expect(desc, contains('60g/h carb planned · 45g/h consumed'));
+        expect(desc, contains('[Mealvana Feedback]'));
+        expect(desc, contains('Rating: 4/5'));
+        expect(desc, contains('Notes: felt good'));
+        expect(desc, contains('Coach notes.'));
+      });
     },
   );
 }
