@@ -2640,32 +2640,33 @@ class ActivityDetailController extends _$ActivityDetailController {
           activity: completedActivity,
         );
 
-        // Fire-and-forget: push feedback to TrainingPeaks
-        unawaited(
-          _pushFeedbackToTrainingPeaks(
-            user.id,
-            completedActivity,
-            overallSatisfaction,
-            textNotes,
-          ),
-        );
-
-        // Fire-and-forget: re-push the fuel plan block in its logged
-        // (planned · consumed) form — RULED Xuan, 2026-09-10, option A. The
-        // same [Mealvana Fuel Plan] block is replaced in-place; this is a
-        // distinct write from the rating/notes [Mealvana Feedback] block
-        // pushed above.
+        // Fire-and-forget as a whole, but the two TP writes MUST be
+        // SEQUENCED. Both the logged fuel-plan re-push (RULED Xuan,
+        // 2026-09-10, option A — the [Mealvana Fuel Plan] block replaced
+        // in-place with planned · consumed) and the rating/notes
+        // [Mealvana Feedback] push do GET→modify→PUT on the SAME TP workout
+        // Description. Fired concurrently they race and the later PUT clobbers
+        // the other's block (caught in the 2026-09-14 prod smoke: the feedback
+        // block was lost). Chaining them makes the feedback push's GET see the
+        // plan write; the plan-strip's `(?! Feedback)` lookahead then preserves
+        // the feedback block, so both coexist.
         final loggedPlan = currentState.nutritionPlan;
-        if (loggedPlan != null) {
-          unawaited(
-            _pushToTrainingPeaks(
+        unawaited(() async {
+          if (loggedPlan != null) {
+            await _pushToTrainingPeaks(
               user.id,
               completedActivity,
               loggedPlan,
               fuelLog: finalFuelLog,
-            ),
+            );
+          }
+          await _pushFeedbackToTrainingPeaks(
+            user.id,
+            completedActivity,
+            overallSatisfaction,
+            textNotes,
           );
-        }
+        }());
 
         _trackAnalytics('fuel_log_completed', {
           'activity_id': activityId,
