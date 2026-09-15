@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:meta/meta.dart';
 
 import '../../../../shared/database/app_database.dart' as db;
 import '../../../../shared/database/database_provider.dart';
@@ -247,7 +246,6 @@ class AthleteDetailController extends _$AthleteDetailController {
   /// An unrecognized / null / legacy value maps to [ActivityType.other]
   /// ("Workout"), NEVER to running — telling a coach a strength session is a
   /// "Run" is false data on the surface she coaches from (Claudia, 2026-09-10).
-  @visibleForTesting
   static ActivityType parseActivityType(String? type) {
     return ActivityType.values.firstWhere(
       (e) => e.dbValue == type || e.name == type,
