@@ -53,6 +53,9 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   late TextEditingController _goalTimeMinutesController;
   late TextEditingController _goalPaceMinutesController;
   late TextEditingController _goalPaceSecondsController;
+  // Cycling events capture goal SPEED (mph); the stored field stays
+  // goalPaceMinutesPerMile (min/mile = 60 / mph) — Option A, no schema change.
+  late TextEditingController _goalSpeedMphController;
 
   // State
   late DateTime? _startTime;
@@ -107,18 +110,23 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
     // Parse goal pace (stored as minutes per mile with decimal)
     if (widget.event?.goalPaceMinutesPerMile != null) {
-      final minutes = widget.event!.goalPaceMinutesPerMile!.floor();
-      final seconds = ((widget.event!.goalPaceMinutesPerMile! - minutes) * 60)
-          .round();
+      final pace = widget.event!.goalPaceMinutesPerMile!;
+      final minutes = pace.floor();
+      final seconds = ((pace - minutes) * 60).round();
       _goalPaceMinutesController = TextEditingController(
         text: minutes.toString(),
       );
       _goalPaceSecondsController = TextEditingController(
         text: seconds.toString(),
       );
+      // Same stored value shown as its reciprocal speed for cycling events.
+      _goalSpeedMphController = TextEditingController(
+        text: pace > 0 ? (60 / pace).toStringAsFixed(1) : '',
+      );
     } else {
       _goalPaceMinutesController = TextEditingController();
       _goalPaceSecondsController = TextEditingController();
+      _goalSpeedMphController = TextEditingController();
     }
 
     // Initialize start time and event type
@@ -174,6 +182,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     _goalTimeMinutesController.dispose();
     _goalPaceMinutesController.dispose();
     _goalPaceSecondsController.dispose();
+    _goalSpeedMphController.dispose();
     _eventNameFocusNode.dispose();
     _locationFocusNode.dispose();
     _eventSearchDebounce?.cancel();
@@ -525,9 +534,18 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         goalTimeMinutes = (hours * 60) + minutes;
       }
 
-      // Calculate goal pace in minutes per mile
+      // Calculate goal pace in minutes per mile. Cycling events capture SPEED
+      // (mph) and store its reciprocal (min/mile = 60 / mph) — Option A, no
+      // schema change (Claudia 2026-08-27: ride events were asked for a run
+      // pace, and the wrong-unit value followed the athlete into the fuel
+      // plan). Running/other types keep min:sec per mile.
       double? goalPaceMinutesPerMile;
-      if (_goalPaceMinutesController.text.isNotEmpty ||
+      if (_selectedSportType == ActivityType.cycling) {
+        final mph = double.tryParse(_goalSpeedMphController.text.trim());
+        if (mph != null && mph > 0) {
+          goalPaceMinutesPerMile = 60 / mph;
+        }
+      } else if (_goalPaceMinutesController.text.isNotEmpty ||
           _goalPaceSecondsController.text.isNotEmpty) {
         final minutes = int.tryParse(_goalPaceMinutesController.text) ?? 0;
         final seconds = int.tryParse(_goalPaceSecondsController.text) ?? 0;
@@ -1217,9 +1235,12 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
                           const SizedBox(height: AppSpacing.md),
 
-                          // Goal Pace
+                          // Goal Pace — cycling captures speed (mph), every
+                          // other type keeps run-style min/mile.
                           Text(
-                            'Goal Pace (per mile)',
+                            _selectedSportType == ActivityType.cycling
+                                ? 'Goal Speed (mph)'
+                                : 'Goal Pace (per mile)',
                             style: AppTextStyles.bodyMedium.copyWith(
                               color: Theme.of(
                                 context,
@@ -1227,112 +1248,165 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                             ),
                           ),
                           const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _goalPaceMinutesController,
-                                  style: AppTextStyles.inputText.copyWith(
+                          if (_selectedSportType == ActivityType.cycling)
+                            TextFormField(
+                              controller: _goalSpeedMphController,
+                              style: AppTextStyles.inputText.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              decoration: InputDecoration(
+                                labelText: 'Speed',
+                                labelStyle: AppTextStyles.bodyMedium.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                                suffixText: 'mph',
+                                suffixStyle: AppTextStyles.bodyMedium.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: AppRadius.inputRadius,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: AppRadius.inputRadius,
+                                  borderSide: BorderSide(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurface,
+                                    ).colorScheme.outline,
                                   ),
-                                  decoration: InputDecoration(
-                                    labelText: 'Minutes',
-                                    labelStyle: AppTextStyles.bodyMedium
-                                        .copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                    suffixText: 'm',
-                                    suffixStyle: AppTextStyles.bodyMedium
-                                        .copyWith(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                        ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: AppRadius.inputRadius,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: AppRadius.inputRadius,
-                                      borderSide: BorderSide(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.outline,
-                                      ),
-                                    ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: AppRadius.inputRadius,
-                                      borderSide: BorderSide(
-                                        color: AppColors.electrolyte,
-                                        width: 2,
-                                      ),
-                                    ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: AppRadius.inputRadius,
+                                  borderSide: const BorderSide(
+                                    color: AppColors.electrolyte,
+                                    width: 2,
                                   ),
-                                  keyboardType: TextInputType.number,
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.md),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _goalPaceSecondsController,
-                                  style: AppTextStyles.inputText.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
                                   ),
-                                  decoration: InputDecoration(
-                                    labelText: 'Seconds',
-                                    labelStyle: AppTextStyles.bodyMedium
-                                        .copyWith(
+                              validator: (value) {
+                                if (value != null && value.trim().isNotEmpty) {
+                                  final mph = double.tryParse(value.trim());
+                                  if (mph == null || mph <= 0) {
+                                    return 'Enter a speed like 18.0';
+                                  }
+                                }
+                                return null;
+                              },
+                            )
+                          else
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _goalPaceMinutesController,
+                                    style: AppTextStyles.inputText.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                    decoration: InputDecoration(
+                                      labelText: 'Minutes',
+                                      labelStyle: AppTextStyles.bodyMedium
+                                          .copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                      suffixText: 'm',
+                                      suffixStyle: AppTextStyles.bodyMedium
+                                          .copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: AppRadius.inputRadius,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: AppRadius.inputRadius,
+                                        borderSide: BorderSide(
                                           color: Theme.of(
                                             context,
-                                          ).colorScheme.onSurfaceVariant,
+                                          ).colorScheme.outline,
                                         ),
-                                    suffixText: 's',
-                                    suffixStyle: AppTextStyles.bodyMedium
-                                        .copyWith(
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: AppRadius.inputRadius,
+                                        borderSide: BorderSide(
+                                          color: AppColors.electrolyte,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.md),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _goalPaceSecondsController,
+                                    style: AppTextStyles.inputText.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                    decoration: InputDecoration(
+                                      labelText: 'Seconds',
+                                      labelStyle: AppTextStyles.bodyMedium
+                                          .copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                      suffixText: 's',
+                                      suffixStyle: AppTextStyles.bodyMedium
+                                          .copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                          ),
+                                      border: OutlineInputBorder(
+                                        borderRadius: AppRadius.inputRadius,
+                                      ),
+                                      enabledBorder: OutlineInputBorder(
+                                        borderRadius: AppRadius.inputRadius,
+                                        borderSide: BorderSide(
                                           color: Theme.of(
                                             context,
-                                          ).colorScheme.onSurfaceVariant,
+                                          ).colorScheme.outline,
                                         ),
-                                    border: OutlineInputBorder(
-                                      borderRadius: AppRadius.inputRadius,
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: AppRadius.inputRadius,
-                                      borderSide: BorderSide(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.outline,
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderRadius: AppRadius.inputRadius,
+                                        borderSide: BorderSide(
+                                          color: AppColors.electrolyte,
+                                          width: 2,
+                                        ),
                                       ),
                                     ),
-                                    focusedBorder: OutlineInputBorder(
-                                      borderRadius: AppRadius.inputRadius,
-                                      borderSide: BorderSide(
-                                        color: AppColors.electrolyte,
-                                        width: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value != null && value.isNotEmpty) {
-                                      final seconds = int.tryParse(value);
-                                      if (seconds == null ||
-                                          seconds < 0 ||
-                                          seconds >= 60) {
-                                        return 'Must be 0-59';
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) {
+                                      if (value != null && value.isNotEmpty) {
+                                        final seconds = int.tryParse(value);
+                                        if (seconds == null ||
+                                            seconds < 0 ||
+                                            seconds >= 60) {
+                                          return 'Must be 0-59';
+                                        }
                                       }
-                                    }
-                                    return null;
-                                  },
+                                      return null;
+                                    },
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
 
                           const SizedBox(height: AppSpacing.md),
 
