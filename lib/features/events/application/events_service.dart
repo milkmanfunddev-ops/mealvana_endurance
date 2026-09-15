@@ -40,6 +40,22 @@ class EventsService {
     this._coachRepository,
   );
 
+  /// The calendar `eventDate` is ALWAYS the date portion of `startTime`, so the
+  /// two can never drift. Both [createEvent] and [updateEvent] derive it here —
+  /// previously only create derived it and update passed the stale
+  /// `event.eventDate` straight through, so editing an event's date saved
+  /// `startTime` but not `eventDate`, and the calendar kept the old date
+  /// (Claudia, 2026-09-10: "shows correct… but it's not saving").
+  static DateTime? eventDateFromStartTime(String? startTime) {
+    if (startTime == null || startTime.isEmpty) return null;
+    try {
+      final parsed = DateTime.parse(startTime);
+      return DateTime(parsed.year, parsed.month, parsed.day);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Get event for a specific activity
   Future<domain.Event?> getEventForActivity(String activityId) async {
     try {
@@ -185,24 +201,8 @@ class EventsService {
 
       final now = DateTime.now();
 
-      // Parse eventDate from startTime if available
-      DateTime? eventDate;
-      if (startTime != null && startTime.isNotEmpty) {
-        try {
-          final parsedDateTime = DateTime.parse(startTime);
-          // Extract just the date portion (no time)
-          eventDate = DateTime(
-            parsedDateTime.year,
-            parsedDateTime.month,
-            parsedDateTime.day,
-          );
-        } catch (e) {
-          _logger.warning(
-            'Failed to parse startTime for eventDate: $startTime',
-            error: e,
-          );
-        }
-      }
+      // Parse eventDate from startTime (single derivation, shared with update).
+      final eventDate = eventDateFromStartTime(startTime);
 
       final event = domain.Event(
         id: '', // Empty string - repository will assign actual ID
@@ -295,11 +295,16 @@ class EventsService {
       // 'manual' rows). Manual/legacy rows keep their origin.
       final flippedOrigin =
           (event.origin == 'training_peaks' || event.origin == 'final_surge')
-              ? 'manual'
-              : event.origin;
+          ? 'manual'
+          : event.origin;
       final updatedEvent = event.copyWith(
         updatedAt: DateTime.now(),
         origin: flippedOrigin,
+        // Re-derive the calendar date from the (possibly edited) startTime so
+        // an edited date actually persists — copyWith otherwise keeps the
+        // stale eventDate. Falls back to the stored date only when there is no
+        // startTime to derive from (e.g. an imported event without a time).
+        eventDate: eventDateFromStartTime(event.startTime) ?? event.eventDate,
       );
 
       _logger.info(
