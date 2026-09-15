@@ -1886,6 +1886,40 @@ Feature name: Meal planning and Vana
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
+## mp-230 · Pickers, and the chips around them
+- category: The planning conversation
+- status: approved
+- image: test/features/meal_planning/presentation/goldens/picker_chips_complete_light.png
+- caption: Compact chips under a picker in the planning chat.
+- screen: Vana chat
+- source: memory 09-04; memory 09-03; 02-contract.md; plan-tab-v2.md
+- work: pending
+
+**Context.** In the planning chat Vana asks choice questions drawn as chips, and shows pickers: carousels of suggested meals. Lee's walkthroughs on 09-03 and 09-04 found accidental picks and chip rows that did not earn their space. The wire contract has no field saying which slot comes next.
+
+**Question.** How a picker and its chips look and behave, and who draws the chips.
+
+**Decision.** 1. A choice question takes two to four options as plain strings, drawn as compact pills. Bigger sets go through the selectable chip grid.
+2. A picker shows a handful of meals from the semantic search over the library, with saved meals boosted. A "Show more" raises a sheet with many more options from the same search. The count is not fixed.
+3. Tapping a picker tile opens meal detail. Only the tick adds it to the draft. Picked tiles get a swap circle. Chat tiles have no overflow menu, title, "tap to add" or why blurb.
+4. The chips under a picker are widgets the app draws. Their labels come from the model when its turn names the choices it expects next (mp-272). When the turn names none, the app shows its own set: "I like these", then "Next: type" or "That's my week" by coverage, plus "Other options" and "Something else…". Filter chips appear once the plan has a meal. Tapping a chip sends its label.
+5. "Other options" never repeats a meal already in the draft or already shown in the conversation.
+
+**Why.** Whole-card adding caused accidental picks, three meals felt thin, the model kept naming the wrong next type, and repeats read as not listening. Lee on 2026-09-14: the picker should be flexible, with a show-more sheet, and fed by the semantic search over the embedded library. Lee on 2026-09-15: the chip text can come from the model, which may say what buttons it expects next; when it says nothing the app shows its own; the widgets are always the app's.
+
+**What else was considered.** Two-line label and detail rows, stripped as not earning their space. MealBuddy's five to seven option groups. A fixed three meals. Model-authored chips, or a next-slot hint on the wire the contract does not carry.
+
+**What it touches.** askChoice schema, choice chips, suggestMeals tool, picker carousel, PickerChips, persona rule 3.
+
+**Details.** The tick sits top-left and the swap circle top-right on picked tiles. The shown set is parsed from stored picker and staples parts.
+
+> 2026-09-14 folded from mp-102, mp-103, mp-104, mp-105, mp-108
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-15 amended by Lee
+> 2026-09-15 rewritten from Lee's words
+> 2026-09-15 approved by Lee
+
 ## mp-231 · How a cooking period fills up
 - category: The planning conversation
 - status: approved
@@ -2967,4 +3001,31 @@ Feature name: Meal planning and Vana
 **What it touches.** Settings screen, the dev button overlay, the capture drives in screens.json.
 
 > 2026-09-15 proposed from Lee's words on mp-222
+> 2026-09-15 approved by Lee
+
+## mp-272 · A turn may name the chips it expects next
+- category: The planning conversation
+- status: approved
+- image: test/features/meal_planning/presentation/goldens/picker_chips_complete_light.png
+- caption: The chips under a picker; the labels may now come from the turn.
+- screen: Vana chat
+- source: Lee on the page 2026-09-15; 02-contract.md
+- work: pending
+
+**Context.** The chips under a picker were app-drawn with app-chosen labels (mp-230 clause 4 as first written). Lee ruled on 2026-09-15 that the model should be able to say which buttons it is thinking about next, with the app's own set as the fallback. The wire contract carries no such field today.
+
+**Question.** How the model tells the app which chips to show under a picker.
+
+**Decision.** 1. A Vana turn may carry an optional list of suggested chip labels: two to four plain strings.
+2. The app draws them as the chips under the picker, in the app's own widget and style. The model never draws or styles a chip.
+3. When the list is absent or empty, the app's own set applies (mp-230 clause 4).
+4. Tapping a suggested chip sends its label, the same as an app chip.
+
+**Why.** Lee on 2026-09-15: the text can sometimes come from the model, so the model should be able to indicate what buttons it is thinking about next; if there is no model indicator we show our buttons; the widgets are drawn by the app.
+
+**What else was considered.** Model-authored chips as markup, rejected: the widgets stay the app's. A next-slot hint alone, which names a slot but not the labels.
+
+**What it touches.** Turn contract (chat.ts, 02-contract.md), PickerChips, stored turn parts, persona rule 3.
+
+> 2026-09-15 proposed from Lee's words on mp-230
 > 2026-09-15 approved by Lee
