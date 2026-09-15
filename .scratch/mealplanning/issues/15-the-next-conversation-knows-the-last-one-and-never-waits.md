@@ -15,6 +15,6 @@
 - [x] OPENER_READ_BACK_MS, readBackWithin and athleteWordsFrom are gone; the opener path awaits nothing.
 - [x] The remember rule in the persona is sharpened and the eval case "a durable thing said in passing is a Memory by the next turn" passes.
 - [x] Eval: a conversation never signalled idle still opens the next one at once.
-- [ ] Dev deploy; simulator: close the sheet, reopen, the opener mentions last time.
+- [x] Dev deploy; simulator: close the sheet, reopen, the opener mentions last time.
 
 Next: /implement-lee mealplanning
