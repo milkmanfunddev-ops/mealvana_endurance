@@ -104,17 +104,22 @@ not a repo one), under 200 characters, leading with the count: `N decisions wait
 SSOT page`. A run that merely leaves cards pending sends nothing; the report carries the count.
 The tool skips the push when they are at the terminal; that is fine.
 
-Report, then end the turn with exactly one `Next:` line:
+Report, then end the turn with a `Clear:` line and exactly one `Next:` line. `Clear:` says
+whether the ratifier can `/clear` now (yes when everything is committed and reseeded and
+nothing in this context is needed by the next command; otherwise no, with the one thing still
+open). `Next:` names the command and says in one clause what it does.
 
 ```
 Pushed: N proposals, N open questions, N images
 Pending on the page: N proposed, N open questions
 Page: URL
-Next: /<command>
+Clear: yes, all committed and on the page
+Next: /<command> (what it does, in one clause)
 ```
 
 or, when the next step cannot start until they rule:
 
 ```
-Next: approve N decisions on the page, then /<command>
+Clear: no, N verdicts still to apply
+Next: approve N decisions on the page, then /<command> (what it does)
 ```
