@@ -413,7 +413,8 @@
     const done = tickets.filter(t => t.state === 'done'), dropped = tickets.filter(t => t.state === 'dropped');
     const next = tickets.filter(t => t.state !== 'done' && t.state !== 'dropped');
     const all = sorted().filter(d => !feat || d.feature === feat);
-    const pendingWork = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status));
+    const cited = new Set(tickets.flatMap(t => t.cites || []));
+    const pendingWork = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status) && !cited.has(d.id));
     const questions = all.filter(isQuestion);
     // Stale pictures, one row per picture: the cards on it, when it was taken, what moved.
     const stale = new Map();
@@ -445,7 +446,8 @@
       const done = !g.pend && !g.queued && (state.meta.finished && state.meta.finished[g.key]);
       navHtml += `<button class="cat ${g.key === state.cat ? 'active' : ''}" data-goto="${esc(g.key)}"><span>${esc(g.category)}</span><span class="n ${g.pend ? 'pend' : ''}">${done ? '<span class="done">done</span> ' : ''}${g.open ? '<span class="q">' + g.open + '?</span> ' : ''}${g.pend ? g.pend + ' / ' : ''}${g.n}</span></button>`;
     }
-    const workPend = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status)).length;
+    const ticketed = new Set([...state.tickets.values()].flatMap(t => t.cites || []));
+    const workPend = all.filter(d => d.work === 'pending' && !GONE.includes(eff(d).status) && !ticketed.has(d.id)).length;
     nav.innerHTML = navHtml + '</div>' + `<div class="feat"><button class="cat ${state.cat === 'work' ? 'active' : ''}" data-goto="work"><span>Work</span><span class="n ${workPend ? 'pend' : ''}">${workPend ? workPend + ' / ' : ''}${state.tickets.size}</span></button><button class="cat ${state.cat === 'vocab' ? 'active' : ''}" data-goto="vocab"><span>Vocabulary</span><span class="n">${state.vocab.size}</span></button></div>`;
     if (state.cat === 'vocab') {
       main.innerHTML = vocabPage();

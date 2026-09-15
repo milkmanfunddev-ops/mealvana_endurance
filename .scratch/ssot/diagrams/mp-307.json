@@ -1,0 +1,30 @@
+{
+  "kind": "flow",
+  "title": "Week start and period are settings",
+  "rows": [
+    [ { "id": "settings", "label": "Vana settings screen" },
+      { "id": "fixed", "label": "Hardcoded Sunday\nand fixed offsets", "tone": "muted" } ],
+    [ { "id": "start", "label": "Week start\ndefault Sunday", "tone": "accent" },
+      { "id": "period", "label": "Period length\ndefault 7 days", "tone": "accent" } ],
+    [ { "id": "math", "label": "weekStartFor and\ncook-day offsets" },
+      { "id": "cover", "label": "Coverage, review sheet,\nweek card" },
+      { "id": "opener", "label": "Check-in opener" } ],
+    [ { "id": "tab", "label": "Plan tab week moves;\ncook, top-up, fresh follow", "tone": "ok" } ]
+  ],
+  "edges": [
+    { "from": "settings", "to": "start" },
+    { "from": "settings", "to": "period" },
+    { "from": "fixed", "to": "math", "label": "no longer", "tone": "muted" },
+    { "from": "start", "to": "math" },
+    { "from": "start", "to": "opener" },
+    { "from": "period", "to": "cover" },
+    { "from": "period", "to": "opener" },
+    { "from": "math", "to": "tab" },
+    { "from": "cover", "to": "tab" }
+  ],
+  "example": [
+    "Monday start, 10-day period: week card opens Monday.",
+    "Cook, top-up and fresh days move with the Monday start.",
+    "Coverage counts servings against 10 days, not 7."
+  ]
+}

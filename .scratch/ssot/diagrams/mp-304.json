@@ -1,0 +1,29 @@
+{
+  "kind": "flow",
+  "title": "Typed feedback lands in the inbox",
+  "rows": [
+    [ { "id": "typed", "label": "Athlete types a\ncomplaint to Vana" },
+      { "id": "shaken", "label": "Athlete shakes\nthe phone" } ],
+    [ { "id": "row", "label": "Feedback row saved:\nwords, sentiment, conv id" },
+      { "id": "ack", "label": "Feedback-saved reply\nunchanged", "tone": "ok" } ],
+    [ { "id": "api", "label": "Wiredash server API", "tone": "pending" },
+      { "id": "client", "label": "Client files it on the\nfeedback-saved part", "tone": "pending" },
+      { "id": "stop", "label": "Neither: ticket stops,\nquestion on the page", "tone": "no" } ],
+    [ { "id": "inbox", "label": "One Wiredash inbox", "tone": "accent" } ]
+  ],
+  "edges": [
+    { "from": "typed", "to": "row" },
+    { "from": "row", "to": "ack" },
+    { "from": "row", "to": "api", "label": "first step: find the path" },
+    { "from": "row", "to": "client" },
+    { "from": "row", "to": "stop", "tone": "no" },
+    { "from": "api", "to": "inbox" },
+    { "from": "client", "to": "inbox" },
+    { "from": "shaken", "to": "inbox" }
+  ],
+  "example": [
+    "Typed: \"the plan repeats salmon\", sentiment negative.",
+    "Inbox entry: those words, negative, conversation 7f3a.",
+    "No API and no client path: stop, ask on the page."
+  ]
+}
