@@ -1,6 +1,6 @@
 # 25: An admin can review any meal
 
-**Status:** in-progress (wave 1, 2026-09-15)
+**Status:** done (wave 1, 2026-09-15)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee mealplanning`
 

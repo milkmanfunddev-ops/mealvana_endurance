@@ -1,6 +1,6 @@
 # 18: The server gates on a two-field RevenueCat cache
 
-**Status:** in-progress (wave 1, 2026-09-15)
+**Status:** done (wave 1, 2026-09-15)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee mealplanning`
 
