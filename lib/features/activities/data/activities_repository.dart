@@ -1151,20 +1151,35 @@ class ActivitiesRepository with SyncableRepository {
     String userId,
     ActivityType activityType, {
     String? excludeActivityId,
+    int? minDurationMinutes,
     int limit = 12,
   }) async {
     try {
       final query = _database.select(_database.activitiesTable)
-        ..where(
-          (tbl) =>
+        ..where((tbl) {
+          var predicate =
               tbl.userId.lower().equals(userId.toLowerCase()) &
               tbl.activityType.equals(activityType.name) &
               tbl.status.equals('completed') &
               // Q-INT2: disconnected-provider rows leave the baseline too.
               (tbl.hiddenByDisconnect.isNull() |
                   tbl.hiddenByDisconnect.equals(false)) &
-              tbl.deletedAt.isNull(),
-        )
+              tbl.deletedAt.isNull();
+          // Duration-gate in SQL so a frequent athlete's short runs don't
+          // starve the fetch window and push qualifying long efforts out of
+          // it — the carb-trend baseline was stuck at N/4 because `limit`
+          // rows of ANY length filled up on short runs. Mirrors the service's
+          // effectiveDuration = actualDurationMinutes ?? durationMinutes.
+          if (minDurationMinutes != null) {
+            predicate =
+                predicate &
+                coalesce<int>([
+                  tbl.actualDurationMinutes,
+                  tbl.durationMinutes,
+                ]).isBiggerOrEqualValue(minDurationMinutes);
+          }
+          return predicate;
+        })
         ..orderBy([(tbl) => OrderingTerm.desc(tbl.completedAt)])
         // Fetch one extra so excluding the current activity still yields `limit`.
         ..limit(limit + 1);
@@ -2596,8 +2611,8 @@ class ActivitiesRepository with SyncableRepository {
     // Swimming carries distance in meters; running/cycling in miles.
     final distanceMiles = type == ActivityType.swimming
         ? (segment.distanceMeters != null
-            ? segment.distanceMeters! / 1609.34
-            : null)
+              ? segment.distanceMeters! / 1609.34
+              : null)
         : segment.distanceMiles;
     return domain.Activity(
       id: '',
@@ -2612,24 +2627,28 @@ class ActivitiesRepository with SyncableRepository {
           .where((l) => l.name == segment.intensity)
           .firstOrNull,
       // Running
-      paceTargetMinutesPerMile:
-          type == ActivityType.running ? segment.paceMinutesPerMile : null,
+      paceTargetMinutesPerMile: type == ActivityType.running
+          ? segment.paceMinutesPerMile
+          : null,
       // Cycling
-      cyclingSpeedMph:
-          type == ActivityType.cycling ? segment.speedMph : null,
-      cyclingTerrain:
-          type == ActivityType.cycling ? segment.terrain : null,
-      cyclingIndoorOutdoor:
-          type == ActivityType.cycling ? segment.indoorOutdoor : null,
-      cyclingElevationGainFt:
-          type == ActivityType.cycling ? segment.elevationGainFt : null,
+      cyclingSpeedMph: type == ActivityType.cycling ? segment.speedMph : null,
+      cyclingTerrain: type == ActivityType.cycling ? segment.terrain : null,
+      cyclingIndoorOutdoor: type == ActivityType.cycling
+          ? segment.indoorOutdoor
+          : null,
+      cyclingElevationGainFt: type == ActivityType.cycling
+          ? segment.elevationGainFt
+          : null,
       // Swimming
-      swimmingPacePer100mSeconds:
-          type == ActivityType.swimming ? segment.pacePer100mSeconds : null,
-      swimmingPoolOrOpenWater:
-          type == ActivityType.swimming ? segment.poolOrOpenWater : null,
-      swimmingWaterTempC:
-          type == ActivityType.swimming ? segment.waterTempC : null,
+      swimmingPacePer100mSeconds: type == ActivityType.swimming
+          ? segment.pacePer100mSeconds
+          : null,
+      swimmingPoolOrOpenWater: type == ActivityType.swimming
+          ? segment.poolOrOpenWater
+          : null,
+      swimmingWaterTempC: type == ActivityType.swimming
+          ? segment.waterTempC
+          : null,
       createdAt: now,
       updatedAt: now,
       needsUpload: true,
