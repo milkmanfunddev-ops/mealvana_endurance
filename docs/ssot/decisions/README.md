@@ -236,7 +236,8 @@ capture with one dated history line, `picture refreshed at 1.26.0+1, 43496fed, r
 <golden path>`. A stale picture whose screen has no drive is reported and left as it was. The
 old picture never stays beside the new one: the asset map then says which artifact asset was
 replaced or fell out of use (Assets below), and the epilogue deletes it. `/implement-lee` runs
-the same refresh for the screens a ticket touched when it closes, once ticket 10 builds it.
+the same refresh for the screens a wave touched when it closes (`touched-screens --since
+<base>` names them from the diff, `refresh --only <keys>` retakes them whether stale or not).
 
 Setup, once per machine: `scripts/ssot-capture-setup.sh` installs the `idb` client (pipx) and
 Facebook's prebuilt `idb_companion` under `~/.local` (Homebrew's facebook/fb tap fails to tap
@@ -286,8 +287,20 @@ runs the prologue, stops while any `Spec` card is proposed or amended (`sync.mjs
 instead of quizzing in the terminal; touches that overlap become blocking edges
 (`ticket-plan`), and the ticket files are written (`publish-tickets`) only once every card is
 approved, each with the three header lines the Work page reads, a `**Decisions:**` line citing
-its ids, and a closing `Next:` line. `/implement-lee` arrives with ticket 10 in
-`.scratch/ssot/issues/`.
+its ids, and a closing `Next:` line. `/implement-lee <feature>` in
+`.claude/skills/implement-lee/` runs the prologue and builds the tickets in waves. `sync.mjs
+wave` reads the ticket files' Status and Blocked-by lines for the frontier (every ready ticket
+whose blockers are done); `--open` marks the wave's tickets in progress, commits every file
+under the issues dir and logs the wave in `.scratch/<feature>/waves.json` with that commit as
+its base. One subagent per ticket follows Matt's implement in its own worktree beside the clone
+(`<clone>-waves/<feature>/NN-<slug>`, branch `wave/<feature>/NN-<slug>`) after checking its
+HEAD is the base, and device checks take turns through `sim-lock`. The branches merge in ticket
+order with Matt's merge-conflict skill (generated files are regenerated, never resolved by
+hand); codegen, the full suite and one code review run once for the wave. `--close` records
+what merged, what failed and the elapsed time and sets each ticket's status (a wave ticket on
+neither list failed). Visual parity runs for a ticket citing a file under
+`docs/ssot/spec/design/renderings/`, the wave's build-time decisions go to the page as
+proposals without blocking the next wave, and the screens the wave touched are retaken.
 
 ## Sync module
 
@@ -296,7 +309,7 @@ the page into the two files), `answers` (close an open question with a decision)
 `answeredLinks` (decisions that answered a question), `specCitations` (what a spec's decision
 sections cite), `pendingIn` (the pending cards of one category), `ticketPlan` (ticket cards with
 their blocking edges), `publishTickets` (approved ticket cards to files), `fold`, `clauses` and
-`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
+`ticketDocument`, `svgCheck`, `checkedSvg`, `undrawn`, `attachSvg`, `uncaptured`, `attachImage`, `readSidecar`, `changedSince`, `imageOrigin`, `captureStatus`, `stalePictures`, `refreshPictures` (with `only` for the screens a wave touched), `ticketFrontier`, `designRenderings`, `touchedScreens`, `setTicketStatus`, `wavePlan`, `waveOpen`, `waveClose`, `elapsed`, `simLock`, `dropAsset` and `unreferencedAssets`; `_page/diagram.mjs` exports `draw` and the token list; `_page/capture.mjs` exports `loadScreens`, `matchScreen`, `findElement`, `runDrive`, `capture`, `sidecar`, `simulatorIo`, `bootedUdid`, `stamp` and `doctor`. Tests: `node --test docs/ssot/decisions/_page/sync.test.mjs`;
 every case feeds a markdown fixture, a spec or an svg string and checks what comes out, never
 how the parser walks lines; one case round-trips the real mealplanning record and proposals. CLI:
 
@@ -328,7 +341,12 @@ node docs/ssot/decisions/_page/sync.mjs capture <feature> <screen>             #
 node docs/ssot/decisions/_page/sync.mjs attach-image <decisions.md> <id> <png> [--caption <text>]  # set the image line, record where the picture came from
 node docs/ssot/decisions/_page/sync.mjs pictures <feature> <proposals.md> <ssot.md>   # uncaptured -> reuse or capture -> attach, one capture per screen
 node docs/ssot/decisions/_page/sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]   # every picture in use: age, cards, stale and what changed; nothing written
-node docs/ssot/decisions/_page/sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]   # retake every stale picture once, in place; cards on a stale golden move to the capture
+node docs/ssot/decisions/_page/sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>] [--only <key,key>]   # retake every stale picture once, in place; cards on a stale golden move to the capture; --only retakes those screens whether stale or not and nothing else
+node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> [--branch <b>]   # the frontier as JSON: done, building, blocked (with what on), uncommitted ticket files, and one entry per wave ticket with branch, worktree, renderings, cites; nothing written
+node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> --open           # the same, then marks its tickets in-progress, commits the issues dir and logs the wave in <feature>/waves.json with that commit as base
+node docs/ssot/decisions/_page/sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]   # closes the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
+node docs/ssot/decisions/_page/sync.mjs touched-screens --since <commit> [<file>...]   # registry screens drawn from the files changed since the commit (committed, uncommitted or untracked), as JSON
+node docs/ssot/decisions/_page/sync.mjs sim-lock acquire <owner> [--wait <seconds>] | release <owner> | status   # one simulator, one holder; the lock dir sits under the OS temp dir, a hold older than 30 minutes is broken
 ```
 
 `triage` sorts the page's verdicts the way the skills apply them: approve, withdraw and reject with

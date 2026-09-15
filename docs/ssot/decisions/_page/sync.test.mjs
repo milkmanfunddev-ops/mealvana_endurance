@@ -7,9 +7,9 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset } from './sync.mjs';
+import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed, simLock } from './sync.mjs';
 import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName } from './capture.mjs';
 import { draw, TOKENS } from './diagram.mjs';
 
@@ -1099,4 +1099,144 @@ test('prepare carries age and staleness into the page document, and the stale an
   const real = loadScreens();
   for (const [k, e] of Object.entries(real)) if (e.drive || e.reuse) assert.ok(Array.isArray(e.code) && e.code.length, `${k} names no code`);
   for (const e of Object.values(real)) for (const p of e.code || []) assert.ok(existsSync(join(here, '../../../..', p)), `${p} is not in the repo`);
+});
+
+// ---- /implement-lee: waves in worktrees (ticket 10) ----
+
+const ticketFile = (n, title, status, blocked, body = '') => `# ${n}: ${title}\n\n**Status:** ${status}\n**Blocked by:** ${blocked}\n**Next:** \`/implement-lee sm\`\n\n**What to build:** ${title}.\n\n**Decisions:** sm-001; approved as sm-010.\n\n**Touches:** lib/features/sheet\n\n${body}- [ ] it works\n\nNext: /implement-lee sm\n`;
+
+test('ticketFrontier takes the tickets whose blockers are all done, and says what the rest wait on', () => {
+  const docs = [
+    ['01-a.md', ticketFile('01', 'A', 'done', 'None (can start immediately).')],
+    ['02-b.md', ticketFile('02', 'B', 'ready-for-agent', '01.')],
+    ['03-c.md', ticketFile('03', 'C', 'ready-for-agent', '01 (touches lib/features/sheet), 02.')],
+    ['04-d.md', ticketFile('04', 'D', 'ready-for-agent', 'None (can start immediately).')],
+    ['05-e.md', ticketFile('05', 'E', 'in-progress', '01.')],
+    ['06-f.md', ticketFile('06', 'F', 'wontfix', '01.')],
+    ['07-g.md', ticketFile('07', 'G', 'ready-for-agent', '05, 06.')],
+  ].map(([f, t]) => ticketDocument('sm', f, t));
+  const f = ticketFrontier(docs);
+  assert.deepEqual(f.done, ['01']);
+  assert.deepEqual(f.frontier, ['02', '04'], 'unblocked and ready, in ticket order');
+  assert.deepEqual(f.building, ['05']);
+  assert.deepEqual(f.blocked, [{ number: '03', waitingOn: ['02'] }, { number: '07', waitingOn: ['05'] }], 'a done or dropped blocker no longer holds; 06 is dropped');
+  assert.deepEqual(f.dropped, ['06']);
+});
+
+test('designRenderings lists the design renderings a ticket cites, once each', () => {
+  const text = 'Match `docs/ssot/spec/design/renderings/pre-workout@v2.html` (see docs/ssot/spec/design/renderings/pre-workout@v2.html and docs/ssot/spec/design/renderings/macro-dashboard@v1.html). The spec is docs/ssot/spec/design/components/vana-sheet.md.';
+  assert.deepEqual(designRenderings(text), ['docs/ssot/spec/design/renderings/pre-workout@v2.html', 'docs/ssot/spec/design/renderings/macro-dashboard@v1.html']);
+  assert.deepEqual(designRenderings('nothing cited'), []);
+});
+
+test('touchedScreens maps changed files to the registry screens drawn from them', () => {
+  const files = ['lib/features/sheet/sheet.dart', 'lib/features/sheet/widgets/x.dart', 'test/sheet_test.dart', 'lib/features/paywall/paywall.dart'];
+  assert.deepEqual(touchedScreens(files, agedScreens), ['vana-sheet', 'paywall']);
+  assert.deepEqual(touchedScreens(['docs/x.md'], agedScreens), []);
+  // The CLI reads what changed since a commit, committed or not, plus any files named.
+  const { root, put, first } = repo();
+  put('_page/screens.json', JSON.stringify(agedScreens)); put('lib/features/paywall/p.dart', 'x');
+  const keys = JSON.parse(execFileSync('node', [cli, 'touched-screens', '--since', first, '--screens', '_page/screens.json'], { cwd: root, encoding: 'utf8' }));
+  assert.deepEqual(keys, ['vana-sheet', 'paywall'], 'sheet.dart moved in the second commit, paywall in the working tree');
+  assert.throws(() => execFileSync('node', [cli, 'touched-screens', '--since', 'nosuchcommit', '--screens', '_page/screens.json'], { cwd: root, stdio: 'pipe' }), /not a commit/);
+  assert.deepEqual(JSON.parse(execFileSync('node', [cli, 'touched-screens', 'lib/features/timeline/t.dart', '--screens', '_page/screens.json'], { cwd: root, encoding: 'utf8' })), ['timeline']);
+});
+
+test('setTicketStatus rewrites only the Status header line', () => {
+  const t = ticketFile('02', 'B', 'ready-for-agent', '01.');
+  const out = setTicketStatus(t, 'in-progress (wave 1, 2026-09-15)');
+  assert.match(out, /^\*\*Status:\*\* in-progress \(wave 1, 2026-09-15\)$/m);
+  assert.equal(out.replace(/^\*\*Status:\*\*.*$/m, 'S'), t.replace(/^\*\*Status:\*\*.*$/m, 'S'));
+  assert.throws(() => setTicketStatus('# 02: no header\n', 'done'), /Status/);
+});
+
+test('refreshPictures with `only` retakes those screens whether stale or not and leaves the rest alone', async () => {
+  const { root, put, second } = repo();
+  put('images/f/timeline.png', 'old png');
+  put('images/f/timeline.json', JSON.stringify({ key: 'timeline', commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-14T16:00:00.000Z' }));
+  const first = () => parse(fixture).decisions[0];
+  const card = (id, meta) => ({ ...first(), id, meta: { ...first().meta, ...meta } });
+  const proposals = { decisions: [card('sm-001', { image: 'goldens/vana_sheet_open_light.png' })] };
+  const ssot = { decisions: [card('sm-003', { screen: 'Timeline', image: 'images/f/timeline.png', status: 'approved' })] };
+  const taken = [];
+  const takePicture = async entry => { taken.push(entry.key); const png = join(root, 'images/f', `${entry.key}.png`); writeFileSync(png, `new ${entry.key}`); writeFileSync(png.replace(/\.png$/, '.json'), JSON.stringify({ key: entry.key, commit: second, appVersion: '1.26.0+1', capturedAt: '2026-09-15T09:00:00.000Z' })); return { path: `images/f/${entry.key}.png` }; };
+  const r = await refreshPictures(proposals, ssot, agedScreens, { root, dir: 'images/f', takePicture, only: ['timeline'], today: '2026-09-15' });
+  assert.deepEqual(taken, ['timeline'], 'the fresh timeline is retaken because the wave touched it; the stale golden is not in `only`');
+  assert.deepEqual(r.refreshed.map(x => x.key), ['timeline']);
+  assert.deepEqual(r.fresh, ['goldens/vana_sheet_open_light.png']);
+  assert.equal(readFileSync(join(root, 'images/f/timeline.png'), 'utf8'), 'new timeline');
+});
+
+test('wavePlan reads the ticket files, names a branch and worktree per frontier ticket, and lists uncommitted ticket files', () => {
+  const { root, put, git } = repo();
+  put('.scratch/sm/issues/01-a.md', ticketFile('01', 'A', 'done', 'None.'));
+  put('.scratch/sm/issues/02-the-sheet.md', ticketFile('02', 'The sheet', 'ready-for-agent', '01.', 'Match `docs/ssot/spec/design/renderings/pre-workout@v2.html`.\n\n'));
+  put('.scratch/sm/issues/03-c.md', ticketFile('03', 'C', 'ready-for-agent', '02.'));
+  git('add', '-A'); git('commit', '-q', '-m', 'tickets');
+  put('.scratch/sm/issues/04-d.md', ticketFile('04', 'D', 'ready-for-agent', 'None.'));
+  const base = git('rev-parse', 'HEAD');
+  const plan = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
+  assert.equal(plan.base, base);
+  assert.equal(plan.branch, 'main');
+  assert.deepEqual(plan.done, ['01']);
+  assert.deepEqual(plan.blocked, [{ number: '03', waitingOn: ['02'] }]);
+  assert.deepEqual(plan.wave.map(t => [t.number, t.title, t.branch, t.renderings, t.file]), [
+    ['02', 'The sheet', 'wave/sm/02-the-sheet', ['docs/ssot/spec/design/renderings/pre-workout@v2.html'], '.scratch/sm/issues/02-the-sheet.md'],
+    ['04', 'D', 'wave/sm/04-d', [], '.scratch/sm/issues/04-d.md'],
+  ]);
+  assert.ok(plan.wave.every(t => t.worktree.startsWith(join(dirname(root), basename(root) + '-waves', 'sm', t.number))), 'worktrees sit beside the clone, never inside it');
+  assert.deepEqual(plan.uncommitted, ['.scratch/sm/issues/04-d.md'], 'a ticket the worktrees cannot see');
+  // The CLI, with --open, records the wave and marks its tickets in progress.
+  const out = JSON.parse(execFileSync('node', [cli, 'wave', 'sm', '.scratch/sm/issues', '--branch', 'main', '--open'], { cwd: root, encoding: 'utf8' }));
+  assert.equal(out.number, 1);
+  // --open commits every ticket file of the feature (the marks and the one that was untracked) and takes that commit as the base.
+  const opened = git('rev-parse', 'HEAD');
+  assert.notEqual(opened, base); assert.equal(out.base, opened); assert.deepEqual(out.uncommitted, []);
+  assert.equal(git('status', '--porcelain', '--', '.scratch/sm/issues'), '', 'nothing under the tickets dir is left uncommitted');
+  assert.match(git('log', '-1', '--format=%s'), /^wave 1 opened for sm: tickets 02, 04 \[skip ci\]$/);
+  assert.match(readFileSync(join(root, '.scratch/sm/issues/02-the-sheet.md'), 'utf8'), /^\*\*Status:\*\* in-progress \(wave 1/m);
+  assert.match(readFileSync(join(root, '.scratch/sm/issues/04-d.md'), 'utf8'), /^\*\*Status:\*\* in-progress \(wave 1/m);
+  const log = JSON.parse(readFileSync(join(root, '.scratch/sm/waves.json'), 'utf8'));
+  assert.deepEqual(log[0].tickets, ['02', '04']); assert.equal(log[0].base, opened); assert.ok(log[0].startedAt);
+  // A second plan sees them building, not on the frontier.
+  const again = wavePlan('sm', '.scratch/sm/issues', { root, branch: 'main' });
+  assert.deepEqual(again.wave, []); assert.deepEqual(again.building, ['02', '04']);
+  // Close: elapsed time, the outcome, and the tickets' final status.
+  const closed = JSON.parse(execFileSync('node', [cli, 'wave', 'sm', '.scratch/sm/issues', '--close', '1', '--merged', '02', '--suite', 'green'], { cwd: root, encoding: 'utf8' }));
+  assert.equal(closed.number, 1); assert.deepEqual(closed.merged, ['02']); assert.deepEqual(closed.failed, ['04'], 'a wave ticket named in neither list failed'); assert.equal(closed.suite, 'green'); assert.match(closed.elapsed, /^\d+m$/);
+  assert.match(readFileSync(join(root, '.scratch/sm/issues/02-the-sheet.md'), 'utf8'), /^\*\*Status:\*\* done \(wave 1/m);
+  assert.match(readFileSync(join(root, '.scratch/sm/issues/04-d.md'), 'utf8'), /^\*\*Status:\*\* ready-for-agent \(wave 1 failed/m, 'a failed ticket goes back on the frontier');
+});
+
+test('waveOpen and waveClose keep one log per feature and elapsed reads as hours and minutes', () => {
+  const log = [];
+  const w = waveOpen(log, { tickets: ['02', '04'], base: 'abc', branch: 'main', now: '2026-09-15T10:00:00.000Z' });
+  assert.equal(w.number, 1);
+  const w2 = waveOpen(log, { tickets: ['03'], base: 'def', branch: 'main', now: '2026-09-15T11:00:00.000Z' });
+  assert.equal(w2.number, 2);
+  const c = waveClose(log, 1, { merged: ['02', '04'], failed: [], suite: 'green', now: '2026-09-15T11:32:00.000Z' });
+  assert.deepEqual(c.failed, []);
+  assert.equal(c.elapsed, '1h 32m'); assert.equal(c.closedAt, '2026-09-15T11:32:00.000Z'); assert.equal(log[0].closedAt, c.closedAt);
+  assert.throws(() => waveClose(log, 9, { now: '2026-09-15T11:32:00.000Z' }), /wave 9/);
+  assert.equal(elapsed('2026-09-15T10:00:00Z', '2026-09-15T10:07:30Z'), '7m');
+  assert.equal(elapsed('2026-09-15T10:00:00Z', '2026-09-15T12:00:00Z'), '2h 0m');
+});
+
+test('simLock hands the one simulator to one owner at a time, breaks a stale hold, and the CLI reports', () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'ssot-sim-')), 'sim.lock');
+  const lock = simLock(dir);
+  assert.deepEqual(lock.status(), { held: false });
+  assert.equal(lock.acquire('wave-02', { now: '2026-09-15T10:00:00.000Z' }).ok, true);
+  const second = lock.acquire('wave-04', { now: '2026-09-15T10:01:00.000Z' });
+  assert.equal(second.ok, false); assert.equal(second.holder.owner, 'wave-02');
+  assert.equal(lock.acquire('wave-02', { now: '2026-09-15T10:01:00.000Z' }).ok, true, 're-entrant for the holder');
+  assert.equal(lock.release('wave-04').ok, false, 'only the holder releases');
+  assert.equal(lock.release('wave-02').ok, true);
+  assert.equal(lock.acquire('wave-04', { now: '2026-09-15T10:02:00.000Z' }).ok, true);
+  // A hold older than staleMs is broken: the agent that took it is gone.
+  const late = lock.acquire('wave-06', { now: '2026-09-15T10:40:00.000Z', staleMs: 30 * 60 * 1000 });
+  assert.equal(late.ok, true); assert.equal(late.broke.owner, 'wave-04');
+  assert.equal(JSON.parse(execFileSync('node', [cli, 'sim-lock', 'status', '--dir', dir], { encoding: 'utf8' })).holder.owner, 'wave-06');
+  assert.equal(execFileSync('node', [cli, 'sim-lock', 'release', 'wave-06', '--dir', dir], { encoding: 'utf8' }).trim(), '{"ok":true}');
+  assert.deepEqual(lock.status(), { held: false });
 });

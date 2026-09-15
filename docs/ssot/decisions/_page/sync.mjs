@@ -30,12 +30,18 @@
 //   node sync.mjs attach-image <decisions.md> <id> <png path> [--caption <text>]  -> set the card's image line, record where it came from
 //   node sync.mjs pictures <feature> <proposals.md> <ssot.md>  -> uncaptured -> reuse or capture -> attach, for every card at once
 //   node sync.mjs stale <proposals.md> [<ssot.md>] [--screens <screens.json>]  -> every picture in use with its age and whether its screen's code moved on
-//   node sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>]  -> retake every stale picture once, in place; cards on a golden move to the capture
+//   node sync.mjs refresh <feature> <proposals.md> <ssot.md> [--screens <screens.json>] [--only <key,key>]  -> retake every stale picture once, in place; cards on a golden move to the capture; --only retakes those screens whether stale or not
+//   node sync.mjs wave <feature> <issues dir> [--branch <b>]  -> the frontier: done, building, blocked, uncommitted ticket files, and branch + worktree + renderings per wave ticket
+//   node sync.mjs wave <feature> <issues dir> --open           -> the same, then commits the ticket files with their in-progress marks and logs the wave (base = that commit)
+//   node sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]  -> close the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
+//   node sync.mjs touched-screens --since <commit> [<file>...]  -> registry screens drawn from the files changed since the commit (committed, uncommitted, untracked)
+//   node sync.mjs sim-lock acquire <owner> [--wait <s>] | release <owner> | status  -> one simulator, one holder at a time
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { join, isAbsolute, basename } from 'node:path';
+import { join, isAbsolute, basename, dirname, resolve } from 'node:path';
 import { draw, TOKENS } from './diagram.mjs';
 import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor } from './capture.mjs';
 
@@ -264,11 +270,14 @@ export function ticketDocument(feature, file, text, idPrefix = '') {
   const line = k => { const m = text.match(new RegExp(`^\\*\\*${k}:\\*\\*\\s*(.*)$`, 'mi')); return m ? m[1].trim() : ''; };
   const [statusLine, blockedLine, nextLine] = TICKET_HEADERS.map(line);
   const s = statusLine.toLowerCase();
-  const state = /wontfix/.test(s) ? 'dropped' : /^(done|built|verified|typed-postcode|send,|partly verified)/.test(s) ? 'done' : /needs-grilling|needs grilling/.test(s) ? 'needs grilling' : /ready/.test(s) ? 'ready' : /after|blocked/.test(s) ? 'waiting' : s ? 'other' : 'proposed';
+  const state = /wontfix/.test(s) ? 'dropped' : /^(done|built|verified|typed-postcode|send,|partly verified)/.test(s) ? 'done' : /needs-grilling|needs grilling/.test(s) ? 'needs grilling' : /^(in-progress|building)/.test(s) ? 'building' : /ready/.test(s) ? 'ready' : /after|blocked/.test(s) ? 'waiting' : s ? 'other' : 'proposed';
   const owed = /owed|not yet (seen|looked)|awaiting a look|untested|unverified|not exercised|fails/.test(s);
   const cites = [...new Set((text.match(new RegExp(`\\b${idPrefix || '[a-z]+'}-\\d{3}\\b`, 'g')) || []))].sort();
   return { id: `${feature}-${num}`, feature, number: num, title, status: statusLine, state, owed, blockedBy: blockedLine, next: nextLine, cites, file, order: parseInt(num, 10) || 0 };
 }
+
+/** The ticket files of a feature (`NN-<slug>.md`), sorted, as `<dir>/<file>` paths; an absent dir is empty. */
+export const ticketFiles = (root, dir) => existsSync(under(root, dir)) ? readdirSync(under(root, dir)).filter(x => /^\d+-.*\.md$/.test(x)).sort().map(f => `${dir}/${f}`) : [];
 
 export function nextId(proposals, ssot) {
   const ids = [...proposals.decisions, ...ssot.decisions].map(d => d.id);
@@ -786,11 +795,13 @@ export function stalePictures(proposals, ssot = { decisions: [] }, screens = {},
  * history line naming what it replaced. A screen with no drive, or a drive that
  * fails, is skipped and its file left alone.
  */
-export async function refreshPictures(proposals, ssot, screens, { root = process.cwd(), dir, takePicture, today = new Date().toISOString().slice(0, 10) }) {
+export async function refreshPictures(proposals, ssot, screens, { root = process.cwd(), dir, takePicture, only, today = new Date().toISOString().slice(0, 10) }) {
   const result = { refreshed: [], fresh: [], skipped: [] };
   const took = new Map(); // key -> {path} | null, so a golden and a capture of one screen share a drive
+  // `only` (screen keys a wave touched) retakes those screens whether stale or not and leaves every other picture alone.
+  const wanted = p => only ? only.includes(p.key) : p.stale;
   for (const p of stalePictures(proposals, ssot, screens, { root })) {
-    if (!p.stale) { result.fresh.push(p.path); continue; }
+    if (!wanted(p)) { result.fresh.push(p.path); continue; }
     const entry = screens[p.key];
     if (!entry?.drive) { result.skipped.push({ path: p.path, why: `${p.key} has no drive` }); continue; }
     if (!took.has(p.key)) {
@@ -807,6 +818,118 @@ export async function refreshPictures(proposals, ssot, screens, { root = process
     result.refreshed.push({ key: p.key, from: p.path, path: taken.path, cards: p.cards });
   }
   return result;
+}
+
+// ---- /implement-lee: waves in worktrees ----
+
+const ticketNumbers = line => [...new Set((String(line || '').match(/\b\d{2}\b/g) || []))];
+/**
+ * The frontier: every ticket that is ready and whose blockers are all done or
+ * dropped, from the header lines `ticketDocument` read. `building` is what an
+ * earlier wave holds (status in-progress), `blocked` says what each waiting
+ * ticket still waits on. Numbers, in ticket order.
+ */
+export function ticketFrontier(tickets) {
+  const sorted = [...tickets].sort((a, b) => a.order - b.order);
+  const building = t => t.state === 'building';
+  const done = sorted.filter(t => t.state === 'done').map(t => t.number);
+  const dropped = sorted.filter(t => t.state === 'dropped').map(t => t.number);
+  const settled = new Set([...done, ...dropped]);
+  const out = { done, dropped, building: sorted.filter(building).map(t => t.number), frontier: [], blocked: [] };
+  for (const t of sorted) {
+    if (settled.has(t.number) || building(t)) continue;
+    const waitingOn = ticketNumbers(t.blockedBy).filter(n => !settled.has(n));
+    if (waitingOn.length) out.blocked.push({ number: t.number, waitingOn });
+    else if (t.state === 'ready' || t.state === 'proposed') out.frontier.push(t.number);
+    else out.blocked.push({ number: t.number, waitingOn: [], status: t.status });
+  }
+  return out;
+}
+/** The design renderings a ticket cites (`docs/ssot/spec/design/renderings/...`), once each, in order. */
+export function designRenderings(text) {
+  return [...new Set(String(text).match(/docs\/ssot\/spec\/design\/renderings\/[^\s`'")\]]+/g) || [])];
+}
+/** The registry screens whose `code` covers any of the files, in registry order. */
+export function touchedScreens(files, screens) {
+  const drawnFrom = (file, codePath) => { const dir = codePath.replace(/\/+$/, ''); return file === dir || file.startsWith(dir + '/'); };
+  return Object.entries(screens).filter(([, entry]) => (entry.code || []).some(codePath => files.some(file => drawnFrom(file, codePath)))).map(([key]) => key);
+}
+/** Rewrite a ticket's `**Status:**` header line and nothing else. */
+export function setTicketStatus(text, status) {
+  const re = new RegExp(`^\\*\\*${TICKET_HEADERS[0]}:\\*\\*.*$`, 'm');
+  if (!re.test(text)) throw new Error(`the ticket has no **${TICKET_HEADERS[0]}:** line`);
+  return text.replace(re, `**${TICKET_HEADERS[0]}:** ${status}`);
+}
+const gitOut = (root, ...a) => (git(root, ...a) || '').trim();
+/**
+ * The next wave for a feature: the frontier from the ticket files, and for each
+ * ticket the branch and worktree its agent builds on, the design renderings it
+ * cites (visual parity), and the ids it cites. `base` is the working branch's
+ * tip the worktrees start from; `uncommitted` lists ticket files a worktree
+ * could not see. Worktrees sit beside the clone (`<clone>-waves/<feature>/NN`),
+ * never inside it, so the app's analyzer and tests never walk another ticket's tree.
+ */
+export function wavePlan(feature, dir, { root = process.cwd(), branch } = {}) {
+  root = resolve(root);
+  const docs = ticketFiles(root, dir).map(f => ticketDocument(feature, f, readFileSync(under(root, f), 'utf8')));
+  const frontier = ticketFrontier(docs);
+  branch = branch || gitOut(root, 'rev-parse', '--abbrev-ref', 'HEAD');
+  const base = gitOut(root, 'rev-parse', 'HEAD');
+  const status = gitOut(root, 'status', '--porcelain', '--', dir);
+  const uncommitted = status.split('\n').filter(Boolean).map(l => l.slice(3).trim()).filter(p => /\/\d+-.*\.md$/.test(p)).sort();
+  const wavesDir = join(dirname(root), `${basename(root)}-waves`, feature);
+  const wave = frontier.frontier.map(n => {
+    const t = docs.find(d => d.number === n);
+    const text = readFileSync(under(root, t.file), 'utf8');
+    const name = `${n}-${basename(t.file).replace(/^\d+-/, '').replace(/\.md$/, '')}`;
+    return { number: n, title: t.title, file: t.file, branch: `wave/${feature}/${name}`, worktree: join(wavesDir, name), renderings: designRenderings(text), cites: t.cites };
+  });
+  return { feature, branch, base, done: frontier.done, dropped: frontier.dropped, building: frontier.building, blocked: frontier.blocked, wave, uncommitted };
+}
+/** Minutes, or hours and minutes, between two ISO instants. */
+export function elapsed(from, to) {
+  const m = Math.max(0, Math.floor((new Date(to) - new Date(from)) / 60000));
+  return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+}
+/** Append a wave to the feature's log (`.scratch/<feature>/waves.json`); numbers count from 1. */
+export function waveOpen(log, { tickets, base, branch, now = new Date().toISOString() }) {
+  const entry = { number: log.length + 1, tickets, base, branch, startedAt: now, closedAt: null };
+  log.push(entry);
+  return entry;
+}
+/** Close a wave: what merged, what failed, how the suite ended, and the time it took. */
+export function waveClose(log, number, { merged = [], failed = [], suite = '', now = new Date().toISOString() } = {}) {
+  const entry = log.find(w => w.number === Number(number));
+  if (!entry) throw new Error(`wave ${number} is not in the log`);
+  // A wave ticket named in neither list did not merge: it fails, so the next run puts it back on the frontier.
+  failed = [...new Set([...failed, ...entry.tickets.filter(t => !merged.includes(t) && !failed.includes(t))])].sort();
+  Object.assign(entry, { merged, failed, suite, closedAt: now, elapsed: elapsed(entry.startedAt, now) });
+  return entry;
+}
+/**
+ * One simulator, one holder at a time. The lock is a directory (mkdir is atomic
+ * on one machine) holding `owner.json`; it lives under the OS temp dir, outside
+ * every worktree, so the agents of one wave share it. A hold older than
+ * `staleMs` is broken, since its agent is gone. Acquire is re-entrant for the
+ * holder; only the holder releases.
+ */
+export const SIM_LOCK = join(tmpdir(), 'mealvana-simulator.lock');
+export function simLock(dir = SIM_LOCK) {
+  const file = join(dir, 'owner.json');
+  const holder = () => { try { return JSON.parse(readFileSync(file, 'utf8')); } catch { return null; } };
+  const take = (owner, now, broke) => { mkdirSync(dir, { recursive: true }); writeFileSync(file, JSON.stringify({ owner, at: now })); return broke ? { ok: true, broke } : { ok: true }; };
+  return {
+    status: () => { const h = existsSync(dir) ? holder() : null; return h ? { held: true, holder: h } : { held: false }; },
+    acquire: (owner, { now = new Date().toISOString(), staleMs = 30 * 60 * 1000 } = {}) => {
+      try { mkdirSync(dir); return take(owner, now); }
+      catch (e) { if (e.code !== 'EEXIST') throw e; }
+      const h = holder();
+      if (!h || h.owner === owner) return take(owner, now);
+      if (new Date(now) - new Date(h.at) > staleMs) return take(owner, now, h);
+      return { ok: false, holder: h };
+    },
+    release: owner => { const h = holder(); if (!h || h.owner !== owner) return { ok: false, holder: h }; rmSync(dir, { recursive: true, force: true }); return { ok: true }; },
+  };
 }
 
 // The assets map (`_page/assets.json`) keys a repo image path to the artifact
@@ -835,6 +958,7 @@ export function unreferencedAssets(assets, paths, features) {
   return Object.keys(assets).filter(p => !used.has(p) && features.some(f => p.startsWith(imageDir(f) + '/'))).map(path => ({ path, why: 'unreferenced', id: assetId(assets, path) }));
 }
 // `--flag value` pairs pulled out of a CLI's arguments; what is left is positional.
+const commaList = v => typeof v === 'string' ? v.split(',').map(x => x.trim()).filter(Boolean) : [];
 const flags = args => { const pos = [], opts = {}; for (let k = 0; k < args.length; k++) { if (args[k].startsWith('--')) opts[args[k].slice(2)] = args[k + 1] === undefined || args[k + 1].startsWith('--') ? true : args[++k]; else pos.push(args[k]); } return [pos, opts]; };
 const loadAssets = path => path && existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : {};
 // The proposals file and the record; a record that does not exist yet reads as empty.
@@ -882,9 +1006,8 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     // Tickets ride along: --tickets <feature>=<issues dir> (repeatable via commas).
     for (const spec of (opts.tickets || '').split(',').filter(Boolean)) {
       const [feature, dir] = spec.split('=');
-      const { readdirSync } = await import('node:fs');
-      for (const f of readdirSync(dir).filter(x => /^\d+-.*\.md$/.test(x)).sort()) {
-        const t = ticketDocument(feature, `${dir}/${f}`, readFileSync(`${dir}/${f}`, 'utf8'));
+      for (const f of ticketFiles(process.cwd(), dir)) {
+        const t = ticketDocument(feature, f, readFileSync(f, 'utf8'));
         const { id, ...body } = t;
         writeFileSync(`${out}/ticket-${id}.json`, JSON.stringify(body, null, 2));
         entries.push({ op: 'set', collection: 'tickets', doc_id: id, file_path: `${out}/ticket-${id}.json` });
@@ -971,8 +1094,8 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     console.log(JSON.stringify(r, null, 2));
   } else if (cmd === 'tickets') {
     // tickets <feature> <issues dir>: ticket documents as JSON
-    const [feature, dir] = args; const { readdirSync } = await import('node:fs');
-    const docs = readdirSync(dir).filter(x => /^\d+-.*\.md$/.test(x)).sort().map(f => ticketDocument(feature, `${dir}/${f}`, readFileSync(`${dir}/${f}`, 'utf8')));
+    const [feature, dir] = args;
+    const docs = ticketFiles(process.cwd(), dir).map(f => ticketDocument(feature, f, readFileSync(f, 'utf8')));
     process.stdout.write(JSON.stringify(docs, null, 2));
   } else if (cmd === 'triage') {
     // triage <verdicts.json> --out <dir>: clear.json for apply, words.json for the terminal.
@@ -1120,10 +1243,61 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
       if (!session) { const booted = bootedUdid(); if (!booted) throw new Error('no booted simulator'); session = { ...stamp(), device: booted.name, runtime: booted.runtime, io: simulatorIo(booted.udid), dir }; }
       return capture(entry, session);
     };
-    const r = await refreshPictures(proposals, ssot, screens, { dir, takePicture });
+    const only = typeof opts.only === 'string' ? commaList(opts.only) : undefined;
+    const r = await refreshPictures(proposals, ssot, screens, { dir, takePicture, only });
     if (r.refreshed.some(x => x.from !== x.path)) { writeFileSync(pf, serialize(proposals)); if (existsSync(sf)) writeFileSync(sf, serialize(ssot)); }
     console.log(JSON.stringify(r, null, 2));
+  } else if (cmd === 'wave') {
+    // wave <feature> <issues dir> [--branch <b>] [--open | --close <n> --merged 02,04 --failed 06 --suite green|red]
+    const [[feature, dir], opts] = flags(args);
+    if (!feature || !dir) { console.error('usage: sync.mjs wave <feature> <issues dir> [--branch <branch>] [--open | --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]]'); process.exit(2); }
+    const root = process.cwd();
+    const logFile = join(dirname(dir.replace(/\/+$/, '')), 'waves.json');
+    const log = existsSync(logFile) ? JSON.parse(readFileSync(logFile, 'utf8')) : [];
+    const today = new Date().toISOString().slice(0, 10);
+    const mark = (n, status) => { const f = ticketFiles(root, dir).find(x => basename(x).startsWith(n + '-')); if (f) writeFileSync(f, setTicketStatus(readFileSync(f, 'utf8'), status)); };
+    if (opts.close) {
+      const entry = waveClose(log, opts.close, { merged: commaList(opts.merged), failed: commaList(opts.failed), suite: opts.suite || '' });
+      for (const n of entry.merged) mark(n, `done (wave ${entry.number}, ${today})`);
+      for (const n of entry.failed) mark(n, `ready-for-agent (wave ${entry.number} failed, ${today})`);
+      writeFileSync(logFile, JSON.stringify(log, null, 2));
+      process.stdout.write(JSON.stringify(entry, null, 2));
+    } else {
+      const plan = wavePlan(feature, dir, { branch: opts.branch });
+      if (opts.open && plan.wave.length) {
+        // Mark the tickets, commit every ticket file of the feature so the worktrees see them, and take that commit as the base every agent checks against.
+        const entry = waveOpen(log, { tickets: plan.wave.map(t => t.number), base: plan.base, branch: plan.branch });
+        for (const t of plan.wave) mark(t.number, `in-progress (wave ${entry.number}, ${today})`);
+        const add = spawnSync('git', ['add', '--', dir], { cwd: root, encoding: 'utf8' });
+        const commit = add.status === 0 ? spawnSync('git', ['commit', '-q', '-m', `wave ${entry.number} opened for ${feature}: tickets ${entry.tickets.join(', ')} [skip ci]`, '--', dir], { cwd: root, encoding: 'utf8' }) : add;
+        if (commit.status !== 0) { console.error(`wave --open could not commit the ticket files: ${(commit.stderr || commit.stdout || '').trim()}`); process.exit(1); }
+        entry.base = plan.base = gitOut(root, 'rev-parse', 'HEAD');
+        mkdirSync(dirname(logFile), { recursive: true }); writeFileSync(logFile, JSON.stringify(log, null, 2));
+        plan.uncommitted = []; plan.number = entry.number; plan.startedAt = entry.startedAt;
+      }
+      process.stdout.write(JSON.stringify(plan, null, 2));
+    }
+  } else if (cmd === 'touched-screens') {
+    // touched-screens --since <commit> [--screens <screens.json>] [<file>...]: the registry screens drawn from the files that changed since the commit (committed, uncommitted or untracked), plus any files given; keys as JSON
+    const [files, opts] = flags(args);
+    if (!opts.since && !files.length) { console.error('usage: sync.mjs touched-screens --since <commit> [--screens <screens.json>] [<file>...]'); process.exit(2); }
+    // Committed since the commit, changed in the working tree, or not yet tracked (a new screen file counts too): `changedSince` over the whole tree.
+    const changed = typeof opts.since === 'string' ? changedSince(opts.since, ['.']) : [];
+    if (changed === null) { console.error(`touched-screens: ${opts.since} is not a commit this clone has`); process.exit(2); }
+    process.stdout.write(JSON.stringify(touchedScreens([...new Set([...changed, ...files])], loadScreens(opts.screens || undefined))));
+  } else if (cmd === 'sim-lock') {
+    // sim-lock acquire <owner> [--wait <seconds>] | release <owner> | status   [--dir <lock dir>]
+    const [[op, owner], opts] = flags(args);
+    const lock = simLock(opts.dir || undefined);
+    if (op === 'status') process.stdout.write(JSON.stringify(lock.status()));
+    else if (op === 'release' && owner) process.stdout.write(JSON.stringify(lock.release(owner)));
+    else if (op === 'acquire' && owner) {
+      const until = Date.now() + Number(opts.wait || 0) * 1000;
+      let r = lock.acquire(owner);
+      while (!r.ok && Date.now() < until) { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000); r = lock.acquire(owner); }
+      process.stdout.write(JSON.stringify(r)); if (!r.ok) process.exit(1);
+    } else { console.error('usage: sync.mjs sim-lock acquire <owner> [--wait <seconds>] | release <owner> | status  [--dir <lock dir>]'); process.exit(2); }
   } else {
-    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures|stale|refresh ...'); process.exit(2);
+    console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures|stale|refresh|wave|touched-screens|sim-lock ...'); process.exit(2);
   }
 }
