@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 import '../../../shared/database/app_database.dart' hide Activity;
 import '../../../shared/services/preferences_service.dart';
 import '../../activities/domain/activity.dart';
+import '../../nutrition_plan/domain/fuel_log_data.dart';
 import '../../nutrition_plan/domain/nutrition_plan.dart';
 import '../data/training_peaks_api_client.dart';
 import '../domain/integration_exceptions.dart';
@@ -85,10 +86,7 @@ class TpWritebackService {
     try {
       await supabase
           .from('tp_writeback_ledger')
-          .update({
-            'status': success ? 'success' : 'failure',
-            'error': error,
-          })
+          .update({'status': success ? 'success' : 'failure', 'error': error})
           .eq('id', ledgerId);
     } catch (e, st) {
       _logError('closeLedgerRow', e, st);
@@ -116,10 +114,18 @@ class TpWritebackService {
 
   /// Push the nutrition plan summary to the TP workout description.
   /// Safe to call fire-and-forget — never throws.
+  ///
+  /// When [fuelLog] is supplied (fuel-log completion), the SAME
+  /// `[Mealvana Fuel Plan]` block is re-rendered in its logged state —
+  /// `planned · consumed` per phase — and replaces the plan-time block
+  /// in-place (RULED Xuan, 2026-09-10, option A single-block). block_kind
+  /// stays 'plan'; the differing hash is what lets the re-push through the
+  /// unchanged-plan guard.
   Future<void> pushPlanToWorkout({
     required String userId,
     required Activity activity,
     required NutritionPlan plan,
+    FuelLogData? fuelLog,
   }) async {
     try {
       // Guard 1: Is write-back enabled?
@@ -151,6 +157,7 @@ class TpWritebackService {
           workoutIdStr: workoutIdStr,
           activity: activity,
           plan: plan,
+          fuelLog: fuelLog,
         );
       } finally {
         _inFlightWorkouts.remove(workoutIdStr);
@@ -166,6 +173,7 @@ class TpWritebackService {
     required String workoutIdStr,
     required Activity activity,
     required NutritionPlan plan,
+    FuelLogData? fuelLog,
     bool isRetry = false,
   }) async {
     // Get a valid access token (refreshes if close to expiry)
@@ -177,11 +185,18 @@ class TpWritebackService {
       return;
     }
 
-    // Build the formatted block
-    final block = TpWritebackFormatter.formatPlanBlock(
-      plan,
-      durationMinutes: activity.durationMinutes,
-    );
+    // Build the formatted block — logged (planned · consumed) form once the
+    // athlete has logged fuel for this plan, otherwise the plan-time form.
+    final block = fuelLog != null
+        ? TpWritebackFormatter.formatLoggedPlanBlock(
+            plan,
+            fuelLog,
+            durationMinutes: activity.durationMinutes,
+          )
+        : TpWritebackFormatter.formatPlanBlock(
+            plan,
+            durationMinutes: activity.durationMinutes,
+          );
     final hash = TpWritebackFormatter.computeHash(block);
 
     // Guard: Has the plan actually changed?
@@ -267,6 +282,7 @@ class TpWritebackService {
           workoutIdStr: workoutIdStr,
           activity: activity,
           plan: plan,
+          fuelLog: fuelLog,
           isRetry: true,
         );
       } else {
@@ -277,7 +293,11 @@ class TpWritebackService {
         }
       }
     } on IntegrationApiException catch (e) {
-      await _closeLedgerRow(ledgerId, success: false, error: 'api_${e.statusCode}');
+      await _closeLedgerRow(
+        ledgerId,
+        success: false,
+        error: 'api_${e.statusCode}',
+      );
       await _handleApiException(e, userId, workoutIdStr);
     }
   }
@@ -387,7 +407,11 @@ class TpWritebackService {
         );
       }
     } on IntegrationApiException catch (e) {
-      await _closeLedgerRow(ledgerId, success: false, error: 'api_${e.statusCode}');
+      await _closeLedgerRow(
+        ledgerId,
+        success: false,
+        error: 'api_${e.statusCode}',
+      );
       await _handleApiException(e, userId, workoutIdStr);
     }
   }

@@ -2650,6 +2650,23 @@ class ActivityDetailController extends _$ActivityDetailController {
           ),
         );
 
+        // Fire-and-forget: re-push the fuel plan block in its logged
+        // (planned · consumed) form — RULED Xuan, 2026-09-10, option A. The
+        // same [Mealvana Fuel Plan] block is replaced in-place; this is a
+        // distinct write from the rating/notes [Mealvana Feedback] block
+        // pushed above.
+        final loggedPlan = currentState.nutritionPlan;
+        if (loggedPlan != null) {
+          unawaited(
+            _pushToTrainingPeaks(
+              user.id,
+              completedActivity,
+              loggedPlan,
+              fuelLog: finalFuelLog,
+            ),
+          );
+        }
+
         _trackAnalytics('fuel_log_completed', {
           'activity_id': activityId,
           'items_count': finalFuelLog.items.length,
@@ -2842,14 +2859,16 @@ class ActivityDetailController extends _$ActivityDetailController {
   Future<void> _pushToTrainingPeaks(
     String userId,
     Activity activity,
-    NutritionPlan plan,
-  ) async {
+    NutritionPlan plan, {
+    FuelLogData? fuelLog,
+  }) async {
     try {
       final service = await ref.read(tpWritebackServiceProvider.future);
       await service.pushPlanToWorkout(
         userId: userId,
         activity: activity,
         plan: plan,
+        fuelLog: fuelLog,
       );
     } catch (e) {
       DebugLogger.error('TP write-back failed (non-blocking): $e');

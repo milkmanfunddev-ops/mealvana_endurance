@@ -16,8 +16,9 @@ import 'package:mealvana_endurance/features/integrations/application/tp_writebac
 import 'package:mealvana_endurance/features/integrations/application/tp_writeback_service.dart';
 import 'package:mealvana_endurance/features/integrations/application/training_peaks_oauth_service.dart';
 import 'package:mealvana_endurance/features/integrations/data/training_peaks_api_client.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/food_item_data.dart';
+import 'package:mealvana_endurance/features/nutrition_plan/domain/fuel_log_data.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/nutrition_plan.dart';
-import 'package:mealvana_endurance/features/nutrition_plan/domain/plan_section.dart';
 import 'package:mealvana_endurance/shared/database/app_database.dart'
     hide Activity;
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
@@ -34,12 +35,11 @@ void main() {
     test('with no ledger custodian the TP API is never called', () async {
       final api = MockTpApiClient();
       final oauth = MockTpOAuthService();
-      when(() => oauth.getValidAccessToken(any()))
-          .thenAnswer((_) async => 'tok');
+      when(
+        () => oauth.getValidAccessToken(any()),
+      ).thenAnswer((_) async => 'tok');
       SharedPreferences.setMockInitialValues({});
-      final prefs = PreferencesService(
-        await SharedPreferences.getInstance(),
-      );
+      final prefs = PreferencesService(await SharedPreferences.getInstance());
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
 
@@ -84,11 +84,20 @@ void main() {
       );
 
       // The push was REFUSED before any TP traffic.
-      verifyNever(() => api.getWorkoutById(any(), any(),
-          includeDescription: any(named: 'includeDescription')));
-      verifyNever(() => api.updatePlannedWorkout(any(),
+      verifyNever(
+        () => api.getWorkoutById(
+          any(),
+          any(),
+          includeDescription: any(named: 'includeDescription'),
+        ),
+      );
+      verifyNever(
+        () => api.updatePlannedWorkout(
+          any(),
           workoutId: any(named: 'workoutId'),
-          workoutData: any(named: 'workoutData')));
+          workoutData: any(named: 'workoutData'),
+        ),
+      );
     });
   });
 
@@ -128,34 +137,34 @@ void main() {
 
   group('the ruled macro register + delimiter robustness', () {
     NutritionPlan plan() => NutritionPlan(
-          id: 'p1',
-          name: 'Plan',
-          sections: [
-            PlanSection(
-              id: 'before',
-              title: 'Before',
-              foodItems: const [],
-              carbsTarget: 60,
-              fluidsTarget: 473, // ~16 oz
-              timing: '2-3h before',
-            ),
-            PlanSection(
-              id: 'during',
-              title: 'During',
-              foodItems: const [],
-              carbsTarget: 120,
-              fluidsTarget: 1000,
-              sodiumTarget: 800,
-            ),
-            PlanSection(
-              id: 'after',
-              title: 'After',
-              foodItems: const [],
-              carbsTarget: 40,
-              proteinTarget: 25,
-            ),
-          ],
-        );
+      id: 'p1',
+      name: 'Plan',
+      sections: [
+        PlanSection(
+          id: 'before',
+          title: 'Before',
+          foodItems: const [],
+          carbsTarget: 60,
+          fluidsTarget: 473, // ~16 oz
+          timing: '2-3h before',
+        ),
+        PlanSection(
+          id: 'during',
+          title: 'During',
+          foodItems: const [],
+          carbsTarget: 120,
+          fluidsTarget: 1000,
+          sodiumTarget: 800,
+        ),
+        PlanSection(
+          id: 'after',
+          title: 'After',
+          foodItems: const [],
+          carbsTarget: 40,
+          proteinTarget: 25,
+        ),
+      ],
+    );
 
     test('Pre + During ONLY; During carries g/h, ml/h, mg/h', () {
       final block = TpWritebackFormatter.formatPlanBlock(
@@ -174,18 +183,131 @@ void main() {
       );
     });
 
-    test('stripping the fuel block can never swallow the feedback block',
-        () {
-      const feedback = '---\n[Mealvana Feedback]\nRating: 4/5\n'
+    test('stripping the fuel block can never swallow the feedback block', () {
+      const feedback =
+          '---\n[Mealvana Feedback]\nRating: 4/5\n'
           'Notes: athlete notes that must survive\n[/Mealvana Feedback]';
       // A truncated fuel block (its own terminator lost) sitting before the
       // feedback block — the ruled lookahead keeps the strip from running
       // through the feedback terminator.
-      const desc = 'Coach notes.\n\n---\n[Mealvana Fuel Plan]\n'
+      const desc =
+          'Coach notes.\n\n---\n[Mealvana Fuel Plan]\n'
           'Pre: 60g carb\n\n$feedback';
       final stripped = TpWritebackFormatter.stripBlockFromDescription(desc);
       expect(stripped, contains('athlete notes that must survive'));
       expect(stripped, contains('[Mealvana Feedback]'));
     });
   });
+
+  group(
+    'logged fuel block — planned · consumed (RULED Xuan 2026-09-10 opt A)',
+    () {
+      NutritionPlan plan() => NutritionPlan(
+        id: 'p1',
+        name: 'Plan',
+        sections: [
+          PlanSection(
+            id: 'before',
+            title: 'Before',
+            foodItems: const [],
+            carbsTarget: 60,
+            fluidsTarget: 473, // ~16 oz
+            timing: '2-3h before',
+          ),
+          PlanSection(
+            id: 'during',
+            title: 'During',
+            foodItems: const [],
+            carbsTarget: 120,
+            fluidsTarget: 1000,
+            sodiumTarget: 800,
+          ),
+        ],
+      );
+
+      // Consumed side: one logged item per phase, quantities 1:1 with their
+      // captured nutrition so actualNutritionalInfo == nutritionalInfo. Before
+      // consumed = 45g carb / 355ml (→12oz); During consumed totals over the
+      // 2h window = 90g carb (45g/h), 820ml (410ml/h), 676mg sodium (338mg/h).
+      FuelLogData fuelLog() => FuelLogData(
+        items: [
+          FuelLogItem(
+            foodId: 'b1',
+            sectionId: 'before_run',
+            plannedQuantity: 1,
+            actualQuantity: 1,
+            name: 'Toast',
+            nutritionalInfo: const NutritionalInfo(carbs: 45, fluids: 355),
+          ),
+          FuelLogItem(
+            foodId: 'd1',
+            sectionId: 'during_run',
+            plannedQuantity: 1,
+            actualQuantity: 1,
+            name: 'Gel + drink',
+            nutritionalInfo: const NutritionalInfo(
+              carbs: 90,
+              sodium: 676,
+              fluids: 820,
+            ),
+          ),
+        ],
+      );
+
+      test('Pre + During each render planned · consumed per field', () {
+        final block = TpWritebackFormatter.formatLoggedPlanBlock(
+          plan(),
+          fuelLog(),
+          durationMinutes: 120,
+        );
+        expect(
+          block,
+          contains(
+            'Pre: 60g carb planned · 45g consumed, '
+            '16oz water planned · 12oz consumed (2-3h before)',
+          ),
+        );
+        expect(
+          block,
+          contains(
+            'During: 60g/h carb planned · 45g/h consumed, '
+            '500ml/h water planned · 410ml/h consumed, '
+            '400mg/h sodium planned · 338mg/h consumed',
+          ),
+        );
+      });
+
+      test(
+        'logged block keeps the single-block delimiters (no second block)',
+        () {
+          final block = TpWritebackFormatter.formatLoggedPlanBlock(
+            plan(),
+            fuelLog(),
+            durationMinutes: 120,
+          );
+          expect(block, startsWith('---\n[Mealvana Fuel Plan]'));
+          expect(block, endsWith('[/Mealvana]'));
+          expect(block, isNot(contains('[Mealvana Feedback]')));
+          expect(block, isNot(contains('Post:')));
+        },
+      );
+
+      test('a different logged block hashes differently from the plan block '
+          '(so the re-push clears the unchanged-plan guard)', () {
+        final planned = TpWritebackFormatter.formatPlanBlock(
+          plan(),
+          durationMinutes: 120,
+        );
+        final logged = TpWritebackFormatter.formatLoggedPlanBlock(
+          plan(),
+          fuelLog(),
+          durationMinutes: 120,
+        );
+        expect(
+          TpWritebackFormatter.computeHash(planned),
+          isNot(equals(TpWritebackFormatter.computeHash(logged))),
+        );
+      });
+    },
+  );
 }
