@@ -85,6 +85,8 @@ export const NdjsonLineZ = z.discriminatedUnion('type', [
 ]);
 /** A recorded NDJSON exchange (fixtures opener.json / general_turn.json). */
 export const NdjsonExchangeZ = z.object({ status: z.literal(200), headers: z.object({ 'x-conversation-id': z.string().min(1), 'x-vana-kind': ConversationKindZ, 'content-type': z.string().startsWith('application/x-ndjson') }).passthrough(), lines: z.array(NdjsonLineZ).min(1) });
+/** `POST vana-chat` with `idle: true` → 202, the acknowledgement of an idle signal (mp-288). Nothing waits on it. */
+export const IdleAckZ = z.object({ idle: z.literal(true), conversation_id: z.string().nullable() }).strict();
 /** `POST vana-action` → { parts, ...extras }. */
 export const ActionResultZ = z.object({ parts: z.array(VanaPartZ) }).passthrough();
 export const HomePayloadZ = z.object({

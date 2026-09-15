@@ -10,12 +10,12 @@
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
-import { buildAthleteContext, contextBlock, withUnreadTalk } from './context.ts';
+import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
-import { athleteWordsFrom, readBackPrevious, readBackWithin, readSummaries, writeSummary, defaultSummaryDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
+import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
@@ -226,13 +226,11 @@ export function withSituation<M extends { role: string; content: unknown }>(mess
   return [...messages.slice(0, i), { ...m, content }, ...messages.slice(i + 1)];
 }
 
-/** How long an opener waits for the previous conversation to be read back (one small-model call, usually 1–2 s)
- *  before it is written without it. The sheet shows Vana typing meanwhile. */
-export const OPENER_READ_BACK_MS = 3500;
-
 // ---------------------------------------------------------------- chat
 /** Request body per 02-contract §5. */
 export interface ChatBody { message?: string; conversation_id?: string | null; kind?: ConversationKind | string; timezone?: string; opener?: boolean; anchor_date?: string; situation?: Situation | null;
+  /** The client says `conversation_id` is idle (mp-288): no turn, its episode and missed notes are written once. */
+  idle?: boolean;
   /** With `opener`: the device raised a moment (vana-moment spec VM-1) — `{ kind, activity_id, window_minutes, branch?, next_activity_id? }`. */
   moment?: unknown }
 export interface ChatRunOpts {
@@ -245,7 +243,24 @@ export interface ChatRunOpts {
 }
 export type ChatOutcome = { ok: true; response: Response } | { ok: false; status: 400 | 429; body: Record<string, unknown> };
 
+/** The reply to an idle signal (schemas.ts IdleAckZ). Nothing waits on it (mp-288 clause 2). */
+export interface IdleAck { idle: true; conversation_id: string | null }
+/**
+ * The idle signal, a flag on the chat call the way the opener flag rides it (mp-288 clause 1). Null when the body is
+ * not one. Otherwise the conversation's episode and any margin notes the remember tool missed are written in the
+ * background, once: the `read_back_at` claim makes a second signal write nothing (clause 3). The acknowledgement goes
+ * back at once; the write finishes under `background`, so the summary exists before the next conversation opens.
+ */
+export function idleSignal(v: VanaCtx, body: ChatBody, background: (p: Promise<unknown>) => void = waitUntil, deps: ExtractDeps = defaultExtractDeps): IdleAck | null {
+  if (body.idle !== true) return null;
+  const id = typeof body.conversation_id === 'string' && body.conversation_id ? body.conversation_id : null;
+  if (id) background(writeOnIdle(v, id, deps));
+  return { idle: true, conversation_id: id };
+}
+
 export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Promise<ChatOutcome> {
+  const idle = opts.persist !== false ? idleSignal(v, body) : null;
+  if (idle) return { ok: true, response: new Response(JSON.stringify(idle), { status: 202, headers: { 'content-type': 'application/json' } }) };
   const kind: ConversationKind = body.kind === 'general' ? 'general' : 'meal_planning';
   const message = (body.message ?? '').trim();
   const anchorDate = body.anchor_date ?? localDate(body.timezone);
@@ -269,27 +284,14 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const convId = conv.id; const convKind = conv.kind;
   // A moment's opener lands in the day's conversation mid-thread (VM-1): that is not the conversation's first turn.
   const intoThread = opener && persist && !!body.conversation_id && (await conversationHasTurns(v, convId));
-  // Lazy extraction: opening a conversation is what reads the previous one back; nothing it writes is announced.
-  //
-  // "Opening" is the conversation's FIRST TURN, not the scripted opener. A general conversation usually starts
-  // with the athlete typing, which leaves `opener` false — gating on that alone meant a typed-first conversation
-  // never read anything back (found in the 2026-09-10 dev eval, where only the scripted openers extracted).
-  //
-  // An opener waits for it, up to a budget, and is written from a context that already holds the conversation
-  // before it (LAST TALKS): the opener is where Vana shows she remembers. A typed turn never waits.
-  const firstTurn = (opener && !intoThread) || (!opener && messages.length <= 1);
-  let unread: string | null = null;
-  if (firstTurn && persist && convId) {
-    if (opener) {
-      const { late } = await readBackWithin(v, convId, OPENER_READ_BACK_MS, waitUntil);
-      if (late) unread = await athleteWordsFrom(v, late);
-    } else waitUntil(readBackPrevious(v, convId));
-  }
+  // The opener reads what exists and never waits (mp-278): the memory table and the newest episodes as they stand.
+  // Nothing is read back here; the previous conversation's episode was written when the client said it was idle,
+  // and when it does not exist yet the opener leaves it out.
   // Planning writes land on this conversation's own draft; the context's PLAN line describes that draft, not the Plan tab's plan.
   const scope = convKind === 'meal_planning' && convId ? { conversationId: convId } : null;
   // Built once when the conversation opens and reused for its turns; a tool write or a new day rebuilds it (mp-276).
   const { ctx, reused } = await cachedContext(v, persist ? convId : null, anchorDate, async () => {
-    const c = withUnreadTalk(await buildAthleteContext(v, anchorDate), anchorDate, unread);
+    const c = await buildAthleteContext(v, anchorDate);
     if (scope) { const draft = await getConversationPlan(v, convId, false); c.plan = { exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? c.plan.batchCooking }; }
     return c;
   });

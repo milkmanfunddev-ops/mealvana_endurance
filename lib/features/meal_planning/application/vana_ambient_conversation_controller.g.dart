@@ -68,6 +68,13 @@ String _$vanaClockHash() => r'8ea0cfb6354214b8bafdc1215fba11ffead9b96f';
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
 /// calls [adopt] once the server names a new conversation.
+///
+/// It also says when that conversation is idle (mp-288): when the sheet
+/// closes ([sheetClosed]), when the app goes to the background, and when a
+/// new conversation takes its place (a new day, or the server naming a
+/// different one). The server writes the conversation's episode once, so the
+/// next opener has it without waiting. Kept alive so the background signal
+/// fires with no sheet open.
 
 @ProviderFor(VanaAmbientConversation)
 const vanaAmbientConversationProvider = VanaAmbientConversationProvider._();
@@ -80,6 +87,13 @@ const vanaAmbientConversationProvider = VanaAmbientConversationProvider._();
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
 /// calls [adopt] once the server names a new conversation.
+///
+/// It also says when that conversation is idle (mp-288): when the sheet
+/// closes ([sheetClosed]), when the app goes to the background, and when a
+/// new conversation takes its place (a new day, or the server naming a
+/// different one). The server writes the conversation's episode once, so the
+/// next opener has it without waiting. Kept alive so the background signal
+/// fires with no sheet open.
 final class VanaAmbientConversationProvider
     extends $AsyncNotifierProvider<VanaAmbientConversation, String?> {
   /// The ambient conversation behind the Vana sheet: one general conversation
@@ -90,13 +104,20 @@ final class VanaAmbientConversationProvider
   /// opened after midnight starts a new conversation even if the app never
   /// restarted. The sheet holds the id it opened with for its whole life and
   /// calls [adopt] once the server names a new conversation.
+  ///
+  /// It also says when that conversation is idle (mp-288): when the sheet
+  /// closes ([sheetClosed]), when the app goes to the background, and when a
+  /// new conversation takes its place (a new day, or the server naming a
+  /// different one). The server writes the conversation's episode once, so the
+  /// next opener has it without waiting. Kept alive so the background signal
+  /// fires with no sheet open.
   const VanaAmbientConversationProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'vanaAmbientConversationProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -110,7 +131,7 @@ final class VanaAmbientConversationProvider
 }
 
 String _$vanaAmbientConversationHash() =>
-    r'2ceab99614574e8b44506b895f194427e43f1712';
+    r'7cb537e8c51dad527341d5da519c8a66511ce4fa';
 
 /// The ambient conversation behind the Vana sheet: one general conversation
 /// per person per day (vana-sheet spec VS-5).
@@ -120,6 +141,13 @@ String _$vanaAmbientConversationHash() =>
 /// opened after midnight starts a new conversation even if the app never
 /// restarted. The sheet holds the id it opened with for its whole life and
 /// calls [adopt] once the server names a new conversation.
+///
+/// It also says when that conversation is idle (mp-288): when the sheet
+/// closes ([sheetClosed]), when the app goes to the background, and when a
+/// new conversation takes its place (a new day, or the server naming a
+/// different one). The server writes the conversation's episode once, so the
+/// next opener has it without waiting. Kept alive so the background signal
+/// fires with no sheet open.
 
 abstract class _$VanaAmbientConversation extends $AsyncNotifier<String?> {
   FutureOr<String?> build();

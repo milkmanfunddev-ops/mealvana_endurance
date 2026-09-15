@@ -108,12 +108,6 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
   };
 }
 
-/** The context with a conversation that has not been read back yet put first in LAST TALKS, as the
- *  athlete's own words: an opener whose read-back ran late still knows what was said just before. */
-export function withUnreadTalk(c: AthleteContext, today: string, words: string | null): AthleteContext {
-  return words ? { ...c, lastTalks: [{ date: today, fact: `not read back yet; they said: "${words}"` }, ...(c.lastTalks ?? [])].slice(0, 4) } : c;
-}
-
 /** Compact text block for the system prompt (~250 tokens). */
 export function contextBlock(c: AthleteContext): string {
   const w = c.week.workouts.slice(0, 8).map((x) => `${x.date.slice(5)} ${x.title}${x.minutes ? ` ${x.minutes}m` : ''}`).join('; ') || 'none';

@@ -4,15 +4,15 @@
  * Three things make that possible, and each is tested here without a model:
  * - The block carries a LAST TALKS line: the newest conversations, one sentence each. Episodes never
  *   crowd the margin notes out of MEMORIES, however many conversations pile up.
- * - An opener waits a moment for the conversation just before it to be read back, so the context it
- *   is written from already holds that conversation. Past the budget it goes without.
+ * - The client says when a conversation is idle, and that signal writes its episode once (mp-288), so
+ *   the next opener reads what exists and never waits for anything (mp-278).
  * - Every opener tells the model to use the lines that carry the athlete, and every line it names is
  *   one the block renders.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { buildAthleteContext, contextBlock, withUnreadTalk } from '../../_shared/vana/context.ts';
-import { systemPrompt } from '../../_shared/vana/chat.ts';
-import { athleteWordsFrom, readBackWithin } from '../../_shared/vana/extract.ts';
+import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
+import { idleSignal, systemPrompt, type ChatBody } from '../../_shared/vana/chat.ts';
+import { IdleAckZ } from '../../_shared/vana/schemas.ts';
 import type { Extraction, ExtractDeps } from '../../_shared/vana/extract.ts';
 import { episodeFor } from '../../_shared/vana/memory.ts';
 import { OPENERS, checkinOpener, debriefOpener } from '../../_shared/vana/persona.ts';
@@ -71,82 +71,98 @@ Deno.test('MEMORIES: margin notes survive any number of newer conversations, and
   assert(!memories.includes('Conversation number'), memories);
 });
 
-// ---------------------------------------------------------------- the read-back an opener waits for
+// ---------------------------------------------------------------- the idle signal (mp-277 clause 3, mp-288)
 
 const EPISODE = 'Planned a four-hour Saturday ride with Marco.';
-const EXTRACTION: Extraction = { memories: [], episode: EPISODE };
+const EXTRACTION: Extraction = { memories: [{ kind: 'pattern', fact: 'Rides long with Marco on Saturdays.' }], episode: EPISODE };
 const PREVIOUS = 'conv-yesterday';
-const OPENING = 'conv-today';
 
-const withPrevious = (): Tables => ({
+/** Last night's conversation, the way the rows store it: it begins with Vana's turn, and nobody has read it back. */
+const lastNight = (): Tables => ({
   vana_conversations: [
     { id: PREVIOUS, user_id: U, kind: 'general', title: null, summary: null, is_deleted: false, read_back_at: null, last_message_at: '2026-09-10T19:00:00Z', created_at: '2026-09-10T18:00:00Z' },
-    { id: OPENING, user_id: U, kind: 'general', title: null, summary: null, is_deleted: false, read_back_at: null, last_message_at: '2026-09-11T08:00:00Z', created_at: '2026-09-11T08:00:00Z' },
   ],
   vana_messages: [
-    { id: 'm1', conversation_id: PREVIOUS, user_id: U, role: 'user', content: 'Riding four hours Saturday with Marco.', parts: [], created_at: '2026-09-10T18:00:00Z' },
-    { id: 'm2', conversation_id: PREVIOUS, user_id: U, role: 'assistant', content: 'Then Friday wants carbs in the tank.', parts: [], created_at: '2026-09-10T18:01:00Z' },
-    { id: 'm3', conversation_id: PREVIOUS, user_id: U, role: 'user', content: 'He is bringing a stove.', parts: [], created_at: '2026-09-10T18:02:00Z' },
-    { id: 'm4', conversation_id: PREVIOUS, user_id: U, role: 'assistant', content: 'Oats on the stove at the halfway stop, then.', parts: [], created_at: '2026-09-10T18:03:00Z' },
+    { id: 'm1', conversation_id: PREVIOUS, user_id: U, role: 'assistant', content: 'Evening. Tomorrow is a rest day, so dinner can be easy.', parts: [], created_at: '2026-09-10T18:00:00Z' },
+    { id: 'm2', conversation_id: PREVIOUS, user_id: U, role: 'user', content: 'Riding four hours Saturday with Marco.', parts: [], created_at: '2026-09-10T18:01:00Z' },
+    { id: 'm3', conversation_id: PREVIOUS, user_id: U, role: 'assistant', content: 'Then Friday wants carbs in the tank.', parts: [], created_at: '2026-09-10T18:02:00Z' },
+    { id: 'm4', conversation_id: PREVIOUS, user_id: U, role: 'user', content: 'He is bringing a stove.', parts: [], created_at: '2026-09-10T18:03:00Z' },
   ],
   user_memories: [],
   vana_calls: [],
 });
 
-/** A model that answers only when released. */
-function heldModel() {
-  let release!: () => void;
-  const gate = new Promise<void>((r) => { release = r; });
-  const deps: ExtractDeps = { generate: async () => { await gate; return { object: EXTRACTION, inputTokens: 1, outputTokens: 1 }; } };
-  return { deps, release };
+/** A model stand-in that answers with a fixed extraction and counts how often it was asked. */
+function countingModel() {
+  let calls = 0;
+  const deps: ExtractDeps = { generate: () => { calls++; return Promise.resolve({ object: EXTRACTION, inputTokens: 1, outputTokens: 1 }); } };
+  return { deps, calls: () => calls };
 }
 
-Deno.test('an opener waits for the conversation before it: a read-back inside the budget lands before the context is read', async () => {
-  const v = testCtx(withPrevious());
+/** Runs the signal the way the function does, and waits for what it handed to the background. */
+async function signal(v: ReturnType<typeof testCtx>, body: ChatBody, model: ExtractDeps) {
   const background: Promise<unknown>[] = [];
-  const model = heldModel();
-  const waited = readBackWithin(v, OPENING, 1000, (p) => background.push(p), model.deps);
-  model.release();
-  const out = await waited;
-
-  assertEquals(out.outcome?.episode, EPISODE);
-  assertEquals(out.late, null);
-  assertEquals(await episodeFor(v, PREVIOUS), EPISODE);
-  const lines = contextBlock(await buildAthleteContext(v, ANCHOR, offlineDeps())).split('\n');
-  assertEquals(line(lines, 'LAST TALKS'), `LAST TALKS (what they said, not their schedule) ${new Date().toISOString().slice(5, 10)} ${EPISODE}`);
-  assertEquals(background.length, 1, 'the read-back is also handed to the background, so it finishes whatever the opener does');
-});
-
-Deno.test('an opener never waits past its budget: a slow read-back finishes in the background', async () => {
-  const v = testCtx(withPrevious());
-  const background: Promise<unknown>[] = [];
-  const model = heldModel();
-  const started = Date.now();
-
-  const out = await readBackWithin(v, OPENING, 30, (p) => background.push(p), model.deps);
-
-  assertEquals(out, { outcome: null, late: PREVIOUS }, 'names the conversation it could not wait for');
-  assert(Date.now() - started < 1000, 'returned at the budget');
-  assertEquals(await episodeFor(v, PREVIOUS), null, 'not landed yet');
-  model.release();
+  const ack = idleSignal(v, body, (p) => background.push(p), model);
   await Promise.all(background);
-  assertEquals(await episodeFor(v, PREVIOUS), EPISODE, 'landed afterwards, for the next opener');
+  return { ack, background };
+}
+
+Deno.test('idle: the first signal for a conversation writes its episode and the notes the tool missed', async () => {
+  const v = testCtx(lastNight());
+  const model = countingModel();
+  const { ack } = await signal(v, { idle: true, conversation_id: PREVIOUS }, model.deps);
+
+  assertEquals(IdleAckZ.parse(ack), { idle: true, conversation_id: PREVIOUS });
+  assertEquals(await episodeFor(v, PREVIOUS), EPISODE);
+  assertEquals(v.fake.rows('user_memories').filter((m) => m.kind !== 'episode').map((m) => m.fact), ['Rides long with Marco on Saturdays.']);
+  // What the next opener reads: the episode is in LAST TALKS before that conversation opens.
+  const lines = contextBlock(await buildAthleteContext(v, ANCHOR, offlineDeps())).split('\n');
+  assert(line(lines, 'LAST TALKS').includes(EPISODE), line(lines, 'LAST TALKS'));
 });
 
-Deno.test('a late read-back still leaves the opener the athlete\'s own last words, first in LAST TALKS', async () => {
-  const v = testCtx(withPrevious());
-  const words = await athleteWordsFrom(v, PREVIOUS);
-  assertEquals(words, 'Riding four hours Saturday with Marco. / He is bringing a stove.');
+Deno.test('idle: a second signal for the same conversation writes nothing', async () => {
+  const v = testCtx(lastNight());
+  const model = countingModel();
+  await signal(v, { idle: true, conversation_id: PREVIOUS }, model.deps);
+  const after = structuredClone(v.fake.rows('user_memories'));
 
-  const c = withUnreadTalk(await buildAthleteContext(v, ANCHOR, offlineDeps()), ANCHOR, words);
-  assertEquals(line(contextBlock(c).split('\n'), 'LAST TALKS'), 'LAST TALKS (what they said, not their schedule) 09-11 not read back yet; they said: "Riding four hours Saturday with Marco. / He is bringing a stove."');
+  const { ack } = await signal(v, { idle: true, conversation_id: PREVIOUS }, model.deps);
+
+  assertEquals(ack, { idle: true, conversation_id: PREVIOUS }, 'still acknowledged');
+  assertEquals(model.calls(), 1, 'the model is not asked twice');
+  assertEquals(v.fake.rows('user_memories'), after);
 });
 
-Deno.test('with nothing to read back, there is nothing late and nothing added', async () => {
-  const v = testCtx({ ...withPrevious(), vana_conversations: withPrevious().vana_conversations!.slice(1) });
-  assertEquals(await readBackWithin(v, OPENING, 30, () => {}, heldModel().deps), { outcome: null, late: null });
-  const c = await buildAthleteContext(v, ANCHOR, offlineDeps());
-  assertEquals(withUnreadTalk(c, ANCHOR, null).lastTalks, c.lastTalks);
+Deno.test('idle: a turn without the flag writes nothing and is not an idle signal', async () => {
+  const v = testCtx(lastNight());
+  const model = countingModel();
+  for (const body of [{ conversation_id: PREVIOUS, message: 'Hi' }, { conversation_id: PREVIOUS, opener: true }, { idle: false, conversation_id: PREVIOUS }] as ChatBody[]) {
+    const { ack, background } = await signal(v, body, model.deps);
+    assertEquals(ack, null);
+    assertEquals(background.length, 0);
+  }
+  assertEquals(model.calls(), 0);
+  assertEquals(v.fake.rows('user_memories'), []);
+  assertEquals(v.fake.rows('vana_conversations')[0].read_back_at, null);
+});
+
+Deno.test('idle: a signal with no conversation is acknowledged and writes nothing', async () => {
+  const v = testCtx(lastNight());
+  const model = countingModel();
+  const { ack, background } = await signal(v, { idle: true }, model.deps);
+  assertEquals(ack, { idle: true, conversation_id: null });
+  assertEquals(background.length, 0);
+  assertEquals(model.calls(), 0);
+});
+
+Deno.test('idle: a failed write never throws, and a later signal can still write the episode', async () => {
+  const v = testCtx(lastNight());
+  const failing: ExtractDeps = { generate: () => Promise.reject(new Error('gateway down')) };
+  await signal(v, { idle: true, conversation_id: PREVIOUS }, failing);
+  assertEquals(await episodeFor(v, PREVIOUS), null);
+
+  await signal(v, { idle: true, conversation_id: PREVIOUS }, countingModel().deps);
+  assertEquals(await episodeFor(v, PREVIOUS), EPISODE);
 });
 
 // ---------------------------------------------------------------- every opener reads the athlete

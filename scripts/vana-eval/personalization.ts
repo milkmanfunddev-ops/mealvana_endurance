@@ -87,7 +87,10 @@ async function createThrowawayUser(): Promise<{ session: Session; close: () => P
 
 // ---------------------------------------------------------------- transport
 type Part = { kind: string; [k: string]: unknown };
-export interface Exchange { say?: string; text: string; parts: Part[]; tools: string[]; error?: string; inputTokens: number; outputTokens: number }
+export interface Exchange { say?: string; text: string; parts: Part[]; tools: string[]; error?: string; inputTokens: number; outputTokens: number;
+  /** Request to response headers, on the attempt that answered. The headers leave once the context is built, so this is
+   *  how long the server made the turn wait before the model started. */
+  headersMs?: number }
 
 async function signIn(): Promise<string> {
   const r = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, { method: 'POST', headers: { apikey: ANON!, 'content-type': 'application/json' }, body: JSON.stringify({ email: EMAIL, password: PASSWORD }) });
@@ -98,11 +101,13 @@ async function signIn(): Promise<string> {
 interface Session { jwt: string; userId: string }
 
 async function chat(s: Session, body: Record<string, unknown>): Promise<{ conversationId: string | null; ex: Exchange }> {
+  const t0 = Date.now();
   const r = await fetch(`${SUPABASE_URL}/functions/v1/vana-chat`, { method: 'POST', headers: { apikey: ANON!, authorization: `Bearer ${s.jwt}`, 'content-type': 'application/json' }, body: JSON.stringify({ timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, ...body }) });
+  const headersMs = Date.now() - t0;
   if (r.status === 403) { console.error('personalization: 403 — the eval user is not Pro (pro_required)'); Deno.exit(2); }
   if (r.status === 429) { const j = await r.json().catch(() => ({})); const wait = Number(j.retry_after_seconds ?? 10); console.log(`  rate limited — waiting ${wait}s`); await new Promise((res) => setTimeout(res, wait * 1000)); return chat(s, body); }
   if (!r.ok) throw new Error(`vana-chat ${r.status}: ${await r.text()}`);
-  const ex: Exchange = { say: body.message as string | undefined, text: '', parts: [], tools: [], inputTokens: 0, outputTokens: 0 };
+  const ex: Exchange = { say: body.message as string | undefined, text: '', parts: [], tools: [], inputTokens: 0, outputTokens: 0, headersMs };
   for (const line of (await r.text()).split('\n')) {
     if (!line.trim()) continue;
     let j: { type: string; delta?: string; part?: Part; tool?: string; message?: string; usage?: { input_tokens?: number; output_tokens?: number } };
@@ -115,6 +120,18 @@ async function chat(s: Session, body: Record<string, unknown>): Promise<{ conver
   }
   ex.text = ex.text.replace(/\s+/g, ' ').trim();
   return { conversationId: r.headers.get('x-conversation-id'), ex };
+}
+
+/** The idle signal (mp-288): a flag on the chat call, answered 202 at once; the episode is written in the background. */
+async function idle(s: Session, conversationId: string | null): Promise<{ status: number; body: unknown }> {
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/vana-chat`, { method: 'POST', headers: { apikey: ANON!, authorization: `Bearer ${s.jwt}`, 'content-type': 'application/json' }, body: JSON.stringify({ idle: true, conversation_id: conversationId }) });
+  return { status: r.status, body: await r.json().catch(() => null) };
+}
+
+/** Polls `read` until it returns something, or gives up with null after `ms`. */
+async function waitFor<T>(read: () => Promise<T | null | undefined>, ms = 20_000, every = 1500): Promise<T | null> {
+  const until = Date.now() + ms;
+  for (;;) { const got = await read(); if (got) return got; if (Date.now() > until) return null; await new Promise((r) => setTimeout(r, every)); }
 }
 
 /** A PostgREST read as the eval user — how every assertion about stored rows is settled. */
@@ -135,6 +152,8 @@ interface CaseCtx {
   /** Says something in a fresh or continuing conversation and returns the turn. */
   say: (text: string, o?: { kind?: 'general' | 'meal_planning'; conversationId?: string | null }) => Promise<{ conversationId: string | null; ex: Exchange }>;
   opener: (kind: 'general' | 'meal_planning') => Promise<{ conversationId: string | null; ex: Exchange }>;
+  /** Says a conversation is idle, the way the app does when the sheet closes. */
+  idle: (conversationId: string | null) => Promise<{ status: number; body: unknown }>;
   /** A turn as somebody other than the eval user — the brand-new athlete of `feedback-prompt-once`. */
   as: (session: Session, body: Record<string, unknown>) => Promise<{ conversationId: string | null; ex: Exchange }>;
   rows: typeof rows;
@@ -267,25 +286,25 @@ const CASES: EvalCase[] = [
       // an announcement the athlete did not ask for. Logged, not failed, until Lee rules on it.
       if (first.ex.parts.some((p) => p.kind === 'memory_saved')) c.log('a self-initiated rememberFact produced a card (open question)');
 
-      // Extraction is lazy: conversation N is read back when conversation N+1 OPENS. A second `say`
-      // continues nothing — it must be a NEW conversation, which is what `say` with no id gives us.
-      //
-      // The wait is for the rate limiter, not the model. `vana.extract` allows three read-backs a
-      // minute, which is generous for a person and tight for an eval that opens a conversation every
-      // few seconds. A rate-limited read-back RELEASES its claim, so nothing is lost — it just happens
-      // on a later conversation, which is no use to an assertion made now.
-      c.log('waiting out the extract rate-limit window before opening the next conversation');
-      await new Promise((r) => setTimeout(r, 62_000));
-      const second = await c.say('What should I make tonight?', { kind: 'general' });
-      await new Promise((r) => setTimeout(r, 8000));
+      // The episode is written when the app says the conversation is idle (mp-288), not when the next one opens.
+      const conv = first.conversationId;
+      const ack = await c.idle(conv);
+      if (ack.status !== 202) c.fail(`idle signal answered ${ack.status}: ${JSON.stringify(ack.body)}`);
+      type Ep = { id: string; fact: string; last_confirmed_at: string };
+      const episodeRows = () => c.rows<Ep>(c.s, `user_memories?select=id,fact,last_confirmed_at&kind=eq.episode&key=eq.${conv}&is_deleted=eq.false`);
+      const episode = await waitFor(async () => (await episodeRows())[0]);
       const after = await c.rows<{ id: string; fact: string; kind: string }>(c.s, 'user_memories?select=id,fact,kind&is_deleted=eq.false&order=last_confirmed_at.desc');
       const added = after.filter((m) => !before.some((b) => b.id === m.id));
       c.log(`${added.length} row(s) added: ${added.map((m) => `${m.kind}: ${m.fact}`).join(' | ') || '(none)'}`);
       // Presence, not addition: on a re-run the fact is already on file and the deduped writer
       // correctly declines to write it twice. What matters is that Vana knows it.
       if (!after.some((m) => m.kind !== 'episode' && mentions(m.fact, 'vegetarian', 'partner'))) c.fail('no Memory records the partner being vegetarian');
-      if (!added.some((m) => m.kind === 'episode')) c.fail('no episode Memory for the finished conversation');
-      void second;
+      if (!episode) { c.fail('no episode Memory for the conversation signalled idle'); return; }
+      // A second signal writes nothing (mp-288 clause 3).
+      await c.idle(conv);
+      await new Promise((r) => setTimeout(r, 6000));
+      const again = await episodeRows();
+      if (again.length !== 1 || again[0].last_confirmed_at !== episode.last_confirmed_at) c.fail(`a second idle signal rewrote the episode: ${JSON.stringify(again)}`);
     },
   },
   {
@@ -482,9 +501,10 @@ const CASES: EvalCase[] = [
     async run(c) {
       const first = await c.say("I'm riding four hours on Saturday with Marco, and he's bringing a camping stove for oatmeal at the halfway stop. What should I eat Friday night?", { kind: 'general' });
       if (first.ex.error) c.fail(`stream error: ${first.ex.error}`);
-      // The read-back runs when the next conversation opens; wait out vana.extract's per-minute limit first.
-      c.log('waiting out the extract rate-limit window before the opener');
-      await new Promise((r) => setTimeout(r, 62_000));
+      // The app signals the conversation idle when the sheet closes; the episode lands before the next one opens.
+      await c.idle(first.conversationId);
+      const landed = await waitFor(async () => (await c.rows<{ fact: string }>(c.s, `user_memories?select=fact&kind=eq.episode&key=eq.${first.conversationId}&is_deleted=eq.false`))[0]);
+      c.log(`episode: ${landed?.fact ?? '(none within 20s)'}`);
       const { ex } = await c.opener('general');
       const said = `${ex.text} ${JSON.stringify(ex.parts)}`;
       c.log(`opener: ${ex.text}`);
@@ -505,6 +525,43 @@ const CASES: EvalCase[] = [
       if (ex.error) c.fail(`stream error: ${ex.error}`);
       if (!mentions(said, 'Marco', 'stove', 'Saturday', 'vegetarian', 'partner', 'broccoli', 'batch', 'Wednesday', 'late shift', 'variety')) c.fail(`the planning opener carries nothing personal: "${ex.text}"`);
       if (READOUT.test(ex.text)) c.fail(`the opener reads its notes aloud: "${ex.text}"`);
+    },
+  },
+  {
+    name: 'durable-said-in-passing', ticket: 'mealplanning 15',
+    about: 'A durable thing said in passing is a Memory by the next turn, with no idle signal (mp-277 clause 2)',
+    async run(c) {
+      type Note = { id: string; fact: string; kind: string; last_confirmed_at: string };
+      const matching = (rows: Note[]) => rows.filter((m) => m.kind !== 'episode' && mentions(m.fact, 'night shift', 'night shifts', 'nights', 'overnight'));
+      const notes = () => c.rows<Note>(c.s, 'user_memories?select=id,fact,kind,last_confirmed_at&is_deleted=eq.false&order=last_confirmed_at.desc&limit=80');
+      // Compared against the server's own timestamps, so a re-run (the deduped writer refreshes rather than adds) still counts.
+      const before = new Map(matching(await notes()).map((m) => [m.id, m.last_confirmed_at]));
+      const { ex } = await c.say("Quick one before my ride: I work night shifts every Tuesday and Thursday, so on those days breakfast is at 7pm. What should I eat an hour before a 60-minute easy spin?", { kind: 'general' });
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      if (/\bremember(ed|ing)?\b/i.test(ex.text)) c.fail(`announces what she saved: "${ex.text}"`);
+      c.log(`tools: ${ex.tools.join(', ') || '(none)'} · parts: ${ex.parts.map((p) => p.kind).join(', ') || '(none)'}`);
+      // The next turn is the deadline. The tool runs inside the turn, so the row is there when the stream ends.
+      const saved = matching(await notes()).filter((m) => before.get(m.id) !== m.last_confirmed_at);
+      c.log(`saved or refreshed: ${saved.map((m) => `${m.kind}: ${m.fact}`).join(' | ') || '(none)'}`);
+      if (!saved.length) c.fail('the night shifts were not saved in the turn they were said');
+    },
+  },
+  {
+    name: 'opener-never-waits', ticket: 'mealplanning 15',
+    about: 'A conversation never signalled idle still opens the next one at once, and the opener reads nothing back (mp-278)',
+    async run(c) {
+      const first = await c.say("My brother Theo is staying with us for two weeks and he doesn't eat pork. What's an easy dinner tonight?", { kind: 'general' });
+      if (first.ex.error) c.fail(`stream error: ${first.ex.error}`);
+      // No idle signal: the app was killed, or offline. The next opener must not wait on that conversation.
+      const { ex } = await c.opener('general');
+      c.log(`opener headers after ${ex.headersMs}ms (the retired read-back waited up to 3500ms before the model even started): ${ex.text}`);
+      if (ex.error) c.fail(`stream error: ${ex.error}`);
+      if (!ex.text.trim()) c.fail('the opener produced no text');
+      if ((ex.headersMs ?? 0) >= 3500) c.fail(`the opener took ${ex.headersMs}ms to start`);
+      const [row] = await c.rows<{ read_back_at: string | null }>(c.s, `vana_conversations?select=read_back_at&id=eq.${first.conversationId}`);
+      if (row?.read_back_at) c.fail('opening the next conversation read the previous one back');
+      const episodes = await c.rows<{ id: string }>(c.s, `user_memories?select=id&kind=eq.episode&key=eq.${first.conversationId}`);
+      if (episodes.length) c.fail('an episode was written for a conversation never signalled idle');
     },
   },
 ];
@@ -533,6 +590,7 @@ for (const kase of todo) {
     log: (l) => { log.push(l); if (verbose) console.log(`    · ${l}`); },
     say: async (text, o) => { const r = await chat(s, { message: text, kind: o?.kind ?? 'general', conversation_id: o?.conversationId ?? null }); account(r.ex); return r; },
     opener: async (kind) => { const r = await chat(s, { opener: true, kind }); account(r.ex); return r; },
+    idle: (conversationId) => idle(s, conversationId),
     as: async (session, body) => { const r = await chat(session, body); account(r.ex); return r; },
   };
   console.log(`▶ ${kase.name} — ${kase.about}`);
