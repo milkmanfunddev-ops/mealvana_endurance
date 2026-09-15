@@ -1,10 +1,10 @@
 /// Design SSOT component — **Vana Sheet** (the launcher and the summoned
 /// glass sheet).
 ///
-/// Spec: `docs/ssot/spec/design/components/vana-sheet.md`, **PROPOSED v1**
-/// (Lee, 2026-09-11), authored app-side and awaiting Xuan. Q-VS1 (three
-/// heights, the grabber dragging between them) and Q-VS2 (the drawn
-/// speech-bubble mark) are confirmed.
+/// Spec: `docs/ssot/spec/design/components/vana-sheet.md`, **PROPOSED v2**
+/// (app-authored 2026-09-15 for ticket 27, awaiting Xuan's ratification in the
+/// QA repo). v2 replaces Q-VS1's three heights with one (mp-265). Q-VS2 (the
+/// drawn speech-bubble mark) stands.
 ///
 /// Material: `docs/ssot/spec/design/tokens.md` §Materials — the launcher takes
 /// `glass` with `lift`, dimmed like the collapsed tab-bar button it mirrors on
@@ -22,18 +22,17 @@
 /// * **Rise** 360 ms from the bottom edge; **condense** 470 ms back into the
 ///   launcher, transform origin at the launcher's own centre, rounding into a
 ///   circle as it shrinks. Every pop of [VanaSheetRoute] — scrim tap (VS-2),
-///   system back (VS-2), the grabber dragged down (VS-7), the dismiss button,
-///   the full-screen hand-off (VS-3) — runs the condense, so no dismissal
-///   slides the sheet off-screen (VS-9). The composer lets go of focus as the
-///   pop starts (the route's focus scope does that), so the keyboard goes too.
-/// * **Heights** (Q-VS1, VS-7) — `auto`, 75 %, 100 % ([VanaSheetHeight]).
-///   The feature picks the rest height; the grabber expands to 100 % and back,
-///   and a drag down past the rest height dismisses through the condense.
-///   The export's thresholds: 24 px up expands, 90 px down collapses or
-///   dismisses, a tap on the grabber toggles, an upward pull at rest gives at
-///   35 %.
-/// * The sheet does not resize while streaming (VS-4): its height moves only
-///   with the grabber, the rest height the feature gives it, and the keyboard.
+///   system back (VS-2), a drag down (VS-7), the dismiss button, the
+///   full-screen hand-off (VS-3) — runs the condense, so no dismissal slides
+///   the sheet off-screen (VS-9). The composer lets go of focus as the pop
+///   starts (the route's focus scope does that), so the keyboard goes too.
+/// * **One height** (mp-265) — [VanaSheet.heightFraction] of the screen, and
+///   the contents scroll inside it. Nothing grows with what the sheet holds,
+///   on send, or while Vana streams; there is no expanded state. Full screen
+///   is only the full-screen button. Only the keyboard takes room from it.
+/// * **Dismiss by drag** (VS-7) — a plain drag down, by the platform bottom
+///   sheet's own rule: past half the sheet, or a flick. No custom thresholds.
+/// * One widget tree shape, so nothing remounts the composer mid-drag.
 ///
 /// What the sheet says is the persona's business: the body and composer are
 /// slots the feature fills, composed from the inside's widgets in
@@ -42,10 +41,8 @@
 library;
 
 import 'dart:math' as math;
-import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
@@ -57,23 +54,9 @@ import 'vana_launcher.dart';
 export 'vana_launcher.dart';
 export 'vana_sheet_conversation.dart';
 
-/// The sheet's three heights (Q-VS1). The page stays visible at the two
-/// rest heights; that is the contract.
-enum VanaSheetHeight {
-  /// As tall as what it holds, up to 75 %: a sheet that is one message and a
-  /// dismiss.
-  auto,
-
-  /// 75 % of the screen: the rest height of a sheet with a card and replies.
-  threeQuarters,
-
-  /// 100 %, expanded: up to the status bar.
-  full,
-}
-
 /// The sheet's chrome: `glass-sheet`, grabber, the full-screen and dismiss
-/// buttons at the top-right, then the feature's [body] and [composer]. It
-/// owns its height: [rest] until the grabber expands it.
+/// buttons at the top-right, then the feature's [body] and [composer], at one
+/// height.
 ///
 /// Always dark inside: `glass-sheet` is a dark-first material (tokens.md —
 /// the light variant is deferred), so the content inherits the dark theme
@@ -87,11 +70,10 @@ class VanaSheet extends StatefulWidget {
     required this.fullScreenLabel,
     required this.onClose,
     required this.onFullScreen,
-    this.rest = VanaSheetHeight.threeQuarters,
-  }) : assert(rest != VanaSheetHeight.full, 'the sheet rests below 100 %');
+  });
 
-  /// The conversation column. At [VanaSheetHeight.auto] it is laid out with
-  /// a loose height and should be as tall as what it holds.
+  /// The conversation, laid out in the room between the chrome and the
+  /// composer. It scrolls itself.
   final Widget body;
 
   /// The composer row, pinned under the body.
@@ -100,45 +82,36 @@ class VanaSheet extends StatefulWidget {
   final String closeLabel;
   final String fullScreenLabel;
 
-  /// Dismiss — the caller pops the route, which condenses. The grabber
-  /// dragged down past the rest height calls it too.
+  /// Dismiss — the caller pops the route, which condenses. A drag down past
+  /// the dismiss rule calls it too.
   final VoidCallback onClose;
 
   /// VS-3 — the caller opens the chat route with the same conversation.
   final VoidCallback onFullScreen;
 
-  /// Where the sheet rests: [VanaSheetHeight.auto] or
-  /// [VanaSheetHeight.threeQuarters]. A change animates.
-  final VanaSheetHeight rest;
-
-  /// The 75 % rest height, a fraction of the screen.
-  static const double restHeightFraction = 0.75;
+  /// The one height, a fraction of the screen (mp-265).
+  static const double heightFraction = 0.75;
 
   static const Duration riseDuration = Duration(milliseconds: 360);
   static const Cubic riseCurve = Cubic(0.2, 0.85, 0.2, 1);
   static const Duration condenseDuration = Duration(milliseconds: 470);
   static const Cubic condenseCurve = Cubic(0.45, 0, 0.55, 1);
 
-  /// A change of height, and the spring back from a drag (the export's
-  /// height transition).
+  /// The spring back from a drag that did not dismiss.
   static const Duration settleDuration = Duration(milliseconds: 320);
 
   /// Where the condense ends: scaled to 2 % and faded to 70 %, then gone.
   static const double condensedScale = 0.02;
   static const double condensedOpacity = 0.7;
 
-  /// The export's drag thresholds, in logical pixels.
-  static const double expandDrag = 24;
-  static const double dismissDrag = 90;
-
-  /// A flick this fast counts as a drag past the threshold.
-  static const double flingVelocity = 700;
-
-  /// How much of an upward pull at rest the sheet follows.
-  static const double stretchFactor = 0.35;
+  /// The platform bottom sheet's dismiss rule (Material `BottomSheet`): a
+  /// drag past this share of the sheet's height, or a flick faster than
+  /// [minFlingVelocity], dismisses.
+  static const double closeProgressThreshold = 0.5;
+  static const double minFlingVelocity = 700;
 
   /// The chrome row above the body: grabber and buttons. The whole row is
-  /// the grabber's drag target.
+  /// the drag target.
   static const double chromeHeight = 48;
 
   static final ThemeData _dark = AppTheme.darkTheme;
@@ -149,38 +122,19 @@ class VanaSheet extends StatefulWidget {
 
 class _VanaSheetState extends State<VanaSheet>
     with SingleTickerProviderStateMixin {
-  bool _expanded = false;
-
-  /// The drag in progress, as the sheet shows it: down moves the sheet down,
-  /// up stretches it (at rest only).
+  /// How far down the finger has moved the sheet.
   double _offset = 0;
-  double _dragged = 0;
 
-  /// A height change or spring back, from these to the current height.
+  /// The spring back, from [_fromOffset] to rest.
   late final AnimationController _settle = AnimationController(
     vsync: this,
     duration: VanaSheet.settleDuration,
     value: 1,
   )..addListener(() => setState(() {}));
-  double _fromHeight = 0;
   double _fromOffset = 0;
 
-  /// The last laid-out height, and the last height `auto` took.
-  double? _height;
-  double? _autoHeight;
-
-  /// From 100 % down to the rest height, as last laid out. A drag down from
-  /// 100 % that passes the rest line by the dismiss distance dismisses.
-  double _collapseDistance = 0;
-
-  VanaSheetHeight get _current =>
-      _expanded ? VanaSheetHeight.full : widget.rest;
-
-  @override
-  void didUpdateWidget(VanaSheet oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.rest != widget.rest && !_expanded) _goTo(expanded: false);
-  }
+  /// The height as last laid out, for the dismiss rule.
+  double _height = 0;
 
   @override
   void dispose() {
@@ -188,66 +142,35 @@ class _VanaSheetState extends State<VanaSheet>
     super.dispose();
   }
 
-  /// Animates from wherever the sheet is now to [expanded] or the rest.
-  void _goTo({required bool expanded}) {
-    _fromHeight = _height ?? 0;
-    _fromOffset = math.max(0, _offset);
+  void _springBack() {
+    _fromOffset = _offset;
     _offset = 0;
-    _expanded = expanded;
     _settle.forward(from: 0);
   }
 
-  /// Back to the rest height. The composer lets go, so the keyboard goes
-  /// with the room it was typing in.
-  void _collapse() {
-    FocusScope.of(context).focusedChild?.unfocus();
-    _goTo(expanded: false);
-  }
-
-  void _toggle() => _expanded ? _collapse() : _goTo(expanded: true);
-
   void _dragStart(DragStartDetails _) {
+    _fromOffset = 0;
     _settle.value = 1;
-    _dragged = 0;
   }
 
   void _dragUpdate(DragUpdateDetails details) {
-    _dragged += details.primaryDelta ?? 0;
-    setState(() {
-      _offset = _dragged >= 0
-          ? _dragged
-          : _expanded
-          ? 0
-          : _dragged * VanaSheet.stretchFactor;
-    });
+    setState(
+      () => _offset = math.max(0, _offset + (details.primaryDelta ?? 0)),
+    );
   }
 
   void _dragEnd(DragEndDetails details) {
     final velocity = details.primaryVelocity ?? 0;
-    final down =
-        _dragged > VanaSheet.dismissDrag || velocity > VanaSheet.flingVelocity;
-    final up =
-        _dragged < -VanaSheet.expandDrag || velocity < -VanaSheet.flingVelocity;
-    final pastRest =
-        _expanded && _dragged > _collapseDistance + VanaSheet.dismissDrag;
-    _dragged = 0;
-    if (down && _expanded && !pastRest) {
-      _collapse();
-    } else if (down) {
-      // VS-7: past the shortest height is the VS-2 path, and the condense.
-      _goTo(expanded: false);
-      widget.onClose();
-    } else if (up && !_expanded) {
-      _goTo(expanded: true);
-    } else {
-      _goTo(expanded: _expanded);
-    }
+    final dismiss =
+        velocity > VanaSheet.minFlingVelocity ||
+        (velocity >= 0 &&
+            _offset > _height * VanaSheet.closeProgressThreshold);
+    _springBack();
+    // VS-7: the VS-2 path, and the condense.
+    if (dismiss) widget.onClose();
   }
 
-  void _dragCancel() {
-    _dragged = 0;
-    _goTo(expanded: _expanded);
-  }
+  void _dragCancel() => _springBack();
 
   @override
   Widget build(BuildContext context) {
@@ -257,74 +180,30 @@ class _VanaSheetState extends State<VanaSheet>
         final room = constraints.hasBoundedHeight
             ? constraints.maxHeight
             : screen;
-        final threeQuarters = math.min(
-          screen * VanaSheet.restHeightFraction,
-          room,
-        );
-        double? heightOf(VanaSheetHeight h) => switch (h) {
-          VanaSheetHeight.full => room,
-          VanaSheetHeight.threeQuarters => threeQuarters,
-          VanaSheetHeight.auto =>
-            _autoHeight == null ? null : math.min(_autoHeight!, threeQuarters),
-        };
-
-        // Null: as tall as what it holds.
-        double? height;
-        var offset = math.max(0.0, _offset);
-        if (_settle.isAnimating) {
-          final t = VanaSheet.riseCurve.transform(_settle.value);
-          height = lerpDouble(
-            _fromHeight,
-            heightOf(_current) ?? threeQuarters,
-            t,
-          );
-          offset = _fromOffset * (1 - t);
-        } else {
-          final stretch = math.max(0.0, -_offset);
-          final base = heightOf(_current);
-          if (_current != VanaSheetHeight.auto || stretch > 0) {
-            height = math.min(room, (base ?? threeQuarters) + stretch);
-          }
-        }
-        final contentSized = height == null;
-        _collapseDistance = room - (heightOf(widget.rest) ?? threeQuarters);
-
-        // One tree shape at every height: a change of shape would remount
-        // the sheet mid-drag and take the composer's focus with it.
-        final surface = GlassSheetSurface(
-          child: Material(
-            type: MaterialType.transparency,
-            child: Column(
-              mainAxisSize: contentSized ? MainAxisSize.min : MainAxisSize.max,
-              children: [
-                _chrome(),
-                Flexible(
-                  fit: contentSized ? FlexFit.loose : FlexFit.tight,
-                  child: widget.body,
-                ),
-                SafeArea(top: false, child: widget.composer),
-              ],
-            ),
-          ),
-        );
+        final height = math.min(screen * VanaSheet.heightFraction, room);
+        _height = height;
+        final offset = _settle.isAnimating
+            ? _fromOffset *
+                  (1 - VanaSheet.riseCurve.transform(_settle.value))
+            : _offset;
 
         return Theme(
           data: VanaSheet._dark,
           child: Transform.translate(
             offset: Offset(0, offset),
-            child: _SizeReporter(
-              onLayout: (size) {
-                _height = size.height;
-                if (contentSized) _autoHeight = size.height;
-              },
-              child: SizedBox(
-                width: double.infinity,
-                height: height,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxHeight: contentSized ? threeQuarters : double.infinity,
+            child: SizedBox(
+              width: double.infinity,
+              height: height,
+              child: GlassSheetSurface(
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Column(
+                    children: [
+                      _chrome(),
+                      Expanded(child: widget.body),
+                      SafeArea(top: false, child: widget.composer),
+                    ],
                   ),
-                  child: surface,
                 ),
               ),
             ),
@@ -335,8 +214,7 @@ class _VanaSheetState extends State<VanaSheet>
   }
 
   /// The grabber row. Dragging anywhere on it (the buttons keep their taps)
-  /// moves the sheet; a tap on the grabber toggles 100 %. The transcript below
-  /// keeps its own scroll.
+  /// moves the sheet down; the transcript below keeps its own scroll.
   Widget _chrome() {
     return GestureDetector(
       key: const ValueKey('vana_sheet.handle'),
@@ -349,23 +227,11 @@ class _VanaSheetState extends State<VanaSheet>
         height: VanaSheet.chromeHeight,
         child: Stack(
           children: [
-            Align(
+            const Align(
               alignment: Alignment.topCenter,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _toggle,
-                // A 44 px target round the 36 × 5 bar.
-                child: const SizedBox(
-                  width: 88,
-                  height: 36,
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Padding(
-                      padding: EdgeInsets.only(top: 10),
-                      child: _Grabber(),
-                    ),
-                  ),
-                ),
+              child: Padding(
+                padding: EdgeInsets.only(top: 10),
+                child: _Grabber(),
               ),
             ),
             Positioned(
@@ -393,36 +259,6 @@ class _VanaSheetState extends State<VanaSheet>
         ),
       ),
     );
-  }
-}
-
-/// Reports its child's laid-out size, so the sheet can animate from the
-/// height it actually has, `auto` included.
-class _SizeReporter extends SingleChildRenderObjectWidget {
-  const _SizeReporter({required this.onLayout, super.child});
-
-  final ValueChanged<Size> onLayout;
-
-  @override
-  RenderObject createRenderObject(BuildContext context) =>
-      _RenderSizeReporter(onLayout);
-
-  @override
-  void updateRenderObject(
-    BuildContext context,
-    _RenderSizeReporter renderObject,
-  ) => renderObject.onLayout = onLayout;
-}
-
-class _RenderSizeReporter extends RenderProxyBox {
-  _RenderSizeReporter(this.onLayout);
-
-  ValueChanged<Size> onLayout;
-
-  @override
-  void performLayout() {
-    super.performLayout();
-    onLayout(size);
   }
 }
 

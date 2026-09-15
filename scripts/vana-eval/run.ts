@@ -28,7 +28,7 @@
 
 type Part = { kind: string; [k: string]: unknown };
 type Turn = { say: string; expect?: string[]; confirm?: boolean; pick?: number };  // pick = tap the first N meals of the last picker via vana-action before speaking (what the app does on tap)
-type Conversation = { name: string; about?: string; turns: Turn[] };
+type Conversation = { name: string; about?: string; kind?: 'meal_planning' | 'general'; turns: Turn[] };  // kind general = the launcher sheet's conversation (ticket 27)
 type Exchange = { role: 'opener' | 'user'; say?: string; text: string; parts: Part[]; status: string[]; error?: string; usage?: unknown };
 type Check = (t: Exchange, ctx: { prev: Exchange | null; opener: Exchange; all: Exchange[] }) => string | null; // null = pass, string = failure reason
 
@@ -143,6 +143,8 @@ const CHECKS: Record<string, Check> = {
   pantry: (t) => (t.parts.some((p) => p.kind === 'pantry') ? null : `no pantry part (parts: ${t.parts.map((p) => p.kind).join(',') || 'none'})`),
   uses_on_hand: (t) => { const p = picker(t); if (!p) return null; const hit = p.meals.some((m) => /uses your/i.test(String((m as { why?: string }).why ?? ''))); return hit ? null : 'no picker option names an on-hand ingredient in its why-line'; },
   week: (t) => (t.parts.some((p) => p.kind === 'week') ? null : `no week part (parts: ${t.parts.map((p) => p.kind).join(',') || 'none'})`),
+  // mp-265 clause 4 (ticket 27): a meal-plan request in the sheet is answered with the hand-off button, never a picker or chips.
+  handoff_meal_plan: (t) => { const h = t.parts.find((p) => p.kind === 'hand_off'); if (!h) return `no hand_off part (parts: ${t.parts.map((p) => p.kind).join(',') || 'none'})`; if (h.target !== 'meal_plan') return `hand_off to ${h.target}, not meal_plan`; if (picker(t)) return 'a meal picker alongside the hand-off'; if (choices(t)) return 'chips alongside the hand-off'; return null; },
 };
 
 // ---------------------------------------------------------------- run
@@ -171,18 +173,19 @@ for (const conv of todo) {
   console.log(`\n▶ ${conv.name}${conv.about ? ` — ${conv.about}` : ''}`);
   if (!keepSettings) await resetSettings(jwt); // per conversation — the previous one may have chosen a setting
   const all: Exchange[] = [];
-  const { conversationId, ex: opener } = await chat(jwt, { opener: true });
+  const kind = conv.kind ?? 'meal_planning';
+  const { conversationId, ex: opener } = await chat(jwt, { opener: true, kind });
   all.push(opener);
   const run = (ex: Exchange, expect: string[]) => { const ctx = { prev: all.length > 1 ? all[all.length - 2] : null, opener, all }; const results: Record<string, string | null> = {}; for (const [k, f] of Object.entries(GLOBAL)) results[k] = f(ex, ctx); for (const k of expect) results[k] = CHECKS[k] ? CHECKS[k](ex, ctx) : `unknown check ${k}`; const u = ex.usage as { input_tokens?: number; output_tokens?: number; cache_read_tokens?: number | null } | undefined; inTok += u?.input_tokens ?? 0; outTok += u?.output_tokens ?? 0; cacheTok += u?.cache_read_tokens ?? 0; turns++;
     // The second turn of every conversation must be served from the cached prefix (mp-290 clause 3).
     if (all.length === 2) results.cached_second_turn = (u?.cache_read_tokens ?? 0) > 0 ? null : `second turn read ${u?.cache_read_tokens ?? 'no'} cache tokens (input ${u?.input_tokens ?? '?'})`; if (Object.values(results).some(Boolean)) failures++; return results; };
   const rec: { conversationId: string | null; exchanges: Scored[] } = { conversationId, exchanges: [] }; transcript[conv.name] = rec;
-  rec.exchanges.push({ ...opener, results: (() => { const r = run(opener, ['presenting']); show('opener', opener, r); return r; })() });
+  rec.exchanges.push({ ...opener, results: (() => { const r = run(opener, kind === 'general' ? [] : ['presenting']); show('opener', opener, r); return r; })() });
   for (const t of conv.turns) {
     if (t.confirm && skipConfirm) { console.log('  – skipped confirm turn (--skip-confirm)'); continue; }
     if (t.pick) await pickMeals(jwt, conversationId, all[all.length - 1], t.pick);
     const say = resolveSay(t.say, all[all.length - 1]);
-    const { ex } = await chat(jwt, { message: say, conversation_id: conversationId });
+    const { ex } = await chat(jwt, { message: say, conversation_id: conversationId, kind });
     all.push(ex);
     const r = run(ex, t.expect ?? []); show('turn', ex, r); rec.exchanges.push({ ...ex, results: r });
   }

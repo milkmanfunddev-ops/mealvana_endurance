@@ -39,6 +39,7 @@ import '../widgets/vana_mic_button.dart';
 import '../widgets/vana_round_button.dart';
 import '../widgets/vana_message_card.dart';
 import '../widgets/vana_status_copy.dart';
+import '../widgets/vana_hand_off.dart';
 import '../widgets/vana_part_renderer.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
@@ -387,6 +388,11 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       onPantryPhoto: _snapFridgePhoto,
       onSwapPicked: (meal) => _swapPicked(plan, meal),
       onEditMessage: _beginEdit,
+      // mp-265 clause 4: the app's own screen for what they asked to do.
+      onHandOff: (part) {
+        final to = vanaHandOffDestination(part);
+        context.push(to.location, extra: to.extra);
+      },
       // Disabled until the opener's response header has named the
       // conversation — there is no draft to browse into before that.
       onBrowseMeals: (state.conversationId ?? widget.conversationId) == null

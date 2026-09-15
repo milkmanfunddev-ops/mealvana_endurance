@@ -330,6 +330,25 @@
           "confirm": true
         }
       ]
+    },
+    {
+      "name": "sheet-plan-handoff",
+      "kind": "general",
+      "about": "the launcher sheet (a general conversation): asked for a meal plan, Vana answers with the meal_plan hand-off button, not a picker (mp-265, ticket 27)",
+      "turns": [
+        {
+          "say": "Can you make me a meal plan for this week?",
+          "expect": [
+            "handoff_meal_plan"
+          ]
+        },
+        {
+          "say": "Plan my dinners for the week, I want quick ones",
+          "expect": [
+            "handoff_meal_plan"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -60,6 +60,7 @@ import '../../features/carb_loading/presentation/screens/carb_loading_food_selec
 import '../../features/carb_loading/presentation/screens/create_custom_carb_loading_food_screen.dart';
 import '../../features/carb_loading/domain/meal_type.dart';
 import '../widgets/tabs_screen.dart';
+import '../../features/events/presentation/screens/event_detail_screen.dart';
 import '../../features/events/presentation/screens/events_list_screen.dart';
 import '../../features/events/presentation/screens/event_form_screen.dart';
 import '../../features/race_checklist/presentation/screens/race_checklist_screen.dart';
@@ -621,6 +622,15 @@ class AppRouter {
             final extra = state.extra as Map<String, dynamic>?;
             return EventFormScreen(forUserId: extra?['forUserId'] as String?);
           },
+        ),
+
+        // One event — where Vana's event and carb-loading hand-offs land
+        // (mp-265). Static `/events/create` above precedes it.
+        GoRoute(
+          path: '/events/:eventId',
+          name: 'event-detail',
+          builder: (context, state) =>
+              EventDetailScreen(eventId: state.pathParameters['eventId']!),
         ),
 
         // Race Day Checklist - Gear checklist for an event
