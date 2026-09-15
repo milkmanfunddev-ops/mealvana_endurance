@@ -5,15 +5,16 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/meal_planning/data/meal_library_remote_data_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_card.dart';
-import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_icon_glyphs.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picture_placeholder.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/meal_image_mosaic.dart';
 
 import '../helpers/test_content.dart';
 
-/// A fifth of the library has no honest picture, permanently. Those Meals keep
-/// their icon, drawn where the picture would be and shaped like it, so a list
-/// mixing pictures and icons stays aligned (meal-image-mosaic.md MIM-9). Meals
-/// come from `search_meals`-shaped rows through the real mapping.
+/// A fifth of the library has no honest picture, permanently. Those Meals show
+/// a plain placeholder where the picture would be, shaped like it, so a list
+/// mixing pictures and placeholders stays aligned (mp-145; the icon state of
+/// meal-image-mosaic.md MIM-9 is no longer drawn). Meals come from
+/// `search_meals`-shaped rows through the real mapping.
 void main() {
   MealRef meal(String id, String name, Map<String, dynamic> image) =>
       MealLibraryRemoteDataSource.rowToMealRef({
@@ -81,8 +82,10 @@ void main() {
     matching: find.byType(MealImageMosaic),
   );
 
-  Finder iconIn(int i) =>
-      find.descendant(of: leading(i), matching: find.byType(MealIconGlyph));
+  Finder placeholderIn(int i) => find.descendant(
+    of: leading(i),
+    matching: find.byType(MealPicturePlaceholder),
+  );
 
   BorderRadiusGeometry cornersOf(WidgetTester t, int i) => t
       .widget<ClipRRect>(
@@ -90,26 +93,25 @@ void main() {
       )
       .borderRadius;
 
-  testWidgets('a Meal with no picture shows its icon where the picture would '
-      'be, the same size and shape', (tester) async {
+  testWidgets('a Meal with no picture shows the placeholder where the picture '
+      'would be, the same size and shape', (tester) async {
     await pump(tester, [dish, none, mosaic]);
 
-    expect(iconIn(1), findsOneWidget);
+    expect(placeholderIn(1), findsOneWidget);
     final pictureBox = tester.getRect(leading(0));
-    final iconBox = tester.getRect(leading(1));
+    final placeholderBox = tester.getRect(leading(1));
     expect(pictureBox.size, const Size(36, 36));
-    expect(iconBox.size, pictureBox.size);
-    expect(iconBox.left, pictureBox.left);
+    expect(placeholderBox.size, pictureBox.size);
+    expect(placeholderBox.left, pictureBox.left);
     expect(tester.getRect(leading(2)).size, pictureBox.size);
     expect(cornersOf(tester, 1), cornersOf(tester, 0));
   });
 
-  testWidgets('the icon state names nothing and signals no failure', (
-    tester,
-  ) async {
+  testWidgets('the placeholder names nothing, draws no icon and signals no '
+      'failure', (tester) async {
     await pump(tester, [none]);
 
-    // No meal name in a box, no "missing image" glyph.
+    // No meal name in a box, no "missing image" glyph, no meal glyph.
     expect(
       find.descendant(of: leading(0), matching: find.byType(Text)),
       findsNothing,
@@ -118,10 +120,14 @@ void main() {
       find.descendant(of: leading(0), matching: find.byType(Icon)),
       findsNothing,
     );
+    expect(
+      find.descendant(of: leading(0), matching: find.byType(CustomPaint)),
+      findsNothing,
+    );
   });
 
-  testWidgets('a photograph that fails to load leaves the icon, not a blank '
-      'slot', (tester) async {
+  testWidgets('a photograph that fails to load leaves the placeholder, not a '
+      'blank slot', (tester) async {
     // flutter_test answers every image request with HTTP 400.
     await pump(tester, [dish]);
     await tester.runAsync(
@@ -131,7 +137,7 @@ void main() {
     await tester.pump();
 
     expect(find.byType(Image), findsNothing);
-    expect(iconIn(0), findsOneWidget);
+    expect(placeholderIn(0), findsOneWidget);
     expect(tester.getSize(leading(0)), const Size(36, 36));
   });
 
@@ -149,8 +155,8 @@ void main() {
       await pump(tester, [dish, none, mosaic, none], brightness: brightness);
 
       expect(tester.takeException(), isNull);
-      expect(iconIn(1), findsOneWidget);
-      expect(iconIn(3), findsOneWidget);
+      expect(placeholderIn(1), findsOneWidget);
+      expect(placeholderIn(3), findsOneWidget);
       expect(tester.getSize(find.byType(MealCard).first).width, 320 - 32);
     });
   }

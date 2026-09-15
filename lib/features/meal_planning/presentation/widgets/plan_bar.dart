@@ -10,11 +10,10 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
-import '../../application/meal_icon_classifier.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/plan_meal.dart';
-import 'meal_icon_glyphs.dart';
+import 'meal_picture_placeholder.dart';
 import 'meal_sheet.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
@@ -277,12 +276,7 @@ class _PlanBarTile extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        MealIconTile(
-                          icon:
-                              meal.icon ??
-                              MealIconClassifier.classify(name: meal.name),
-                          size: 30,
-                        ),
+                        const MealPicturePlaceholder(size: 30),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Padding(

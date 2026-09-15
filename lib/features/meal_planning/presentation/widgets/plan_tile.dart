@@ -8,13 +8,12 @@ import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../application/meal_icon_classifier.dart';
 import '../../domain/plan_meal.dart';
 import 'card_overflow_menu.dart';
-import 'meal_icon_glyphs.dart';
+import 'meal_picture_placeholder.dart';
 import 'slot_chip.dart';
 
-/// One planned meal row: icon, name (up to two lines), the slot chip and the
+/// One planned meal row: placeholder, name (up to two lines), the slot chip and the
 /// servings-left note, then "×N" on the trailing edge — the prototype's
 /// `.v-tile`. Tap opens the meal's detail page; swipes and the `⋮` overflow
 /// are owned by [PlanList] / the tile (05 §4).
@@ -49,8 +48,6 @@ class PlanTile extends ConsumerWidget {
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
     final border = textColor.withValues(alpha: 0.10);
 
-    final icon = meal.icon ?? MealIconClassifier.classify(name: meal.name);
-
     final macros = showMacros
         ? MacroPillRow(
             kcal: meal.kcal,
@@ -82,7 +79,9 @@ class PlanTile extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
-              MealIconTile(icon: icon, size: 36),
+              // No icon on the tile (mp-145): the plain placeholder keeps the
+              // row's shape where a picture would sit.
+              const MealPicturePlaceholder(size: 36),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
