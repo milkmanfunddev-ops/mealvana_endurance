@@ -1,19 +1,21 @@
 /**
- * Pure mapping from a RevenueCat subscription webhook event to a
- * `public.user_entitlements` row (docs/implement_mealplanning/04-entitlement.md).
+ * Pure mapping from a RevenueCat subscription webhook event to the
+ * `public.user_entitlements` row — a two-field cache of RevenueCat (mp-285):
+ * `active_until` and `period_type`, plus `event_at` (the RC event time) so an
+ * event older than the row is ignored. Nothing else from the payload is kept.
  *
  * Kept free of Deno/Supabase imports so index.test.ts exercises the SAME code
- * the handler runs instead of a hand-maintained mirror.
+ * the handler runs.
  */
 
-/** The RevenueCat entitlement identifier that unlocks meal planning. */
+/** The RevenueCat entitlement identifier the app is gated on. */
 export const PRO_ENTITLEMENT = 'pro';
 
 /**
  * Every store SKU attached to the `pro` entitlement, across all four store
  * apps (RC project proj77b3c48f, verified 2026-09-01). Play dev + prod share
  * ids; the RC Test Store reuses the iOS dev ids. Used as a fallback when an
- * event arrives without `entitlement_ids` (older payloads / TRANSFER).
+ * event arrives without `entitlement_ids` (older payloads).
  */
 export const PRO_PRODUCT_IDS: ReadonlySet<string> = new Set([
   // iOS dev (6756683509) — also the RC Test Store products
@@ -27,7 +29,11 @@ export const PRO_PRODUCT_IDS: ReadonlySet<string> = new Set([
   'mealvana_pro_annual:annual',
 ]);
 
-/** Subscription lifecycle events that (re)compute the entitlement row. */
+/**
+ * Subscription lifecycle events that (re)compute the row. `TEST` (the
+ * dashboard's "send test event") is deliberately absent: a ping carries no
+ * expiry and must never write the cache.
+ */
 export const SUBSCRIPTION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'INITIAL_PURCHASE',
   'RENEWAL',
@@ -38,7 +44,6 @@ export const SUBSCRIPTION_EVENT_TYPES: ReadonlySet<string> = new Set([
   'PRODUCT_CHANGE',
   'SUBSCRIPTION_PAUSED',
   'SUBSCRIPTION_EXTENDED',
-  'TEST',
 ]);
 
 /** Handled separately: it carries user lists, not a product. */
@@ -46,18 +51,14 @@ export const TRANSFER_EVENT_TYPE = 'TRANSFER';
 
 export type RcEvent = Record<string, unknown>;
 
-/** Shape of a `user_entitlements` upsert payload (minus user_id). */
+/** The row minus `user_id`: the two gate fields and the event time. */
 export interface EntitlementRow {
-  entitlement: string;
-  active: boolean;
-  product_id: string | null;
-  store: string | null;
+  /** End of the period RevenueCat last reported; null = no access. */
+  active_until: string | null;
+  /** NORMAL | TRIAL | INTRO | PROMOTIONAL, as RevenueCat names it. */
   period_type: string | null;
-  expires_at: string | null;
-  unsubscribe_detected_at: string | null;
-  billing_issue_detected_at: string | null;
-  source: 'revenuecat';
-  updated_at: string;
+  /** RevenueCat `event_timestamp_ms` as ISO — the ordering key for stale events. */
+  event_at: string;
 }
 
 /**
@@ -79,7 +80,7 @@ export function isProEvent(event: RcEvent): boolean {
     PRO_PRODUCT_IDS.has(`${productId}:annual`);
 }
 
-function msToIso(value: unknown): string | null {
+export function msToIso(value: unknown): string | null {
   const ms = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(ms) || ms <= 0) return null;
   return new Date(ms).toISOString();
@@ -92,15 +93,16 @@ function str(value: unknown): string | null {
 }
 
 /**
- * Build the row for [event]. `active` is "the subscription has not expired
- * as of [nowMs] and this is not the EXPIRATION event itself" — a CANCELLATION
- * (auto-renew off) therefore stays active until `expiration_at_ms`, matching
- * RevenueCat's own entitlement semantics. BILLING_ISSUE stays active while
- * RevenueCat keeps the expiry in the grace period.
+ * Build the row for [event].
  *
- * [previous] is the current row, so the cancellation / billing timestamps
- * survive events that do not speak to them (a RENEWAL after a BILLING_ISSUE
- * clears it; a PRODUCT_CHANGE after a CANCELLATION keeps it).
+ * `active_until` is RevenueCat's `expiration_at_ms`: a CANCELLATION (auto-renew
+ * off) keeps access to the end of the period and a BILLING_ISSUE keeps it while
+ * RevenueCat keeps the expiry in the grace period — RevenueCat's own semantics.
+ * An EXPIRATION closes the row at the event time when the payload's expiry is
+ * later (clock skew). A payload without an expiry yields null: never
+ * open-ended access by accident.
+ *
+ * `period_type` falls back to [previous] when the payload is silent.
  */
 export function entitlementRowFor(
   event: RcEvent,
@@ -108,56 +110,31 @@ export function entitlementRowFor(
   previous?: Partial<EntitlementRow> | null,
 ): EntitlementRow {
   const type = String(event.type ?? '');
-  const expiresAt = msToIso(event.expiration_at_ms);
-  const expiresMs = expiresAt ? Date.parse(expiresAt) : null;
   const eventAt = msToIso(event.event_timestamp_ms) ?? new Date(nowMs).toISOString();
+  const expiry = msToIso(event.expiration_at_ms);
 
-  const notExpired = expiresMs === null ? false : expiresMs > nowMs;
-  const active = type !== 'EXPIRATION' && notExpired;
-
-  let unsubscribeDetectedAt = previous?.unsubscribe_detected_at ?? null;
-  let billingIssueDetectedAt = previous?.billing_issue_detected_at ?? null;
-  switch (type) {
-    case 'CANCELLATION':
-      unsubscribeDetectedAt = eventAt;
-      break;
-    case 'BILLING_ISSUE':
-      billingIssueDetectedAt = eventAt;
-      break;
-    case 'UNCANCELLATION':
-      unsubscribeDetectedAt = null;
-      billingIssueDetectedAt = null;
-      break;
-    case 'INITIAL_PURCHASE':
-    case 'RENEWAL':
-      billingIssueDetectedAt = null;
-      break;
+  let activeUntil = expiry;
+  if (type === 'EXPIRATION' && (expiry === null || Date.parse(expiry) > Date.parse(eventAt))) {
+    activeUntil = eventAt;
   }
 
   return {
-    entitlement: PRO_ENTITLEMENT,
-    active,
-    product_id: str(event.product_id) ?? previous?.product_id ?? null,
-    store: str(event.store) ?? previous?.store ?? null,
+    active_until: activeUntil,
     period_type: str(event.period_type) ?? previous?.period_type ?? null,
-    expires_at: expiresAt,
-    unsubscribe_detected_at: unsubscribeDetectedAt,
-    billing_issue_detected_at: billingIssueDetectedAt,
-    source: 'revenuecat',
-    updated_at: eventAt,
+    event_at: eventAt,
   };
 }
 
 /**
  * True when [event] is older than the row already stored, i.e. a delayed or
  * re-delivered event that must not clobber newer state. Both timestamps are
- * the RevenueCat `event_timestamp_ms` (stored in `updated_at`).
+ * the RevenueCat `event_timestamp_ms` (stored in `event_at`).
  */
-export function isStaleEvent(event: RcEvent, storedUpdatedAt: string | null | undefined): boolean {
-  if (!storedUpdatedAt) return false;
+export function isStaleEvent(event: RcEvent, storedEventAt: string | null | undefined): boolean {
+  if (!storedEventAt) return false;
   const eventAt = msToIso(event.event_timestamp_ms);
   if (!eventAt) return false;
-  return Date.parse(eventAt) < Date.parse(storedUpdatedAt);
+  return Date.parse(eventAt) < Date.parse(storedEventAt);
 }
 
 /** The user ids a TRANSFER event moves purchases away from / to. */
