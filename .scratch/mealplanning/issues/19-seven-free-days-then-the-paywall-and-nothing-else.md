@@ -1,6 +1,6 @@
 # 19: Seven free days, then the paywall, and nothing else
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 2, 2026-09-15)
 **Blocked by:** 18.
 **Next:** `/implement-lee mealplanning`
 

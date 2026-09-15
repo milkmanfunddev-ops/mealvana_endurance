@@ -1,6 +1,6 @@
 # 14: A long conversation keeps its opening
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 2, 2026-09-15)
 **Blocked by:** 13 (touches supabase/functions/_shared/vana/chat.ts).
 **Next:** `/implement-lee mealplanning`
 
