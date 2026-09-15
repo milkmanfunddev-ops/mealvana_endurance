@@ -12,6 +12,8 @@ import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
+import '../../../../shared/services/app_config.dart';
+import '../providers/dev_tools_switch_controller.dart';
 import '../providers/settings_controller.dart';
 import 'debug_screen.dart';
 
@@ -279,8 +281,80 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // (so testers can easily toggle it off on repeat visits).
           if (_showTesterSection) _buildTesterSection(context),
 
+          // Dev-build section (ticket 24, mp-271): only the dev flavor shows
+          // it, no taps needed. Release/prod builds have no switch and no
+          // buttons, as before.
+          if (ref.watch(appConfigProvider).isDevelopment)
+            _buildDevBuildSection(context),
+
           const SizedBox(height: AppSpacing.xxxl),
         ],
+      ),
+    );
+  }
+
+  /// The switch that turns the dev build's testing buttons (blue wrench,
+  /// red accessibility checker) off and on for this device. Per device,
+  /// default on, remembered across launches; the app shell watches the same
+  /// controller, so the buttons go and come back without a restart.
+  Widget _buildDevBuildSection(BuildContext context) {
+    final toolsOn = ref.watch(devToolsSwitchControllerProvider).value ?? true;
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final onSurfaceVariant = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: BaseCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Dev build',
+              style: AppTextStyles.subtitle.copyWith(color: onSurface),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Only the dev build has this section.',
+              style: AppTextStyles.bodySmall.copyWith(color: onSurfaceVariant),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Show testing buttons',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        toolsOn
+                            ? 'The wrench and accessibility buttons float over every screen on this device.'
+                            : 'Hidden on this device. Turn back on any time.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                KyleSwitch(
+                  key: const Key('settings.dev_tools_switch'),
+                  value: toolsOn,
+                  semanticLabel: 'Show testing buttons',
+                  onChanged: (value) => ref
+                      .read(devToolsSwitchControllerProvider.notifier)
+                      .setVisible(value),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
