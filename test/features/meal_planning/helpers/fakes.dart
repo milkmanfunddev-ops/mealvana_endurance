@@ -82,6 +82,7 @@ SupabaseClient supabaseWithSession({bool signedIn = true}) {
   final client = MockSupabaseClient();
   final auth = MockGoTrueClient();
   when(() => client.auth).thenReturn(auth);
+  when(() => auth.onAuthStateChange).thenAnswer((_) => const Stream.empty());
   if (signedIn) {
     final session = MockSession();
     final user = MockUser();

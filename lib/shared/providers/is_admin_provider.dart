@@ -12,10 +12,16 @@ part 'is_admin_provider.g.dart';
 /// One small select per session (`keepAlive`): the cached `user_profiles`
 /// row does not carry the flag and a Drift schema bump for a read-only
 /// boolean is not worth it. Signed out, or any read failure, means `false`.
+/// A sign-in or sign-out that changes the user re-reads, so an athlete who
+/// signs in after an admin on the same device never inherits the box.
 @Riverpod(keepAlive: true)
 Future<bool> isAdmin(Ref ref) async {
   final deps = ref.watch(appExternalDepsProvider);
   final authUserId = deps.supabaseClient.auth.currentUser?.id;
+  final sub = deps.supabaseClient.auth.onAuthStateChange.listen((state) {
+    if (state.session?.user.id != authUserId) ref.invalidateSelf();
+  });
+  ref.onDispose(sub.cancel);
   if (authUserId == null) return false;
   try {
     final row = await deps.supabaseClient
