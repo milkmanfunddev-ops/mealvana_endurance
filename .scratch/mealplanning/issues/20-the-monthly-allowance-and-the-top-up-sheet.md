@@ -1,6 +1,6 @@
 # 20: The monthly Allowance and the top-up sheet
 
-**Status:** in-progress (wave 2, 2026-09-15)
+**Status:** done (wave 2, 2026-09-15)
 **Blocked by:** 18 (touches supabase/functions/revenuecat-webhook/index.ts).
 **Next:** `/implement-lee mealplanning`
 

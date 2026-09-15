@@ -1,6 +1,6 @@
 # 32: Every recipe says where its steps came from
 
-**Status:** in-progress (wave 2, 2026-09-15)
+**Status:** done (wave 2, 2026-09-15)
 **Blocked by:** 25 (touches lib/features/meal_planning/presentation/screens/meal_detail_screen.dart).
 **Next:** `/implement-lee mealplanning`
 
