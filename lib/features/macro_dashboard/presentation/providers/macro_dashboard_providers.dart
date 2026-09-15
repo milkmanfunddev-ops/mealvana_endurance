@@ -10,6 +10,7 @@ import '../../../daily_macros/domain/daily_macro_targets.dart';
 import '../../../daily_macros/presentation/providers/daily_macros_controller.dart';
 import '../../../meal_logging/presentation/providers/meal_log_providers.dart';
 import '../../application/dashboard_assembler.dart';
+import '../../application/dashboard_transient_telemetry.dart';
 import '../../domain/dashboard_models.dart';
 
 part 'macro_dashboard_providers.g.dart';
@@ -46,6 +47,17 @@ Future<DashboardData> macroDashboardDay(Ref ref) async {
     current: macrosState.dailyMacros,
     weekly: macrosState.weeklyMacros,
     calculating: macrosState.isCalculating,
+  );
+
+  // Record whether this assembly renders the "no targets" placeholder — the
+  // transient disabled dashboard is otherwise invisible to us (QA intake
+  // 2026-09-15-dashboard-targets-empty-state, observability half).
+  DashboardTransientTelemetry.observe(
+    userId: userId,
+    dateKey: dateStr,
+    hasTargets: targets.daily != null,
+    calculating: macrosState.isCalculating,
+    calculationError: macrosState.calculationError,
   );
 
   // Bug 2026-08-20-dashboard-weight-fallback-70kg: hand the assembler the
