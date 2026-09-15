@@ -10,8 +10,8 @@
 
 **Touches:** lib/features/settings/presentation/screens/settings_screen.dart, lib/shared/widgets/root_app_widget.dart, lib/shared/widgets/environment_indicator.dart, test/features/settings
 
-- [ ] A dev-only switch in Settings, default on, persisted per device (controller test through the real notifier).
-- [ ] Off hides the accessibility tools and the wrench; on restores them without a restart.
-- [ ] Release builds show no switch and no buttons, as today.
+- [x] A dev-only switch in Settings, default on, persisted per device (controller test through the real notifier).
+- [x] Off hides the accessibility tools and the wrench; on restores them without a restart.
+- [x] Release builds show no switch and no buttons, as today.
 
 Next: /implement-lee mealplanning
