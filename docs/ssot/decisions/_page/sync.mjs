@@ -35,7 +35,7 @@
 //   node sync.mjs wave <feature> <issues dir> --open           -> the same, then commits the ticket files with their in-progress marks and logs the wave (base = that commit)
 //   node sync.mjs wave <feature> <issues dir> --close <n> [--merged NN,NN] [--failed NN,NN] [--suite green|red]  -> close the wave with elapsed time; merged tickets become done, every other wave ticket ready-for-agent again
 //   node sync.mjs touched-screens --since <commit> [<file>...]  -> registry screens drawn from the files changed since the commit (committed, uncommitted, untracked)
-//   node sync.mjs simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]  -> a simulator per agent, copied from the dev one (app + data); every capture command takes --udid or SSOT_SIMULATOR
+//   node sync.mjs simulator claim <owner> [--wait <minutes>] | release <name|udid> | add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]  -> a pool of at most three wave simulators copied from the dev one (app + data): claim one when a device is needed, release it right after; every capture command takes --udid or SSOT_SIMULATOR
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -43,7 +43,7 @@ import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { join, isAbsolute, basename, dirname, resolve } from 'node:path';
 import { draw, TOKENS } from './diagram.mjs';
-import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor, createSimulator, deleteSimulator, listSimulators } from './capture.mjs';
+import { loadScreens, matchScreen, capture, simulatorIo, bootedUdid, stamp, doctor, createSimulator, deleteSimulator, listSimulators, claimSimulator, releaseSimulator, SIMULATOR_CAP } from './capture.mjs';
 
 const HEAD_KEYS = ['feature', 'feature name', 'last extracted', 'artifact'];
 const PARTS = [
@@ -1264,12 +1264,27 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].split('/').pop()
     if (changed === null) { console.error(`touched-screens: ${opts.since} is not a commit this clone has`); process.exit(2); }
     process.stdout.write(JSON.stringify(touchedScreens([...new Set([...changed, ...files])], loadScreens(opts.screens || undefined))));
   } else if (cmd === 'simulator') {
-    // simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]: a simulator per agent, copied from the dev one (app + data)
+    // simulator claim <owner> [--wait <minutes>] | release <name|udid> | add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]: a pool of at most SIMULATOR_CAP wave simulators, copied from the dev one (app + data)
     const [[op, name], opts] = flags(args);
-    if (op === 'add' && name) process.stdout.write(JSON.stringify(createSimulator(name, { from: typeof opts.from === 'string' ? opts.from : undefined })));
+    const from = typeof opts.from === 'string' ? opts.from : undefined;
+    if (op === 'claim' && name) {
+      // With --wait, poll every 30 s until a device frees up or the minutes run out (exit 3), so an agent needs no loop of its own.
+      const deadline = Date.now() + (typeof opts.wait === 'string' ? Number(opts.wait) : 0) * 60_000;
+      for (;;) {
+        const got = claimSimulator(name, { from });
+        if (!got.waiting) { process.stdout.write(JSON.stringify(got)); break; }
+        if (Date.now() >= deadline) { console.error(`simulator claim: all ${got.cap} wave simulators are held (${got.held.map(h => `${h.name}: ${h.owner ?? 'free?'}`).join(', ')}); pass --wait <minutes> or try again later`); process.stdout.write(JSON.stringify(got)); process.exit(3); }
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 30_000);
+      }
+    }
+    else if (op === 'release' && name) process.stdout.write(JSON.stringify(releaseSimulator(name)));
+    else if (op === 'add' && name) {
+      if (listSimulators('wave-').length >= SIMULATOR_CAP) { console.error(`simulator add: ${SIMULATOR_CAP} wave simulators already exist; the cap is ${SIMULATOR_CAP}. Use claim, or drop one first`); process.exit(3); }
+      process.stdout.write(JSON.stringify(createSimulator(name, { from })));
+    }
     else if (op === 'drop' && name) process.stdout.write(JSON.stringify(deleteSimulator(name)));
     else if (op === 'list') process.stdout.write(JSON.stringify(listSimulators(name || 'wave-'), null, 2));
-    else { console.error('usage: sync.mjs simulator add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]'); process.exit(2); }
+    else { console.error('usage: sync.mjs simulator claim <owner> [--wait <minutes>] | release <name|udid> | add <name> [--from <udid|name>] | drop <name|udid> | list [<prefix>]'); process.exit(2); }
   } else {
     console.error('usage: sync.mjs export|apply|answers|questions|linked|cite|pending|prepare|terms|question-first|fold|tickets|triage|next-id|images|asset|undrawn|draw|attach-svg|uncaptured|capture|attach-image|pictures|stale|refresh|wave|touched-screens|simulator ...'); process.exit(2);
   }

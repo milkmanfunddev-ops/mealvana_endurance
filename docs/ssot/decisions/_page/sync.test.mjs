@@ -5,12 +5,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse, serialize, apply, answers, openQuestions, answeredLinks, specCitations, questionFirst, fold, clauses, toDocuments, ticketDocument, triage, nextId, assetId, staleImages, recordAsset, pendingIn, ticketPlan, publishTickets, svgCheck, undrawn, attachSvg, uncaptured, attachImage, readSidecar, changedSince, captureStatus, stalePictures, refreshPictures, dropAsset, ticketFrontier, designRenderings, touchedScreens, setTicketStatus, wavePlan, waveOpen, waveClose, elapsed } from './sync.mjs';
-import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName, bootedUdid, createSimulator, deleteSimulator, listSimulators } from './capture.mjs';
+import { matchScreen, findElement, runDrive, capture, sidecar, loadScreens, runtimeName, bootedUdid, createSimulator, deleteSimulator, listSimulators, claimSimulator, releaseSimulator } from './capture.mjs';
 import { draw, TOKENS } from './diagram.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -1281,4 +1281,56 @@ test('runDrive dismisses the first-launch notification prompt before the first s
   };
   await runDrive([{ tap: 'Timeline', type: 'Button' }], io);
   assert.deepEqual(taps, [[50, 120], [25, 25]], "Don't Allow first (iOS curls the apostrophe), then the drive's own step");
+});
+
+test('the simulator pool: a free device is reused with fresh dev data, a new one is made only under the cap, the cap means waiting, release frees, drop forgets', () => {
+  const path = join(tmpdir(), `ssot-claims-test-${process.pid}.json`);
+  try { rmSync(path, { force: true }); } catch {}
+  const pool = [];
+  const list = () => ({ devices: { 'com.apple.CoreSimulator.SimRuntime.iOS-26-2': [
+    { udid: 'DEV', name: 'iPhone 17 Pro', state: 'Booted', deviceTypeIdentifier: 'com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro' },
+    ...pool,
+  ] } });
+  const calls = [], copies = [];
+  let made = 0;
+  const run = a => {
+    calls.push(a.join(' '));
+    if (a[0] === 'list') return JSON.stringify(list());
+    if (a[0] === 'create') { made++; pool.push({ udid: `P${made}`, name: a[1], state: 'Shutdown', deviceTypeIdentifier: 'x' }); return `P${made}\n`; }
+    if (a[0] === 'boot') { const d = pool.find(x => x.udid === a[1]); if (d) d.state = 'Booted'; return ''; }
+    if (a[0] === 'get_app_container') return a[3] === 'data' ? `/sims/${a[1]}/data\n` : `/sims/${a[1]}/Runner.app\n`;
+    if (a[0] === 'delete') { const i = pool.findIndex(x => x.udid === a[1]); pool.splice(i, 1); return ''; }
+    return '';
+  };
+  const opts = { path, run, cap: 2, copy: (s, d) => copies.push([s, d]), now: () => '2026-09-15T16:00:00Z' };
+  // Nothing exists: the first claim makes wave-pool-1.
+  const a = claimSimulator('mealplanning-13', opts);
+  assert.deepEqual(a, { udid: 'P1', name: 'wave-pool-1', from: 'DEV', runtime: 'iOS 26.2', reused: false, owner: 'mealplanning-13' });
+  // The same owner asking again gets the same device, nothing new made.
+  assert.deepEqual(claimSimulator('mealplanning-13', opts), { udid: 'P1', name: 'wave-pool-1', reused: true, owner: 'mealplanning-13' });
+  // A second owner: still under the cap, so wave-pool-2 is made.
+  const b = claimSimulator('mealplanning-18', opts);
+  assert.equal(b.name, 'wave-pool-2'); assert.equal(b.reused, false);
+  // A third owner at the cap waits, and is told who holds what.
+  assert.deepEqual(claimSimulator('mealplanning-22', opts), { waiting: true, cap: 2, held: [{ name: 'wave-pool-1', owner: 'mealplanning-13' }, { name: 'wave-pool-2', owner: 'mealplanning-18' }] });
+  assert.equal(made, 2, 'nothing is created at the cap');
+  assert.deepEqual(listSimulators('wave-', { run, path }).map(d => [d.name, d.owner]), [['wave-pool-1', 'mealplanning-13'], ['wave-pool-2', 'mealplanning-18']]);
+  // Release one; the waiting owner gets it back with the dev data copied over again.
+  assert.deepEqual(releaseSimulator('wave-pool-1', { path, run }), { released: true, udid: 'P1', name: 'wave-pool-1', owner: 'mealplanning-13' });
+  copies.length = 0;
+  const c = claimSimulator('mealplanning-22', opts);
+  assert.deepEqual(c, { udid: 'P1', name: 'wave-pool-1', reused: true, owner: 'mealplanning-22' });
+  assert.deepEqual(copies, [['/sims/DEV/data', '/sims/P1/data']], 'a reused device gets the dev data again');
+  assert.equal(made, 2);
+  // Releasing something unclaimed says so; dropping a device forgets its claim.
+  assert.equal(releaseSimulator('wave-pool-1', { path, run }).released, true);
+  assert.equal(releaseSimulator('wave-pool-1', { path, run }).released, false);
+  assert.deepEqual(deleteSimulator('wave-pool-2', { run, path }).deleted, true);
+  assert.deepEqual(listSimulators('wave-', { run, path }).map(d => [d.name, d.owner]), [['wave-pool-1', null]]);
+  // A claim on a device that vanished is dropped, so the slot is free again.
+  claimSimulator('mealplanning-24', opts); // takes wave-pool-1
+  pool.splice(0, 1); // the device disappears outside the tooling
+  assert.equal(claimSimulator('mealplanning-25', opts).name, 'wave-pool-1', 'the stale claim is dropped and the name is free');
+  assert.throws(() => claimSimulator('', opts), /needs an owner/);
+  rmSync(path, { force: true });
 });

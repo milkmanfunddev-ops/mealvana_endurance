@@ -28,7 +28,8 @@
 // the dev simulator's bundle container and copies its data container over, so
 // the copy opens signed in with the same data. `deleteSimulator` removes it.
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -156,17 +157,85 @@ export function createSimulator(name, { from, bundle = BUNDLE, run = simctl, cop
   if (idb) spawnSync(idb, ['connect', udid], { stdio: 'ignore' });
   return { udid, name, from: source.udid, runtime: source.runtime };
 }
+/**
+ * The simulator pool. A Mac runs at most SIMULATOR_CAP wave simulators at once (Lee, 2026-09-15),
+ * so an agent claims one when it needs a device and releases it right after. `claimSimulator`
+ * hands back a free pool device (its dev data re-copied so it opens as the dev account, whatever
+ * the last ticket did on it), creates one only when none is free and fewer than the cap exist,
+ * and otherwise answers `{waiting: true}` so the caller waits. Claims live in one JSON file in the
+ * machine's temp dir, keyed by udid, since the simulators are machine-global too; a claim on a
+ * device that no longer exists is dropped on the next call.
+ */
+export const SIMULATOR_CAP = 3;
+export const POOL_PREFIX = 'wave-';
+export const CLAIMS_PATH = join(tmpdir(), 'mealvana-ssot-simulators.json');
+function readClaims(path) { try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return {}; } }
+/** A mkdir lock around the claims file: two agents claiming at once take turns. */
+function withClaims(path, fn) {
+  const lock = path + '.lock';
+  for (let i = 0; ; i++) {
+    try { mkdirSync(lock); break; } catch (e) {
+      if (e.code !== 'EEXIST' || i > 100) throw new Error(`could not lock ${lock}: ${e.message}`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+    }
+  }
+  try {
+    const claims = readClaims(path);
+    const out = fn(claims);
+    writeFileSync(path, JSON.stringify(claims, null, 2));
+    return out;
+  } finally { rmSync(lock, { recursive: true, force: true }); }
+}
+export function simulatorClaims({ path = CLAIMS_PATH } = {}) { return readClaims(path); }
+export function claimSimulator(owner, { from, cap = SIMULATOR_CAP, prefix = POOL_PREFIX, path = CLAIMS_PATH, run = simctl, bundle = BUNDLE, copy, now = () => new Date().toISOString() } = {}) {
+  if (!owner) throw new Error('a claim needs an owner (the ticket, e.g. mealplanning-13)');
+  return withClaims(path, claims => {
+    const pool = devices(run).filter(d => d.name.startsWith(prefix));
+    for (const udid of Object.keys(claims)) if (!pool.some(d => d.udid === udid)) delete claims[udid];
+    const mine = pool.find(d => claims[d.udid]?.owner === owner);
+    if (mine) return { udid: mine.udid, name: mine.name, reused: true, owner };
+    const free = pool.find(d => !claims[d.udid]);
+    if (free) {
+      if (free.state !== 'Booted') run(['boot', free.udid]);
+      // Same data as the dev simulator again, so the last ticket's local state does not leak into this one.
+      const source = from ? devices(run).find(x => x.udid === from || x.name === from) : devices(run).find(x => x.state === 'Booted' && !x.name.startsWith(prefix));
+      if (source) {
+        const data = run(['get_app_container', source.udid, bundle, 'data']).trim();
+        const target = run(['get_app_container', free.udid, bundle, 'data']).trim();
+        (copy ?? ((src, dst) => execFileSync('rsync', ['-a', '--delete', src + '/', dst + '/'])))(data, target);
+      }
+      claims[free.udid] = { owner, name: free.name, since: now() };
+      return { udid: free.udid, name: free.name, reused: true, owner };
+    }
+    if (pool.length >= cap) return { waiting: true, cap, held: pool.map(d => ({ name: d.name, owner: claims[d.udid]?.owner ?? null })) };
+    let n = 1; while (pool.some(d => d.name === `${prefix}pool-${n}`)) n++;
+    const made = createSimulator(`${prefix}pool-${n}`, { from, run, bundle, ...(copy ? { copy } : {}) });
+    claims[made.udid] = { owner, name: made.name, since: now() };
+    return { ...made, reused: false, owner };
+  });
+}
+export function releaseSimulator(nameOrUdid, { path = CLAIMS_PATH, run = simctl } = {}) {
+  return withClaims(path, claims => {
+    const d = devices(run).find(x => x.udid === nameOrUdid || x.name === nameOrUdid);
+    const udid = d?.udid ?? nameOrUdid;
+    const had = claims[udid];
+    delete claims[udid];
+    return { released: Boolean(had), udid, name: d?.name ?? had?.name ?? null, owner: had?.owner ?? null };
+  });
+}
 /** Shut a simulator down and delete it. Takes a udid or a name; a device that does not exist is a no-op. */
-export function deleteSimulator(nameOrUdid, { run = simctl } = {}) {
+export function deleteSimulator(nameOrUdid, { run = simctl, path = CLAIMS_PATH } = {}) {
   const d = devices(run).find(x => x.udid === nameOrUdid || x.name === nameOrUdid);
   if (!d) return { deleted: false };
   if (d.state !== 'Shutdown') try { run(['shutdown', d.udid]); } catch {}
   run(['delete', d.udid]);
+  withClaims(path, claims => { delete claims[d.udid]; });
   return { deleted: true, udid: d.udid, name: d.name };
 }
 /** The simulators whose names start with a prefix (`wave-`), with their state. */
-export function listSimulators(prefix, { run = simctl } = {}) {
-  return devices(run).filter(d => d.name.startsWith(prefix)).map(d => ({ udid: d.udid, name: d.name, state: d.state, runtime: d.runtime }));
+export function listSimulators(prefix, { run = simctl, path = CLAIMS_PATH } = {}) {
+  const claims = readClaims(path);
+  return devices(run).filter(d => d.name.startsWith(prefix)).map(d => ({ udid: d.udid, name: d.name, state: d.state, runtime: d.runtime, owner: claims[d.udid]?.owner ?? null, since: claims[d.udid]?.since ?? null }));
 }
 export function simulatorIo(udid, { bundle = BUNDLE, idb = idbPath() } = {}) {
   const run = (cmd, args) => execFileSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
