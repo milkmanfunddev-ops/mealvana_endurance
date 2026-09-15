@@ -16,6 +16,8 @@ part of 'is_admin_provider.dart';
 /// One small select per session (`keepAlive`): the cached `user_profiles`
 /// row does not carry the flag and a Drift schema bump for a read-only
 /// boolean is not worth it. Signed out, or any read failure, means `false`.
+/// A sign-in or sign-out that changes the user re-reads, so an athlete who
+/// signs in after an admin on the same device never inherits the box.
 
 @ProviderFor(isAdmin)
 const isAdminProvider = IsAdminProvider._();
@@ -28,6 +30,8 @@ const isAdminProvider = IsAdminProvider._();
 /// One small select per session (`keepAlive`): the cached `user_profiles`
 /// row does not carry the flag and a Drift schema bump for a read-only
 /// boolean is not worth it. Signed out, or any read failure, means `false`.
+/// A sign-in or sign-out that changes the user re-reads, so an athlete who
+/// signs in after an admin on the same device never inherits the box.
 
 final class IsAdminProvider
     extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
@@ -40,6 +44,8 @@ final class IsAdminProvider
   /// One small select per session (`keepAlive`): the cached `user_profiles`
   /// row does not carry the flag and a Drift schema bump for a read-only
   /// boolean is not worth it. Signed out, or any read failure, means `false`.
+  /// A sign-in or sign-out that changes the user re-reads, so an athlete who
+  /// signs in after an admin on the same device never inherits the box.
   const IsAdminProvider._()
     : super(
         from: null,
@@ -65,4 +71,4 @@ final class IsAdminProvider
   }
 }
 
-String _$isAdminHash() => r'6069375e80dded575b8eff4b2c38a3358094059d';
+String _$isAdminHash() => r'2f9a92c82436e365c3d833f13020a9c0ca15bb20';
