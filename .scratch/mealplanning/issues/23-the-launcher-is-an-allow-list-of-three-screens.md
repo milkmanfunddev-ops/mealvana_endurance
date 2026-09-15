@@ -1,6 +1,6 @@
 # 23: The launcher is an allow-list of three screens
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 1, 2026-09-15)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee mealplanning`
 

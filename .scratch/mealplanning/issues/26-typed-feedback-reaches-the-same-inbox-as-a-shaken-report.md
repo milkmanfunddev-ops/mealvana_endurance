@@ -1,6 +1,6 @@
 # 26: Typed feedback reaches the same inbox as a shaken report
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 1, 2026-09-15)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee mealplanning`
 
