@@ -75,7 +75,7 @@ final class MealDetailControllerProvider
 }
 
 String _$mealDetailControllerHash() =>
-    r'2e7c24886f3cf80a9b94b825db400df25de6ba69';
+    r'9e761998edfd2dce797e6759828085f094a8c3cc';
 
 /// One meal's detail page / cooking-mode source, by library id or saved
 /// uuid. `keepAlive` so a detail opened once survives a network blip

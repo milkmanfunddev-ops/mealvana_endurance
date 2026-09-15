@@ -404,6 +404,15 @@ class ContentKeys {
   static const String mpDetailSavedToast = 'meal_planning.detail_saved_toast';
   static const String mpDetailThumbsDownNote =
       'meal_planning.detail_thumbs_down_note';
+  // Admin review box (mp-144 clause 3): admins only.
+  static const String mpDetailReviewTitle = 'meal_planning.detail_review_title';
+  static const String mpDetailReviewGood = 'meal_planning.detail_review_good';
+  static const String mpDetailReviewNotGood =
+      'meal_planning.detail_review_not_good';
+  static const String mpDetailReviewWhyHint =
+      'meal_planning.detail_review_why_hint';
+  static const String mpDetailReviewSend = 'meal_planning.detail_review_send';
+  static const String mpDetailReviewSent = 'meal_planning.detail_review_sent';
   static const String mpDetailSwapsTitle = 'meal_planning.detail_swaps_title';
   static const String mpDetailAddDirections =
       'meal_planning.detail_add_directions';

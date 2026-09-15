@@ -7,6 +7,7 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../meal_logging/data/saved_meals_repository.dart';
 import '../data/meal_library_remote_data_source.dart';
+import '../data/meal_review_repository.dart';
 import '../data/vana_action_client.dart';
 import '../domain/meal_detail.dart';
 import '../domain/meal_ref.dart';
@@ -99,6 +100,38 @@ class MealDetailController extends _$MealDetailController {
     final saved = result.savedMealRef;
     unawaited(_resyncSavedMeals());
     return saved;
+  }
+
+  /// Admin review (mp-144 clause 3): is this a good recipe, and why. Remote
+  /// ack only — the team reads the row cross-user, so nothing is reported as
+  /// sent until the server has it. The detail state is untouched; a failure
+  /// (offline, RLS refusing a non-admin) rethrows for the screen to show.
+  Future<void> review({required bool isGood, required String why}) async {
+    final current = state.value;
+    if (current == null) return;
+    final clean = why.trim();
+    if (clean.isEmpty) return;
+    try {
+      await ref
+          .read(mealReviewRepositoryProvider)
+          .addReview(
+            MealReview(
+              mealSource: current.meal.source,
+              mealId: current.meal.id,
+              mealName: current.meal.name,
+              isGood: isGood,
+              why: clean.length > 2000 ? clean.substring(0, 2000) : clean,
+            ),
+          );
+    } catch (e, st) {
+      _logger.warning(
+        'meal_reviews insert failed',
+        context: 'MEAL_DETAIL_CONTROLLER',
+        error: e,
+        stackTrace: st,
+      );
+      rethrow;
+    }
   }
 
   Future<void> _resyncSavedMeals() async {
