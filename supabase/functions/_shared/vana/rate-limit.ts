@@ -9,7 +9,7 @@ const WINDOWS = {
   'vana.brief': { seconds: 60, max: 2 },
   'vana.daynotes': { seconds: 60, max: 4 },  // one call writes all seven days
   'vana.embed': { seconds: 60, max: 30 },
-  'vana.extract': { seconds: 60, max: 3 },   // lazy read-back: one per opened conversation, and openers are already capped at 3/min
+  'vana.extract': { seconds: 60, max: 3 },   // extraction at idle: one per conversation the client signals idle (a repeat signal never reaches the model)
   'vana.summary': { seconds: 60, max: 3 },   // the rolling history summary: one per twenty messages of a conversation, plus a catch-up
 } as const;
 export type RateLimitedFn = keyof typeof WINDOWS;

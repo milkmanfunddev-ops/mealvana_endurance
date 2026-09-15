@@ -10,11 +10,11 @@
 
 **Touches:** supabase/functions/_shared/vana/chat.ts, supabase/functions/_shared/vana/extract.ts, supabase/functions/_shared/vana/opener.ts, supabase/functions/_shared/vana/persona.ts, supabase/functions/_shared/vana/schemas.ts, supabase/functions/tests/vana/personal_openers.test.ts, lib/features/meal_planning/data/vana_chat_repository.dart, lib/features/meal_planning/application/vana_ambient_conversation_controller.dart, lib/features/meal_planning/presentation/widgets/vana_companion.dart, test/features/meal_planning/application/vana_ambient_conversation_test.dart
 
-- [ ] The chat request accepts an idle flag; the first idle for a conversation writes its episode and notes, the second writes nothing, no flag writes nothing (server seam).
-- [ ] The client sends idle on sheet close, app background and new conversation (controller test through the real notifier), fire-and-forget.
-- [ ] OPENER_READ_BACK_MS, readBackWithin and athleteWordsFrom are gone; the opener path awaits nothing.
-- [ ] The remember rule in the persona is sharpened and the eval case "a durable thing said in passing is a Memory by the next turn" passes.
-- [ ] Eval: a conversation never signalled idle still opens the next one at once.
-- [ ] Dev deploy; simulator: close the sheet, reopen, the opener mentions last time.
+- [x] The chat request accepts an idle flag; the first idle for a conversation writes its episode and notes, the second writes nothing, no flag writes nothing (server seam).
+- [x] The client sends idle on sheet close, app background and new conversation (controller test through the real notifier), fire-and-forget.
+- [x] OPENER_READ_BACK_MS, readBackWithin and athleteWordsFrom are gone; the opener path awaits nothing.
+- [x] The remember rule in the persona is sharpened and the eval case "a durable thing said in passing is a Memory by the next turn" passes.
+- [x] Eval: a conversation never signalled idle still opens the next one at once.
+- [x] Dev deploy; simulator: close the sheet, reopen, the opener mentions last time.
 
 Next: /implement-lee mealplanning

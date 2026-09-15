@@ -6,7 +6,7 @@
  * which conversation gets read — not the model's judgement, which the live evals cover.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { extractConversation, readBackPrevious, pendingReadBack, transcriptOf, extractionPrompt } from '../../_shared/vana/extract.ts';
+import { extractConversation, transcriptOf, extractionPrompt } from '../../_shared/vana/extract.ts';
 import type { Extraction, ExtractDeps } from '../../_shared/vana/extract.ts';
 import { listMemories, episodeFor } from '../../_shared/vana/memory.ts';
 import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
@@ -129,26 +129,6 @@ Deno.test('a failed model call releases the claim, so the conversation can be re
 
   const out = await extractConversation(v, CONV, fixedModel(TWO_FACTS).deps);
   assertEquals(out.memories, 2);
-});
-
-Deno.test('the conversation read back is the most recent one that has not been, never the one being opened', async () => {
-  const v = testCtx(world({
-    vana_conversations: [
-      conversation({ id: 'old', last_message_at: '2026-09-01T09:00:00Z' }),
-      conversation({ id: 'recent', last_message_at: '2026-09-08T09:00:00Z' }),
-      conversation({ id: 'done', last_message_at: '2026-09-09T09:00:00Z', read_back_at: '2026-09-09T09:05:00Z' }),
-      conversation({ id: 'opening', last_message_at: '2026-09-09T10:00:00Z' }),
-    ],
-  }));
-  assertEquals(await pendingReadBack(v, 'opening'), 'recent');
-});
-
-Deno.test('readBackPrevious is silent when there is nothing pending, and never throws', async () => {
-  const v = testCtx(world({ vana_conversations: [conversation({ id: 'opening' })] }));
-  assertEquals(await readBackPrevious(v, 'opening', fixedModel(TWO_FACTS).deps), null);
-
-  const broken = testCtx(world(), { errors: { vana_conversations: 'boom' } });
-  assertEquals(await readBackPrevious(broken, 'opening', fixedModel(TWO_FACTS).deps), null);
 });
 
 Deno.test('the transcript is text only, oldest first, and survives a row whose text is in parts', async () => {

@@ -1,11 +1,13 @@
 /**
- * Lazy extraction — the margin notes Vana keeps without being asked.
+ * Extraction at idle — the episode, and the margin notes the remember tool missed (mp-024's third writer).
  *
- * There is no scheduler. When a conversation opens, the athlete's most recent conversation that has
- * not been read back yet is fed to ONE Haiku call with the margin-note rule and a strict schema:
- * zero to three sentences, plus one episode sentence. The sentences go through the deduped writer;
- * the episode is a keyed Memory and also fills the conversation's summary column so a list preview
- * has something to show. `read_back_at` is stamped so a conversation is never extracted twice.
+ * There is no scheduler and nothing runs when a conversation opens. The client says when a conversation
+ * is idle (the sheet closes, the app goes to the background, a new conversation starts: mp-288), and
+ * that conversation is fed to ONE Haiku call with the margin-note rule and a strict schema: zero to
+ * three sentences, plus one episode sentence. The sentences go through the deduped writer; the episode
+ * is a keyed Memory. `read_back_at` is stamped so a conversation is never extracted twice: a second
+ * signal writes nothing. A signal that never arrives (offline) is dropped; the remember tool already
+ * wrote that conversation's margin notes in the hot path (mp-277 clause 2).
  *
  * Nothing is announced. Extracted Memories produce no card and no mention — the flat list in Vana
  * settings is the audit trail.
@@ -72,14 +74,6 @@ export function extractionPrompt(lines: TranscriptLine[], existing: string[]): s
   ].join('\n');
 }
 
-/** The athlete's most recent conversation still waiting to be read back, excluding the one they just opened. */
-export async function pendingReadBack(v: VanaCtx, exceptConversationId: string): Promise<string | null> {
-  const { data } = await v.db.from('vana_conversations').select('id')
-    .eq('user_id', v.userId).eq('is_deleted', false).is('read_back_at', null).neq('id', exceptConversationId)
-    .order('last_message_at', { ascending: false }).limit(1).maybeSingle();
-  return data?.id ? String(data.id) : null;
-}
-
 /** The stored turns of one conversation, oldest first, text only. */
 export async function transcriptOf(v: VanaCtx, conversationId: string): Promise<TranscriptLine[]> {
   const { data } = await v.db.from('vana_messages').select('role, content, parts, created_at')
@@ -95,8 +89,8 @@ export async function transcriptOf(v: VanaCtx, conversationId: string): Promise<
 export interface ExtractOutcome { conversationId: string; memories: number; episode: string | null; skipped?: 'already-read' | 'too-short' | 'rate-limited' }
 
 /**
- * Reads one conversation back. Claims it first by stamping `read_back_at`, so two concurrent
- * openers cannot both pay for the same extraction; on failure the claim is released.
+ * Reads one conversation back. Claims it first by stamping `read_back_at`, so two signals racing
+ * cannot both pay for the same extraction; on failure the claim is released.
  */
 export async function extractConversation(v: VanaCtx, conversationId: string, deps: ExtractDeps = defaultExtractDeps): Promise<ExtractOutcome> {
   const claimed = await claim(v, conversationId);
@@ -133,47 +127,11 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
   }
 }
 
-/** Reads back whatever is pending for this athlete. Never throws — it runs in the background of an opener. */
-export async function readBackPrevious(v: VanaCtx, openingConversationId: string, deps: ExtractDeps = defaultExtractDeps): Promise<ExtractOutcome | null> {
-  try {
-    const id = await pendingReadBack(v, openingConversationId);
-    if (!id) return null;
-    return await extractConversation(v, id, deps);
-  } catch { return null; }
-}
-
-/** What an opener got from its read-back: the outcome when it landed in time, or the conversation it
- *  could not wait for. */
-export interface OpenerReadBack { outcome: ExtractOutcome | null; late: string | null }
-
-/**
- * An opener's read-back, given a moment to land. The opener is written from the context, so a
- * conversation read back first is one the opener can pick up from ("ready for Saturday's ride?").
- * Past `budgetMs` the opener goes without it and gets `late` instead, so it can still read the
- * athlete's own last words (`athleteWordsFrom`); the read-back keeps running under `background`.
- * Never throws.
- */
-export async function readBackWithin(v: VanaCtx, openingConversationId: string, budgetMs: number, background: (p: Promise<unknown>) => void, deps: ExtractDeps = defaultExtractDeps): Promise<OpenerReadBack> {
-  let id: string | null = null;
-  try { id = await pendingReadBack(v, openingConversationId); } catch { /* nothing to read back */ }
-  if (!id) return { outcome: null, late: null };
-  const run = extractConversation(v, id, deps).catch(() => null);
-  background(run);
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const LATE = Symbol('late');
-  const late = new Promise<typeof LATE>((resolve) => { timer = setTimeout(() => resolve(LATE), budgetMs); });
-  try {
-    const got = await Promise.race([run, late]);
-    return got === LATE ? { outcome: null, late: id } : { outcome: got, late: null };
-  } finally { clearTimeout(timer); }
-}
-
-/** The athlete's last `n` turns of a conversation, in their words, joined — what an opener has of a
- *  conversation whose read-back is still running. Null when they said nothing there. */
-export async function athleteWordsFrom(v: VanaCtx, conversationId: string, n = 2): Promise<string | null> {
-  const said = (await transcriptOf(v, conversationId)).filter((l) => l.role === 'user').slice(-n).map((l) => l.text.replace(/\s+/g, ' ').trim()).filter(Boolean);
-  const words = said.join(' / ').replace(/"/g, "'");
-  return words ? (words.length > 280 ? `${words.slice(0, 279)}…` : words) : null;
+/** What an idle signal writes (mp-288 clause 3): the conversation's episode and missed notes, once. A
+ *  conversation already read back writes nothing. Never throws — it runs in the background of a
+ *  request nobody waits on. */
+export async function writeOnIdle(v: VanaCtx, conversationId: string, deps: ExtractDeps = defaultExtractDeps): Promise<ExtractOutcome | null> {
+  try { return await extractConversation(v, conversationId, deps); } catch { return null; }
 }
 
 /** The one place an episode is written: a keyed Memory, one row per conversation. It no longer fills

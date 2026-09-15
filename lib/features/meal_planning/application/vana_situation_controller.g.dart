@@ -16,6 +16,12 @@ part of 'vana_situation_controller.dart';
 /// report nothing, so the last reported screen is the right answer. A report
 /// older than [vanaSituationTtl] reads as no Situation at all.
 ///
+/// The route on top ([routeOnTop], told by the Vana launcher's host on every
+/// router change except onto a Vana route) decides which report counts: a
+/// report counts while the route it was made under is on top. Any other
+/// screen speaks as its route and nothing else, so the sheet opened over
+/// settings is not told the athlete is still on the fuel log.
+///
 /// Kept alive: the screen that set it is underneath the sheet, not above it.
 
 @ProviderFor(VanaSituationController)
@@ -29,6 +35,12 @@ const vanaSituationControllerProvider = VanaSituationControllerProvider._();
 /// report nothing, so the last reported screen is the right answer. A report
 /// older than [vanaSituationTtl] reads as no Situation at all.
 ///
+/// The route on top ([routeOnTop], told by the Vana launcher's host on every
+/// router change except onto a Vana route) decides which report counts: a
+/// report counts while the route it was made under is on top. Any other
+/// screen speaks as its route and nothing else, so the sheet opened over
+/// settings is not told the athlete is still on the fuel log.
+///
 /// Kept alive: the screen that set it is underneath the sheet, not above it.
 final class VanaSituationControllerProvider
     extends $NotifierProvider<VanaSituationController, VanaSituation?> {
@@ -39,6 +51,12 @@ final class VanaSituationControllerProvider
   /// Vana means leaving the screen you were asking about, and the Vana routes
   /// report nothing, so the last reported screen is the right answer. A report
   /// older than [vanaSituationTtl] reads as no Situation at all.
+  ///
+  /// The route on top ([routeOnTop], told by the Vana launcher's host on every
+  /// router change except onto a Vana route) decides which report counts: a
+  /// report counts while the route it was made under is on top. Any other
+  /// screen speaks as its route and nothing else, so the sheet opened over
+  /// settings is not told the athlete is still on the fuel log.
   ///
   /// Kept alive: the screen that set it is underneath the sheet, not above it.
   const VanaSituationControllerProvider._()
@@ -69,7 +87,7 @@ final class VanaSituationControllerProvider
 }
 
 String _$vanaSituationControllerHash() =>
-    r'0f53150344ae62c94d46028767690153519efa35';
+    r'7d86691a72c4cdc13f2735cded7a85758346a5e5';
 
 /// Where Vana looks to find out what the athlete is looking at.
 ///
@@ -78,6 +96,12 @@ String _$vanaSituationControllerHash() =>
 /// Vana means leaving the screen you were asking about, and the Vana routes
 /// report nothing, so the last reported screen is the right answer. A report
 /// older than [vanaSituationTtl] reads as no Situation at all.
+///
+/// The route on top ([routeOnTop], told by the Vana launcher's host on every
+/// router change except onto a Vana route) decides which report counts: a
+/// report counts while the route it was made under is on top. Any other
+/// screen speaks as its route and nothing else, so the sheet opened over
+/// settings is not told the athlete is still on the fuel log.
 ///
 /// Kept alive: the screen that set it is underneath the sheet, not above it.
 

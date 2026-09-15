@@ -155,6 +155,32 @@ class VanaChatRepository {
     );
   }
 
+  /// Tell the server [conversationId] is idle (mp-288): the sheet closed, the
+  /// app went to the background, or a new conversation started. The server
+  /// writes the conversation's episode and any margin notes the remember tool
+  /// missed, once; a repeat writes nothing.
+  ///
+  /// A flag on the chat call, the way [streamChat]'s opener flag rides it.
+  /// Fire-and-forget: it never throws. Offline, the signal is dropped and the
+  /// conversation is signalled the next time it goes idle.
+  Future<void> signalIdle(String conversationId) async {
+    if (conversationId.isEmpty) return;
+    try {
+      await _transport.postJson(functionName, {
+        'conversation_id': conversationId,
+        'idle': true,
+        'timezone': resolveTimezone(),
+      });
+      _logger.info('signalIdle conv=$conversationId', context: _context);
+    } catch (e) {
+      _logger.warning(
+        'idle signal dropped conv=$conversationId',
+        context: _context,
+        error: e,
+      );
+    }
+  }
+
   /// Transport-level stream for callers with their own line parser (the
   /// legacy `AiCoachChatRepository`, whose part kinds differ from Vana's).
   Future<NdjsonResponse> streamRaw(Map<String, dynamic> body) =>

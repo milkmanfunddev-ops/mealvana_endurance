@@ -239,9 +239,10 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
     final moment = ref.read(vanaMomentControllerProvider).value;
     final live = moment?.moment;
     if (live != null) _awaitAnswer(conversationId, live);
-    // Completes when the sheet closes.
-    await navigator.push(
-      VanaSheetRoute<void>(
+    // Completes when the sheet closes: true when it handed over to the
+    // full-screen chat, where the conversation carries on.
+    final handedOver = await navigator.push(
+      VanaSheetRoute<bool>(
         barrierLabel: content.getValue(ContentKeys.mpCompanionClose),
         builder: (_) => VanaCompanionSheet(
           conversationId: conversationId,
@@ -250,6 +251,10 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
         ),
       ),
     );
+    // mp-288: a closed sheet's conversation is idle. Fire-and-forget.
+    if (mounted && handedOver != true) {
+      ref.read(vanaAmbientConversationProvider.notifier).sheetClosed();
+    }
   }
 
   /// The day's first sheet: start its conversation fresh, and hold whatever
@@ -500,7 +505,10 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     _lastAttempt?.call();
   }
 
-  void _close() => Navigator.of(context).pop();
+  /// [handedOver] when the conversation carries on in the full-screen chat,
+  /// so the host does not signal it idle (mp-288).
+  void _close({bool handedOver = false}) =>
+      Navigator.of(context).pop(handedOver);
 
   /// VS-3: the chat route, carrying the sheet's own conversation. The sheet's
   /// key is passed as is, so the chat route reads the very same notifier —
@@ -508,7 +516,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   void _fullScreen() {
     final router = GoRouter.of(context);
     final id = widget.conversationId;
-    _close();
+    _close(handedOver: true);
     router.push(id == null ? '/vana?mode=general' : '/vana?mode=general&c=$id');
   }
 

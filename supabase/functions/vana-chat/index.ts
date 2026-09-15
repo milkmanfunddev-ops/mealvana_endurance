@@ -4,6 +4,8 @@
  * POST /functions/v1/vana-chat        Auth: Supabase user JWT
  * Body: { message?, conversation_id?, kind: 'meal_planning' | 'general', timezone?, opener?, anchor_date? }
  *   opener: true (or a planning conversation with no message) → Vana writes the scripted first turn.
+ *   idle: true with conversation_id → no turn: 202 {idle, conversation_id}; the conversation's episode and missed margin
+ *   notes are written once in the background (mp-288). Not charged.
  * Response: application/x-ndjson — see _shared/vana/stream.ts for the line protocol. Headers `x-conversation-id`,
  *   `x-vana-kind` are set before the first byte.
  * Pre-stream errors: 401 {error:'unauthenticated'} · 400 {error:'message_required'|'invalid_body'} ·
