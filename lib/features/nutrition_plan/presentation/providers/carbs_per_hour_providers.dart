@@ -32,6 +32,11 @@ Future<CarbsPerHourBaseline> carbsPerHourBaseline(
     userId,
     activityType,
     excludeActivityId: activityId,
+    // Only fetch efforts long enough to qualify, so a frequent athlete's
+    // short runs don't fill the window and starve out older long runs
+    // (the "stuck at N/4 baseline efforts" bug). The service still applies
+    // the speed-work and fuel-logged filters on what comes back.
+    minDurationMinutes: service.minimumDurationMinutes,
   );
 
   return service.baselineFromHistory(recent);
