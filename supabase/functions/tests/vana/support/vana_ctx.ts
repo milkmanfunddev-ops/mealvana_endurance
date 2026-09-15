@@ -4,7 +4,6 @@ import { FakeDb, fakeDb } from './fake_db.ts';
 import type { Tables, FakeDbOptions } from './fake_db.ts';
 import type { VanaCtx } from '../../../_shared/vana/env.ts';
 import type { ContextDeps } from '../../../_shared/vana/context.ts';
-import type { Memory } from '../../../_shared/vana/contracts.ts';
 
 export const TEST_USER_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -29,12 +28,11 @@ export function testCtx(tables: Tables = {}, opts: FakeDbOptions = {}, userId = 
   return { db, admin: db, userId, token: 'test-token', fake };
 }
 
-/** Context deps that touch nothing: no macro fill, no weather, recall falls back to the list. */
+/** Context deps that touch nothing: no macro fill, no weather. */
 export function offlineDeps(over: Partial<ContextDeps> = {}): ContextDeps {
   return {
     ensureWeekTargets: () => Promise.resolve(),
     weatherLine: () => Promise.resolve(null),
-    recallMemories: () => Promise.resolve([] as Memory[]),
     ...over,
   };
 }

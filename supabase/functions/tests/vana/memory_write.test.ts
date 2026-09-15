@@ -125,12 +125,12 @@ Deno.test('a deleted Memory is absent from the next turn\'s block', async () => 
   const v = ctxWith([keep, drop]);
   v.fake.tables.users = [{ id: U, first_name: 'Lee', allergies: [] }];
 
-  const before = contextBlock(await buildAthleteContext(v, undefined, '2026-09-09', offlineDeps()));
+  const before = contextBlock(await buildAthleteContext(v, '2026-09-09', offlineDeps()));
   assert(before.includes('Partner is vegetarian'), 'it was in the block to begin with');
 
   await forgetMemory(v, drop.id as string);
 
-  const after = contextBlock(await buildAthleteContext(v, undefined, '2026-09-09', offlineDeps()));
+  const after = contextBlock(await buildAthleteContext(v, '2026-09-09', offlineDeps()));
   assert(!after.includes('Partner is vegetarian'), 'the deleted Memory is gone from the block');
   assert(after.includes('Hates cilantro'), 'the one that was kept is still there');
   // A tombstone, not a hard delete — the row is still on file, flagged.

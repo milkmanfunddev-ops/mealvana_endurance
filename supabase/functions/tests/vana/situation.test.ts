@@ -5,6 +5,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { resolveSituation, screenFor } from '../../_shared/vana/situation.ts';
 import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
+import { withSituation } from '../../_shared/vana/chat.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Tables } from './support/fake_db.ts';
 
@@ -112,12 +113,24 @@ Deno.test('the screen table matches sub-routes by longest prefix', () => {
   assertEquals(screenFor('/food')?.route, '/food');
 });
 
-Deno.test('the SITUATION line appears in the block only when a Situation was sent', async () => {
+Deno.test('the Situation rides on the user message, never in the block (mp-276: the block is byte-identical across turns)', async () => {
   const v = testCtx(world());
-  const c = await buildAthleteContext(v, undefined, '2026-09-12', offlineDeps());
-  assert(!contextBlock(c).includes('SITUATION'), 'no Situation, no line');
+  const c = await buildAthleteContext(v, '2026-09-12', offlineDeps());
+  const situation = await resolveSituation(v, { route: '/fuel-log', entityId: 'act-1', date: '2026-09-12' });
+  assert(!contextBlock(c).includes('SITUATION'), 'the block never carries a Situation');
 
-  c.situation = await resolveSituation(v, { route: '/fuel-log', entityId: 'act-1', date: '2026-09-12' });
-  const line = contextBlock(c).split('\n').find((l) => l.startsWith('SITUATION'));
-  assertEquals(line, 'SITUATION right now they are looking at the fuel log for Long ride on Saturday 2026-09-12 (cycling, 180 min)');
+  const note = '[SITUATION right now they are looking at the fuel log for Long ride on Saturday 2026-09-12 (cycling, 180 min)]';
+  // A string-content user turn (the scripted opener) gets the note after its text.
+  assertEquals(withSituation([{ role: 'user', content: 'Hi' }], situation), [{ role: 'user', content: `Hi\n\n${note}` }]);
+  // A parts-content history: only the LAST user turn carries it; earlier turns and the assistant's are untouched.
+  const history = [
+    { role: 'user', content: [{ type: 'text', text: 'What should I eat?' }] },
+    { role: 'assistant', content: [{ type: 'text', text: 'Rice.' }] },
+    { role: 'user', content: [{ type: 'text', text: 'Why?' }] },
+  ];
+  const out = withSituation(history, situation);
+  assertEquals(out[0], history[0]); assertEquals(out[1], history[1]);
+  assertEquals(out[2], { role: 'user', content: [{ type: 'text', text: 'Why?' }, { type: 'text', text: note }] });
+  // No Situation, no change — the same objects, not copies.
+  assertEquals(withSituation(history, null), history);
 });

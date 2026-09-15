@@ -27,7 +27,7 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     // Over the bucket → keep whatever notes exist (the Plan tab shows the last good ones); never queue a burst of Haiku calls.
     const rl = await checkRateLimit(v.admin, v.userId, 'vana.daynotes');
     if (!rl.allowed) { console.warn(`[vana] day notes rate-limited for ${v.userId}`); return plan.dayNotes; }
-    const ctx = await buildAthleteContext(v, undefined, anchorDate);
+    const ctx = await buildAthleteContext(v, anchorDate);
     const days = Array.from({ length: 7 }, (_, i) => addDays(anchorDate, i));
     const meals = plan.meals.map((m) => `- ${m.name} (${m.mealType}, ×${m.servings}, ${m.servingsLeft} left${m.session ? `, ${m.session}` : ''})`).join('\n') || '- (no meals in the plan yet)';
     const started = Date.now();

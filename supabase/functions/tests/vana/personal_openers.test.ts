@@ -31,7 +31,7 @@ const memory = (id: string, kind: string, fact: string, at: string, key: string 
 });
 
 const blockFor = async (tables: Tables) => {
-  const c = await buildAthleteContext(testCtx(tables), undefined, ANCHOR, offlineDeps());
+  const c = await buildAthleteContext(testCtx(tables), ANCHOR, offlineDeps());
   return contextBlock(c).split('\n');
 };
 const line = (lines: string[], prefix: string) => lines.find((l) => l.startsWith(`${prefix} `)) ?? `«no ${prefix} line»`;
@@ -112,7 +112,7 @@ Deno.test('an opener waits for the conversation before it: a read-back inside th
   assertEquals(out.outcome?.episode, EPISODE);
   assertEquals(out.late, null);
   assertEquals(await episodeFor(v, PREVIOUS), EPISODE);
-  const lines = contextBlock(await buildAthleteContext(v, undefined, ANCHOR, offlineDeps())).split('\n');
+  const lines = contextBlock(await buildAthleteContext(v, ANCHOR, offlineDeps())).split('\n');
   assertEquals(line(lines, 'LAST TALKS'), `LAST TALKS (what they said, not their schedule) ${new Date().toISOString().slice(5, 10)} ${EPISODE}`);
   assertEquals(background.length, 1, 'the read-back is also handed to the background, so it finishes whatever the opener does');
 });
@@ -138,14 +138,14 @@ Deno.test('a late read-back still leaves the opener the athlete\'s own last word
   const words = await athleteWordsFrom(v, PREVIOUS);
   assertEquals(words, 'Riding four hours Saturday with Marco. / He is bringing a stove.');
 
-  const c = withUnreadTalk(await buildAthleteContext(v, undefined, ANCHOR, offlineDeps()), ANCHOR, words);
+  const c = withUnreadTalk(await buildAthleteContext(v, ANCHOR, offlineDeps()), ANCHOR, words);
   assertEquals(line(contextBlock(c).split('\n'), 'LAST TALKS'), 'LAST TALKS (what they said, not their schedule) 09-11 not read back yet; they said: "Riding four hours Saturday with Marco. / He is bringing a stove."');
 });
 
 Deno.test('with nothing to read back, there is nothing late and nothing added', async () => {
   const v = testCtx({ ...withPrevious(), vana_conversations: withPrevious().vana_conversations!.slice(1) });
   assertEquals(await readBackWithin(v, OPENING, 30, () => {}, heldModel().deps), { outcome: null, late: null });
-  const c = await buildAthleteContext(v, undefined, ANCHOR, offlineDeps());
+  const c = await buildAthleteContext(v, ANCHOR, offlineDeps());
   assertEquals(withUnreadTalk(c, ANCHOR, null).lastTalks, c.lastTalks);
 });
 
@@ -182,7 +182,7 @@ Deno.test('every line an opener names is a line the block renders', async () => 
 });
 
 Deno.test('the context header names the weekday, so a talk about "Saturday" reads against today', async () => {
-  const c = await buildAthleteContext(testCtx(athlete()), undefined, ANCHOR, offlineDeps());
+  const c = await buildAthleteContext(testCtx(athlete()), ANCHOR, offlineDeps());
   assert(systemPrompt('general', c, '2026-09-11').includes('--- CONTEXT (today 2026-09-11, Friday) ---'));
   assert(systemPrompt('meal_planning', c, '2026-09-13').includes('--- CONTEXT (today 2026-09-13, Sunday) ---'));
 });

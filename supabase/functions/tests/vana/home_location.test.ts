@@ -25,7 +25,7 @@ const LINES = { 'Birmingham, Alabama': 'Birmingham, Alabama · 88°F, humid', 'C
 const build = async (users: Tables['users'], events: Tables['events'] = [RACE]) => {
   const w = recordingWeather(LINES);
   const v = testCtx({ users, events });
-  const c = await buildAthleteContext(v, undefined, ANCHOR, offlineDeps({ weatherLine: w.weatherLine }));
+  const c = await buildAthleteContext(v, ANCHOR, offlineDeps({ weatherLine: w.weatherLine }));
   return { v, c, lines: contextBlock(c).split('\n'), asked: w.asked };
 };
 const line = (lines: string[], prefix: string) => lines.find((l) => l.startsWith(prefix)) ?? null;

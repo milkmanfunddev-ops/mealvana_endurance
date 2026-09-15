@@ -1,24 +1,26 @@
-/** AthleteContext — small, deterministic, built server-side on every turn (≤ ~1.5k tokens). Server-internal: Dart never sees it. */
+/** AthleteContext — small, deterministic, built server-side when a conversation opens (≤ ~1.5k tokens) and reused for
+ *  its turns through context-cache.ts (mp-276). Server-internal: Dart never sees it. Nothing in here depends on the
+ *  message being answered: per-message memory recall left the block, the memories and last talks cover the person,
+ *  and `recallFacts` stays a tool. */
 import type { AthleteContext, Memory, DayTarget } from './contracts.ts';
 import { deriveWeekCharacter } from './derive-week-character.ts';
 import { today, addDays, weekStartFor } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { weatherLine } from './weather.ts';
-import { listNotes, recallMemories, recentEpisodes, getSetting, getCoverageScope } from './memory.ts';
+import { listNotes, recentEpisodes, getSetting, getCoverageScope } from './memory.ts';
 import { seasonalProduce } from './season.ts';
 import { getPlan } from './plan.ts';
 import { ensureWeekTargets } from './macros.ts';
 import { holidaysInRange } from './holidays.ts';
 
-/** The three collaborators that leave the process: the macro engine, the weather API, and the
- *  embedding call behind vector recall. Injecting them is what lets a test build the block from
- *  fixture rows alone. Production always takes the defaults. */
+/** The two collaborators that leave the process: the macro engine and the weather API. Injecting
+ *  them is what lets a test build the block from fixture rows alone. Production always takes the
+ *  defaults. */
 export interface ContextDeps {
   ensureWeekTargets: (v: VanaCtx, anchorDate: string) => Promise<void>;
   weatherLine: (place: string | null, dateIso: string) => Promise<string | null>;
-  recallMemories: (v: VanaCtx, text: string, limit: number) => Promise<Memory[]>;
 }
-export const defaultContextDeps: ContextDeps = { ensureWeekTargets, weatherLine, recallMemories };
+export const defaultContextDeps: ContextDeps = { ensureWeekTargets, weatherLine };
 
 /** Thumbs from `meal_feedback`, newest first, resolved to names. Two follow-up reads rather than a
  *  PostgREST embed: the ids point at two different tables, and an embed would hide which. */
@@ -39,7 +41,7 @@ async function likedMeals(v: VanaCtx, limit = 12): Promise<{ name: string; stanc
 
 /** `anchorDate` = the day the user is looking at (client-local, passed by the function from `anchor_date`/`timezone`).
  *  Defaults to UTC today — the two differ around midnight and on weekend boundaries. */
-export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, anchorDate?: string, deps: ContextDeps = defaultContextDeps): Promise<AthleteContext> {
+export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps: ContextDeps = defaultContextDeps): Promise<AthleteContext> {
   const t = anchorDate ?? today();
   await deps.ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
@@ -84,11 +86,9 @@ export async function buildAthleteContext(v: VanaCtx, latestUserText?: string, a
   const home = user?.home_city ? { city: String(user.home_city), lat: user.home_lat == null ? null : Number(user.home_lat), lon: user.home_lon == null ? null : Number(user.home_lon), timezone: user.home_timezone ? String(user.home_timezone) : null } : null;
   const [wToday, wRace] = await Promise.all([deps.weatherLine(home?.city ?? race?.location ?? null, t), race ? deps.weatherLine(race.location, race.date) : Promise.resolve(null)]);
   // Margin notes and conversations are separate lines: an athlete who talks often would otherwise fill
-  // MEMORIES with conversation sentences and push every note out of it.
-  let memories: Memory[] = latestUserText ? (await deps.recallMemories(v, latestUserText, 6)).filter((m) => m.kind !== 'episode') : [];
-  const [recent, episodes] = await Promise.all([listNotes(v, 10), recentEpisodes(v, 3)]);
-  for (const m of recent) if (!memories.some((x) => x.id === m.id)) memories.push(m);
-  memories = memories.slice(0, 10);
+  // MEMORIES with conversation sentences and push every note out of it. The newest notes, not a
+  // per-message recall: the block must read the same on every turn of a conversation.
+  const [memories, episodes]: [Memory[], Memory[]] = await Promise.all([listNotes(v, 10), recentEpisodes(v, 3)]);
   const holidays = (await holidaysInRange(v.db, t, addDays(t, 13))).map((h) => ({ date: h.date, name: h.name, daysOut: Math.round((new Date(h.date + 'T00:00:00Z').getTime() - new Date(t + 'T00:00:00Z').getTime()) / 86400_000) }));
   return {
     profile: { firstName: user?.first_name ?? null, diet: user?.dietary_preference ?? null, allergies: (user?.allergies ?? []) as string[], gutTraining: user?.gut_training_level ?? null },
@@ -136,7 +136,5 @@ export function contextBlock(c: AthleteContext): string {
     `GOALS ${(c.goals ?? []).join(', ') || 'none'}`,
     // Only when they have told us. No HOME line is the signal to ask rather than assume the race venue.
     ...(c.home?.city ? [`HOME ${c.home.city}${c.home.timezone ? ` (${c.home.timezone})` : ''}`] : []),
-    // Only when the client sent one. No situation means no screen context, not an empty one.
-    ...(c.situation ? [`SITUATION right now they are ${c.situation}`] : []),
   ].join('\n');
 }

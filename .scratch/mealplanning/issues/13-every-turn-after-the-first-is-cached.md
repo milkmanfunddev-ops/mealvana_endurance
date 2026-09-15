@@ -10,11 +10,11 @@
 
 **Touches:** supabase/functions/_shared/vana/chat.ts, supabase/functions/_shared/vana/context.ts, supabase/functions/_shared/vana/log.ts, supabase/functions/tests/vana/context_block.test.ts, supabase/functions/vana-eval
 
-- [ ] The gateway call carries automatic caching and the cache-read token count is written to vana_calls per call.
-- [ ] The context block is built once per conversation open and reused; a tool write (plan, memory, pantry, home) or a day change rebuilds it; nothing else does.
-- [ ] Per-message memory recall is out of the block; recall remains a tool.
-- [ ] Prompt order is tools, persona, context, messages, and the block is byte-identical across two turns with no writes between (mp-218 test extended).
-- [ ] The eval records cache reads per case and fails a case whose second turn reads zero.
-- [ ] Dev deploy of vana-chat; a two-turn conversation on the dev account shows a non-zero cache read on turn two.
+- [x] The gateway call carries automatic caching and the cache-read token count is written to vana_calls per call.
+- [x] The context block is built once per conversation open and reused; a tool write (plan, memory, pantry, home) or a day change rebuilds it; nothing else does.
+- [x] Per-message memory recall is out of the block; recall remains a tool.
+- [x] Prompt order is tools, persona, context, messages, and the block is byte-identical across two turns with no writes between (mp-218 test extended).
+- [x] The eval records cache reads per case and fails a case whose second turn reads zero.
+- [x] Dev deploy of vana-chat; a two-turn conversation on the dev account shows a non-zero cache read on turn two.
 
 Next: /implement-lee mealplanning

@@ -5,9 +5,16 @@
  * database, `buildAthleteContext` reads them the way the deployed function does, and `contextBlock`
  * renders the text the model actually sees. Nothing here asserts on prompt wording outside the
  * block, on tool-call order, or on a private helper.
+ *
+ * The second half is the mp-218 / mp-276 / mp-290 shape tests: the block has a budget, two builds with
+ * no writes between are byte-identical, a tool write or a day change produces a different block, and
+ * the conversation row holds the block between turns.
  */
-import { assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
+import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
+import { cachedContext } from '../../_shared/vana/context-cache.ts';
+import { rememberFact } from '../../_shared/vana/memory.ts';
+import { setServings } from '../../_shared/vana/plan.ts';
 import { testCtx, offlineDeps, fixedWeather, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Tables } from './support/fake_db.ts';
 
@@ -54,7 +61,7 @@ function fixture(): Tables {
 
 const build = async (tables = fixture()) => {
   const v = testCtx(tables);
-  const c = await buildAthleteContext(v, undefined, ANCHOR, offlineDeps({ weatherLine: fixedWeather({ 'Chattanooga, TN': 'Chattanooga, TN · 84°F, 10% rain' }) }));
+  const c = await buildAthleteContext(v, ANCHOR, offlineDeps({ weatherLine: fixedWeather({ 'Chattanooga, TN': 'Chattanooga, TN · 84°F, 10% rain' }) }));
   return { v, c, lines: contextBlock(c).split('\n') };
 };
 
@@ -100,4 +107,103 @@ Deno.test('context block: an athlete with nothing on file still renders every li
 Deno.test('context block: reads the athlete, and writes nothing', async () => {
   const { v } = await build();
   assertEquals(v.fake.writes, []);
+});
+
+// ---------------------------------------------------------------- mp-276 / mp-290: the block does not churn
+// The budget (mp-218). Estimated from bytes — the deployed function never tokenizes — at the usual ~4 chars per
+// token; a block that passes this is well inside the "~250 tokens" the chat header promises with headroom for
+// the LIKES/MEMORIES lines. The number is a build-time proposal awaiting the record (see the ticket 13 report).
+export const CONTEXT_BLOCK_TOKEN_BUDGET = 1500;
+const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+
+Deno.test('the block for a representative athlete stays inside the token budget', async () => {
+  const { c } = await build();
+  const tokens = estimateTokens(contextBlock(c));
+  assert(tokens <= CONTEXT_BLOCK_TOKEN_BUDGET, `block is ~${tokens} tokens, budget ${CONTEXT_BLOCK_TOKEN_BUDGET}`);
+});
+
+Deno.test('two builds for one athlete with no writes between are byte-identical', async () => {
+  const v = testCtx(fixture());
+  const deps = offlineDeps({ weatherLine: fixedWeather({ 'Chattanooga, TN': 'Chattanooga, TN · 84°F, 10% rain' }) });
+  const first = contextBlock(await buildAthleteContext(v, ANCHOR, deps));
+  const second = contextBlock(await buildAthleteContext(v, ANCHOR, deps));
+  assertEquals(second, first);
+  assertEquals(JSON.stringify(await buildAthleteContext(v, ANCHOR, deps)), JSON.stringify(await buildAthleteContext(v, ANCHOR, deps)));
+});
+
+Deno.test('a memory write, a plan write, and a day change each produce a different block', async () => {
+  const v = testCtx(fixture());
+  const deps = offlineDeps();
+  const base = contextBlock(await buildAthleteContext(v, ANCHOR, deps));
+
+  // memory: a margin note lands on the MEMORIES line
+  await rememberFact(v, { kind: 'preference', fact: 'Partner is vegetarian', source: 'conversation' }, { embed: () => Promise.reject(new Error('offline')) });
+  const afterMemory = contextBlock(await buildAthleteContext(v, ANCHOR, deps));
+  assert(afterMemory !== base, 'a memory write changes the block');
+  assert(afterMemory.includes('Partner is vegetarian'));
+
+  // plan: servings change the PLAN line
+  await setServings(v, 'pm-1', 1);
+  const afterPlan = contextBlock(await buildAthleteContext(v, ANCHOR, deps));
+  assert(afterPlan !== afterMemory, 'a plan write changes the block');
+  assert(afterPlan.includes('2 servings left'), afterPlan.split('\n').find((l) => l.startsWith('LOGGED')) ?? '');
+
+  // day: the same rows read on the next day give a different block
+  const nextDay = contextBlock(await buildAthleteContext(v, '2026-09-10', deps));
+  assert(nextDay !== afterPlan, 'a day change changes the block');
+});
+
+Deno.test('the conversation stores its context on open and reuses it on the next turn; a write or a new day rebuilds', async () => {
+  const CONV = 'cccccccc-0000-4000-8000-000000000001';
+  const v = testCtx({ ...fixture(), vana_conversations: [{ id: CONV, user_id: U, kind: 'meal_planning', is_deleted: false, context: null, context_day: null }] });
+  const deps = offlineDeps();
+  let builds = 0;
+  const build = async () => { builds++; return await buildAthleteContext(v, ANCHOR, deps); };
+
+  const open = await cachedContext(v, CONV, ANCHOR, build);
+  assertEquals(open.reused, false); assertEquals(builds, 1);
+  const stored = v.fake.rows('vana_conversations').find((r) => r.id === CONV)!;
+  assertEquals(stored.context_day, ANCHOR);
+  assertEquals(JSON.stringify(stored.context), JSON.stringify(open.ctx));
+
+  // turn two: served from the row, nothing built
+  const second = await cachedContext(v, CONV, ANCHOR, build);
+  assertEquals(second.reused, true); assertEquals(builds, 1);
+  assertEquals(contextBlock(second.ctx), contextBlock(open.ctx));
+
+  // a tool write nulls it; the next turn builds again
+  await rememberFact(v, { kind: 'preference', fact: 'Hates cilantro on tacos', source: 'conversation' }, { embed: () => Promise.reject(new Error('offline')) });
+  assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === CONV)!.context, null);
+  const third = await cachedContext(v, CONV, ANCHOR, build);
+  assertEquals(third.reused, false); assertEquals(builds, 2);
+  assert(contextBlock(third.ctx).includes('Hates cilantro on tacos'));
+
+  // a new day rebuilds even with no write
+  const tomorrow = await cachedContext(v, CONV, '2026-09-10', build);
+  assertEquals(tomorrow.reused, false); assertEquals(builds, 3);
+  assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === CONV)!.context_day, '2026-09-10');
+
+  // an ephemeral turn (no conversation) builds every time and stores nothing
+  const rowsBefore = JSON.stringify(v.fake.rows('vana_conversations'));
+  assertEquals((await cachedContext(v, null, ANCHOR, build)).reused, false); assertEquals(builds, 4);
+  assertEquals(JSON.stringify(v.fake.rows('vana_conversations')), rowsBefore);
+});
+
+Deno.test('a plan write reaches every conversation of the athlete, and no one else\'s', async () => {
+  const MINE = 'cccccccc-0000-4000-8000-000000000002'; const THEIRS = 'cccccccc-0000-4000-8000-000000000003';
+  const v = testCtx({ ...fixture(), vana_conversations: [
+    { id: MINE, user_id: U, kind: 'general', is_deleted: false, context: { profile: {} }, context_day: ANCHOR },
+    { id: THEIRS, user_id: '22222222-2222-4222-8222-222222222222', kind: 'general', is_deleted: false, context: { profile: {} }, context_day: ANCHOR },
+  ] });
+  await setServings(v, 'pm-2', 4);
+  assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === MINE)!.context, null);
+  assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === THEIRS)!.context, { profile: {} });
+});
+
+Deno.test('the server\'s own read-back write is quiet: it does not rebuild the block mid-conversation', async () => {
+  const CONV = 'cccccccc-0000-4000-8000-000000000004';
+  const v = testCtx({ ...fixture(), vana_conversations: [{ id: CONV, user_id: U, kind: 'general', is_deleted: false, context: { profile: {} }, context_day: ANCHOR }] });
+  await rememberFact(v, { kind: 'pattern', fact: 'Skips fish on weeknights', source: 'conversation' }, { embed: () => Promise.reject(new Error('offline')) }, { quiet: true });
+  assertEquals(v.fake.rows('user_memories').some((r) => r.fact === 'Skips fish on weeknights'), true, 'the note is still written');
+  assertEquals(v.fake.rows('vana_conversations').find((r) => r.id === CONV)!.context, { profile: {} }, 'the stored block is untouched');
 });
