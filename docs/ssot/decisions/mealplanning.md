@@ -1361,6 +1361,61 @@ Feature name: Meal planning and Vana
 > 2026-09-14 approved
 > 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 
+## mp-144 · One thumb per person per meal, and a thumbs down means Vana will not suggest it again
+- category: Meals tab and library
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/meal-detail.png
+- caption:
+- screen: Meal detail
+- source: recipe-directions-and-cooking-mode.md; 05-flutter-feature.md
+- work: pending
+
+**Context.** Opening a meal from the Meals tab or a plan tile shows the meal detail screen. The app already had a favourite flag on saved recipes, which marks a meal the athlete wants to keep. Vana's planner needed a separate signal for meals the athlete does not want offered again.
+
+**Question.** How a thumb vote should be stored and what it should do to future suggestions.
+
+**Decision.** 1. Meal feedback holds one vote per person per meal. Tapping the same vote twice clears it. The detail screen shows the thumbs optimistically, and a thumbs down shows a note that Vana will not suggest that meal again.
+2. A disliked meal is filtered out of suggestions but still visible when browsing. A thumbs up adds 0.10 to the meal's search score.
+3. A signed-in admin sees a comment box on every meal page. They can say whether it is a good recipe and why, and each comment lands in a table for the team to review. Athletes never see the box.
+
+**Why.** A quality signal distinct from the saved-meal favourite, and the one structured meal preference the planner honours. Lee on 2026-09-14: admins need to comment on recipes from the page and have it reach the database.
+
+**What else was considered.** Reusing the recipe favourite flag. It lost because a favourite says "keep this" and cannot say "never again".
+
+**What it touches.** set_meal_feedback, search_meals, meal detail controller. Admin flag, meal_reviews table, meal detail screen.
+
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
+> 2026-09-15 approved by Lee
+
+## mp-145 · Meal icons are classified and stored, but not drawn
+- category: Meals tab and library
+- status: approved
+- image: test/features/meal_planning/presentation/goldens/meal_icon_glyphs_grid.png
+- caption: The 23 meal icon glyphs.
+- screen: Meals tab
+- source: plan-tab-v2.md; 02-contract.md
+- work: pending
+
+**Context.** Every meal card and plan tile shows a small glyph beside the name, and the glyph stands in when a meal has no photo. The fuel log already had a set of 12 food icons. The meal library needed finer distinctions, and many meals have no photo at all.
+
+**Question.** How each meal gets its glyph without a model call and without blank cards.
+
+**Decision.** 1. The 23-key classifier stays and the key is stored on library, saved and plan meals, copied along on add and swap, so the data is there when it is wanted.
+2. Icons are not drawn on tiles, cards, the plan bar or the review sheet. Tiles keep their shape without the glyph.
+3. A meal with no photo shows a plain placeholder, not an icon.
+
+**Why.** Lee on 2026-09-14: the icons clutter the UI. The classification is cheap to keep and costs nothing unseen.
+
+**What else was considered.** Model-chosen icons, which would cost a call per meal and could drift. Extending the 12 food icons, which lost because the fuel-log set was built for logged foods rather than dishes.
+
+**What it touches.** MealIconClassifier, KyleFoodIcon, meal cards. Meal card, plan tile, plan bar, review sheet.
+
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-15 approved by Lee
+
 ## mp-146 · Directions carry a recorded origin and a badge
 - category: Recipes and cooking
 - status: approved
@@ -1622,6 +1677,32 @@ Feature name: Meal planning and Vana
 > 2026-09-14 folded from mp-078, mp-079, mp-080, mp-081
 > 2026-09-14 approved
 
+## mp-222 · The launcher is its own accessibility node
+- category: The sheet and launcher
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/timeline-launcher.png
+- caption:
+- screen: Any screen with the launcher
+- source: ticket 06
+- detail: yes
+
+**Context.** The launcher floats above every screen at the app's root. On the device its label merged into the root, so VoiceOver read the entire screen as one button called "Ask Vana".
+
+**Question.** How the launcher presents itself to a screen reader.
+
+**Decision.** The launcher is its own accessibility node with its own label. Its semantics no longer merge into the app root.
+
+**Why.** VoiceOver read the whole screen as one "Ask Vana" button.
+
+**What else was considered.** none recorded
+
+**What it touches.** VanaLauncher.
+
+> 2026-09-14 folded from mp-070
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
+> 2026-09-14 picture reused from docs/ssot/decisions/images/mealplanning/timeline-launcher.png
+> 2026-09-15 approved by Lee
+
 ## mp-223 · Two fuelling windows make Vana speak first: before a workout and after one
 - category: Moments: Vana speaks first
 - status: approved
@@ -1647,6 +1728,32 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-082, mp-083, mp-091, mp-092
 > 2026-09-14 approved
+
+## mp-224 · Where the window numbers come from
+- category: Moments: Vana speaks first
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-224.svg
+- screen: none (algorithm/data)
+- source: ticket 09; memory 09-11; ticket 10
+- detail: yes
+
+**Context.** The pre-workout window length varies by workout and the app already has a fuelling window authority that owns it. A session's end has to be computed from a row where mark-done and Garmin write different things into the completed field.
+
+**Question.** Where the resolver gets a workout's window length and a session's end time.
+
+**Decision.** 1. The resolver reads the workout's stored pre-workout minutes and falls back to the authority's default from duration and intensity. A workout created close to its start is clamped so its window opens the minute it is created. The device sends the window to the server so Vana names the same one.
+2. A session's end is the actual start, else the scheduled start, plus the actual duration, else the planned duration. The completed timestamp is never read.
+
+**Why.** The fuelling window authority already owns the number, and two writers fill the completed field with different meanings.
+
+**What else was considered.** A fixed window in the resolver, which would put a second window number outside the authority. Reading the completed time, which mark-done and Garmin fill differently.
+
+**What it touches.** fueling_window_authority.dart, moment resolver, moment.ts, chat body.
+
+> 2026-09-14 folded from mp-084, mp-093
+> 2026-09-15 approved by Lee
 
 ## mp-225 · What the athlete sees when a moment raises
 - category: Moments: Vana speaks first
@@ -1778,6 +1885,37 @@ Feature name: Meal planning and Vana
 > 2026-09-14 folded from mp-100, mp-101
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
+
+## mp-231 · How a cooking period fills up
+- category: The planning conversation
+- status: approved
+- image: test/features/meal_planning/presentation/goldens/plan_bar_expanded_light.png
+- caption: The plan bar with its coverage count.
+- screen: Vana chat
+- source: memory 08-31; 02-contract.md; memory 09-03; vana-chatbot-update-plan.md
+- work: pending
+
+**Context.** A week's plan covers several meal types and the plan bar shows how much of the week is covered. Breakfast and snacks are staples. Not every athlete wants lunches planned, and Xuan's scenario has an athlete who trusts Vana to decide for them.
+
+**Question.** Which meals get planned, over what span, and what gets suggested first.
+
+**Decision.** 1. The order of meal types is not fixed. A person may skip breakfast, snacks or any type, and the walk only covers the types they plan.
+2. The plan spans a cooking period. A week is the default and the athlete can change it, so several days is fine.
+3. In batch mode the athlete cooks a few meals at one sitting and eats them across the period. Servings scale so the batch covers the days, and coverage counts servings against the period, not a fixed 14 slots.
+4. People who do not batch plan per day instead, and the walk, coverage and review follow that mode.
+5. Suggestions give the highest weight to meals the athlete has liked or already cooked. One tap drafts the period from what they ate last time.
+6. "Draft it for me" runs deterministically. The model selects nothing and only presents the result.
+
+**Why.** Lee on 2026-09-14: the order is not fixed, the span is not a set week, batch cooking is cooking a few meals and eating them through the period, so servings must scale, non-batchers plan differently, and already-cooked or liked meals must come first.
+
+**What else was considered.** A fixed dinner-lunch-breakfast-snack walk over 14 slots (the earlier reading), rejected as too rigid.
+
+**What it touches.** Chip logic, planning prompt, coverage service, plan bar denominator, batch setting, suggestMeals ranking, draftWeek tool, settings.
+
+> 2026-09-14 folded from mp-106, mp-107, mp-111
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-15 approved by Lee
 
 ## mp-232 · Batch cooking is asked once
 - category: The planning conversation
@@ -2092,6 +2230,70 @@ Feature name: Meal planning and Vana
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
 
+## mp-244 · The shopping list
+- category: Shopping list
+- status: approved
+- image: test/features/meal_planning/presentation/goldens/shopping_list_light.png
+- caption: The shopping list grouped by aisle.
+- screen: Shopping tab
+- source: plan-tab-v2.md; 05-flutter-feature.md; memory 09-07; memory 09-02
+- work: pending
+
+**Context.** When the athlete confirms a plan they land on the Shopping tab. Building the list means adding up ingredients across every meal and serving. Most plan edits write locally first. The prototype had aisle groups, a pickup placeholder, and filtered out items the athlete already has.
+
+**Question.** Where the list is built, what the tab shows, and which unit system it uses.
+
+**Decision.** 1. The list is aggregated deterministically on the server at confirm, and confirm waits for the server's acknowledgement. It is rebuilt after every plan edit. The device never computes it.
+2. Nine aisle groups. Each row has a checkbox and a quantity. A row from more than one meal carries a count badge that opens a sheet listing those meals. Share sends plain text. No pickup button.
+3. Quantities render imperial unless Settings says metric, on screen and in the shared text.
+4. Items marked as had are filtered out and only Vana's "Add back" restores them. There is no per-row "have it" toggle. That toggle is logged as an open question.
+5. Each row can tap back to the recipe or recipes it came from, through the count-badge sheet every multi-meal row already has, so no new control is added.
+
+**Why.** The list is the moment of value and must exist before the athlete lands on it. Kroger and other surfaces read it too, so there is one builder. US users read imperial. Lee on 2026-09-14: a tap back to the original recipe, through minimal UI.
+
+**What else was considered.** Computing on the device, which gives two builders that disagree. A metric default. Keeping the unwired per-row toggle.
+
+**What it touches.** grocery.ts, confirm_meal_plan, Shopping tab, ShoppingListController, quantity formatter.
+
+**Details.** Plans confirmed before a change keep their old quantities until reconfirmed. Always-have items match on whole phrases, and catalog rows with a blank quantity get a default.
+
+> 2026-09-14 folded from mp-151, mp-152, mp-153, mp-154
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-15 approved by Lee
+
+## mp-245 · Typing feedback to Vana is the feedback system
+- category: Feedback loop
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- caption:
+- screen: Vana chat
+- source: spec.md; ticket 01; 02-contract.md; archive ticket 01
+- work: pending
+
+**Context.** The only existing channel was a Wiredash form buried in Settings that nobody used. Vana is already the surface athletes talk to. In testing Vana apologised instead of filing about half the time, filed feature requests under the wrong heading, and twice said "saved" without calling the tool.
+
+**Question.** Whether talking to Vana is the feedback channel, what counts as feedback, and how it is filed.
+
+**Decision.** 1. A complaint, praise or suggestion typed to Vana files a row in the athlete's own words, with a sentiment, an about-field and the conversation id. Taste comments such as "not those" write no row. The Wiredash card stays for anything that needs a screenshot.
+2. A message that is both a complaint and a question keeps Vana's answer. A pure vent gets the acknowledgement alone.
+3. "I have told you" and "you keep getting this wrong" count as feedback. The feedback rule sits at the top of the prompt's rules.
+4. A request for something new is filed as a suggestion. Praise or a complaint about Vana's meal ideas is about Vana, even when the athlete says "the app".
+5. Vana must call the tool before claiming feedback is saved, and the conversation id travels apart from the plan scope so general mode keeps it.
+6. Vana's feedback tool also files a Wiredash entry, so typed feedback and shaken reports land in one place. Wiredash entries are created on the device, so the server tool hands the row to the app to file. This is the reading; the device hand-off is the open detail.
+
+**Why.** The athlete should not have to find a form. Position beat wording. Feature requests were going to the wrong pile. Lee on 2026-09-14: one uniform Wiredash entry for everything, if possible.
+
+**What else was considered.** A feedback form or screen. Silence on every feedback message, which leaves a question unanswered.
+
+**What it touches.** save-feedback tool, user_feedback table, chat.ts, general prompt.
+
+> 2026-09-14 folded from mp-155, mp-157, mp-158, mp-159, mp-162
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
+> 2026-09-15 approved by Lee
+
 ## mp-246 · What Vana says after feedback, and the one-time prompt
 - category: Feedback loop
 - status: approved
@@ -2116,6 +2318,31 @@ Feature name: Meal planning and Vana
 > 2026-09-14 folded from mp-156, mp-161
 > 2026-09-14 approved
 > 2026-09-14 picture captured at 1.26.0+1, 43496fed
+
+## mp-247 · Praise asserts sentiment only, not the about-field
+- category: Feedback loop
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-247.svg
+- screen: none (algorithm/data)
+- source: ticket 01
+- detail: yes
+
+**Context.** Live evals send test messages to Vana on dev and inspect the row she files. Praise such as "this app planned my week perfectly" names the app while describing Vana's planning.
+
+**Question.** How strict the praise eval is about the about-field.
+
+**Decision.** The praise eval checks for positive sentiment and rating. It logs the about-field but does not assert on it.
+
+**Why.** Praise naming "this app" while describing Vana's planning is genuinely either.
+
+**What else was considered.** none recorded
+
+**What it touches.** Personalisation eval.
+
+> 2026-09-14 folded from mp-160
+> 2026-09-15 approved by Lee
 
 ## mp-248 · Problem reports go through Wiredash, from a card or a shake
 - category: Feedback loop
@@ -2197,6 +2424,86 @@ Feature name: Meal planning and Vana
 > 2026-09-14 folded from mp-168, mp-169, mp-170, mp-171
 > 2026-09-14 rejected: we won't ship without this purchase/7day free trial thing.  so no mealplanning without this
 
+## mp-251 · Webhook ordering and the tester switch
+- category: Pro and paywall
+- status: rejected
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-251.svg
+- screen: none (algorithm/data)
+- source: 04-entitlement.md; 05-flutter-feature.md; memory 09-01
+- detail: yes
+
+**Context.** RevenueCat events can arrive out of order. Testers need to pass both the tab gate and the function gate without buying.
+
+**Question.** How out-of-order store events and internal testers are handled.
+
+**Decision.** 1. An event older than the stored row is acknowledged as stale and ignored. A transfer event moves the entitlement between users.
+2. The seven-tap tester switch also writes the internal flag on the server. The flag is self-service and accepted as a team convenience. The webhook's entitlement row remains the real paywall.
+
+**Why.** A late event must not roll a subscription back, and testers need one switch.
+
+**What else was considered.** none recorded
+
+**What it touches.** Webhook handler, internal-device switch, users.internal flag.
+
+> 2026-09-14 folded from mp-173, mp-174
+> 2026-09-15 rejected by Lee: we are not using the entitlements table anymore
+
+## mp-252 · Vana runs as edge functions on the existing wire
+- category: Data, sync and backend
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-252.svg
+- screen: none (algorithm/data)
+- source: README; 02-contract.md; 03-backend.md
+- detail: yes
+
+**Context.** The prototype ran on Vercel. The app already parses an NDJSON envelope, and the prototype's fixtures define the contract.
+
+**Question.** Where Vana runs, what shape the wire is, and whose credentials the functions use.
+
+**Decision.** 1. Vana runs as three Supabase edge functions: chat, action and day notes. There is no Vercel service.
+2. The wire is the existing NDJSON envelope extended with status lines. The prototype speaks the same transport.
+3. The wire shape is camelCase and the frozen fixture files are the truth for both clients.
+4. The functions read as the caller so row-level security filters. The service key is kept only for call logs, pair refresh and macro fills.
+
+**Why.** One backend, one contract, and the database does the authorisation.
+
+**What else was considered.** none recorded
+
+**What it touches.** vana-chat, vana-action, vana-day-notes, contracts file, fixtures.
+
+> 2026-09-14 folded from mp-175, mp-176, mp-177, mp-178
+> 2026-09-15 approved by Lee
+
+## mp-253 · Openers live in the chat function, and the old chat route survives one release
+- category: Data, sync and backend
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/vana-chat.png
+- caption:
+- screen: Vana chat
+- source: 03-backend.md; memory 08-26
+- detail: yes
+
+**Context.** Clients already shipped call the old chat route. General openers used to be synthetic and unstored.
+
+**Question.** Whether the opener is its own function, and what happens to the old chat route and tables.
+
+**Decision.** 1. There is no separate opener function. An opener flag on the chat call runs it. General openers are persisted. The old chat route keeps its unstored opener for shipped clients.
+2. The old chat function becomes Vana in general mode under the old route, and the app's old chat path redirects there. The route stays until the minimum app version passes 1.24. The old tables are renamed to Vana names with compatibility views under the old names.
+
+**Why.** Shipped clients keep working while the app moves.
+
+**What else was considered.** none recorded
+
+**What it touches.** vana-chat opener flag, old chat function, table renames and views.
+
+> 2026-09-14 folded from mp-179, mp-180
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
+> 2026-09-15 approved by Lee
+
 ## mp-254 · Which writes wait for the server
 - category: Data, sync and backend
 - status: approved
@@ -2223,6 +2530,60 @@ Feature name: Meal planning and Vana
 > 2026-09-14 approved
 > 2026-09-14 picture reused from test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
 > 2026-09-14 picture refreshed at 1.26.0+1, 469da691, replacing test/features/meal_planning/presentation/goldens/plan_confirmed_light.png
+
+## mp-255 · What syncs and what does not
+- category: Data, sync and backend
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/meals-tab.png
+- caption:
+- screen: Meals tab
+- source: 05-flutter-feature.md; plan-tab-v2.md; 06-sync-schema-envs.md
+- work: pending
+
+**Context.** The meal library is about 1,900 rows with embeddings. The app's rule is repository-level sync on demand, never a startup sync-all. Entitlements are written only by the webhook.
+
+**Question.** Which meal-planning tables are mirrored to the device and when they sync.
+
+**Decision.** 1. The meal library is never mirrored. Search and detail hit the server, with an in-memory cache for the session and a local text search as fallback.
+2. Plans and memories sync when their controller first builds and on pull-to-refresh on the Plan tab. Nothing syncs from startup.
+3. There is no entitlements table. Whether a person is in trial or paid is read from the store subscription state, and nothing about it is mirrored or synced.
+
+**Why.** The library is too big and too alive to mirror, and startup sync-all is banned. Lee on 2026-09-14: the entitlements table is not needed under the trial model.
+
+**What else was considered.** none recorded
+
+**What it touches.** Catalog repository, plan and memory repositories, entitlements table.
+
+> 2026-09-14 folded from mp-183, mp-184, mp-185
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
+> 2026-09-15 approved by Lee
+
+## mp-256 · An action targets the plan id, else the conversation's draft, else the week
+- category: Data, sync and backend
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-256.svg
+- screen: none (algorithm/data)
+- source: 02-contract.md
+- detail: yes
+
+**Context.** Actions arrive from chat parts, the Plan tab and the Review sheet, not all of which know a plan id.
+
+**Question.** Which plan an action hits when it does not name one.
+
+**Decision.** An action that names a plan id hits that plan. Otherwise it hits the conversation's draft. Otherwise it hits the week's active plan.
+
+**Why.** One resolution order, so every caller gets the plan it means.
+
+**What else was considered.** none recorded
+
+**What it touches.** vana-action plan resolution.
+
+> 2026-09-14 folded from mp-186
+> 2026-09-15 approved by Lee
 
 ## mp-257 · Home location is a Fact set in conversation
 - category: Data, sync and backend
@@ -2361,6 +2722,36 @@ Feature name: Meal planning and Vana
 > 2026-09-14 folded from mp-201, mp-202, mp-203
 > 2026-09-14 approved
 
+## mp-262 · Lee and Xuan both ratify, and the record must be portable
+- category: Design system
+- status: approved
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-262.svg
+- screen: none (algorithm/data)
+- source: tickets 04, 05; memory 09-09; ticket 05; README
+- work: pending
+
+**Context.** The QA repo is Xuan's. The app authored three component specs it needed before Xuan could ratify them. The TanStack prototype is the living reference and source of fixtures.
+
+**Question.** Who ratifies, where the specs and decisions live, and who else must be able to run the page.
+
+**Decision.** 1. Lee and Xuan both ratify. A spec or decision is settled when either has approved it on the page.
+2. Specs and the decision record stay in the app repo under docs/ssot for now. The QA repo is not touched.
+3. The decisions page, its files and its tooling are portable. Another person on another laptop can open the page, see the same record, and run the skills. Nothing depends on one machine.
+4. The prototype stays in its own repo. No TypeScript is copied into the app. SQL migrations live in the app repo.
+
+**Why.** Lee on 2026-09-14: both ratify, keep things in docs/ssot for now, and Xuan must be able to run this from another laptop.
+
+**What else was considered.** Ratification only in the QA repo and only by Xuan (the earlier reading).
+
+**What it touches.** docs/ssot/decisions, the page artifact and its sharing, the skills, the QA repo boundary.
+
+> 2026-09-14 folded from mp-204, mp-205, mp-206
+> 2026-09-14 amended by Lee
+> 2026-09-14 rewritten from Lee's words
+> 2026-09-15 approved by Lee
+
 ## mp-263 · Seams, and what never runs in CI
 - category: Process and scope
 - status: approved
@@ -2472,3 +2863,108 @@ Feature name: Meal planning and Vana
 
 > 2026-09-14 folded from mp-052
 > 2026-09-14 approved
+
+## mp-268 · The general conversation opens on the screen underneath
+- status: approved
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+- caption:
+- work: pending
+- category: The planning conversation
+- screen: Vana sheet
+- source: Lee on the page 2026-09-14, on mp-237
+
+**Context.** The general conversation used to open with three example chips. Vana lives on three screens and knows what is in view on each.
+
+**Question.** What the general conversation says first.
+
+**Decision.** 1. No example chips. The general conversation opens with a line that reads the screen underneath, such as "I see you are planning an event" or "I see you are carb loading".
+2. When the screen underneath says nothing useful, the opener falls back to the personal opener that every conversation already carries.
+3. Offline, rate limit and out-of-trial failures keep their one visible outcome each.
+
+**Why.** Lee on 2026-09-14: the general conversation does not need example chips; open from the route they are on.
+
+**What else was considered.** Three example chips and a "Start a meal plan" offer (mp-237), rejected.
+
+**What it touches.** vana-chat opener, situation resolver, sheet conversation.
+
+> 2026-09-14 from Lee's rejection of undefined
+> 2026-09-14 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+> 2026-09-15 approved by Lee
+
+## mp-269 · Week start and period length are settings
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/settings.png
+- caption:
+- work: pending
+- category: Plan tab
+- screen: Settings, Plan tab
+- source: Lee on the page 2026-09-14, on mp-240
+
+**Context.** The plan week was fixed to Sunday and cook days to fixed offsets. Athletes cook on different days and for different spans.
+
+**Question.** Which day a plan period starts and how long it runs.
+
+**Decision.** 1. The start day and the length of a plan period are settings the athlete can change. Sunday and seven days are the defaults.
+2. Cook days derive from those settings, not from fixed offsets.
+3. The Plan tab, coverage, the review sheet and the check-in opener all read the settings.
+
+**Why.** Lee on 2026-09-14: it is variable; a user can change which day the week starts and how many days.
+
+**What else was considered.** Sunday start with cook days at plus three and plus five (mp-240), rejected.
+
+**What it touches.** Settings, week start, plan queries, session dates, review sheet, check-in opener.
+
+> 2026-09-14 from Lee's rejection of undefined
+> 2026-09-14 picture captured at 1.26.0+1, 43496fed
+> 2026-09-15 approved by Lee
+
+## mp-270 · Meal planning ships only with the trial and purchase model
+- status: approved
+- image: none
+- caption:
+- work: pending
+- category: Pro and paywall
+- screen: Paywall
+- source: Lee on the page 2026-09-14, on mp-250
+
+**Context.** The earlier plan shipped meal planning dark behind a gate flag and opened it later by granting entitlements or enabling purchase.
+
+**Question.** Whether meal planning can reach prod before the trial exists.
+
+**Decision.** 1. Meal planning does not ship until the seven-day trial and purchase model is live. No dark launch and no gate flag as the release plan.
+2. The trial move (see the open question beside the trial card) is therefore on the critical path for the meal-planning release.
+
+**Why.** Lee on 2026-09-14: we will not ship without the purchase and seven-day trial, so no meal planning without it.
+
+**What else was considered.** Shipping dark with a gate flag and a Buy button behind a purchase flag (mp-250), rejected.
+
+**What it touches.** Release plan, gate flag, Pro screen, RevenueCat products.
+
+> 2026-09-14 from Lee's rejection of undefined
+> 2026-09-15 approved by Lee
+
+## mp-271 · Testers can switch the dev accessibility buttons off in Settings
+- category: Process and scope
+- status: approved
+- image: docs/ssot/decisions/images/mealplanning/settings.png
+- caption:
+- screen: Settings
+- source: Lee on the page 2026-09-15
+- work: pending
+
+**Context.** The dev build shows two floating buttons in the bottom right of every screen: the blue wrench (debug tools) and the red accessibility figure. They are always on. On the simulator they cover the Vana launcher and the tab bar, and they appear in every screenshot the record captures. Nothing is hidden behind a build flag: dev ships visible.
+
+**Question.** Whether a tester can turn the dev accessibility buttons off, and where.
+
+**Decision.** 1. The dev build ships the buttons on, with no build-time flag.
+2. Settings gets a switch, shown in dev mode only, that turns the accessibility buttons off and on for that tester on that device.
+3. The switch defaults to on and is remembered across launches.
+
+**Why.** Lee on 2026-09-15: no hide-flags; ship without flags, and let a tester in dev mode toggle the accessibility settings on or off in Settings.
+
+**What else was considered.** A build-time hide-flag, ruled out by the repo rule that dev ships visible. Leaving the buttons always on, which blocks the launcher on the simulator.
+
+**What it touches.** Settings screen, the dev button overlay, the capture drives in screens.json.
+
+> 2026-09-15 proposed from Lee's words on mp-222
+> 2026-09-15 approved by Lee
