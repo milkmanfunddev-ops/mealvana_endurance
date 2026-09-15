@@ -130,7 +130,8 @@ shorebird upgrade          # DO THIS FIRST — see below
 git worktree add --detach /tmp/wt-126 <backport-branch-tip-sha>
 cd /tmp/wt-126
 cp /path/to/repo/.env /path/to/repo/.env.dev.local /path/to/repo/.env.prod.local .
-flutter pub get
+# pub get with SHOREBIRD'S Flutter, never the PATH one — see the bullet below.
+~/.shorebird/bin/cache/flutter/<revision>/bin/flutter pub get
 
 # ALWAYS dry-run first (validates + shows asset/native diffs, uploads nothing):
 set -a; source /path/to/repo/secrets/shorebird.env; set +a
@@ -150,6 +151,14 @@ devices jump straight to the newest patch number.
 
 - **`shorebird upgrade` first.** An out-of-date CLI fails at the *very last
   step* ("Creating patch ✗") after build, verify and diff have all succeeded.
+- **`pub get` with Shorebird's Flutter, not the system one.** A plain
+  `flutter pub get` resolves SDK packages (flutter, flutter_test) to whatever
+  Flutter is on PATH (homebrew here), while Shorebird compiles with its own
+  cached Flutter — the mismatch kills the kernel snapshot mid-build with
+  `_TestFlutterView is missing implementations` (cost a full 15-min build,
+  2026-09-15). Use `~/.shorebird/bin/cache/flutter/<revision>/bin/flutter
+  pub get`, taking <revision> from the "Building patch with Flutter x.y.z
+  (<short-rev>)" line of a previous log or the newest dir in that cache.
 - **`CI=true`** — otherwise it tries to prompt and dies with "No terminal
   attached to stdout".
 - **Detach it.** The AOT link alone takes ~7.5 min, the whole patch ~15. Any
