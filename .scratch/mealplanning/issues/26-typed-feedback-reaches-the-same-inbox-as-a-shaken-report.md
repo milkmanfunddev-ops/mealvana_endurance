@@ -10,8 +10,8 @@
 
 **Touches:** supabase/functions/_shared/vana/tools.ts, supabase/functions/tests/vana/feedback_ack.test.ts, lib/features/feedback/data/feedback_repository.dart, lib/shared/widgets/shake_to_report.dart
 
-- [ ] The ingest path is found and named in the ticket, or the ticket stops with an open question on the page.
-- [ ] A saved feedback row produces one Wiredash entry carrying words, sentiment and conversation id (seam test with a fake client).
-- [ ] The feedback-saved acknowledgement is unchanged for the athlete.
+- [x] The ingest path is found and named in the ticket, or the ticket stops with an open question on the page.
+- [x] A saved feedback row produces one Wiredash entry carrying words, sentiment and conversation id (seam test with a fake client).
+- [x] The feedback-saved acknowledgement is unchanged for the athlete.
 
 Next: /implement-lee mealplanning
