@@ -65,8 +65,8 @@ async function nearIdentical(v: VanaCtx, embedding: number[]): Promise<any | nul
  * written twice: the existing row's confirmed date is refreshed instead, so recency still moves.
  * Conflicting notes both stay — each carries its date in the prompt and the model weighs them.
  */
-/** `quiet`: the write is the server's own bookkeeping (a read-back of the previous conversation, the episode sentence
- *  written when the history cap bites), not a tool the athlete's turn called. It does not rebuild the context block:
+/** `quiet`: the write is the server's own bookkeeping (a read-back of the previous conversation), not a tool the
+ *  athlete's turn called. It does not rebuild the context block:
  *  mp-276 refreshes the block on a tool write or a new day, nothing else, and a background write landing between two
  *  turns would otherwise churn the cached prefix mid-conversation. The next conversation, tool write or day sees it. */
 export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps = defaultMemoryDeps, opts: { quiet?: boolean } = {}): Promise<Memory> {
@@ -105,7 +105,8 @@ async function writeFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; ke
   return toMemory(data);
 }
 /** The episode sentence for one conversation, or null. Keyed by conversation id so re-extraction
- *  cannot pile them up. */
+ *  cannot pile them up. Written once, when the conversation is read back; a conversation still in
+ *  progress has none — its long history is summarised onto its own row instead (mp-277 clause 1). */
 export async function episodeFor(v: VanaCtx, conversationId: string): Promise<string | null> {
   if (!conversationId) return null;
   const { data } = await newestEpisode(v, conversationId);

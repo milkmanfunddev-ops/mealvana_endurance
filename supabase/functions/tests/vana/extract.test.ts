@@ -66,10 +66,12 @@ Deno.test('two durable facts and one plan detail: two Memories and one episode, 
   assert(calls[0].prompt.includes('(nothing yet)'), 'an empty file says so');
 });
 
-Deno.test('the episode also fills the conversation summary, for list previews', async () => {
-  const v = testCtx(world());
+Deno.test('the episode leaves the conversation summary column alone: it belongs to the rolling history summary (mp-277)', async () => {
+  const v = testCtx(world({ vana_conversations: [conversation({ summary: 'Through message 20: Planning dinners; Tuesday is bolognese.', summary_index: 20 })] }));
   await extractConversation(v, CONV, fixedModel(TWO_FACTS).deps);
-  assertEquals(v.fake.rows('vana_conversations')[0].summary, 'Planned five vegetarian dinners around Saturday’s long ride.');
+  assertEquals(v.fake.rows('vana_conversations')[0].summary, 'Through message 20: Planning dinners; Tuesday is bolognese.');
+  assertEquals(v.fake.rows('vana_conversations')[0].summary_index, 20);
+  assertEquals(v.fake.writesTo('vana_conversations', 'update').filter((w) => 'summary' in w.values).length, 0);
 });
 
 Deno.test('a second run over the same conversation writes nothing and does not call the model', async () => {

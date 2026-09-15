@@ -181,13 +181,16 @@ export class QueryBuilder implements PromiseLike<{ data: unknown; error: { messa
   }
 
   // deno-lint-ignore no-explicit-any
-  private async run(): Promise<{ data: any; error: { message: string } | null }> {
+  private async run(): Promise<{ data: any; error: { message: string } | null; count?: number }> {
     await Promise.resolve();
     if (this.forcedError) return { data: null, error: { message: this.forcedError } };
     const store = this.db.rows(this.table);
     switch (this.mode) {
-      case 'select':
-        return { data: this.shape(this.matching()), error: null };
+      case 'select': {
+        // `count: 'exact'` callers (the rate limit) read `count`; it is the matched rows before limit, like PostgREST.
+        const hit = this.matching();
+        return { data: this.shape(hit), error: null, count: hit.length };
+      }
       case 'insert': {
         const vs: Row[] = (Array.isArray(this.payload) ? this.payload : [this.payload]).map((r: Row) => ({ id: crypto.randomUUID(), created_at: new Date().toISOString(), ...this.db.defaultsFor(this.table), ...clone(r) }));
         store.push(...vs);

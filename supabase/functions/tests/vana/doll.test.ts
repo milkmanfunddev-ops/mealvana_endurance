@@ -4,10 +4,9 @@
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
 import { buildAthleteContext, contextBlock } from '../../_shared/vana/context.ts';
-import { capHistory, HISTORY_CAP, systemPrompt } from '../../_shared/vana/chat.ts';
+import { systemPrompt } from '../../_shared/vana/chat.ts';
 import { testCtx, offlineDeps, TEST_USER_ID } from './support/vana_ctx.ts';
 import type { Tables } from './support/fake_db.ts';
-import type { UIMessage } from 'npm:ai@6';
 
 const U = TEST_USER_ID;
 const ANCHOR = '2026-09-09';
@@ -68,30 +67,4 @@ Deno.test('both conversation kinds embed the identical context block', async () 
   // The prompts above the block still differ — one persona, two sets of instructions.
   assertEquals(general.slice(general.indexOf('--- CONTEXT')), planning.slice(planning.indexOf('--- CONTEXT')));
   assert(general.slice(0, general.indexOf('--- CONTEXT')) !== planning.slice(0, planning.indexOf('--- CONTEXT')));
-});
-
-// ---------------------------------------------------------------- history cap
-const msgs = (n: number): UIMessage[] => Array.from({ length: n }, (_, i) => ({ id: `m${i}`, role: i % 2 === 0 ? 'user' : 'assistant', parts: [{ type: 'text', text: `turn ${i}` }] } as UIMessage));
-const textOf = (m: UIMessage) => m.parts.map((p) => (p as { text?: string }).text ?? '').join('');
-
-Deno.test('history cap: under the cap nothing is added or removed', () => {
-  const ten = msgs(10);
-  assertEquals(capHistory(ten, 'Talked about race-week dinners.'), ten);
-  assertEquals(capHistory(msgs(HISTORY_CAP), 'Talked about race-week dinners.').length, HISTORY_CAP);
-});
-
-Deno.test('history cap: 21 messages replay the last 20 with the episode sentence prepended once', () => {
-  const out = capHistory(msgs(21), 'Talked about race-week dinners.');
-  assertEquals(out.length, HISTORY_CAP + 1);
-  assertEquals(out[0].role, 'user');
-  assertEquals(textOf(out[0]), 'Earlier in this conversation: Talked about race-week dinners.');
-  assertEquals(textOf(out[1]), 'turn 1');            // message 0 fell off the front
-  assertEquals(textOf(out.at(-1)!), 'turn 20');
-});
-
-Deno.test('history cap: with no episode yet, the cap still bites and nothing is invented', () => {
-  const out = capHistory(msgs(21), null);
-  assertEquals(out.length, HISTORY_CAP);
-  assertEquals(textOf(out[0]), 'turn 1');
-  assertEquals(capHistory(msgs(21), '   ').length, HISTORY_CAP);
 });

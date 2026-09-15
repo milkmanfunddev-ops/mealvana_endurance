@@ -15,8 +15,7 @@ import { cachedContext } from './context-cache.ts';
 import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
-import { episodeFor } from './memory.ts';
-import { athleteWordsFrom, readBackPrevious, readBackWithin, writeOpenEpisode, defaultEpisodeDeps, type EpisodeDeps } from './extract.ts';
+import { athleteWordsFrom, readBackPrevious, readBackWithin, readSummaries, writeSummary, defaultSummaryDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
 import { logAiUsage } from '../ai/usage.ts';
@@ -57,32 +56,49 @@ async function loadOpenerInput(v: VanaCtx, t: string) {
   return { today: t, current: await stamp(current), previous: await stamp(previous) };
 }
 
-/** Each turn replays at most this many messages. A long conversation stays coherent and stops
- *  growing the bill; what fell off the front survives as the episode sentence, if one exists. */
-export const HISTORY_CAP = 20;
-/** The messages a turn replays: the last HISTORY_CAP, with the conversation's episode sentence
- *  prepended once when the cap actually bites. Under the cap, nothing is added or removed. */
-export function capHistory(messages: UIMessage[], episode: string | null): UIMessage[] {
-  if (messages.length <= HISTORY_CAP) return messages;
-  const kept = messages.slice(-HISTORY_CAP);
-  if (!episode?.trim()) return kept;
-  return [{ id: 'episode', role: 'user', parts: [{ type: 'text', text: `Earlier in this conversation: ${episode.trim()}` }] } as UIMessage, ...kept];
+/** History is chunked, never sliding (mp-277 clause 1). Every message stays verbatim up to this many. */
+export const VERBATIM_CAP = 40;
+/** At the cap the oldest chunk becomes one summary message and the last chunk stays verbatim; the same again
+ *  every chunk after that, rolling the previous summary in. */
+export const SUMMARY_CHUNK = 20;
+/** The summary for a boundary is written this many messages before the count reaches it, so it exists by then
+ *  and no turn waits for a model call. */
+export const SUMMARY_LEAD = 10;
+/** The index the replay applies at `count` messages: the stored summary covering [0, index) stands in for them
+ *  and the rest stay verbatim. Zero under the cap; then the greatest chunk boundary leaving a full chunk verbatim. */
+export const summaryIndexAt = (count: number) => count < VERBATIM_CAP ? 0 : Math.floor((count - SUMMARY_CHUNK) / SUMMARY_CHUNK) * SUMMARY_CHUNK;
+/** The index whose summary is due by `count` messages: SUMMARY_LEAD ahead of the boundary it is applied at. */
+export const summaryDueAt = (count: number) => count < SUMMARY_CHUNK + SUMMARY_LEAD ? 0 : Math.floor((count - SUMMARY_LEAD) / SUMMARY_CHUNK) * SUMMARY_CHUNK;
+
+const summaryMessage = (p: StoredSummary): UIMessage =>
+  ({ id: `summary-${p.index}`, role: 'user', parts: [{ type: 'text', text: `Earlier in this conversation (messages 1–${p.index}, summarised): ${p.text}` }] } as UIMessage);
+/** The messages a turn replays, given what the row holds: under the cap, or with nothing stored that can stand in,
+ *  every message verbatim (nothing is invented and nothing is lost — a missing summary only costs tokens); else the
+ *  newest stored summary at or under the applied index, then the messages after it. The pending roll written ten
+ *  ahead is stored beside the applied one and is not used until its own boundary. */
+export function compactHistory(messages: UIMessage[], parts: StoredSummary[]): UIMessage[] {
+  const applied = summaryIndexAt(messages.length);
+  if (applied === 0) return messages;
+  const part = parts.filter((p) => p.index > 0 && p.index <= applied && p.text.trim()).sort((a, b) => b.index - a.index)[0];
+  if (!part) return messages;
+  return [summaryMessage(part), ...messages.slice(part.index)];
 }
 export interface ReplayDeps {
-  episode: EpisodeDeps;
-  /** Where the episode write runs. EdgeRuntime.waitUntil in production; a test records it. */
+  summary: SummaryDeps;
+  /** Where the summary write runs. EdgeRuntime.waitUntil in production; a test records it. */
   background: (p: Promise<unknown>) => void;
 }
-const defaultReplayDeps: ReplayDeps = { episode: defaultEpisodeDeps, background: waitUntil };
-/** The history a turn replays, and the episode that keeps it honest. When the cap bites and the
- *  conversation has no episode yet, one is written in the background and the NEXT turn prepends it;
- *  this turn never waits for a model call it did not need. Once the episode exists nothing more is
- *  written — lazy extraction rewrites the same row when the athlete leaves. */
+const defaultReplayDeps: ReplayDeps = { summary: defaultSummaryDeps, background: waitUntil };
+/** The history a turn replays, and the summary that keeps it whole. Reads the row once a summary could be due or
+ *  applied; when the boundary due by now has no summary yet — the lead write at thirty, or one that failed or was
+ *  rate-limited — it is written in the background from the messages in hand, and this turn never waits for it.
+ *  The cached prefix (mp-276) changes only when a boundary is crossed: once per chunk. */
 export async function replayHistory(v: VanaCtx, conversationId: string, messages: UIMessage[], deps: ReplayDeps = defaultReplayDeps): Promise<UIMessage[]> {
-  if (messages.length <= HISTORY_CAP || !conversationId) return capHistory(messages, null);
-  const episode = await episodeFor(v, conversationId);
-  if (!episode) deps.background(writeOpenEpisode(v, conversationId, deps.episode));
-  return capHistory(messages, episode);
+  const due = summaryDueAt(messages.length);
+  if (!due || !conversationId) return messages;
+  const { index, parts } = await readSummaries(v, conversationId);
+  if (index < due) deps.background(writeSummary(v, conversationId, due, messages, deps.summary));
+  return compactHistory(messages, parts);
 }
 
 /** Keeps the first `n` sentences of a text block. Planning turns use it only as the RUNAWAY_SENTENCES guard. */
