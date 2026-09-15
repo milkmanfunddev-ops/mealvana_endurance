@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
@@ -42,6 +43,7 @@ class VanaPartCallbacks {
     this.onSwapPicked,
     this.onEditMessage,
     this.onBrowseMeals,
+    this.onHandOff,
   });
 
   /// Navigate to `/food/meals/:id`.
@@ -91,6 +93,10 @@ class VanaPartCallbacks {
   /// "Browse meals" under every picker — opens `/vana/browse` for this
   /// conversation; null while the conversation has no id (chip disabled).
   final VoidCallback? onBrowseMeals;
+
+  /// `hand_off` part → the athlete tapped the button: the host navigates to
+  /// the part's screen (mp-265 clause 4). Null renders the button inert.
+  final ValueChanged<VanaHandOffPart>? onHandOff;
 }
 
 /// Switches a [VanaPart] to its widget (02 §3). `batch` parts are folded
@@ -170,6 +176,17 @@ class VanaPartRenderer extends ConsumerWidget {
         return const _FeedbackSavedRow();
       case VanaFeedbackPromptPart _:
         return const _FeedbackPromptRow();
+      case VanaHandOffPart p:
+        final onHandOff = callbacks.onHandOff;
+        return Align(
+          alignment: Alignment.centerLeft,
+          child: KylePrimaryButton(
+            key: const ValueKey('meal_planning.hand_off'),
+            text: p.label,
+            isFullWidth: false,
+            onPressed: onHandOff == null ? null : () => onHandOff(p),
+          ),
+        );
       case VanaLoggedPart p:
         return _LoggedRow(
           text: ContentKeys.format(content.getValue(ContentKeys.mpLoggedRow), {

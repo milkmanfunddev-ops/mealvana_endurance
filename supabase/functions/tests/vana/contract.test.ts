@@ -84,3 +84,36 @@ Deno.test('contract: action results — batch, confirm_plan, home, meal_detail, 
   const recent = parse(ActionResultZ, fixture('recent_meals'), 'recent_meals.json');
   parse(z.array(RecentMealZ), recent.meals, 'recent_meals.json .meals');
 });
+
+// ---- mp-265 clause 4 / ticket 27: a deterministic action is a hand-off to the app's own screen, never done in the sheet.
+Deno.test('contract: hand_off.json — a button to the screen the app already has (mp-265)', async () => {
+  const { HandOffPartZ } = await import('../../_shared/vana/schemas.ts');
+  const plan = parse(HandOffPartZ, fixture('hand_off'), 'hand_off.json');
+  assertEquals(plan.target, 'meal_plan');
+  assertEquals(plan.entityId, null);
+  const activity = parse(HandOffPartZ, fixture('hand_off_entity'), 'hand_off_entity.json');
+  assertEquals(activity.target, 'new_activity');
+  assert(activity.entityId, 'fuelling a workout names the workout');
+  for (const f of ['hand_off', 'hand_off_entity']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
+  assert(!HandOffPartZ.safeParse({ kind: 'hand_off', target: 'settings', label: 'x', entityId: null }).success, 'target is one of the four screens');
+  assert(!HandOffPartZ.safeParse({ kind: 'hand_off', target: 'meal_plan', label: '', entityId: null }).success, 'label is required');
+  assert(!HandOffPartZ.safeParse({ kind: 'hand_off', target: 'meal_plan', label: 'x' }).success, 'entityId is always sent, null when there is none');
+});
+
+Deno.test('contract: the handOff tool returns the hand_off part, in the sheet\'s general tool set', async () => {
+  const { makeVanaTools } = await import('../../_shared/vana/tools.ts');
+  // deno-lint-ignore no-explicit-any
+  const tools = makeVanaTools({} as any, {} as any, 'general') as Record<string, any>;
+  assert(tools.handOff, 'general mode offers handOff');
+  const out = await tools.handOff.execute({ target: 'meal_plan', label: 'Open meal planning' }, { toolCallId: 't', messages: [] });
+  parse(VanaPartZ, out, 'handOff output');
+  assertEquals(out, fixture('hand_off'));
+  const withId = await tools.handOff.execute({ target: 'event', label: 'Plan the race', entityId: 'ev-1' }, { toolCallId: 't', messages: [] });
+  assertEquals(withId.entityId, 'ev-1');
+});
+
+Deno.test('contract: the general persona names the four hand-offs and never builds a plan in the sheet', async () => {
+  const { GENERAL_PROMPT } = await import('../../_shared/vana/persona.ts');
+  for (const target of ['meal_plan', 'new_activity', 'event', 'carb_loading']) assert(GENERAL_PROMPT.includes(target), `GENERAL_PROMPT names ${target}`);
+  assert(!GENERAL_PROMPT.includes('"Start a meal plan"'), 'a plan request is a hand-off, not a chip');
+});

@@ -27,6 +27,7 @@ void main() {
     VanaPart part, {
     void Function(String label)? onChipPick,
     void Function(MealRef meal, int servings)? onPickMeal,
+    ValueChanged<VanaHandOffPart>? onHandOff,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -43,6 +44,7 @@ void main() {
                   onSomethingElse: () {},
                   onAcceptRule: (_) {},
                   onViewShopping: () {},
+                  onHandOff: onHandOff,
                 ),
               ),
             ),
@@ -51,6 +53,57 @@ void main() {
       ),
     );
   }
+
+  group('hand_off (mp-265, ticket 27)', () {
+    test('the frozen fixtures parse: the four targets, the entity id', () {
+      final plan = VanaPart.fromJson(fixture('hand_off'));
+      expect(plan, isA<VanaHandOffPart>());
+      plan as VanaHandOffPart;
+      expect(plan.target, VanaHandOffTarget.mealPlan);
+      expect(plan.label, 'Open meal planning');
+      expect(plan.entityId, isNull);
+      expect(plan.toJson(), fixture('hand_off'));
+
+      final activity =
+          VanaPart.fromJson(fixture('hand_off_entity')) as VanaHandOffPart;
+      expect(activity.target, VanaHandOffTarget.newActivity);
+      expect(activity.entityId, '5b0c7a52-3f1e-4d7a-9a51-2d8f0c1e6b44');
+
+      expect(
+        [for (final t in VanaHandOffTarget.values) t.wire],
+        ['meal_plan', 'new_activity', 'event', 'carb_loading'],
+      );
+    });
+
+    test('a target this client does not know drops the part', () {
+      expect(
+        VanaPart.fromJson(const {
+          'kind': 'hand_off',
+          'target': 'settings',
+          'label': 'Open settings',
+          'entityId': null,
+        }),
+        isNull,
+      );
+    });
+
+    testWidgets('renders a button with the label; a tap hands the part over', (
+      tester,
+    ) async {
+      VanaHandOffPart? tapped;
+      final part = VanaPart.fromJson(fixture('hand_off'))!;
+      await pumpPart(tester, part, onHandOff: (p) => tapped = p);
+
+      final button = find.byKey(const ValueKey('meal_planning.hand_off'));
+      expect(button, findsOneWidget);
+      expect(
+        find.descendant(of: button, matching: find.text('Open meal planning')),
+        findsOneWidget,
+      );
+      await tester.tap(button);
+      expect(tapped?.target, VanaHandOffTarget.mealPlan);
+    });
+  });
 
   testWidgets('meal_picker renders the tiles and chip strip, no title', (
     tester,

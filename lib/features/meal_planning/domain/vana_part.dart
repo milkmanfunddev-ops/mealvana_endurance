@@ -56,6 +56,8 @@ sealed class VanaPart extends WireRecord {
           return VanaFeedbackSavedPart.fromJson(json);
         case 'feedback_prompt':
           return const VanaFeedbackPromptPart();
+        case 'hand_off':
+          return VanaHandOffPart.fromJson(json);
         default:
           return null;
       }
@@ -499,6 +501,70 @@ class VanaFeedbackPromptPart extends VanaPart {
 
   @override
   Map<String, dynamic> toJson() => {'kind': kind};
+}
+
+/// The screens a hand-off lands on (`HandOffTarget` in `contracts.ts`).
+enum VanaHandOffTarget {
+  /// Building or changing a meal plan: the meal-planning page.
+  mealPlan('meal_plan'),
+
+  /// Fuelling an upcoming workout: the new-activity screen.
+  newActivity('new_activity'),
+
+  /// Planning an event: the event screen.
+  event('event'),
+
+  /// Carb loading for a race: the carb-loading picks, on the event.
+  carbLoading('carb_loading');
+
+  const VanaHandOffTarget(this.wire);
+
+  final String wire;
+
+  static VanaHandOffTarget? fromWire(String? wire) =>
+      values.where((t) => t.wire == wire).firstOrNull;
+}
+
+/// `handOff` (mp-265 clause 4) — the athlete is trying to do something the
+/// app already has a screen for, so Vana offers a button that takes them
+/// there instead of doing it in the chat. [entityId] is the workout or event
+/// it is about, null when there is none.
+class VanaHandOffPart extends VanaPart {
+  const VanaHandOffPart({
+    required this.target,
+    required this.label,
+    this.entityId,
+  });
+
+  final VanaHandOffTarget target;
+  final String label;
+  final String? entityId;
+
+  @override
+  String get kind => 'hand_off';
+
+  /// A target this client does not know is a [FormatException], so the part
+  /// is dropped at parse time like an unknown kind.
+  factory VanaHandOffPart.fromJson(Map<String, dynamic> json) {
+    final wire = readString(json, 'target');
+    final target = VanaHandOffTarget.fromWire(wire);
+    if (target == null) {
+      throw FormatException('unknown hand_off target', wire);
+    }
+    return VanaHandOffPart(
+      target: target,
+      label: requireString(json, 'label'),
+      entityId: readString(json, 'entityId'),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'target': target.wire,
+    'label': label,
+    'entityId': entityId,
+  };
 }
 
 /// `logFromPlan`.

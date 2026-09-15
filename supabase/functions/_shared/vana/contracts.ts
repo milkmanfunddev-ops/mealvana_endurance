@@ -99,7 +99,13 @@ export type VanaPart =
   | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] }                 // recordDebrief — end-of-week debrief captured (Phase 3)
   // ---- additive 2026-09-09 (feedback loop) — typing feedback INTO Vana is the feedback system
   | { kind: 'feedback_saved'; message: string; sentiment: 'positive' | 'negative' | 'neutral'; about: 'vana' | 'app' | 'suggestion' } // saveFeedback — the athlete's words landed in user_feedback; the client draws the whole acknowledgement from it (the model writes nothing)
-  | { kind: 'feedback_prompt' };                                                                                                            // server-appended after the FIRST conversation's opener: "Have feedback for me? Just type it here." (plain text)
+  | { kind: 'feedback_prompt' }                                                                                                             // server-appended after the FIRST conversation's opener: "Have feedback for me? Just type it here." (plain text)
+  // ---- additive 2026-09-15 (mp-265 clause 4, ticket 27) — a deterministic action is a hand-off to the app's own screen, never done in the chat
+  | { kind: 'hand_off'; target: HandOffTarget; label: string; entityId: string | null };                                                  // handOff — the app renders a button that navigates; entityId = the workout / event it is about, null when none
+
+/** The screens a hand-off lands on: meal_plan → the meal-planning page · new_activity → fuelling a workout ·
+ *  event → planning an event · carb_loading → the carb-loading picks (on the event). */
+export type HandOffTarget = 'meal_plan' | 'new_activity' | 'event' | 'carb_loading';
 
 // ---- What the UI sends back (chip taps are plain user messages; structured edits go through these)
 export interface UiAction {
