@@ -23,6 +23,7 @@ import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } 
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
+import { getPlanPeriod } from './memory.ts';
 import { generalOpener } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
 import { ndjsonFromFullStream, ndjsonHeaders, cacheReadTokens } from './stream.ts';
@@ -50,10 +51,11 @@ const promptFor = (kind: ConversationKind) => (kind === 'general' ? GENERAL_PROM
 
 // Opener variants (plan Phase 3) live in opener.ts — pure, so tests import them without the AI SDK.
 async function loadOpenerInput(v: VanaCtx, t: string) {
-  const ws = weekStartFor(t);
+  const period = await getPlanPeriod(v); // mp-269: the week and the cook dates read the athlete's start day and period length
+  const ws = weekStartFor(t, period.weekStart);
   const [current, previous] = await Promise.all([getPlan(v, ws), getPlan(v, addDays(ws, -7))]);
   const stamp = async (p: MealPlan | null) => { if (!p) return null; const { data } = await v.db.from('meal_plans').select('checkin_done_at, debrief_done_at').eq('id', p.id).maybeSingle(); return { ...p, checkinDoneAt: data?.checkin_done_at ?? null, debriefDoneAt: data?.debrief_done_at ?? null }; };
-  return { today: t, current: await stamp(current), previous: await stamp(previous) };
+  return { today: t, current: await stamp(current), previous: await stamp(previous), periodDays: period.periodDays };
 }
 
 /** History is chunked, never sliding (mp-277 clause 1). Every message stays verbatim up to this many. */

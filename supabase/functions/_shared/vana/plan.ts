@@ -14,7 +14,7 @@ import type { VanaCtx } from './env.ts';
 import { weekStartFor, today } from './env.ts';
 import { invalidateContext } from './context-cache.ts';
 import { getMeal } from './meals.ts';
-import { getSetting, getCoverageScope, getPantryItems } from './memory.ts';
+import { getSetting, getCoverageScope, getPantryItems, getPlanPeriod } from './memory.ts';
 import { buildShoppingList } from './grocery.ts';
 import { resolveMealIcon } from './meal-icon.ts';
 import { coverageOf, defaultSession } from './plan-math.ts';
@@ -27,14 +27,18 @@ const toPlanMeal = (r: any): PlanMeal => ({ id: r.id, planId: r.plan_id, source:
 export { coverageOf, defaultSession };
 
 // ---------------------------------------------------------------- resolution
-/** The week's active plan: confirmed if there is one, else the most recently edited draft. */
-export async function getPlan(v: VanaCtx, weekStart = weekStartFor(today())): Promise<MealPlan | null> {
+/** The week a plan made today belongs to: the latest start day (the week_start setting, mp-269) on or before `iso`. */
+export async function currentWeekStart(v: VanaCtx, iso = today()): Promise<string> { return weekStartFor(iso, (await getPlanPeriod(v)).weekStart); }
+/** The week's active plan: confirmed if there is one, else the most recently edited draft. Omit `weekStart` for the current week. */
+export async function getPlan(v: VanaCtx, week?: string): Promise<MealPlan | null> {
+  const weekStart = week ?? await currentWeekStart(v);
   const { data } = await v.db.from('meal_plans').select('*').eq('user_id', v.userId).eq('week_start', weekStart).eq('is_deleted', false).neq('status', 'archived')
     .order('status', { ascending: true }) // 'confirmed' sorts before 'draft'
     .order('updated_at', { ascending: false }).limit(1).maybeSingle();
   return data ? hydrate(v, data) : null;
 }
-export async function getOrCreatePlan(v: VanaCtx, weekStart = weekStartFor(today())): Promise<MealPlan> {
+export async function getOrCreatePlan(v: VanaCtx, week?: string): Promise<MealPlan> {
+  const weekStart = week ?? await currentWeekStart(v);
   const cur = await getPlan(v, weekStart);
   return cur ?? insertDraft(v, weekStart, null);
 }
@@ -42,7 +46,7 @@ export async function getOrCreatePlan(v: VanaCtx, weekStart = weekStartFor(today
 export async function getConversationPlan(v: VanaCtx, conversationId: string, create = true): Promise<MealPlan | null> {
   const { data } = await v.db.from('meal_plans').select('*').eq('user_id', v.userId).eq('conversation_id', conversationId).eq('is_deleted', false).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (data) return hydrate(v, data);
-  return create ? insertDraft(v, weekStartFor(today()), conversationId) : null;
+  return create ? insertDraft(v, await currentWeekStart(v), conversationId) : null;
 }
 export async function resolvePlan(v: VanaCtx, scope?: PlanScope | null, create = true): Promise<MealPlan | null> {
   if (scope?.planId) return getPlanById(v, scope.planId);
@@ -63,9 +67,9 @@ async function planIdOfMeal(v: VanaCtx, planMealId: string): Promise<string> {
 }
 // deno-lint-ignore no-explicit-any
 async function hydrate(v: VanaCtx, plan: any): Promise<MealPlan> {
-  const [{ data: rows }, coverageScope] = await Promise.all([v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at'), getCoverageScope(v)]);
+  const [{ data: rows }, coverageScope, period] = await Promise.all([v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at'), getCoverageScope(v), getPlanPeriod(v)]);
   const meals = (rows ?? []).map(toPlanMeal);
-  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
+  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope, period.periodDays), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
 }
 
 // ---------------------------------------------------------------- edits
@@ -206,7 +210,7 @@ export async function newPlan(v: VanaCtx, scope?: PlanScope | null): Promise<Mea
   const cur = await resolvePlan(v, scope, false);
   if (cur) await v.db.from('meal_plans').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', cur.id);
   const conversationId = scope?.conversationId ?? cur?.conversationId ?? null;
-  const fresh = await insertDraft(v, cur?.weekStart ?? weekStartFor(today()), conversationId);
+  const fresh = await insertDraft(v, cur?.weekStart ?? await currentWeekStart(v), conversationId);
   await invalidateContext(v);
   return fresh;
 }

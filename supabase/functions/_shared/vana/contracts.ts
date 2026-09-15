@@ -55,7 +55,7 @@ export interface MealPlan {
   brief: string | null; rules: PlanRule[]; meals: PlanMeal[]; shopping: ShoppingItem[];
   dayNotes: Record<string, string>;        // ISO date → Vana's one-liner for that day, precomputed (see server/vana/daynotes.ts)
   dayNotesStale?: boolean;
-  coverage: { lunchDinnerSlots: number; covered: number; perDay: { kcal: number; carbsG: number; proteinG: number } };
+  coverage: { lunchDinnerSlots: number; covered: number; periodDays: number; perDay: { kcal: number; carbsG: number; proteinG: number } };  // periodDays (additive, 2026-09-15, mp-269): the period the slots and perDay are counted over
 }
 /** Meal detail — what /food/meals/:id and cooking mode need; built by the `get_meal` action for a library id or a saved uuid. */
 export interface MealIngredient { name: string; qty: string; role?: string | null }
@@ -117,7 +117,7 @@ export interface UiAction {
 // ---- Athlete context injected on every turn (~1.5k tokens max). Built server-side, deterministic.
 export interface AthleteContext {
   profile: { firstName: string | null; diet: string | null; allergies: string[]; gutTraining: string | null };
-  week: { start: string; character: string; anchor: string | null; loadScore: number; workouts: { date: string; title: string; type: string; minutes: number | null; intensity: string | null }[] };
+  week: { start: string; periodDays?: number; character: string; anchor: string | null; loadScore: number; workouts: { date: string; title: string; type: string; minutes: number | null; intensity: string | null }[] };
   race: { name: string; date: string; daysOut: number; location: string | null } | null;
   budget: { today: DayTarget | null; week: DayTarget[]; raceWeekCarbsG: number | null };   // straight from daily_macro_targets (the daily-macros service); never recomputed
   weather: { today: string | null; raceDay: string | null };
