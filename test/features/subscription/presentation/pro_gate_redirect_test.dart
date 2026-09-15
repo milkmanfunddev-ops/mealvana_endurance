@@ -111,8 +111,7 @@ void main() {
       ).thenAnswer((_) => const Stream<String?>.empty());
       when(() => service.setStatusListener(any())).thenAnswer((inv) {
         capturedListener =
-            inv.positionalArguments.first
-                as void Function(SubscriptionStatus)?;
+            inv.positionalArguments.first as void Function(SubscriptionStatus)?;
       });
       when(() => service.currentAppUserId()).thenAnswer((_) async => _userId);
       when(() => service.logIn(any())).thenAnswer((_) async {});
@@ -197,23 +196,26 @@ void main() {
       expect(find.text('main'), findsNothing);
     });
 
-    testWidgets('a later refresh reopens: the push moves the paywall to /main',
-        (tester) async {
-      when(
-        () => service.fetchStatus(),
-      ).thenAnswer((_) async => SubscriptionStatus.none);
-      await pump(tester, initial: '/settings');
-      expect(find.text('paywall'), findsOneWidget);
+    testWidgets(
+      'a later refresh reopens: the push moves the paywall to /main',
+      (tester) async {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) async => SubscriptionStatus.none);
+        await pump(tester, initial: '/settings');
+        expect(find.text('paywall'), findsOneWidget);
 
-      capturedListener!(_active);
-      await tester.pumpAndSettle();
+        capturedListener!(_active);
+        await tester.pumpAndSettle();
 
-      expect(find.text('main'), findsOneWidget);
-      expect(find.text('paywall'), findsNothing);
-    });
+        expect(find.text('main'), findsOneWidget);
+        expect(find.text('paywall'), findsNothing);
+      },
+    );
 
-    testWidgets('an expiry mid-session closes the app onto the paywall',
-        (tester) async {
+    testWidgets('an expiry mid-session closes the app onto the paywall', (
+      tester,
+    ) async {
       when(() => service.fetchStatus()).thenAnswer((_) async => _active);
       await pump(tester, initial: '/settings');
       expect(find.text('settings'), findsOneWidget);

@@ -59,29 +59,41 @@ void main() {
   });
 
   test('an anonymous session is reported as such (purchases refuse it)', () {
-    when(() => auth.currentUser).thenReturn(_FakeUser('anon', isAnonymous: true));
+    when(
+      () => auth.currentUser,
+    ).thenReturn(_FakeUser('anon', isAnonymous: true));
     expect(repo.isAnonymousUser, isTrue);
   });
 
-  test('authUserIdChanges maps sessions to ids, distinct, null on sign-out', () async {
-    final events = StreamController<AuthState>();
-    when(() => auth.onAuthStateChange).thenAnswer((_) => events.stream);
+  test(
+    'authUserIdChanges maps sessions to ids, distinct, null on sign-out',
+    () async {
+      final events = StreamController<AuthState>();
+      when(() => auth.onAuthStateChange).thenAnswer((_) => events.stream);
 
-    final seen = <String?>[];
-    final sub = repo.authUserIdChanges.listen(seen.add);
-    addTearDown(sub.cancel);
+      final seen = <String?>[];
+      final sub = repo.authUserIdChanges.listen(seen.add);
+      addTearDown(sub.cancel);
 
-    events
-      ..add(AuthState(AuthChangeEvent.signedIn, _FakeSession(_FakeUser('u-1'))))
-      // A token refresh for the same user must not chatter.
-      ..add(
-        AuthState(AuthChangeEvent.tokenRefreshed, _FakeSession(_FakeUser('u-1'))),
-      )
-      ..add(AuthState(AuthChangeEvent.signedOut, null))
-      ..add(AuthState(AuthChangeEvent.signedIn, _FakeSession(_FakeUser('u-2'))));
-    await events.close();
-    await Future<void>.delayed(Duration.zero);
+      events
+        ..add(
+          AuthState(AuthChangeEvent.signedIn, _FakeSession(_FakeUser('u-1'))),
+        )
+        // A token refresh for the same user must not chatter.
+        ..add(
+          AuthState(
+            AuthChangeEvent.tokenRefreshed,
+            _FakeSession(_FakeUser('u-1')),
+          ),
+        )
+        ..add(AuthState(AuthChangeEvent.signedOut, null))
+        ..add(
+          AuthState(AuthChangeEvent.signedIn, _FakeSession(_FakeUser('u-2'))),
+        );
+      await events.close();
+      await Future<void>.delayed(Duration.zero);
 
-    expect(seen, ['u-1', null, 'u-2']);
-  });
+      expect(seen, ['u-1', null, 'u-2']);
+    },
+  );
 }

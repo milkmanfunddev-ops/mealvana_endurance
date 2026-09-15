@@ -29,8 +29,6 @@ import '../../../../shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
-import '../../../subscription/application/pro_gate.dart';
-import '../../../subscription/presentation/pro_gate_redirect.dart';
 import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_chat_controller.dart';
 import '../../application/vana_moment_controller.dart';
@@ -220,11 +218,9 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
   }
 
   Future<void> _summon() async {
-    if (!ref.read(proUnlockedProvider)) {
-      // Gating follows the app's gate: the same paywall the chat route uses.
-      widget.router.push(kProPaywallPath);
-      return;
-    }
+    // Gating follows the one app gate (mp-266 §2): a launcher that renders
+    // is on a screen the router already let through, so there is no
+    // Vana-specific check here.
     final navigator = widget.router.routerDelegate.navigatorKey.currentState;
     if (navigator == null) return;
     String? conversationId;
@@ -312,8 +308,7 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 
   @override
   Widget build(BuildContext context) {
-    final shown =
-        vanaLauncherShownOn(_path) && !_pushedOnTop && !_popupOnTop;
+    final shown = vanaLauncherShownOn(_path) && !_pushedOnTop && !_popupOnTop;
     final moment = ref.watch(vanaMomentControllerProvider).value;
     _ringWhenShown(moment, shown);
     final live = moment?.moment;

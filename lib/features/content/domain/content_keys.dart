@@ -1,43 +1,40 @@
 /// Content key constants that map to the content_defaults.json structure
 /// These provide type-safe access to all content strings
 class ContentKeys {
-  // Pro Version (subscription paywall) — lib/features/subscription
-  static const String proVersionTitle = 'pro_version.title';
-  static const String proVersionSubtitle = 'pro_version.subtitle';
-  static const String proVersionActiveBadge = 'pro_version.active_badge';
-  static const String proVersionTrialBadge = 'pro_version.trial_badge';
-  static const String proVersionActiveUntil = 'pro_version.active_until';
-  static const String proVersionFeaturesTitle = 'pro_version.features_title';
-  static const String proVersionFeature1Title = 'pro_version.feature_1_title';
-  static const String proVersionFeature1Description =
-      'pro_version.feature_1_description';
-  static const String proVersionFeature2Title = 'pro_version.feature_2_title';
-  static const String proVersionFeature2Description =
-      'pro_version.feature_2_description';
-  static const String proVersionFeature3Title = 'pro_version.feature_3_title';
-  static const String proVersionFeature3Description =
-      'pro_version.feature_3_description';
-  static const String proVersionPricingTitle = 'pro_version.pricing_title';
-  static const String proVersionPricingUnavailable =
-      'pro_version.pricing_unavailable';
-  static const String proVersionMonthlyLabel = 'pro_version.monthly_label';
-  static const String proVersionAnnualLabel = 'pro_version.annual_label';
-  static const String proVersionPerMonth = 'pro_version.per_month';
-  static const String proVersionPerYear = 'pro_version.per_year';
-  static const String proVersionSubscribeButton =
-      'pro_version.subscribe_button';
-  static const String proVersionPurchaseComingSoon =
-      'pro_version.purchase_coming_soon';
-  static const String proVersionRestoreButton = 'pro_version.restore_button';
-  static const String proVersionRestoreSuccess = 'pro_version.restore_success';
-  static const String proVersionRestoreNone = 'pro_version.restore_none';
-  static const String proVersionPurchaseSuccess =
-      'pro_version.purchase_success';
-  static const String proVersionPurchasePending =
-      'pro_version.purchase_pending';
-  static const String proVersionPurchaseFailed = 'pro_version.purchase_failed';
-  static const String proVersionSignInRequired = 'pro_version.sign_in_required';
-  static const String proVersionManageNote = 'pro_version.manage_note';
+  // Paywall (the one app gate, mp-280) — lib/features/subscription
+  static const String paywallTitle = 'paywall.title';
+  static const String paywallSubtitle = 'paywall.subtitle';
+  static const String paywallPricingTitle = 'paywall.pricing_title';
+  static const String paywallPricingUnavailable = 'paywall.pricing_unavailable';
+  static const String paywallMonthlyLabel = 'paywall.monthly_label';
+  static const String paywallAnnualLabel = 'paywall.annual_label';
+  static const String paywallPerMonth = 'paywall.per_month';
+  static const String paywallPerYear = 'paywall.per_year';
+  static const String paywallIntroLine = 'paywall.intro_line';
+  static const String paywallStartTrialButton = 'paywall.start_trial_button';
+  static const String paywallSubscribeButton = 'paywall.subscribe_button';
+  static const String paywallCancelNote = 'paywall.cancel_note';
+  static const String paywallRestoreButton = 'paywall.restore_button';
+  static const String paywallManageButton = 'paywall.manage_button';
+  static const String paywallSignOutButton = 'paywall.sign_out_button';
+  static const String paywallDeleteAccountButton =
+      'paywall.delete_account_button';
+  static const String paywallRestoreSuccess = 'paywall.restore_success';
+  static const String paywallRestoreNone = 'paywall.restore_none';
+  static const String paywallPurchaseSuccess = 'paywall.purchase_success';
+  static const String paywallPurchasePending = 'paywall.purchase_pending';
+  static const String paywallPurchaseFailed = 'paywall.purchase_failed';
+  static const String paywallManageUnavailable = 'paywall.manage_unavailable';
+  static const String paywallSignOutConfirmTitle =
+      'paywall.sign_out_confirm_title';
+  static const String paywallSignOutConfirmBody =
+      'paywall.sign_out_confirm_body';
+  static const String paywallDeleteConfirmTitle =
+      'paywall.delete_confirm_title';
+  static const String paywallDeleteConfirmBody = 'paywall.delete_confirm_body';
+  static const String paywallDeleteConfirmAction =
+      'paywall.delete_confirm_action';
+  static const String paywallCancel = 'paywall.cancel';
 
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';

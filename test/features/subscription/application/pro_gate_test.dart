@@ -45,7 +45,9 @@ void main() {
   });
 
   group('appGateProvider', () {
-    ProviderContainer container(SubscriptionStatusController Function() status) {
+    ProviderContainer container(
+      SubscriptionStatusController Function() status,
+    ) {
       final c = ProviderContainer(
         overrides: [subscriptionStatusProvider.overrideWith(status)],
       );
@@ -73,19 +75,22 @@ void main() {
       expect(await pending, isTrue);
     });
 
-    test('follows a status flip (the gate reacts when RevenueCat refreshes)', () async {
-      final fixed = _FixedStatus(SubscriptionStatus.none);
-      final c = container(() => fixed);
-      final sub = c.listen(appGateProvider, (_, _) {});
-      addTearDown(sub.close);
-      expect(await c.read(appGateProvider.future), isFalse);
+    test(
+      'follows a status flip (the gate reacts when RevenueCat refreshes)',
+      () async {
+        final fixed = _FixedStatus(SubscriptionStatus.none);
+        final c = container(() => fixed);
+        final sub = c.listen(appGateProvider, (_, _) {});
+        addTearDown(sub.close);
+        expect(await c.read(appGateProvider.future), isFalse);
 
-      // The controller's own setter path, as a RevenueCat push uses it.
-      fixed.state = const AsyncData(_active);
-      await Future<void>.delayed(Duration.zero);
+        // The controller's own setter path, as a RevenueCat push uses it.
+        fixed.state = const AsyncData(_active);
+        await Future<void>.delayed(Duration.zero);
 
-      expect(await c.read(appGateProvider.future), isTrue);
-    });
+        expect(await c.read(appGateProvider.future), isTrue);
+      },
+    );
   });
 
   group('readAppGate (the router redirect)', () {

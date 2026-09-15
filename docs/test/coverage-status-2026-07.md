@@ -55,7 +55,7 @@ Update it when a layer materially changes; stale claims here are worse than no c
 | learn (NEW) | Learn tab → lesson → player | skips if catalog empty |
 | event_checklist_carbload (NEW) | race-day checklist + carb-load protocol screens | cleans up its event |
 | ai_coach_chat (NEW) | send message → assistant reply arrives | dev only; skips if entry gated off |
-| paywall_render (NEW) | /pro renders pricing | never taps buy |
+| paywall_render | removed 2026-09-15 (ticket 19): the paywall never renders for an entitled account | |
 
 ### Still uncovered by Patrol (accepted gaps, revisit post-1.22)
 Password reset; meal-log AI paths (photo/describe — camera + AI spend); barcode scan

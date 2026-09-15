@@ -13,6 +13,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../application/vana_chat_controller.dart';
+import '../../../subscription/application/subscription_status_provider.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_plan.dart';
 import '../../domain/meal_ref.dart';
@@ -956,7 +957,15 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       if (!mounted) return;
       switch (error) {
         case VanaChatErrorKind.proRequired:
-          context.go('/pro');
+          // The server's RevenueCat cache says no while the SDK's said yes
+          // (the webhook may lag, or the entitlement just ended). RevenueCat
+          // wins (mp-285): re-resolve; if the SDK now agrees, the router
+          // moves this screen onto the paywall by itself.
+          MealvanaSnackbar.showWarning(
+            context,
+            content.getValue(ContentKeys.mpProRequired),
+          );
+          ref.read(subscriptionStatusProvider.notifier).refresh();
         case VanaChatErrorKind.rateLimited:
           MealvanaSnackbar.showWarning(
             context,

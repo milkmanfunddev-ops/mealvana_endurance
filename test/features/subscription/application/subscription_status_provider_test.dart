@@ -113,7 +113,10 @@ void main() {
       final c = container();
       final started = DateTime.now();
       expect(await resolve(c), SubscriptionStatus.none);
-      expect(DateTime.now().difference(started), greaterThanOrEqualTo(_timeout));
+      expect(
+        DateTime.now().difference(started),
+        greaterThanOrEqualTo(_timeout),
+      );
     });
 
     test('a fetch that fails (offline, no cache) → none at once', () async {
@@ -122,18 +125,21 @@ void main() {
       expect(await resolve(c), SubscriptionStatus.none);
     });
 
-    test('the SDK announcing its cache before the timeout still counts', () async {
-      when(
-        () => service.fetchStatus(),
-      ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
-      final c = container();
-      final pending = resolve(c);
-      // RevenueCat's listener fires with the cached info while the fetch
-      // is still out.
-      await Future<void>.delayed(Duration.zero);
-      capturedListener!(_rcActive);
-      expect((await pending).active, isTrue);
-    });
+    test(
+      'the SDK announcing its cache before the timeout still counts',
+      () async {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
+        final c = container();
+        final pending = resolve(c);
+        // RevenueCat's listener fires with the cached info while the fetch
+        // is still out.
+        await Future<void>.delayed(Duration.zero);
+        capturedListener!(_rcActive);
+        expect((await pending).active, isTrue);
+      },
+    );
   });
 
   group('a later refresh reopens (or closes) the app', () {
@@ -211,16 +217,13 @@ void main() {
   });
 
   group('edges', () {
-    test(
-      'signed out → none without contacting RevenueCat',
-      () async {
-        when(() => repo.currentUserId).thenReturn(null);
-        final c = container();
-        expect(await resolve(c), SubscriptionStatus.none);
-        verifyNever(() => service.currentAppUserId());
-        verifyNever(() => service.fetchStatus());
-      },
-    );
+    test('signed out → none without contacting RevenueCat', () async {
+      when(() => repo.currentUserId).thenReturn(null);
+      final c = container();
+      expect(await resolve(c), SubscriptionStatus.none);
+      verifyNever(() => service.currentAppUserId());
+      verifyNever(() => service.fetchStatus());
+    });
 
     test('build never throws — an unexpected error locks', () async {
       when(() => service.fetchStatus()).thenThrow(StateError('boom'));

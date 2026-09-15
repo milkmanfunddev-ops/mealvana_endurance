@@ -67,7 +67,7 @@ import '../../features/education/presentation/screens/education_screen.dart';
 import '../../features/education/presentation/screens/video_player_screen.dart';
 import '../../features/subscription/application/pro_gate.dart';
 import '../../features/subscription/presentation/pro_gate_redirect.dart';
-import '../../features/subscription/presentation/screens/pro_version_screen.dart';
+import '../../features/subscription/presentation/screens/paywall_screen.dart';
 import '../../features/ai_credits/presentation/screens/buy_credits_screen.dart';
 import '../screens/food_detail_screen.dart';
 // Coach mode screens
@@ -117,6 +117,16 @@ class AppRouter {
   // Router provider with ref access for redirect logic
   static final routerProvider = Provider<GoRouter>((ref) {
     final authChangeNotifier = ref.read(authChangeNotifierProvider);
+    // The app gate (mp-280, mp-284): when RevenueCat's answer changes — a
+    // purchase, a restore, an expiry, the background refresh of a cached
+    // answer — the current location is re-evaluated, so the paywall yields
+    // to /main and an expired account meets the paywall without a restart.
+    // The root widget watches this provider, which keeps the subscription
+    // active.
+    ref.listen(appGateProvider, (previous, next) {
+      if (!next.hasValue || next.isLoading) return;
+      if (previous?.value != next.value) authChangeNotifier.notify();
+    });
     return GoRouter(
       initialLocation: '/',
       refreshListenable: authChangeNotifier,
@@ -127,7 +137,7 @@ class AppRouter {
       // The Vana launcher's observer hides it under any dialog or sheet.
       observers: [SentryNavigatorObserver(), vanaCompanionObserver],
       // Redirect logic based on app startup state
-      redirect: (context, state) {
+      redirect: (context, state) async {
         final currentPath = state.uri.path;
 
         // Allow navigation to force-upgrade route always
@@ -185,17 +195,15 @@ class AppRouter {
           if (supabase.auth.currentSession == null) {
             return '/welcome';
           }
-          // Pro gate: meal planning (/food/*, /vana/*) is a Pro-only surface.
-          // The routes land in Phase 4; the guard is here so a deep link from
-          // a newer build, or a tab tap once the Food tab exists, resolves to
-          // the paywall instead of a locked screen. `isProGatedPath` is
-          // checked first so ordinary navigation never builds the
-          // subscription provider. The server row is the real paywall
-          // (edge functions call has_entitlement); this is UX.
-          if (isProGatedPath(currentPath) && !isProUnlocked(ref)) {
-            return '/pro';
-          }
-          return null; // Allow navigation to protected routes when authenticated
+          // The app gate (mp-280): every signed-in route is behind the one
+          // subscription gate. `readAppGate` answers from the settled status
+          // at once, or waits for the status controller's bounded resolve
+          // (mp-284: no cache and no answer within a couple of seconds is
+          // locked). A locked account lands on the paywall and stays there;
+          // the paywall itself yields to /main once unlocked. The server
+          // checks every debiting or Vana call itself (mp-285); this is UX.
+          final unlocked = await readAppGate(ref);
+          return gateRedirect(path: currentPath, unlocked: unlocked);
         }
 
         // For public routes, don't redirect (user is already where they should be)
@@ -625,11 +633,11 @@ class AppRouter {
           },
         ),
 
-        // Pro Version Screen - Premium features showcase
+        // The paywall — where a locked account lands and stays (mp-280).
         GoRoute(
-          path: '/pro',
-          name: 'pro-version',
-          builder: (context, state) => const ProVersionScreen(),
+          path: kPaywallPath,
+          name: 'paywall',
+          builder: (context, state) => const PaywallScreen(),
         ),
 
         // AI Credits Paywall - purchase credit packs for AI features
@@ -1067,7 +1075,7 @@ class AppRouter {
         ),
 
         // ====================================================================
-        // MEAL PLANNING (Vana) — Pro-gated via isProGatedPath above
+        // MEAL PLANNING (Vana) — behind the one app gate like every route
         // ====================================================================
         GoRoute(
           path: '/food',

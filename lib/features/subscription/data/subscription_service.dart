@@ -16,7 +16,8 @@ const String kProOfferingId = 'default';
 /// Where a subscriber manages the subscription when RevenueCat has no
 /// `managementURL` for them (no purchase on record yet, or the SDK is not
 /// configured): the store's own subscriptions page.
-const String kAppleSubscriptionsUrl = 'https://apps.apple.com/account/subscriptions';
+const String kAppleSubscriptionsUrl =
+    'https://apps.apple.com/account/subscriptions';
 const String kGoogleSubscriptionsUrl =
     'https://play.google.com/store/account/subscriptions';
 
@@ -165,9 +166,7 @@ class SubscriptionService {
   /// group; a cancelled trial is not repeated, mp-279). Unknown eligibility
   /// is not in the set — the store sheet states the real terms at purchase.
   /// Empty when the SDK is unavailable or the check fails.
-  Future<Set<String>> introIneligibleProductIds(
-    List<String> productIds,
-  ) async {
+  Future<Set<String>> introIneligibleProductIds(List<String> productIds) async {
     if (!isAvailable || productIds.isEmpty) return const {};
     try {
       final result = await Purchases.checkTrialOrIntroductoryPriceEligibility(
@@ -175,7 +174,8 @@ class SubscriptionService {
       );
       return {
         for (final entry in result.entries)
-          if (entry.value.status == IntroEligibilityStatus.introEligibilityStatusIneligible)
+          if (entry.value.status ==
+              IntroEligibilityStatus.introEligibilityStatusIneligible)
             entry.key,
       };
     } catch (e, st) {
