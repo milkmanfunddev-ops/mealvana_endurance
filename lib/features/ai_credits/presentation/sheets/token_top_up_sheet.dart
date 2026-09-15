@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
 import '../../domain/credit_packs.dart';
+import '../../domain/credit_wallet.dart';
 import '../widgets/token_pill.dart';
 
 /// Show the token top-up sheet.
@@ -16,6 +20,11 @@ import '../widgets/token_pill.dart';
 /// are the same decision at different urgencies. It commits to a purchase and
 /// then celebrates in place rather than dismissing, so the user ends where
 /// they started with a balance they can see.
+///
+/// Since ticket 20 (mp-282 §2) it is also what every 402 raises
+/// (`handleInsufficientCredits`), so above the packs it says what the
+/// subscription's monthly Allowance is, what is left of it and when it
+/// renews — read from the wallet row, which the server keeps current.
 Future<void> showTokenTopUpSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -162,7 +171,8 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
   Widget _packsView() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
-    final balance = ref.watch(creditsControllerProvider).value?.balance ?? 0;
+    final wallet = ref.watch(creditsControllerProvider).value;
+    final balance = wallet?.balance ?? 0;
     final out = balance <= 0;
     final packagesAsync = ref.watch(visibleCreditPackagesProvider);
 
@@ -190,6 +200,10 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
             color: onSurface.withValues(alpha: 0.6),
           ),
         ),
+        if (wallet != null && wallet.hasAllowance) ...[
+          const SizedBox(height: 14),
+          _AllowanceLines(wallet: wallet, onSurface: onSurface),
+        ],
         const SizedBox(height: 22),
         packagesAsync.when(
           loading: () => const Padding(
@@ -491,5 +505,64 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
           _error = "That didn't go through. Nothing was charged.";
         });
     }
+  }
+}
+
+/// The Allowance lines above the packs (mp-282 §2): what the subscription
+/// includes, what is left of it this period and when it renews. Pack credits
+/// are the rest of the balance and never expire, so they need no date.
+class _AllowanceLines extends ConsumerWidget {
+  const _AllowanceLines({required this.wallet, required this.onSurface});
+
+  final CreditWallet wallet;
+  final Color onSurface;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
+    final renews = wallet.allowanceRenewsAt;
+    final detail = renews == null
+        ? ContentKeys.format(
+            content.getValue(ContentKeys.aiCreditsAllowanceLeft),
+            {'left': wallet.allowance},
+          )
+        : ContentKeys.format(
+            content.getValue(ContentKeys.aiCreditsAllowanceRenews),
+            {
+              'left': wallet.allowance,
+              'date': DateFormat('MMM d').format(renews.toLocal()),
+            },
+          );
+    return Container(
+      key: const ValueKey('tokens.allowance'),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: onSurface.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            ContentKeys.format(
+              content.getValue(ContentKeys.aiCreditsAllowanceLine),
+              {'n': wallet.allowanceMonthly},
+            ),
+            style: AppTextStyles.bodyMedium.copyWith(
+              fontWeight: FontWeight.w600,
+              color: onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            detail,
+            key: const ValueKey('tokens.allowance_detail'),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -716,6 +716,13 @@
     "companion_session_run": "run",
     "companion_session_ride": "ride",
     "companion_session_swim": "swim",
-    "companion_session_other": "session"
+    "companion_session_other": "session",
+    "out_of_credits_strip": "Out of tokens for now — top up to keep chatting",
+    "out_of_credits_action": "Top up"
+  },
+  "ai_credits": {
+    "allowance_line": "Your plan includes {n} tokens a month",
+    "allowance_renews": "{left} left · renews {date}",
+    "allowance_left": "{left} left"
   }
 }

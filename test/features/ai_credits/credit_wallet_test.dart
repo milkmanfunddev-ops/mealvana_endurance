@@ -111,6 +111,120 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
+  // The monthly Allowance (mp-281, ticket 20) — rows shaped like the server's
+  // `token_wallets` after grant_allowance / debit_credits, never like this
+  // class's own output.
+  // ---------------------------------------------------------------------------
+
+  group('CreditWallet — Allowance', () {
+    test('a fresh grant: the allowance is the whole balance, packs are 0', () {
+      final w = CreditWallet.fromMap({
+        'balance': 300,
+        'allowance': 300,
+        'allowance_monthly': 300,
+        'allowance_expires_at': '2026-10-15T12:00:00+00:00',
+        'free_period': '2026-09',
+        'updated_at': '2026-09-15T12:00:00+00:00',
+      });
+      expect(w.hasAllowance, isTrue);
+      expect(w.allowance, 300);
+      expect(w.allowanceMonthly, 300);
+      expect(w.packCredits, 0);
+      expect(w.allowanceRenewsAt, DateTime.utc(2026, 10, 15, 12));
+    });
+
+    test('after debits spent the allowance first, packs are what is left', () {
+      // 300 granted + 50 pack, 302 debited: the SQL took 300 from the
+      // allowance and 2 from the pack.
+      final w = CreditWallet.fromMap({
+        'balance': 48,
+        'allowance': 0,
+        'allowance_monthly': 300,
+        'allowance_expires_at': '2026-10-15T12:00:00+00:00',
+      });
+      expect(w.allowance, 0);
+      expect(w.packCredits, 48);
+      expect(w.hasAllowance, isTrue, reason: 'the grant size still shows');
+    });
+
+    test(
+      'a wallet never granted an allowance has nothing to say about one',
+      () {
+        final w = CreditWallet.fromMap({'balance': 50});
+        expect(w.hasAllowance, isFalse);
+        expect(w.allowance, 0);
+        expect(w.allowanceMonthly, 0);
+        expect(w.allowanceRenewsAt, isNull);
+        expect(w.packCredits, 50);
+      },
+    );
+
+    test(
+      'a forfeited allowance (window closed) leaves the packs untouched',
+      () {
+        final w = CreditWallet.fromMap({
+          'balance': 50,
+          'allowance': 0,
+          'allowance_monthly': 300,
+          'allowance_expires_at': null,
+        });
+        expect(w.packCredits, 50);
+        expect(w.allowanceRenewsAt, isNull);
+      },
+    );
+
+    test('packCredits never goes negative on an inconsistent row', () {
+      final w = CreditWallet.fromMap({'balance': 2, 'allowance': 5});
+      expect(w.packCredits, 0);
+    });
+
+    test('zero keeps the old shape', () {
+      expect(CreditWallet.zero.hasAllowance, isFalse);
+      expect(CreditWallet.zero.packCredits, 0);
+    });
+  });
+
+  group('InsufficientCreditsException — the 402 body names the Allowance', () {
+    test('fromMap reads allowance_monthly and allowance_expires_at', () {
+      final ex = InsufficientCreditsException.fromMap({
+        'error': 'insufficient_credits',
+        'message': 'You are out of AI credits. Purchase more to continue.',
+        'balance': 0,
+        'cost': 1,
+        'allowance_monthly': 300,
+        'allowance_expires_at': '2026-10-15T12:00:00+00:00',
+      });
+      expect(ex.allowanceMonthly, 300);
+      expect(ex.allowanceRenewsAt, DateTime.utc(2026, 10, 15, 12));
+    });
+
+    test(
+      'an older server (no allowance fields) parses as unknown, not zero',
+      () {
+        final ex = InsufficientCreditsException.fromMap({
+          'balance': 0,
+          'cost': 1,
+          'message': 'x',
+        });
+        expect(ex.allowanceMonthly, isNull);
+        expect(ex.allowanceRenewsAt, isNull);
+      },
+    );
+
+    test('a wallet never granted one reports 0 and no date', () {
+      final ex = InsufficientCreditsException.fromMap({
+        'balance': 0,
+        'cost': 1,
+        'message': 'x',
+        'allowance_monthly': 0,
+        'allowance_expires_at': null,
+      });
+      expect(ex.allowanceMonthly, 0);
+      expect(ex.allowanceRenewsAt, isNull);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // InsufficientCreditsException
   // ---------------------------------------------------------------------------
 

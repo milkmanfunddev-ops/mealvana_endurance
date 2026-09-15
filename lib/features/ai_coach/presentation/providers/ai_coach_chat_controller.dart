@@ -5,7 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../ai_credits/domain/insufficient_credits_exception.dart';
-import '../../../ai_credits/presentation/insufficient_credits_paywall.dart';
+import '../../../ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../data/ai_coach_chat_repository.dart';
 import '../../domain/ai_coach_message.dart';
 import '../../domain/ai_coach_ui_part.dart';
@@ -247,10 +247,16 @@ class AiCoachChatController extends _$AiCoachChatController {
     } on InsufficientCreditsException catch (e) {
       if (!ref.mounted) return;
       _logger.error('AiCoachChatController.send out of AI credits', error: e);
-      maybeShowInsufficientCreditsPaywall(e);
-      _handleSendError(
-        currentState,
-        e.message.trim().isNotEmpty ? e.message : 'You are out of AI credits.',
+      // The one 402 handler raises the top-up sheet (mp-282); the turn rolls
+      // back with no error line — an empty wallet is never said mid-thread.
+      handleInsufficientCredits(e);
+      state = AsyncData(
+        AiCoachChatState(
+          conversationId: currentState.conversationId,
+          messages: List<AiCoachMessage>.from(currentState.messages),
+          isStreaming: false,
+          hasHistory: currentState.hasHistory,
+        ),
       );
     } on AiCoachChatServerError catch (e) {
       if (!ref.mounted) return;
