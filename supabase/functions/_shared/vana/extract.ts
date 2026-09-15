@@ -13,14 +13,14 @@
  * The opener's synthetic user message is never stored, so a transcript begins with Vana's own first
  * turn. Nothing here may depend on that message existing.
  *
- * The episode half also runs on its own, over a conversation the athlete is still in: see
- * `writeOpenEpisode`.
+ * A conversation still in progress is not read back; its history is chunked and the oldest chunk
+ * summarised onto the conversation row instead (mp-277 clause 1): see `writeSummary`.
  */
 import { generateObject } from 'npm:ai@6';
 import { z } from 'npm:zod@3';
 import { TOOL_MODEL } from './env.ts';
 import type { VanaCtx } from './env.ts';
-import { episodeFor, listMemories, rememberFact } from './memory.ts';
+import { listMemories, rememberFact } from './memory.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
 
@@ -176,63 +176,114 @@ export async function athleteWordsFrom(v: VanaCtx, conversationId: string, n = 2
   return words ? (words.length > 280 ? `${words.slice(0, 279)}…` : words) : null;
 }
 
-/** The one place an episode is written, whoever wrote it: keyed by conversation, so the sentence
- *  written mid-conversation is the row lazy extraction later rewrites, never a second one. */
+/** The one place an episode is written: a keyed Memory, one row per conversation. It no longer fills
+ *  `vana_conversations.summary` — that column carries the rolling in-conversation summary, keyed by
+ *  `summary_index` (mp-277 clause 1), and a second writer on it would be the race the decision rules out. */
 async function writeEpisode(v: VanaCtx, conversationId: string, episode: string): Promise<void> {
   await rememberFact(v, { kind: 'episode', key: conversationId, fact: episode, confidence: 0.9, source: 'conversation' }, undefined, { quiet: true });
-  // The summary column is read by client and server and was written by nothing; the episode fills it for list previews.
-  await v.db.from('vana_conversations').update({ summary: episode }).eq('id', conversationId).eq('user_id', v.userId);
 }
 
-// ---------------------------------------------------------------- the episode of an open conversation
+// ---------------------------------------------------------------- the rolling summary of an open conversation
 
-export const EpisodeZ = z.object({ episode: ExtractionZ.shape.episode });
+/** One stored summary: the text standing in for messages [0, index). */
+export interface StoredSummary { index: number; text: string }
 
-export const OPEN_EPISODE_SYSTEM = `You read the opening turns of a conversation between an endurance athlete and Vana, their nutrition assistant. The conversation is still going, and these turns are about to leave what Vana can see. Your sentence is what replaces them.
+export const SummaryZ = z.object({ summary: z.string().min(3).max(1500) });
 
-THE EPISODE — exactly one sentence, at most 25 words, saying what the athlete established in these turns. Keep the specifics a later reply would need: a name, a number, a day, a plan, a constraint. "Building a race-week menu for Sunday's 10K; partner cooks Tuesdays, budget $80." Not a list of topics. Write nothing else — no memories, no advice.`;
+export const SUMMARY_SYSTEM = `You read the opening of a conversation between an endurance athlete and Vana, their nutrition assistant. The conversation is still going, and these messages are about to leave what Vana can see. Your summary is what replaces them.
 
-export interface EpisodeDeps {
-  generate: (input: { system: string; prompt: string }) => Promise<{ object: { episode: string }; inputTokens?: number; outputTokens?: number }>;
+THE SUMMARY — one paragraph, at most 150 words, saying what these messages established, so a later reply can pick up exactly where they left off. Keep every specific a later reply would need: names, numbers, days, the meals they picked or turned down, constraints, decisions, anything they asked Vana to remember. When a PREVIOUS SUMMARY is given, fold it in: the paragraph must still carry what it carried. Not a list of topics, not advice, nothing Vana should do next. Write nothing else.`;
+
+export interface SummaryDeps {
+  generate: (input: { system: string; prompt: string }) => Promise<{ object: { summary: string }; inputTokens?: number; outputTokens?: number }>;
 }
-export const defaultEpisodeDeps: EpisodeDeps = {
+export const defaultSummaryDeps: SummaryDeps = {
   generate: async ({ system, prompt }) => {
-    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: EpisodeZ, maxOutputTokens: 120, system, prompt });
+    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: SummaryZ, maxOutputTokens: 400, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
   },
 };
 
+/** How a part leads in the column, so the text says what it covers and the client preview still reads. */
+const PART_LEAD = /^Through message (\d+): ([\s\S]+)$/;
+/** The column, read: zero, one or two parts, oldest first. Text without a lead-in (an episode sentence
+ *  written before the column was keyed) reads as nothing stored. */
+export function parseSummaries(text: string | null | undefined): StoredSummary[] {
+  if (!text) return [];
+  const parts: StoredSummary[] = [];
+  for (const para of text.split('\n\n')) {
+    const m = para.trim().match(PART_LEAD);
+    if (m) parts.push({ index: Number(m[1]), text: m[2].trim() });
+  }
+  return parts.sort((a, b) => a.index - b.index);
+}
+export const renderSummaries = (parts: StoredSummary[]) => parts.map((p) => `Through message ${p.index}: ${p.text}`).join('\n\n');
+
+/** The row's summary and its key. A missing column (the migration not yet applied) reads as nothing stored. */
+export async function readSummaries(v: VanaCtx, conversationId: string): Promise<{ index: number; parts: StoredSummary[] }> {
+  const { data } = await v.db.from('vana_conversations').select('summary, summary_index').eq('id', conversationId).eq('user_id', v.userId).maybeSingle();
+  return { index: Number(data?.summary_index ?? 0), parts: parseSummaries(data?.summary) };
+}
+
+/** The message text the summariser reads: what was said, plus the meals a picker showed, which is
+ *  how "the one I picked in turn three" survives when the pick was a tap rather than a sentence. */
+export function transcriptFromMessages(messages: { role: string; parts: unknown[] }[]): TranscriptLine[] {
+  return messages.map((m) => {
+    const text: string[] = [];
+    for (const p of m.parts as { type?: string; text?: string; state?: string; output?: unknown }[]) {
+      if (p?.type === 'text' && p.text?.trim()) text.push(p.text.trim());
+      else if (p?.type?.startsWith('tool-') && p.state === 'output-available') {
+        const out = p.output as { kind?: string; meals?: { name?: string }[] } | undefined;
+        const names = Array.isArray(out?.meals) ? out!.meals.map((x) => x?.name).filter(Boolean) : [];
+        if (out?.kind && names.length) text.push(`[${out.kind}: ${names.join(', ')}]`);
+      }
+    }
+    return { role: m.role === 'user' ? 'user' as const : 'assistant' as const, text: text.join(' ').replace(/\s+/g, ' ').trim() };
+  }).filter((l) => l.text);
+}
+
+export function summaryPrompt(previous: StoredSummary | null, lines: TranscriptLine[], from: number, to: number): string {
+  return [
+    ...(previous ? [`--- PREVIOUS SUMMARY (messages 1–${previous.index}) ---`, previous.text] : []),
+    `--- MESSAGES ${from + 1}–${to} ---`,
+    conversationText(lines),
+  ].join('\n');
+}
+
 /**
- * The extractor's episode half, for a conversation the athlete is still in. The history cap calls it
- * the first time it bites; the next turn finds the episode and prepends it.
+ * Writes the summary standing in for messages [0, target) onto the conversation row, keyed by
+ * `target` (mp-277 clause 1). The history replay schedules it ten messages before the boundary it
+ * is applied at, so no turn waits for it. It rolls the newest stored summary in — the model reads
+ * that summary plus the messages after it, never the whole transcript again — and keeps that
+ * previous part beside the new one, because the previous part is still the one applied until the
+ * count reaches the new boundary plus twenty.
  *
- * It reads the opening half of the transcript: what falls out of view soonest. Not only the rows
- * dropped this turn — at the crossing that is one row, usually Vana's first line. Not the whole
- * transcript either — the recent half is still in view, and the first live run on dev (2026-09-10)
- * showed a sentence written from all of it lists the latest topics and drops the opening, which is
- * the one thing it exists to keep. It does not stamp `read_back_at`: the
- * conversation's margin notes are still owed, and lazy extraction later rewrites the same episode row
- * from the finished transcript.
- *
- * Never throws — it runs in the background of a turn, where nobody is listening.
+ * Never throws — it runs in the background of a turn, where nobody is listening. A write that finds
+ * the row already at or past `target` (a concurrent turn's, or its own retry) leaves it alone.
  */
-export async function writeOpenEpisode(v: VanaCtx, conversationId: string, deps: EpisodeDeps = defaultEpisodeDeps): Promise<string | null> {
+export async function writeSummary(v: VanaCtx, conversationId: string, target: number, messages: { role: string; parts: unknown[] }[], deps: SummaryDeps = defaultSummaryDeps): Promise<StoredSummary | null> {
   try {
-    const rl = await checkRateLimit(v.admin, v.userId, 'vana.episode');
-    if (!rl.allowed) return null;   // no episode written, so the next turn tries again
-    const lines = await transcriptOf(v, conversationId);
+    const before = await readSummaries(v, conversationId);
+    if (before.index >= target) return null;
+    const rl = await checkRateLimit(v.admin, v.userId, 'vana.summary');
+    if (!rl.allowed) return null;   // nothing written, so the next turn schedules it again
+    const previous = before.parts.filter((p) => p.index < target).at(-1) ?? null;
+    const from = previous?.index ?? 0;
+    const lines = transcriptFromMessages(messages.slice(from, target));
     if (!lines.length) return null;
-    const opening = lines.slice(0, Math.ceil(lines.length / 2));
-    const { object, inputTokens, outputTokens } = await deps.generate({ system: OPEN_EPISODE_SYSTEM, prompt: `--- OPENING TURNS ---\n${conversationText(opening)}` });
-    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.episode', model: TOOL_MODEL, inputTokens, outputTokens });
-    const episode = object.episode.trim() || null;
-    // Whatever landed while the model was thinking wins: lazy extraction's sentence comes from the
-    // finished transcript, and a concurrent turn's is as good as this one. Never overwrite.
-    if (!episode || await episodeFor(v, conversationId)) return null;
-    await writeEpisode(v, conversationId, episode);
-    return episode;
+    const { object, inputTokens, outputTokens } = await deps.generate({ system: SUMMARY_SYSTEM, prompt: summaryPrompt(previous, lines, from, target) });
+    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.summary', model: TOOL_MODEL, inputTokens, outputTokens });
+    const text = object.summary.replace(/\s+/g, ' ').trim();
+    if (!text) return null;
+    // Whatever landed while the model was thinking wins if it is newer: never roll the row back.
+    const now = await readSummaries(v, conversationId);
+    if (now.index >= target) return null;
+    const part = { index: target, text };
+    const parts = [...(previous ? [previous] : []), part];
+    await v.db.from('vana_conversations').update({ summary: renderSummaries(parts), summary_index: target }).eq('id', conversationId).eq('user_id', v.userId);
+    return part;
   } catch (e) {
-    console.error('[vana] open-conversation episode failed:', (e as Error).message);
+    console.error('[vana] conversation summary failed:', (e as Error).message);
     return null;
   }
 }

@@ -289,63 +289,80 @@ const CASES: EvalCase[] = [
     },
   },
   {
-    name: 'long-conversation-remembers-its-start', ticket: 'mealplanning 03',
-    about: 'Past the 20-message history cap, Vana still knows something said in the first turn',
+    name: 'long-conversation-keeps-its-opening', ticket: 'mealplanning 14',
+    about: 'Forty-five messages in, Vana still knows the meal picked in turn three (mp-277 clause 1)',
     async run(c) {
-      // Something said once, at the very front, that no Fact or Memory would carry: who the ride is
-      // with and how long it is. The filler turns never mention it, so by the last question the only
-      // thing that can still carry it is the episode written when the cap first bit.
-      const opening = "I'm riding four hours on Saturday with my friend Marco, and he's bringing a camping stove for a mid-ride stop. Help me plan the food.";
-      // Everyday questions with no ride in them, so Vana has no reason to bring Saturday back up.
+      // Turn three (message index 2) names a meal and a guest that no Fact or Memory would carry and
+      // no later turn repeats. By message forty-five the first twenty messages have left the verbatim
+      // window; the only thing that can still carry the pick is the summary written at thirty and
+      // applied from forty.
+      const opening = 'Help me think about dinners this week. I train most evenings, so nothing that takes an hour.';
+      // The guest's name is on file nowhere else (Marco is: an older eval conversation's ride), so
+      // neither a Memory nor LAST TALKS can carry it.
+      const turnThree = "For Tuesday I'll go with the lentil bolognese, and my friend Priya is coming over for it.";
+      // Everyday questions with no Tuesday, no bolognese and no Priya in them.
       const filler = [
         'What is a good everyday breakfast for someone who trains a lot?',
         'How much protein should I get at lunch?',
         'Is oatmeal or toast better on a normal workday?',
-        'What is a quick weeknight dinner with lentils?',
         'Are frozen vegetables as good as fresh?',
         'How much coffee a day is too much?',
         'What is a good afternoon snack at my desk?',
         'Should I eat differently on a rest day?',
         'Is it fine to eat the same lunch every day?',
+        'How much water should I drink on an easy day?',
+        'Is peanut butter a reasonable snack?',
+        'What should I eat right after a swim?',
+        'Do I need electrolytes on a short run?',
+        'Is Greek yogurt or cottage cheese better for protein?',
+        'How late is too late to eat before bed?',
+        'Are rice cakes worth eating?',
+        'What is a good travel snack for a work trip?',
+        'Should I take a multivitamin?',
+        'Is brown rice much better than white?',
+        'What is a good snack before bed?',
+        'How do I get more fibre without feeling bloated?',
       ];
-      const cap = 20;   // HISTORY_CAP in supabase/functions/_shared/vana/chat.ts
       type Msg = { role: string; content: string | null };
-      type Ep = { id: string; fact: string };
-      const episodes = (id: string) => c.rows<Ep>(c.s, `user_memories?select=id,fact&kind=eq.episode&key=eq.${id}&is_deleted=eq.false`);
+      type Conv = { summary: string | null; summary_index: number | null };
       const stored = (id: string) => c.rows<Msg>(c.s, `vana_messages?select=role,content&conversation_id=eq.${id}&order=created_at`);
+      const summaryRow = async (id: string) => (await c.rows<Conv>(c.s, `vana_conversations?select=summary,summary_index&id=eq.${id}`))[0];
+      // The meal is the load-bearing fact: the guard on the window keys on it alone, so a name Vana
+      // happens to reuse cannot make a run inconclusive.
+      const carries = (t: string) => /bolognese/i.test(t);
 
       const first = await c.say(opening, { kind: 'general' });
       const id = first.conversationId;
       if (!id) { c.fail('no conversation id came back'); return; }
-      // Ten exchanges store twenty rows. The eleventh question is the twenty-first message: the cap bites.
-      for (const q of filler) await c.say(q, { kind: 'general', conversationId: id });
-      await new Promise((r) => setTimeout(r, 3000));
-      const beforeCrossing = await stored(id);
-      c.log(`${beforeCrossing.length} stored message(s) before the crossing turn`);
-      if ((await episodes(id)).length) c.fail('an episode existed before the conversation crossed the cap');
+      await c.say(turnThree, { kind: 'general', conversationId: id });
+      // Fourteen more exchanges take the stored count to thirty-two; the sixteenth question was the
+      // turn that reached thirty-one messages, where the summary for twenty is due and written.
+      for (const q of filler.slice(0, 14)) await c.say(q, { kind: 'general', conversationId: id });
+      await new Promise((r) => setTimeout(r, 8000));   // it is written in the background of that turn
+      const atThirty = await summaryRow(id);
+      c.log(`after ${(await stored(id)).length} stored messages: summary_index=${atThirty?.summary_index ?? 'null'} summary="${atThirty?.summary ?? ''}"`);
+      if (atThirty?.summary_index !== 20) c.fail(`expected summary_index 20 once the count passed thirty, found ${atThirty?.summary_index ?? 'null'}`);
+      if (!carries(atThirty?.summary ?? '') || !mentions(atThirty?.summary ?? '', 'Priya')) c.fail('the summary for the first twenty messages does not carry turn three');
 
-      await c.say('What is a good snack before bed?', { kind: 'general', conversationId: id });
-      await new Promise((r) => setTimeout(r, 8000));   // the episode is written in the background of that turn
-      const written = await episodes(id);
-      c.log(`episode after crossing: ${written.map((e) => `"${e.fact}"`).join(' | ') || '(none)'}`);
-      if (written.length !== 1) { c.fail(`expected exactly one episode row after crossing the cap, found ${written.length}`); return; }
+      // Six more exchanges: the question is message forty-five, with messages 1-20 out of the window.
+      for (const q of filler.slice(14)) await c.say(q, { kind: 'general', conversationId: id });
+      const rows = await stored(id);
+      c.log(`${rows.length} stored message(s) before the question`);
+      // What the final turn replays besides the summary: messages 21 onward. If one of them still
+      // carries the pick, the answer proves nothing about the summary.
+      if (rows.slice(20).some((m) => carries(m.content ?? ''))) { c.fail('inconclusive: a replayed turn still mentions the pick, so this run cannot tell the summary from the verbatim window'); return; }
 
-      const question = 'Remind me — who am I riding with on Saturday, and for how long?';
-      // What the final turn replays besides the episode: the last cap-1 stored rows plus the question.
-      // If a recent turn still carries the ride, the answer proves nothing about the episode.
-      const replayWindow = (await stored(id)).slice(-(cap - 1));
-      if (replayWindow.some((m) => mentions(m.content ?? '', 'Marco') || /\b(four|4)[- ]?hours?\b/i.test(m.content ?? ''))) {
-        c.fail('inconclusive: a recent turn still mentions the ride, so this run cannot tell the episode from the replay window');
-        return;
-      }
-      const { ex } = await c.say(question, { kind: 'general', conversationId: id });
+      const { ex } = await c.say('Remind me — which dinner did I pick for Tuesday, and who is coming over for it?', { kind: 'general', conversationId: id });
+      c.log(`answer: ${ex.text}`);
       if (ex.error) c.fail(`stream error: ${ex.error}`);
-      if (!mentions(ex.text, 'Marco')) c.fail(`forgot who the ride is with: "${ex.text}"`);
-      if (!/\b(four|4)[- ]?(hours?|hrs?|h)\b/i.test(ex.text)) c.fail(`forgot how long the ride is: "${ex.text}"`);
+      if (!/bolognese/i.test(ex.text)) c.fail(`forgot the meal picked in turn three: "${ex.text}"`);
+      if (!mentions(ex.text, 'Priya')) c.fail(`forgot who is coming: "${ex.text}"`);
 
       await new Promise((r) => setTimeout(r, 3000));
-      const after = await episodes(id);
-      if (after.length !== 1 || after[0].id !== written[0].id) c.fail(`later turns wrote another episode (${after.length} row(s))`);
+      const after = await summaryRow(id);
+      if (after?.summary_index !== 20) c.fail(`the row moved before sixty: summary_index=${after?.summary_index ?? 'null'}`);
+      const episodes = await c.rows<{ id: string }>(c.s, `user_memories?select=id&kind=eq.episode&key=eq.${id}&is_deleted=eq.false`);
+      if (episodes.length) c.fail(`a mid-conversation episode was written (${episodes.length} row(s)); only the read-back writes one`);
     },
   },
   {
