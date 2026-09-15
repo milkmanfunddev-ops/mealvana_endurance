@@ -1,0 +1,30 @@
+{
+  "kind": "flow",
+  "title": "Two fields, written by the webhook",
+  "rows": [
+    [ { "id": "offer", "label": "Store: 7-day free\nintro offer" },
+      { "id": "buy", "label": "Sandbox purchase" } ],
+    [ { "id": "hook", "label": "RevenueCat webhook", "tone": "accent" },
+      { "id": "old", "label": "Event older than\nthe row: ignored", "tone": "no" } ],
+    [ { "id": "row", "label": "Entitlement row:\nactive until, period type", "tone": "ok" },
+      { "id": "app", "label": "App-side insert\nor grant", "tone": "no" } ],
+    [ { "id": "gate", "label": "requirePro reads\nthe two fields", "tone": "ok" },
+      { "id": "flag", "label": "Pro gate flag\nand config key", "tone": "muted" } ],
+    [ { "id": "call", "label": "Vana or debiting call" } ]
+  ],
+  "edges": [
+    { "from": "offer", "to": "buy" },
+    { "from": "buy", "to": "hook" },
+    { "from": "hook", "to": "old", "tone": "no" },
+    { "from": "hook", "to": "row", "label": "only these" },
+    { "from": "app", "to": "row", "label": "never", "tone": "no" },
+    { "from": "row", "to": "gate" },
+    { "from": "flag", "to": "gate", "label": "removed", "tone": "muted" },
+    { "from": "gate", "to": "call" }
+  ],
+  "example": [
+    "Sandbox monthly on dev: row gets active until +7 days,",
+    "period type trial; the next Vana call passes the gate.",
+    "An event dated before the row's event changes nothing."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "timeline",
+  "title": "One green run on each store",
+  "steps": [
+    { "at": "Day 1, subscribe", "label": "Fresh sandbox account on the store;\nwizard subscribes via the intro offer" },
+    { "at": "Day 1, check", "label": "Entitlement active; Allowance landed", "tone": "ok" },
+    { "at": "Cancel", "label": "Wizard cancels; the paywall appears", "tone": "pending" },
+    { "at": "Restore", "label": "Restore brings the entitlement back", "tone": "ok" },
+    { "at": "Log", "label": "Each step recorded in a dated log\nunder docs/release, ships with it" },
+    { "at": "Release gate", "label": "No meal-planning release without\na green run on both stores", "tone": "no" }
+  ],
+  "example": [
+    "App Store sandbox 2026-09-16: six steps green.",
+    "Play sandbox: cancel step red. Release stays blocked",
+    "until the Play run is repeated green."
+  ]
+}

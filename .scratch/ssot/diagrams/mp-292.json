@@ -1,0 +1,16 @@
+{
+  "kind": "timeline",
+  "title": "Verbatim to forty, then rolling",
+  "steps": [
+    { "at": "Messages 1 to 39", "label": "Every message replayed verbatim", "tone": "ok" },
+    { "at": "Message 30", "label": "Summary of the oldest 20 written\nin the background; turn returns first", "tone": "pending" },
+    { "at": "Message 40", "label": "Replay is one summary plus the last 20;\nsummary stored on the conversation row\nkeyed by the message index it covers", "tone": "accent" },
+    { "at": "Message 60", "label": "Same again, rolling: one rolled\nsummary plus the last 20", "tone": "accent" },
+    { "at": "Mid-conversation", "label": "Episode writer and its opening-half\nprompt removed; the end-of-conversation\nepisode row stays", "tone": "no" }
+  ],
+  "example": [
+    "Turn 40 asks about the meal picked in turn 3:",
+    "turn 3 sits in the summary; Vana names the meal.",
+    "Eval: a 45-turn conversation answers about turn 3."
+  ]
+}

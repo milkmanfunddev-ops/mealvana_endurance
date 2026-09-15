@@ -1,0 +1,26 @@
+{
+  "kind": "flow",
+  "title": "Turn two reads a cached prefix",
+  "rows": [
+    [ { "id": "open", "label": "Conversation opens" },
+      { "id": "block", "label": "Context block\nbuilt once", "tone": "accent" } ],
+    [ { "id": "prompt", "label": "Prompt: tools, persona,\ncontext, messages" },
+      { "id": "rebuild", "label": "Tool write or new day\nrebuilds the block", "tone": "pending" } ],
+    [ { "id": "turn2", "label": "Turn 2 reads\nthe cached prefix", "tone": "ok" },
+      { "id": "recall", "label": "Per-message recall\nstays a tool", "tone": "muted" } ],
+    [ { "id": "log", "label": "vana_calls: cache-read\ntokens beside input" } ]
+  ],
+  "edges": [
+    { "from": "open", "to": "block" },
+    { "from": "block", "to": "prompt" },
+    { "from": "rebuild", "to": "block", "label": "only then" },
+    { "from": "block", "to": "recall", "label": "not inside", "tone": "muted" },
+    { "from": "prompt", "to": "turn2" },
+    { "from": "turn2", "to": "log" }
+  ],
+  "example": [
+    "Dev account, turn 1: cache read 0, full input price.",
+    "Turn 2, no writes: block byte-identical, read above 0.",
+    "Eval case whose second turn reads zero: case fails."
+  ]
+}
