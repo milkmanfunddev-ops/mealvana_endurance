@@ -181,6 +181,48 @@ function captureWarn(body: () => void): string[] {
   return warnings;
 }
 
+// F4a validator gap (2026-09-15, Sentry MEALVANA-ENDURANCE-C6): the input
+// validator still whitelisted the four F4 sports, rejecting the whole day's
+// payload (400) before F4a pricing ever ran — one TP "Warm Up Routine"
+// (sport `other`) permanently disabled the dashboard. The validator checks
+// shape only; membership is priced, never rejected.
+Deno.test('F4a: validator accepts unknown sports (pricing decides, not the gate)', () => {
+  const input = refInput({
+    sessions: [
+      session('running' as Sport, 0.57, 0.2, 0.5, 0.3),
+      session('other' as Sport, 0.5, 0.7, 0.2, 0.1),
+    ],
+  });
+  assertEquals(validateInput(input), null);
+});
+
+Deno.test('F4a: validator still rejects a missing/empty sport', () => {
+  const input = refInput({
+    sessions: [session('' as Sport, 1.0, 0.7, 0.2, 0.1)],
+  });
+  assertEquals(validateInput(input)?.includes('sport'), true);
+});
+
+Deno.test('F4a: a day mixing running with an `other` session computes, other prices 0', () => {
+  const base = calculateDailyMacros(
+    refInput({ sessions: [session('running' as Sport, 0.57, 0.2, 0.5, 0.3)] }),
+  );
+  const mixed = captureWarn(() => {}) && calculateDailyMacros(
+    refInput({
+      sessions: [
+        session('running' as Sport, 0.57, 0.2, 0.5, 0.3),
+        session('other' as Sport, 0.5, 0.7, 0.2, 0.1),
+      ],
+    }),
+  );
+  // The `other` session adds exactly nothing to session ENERGY (F4a: 0 kcal).
+  // carb_g is deliberately NOT asserted equal: carbDemand has no unknown-sport
+  // guard and prices `other` on the endurance oxidation ladder (+10g here).
+  // F4a's text rules kcal only — carb demand for unknown sports is unruled;
+  // filed to QA intake 2026-09-15 rather than decided inside this hotfix.
+  assertEquals(mixed.session_kcal, base.session_kcal);
+});
+
 Deno.test('F4a: unknown sports contribute exactly 0 with the estimate flag', () => {
   const unknowns = ['other', 'zumba', 'esports'];
   const warnings = captureWarn(() => {
