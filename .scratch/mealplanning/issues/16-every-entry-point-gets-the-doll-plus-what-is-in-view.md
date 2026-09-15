@@ -1,6 +1,6 @@
 # 16: Every entry point gets the Doll plus what is in view
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-15)
 **Blocked by:** 13 (touches supabase/functions/_shared/vana/context.ts), 15 (touches lib/features/meal_planning/application/vana_ambient_conversation_controller.dart).
 **Next:** `/implement-lee mealplanning`
 

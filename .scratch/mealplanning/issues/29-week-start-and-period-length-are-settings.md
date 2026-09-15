@@ -1,6 +1,6 @@
 # 29: Week start and period length are settings
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-15)
 **Blocked by:** 15 (touches supabase/functions/_shared/vana/opener.ts), 22 (touches lib/features/meal_planning/presentation/widgets/review_sheet.dart).
 **Next:** `/implement-lee mealplanning`
 

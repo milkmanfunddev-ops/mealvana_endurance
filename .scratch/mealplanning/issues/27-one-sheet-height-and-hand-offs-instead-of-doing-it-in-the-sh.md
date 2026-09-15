@@ -1,6 +1,6 @@
 # 27: One sheet height, and hand-offs instead of doing it in the sheet
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-15)
 **Blocked by:** 15 (touches lib/features/meal_planning/presentation/widgets/vana_companion.dart), 26 (touches supabase/functions/_shared/vana/tools.ts).
 **Next:** `/implement-lee mealplanning`
 

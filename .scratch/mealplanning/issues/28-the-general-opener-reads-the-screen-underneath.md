@@ -1,6 +1,6 @@
 # 28: The general opener reads the screen underneath
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-15)
 **Blocked by:** 15, 20 (touches lib/features/meal_planning/presentation/screens/vana_chat_screen.dart).
 **Next:** `/implement-lee mealplanning`
 
