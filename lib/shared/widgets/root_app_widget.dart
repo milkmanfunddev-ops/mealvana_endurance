@@ -19,6 +19,7 @@ import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
 import '../../features/app_startup/presentation/widgets/app_startup_widget.dart';
+import '../../features/settings/presentation/providers/dev_tools_switch_controller.dart';
 import '../../features/meal_planning/presentation/widgets/vana_companion.dart';
 import '../core/app_router.dart';
 import '../services/app_config.dart';
@@ -201,9 +202,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                         .track(event),
                     onReport: (ctx) =>
                         Wiredash.of(ctx).show(inheritMaterialTheme: true),
-                    child: _appShell(
-                      context,
-                      AppStartupWidget(
+                    child: _AppShell(
+                      isDev: config.isDevelopment,
+                      child: AppStartupWidget(
                         // Pass router child back when initialization is complete,
                         // under the Vana launcher, which floats over every
                         // ordinary route (vana-sheet spec).
@@ -213,7 +214,6 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                           child: child!,
                         ),
                       ),
-                      isDev: config.isDevelopment,
                     ),
                   );
                 },
@@ -238,10 +238,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return _appShell(
-                    context,
-                    AppStartupWidget(onLoaded: (_) => child!),
+                  return _AppShell(
                     isDev: config.isDevelopment,
+                    child: AppStartupWidget(onLoaded: (_) => child!),
                   );
                 },
               ),
@@ -264,10 +263,9 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
                 themeMode: ThemeMode.dark,
                 routerConfig: goRouter,
                 builder: (context, child) {
-                  return _appShell(
-                    context,
-                    AppStartupWidget(onLoaded: (_) => child!),
+                  return _AppShell(
                     isDev: config.isDevelopment,
+                    child: AppStartupWidget(onLoaded: (_) => child!),
                   );
                 },
               ),
@@ -305,12 +303,14 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// content — testers can drive scale freely while the panel chrome stays
 /// bounded.
 ///
-/// Show rule is `isDev` alone (runtime, from AppConfig: `.env.dev.local` sets
-/// `APP_ENVIRONMENT=dev`). Deliberately *not* gated on `kDebugMode`, so the
-/// installed dev build — a Shorebird/TestFlight release binary — carries the
-/// tools for QA. Prod never shows them in any build mode.
+/// Show rule is `isDev` (runtime, from AppConfig: `.env.dev.local` sets
+/// `APP_ENVIRONMENT=dev`) AND the tester's Settings switch
+/// ([devToolsSwitchControllerProvider], per device, default on; ticket 24,
+/// mp-271). Deliberately *not* gated on `kDebugMode`, so the installed dev
+/// build — a Shorebird/TestFlight release binary — carries the tools for QA.
+/// Prod never shows them in any build mode and never reads the switch.
 ///
-/// Which button appears where:
+/// Which button appears where (switch on):
 ///
 /// | build              | blue wrench | red checker |
 /// |--------------------|-------------|-------------|
@@ -323,18 +323,37 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
 /// Flutter nulls out in release builds. Forcing it on in an installed dev
 /// build would just render a button that always finds zero issues, so the
 /// release path mounts the testing-tools panel alone.
-Widget _appShell(BuildContext context, Widget child, {required bool isDev}) {
-  final mq = MediaQuery.of(context);
-  return MediaQuery(
-    data: mq.copyWith(
-      textScaler: mq.textScaler.clamp(minScaleFactor: 1.0, maxScaleFactor: 1.6),
-    ),
-    child: !isDev
-        ? child
-        : kDebugMode
-        ? _DevAccessibilityTools(child: child)
-        : _DevTestingTools(child: child),
-  );
+///
+/// Flipping the switch swaps the wrapper around [child], which remounts the
+/// subtree down to the router's Navigator. The Navigator carries
+/// `sentryNavigatorKey` (a GlobalKey), so it and every route below it are
+/// reparented with their state intact; the hot-reload re-key in
+/// [_DevAccessibilityTools] already relies on the same behaviour.
+class _AppShell extends ConsumerWidget {
+  const _AppShell({required this.child, required this.isDev});
+
+  final Widget child;
+  final bool isDev;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mq = MediaQuery.of(context);
+    final toolsOn =
+        isDev && (ref.watch(devToolsSwitchControllerProvider).value ?? true);
+    return MediaQuery(
+      data: mq.copyWith(
+        textScaler: mq.textScaler.clamp(
+          minScaleFactor: 1.0,
+          maxScaleFactor: 1.6,
+        ),
+      ),
+      child: !toolsOn
+          ? child
+          : kDebugMode
+          ? _DevAccessibilityTools(child: child)
+          : _DevTestingTools(child: child),
+    );
+  }
 }
 
 /// Debug-only wrapper around [AccessibilityTools] that **resets the panel's
@@ -387,7 +406,7 @@ class _DevAccessibilityToolsState extends State<_DevAccessibilityTools> {
 /// panel — behind the same blue floating button, reproducing the package's own
 /// overlay structure so QA sees identical chrome on device and in simulator.
 ///
-/// The red issue-checker button is intentionally absent here; see [_appShell].
+/// The red issue-checker button is intentionally absent here; see [_AppShell].
 class _DevTestingTools extends StatefulWidget {
   const _DevTestingTools({required this.child});
 
