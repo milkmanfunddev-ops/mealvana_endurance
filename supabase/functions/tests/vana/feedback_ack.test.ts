@@ -41,3 +41,13 @@ Deno.test('a question mark is what buys an answer', () => {
   assert(silenceAfterFeedback('You keep suggesting fish and I have told you I do not eat it.'));
   assert(!silenceAfterFeedback('Why do you keep suggesting fish?'));
 });
+
+// Ticket 26 (2026-09-15): the device files the feedback_saved part into Wiredash, so the part must reach the client
+// with the athlete's words, the sentiment and the about-field intact, and the acknowledgement must stay the row alone.
+Deno.test('the feedback_saved part reaches the client whole — words, sentiment, about — with the acknowledgement unchanged', () => {
+  const { parts, ui } = partsFromSteps('', [feedbackStep("You're right, sorry.")], null, true);
+  assertEquals(texts(parts), []);
+  assertEquals(ui, [{ kind: 'feedback_saved', message: 'you keep suggesting fish', sentiment: 'negative', about: 'vana' }]);
+  const stored = parts.find((p) => (p as { type: string }).type === 'tool-saveFeedback') as { output: unknown } | undefined;
+  assertEquals(stored?.output, ui[0]);
+});

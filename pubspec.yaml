@@ -112,7 +112,7 @@ dependencies:
   location_iq: ^1.0.1
 
   # User Feedback with Screenshot Annotation
-  wiredash: ^2.6.0
+  wiredash: 2.6.0 # exact: features/feedback/data/wiredash_feedback_filer.dart reads package:wiredash/src
   connectivity_plus: ^7.0.0
   flutter_svg: ^2.2.3
   calendar_date_picker2: ^2.0.1
