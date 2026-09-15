@@ -1,39 +1,39 @@
 /**
- * Pro gate for the Vana functions (docs/implement_mealplanning/03-backend.md §3, 04-entitlement.md).
+ * The one server gate (mp-266, mp-279, mp-285): a caller passes when their
+ * `public.user_entitlements` row — the two-field cache of RevenueCat that only
+ * the revenuecat-webhook writes — has `active_until` in the future.
  *
- * A caller passes when ANY of these hold:
- *   1. the PRO_GATE_ENABLED secret is 'false' (dev default — the feature is open while the paywall is being built);
- *   2. `public.has_entitlement(p_user, 'pro')` is true (Phase 3 creates `user_entitlements` + this function; until it
- *      exists the RPC errors and we log + treat the caller as NOT entitled — never fail open on a missing table);
- *   3. `users.is_internal = true` (internal testers).
- *
- * When the secret is absent: gate ON everywhere except the dev project, so a forgotten prod secret cannot open the
- * feature. Set `PRO_GATE_ENABLED=false` explicitly on dev anyway.
+ * There is no flag, no trial clock and no tester bypass on this path: nothing
+ * app-side can grant an entitlement. Testers get a RevenueCat promotional
+ * grant, which arrives through the webhook like any other event.
  */
 import type { Db } from './env.ts';
-import { SUPABASE_URL } from './env.ts';
-
-const DEV_PROJECT_REF = 'vlmtsdzpnjnavdgytcmi';
-
-export function proGateEnabled(): boolean {
-  const raw = Deno.env.get('PRO_GATE_ENABLED');
-  if (raw == null || raw === '') return !SUPABASE_URL.includes(DEV_PROJECT_REF);
-  return raw.trim().toLowerCase() !== 'false';
-}
 
 export type ProCheck = { ok: true } | { ok: false; reason: 'pro_required' };
 
-export async function requirePro(admin: Db, userId: string): Promise<ProCheck> {
-  if (!proGateEnabled()) return { ok: true };
+/** The row as the webhook writes it (period_type is carried for callers, not read here). */
+export interface EntitlementCacheRow {
+  active_until: string | null;
+  period_type?: string | null;
+}
+
+/** Pure rule: access runs while `active_until` is later than now. */
+export function isEntitled(row: EntitlementCacheRow | null | undefined, nowMs: number): boolean {
+  const until = row?.active_until ? Date.parse(row.active_until) : NaN;
+  return Number.isFinite(until) && until > nowMs;
+}
+
+export async function requirePro(admin: Db, userId: string, nowMs: number = Date.now()): Promise<ProCheck> {
   try {
-    const { data, error } = await admin.rpc('has_entitlement', { p_user: userId, p_key: 'pro' });
-    if (error) console.warn('[vana] has_entitlement unavailable (treating as not entitled):', error.message);
-    else if (data === true) return { ok: true };
-  } catch (e) { console.warn('[vana] has_entitlement threw (treating as not entitled):', (e as Error).message); }
-  try {
-    const { data, error } = await admin.from('users').select('is_internal').eq('id', userId).maybeSingle();
-    if (error) console.warn('[vana] users.is_internal lookup failed:', error.message);
-    else if (data?.is_internal === true) return { ok: true };
-  } catch (e) { console.warn('[vana] users.is_internal lookup threw:', (e as Error).message); }
+    const { data, error } = await admin
+      .from('user_entitlements')
+      .select('active_until, period_type')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) console.warn('[vana] user_entitlements read failed (treating as not entitled):', error.message);
+    else if (isEntitled(data as EntitlementCacheRow | null, nowMs)) return { ok: true };
+  } catch (e) {
+    console.warn('[vana] user_entitlements read threw (treating as not entitled):', (e as Error).message);
+  }
   return { ok: false, reason: 'pro_required' };
 }

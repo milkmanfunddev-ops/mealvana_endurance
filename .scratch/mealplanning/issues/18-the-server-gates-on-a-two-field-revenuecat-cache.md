@@ -10,10 +10,10 @@
 
 **Touches:** supabase/functions/revenuecat-webhook/index.ts, supabase/functions/revenuecat-webhook/entitlements.ts, supabase/functions/revenuecat-webhook/index.test.ts, supabase/functions/_shared/vana/entitlement.ts, supabase/migrations/20260916110000_user_entitlements_two_fields.sql, scripts/store
 
-- [ ] Both stores carry a seven-day free introductory offer on the monthly and annual subscriptions, created by script and recorded in docs/implement_mealplanning.
-- [ ] The webhook writes active until and period type only; an event older than the row's event time is ignored; a transfer moves the row (seam tests with fake events).
-- [ ] The migration drops every other column from the entitlements table and nothing app-side can insert into it.
-- [ ] requirePro reads the two fields; the Pro gate flag is gone from the server and the config key from app_config's read.
+- [x] Both stores carry a seven-day free introductory offer on the monthly and annual subscriptions, created by script and recorded in docs/implement_mealplanning.
+- [x] The webhook writes active until and period type only; an event older than the row's event time is ignored; a transfer moves the row (seam tests with fake events).
+- [x] The migration drops every other column from the entitlements table and nothing app-side can insert into it.
+- [x] requirePro reads the two fields; the Pro gate flag is gone from the server and the config key from app_config's read.
 - [ ] Dev deploy of the webhook; a sandbox purchase on the dev app lands the row.
 
 Next: /implement-lee mealplanning
