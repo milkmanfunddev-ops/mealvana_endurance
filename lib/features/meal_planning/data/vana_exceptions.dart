@@ -29,8 +29,9 @@ class VanaUnauthenticatedException extends VanaException {
   String toString() => 'VanaUnauthenticatedException: $message';
 }
 
-/// 403 `{error:'pro_required'}` — the user is not entitled to Pro. The UI
-/// routes to `/pro`.
+/// 403 `{error:'pro_required'}` — the server's entitlement record says no.
+/// The UI warns and refreshes the subscription status; the router owns the
+/// paywall (ticket 19).
 class ProRequiredException extends VanaException {
   const ProRequiredException([this.reason = 'pro_required']);
 

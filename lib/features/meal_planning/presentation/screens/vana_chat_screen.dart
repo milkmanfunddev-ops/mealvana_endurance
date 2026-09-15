@@ -45,8 +45,9 @@ import '../widgets/vana_part_renderer.dart';
 /// carry the plan bar (minimized at start and on every new turn), the
 /// review/confirm sheet and the pick/swap remote-ack actions; general chats
 /// get the empty state with example chips. Errors map per the contract:
-/// offline bubble-copy, 429 "Give me N seconds", 402 credits paywall,
-/// 403 → `/pro`.
+/// offline bubble-copy, 429 "Give me N seconds", 402 top-up sheet (below),
+/// 403 a warning and a status refresh: the router alone moves the athlete
+/// onto the paywall when the SDK agrees (ticket 19, mp-284).
 ///
 /// An empty wallet (402) is never a gate (mp-282): the send raises the
 /// top-up sheet through the one shared handler, one line rides above the

@@ -79,7 +79,8 @@ class VanaChatState {
   /// True once history (or "no history") has been resolved.
   final bool historyLoaded;
 
-  /// 403 `pro_required` — the screen routes to `/pro`.
+  /// 403 `pro_required` — the screen warns and refreshes the subscription
+  /// status; the router moves onto the paywall when the SDK agrees.
   bool get proRequired => error == VanaChatErrorKind.proRequired;
 
   bool get isPlanning => kind == VanaConversationKind.mealPlanning;
