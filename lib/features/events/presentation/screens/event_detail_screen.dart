@@ -84,7 +84,6 @@ class EventDetailScreen extends ConsumerWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      settings: EventFormScreen.routeSettings,
                       builder: (context) => EventFormScreen(event: event),
                     ),
                   ).then((_) {

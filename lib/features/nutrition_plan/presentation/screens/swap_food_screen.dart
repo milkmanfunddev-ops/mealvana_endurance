@@ -166,7 +166,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     final result = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
-        settings: FoodDetailScreen.routeSettings,
         builder: (ctx) => FoodDetailScreen(
           foodData: FoodDetailData(
             id: uuid,
@@ -389,7 +388,6 @@ class _SwapFoodScreenState extends ConsumerState<SwapFoodScreen> {
     final detailResult = await Navigator.push<dynamic>(
       context,
       MaterialPageRoute(
-        settings: FoodDetailScreen.routeSettings,
         builder: (ctx) => FoodDetailScreen(
           foodData: FoodDetailData(
             id: '',

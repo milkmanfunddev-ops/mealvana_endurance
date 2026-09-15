@@ -40,7 +40,6 @@ class EventFooterLinks extends StatelessWidget {
                   final result = await Navigator.of(context)
                       .push<Map<String, dynamic>>(
                         MaterialPageRoute(
-                          settings: EventFormScreen.routeSettings,
                           builder: (_) => const EventFormScreen(),
                         ),
                       );

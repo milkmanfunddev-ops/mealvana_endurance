@@ -56,7 +56,6 @@ class UpcomingEventCardKyle extends ConsumerWidget {
             final result = await Navigator.of(context)
                 .push<Map<String, dynamic>>(
                   MaterialPageRoute(
-                    settings: EventFormScreen.routeSettings,
                     builder: (context) => const EventFormScreen(),
                   ),
                 );
