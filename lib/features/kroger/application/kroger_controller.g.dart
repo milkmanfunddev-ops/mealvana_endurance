@@ -75,7 +75,7 @@ final class KrogerAreaFinderProvider
   }
 }
 
-String _$krogerAreaFinderHash() => r'f2267a1d96d86ee7525805455b73e05657995202';
+String _$krogerAreaFinderHash() => r'dfb48abbcf2ddfd5bae76183d816697ed96a5e20';
 
 @ProviderFor(krogerUserId)
 const krogerUserIdProvider = KrogerUserIdProvider._();
@@ -233,7 +233,7 @@ final class KrogerControllerProvider
   }
 }
 
-String _$krogerControllerHash() => r'935a3427cdd6542603fd122b34bb4b3ff0ffb329';
+String _$krogerControllerHash() => r'3ba08b3d3b13ce9b76d94725b5009c041fc0e343';
 
 final class KrogerControllerFamily extends $Family
     with

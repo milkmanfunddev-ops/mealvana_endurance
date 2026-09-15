@@ -59,7 +59,10 @@ String _$vanaReducedMotionHash() => r'be3f50d988892972361197837f036a26267ea8e9';
 /// retires.
 ///
 /// Resolves [resolveVanaMoment] from today's activities and meal logs when
-/// either changes and every [vanaMomentResolveInterval]. A raised moment
+/// either changes, when the app comes back to the foreground, and every
+/// [vanaMomentResolveInterval] while the clock matters: a workout today has
+/// yet to start, or a finished one's recovery window has yet to close (with
+/// neither, nothing changes until a row does). A raised moment
 /// waits until the launcher's host calls [ring] with a launcher on screen, so
 /// it never spends its one ring where nobody can see it. What rang, what was
 /// answered and where each opening sits persist per user per day, so a
@@ -73,7 +76,10 @@ const vanaMomentControllerProvider = VanaMomentControllerProvider._();
 /// retires.
 ///
 /// Resolves [resolveVanaMoment] from today's activities and meal logs when
-/// either changes and every [vanaMomentResolveInterval]. A raised moment
+/// either changes, when the app comes back to the foreground, and every
+/// [vanaMomentResolveInterval] while the clock matters: a workout today has
+/// yet to start, or a finished one's recovery window has yet to close (with
+/// neither, nothing changes until a row does). A raised moment
 /// waits until the launcher's host calls [ring] with a launcher on screen, so
 /// it never spends its one ring where nobody can see it. What rang, what was
 /// answered and where each opening sits persist per user per day, so a
@@ -85,7 +91,10 @@ final class VanaMomentControllerProvider
   /// retires.
   ///
   /// Resolves [resolveVanaMoment] from today's activities and meal logs when
-  /// either changes and every [vanaMomentResolveInterval]. A raised moment
+  /// either changes, when the app comes back to the foreground, and every
+  /// [vanaMomentResolveInterval] while the clock matters: a workout today has
+  /// yet to start, or a finished one's recovery window has yet to close (with
+  /// neither, nothing changes until a row does). A raised moment
   /// waits until the launcher's host calls [ring] with a launcher on screen, so
   /// it never spends its one ring where nobody can see it. What rang, what was
   /// answered and where each opening sits persist per user per day, so a
@@ -110,14 +119,17 @@ final class VanaMomentControllerProvider
 }
 
 String _$vanaMomentControllerHash() =>
-    r'ce12772e80c7f865e627dca23f67e6bb7b4219b7';
+    r'd826da87730c35bb06776d281c5291b116de4561';
 
 /// The moment on the launcher (vana-moment spec). Global and per day, like
 /// the launcher: it stays as the athlete moves between screens until it
 /// retires.
 ///
 /// Resolves [resolveVanaMoment] from today's activities and meal logs when
-/// either changes and every [vanaMomentResolveInterval]. A raised moment
+/// either changes, when the app comes back to the foreground, and every
+/// [vanaMomentResolveInterval] while the clock matters: a workout today has
+/// yet to start, or a finished one's recovery window has yet to close (with
+/// neither, nothing changes until a row does). A raised moment
 /// waits until the launcher's host calls [ring] with a launcher on screen, so
 /// it never spends its one ring where nobody can see it. What rang, what was
 /// answered and where each opening sits persist per user per day, so a
