@@ -8,6 +8,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/feedback/data/wiredash_feedback_filer.dart';
+import 'package:mealvana_endurance/features/feedback/domain/typed_feedback.dart';
 import 'package:mealvana_endurance/features/meal_logging/application/meal_ai_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
@@ -128,6 +130,18 @@ class _RecordingPlanController extends MealPlanController {
   Future<void> applyServerPlan(MealPlan plan) async => applied.add(plan);
 }
 
+/// Stands in for the Wiredash SDK: records what the controller files.
+class _FakeFeedbackFiler extends Fake implements WiredashFeedbackFiler {
+  final List<TypedFeedback> filed = [];
+  Object? failWith;
+
+  @override
+  Future<void> file(TypedFeedback feedback) async {
+    if (failWith != null) throw failWith!;
+    filed.add(feedback);
+  }
+}
+
 class _FakeMemoryRepo extends Fake implements UserMemoryRepository {
   final List<UserMemory> applied = [];
 
@@ -151,6 +165,7 @@ void main() {
   late _FakeMemoryRepo memoryRepo;
   late _FakeActionClient actions;
   late _FakeMealAiService mealAi;
+  late _FakeFeedbackFiler filer;
 
   setUp(() {
     repo = _FakeChatRepo();
@@ -158,6 +173,7 @@ void main() {
     memoryRepo = _FakeMemoryRepo();
     actions = _FakeActionClient();
     mealAi = _FakeMealAiService();
+    filer = _FakeFeedbackFiler();
   });
 
   ({VanaChatController notifier, List<VanaChatState> seen}) make({
@@ -171,6 +187,7 @@ void main() {
       userMemoryRepositoryProvider.overrideWithValue(memoryRepo),
       vanaActionClientProvider.overrideWithValue(actions),
       mealAiServiceProvider.overrideWithValue(mealAi),
+      wiredashFeedbackFilerProvider.overrideWithValue(filer),
     ]);
     final provider = vanaChatControllerProvider(
       kind: kind,
@@ -309,6 +326,73 @@ void main() {
       expect(s.isStreaming, isFalse);
     },
   );
+
+  group('feedback_saved files one Wiredash entry (ticket 26)', () {
+    // The part exactly as `stream.ts` emits it: `{type:'ui', part:<tool output>}`,
+    // with the server's own fixture as the part (producer-shaped, never a
+    // Dart builder's output).
+    List<VanaStreamEvent> feedbackTurn() => [
+      VanaStreamEvent.fromJson({
+        'type': 'ui',
+        'part': loadFixture('feedback_saved'),
+      })!,
+      const VanaDoneEvent(),
+    ];
+
+    test('the entry carries the words, the sentiment and the conversation id, '
+        'and the acknowledgement row is unchanged', () async {
+      repo.events = feedbackTurn();
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+
+      await notifier.send(
+        'You keep suggesting fish on weeknights, I never make it',
+      );
+
+      final entry = filer.filed.single;
+      expect(entry.message, loadFixture('feedback_saved')['message']);
+      expect(entry.sentiment, 'negative');
+      expect(entry.about, 'vana');
+      expect(
+        entry.conversationId,
+        'conv-server',
+        reason: 'the id the server answered with, not the pre-turn null',
+      );
+
+      // The athlete still sees the server-authored row and nothing else.
+      final reply = notifier.state.value!.messages.last;
+      expect(reply.isUser, isFalse);
+      expect(reply.content, isEmpty);
+      final part = reply.parts.single as VanaFeedbackSavedPart;
+      expect(part.message, entry.message);
+      expect(part.sentiment, FeedbackSentiment.negative);
+      expect(part.about, FeedbackAbout.vana);
+    });
+
+    test('a Wiredash failure is logged and never reaches the athlete', () async {
+      repo.events = feedbackTurn();
+      filer.failWith = StateError('wiredash down');
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+
+      await notifier.send('You keep suggesting fish');
+
+      final s = notifier.state.value!;
+      expect(s.error, isNull);
+      expect(s.messages.last.parts.single, isA<VanaFeedbackSavedPart>());
+      expect(filer.filed, isEmpty);
+    });
+
+    test('a turn without feedback files nothing', () async {
+      repo.events = const [VanaTextEvent('Two dinners left.'), VanaDoneEvent()];
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.send('What is left?');
+
+      expect(filer.filed, isEmpty);
+    });
+  });
 
   test(
     'history: batch parts are stripped from bubbles and seed draftPlan',

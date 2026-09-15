@@ -7,6 +7,8 @@ import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../feedback/data/wiredash_feedback_filer.dart';
+import '../../feedback/domain/typed_feedback.dart';
 import '../../meal_logging/application/meal_ai_service.dart';
 import '../data/user_memory_repository.dart';
 import '../data/vana_action_client.dart';
@@ -575,6 +577,9 @@ class VanaChatController extends _$VanaChatController {
         if (part is VanaMemorySavedPart) {
           await _foldMemory(part);
         }
+        if (part is VanaFeedbackSavedPart) {
+          await _fileFeedback(part, conversationId);
+        }
         if (lastIndex >= 0) {
           messages[lastIndex] = messages[lastIndex].appendPart(part);
         }
@@ -636,6 +641,35 @@ class VanaChatController extends _$VanaChatController {
     } catch (e) {
       _logger.warning(
         'Failed to store memory_saved part locally',
+        context: _context,
+        error: e,
+      );
+    }
+  }
+
+  /// A `feedback_saved` part is the server's word that the row landed in
+  /// `user_feedback`; the device then files the same words into Wiredash so
+  /// typed feedback sits in the inbox with shaken reports (mp-245 clause 6,
+  /// ticket 26). Filing never touches the turn: the acknowledgement row is
+  /// already the reply, and a Wiredash failure is only logged.
+  Future<void> _fileFeedback(
+    VanaFeedbackSavedPart part,
+    String? conversationId,
+  ) async {
+    try {
+      await ref
+          .read(wiredashFeedbackFilerProvider)
+          .file(
+            TypedFeedback(
+              message: part.message,
+              sentiment: part.sentiment.name,
+              about: part.about.name,
+              conversationId: conversationId,
+            ),
+          );
+    } catch (e) {
+      _logger.warning(
+        'Failed to file feedback_saved part to Wiredash',
         context: _context,
         error: e,
       );
