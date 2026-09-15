@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_detail_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/cooking_session.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/directions_origin.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_detail.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_ref.dart';
@@ -397,6 +399,84 @@ void main() {
       // Popped back to the browse screen.
       expect(find.text('browse'), findsOneWidget);
       expect(addButton(), findsNothing);
+    });
+  });
+
+  // ── Directions origin (mp-146 / ticket 32) ─────────────────────────────
+  group('directions say where the steps came from', () {
+    Future<void> pumpWith(WidgetTester tester, MealDirections d) async {
+      controller = _FixedDetailController(detail.copyWith(directions: d));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            contentServiceProvider.overrideWith(testContentService),
+            isAdminProvider.overrideWith((ref) async => false),
+            mealDetailControllerProvider(
+              'D-100',
+            ).overrideWith(() => controller),
+          ],
+          child: const MaterialApp(home: MealDetailScreen(id: 'D-100')),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('verbatim steps read "as published by X" with the link', (
+      tester,
+    ) async {
+      await pumpWith(
+        tester,
+        const MealDirections(
+          origin: DirectionsOrigin.source,
+          sourceName: 'Jennifer Sygo',
+          sourceUrl: 'https://runningmagazine.ca/recipes/salmon-quinoa',
+          verbatim: true,
+        ),
+      );
+      expect(
+        find.text(
+          ContentKeys.format(content['meal_planning.origin_verbatim']!, {
+            'name': 'Jennifer Sygo',
+          }),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.detail_origin_link')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('AI-written steps keep the sparkle badge and tooltip', (
+      tester,
+    ) async {
+      await pumpWith(
+        tester,
+        const MealDirections(origin: DirectionsOrigin.aiGenerated),
+      );
+      expect(
+        find.text(content['meal_planning.badge_ai_generated']!),
+        findsOneWidget,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) =>
+              w is Tooltip &&
+              w.message == content['meal_planning.cook_ai_disclaimer'],
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a simple assembly says so', (tester) async {
+      await pumpWith(
+        tester,
+        const MealDirections(origin: DirectionsOrigin.assemblySimple),
+      );
+      expect(
+        find.text(content['meal_planning.origin_assembly']!),
+        findsOneWidget,
+      );
     });
   });
 
