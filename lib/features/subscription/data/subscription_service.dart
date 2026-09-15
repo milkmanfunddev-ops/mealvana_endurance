@@ -8,9 +8,17 @@ import '../domain/entitlement.dart';
 
 part 'subscription_service.g.dart';
 
-/// The RevenueCat offering that carries the Pro packages (`$rc_monthly`,
-/// `$rc_annual`). Falls back to `Offerings.current` when the id is renamed.
+/// The RevenueCat offering that carries the subscription packages
+/// (`$rc_monthly`, `$rc_annual`). Falls back to `Offerings.current` when the
+/// id is renamed.
 const String kProOfferingId = 'default';
+
+/// Where a subscriber manages the subscription when RevenueCat has no
+/// `managementURL` for them (no purchase on record yet, or the SDK is not
+/// configured): the store's own subscriptions page.
+const String kAppleSubscriptionsUrl = 'https://apps.apple.com/account/subscriptions';
+const String kGoogleSubscriptionsUrl =
+    'https://play.google.com/store/account/subscriptions';
 
 /// Kept alive for the same reason as [revenueCatServiceProvider]: it wraps
 /// the process-wide [Purchases] singleton and owns the one CustomerInfo
@@ -24,13 +32,13 @@ SubscriptionService subscriptionService(Ref ref) {
   );
 }
 
-/// Subscription-side wrapper over [Purchases] — CustomerInfo, the Pro
-/// offering, purchase/restore — layered on [RevenueCatService], which owns
-/// configure/logIn and the store-error handling for purchases.
+/// Subscription-side wrapper over [Purchases] — CustomerInfo, the offering,
+/// purchase/restore, management URL — layered on [RevenueCatService], which
+/// owns configure/logIn and the store-error handling for purchases.
 ///
 /// Same contract as [RevenueCatService]: every method is safe before the SDK
 /// is configured (returns null / no-ops), never throws, and reports every
-/// failure to Sentry with a breadcrumb trail so a "Pro never unlocked" report
+/// failure to Sentry with a breadcrumb trail so a "never unlocked" report
 /// arrives with the fetch/listener sequence attached.
 class SubscriptionService {
   SubscriptionService({
@@ -69,10 +77,27 @@ class SubscriptionService {
     );
   }
 
-  /// The Pro status RevenueCat currently holds for the identified customer.
+  /// The RevenueCat app user id the SDK's cache currently belongs to, or
+  /// null when the SDK is unavailable. A local read — no network.
+  Future<String?> currentAppUserId() async {
+    if (!isAvailable) return null;
+    try {
+      return await Purchases.appUserID;
+    } catch (e, st) {
+      _report('appUserID failed', e, stackTrace: st);
+      return null;
+    }
+  }
+
+  /// Identify [userId] with RevenueCat (idempotent; a no-op before configure).
+  Future<void> logIn(String userId) => _revenueCat.logIn(userId);
+
+  /// The status RevenueCat currently holds for the identified customer.
   ///
-  /// Null when the SDK is unavailable or the call fails — the caller decides
-  /// whether a server row or cache should stand in.
+  /// With a cache on disk the SDK answers from it at once, online or not
+  /// (the cache is the answer whenever there is one, mp-284); with no cache
+  /// it fetches, and an offline fetch fails. Null when the SDK is unavailable
+  /// or the call fails — the caller treats that as locked.
   Future<SubscriptionStatus?> fetchStatus() async {
     if (!isAvailable) {
       _crumb('fetchStatus skipped: SDK not configured');
@@ -82,7 +107,7 @@ class SubscriptionService {
       final info = await Purchases.getCustomerInfo();
       final status = statusFromCustomerInfo(info);
       _crumb('customer info fetched', {
-        'pro_active': status.active,
+        'active': status.active,
         'expires_at': status.expiresAt?.toIso8601String(),
         'is_trial': status.isTrial,
       });
@@ -95,7 +120,7 @@ class SubscriptionService {
 
   /// Register (or replace) the app-level status listener. RevenueCat calls
   /// it whenever CustomerInfo changes — purchase, renewal, expiry, restore —
-  /// and immediately with the last-known info if it already has one.
+  /// which is how the gate reacts to a refresh (mp-284).
   ///
   /// Pass null to detach. Safe before configure: the SDK only stores the
   /// callback, so a listener attached early simply starts firing once
@@ -111,7 +136,7 @@ class SubscriptionService {
     void listener(CustomerInfo info) {
       final status = statusFromCustomerInfo(info);
       _crumb('customer info updated', {
-        'pro_active': status.active,
+        'active': status.active,
         'expires_at': status.expiresAt?.toIso8601String(),
       });
       onChange(status);
@@ -121,8 +146,8 @@ class SubscriptionService {
     Purchases.addCustomerInfoUpdateListener(listener);
   }
 
-  /// The offering that carries the Pro packages, or null when the SDK is
-  /// unavailable / the store served nothing.
+  /// The offering that carries the subscription packages, or null when the
+  /// SDK is unavailable / the store served nothing.
   Future<Offering?> fetchProOffering() async {
     final offerings = await _revenueCat.getOfferings();
     if (offerings == null) return null;
@@ -135,11 +160,35 @@ class SubscriptionService {
     return offering;
   }
 
+  /// Product ids among [productIds] the store says are NOT eligible for
+  /// their introductory offer (one free week per person per subscription
+  /// group; a cancelled trial is not repeated, mp-279). Unknown eligibility
+  /// is not in the set — the store sheet states the real terms at purchase.
+  /// Empty when the SDK is unavailable or the check fails.
+  Future<Set<String>> introIneligibleProductIds(
+    List<String> productIds,
+  ) async {
+    if (!isAvailable || productIds.isEmpty) return const {};
+    try {
+      final result = await Purchases.checkTrialOrIntroductoryPriceEligibility(
+        productIds,
+      );
+      return {
+        for (final entry in result.entries)
+          if (entry.value.status == IntroEligibilityStatus.introEligibilityStatusIneligible)
+            entry.key,
+      };
+    } catch (e, st) {
+      _report('intro eligibility check failed', e, stackTrace: st);
+      return const {};
+    }
+  }
+
   /// Purchase [pkg] through the store. True on success, false on cancel or
   /// error — [RevenueCatService.purchase] already reports the distinction.
   Future<bool> purchase(Package pkg) => _revenueCat.purchase(pkg);
 
-  /// Restore purchases and return the resulting Pro status (null when the SDK
+  /// Restore purchases and return the resulting status (null when the SDK
   /// is unavailable or the store call fails).
   Future<SubscriptionStatus?> restore() async {
     if (!isAvailable) {
@@ -149,7 +198,7 @@ class SubscriptionService {
     try {
       final info = await Purchases.restorePurchases();
       final status = statusFromCustomerInfo(info);
-      _crumb('restore completed', {'pro_active': status.active});
+      _crumb('restore completed', {'active': status.active});
       return status;
     } catch (e, st) {
       _report('restorePurchases failed', e, stackTrace: st);
@@ -157,7 +206,37 @@ class SubscriptionService {
     }
   }
 
-  /// Map a [CustomerInfo] to the Pro [SubscriptionStatus]. Only the ACTIVE
+  /// Where this customer manages the subscription: RevenueCat's
+  /// `managementURL` when it has one, else the platform store's
+  /// subscriptions page. Never null on a phone; null on the web.
+  Future<Uri?> managementUrl() async {
+    if (isAvailable) {
+      try {
+        final info = await Purchases.getCustomerInfo();
+        final url = info.managementURL;
+        if (url != null && url.isNotEmpty) {
+          final parsed = Uri.tryParse(url);
+          if (parsed != null) return parsed;
+        }
+      } catch (e, st) {
+        _report('managementURL read failed', e, stackTrace: st);
+      }
+    }
+    return storeSubscriptionsUrl(defaultTargetPlatform);
+  }
+
+  /// The platform store's own subscriptions page; null off iOS / Android.
+  @visibleForTesting
+  static Uri? storeSubscriptionsUrl(TargetPlatform platform) {
+    return switch (platform) {
+      TargetPlatform.iOS ||
+      TargetPlatform.macOS => Uri.parse(kAppleSubscriptionsUrl),
+      TargetPlatform.android => Uri.parse(kGoogleSubscriptionsUrl),
+      _ => null,
+    };
+  }
+
+  /// Map a [CustomerInfo] to the [SubscriptionStatus]. Only the ACTIVE
   /// entitlement map counts — an expired entitlement still appears in `all`.
   static SubscriptionStatus statusFromCustomerInfo(CustomerInfo info) =>
       statusFromEntitlement(info.entitlements.active[Entitlement.pro.key]);
@@ -177,5 +256,17 @@ class SubscriptionService {
           info.periodType == PeriodType.intro,
       productId: info.productIdentifier,
     );
+  }
+
+  /// The free introductory offer a store product carries, or null when it
+  /// has none or the offer is a discount rather than free.
+  static IntroOffer? introOfferOf(StoreProduct product) {
+    final intro = product.introductoryPrice;
+    if (intro == null || intro.price != 0) return null;
+    final days = IntroOffer.daysFor(
+      unit: intro.periodUnit.name,
+      count: intro.periodNumberOfUnits * (intro.cycles < 1 ? 1 : intro.cycles),
+    );
+    return days == null ? null : IntroOffer(freeDays: days);
   }
 }

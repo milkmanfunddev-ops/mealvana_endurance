@@ -1,4 +1,6 @@
-/// Unit tests for the Pro gate rule ([computeProUnlocked] / `proUnlockedProvider`).
+/// Unit tests for the app gate ([computeUnlocked] / `appGateProvider` /
+/// [readAppGate]). The gate is the status and nothing else: no build flag,
+/// no tester grant, no coach branch (mp-279, mp-286).
 library;
 
 import 'dart:async';
@@ -9,7 +11,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
-import 'package:mealvana_endurance/shared/services/app_config.dart';
 
 const _active = SubscriptionStatus(
   active: true,
@@ -17,7 +18,7 @@ const _active = SubscriptionStatus(
 );
 
 /// A status controller pinned to one value — how widget/router tests stub
-/// the subscription without RevenueCat or Supabase.
+/// the subscription without RevenueCat.
 class _FixedStatus extends SubscriptionStatusController {
   _FixedStatus(this.status);
   final SubscriptionStatus status;
@@ -25,113 +26,93 @@ class _FixedStatus extends SubscriptionStatusController {
   Future<SubscriptionStatus> build() async => status;
 }
 
-class _LoadingStatus extends SubscriptionStatusController {
+/// A status controller that answers when the test says so.
+class _DeferredStatus extends SubscriptionStatusController {
+  final completer = Completer<SubscriptionStatus>();
   @override
-  Future<SubscriptionStatus> build() => Completer<SubscriptionStatus>().future;
+  Future<SubscriptionStatus> build() => completer.future;
 }
 
 void main() {
-  group('computeProUnlocked', () {
-    final gateOn = AppConfig.forTesting(proGateEnabled: true);
-    final gateOff = AppConfig.forTesting(proGateEnabled: false);
-
-    test('gate off → unlocked whatever the status (dev builds)', () {
-      expect(
-        computeProUnlocked(status: const AsyncLoading(), config: gateOff),
-        isTrue,
-      );
-      expect(
-        computeProUnlocked(
-          status: const AsyncData(SubscriptionStatus.none),
-          config: gateOff,
-        ),
-        isTrue,
-      );
+  group('computeUnlocked', () {
+    test('active → unlocked', () {
+      expect(computeUnlocked(_active), isTrue);
     });
 
-    test('gate on + active status → unlocked', () {
-      expect(
-        computeProUnlocked(status: const AsyncData(_active), config: gateOn),
-        isTrue,
-      );
-    });
-
-    test('gate on + none → locked', () {
-      expect(
-        computeProUnlocked(
-          status: const AsyncData(SubscriptionStatus.none),
-          config: gateOn,
-        ),
-        isFalse,
-      );
-    });
-
-    test('gate on + still loading → locked (fail closed)', () {
-      expect(
-        computeProUnlocked(status: const AsyncLoading(), config: gateOn),
-        isFalse,
-      );
-    });
-
-    test('gate on + error → locked', () {
-      expect(
-        computeProUnlocked(
-          status: AsyncError(StateError('x'), StackTrace.empty),
-          config: gateOn,
-        ),
-        isFalse,
-      );
+    test('none → locked', () {
+      expect(computeUnlocked(SubscriptionStatus.none), isFalse);
     });
   });
 
-  group('proUnlockedProvider', () {
-    ProviderContainer container({
-      required bool gate,
-      required SubscriptionStatusController Function() status,
-    }) {
+  group('appGateProvider', () {
+    ProviderContainer container(SubscriptionStatusController Function() status) {
       final c = ProviderContainer(
-        overrides: [
-          appConfigProvider.overrideWithValue(
-            AppConfig.forTesting(proGateEnabled: gate),
-          ),
-          subscriptionStatusProvider.overrideWith(status),
-        ],
+        overrides: [subscriptionStatusProvider.overrideWith(status)],
       );
       addTearDown(c.dispose);
       return c;
     }
 
     test('reflects an active status once resolved', () async {
-      final c = container(gate: true, status: () => _FixedStatus(_active));
-      await c.read(subscriptionStatusProvider.future);
-      expect(c.read(proUnlockedProvider), isTrue);
+      final c = container(() => _FixedStatus(_active));
+      expect(await c.read(appGateProvider.future), isTrue);
     });
 
-    test('locked while loading, unlocked when the gate is off', () {
-      expect(
-        container(
-          gate: true,
-          status: _LoadingStatus.new,
-        ).read(proUnlockedProvider),
-        isFalse,
-      );
-      expect(
-        container(
-          gate: false,
-          status: _LoadingStatus.new,
-        ).read(proUnlockedProvider),
-        isTrue,
-      );
+    test('reflects a locked status once resolved', () async {
+      final c = container(() => _FixedStatus(SubscriptionStatus.none));
+      expect(await c.read(appGateProvider.future), isFalse);
     });
 
-    test('isProUnlocked reads the same value', () async {
-      final c = container(
-        gate: true,
-        status: () => _FixedStatus(SubscriptionStatus.none),
+    test('is loading while the status is unresolved, then settles', () async {
+      final deferred = _DeferredStatus();
+      final c = container(() => deferred);
+      expect(c.read(appGateProvider).isLoading, isTrue);
+
+      final pending = c.read(appGateProvider.future);
+      deferred.completer.complete(_active);
+      expect(await pending, isTrue);
+    });
+
+    test('follows a status flip (the gate reacts when RevenueCat refreshes)', () async {
+      final fixed = _FixedStatus(SubscriptionStatus.none);
+      final c = container(() => fixed);
+      final sub = c.listen(appGateProvider, (_, _) {});
+      addTearDown(sub.close);
+      expect(await c.read(appGateProvider.future), isFalse);
+
+      // The controller's own setter path, as a RevenueCat push uses it.
+      fixed.state = const AsyncData(_active);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(await c.read(appGateProvider.future), isTrue);
+    });
+  });
+
+  group('readAppGate (the router redirect)', () {
+    test('answers from the settled value without waiting', () async {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionStatusProvider.overrideWith(() => _FixedStatus(_active)),
+        ],
       );
-      await c.read(subscriptionStatusProvider.future);
-      final viaRef = Provider<bool>((ref) => isProUnlocked(ref));
-      expect(c.read(viaRef), isFalse);
+      addTearDown(c.dispose);
+      await c.read(appGateProvider.future);
+
+      final viaRef = Provider<Future<bool>>((ref) => readAppGate(ref));
+      expect(await c.read(viaRef), isTrue);
+    });
+
+    test('waits for an unresolved status', () async {
+      final deferred = _DeferredStatus();
+      final c = ProviderContainer(
+        overrides: [subscriptionStatusProvider.overrideWith(() => deferred)],
+      );
+      addTearDown(c.dispose);
+
+      final viaRef = Provider<Future<bool>>((ref) => readAppGate(ref));
+      final pending = c.read(viaRef);
+      deferred.completer.complete(SubscriptionStatus.none);
+      expect(await pending, isFalse);
     });
   });
 }

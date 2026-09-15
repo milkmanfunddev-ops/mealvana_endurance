@@ -1,32 +1,26 @@
-/// Domain model for the Pro subscription entitlement.
+/// Domain model for the subscription entitlement.
 ///
-/// Mirrors the RevenueCat entitlement identifier (`pro`) and the server row in
-/// `public.user_entitlements` (docs/implement_mealplanning/04-entitlement.md).
-/// Pure Dart — no SDK or Supabase types — so the application layer can unify
-/// the three sources (RevenueCat, server row, internal tester flag) into one
-/// [SubscriptionStatus] without the presentation layer knowing which won.
+/// Mirrors the RevenueCat entitlement identifier (`pro`). RevenueCat is the
+/// only gate (mp-279): the client reads the SDK's cached entitlement and
+/// nothing else, so there is one source here, not three. Pure Dart, no SDK
+/// or Supabase types.
 library;
 
 /// Entitlements the app knows how to gate on. The [key] is the identifier in
-/// RevenueCat AND the `entitlement` column server-side; they must stay equal.
+/// RevenueCat; the server's own two-field cache (mp-285) keys on the user.
 enum Entitlement {
   pro('pro');
 
   const Entitlement(this.key);
 
-  /// RevenueCat entitlement identifier / `user_entitlements.entitlement`.
+  /// RevenueCat entitlement identifier.
   final String key;
 }
 
-/// Which source vouched for the active entitlement.
-///
-/// Order matters for [SubscriptionStatus.merge]: RevenueCat is authoritative
-/// (it sees the store directly), the server row is the paywall the edge
-/// functions enforce, and the internal tester flag is a client-only override
-/// for QA that never reaches the server.
-enum SubscriptionSource { none, revenuecat, server, internal }
+/// Which source vouched for the active entitlement. [none] when inactive.
+enum SubscriptionSource { none, revenuecat }
 
-/// The resolved Pro status for the current user.
+/// The resolved subscription status for the current user.
 class SubscriptionStatus {
   const SubscriptionStatus({
     required this.active,
@@ -36,10 +30,11 @@ class SubscriptionStatus {
     this.productId,
   });
 
-  /// Nobody is subscribed (also the safe fallback whenever a lookup fails).
+  /// Nobody is subscribed (also the safe fallback whenever a lookup fails
+  /// or times out: an unknown entitlement is locked, mp-284).
   static const none = SubscriptionStatus(active: false);
 
-  /// Whether Pro features are unlocked for this user right now.
+  /// Whether the app is unlocked for this user right now.
   final bool active;
 
   /// When the current period ends (UTC). Null for open-ended grants and for
@@ -60,17 +55,6 @@ class SubscriptionStatus {
   bool isExpiredAt(DateTime now) {
     final e = expiresAt;
     return e != null && !e.isAfter(now);
-  }
-
-  /// Pick the status to show when several sources report. The first ACTIVE
-  /// status in [candidates] wins (so pass them in priority order); when none
-  /// is active, [none] is returned rather than an inactive row from a
-  /// lower-priority source, keeping `source` meaningful.
-  static SubscriptionStatus merge(Iterable<SubscriptionStatus?> candidates) {
-    for (final c in candidates) {
-      if (c != null && c.active) return c;
-    }
-    return none;
   }
 
   SubscriptionStatus copyWith({
@@ -106,4 +90,40 @@ class SubscriptionStatus {
   String toString() =>
       'SubscriptionStatus(active: $active, source: ${source.name}, '
       'expiresAt: $expiresAt, isTrial: $isTrial, productId: $productId)';
+}
+
+/// A free introductory period the store attaches to a subscription product
+/// (mp-279: seven days free on the monthly and annual plans). Only a free
+/// offer is modelled — a discounted intro price is not one this app sells.
+class IntroOffer {
+  const IntroOffer({required this.freeDays});
+
+  /// Length of the free period in days.
+  final int freeDays;
+
+  /// Days for a store period of [count] × [unit], where [unit] is the
+  /// store's DAY / WEEK / MONTH / YEAR word (case-insensitive). Apple reports
+  /// a seven-day trial as `WEEK × 1`; the copy says "7 days", so weeks are
+  /// unrolled. Months and years use the 30 / 365 convention the stores use
+  /// for their own copy. Unknown units yield null.
+  static int? daysFor({required String unit, required int count}) {
+    if (count <= 0) return null;
+    return switch (unit.toUpperCase()) {
+      'DAY' => count,
+      'WEEK' => count * 7,
+      'MONTH' => count * 30,
+      'YEAR' => count * 365,
+      _ => null,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is IntroOffer && other.freeDays == freeDays;
+
+  @override
+  int get hashCode => freeDays.hashCode;
+
+  @override
+  String toString() => 'IntroOffer(freeDays: $freeDays)';
 }

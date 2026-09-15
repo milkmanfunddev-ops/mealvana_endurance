@@ -1,35 +1,37 @@
+import 'dart:async';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../../../shared/services/app_config.dart';
 import '../domain/entitlement.dart';
 import 'subscription_status_provider.dart';
 
 part 'pro_gate.g.dart';
 
-/// The one rule for "may this user see Pro surfaces on the client":
-/// the gate is off for this build, or the resolved status is active.
+/// The one rule for "may this user see the app": the resolved subscription
+/// status is active. There is no build flag, no tester grant and no coach
+/// branch (mp-279, mp-280, mp-286).
+bool computeUnlocked(SubscriptionStatus status) => status.active;
+
+/// The app gate, as the router reads it (mp-280: everything is behind it).
 ///
-/// While the status is still loading (cold start, before RevenueCat and the
-/// server have answered) the answer is "locked" when the gate is on — the
-/// Drift cache makes that window short for a subscriber, and a locked deep
-/// link lands on `/pro`, not on an error.
-bool computeProUnlocked({
-  required AsyncValue<SubscriptionStatus> status,
-  required AppConfig config,
-}) {
-  if (!config.proGateEnabled) return true;
-  return status.asData?.value.active ?? false;
-}
-
-/// Reactive form of [computeProUnlocked]. keepAlive so the router's
-/// `ref.read` sees the same value the tabs screen is watching.
+/// Loading while the status is unresolved — the status controller bounds
+/// that wait (mp-284), so awaiting `.future` here answers within a couple of
+/// seconds. keepAlive so the router's `ref.read` sees the same value every
+/// screen watches.
 @Riverpod(keepAlive: true)
-bool proUnlocked(Ref ref) {
-  return computeProUnlocked(
-    status: ref.watch(subscriptionStatusProvider),
-    config: ref.watch(appConfigProvider),
-  );
+class AppGate extends _$AppGate {
+  @override
+  FutureOr<bool> build() async {
+    final status = await ref.watch(subscriptionStatusProvider.future);
+    return computeUnlocked(status);
+  }
 }
 
-/// Imperative read for non-widget callers (the GoRouter redirect).
-bool isProUnlocked(Ref ref) => ref.read(proUnlockedProvider);
+/// Whether the app is unlocked, for a non-widget caller (the GoRouter
+/// redirect). Answers from the settled value when there is one; otherwise
+/// waits for the status controller's bounded resolve.
+Future<bool> readAppGate(Ref ref) {
+  final gate = ref.read(appGateProvider);
+  if (gate.hasValue && !gate.isLoading) return Future.value(gate.value!);
+  return ref.read(appGateProvider.future);
+}

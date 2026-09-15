@@ -1,4 +1,4 @@
-/// Unit tests for the Pro entitlement domain model.
+/// Unit tests for the subscription domain model.
 library;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -6,49 +6,17 @@ import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart
 
 void main() {
   group('Entitlement', () {
-    test('pro key matches the RevenueCat / server identifier', () {
+    test('pro key matches the RevenueCat identifier', () {
       expect(Entitlement.pro.key, 'pro');
     });
   });
 
-  group('SubscriptionStatus.merge', () {
-    const rc = SubscriptionStatus(
-      active: true,
-      source: SubscriptionSource.revenuecat,
-    );
-    const server = SubscriptionStatus(
-      active: true,
-      source: SubscriptionSource.server,
-    );
-    const internal = SubscriptionStatus(
-      active: true,
-      source: SubscriptionSource.internal,
-    );
-
-    test('first ACTIVE candidate wins, in the order given', () {
-      expect(SubscriptionStatus.merge([rc, server, internal]), rc);
-      expect(SubscriptionStatus.merge([null, server, internal]), server);
-      expect(
-        SubscriptionStatus.merge([SubscriptionStatus.none, null, internal]),
-        internal,
-      );
+  group('SubscriptionStatus', () {
+    test('none is inactive with no source', () {
+      expect(SubscriptionStatus.none.active, isFalse);
+      expect(SubscriptionStatus.none.source, SubscriptionSource.none);
     });
 
-    test('no active candidate → none (never an inactive row)', () {
-      const inactiveWithProduct = SubscriptionStatus(
-        active: false,
-        source: SubscriptionSource.server,
-        productId: 'mealvana_pro_monthly',
-      );
-      expect(
-        SubscriptionStatus.merge([inactiveWithProduct, null]),
-        SubscriptionStatus.none,
-      );
-      expect(SubscriptionStatus.merge(const []), SubscriptionStatus.none);
-    });
-  });
-
-  group('SubscriptionStatus.isExpiredAt', () {
     test('no expiry is never expired', () {
       const s = SubscriptionStatus(active: true);
       expect(s.isExpiredAt(DateTime.utc(2099)), isFalse);
@@ -62,18 +30,45 @@ void main() {
       expect(s.isExpiredAt(DateTime.utc(2026, 9, 1, 12, 0, 1)), isTrue);
       expect(s.isExpiredAt(DateTime.utc(2026, 9, 1, 11)), isFalse);
     });
+
+    test('value equality', () {
+      final a = SubscriptionStatus(
+        active: true,
+        expiresAt: DateTime.utc(2026, 10),
+        source: SubscriptionSource.revenuecat,
+        productId: 'x',
+      );
+      final b = a.copyWith();
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a.copyWith(active: false), isNot(a));
+    });
   });
 
-  test('value equality', () {
-    final a = SubscriptionStatus(
-      active: true,
-      expiresAt: DateTime.utc(2026, 10),
-      source: SubscriptionSource.server,
-      productId: 'x',
-    );
-    final b = a.copyWith();
-    expect(a, b);
-    expect(a.hashCode, b.hashCode);
-    expect(a.copyWith(active: false), isNot(a));
+  group('IntroOffer.daysFor', () {
+    test("Apple's WEEK × 1 is the seven free days the copy promises", () {
+      expect(IntroOffer.daysFor(unit: 'WEEK', count: 1), 7);
+      expect(IntroOffer.daysFor(unit: 'week', count: 1), 7);
+    });
+
+    test('days pass through; months and years use the store convention', () {
+      expect(IntroOffer.daysFor(unit: 'DAY', count: 7), 7);
+      expect(IntroOffer.daysFor(unit: 'DAY', count: 3), 3);
+      expect(IntroOffer.daysFor(unit: 'MONTH', count: 1), 30);
+      expect(IntroOffer.daysFor(unit: 'YEAR', count: 1), 365);
+    });
+
+    test('an unknown unit or a non-positive count is no offer', () {
+      expect(IntroOffer.daysFor(unit: 'unknown', count: 1), isNull);
+      expect(IntroOffer.daysFor(unit: 'DAY', count: 0), isNull);
+    });
+
+    test('value equality', () {
+      expect(const IntroOffer(freeDays: 7), const IntroOffer(freeDays: 7));
+      expect(
+        const IntroOffer(freeDays: 7),
+        isNot(const IntroOffer(freeDays: 14)),
+      );
+    });
   });
 }
