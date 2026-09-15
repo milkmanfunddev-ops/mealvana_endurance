@@ -14,7 +14,8 @@
   `docs/implement_mealplanning/05-flutter-feature.md` §Status. `plan_meals.is_deleted` is a
   local-only tombstone (the server hard-deletes). v19 added `user_entitlements` — a read-only
   local cache of the user's Pro subscription row, written server-side by the `revenuecat-webhook`
-  (`supabase/migrations/20260902080000_user_entitlements.sql`; see
+  (`supabase/migrations/20260902080000_user_entitlements.sql`, shrunk to `user_id` + `active_until` +
+  `period_type` + `event_at` by `20260916110000_user_entitlements_two_fields.sql`, ticket 18; see
   `docs/implement_mealplanning/04-entitlement.md`). It is not a `SyncableRepository`.
 - Drift tables are the `tables:` list in `app_database.dart`; snapshots per version live in
   `database_schemas/drift_schemas/drift_schema_v<N>.json`

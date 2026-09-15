@@ -39,6 +39,35 @@
 - Sandbox purchase → webhook → provider-flip acceptance run on a device (needs the ASC products
   approved for sandbox, which they are; needs `PRO_PURCHASE_ENABLED=true` on a local debug build).
 
+## Ticket 18 (2026-09-15) — the server gates on a two-field RevenueCat cache
+
+Decisions mp-266, mp-279, mp-285 (approved as mp-296). Supersedes the DB, webhook and gate rows of the
+status table above; the Flutter rows are ticket 19's.
+
+| Piece | Where | State |
+|---|---|---|
+| `user_entitlements` = `user_id` (pk) + `active_until` + `period_type` + `event_at`; every other column dropped; `has_entitlement()` dropped; no insert/update/delete for `authenticated`/`anon` (verified: `set role authenticated; insert …` → 42501) | `supabase/migrations/20260916110000_user_entitlements_two_fields.sql` | applied to **dev** (table had 0 rows). **Prod: not applied** (cutover runbook). |
+| Webhook writes only the two fields (+ event time); an event older than the row's `event_at` is acked as `stale_event`; TRANSFER copies the two fields to the new owner and closes the old owner's row at the transfer time; TEST pings never write | `supabase/functions/revenuecat-webhook/{index,handler,entitlements}.ts`, seam tests in `index.test.ts` with RevenueCat-shaped events | deployed to **dev** (deploy counter 26). Prod still runs the old build. |
+| `requirePro` reads `active_until > now()` from the row; the `PRO_GATE_ENABLED` secret, the `has_entitlement` RPC and the `users.is_internal` bypass are gone from the server | `supabase/functions/_shared/vana/entitlement.ts`, `supabase/functions/tests/vana/entitlement.test.ts` | in code; **takes effect on dev when `vana-chat`, `vana-action`, `vana-day-notes`, `kroger` are next deployed** (not done in ticket 18 so the wave's simulators keep working). `PRO_GATE_ENABLED` unset on dev. |
+| Dev RevenueCat webhook integration `whintgre4c0c2670c` now receives every subscription lifecycle event (was `initial_purchase, renewal, non_renewing_purchase` only — a cache that never hears a cancellation or expiration never closes) | RevenueCat project `proj77b3c48f` | done for **dev**; the **prod** integration `whintgraa6c9e50e5` still carries the three-event list — widen it with the prod deploy (never re-add an environment filter). |
+
+### Store work — seven-day free introductory offer, DEV apps only (2026-09-15, by script)
+mp-279: the existing monthly and annual subscriptions get a seven-day free trial; no new product ids.
+Scripts: `scripts/store/asc.mjs` and `scripts/store/play.mjs` (`list` is read-only; `add-trial` creates;
+both refuse the prod app id / package by construction). Prod is a release-day act.
+
+| Store | App | What was created | Verified by |
+|---|---|---|---|
+| App Store Connect | dev 6756683509, group `Mealvana Pro` 22351029 | `mealvana_pro_monthly` (6807411443) and `mealvana_pro_annual` (6807411689): one `FREE_TRIAL ONE_WEEK ×1` introductory offer **per territory**, all 175 (Apple requires the `territory` relationship; there is no "all territories" call). Start date 2026-09-15, no end date. Subscriptions remain `MISSING_METADATA` (review screenshot) — sandbox purchases work without review. | `node scripts/store/asc.mjs list` → "FREE_TRIAL ONE_WEEK ×1 in 175 territories" on both |
+| Google Play | `com.milkman.mealvanaendurance.dev` | Offer `free-week` on base plans `mealvana_pro_monthly/monthly` and `mealvana_pro_annual/annual`: one phase `P7D ×1 free` (US regional config + all other regions; MN is not billable at regions version 2022/02 so it sits under other-regions), targeting `anySubscriptionInApp` (one intro offer per new subscriber — a cancelled trial is not repeated), activated. | `node scripts/store/play.mjs list` → "offer free-week · ACTIVE · phases [P7D×1 free]" on both |
+| RevenueCat | dev apps | nothing to configure: the SDK reads the store's intro eligibility at purchase time. RC's product catalogue still shows `trial_duration: null` for the dev products (it is not synced from the store). | `list-products` |
+
+Not done in ticket 18: a real sandbox purchase on the dev app. The iOS simulator cannot sign into a
+sandbox App Store account, and a StoreKit-configuration purchase never reaches RevenueCat's servers, so
+no webhook fires. The deployed function was checked alive (bad secret → 401); the shared secret is not
+on disk, so a hand-delivered RevenueCat-shaped event could not be authenticated. Ticket 21's wizard runs
+the purchase on a device.
+
 ## What exists (verified 2026-09-01 via the RevenueCat API)
 - Project `proj77b3c48f` already has entitlement **`pro`** ("Mealvana Endurance Pro", since 2025-11)
   with products `mealvana_pro_monthly` ($9.95/mo, P1M) and `mealvana_pro_annual` ($69/yr, P1Y), in the

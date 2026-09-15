@@ -135,7 +135,12 @@ async function addTrial(dryRun) {
         console.log(`${s.productId}/${bp.basePlanId}: already has a P7D free offer, skipping`);
         continue;
       }
-      const regions = (bp.regionalConfigs ?? []).filter((r) => r.newSubscriberAvailability).map((r) => r.regionCode);
+      // Regions Play refuses in an offer at regions version 2022/02 (seen: MN)
+      // fall under otherRegionsConfig instead of a regional entry.
+      const NOT_BILLABLE = new Set(['MN']);
+      const regions = (bp.regionalConfigs ?? [])
+        .filter((r) => r.newSubscriberAvailability && !NOT_BILLABLE.has(r.regionCode))
+        .map((r) => r.regionCode);
       console.log(`${dryRun ? '[dry-run] would create' : 'creating'} offer ${OFFER_ID} on ${s.productId}/${bp.basePlanId} (${regions.length} regions + other regions)`);
       if (dryRun) continue;
       const body = {
@@ -153,7 +158,7 @@ async function addTrial(dryRun) {
           otherRegionsConfig: { free: {} },
         }],
         regionalConfigs: regions.map((regionCode) => ({ regionCode, newSubscriberAvailability: true })),
-        otherRegionsConfig: { newSubscriberAvailability: true },
+        otherRegionsConfig: { otherRegionsNewSubscriberAvailability: true },
       };
       const existing = bp.offers.find((o) => o.offerId === OFFER_ID);
       if (!existing) {

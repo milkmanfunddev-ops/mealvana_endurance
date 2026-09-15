@@ -97,7 +97,7 @@ async function catalogue() {
     const group = { id: g.id, ...g.attributes, subscriptions: [] };
     for (const s of subs) {
       const offers = await listAll(
-        `/v1/subscriptions/${s.id}/introductoryOffers?fields[subscriptionIntroductoryOffers]=duration,offerMode,numberOfPeriods,startDate,endDate&include=territory`,
+        `/v1/subscriptions/${s.id}/introductoryOffers?fields[subscriptionIntroductoryOffers]=duration,offerMode,numberOfPeriods,startDate,endDate,territory&include=territory`,
       );
       group.subscriptions.push({
         id: s.id,
@@ -121,39 +121,67 @@ function print(cat) {
     for (const s of g.subscriptions) {
       console.log(`    ${s.productId} (${s.id}) · ${s.subscriptionPeriod} · ${s.state}`);
       if (s.introductoryOffers.length === 0) console.log('      intro offers: none');
+      const byKind = new Map();
       for (const o of s.introductoryOffers) {
-        console.log(`      intro offer ${o.id}: ${o.offerMode} ${o.duration} ×${o.numberOfPeriods} territory=${o.territory} start=${o.startDate ?? '-'} end=${o.endDate ?? '-'}`);
+        const k = `${o.offerMode} ${o.duration} ×${o.numberOfPeriods}`;
+        byKind.set(k, (byKind.get(k) ?? 0) + 1);
       }
+      for (const [k, n] of byKind) console.log(`      intro offer ${k} in ${n} territories`);
     }
   }
+}
+
+async function territoriesFor(subscriptionId) {
+  const availability = await api('GET', `/v1/subscriptions/${subscriptionId}/subscriptionAvailability`);
+  const items = await listAll(
+    `/v1/subscriptionAvailabilities/${availability.data.id}/availableTerritories?fields[territories]=currency&limit=200`,
+  );
+  return items.map((t) => t.id);
 }
 
 async function addTrial(dryRun) {
   const cat = await catalogue();
   print(cat);
-  const targets = cat.groups.flatMap((g) => g.subscriptions).filter((s) =>
-    !s.introductoryOffers.some((o) => o.offerMode === 'FREE_TRIAL')
-  );
-  if (targets.length === 0) {
-    console.log('every subscription already carries a FREE_TRIAL intro offer; nothing to do');
-    return;
-  }
-  for (const s of targets) {
-    console.log(`${dryRun ? '[dry-run] would create' : 'creating'} ONE_WEEK FREE_TRIAL on ${s.productId} (${s.id})`);
-    if (dryRun) continue;
-    // No territory relationship: the offer applies in every territory the
-    // subscription is sold in (Apple's "all territories" form).
-    const created = await api('POST', '/v1/subscriptionIntroductoryOffers', {
-      data: {
-        type: 'subscriptionIntroductoryOffers',
-        attributes: { duration: 'ONE_WEEK', offerMode: 'FREE_TRIAL', numberOfPeriods: 1 },
-        relationships: { subscription: { data: { type: 'subscriptions', id: s.id } } },
-      },
-    });
-    console.log(`  created ${created.data.id}`);
+  for (const s of cat.groups.flatMap((g) => g.subscriptions)) {
+    // Apple wants one introductory offer per territory (the "territory"
+    // relationship is required), so the offer is created for every territory
+    // the subscription is available in, skipping those that already have one.
+    const territories = await territoriesFor(s.id);
+    const covered = new Set(s.introductoryOffers.filter((o) => o.offerMode === 'FREE_TRIAL').map((o) => o.territory));
+    const missing = territories.filter((t) => !covered.has(t));
+    console.log(`${s.productId}: ${territories.length} territories, ${covered.size} with a free trial, ${missing.length} to create`);
+    if (missing.length === 0) continue;
+    if (dryRun) {
+      console.log(`  [dry-run] would create ONE_WEEK FREE_TRIAL in ${missing.join(' ')}`);
+      continue;
+    }
+    let n = 0;
+    for (const territory of missing) {
+      await api('POST', '/v1/subscriptionIntroductoryOffers', {
+        data: {
+          type: 'subscriptionIntroductoryOffers',
+          attributes: { duration: 'ONE_WEEK', offerMode: 'FREE_TRIAL', numberOfPeriods: 1 },
+          relationships: {
+            subscription: { data: { type: 'subscriptions', id: s.id } },
+            territory: { data: { type: 'territories', id: territory } },
+          },
+        },
+      });
+      n++;
+      if (n % 25 === 0) console.log(`  ${n}/${missing.length}`);
+    }
+    console.log(`  created ${n} offers on ${s.productId}`);
   }
   console.log('\nAfter:');
-  print(await catalogue());
+  printSummary(await catalogue());
+}
+
+/** One line per subscription: how many territories carry the free trial. */
+function printSummary(cat) {
+  for (const s of cat.groups.flatMap((g) => g.subscriptions)) {
+    const trials = s.introductoryOffers.filter((o) => o.offerMode === 'FREE_TRIAL' && o.duration === 'ONE_WEEK');
+    console.log(`  ${s.productId}: ONE_WEEK FREE_TRIAL in ${trials.length} territories`);
+  }
 }
 
 const [cmd = 'list', ...flags] = process.argv.slice(2);
