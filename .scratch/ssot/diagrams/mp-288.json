@@ -1,0 +1,81 @@
+{
+  "kind": "flow",
+  "title": "Idle rides the chat call",
+  "rows": [
+    [
+      {
+        "id": "close",
+        "label": "Sheet closes"
+      },
+      {
+        "id": "bg",
+        "label": "App goes to\nbackground"
+      },
+      {
+        "id": "new",
+        "label": "New conversation\nstarts"
+      }
+    ],
+    [
+      {
+        "id": "flag",
+        "label": "Chat call with\nidle flag, no wait",
+        "tone": "accent"
+      },
+      {
+        "id": "endpoint",
+        "label": "Separate idle\nendpoint",
+        "tone": "no"
+      }
+    ],
+    [
+      {
+        "id": "first",
+        "label": "No episode yet:\nserver writes it",
+        "tone": "ok"
+      },
+      {
+        "id": "again",
+        "label": "Episode exists:\nwrites nothing",
+        "tone": "ok"
+      },
+      {
+        "id": "offline",
+        "label": "Offline: dropped,\nread back next open",
+        "tone": "muted"
+      }
+    ]
+  ],
+  "edges": [
+    {
+      "from": "close",
+      "to": "flag"
+    },
+    {
+      "from": "bg",
+      "to": "flag"
+    },
+    {
+      "from": "new",
+      "to": "flag"
+    },
+    {
+      "from": "flag",
+      "to": "first"
+    },
+    {
+      "from": "flag",
+      "to": "again",
+      "label": "second signal"
+    },
+    {
+      "from": "flag",
+      "to": "offline"
+    }
+  ],
+  "example": [
+    "Dana closes the sheet 19:02: flag sent, sheet gone at once.",
+    "Backgrounds the app 19:03: second flag, episode exists.",
+    "On a plane: flag dropped; notes were saved in the turn."
+  ]
+}

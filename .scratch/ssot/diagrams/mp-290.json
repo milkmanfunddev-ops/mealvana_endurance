@@ -1,0 +1,24 @@
+{
+  "kind": "flow",
+  "title": "Bytes and counts, not dollars",
+  "rows": [
+    [ { "id": "block", "label": "Context block\nbuilt twice, no writes" },
+      { "id": "history", "label": "History replayed\nat 39, 40, 61" },
+      { "id": "eval", "label": "Eval case,\nsecond turn" } ],
+    [ { "id": "same", "label": "Byte-identical;\nwrite or new day differs", "tone": "ok" },
+      { "id": "shape", "label": "Verbatim; summary + 20;\nrolled summary + 20", "tone": "ok" },
+      { "id": "reads", "label": "Cache-read tokens\nabove zero", "tone": "ok" } ],
+    [ { "id": "cost", "label": "Dollar cost per turn", "tone": "no" } ]
+  ],
+  "edges": [
+    { "from": "block", "to": "same" },
+    { "from": "history", "to": "shape" },
+    { "from": "eval", "to": "reads" },
+    { "from": "reads", "to": "cost", "label": "never asserted" }
+  ],
+  "example": [
+    "39 messages: all verbatim. 40: one summary plus 20.",
+    "61: one rolled summary plus 20; turn returns first.",
+    "Eval case 7, turn two reads 0 cache tokens: case fails."
+  ]
+}

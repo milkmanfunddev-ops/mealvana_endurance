@@ -1,0 +1,40 @@
+{
+  "kind": "timeline",
+  "title": "One hand run per store, before release",
+  "steps": [
+    {
+      "at": "Seam test",
+      "label": "Fake webhook events: renewal grants,\nstale event ignored, transfer moves row",
+      "tone": "ok"
+    },
+    {
+      "at": "Day 1",
+      "label": "Fresh sandbox account subscribes\nthrough the introductory offer",
+      "tone": "accent"
+    },
+    {
+      "at": "Day 1",
+      "label": "Entitlement active, webhook lands\nthe Allowance",
+      "tone": "ok"
+    },
+    {
+      "at": "Cancel",
+      "label": "Subscription cancelled: account\nmeets the paywall",
+      "tone": "pending"
+    },
+    {
+      "at": "Restore",
+      "label": "Restore purchases reopens it",
+      "tone": "ok"
+    },
+    {
+      "at": "Release",
+      "label": "Written up with the release;\nnever a CI step",
+      "tone": "no"
+    }
+  ],
+  "example": [
+    "Release 1.27.0: one App Store run, one Play run, logged.",
+    "Webhook seam: 3 fake events, green in CI on every push."
+  ]
+}
