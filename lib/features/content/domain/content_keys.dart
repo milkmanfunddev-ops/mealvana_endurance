@@ -425,6 +425,10 @@ class ContentKeys {
   static const String mpDetailEditCancel = 'meal_planning.detail_edit_cancel';
   static const String mpDetailAddToPlan = 'meal_planning.detail_add_to_plan';
   static const String mpBadgeAiGenerated = 'meal_planning.badge_ai_generated';
+  // Directions origin (mp-146): where a recipe's steps came from.
+  static const String mpOriginVerbatim = 'meal_planning.origin_verbatim';
+  static const String mpOriginAltSource = 'meal_planning.origin_alt_source';
+  static const String mpOriginAssembly = 'meal_planning.origin_assembly';
   static const String mpBadgePlantBased = 'meal_planning.badge_plant_based';
   static const String mpBadgePlantBasedInfo =
       'meal_planning.badge_plant_based_info';

@@ -10,8 +10,8 @@
 
 **Touches:** lib/features/meal_planning/presentation/screens/meal_detail_screen.dart, lib/features/meal_planning/domain/directions_origin.dart
 
-- [ ] Four origins, four labels; verbatim carries the publisher name and link (widget test per origin).
-- [ ] The sparkle tooltip is unchanged for AI-generated steps.
-- [ ] Golden of the detail screen per origin.
+- [x] Four origins, four labels; verbatim carries the publisher name and link (widget test per origin).
+- [x] The sparkle tooltip is unchanged for AI-generated steps.
+- [x] Golden of the detail screen per origin.
 
 Next: /implement-lee mealplanning

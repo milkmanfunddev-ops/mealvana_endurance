@@ -26,6 +26,7 @@ import '../../domain/meal_image.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/choice_chip_button.dart';
+import '../widgets/directions_origin_label.dart';
 import '../widgets/meal_picture_mapping.dart';
 import '../widgets/servings_sheet.dart';
 import '../widgets/dashed_box.dart';
@@ -35,7 +36,8 @@ import 'vana_browse_screen.dart';
 
 /// `/food/meals/:id` (05 §4), minimal layout: hero, title + "see the
 /// original recipe", thumbs · prep row, macro pills, ingredients,
-/// directions (AI badge only), saved-meal notes, swaps as plain tips.
+/// directions labelled by origin (mp-146), saved-meal notes, swaps as
+/// plain tips.
 /// `?swap=<planMealId>` turns the primary action into "Swap in" + servings
 /// stepper (remote-ack `swap_meal`); `?pick=<conversationId>` (from the
 /// Vana browse screen) adds "Add to plan" into that conversation's draft
@@ -144,6 +146,9 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
 
   /// "Add to plan" is in flight — the button spins, no double-tap.
   bool _adding = false;
+
+  Future<bool> _openOriginal(Uri uri) =>
+      launchUrl(uri, mode: LaunchMode.externalApplication);
 
   @override
   Widget build(BuildContext context) {
@@ -358,10 +363,27 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                   content.getValue(ContentKeys.mpDetailDirections),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              _OriginBadge(origin: detail.directions.origin),
+              // AI-written steps keep the sparkle badge on the label row.
+              if (detail.directions.origin == DirectionsOrigin.aiGenerated) ...[
+                const SizedBox(width: AppSpacing.sm),
+                DirectionsOriginLabel(
+                  directions: detail.directions,
+                  onOpen: _openOriginal,
+                ),
+              ],
             ],
           ),
+          // mp-146: every other origin gets its own line under the label —
+          // "As published by X" (linked), "Steps from X", or "A simple
+          // assembly". No recorded origin, no line.
+          if (detail.directions.origin != null &&
+              detail.directions.origin != DirectionsOrigin.aiGenerated) ...[
+            const SizedBox(height: AppSpacing.xxs),
+            DirectionsOriginLabel(
+              directions: detail.directions,
+              onOpen: _openOriginal,
+            ),
+          ],
           const SizedBox(height: AppSpacing.xs),
           _ListCard(
             rows: [
@@ -1076,57 +1098,6 @@ class _AdminReviewBoxState extends ConsumerState<_AdminReviewBox> {
             onPressed: canSend ? _send : null,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// "AI-written steps" — the only origin badge kept on the minimal layout;
-/// assembly-simple / verbatim-source badges were removed with the cleanup.
-class _OriginBadge extends ConsumerWidget {
-  const _OriginBadge({required this.origin});
-
-  final DirectionsOrigin? origin;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (origin != DirectionsOrigin.aiGenerated) {
-      return const SizedBox.shrink();
-    }
-    final content = ref.read(contentServiceProvider);
-
-    return Tooltip(
-      message: content.getValue(ContentKeys.mpCookAiDisclaimer),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: AppColors.orange.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: AppColors.orange.withValues(alpha: 0.45),
-            width: 0.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const FaIcon(
-              FontAwesomeIcons.wandMagicSparkles,
-              size: 11,
-              color: AppColors.orange,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              content.getValue(ContentKeys.mpBadgeAiGenerated),
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.orange,
-                height: 1.2,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
