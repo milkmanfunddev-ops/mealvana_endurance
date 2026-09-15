@@ -1,10 +1,12 @@
-/** Call log → public.vana_calls (id, user_id, conversation_id, function_name, model, input_tokens, output_tokens).
+/** Call log → public.vana_calls (id, user_id, conversation_id, function_name, model, input_tokens, output_tokens,
+ *  cache_read_tokens). cache_read_tokens is the prompt-cache read the gateway reported for the call, written beside
+ *  input_tokens so a zero on a second turn is visible (mp-276 clause 1).
  *  Service role: users can only SELECT their own rows. Never throws. */
 import type { Db } from './env.ts';
 
-export async function logCall(admin: Db, row: { userId: string; conversationId?: string | null; functionName: string; model: string; inputTokens?: number; outputTokens?: number }) {
+export async function logCall(admin: Db, row: { userId: string; conversationId?: string | null; functionName: string; model: string; inputTokens?: number; outputTokens?: number; cacheReadTokens?: number }) {
   try {
-    const { error } = await admin.from('vana_calls').insert({ user_id: row.userId, conversation_id: row.conversationId ?? null, function_name: row.functionName, model: row.model, input_tokens: row.inputTokens ?? null, output_tokens: row.outputTokens ?? null });
+    const { error } = await admin.from('vana_calls').insert({ user_id: row.userId, conversation_id: row.conversationId ?? null, function_name: row.functionName, model: row.model, input_tokens: row.inputTokens ?? null, output_tokens: row.outputTokens ?? null, cache_read_tokens: row.cacheReadTokens ?? null });
     if (error) console.error('[vana] vana_calls insert failed:', error.message);
   } catch (e) { console.error('[vana] vana_calls insert threw:', (e as Error).message); }
 }

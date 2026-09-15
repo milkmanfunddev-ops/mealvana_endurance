@@ -2,6 +2,7 @@
 import type { Memory } from './contracts.ts';
 import type { VanaCtx } from './env.ts';
 import { embedText, vec } from './embeddings.ts';
+import { invalidateContext } from './context-cache.ts';
 
 /** Cosine similarity above which a new sentence is the same margin note as one already on file.
  *  text-embedding-3-small puts a genuine paraphrase around 0.85–0.92 and a restatement above 0.95,
@@ -65,6 +66,11 @@ async function nearIdentical(v: VanaCtx, embedding: number[]): Promise<any | nul
  * Conflicting notes both stay — each carries its date in the prompt and the model weighs them.
  */
 export async function rememberFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps = defaultMemoryDeps): Promise<Memory> {
+  const out = await writeFact(v, m, deps);
+  await invalidateContext(v); // memories, settings and the pantry are all lines of the block
+  return out;
+}
+async function writeFact(v: VanaCtx, m: { kind: Memory['kind']; fact: string; key?: string | null; value?: unknown; confidence?: number; source?: string }, deps: MemoryDeps): Promise<Memory> {
   let raw: number[] | null = null;
   try { raw = await deps.embed(v, m.fact); } catch { /* optional — a write without an embedding is still a write */ }
   const embedding: string | null = raw ? vec(raw) : null;
@@ -110,6 +116,7 @@ function newestEpisode(v: VanaCtx, conversationId: string) {
 }
 export async function forgetMemory(v: VanaCtx, id: string) {
   await v.db.from('user_memories').update({ is_deleted: true }).eq('id', id).eq('user_id', v.userId);
+  await invalidateContext(v);
 }
 export async function getSetting<T = unknown>(v: VanaCtx, key: string): Promise<T | null> {
   const { data } = await v.db.from('user_memories').select('value').eq('user_id', v.userId).eq('kind', 'setting').eq('key', key).eq('is_deleted', false).maybeSingle();

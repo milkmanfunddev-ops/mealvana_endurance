@@ -16,7 +16,7 @@ const base = (): Tables => ({ users: [{ id: U, first_name: 'Lee', dietary_prefer
 
 const blockFor = async (tables: Tables) => {
   const v = testCtx(tables);
-  const c = await buildAthleteContext(v, undefined, ANCHOR, offlineDeps());
+  const c = await buildAthleteContext(v, ANCHOR, offlineDeps());
   return { c, lines: contextBlock(c).split('\n') };
 };
 const line = (lines: string[], prefix: string) => lines.find((l) => l.startsWith(prefix)) ?? `«no ${prefix} line»`;

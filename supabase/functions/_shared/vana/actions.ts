@@ -98,7 +98,7 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
 
 /** get_home {date?} — what the Food → Plan screen needs: the plan, the day planner, a small day card, staples when there is no plan. No model call. */
 export async function homePayload(v: VanaCtx, date = today()) {
-  const ctx = await buildAthleteContext(v, undefined, date);
+  const ctx = await buildAthleteContext(v, date);
   const [day, pl] = await Promise.all([dayGuidance(v, ctx, date), plan.getPlan(v)]);
   const staples = pl && pl.meals.length ? null : await diagnoseStaples(v);
   const slots = (pl?.days?.[date] ?? {}) as DayPlan;

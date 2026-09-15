@@ -12,6 +12,7 @@
 import type { MealPlan, PlanMeal, PlanRule, ShoppingItem, MealRef, Session, DayPlan, DaySlot, DaySlotRef } from './contracts.ts';
 import type { VanaCtx } from './env.ts';
 import { weekStartFor, today } from './env.ts';
+import { invalidateContext } from './context-cache.ts';
 import { getMeal } from './meals.ts';
 import { getSetting, getCoverageScope, getPantryItems } from './memory.ts';
 import { buildShoppingList } from './grocery.ts';
@@ -93,6 +94,7 @@ export async function setServings(v: VanaCtx, planMealId: string, servings: numb
 export async function setSession(v: VanaCtx, planMealId: string, session: Session): Promise<MealPlan> {
   const planId = await planIdOfMeal(v, planMealId);
   await v.db.from('plan_meals').update({ session }).eq('id', planMealId).eq('user_id', v.userId);
+  await invalidateContext(v);
   return (await getPlanById(v, planId))!;
 }
 export async function applySwap(v: VanaCtx, planMealId: string, swap: { from: string; to: string; effect?: string }): Promise<MealPlan> {
@@ -112,6 +114,7 @@ export async function setRule(v: VanaCtx, rule: PlanRule, scope?: PlanScope | nu
   const plan = (await resolvePlan(v, scope, true))!;
   const rules = plan.rules.filter((r) => !(r.day === rule.day && r.rule === rule.rule)).concat(rule);
   await v.db.from('meal_plans').update({ rules, updated_at: new Date().toISOString() }).eq('id', plan.id);
+  await invalidateContext(v);
   return (await getPlanById(v, plan.id))!;
 }
 export async function setBatchCooking(v: VanaCtx, on: boolean, scope?: PlanScope | null): Promise<MealPlan> {
@@ -125,6 +128,7 @@ export async function setBatchCooking(v: VanaCtx, on: boolean, scope?: PlanScope
     if (on) { if (!ref.batch) s = 'fresh-fri'; else { s = sunday >= 2 ? 'topup-wed' : 'cook-sun'; sunday++; } }
     await v.db.from('plan_meals').update({ session: s }).eq('id', m.id);
   }
+  await invalidateContext(v);
   return (await getPlanById(v, plan.id))!;
 }
 export async function setBrief(v: VanaCtx, brief: string, scope?: PlanScope | null) { const p = (await resolvePlan(v, scope, true))!; await v.db.from('meal_plans').update({ brief }).eq('id', p.id); }
@@ -145,6 +149,7 @@ export async function refreshShopping(v: VanaCtx, planId?: string | null): Promi
   const items = await buildShoppingList(v, plan, await getPantryItems(v));
   const merged = items.map((i) => { const p = prev.get(i.name.toLowerCase()); return p ? { ...i, checked: p.checked, have: i.have || p.have } : i; });
   await v.db.from('meal_plans').update({ shopping: merged, day_notes_stale: true, updated_at: new Date().toISOString() }).eq('id', plan.id);
+  await invalidateContext(v); // every meal edit ends here: the PLAN line changed
   return { ...plan, shopping: merged, dayNotesStale: true };
 }
 export async function toggleShopping(v: VanaCtx, name: string, field: 'checked' | 'have', value: boolean): Promise<ShoppingItem[]> {
@@ -160,6 +165,7 @@ export async function logFromPlan(v: VanaCtx, planMealId: string, mealType?: str
   if (error) throw new Error(`plan_log_from_plan: ${error.message}`);
   const { data: m } = await v.db.from('plan_meals').select('name, servings_left').eq('id', planMealId).eq('user_id', v.userId).maybeSingle();
   if (!m) throw new Error('plan meal not found');
+  await invalidateContext(v); // LOGGED TODAY and the servings left both moved
   return { name: m.name, servingsLeft: m.servings_left, logId: String(logId) };
 }
 
@@ -200,7 +206,9 @@ export async function newPlan(v: VanaCtx, scope?: PlanScope | null): Promise<Mea
   const cur = await resolvePlan(v, scope, false);
   if (cur) await v.db.from('meal_plans').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', cur.id);
   const conversationId = scope?.conversationId ?? cur?.conversationId ?? null;
-  return insertDraft(v, cur?.weekStart ?? weekStartFor(today()), conversationId);
+  const fresh = await insertDraft(v, cur?.weekStart ?? weekStartFor(today()), conversationId);
+  await invalidateContext(v);
+  return fresh;
 }
 
 // ---------------------------------------------------------------- day planner (meal_plans.days jsonb)

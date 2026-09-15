@@ -2,12 +2,16 @@
  *  rate limit → context → conversation → tools → user-row persist → streamText → NDJSON, with the assistant row,
  *  `vana_calls` and `ai_usage` written from onFinish under EdgeRuntime.waitUntil.
  *  Cost posture: Haiku by default, ≤6 steps, ≤700 output tokens, ~250-token context block, compact tool outputs.
+ *  The repeated prefix is cached (mp-276): the gateway call carries Anthropic's automatic cache_control, the prompt
+ *  order is fixed (tools, persona, context, messages), the context block is built once per conversation and reused
+ *  (context-cache.ts), and the cache-read token count is logged per call so a zero is visible.
  *  Brevity is a prompt rule (persona.ts VOICE registers), not a server trim: a clamp only cuts text after it was paid for.
  *  The only server cut is a generous runaway guard so a looping turn never floods the transcript (Lee, 2026-09-03). */
 import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock, withUnreadTalk } from './context.ts';
+import { cachedContext } from './context-cache.ts';
 import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
@@ -22,7 +26,12 @@ import { addDays, weekStartFor } from './env.ts';
 import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
 import { generalOpener } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
-import { ndjsonFromFullStream, ndjsonHeaders } from './stream.ts';
+import { ndjsonFromFullStream, ndjsonHeaders, cacheReadTokens } from './stream.ts';
+
+/** Anthropic's automatic prompt caching, through the gateway: a top-level `cache_control` the API places on the last
+ *  cacheable block and moves forward as the conversation grows (mp-276 clause 1). With the prefix stable — tools,
+ *  persona, context, then the history — every turn after the first reads the one before it. */
+export const CACHE_PROVIDER_OPTIONS = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
 
 const MAX_OUTPUT_TOKENS = 900;
 /** Runaway guard, not a style rule: a well-behaved planning turn never comes near it (PRESENTING is ≤4 sentences). */
@@ -182,9 +191,24 @@ export function partsFromSteps(text: string, steps: any[], maxSentences: number 
 const weekdayOf = (iso: string) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(`${iso}T12:00:00Z`).getUTCDay()];
 /** Both kinds get the same block (the Voodoo Doll, 2026-09-09). Only the prompt above it differs.
  *  Before this, general mode carried a first name and a date, and everything else had to be fetched
- *  by a tool call the model might not make. */
+ *  by a tool call the model might not make.
+ *  Order is fixed and stable within a day: persona, then the context (the API renders tools before this
+ *  system text, and the messages after it). Nothing per-message goes in here — the Situation rides on the
+ *  user message (`withSituation`) — or the cached prefix would break on every turn (mp-276 clause 3). */
 export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '') =>
   `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}, ${weekdayOf(todayIso)}) ---\n${contextBlock(ctx)}${extra}`;
+
+/** The Situation (which screen they are on) travels with the message, so it is appended to the last user turn as a
+ *  marked line, not written into the system prompt: the prefix stays byte-identical across turns and only the newest
+ *  message — never cached anyway — carries what changes per message. */
+export function withSituation<M extends { role: string; content: unknown }>(messages: M[], situation: string | null | undefined): M[] {
+  if (!situation) return messages;
+  const i = messages.map((m) => m.role).lastIndexOf('user');
+  if (i < 0) return messages;
+  const m = messages[i]; const note = `[SITUATION right now they are ${situation}]`;
+  const content = typeof m.content === 'string' ? `${m.content}\n\n${note}` : Array.isArray(m.content) ? [...m.content, { type: 'text', text: note }] : m.content;
+  return [...messages.slice(0, i), { ...m, content }, ...messages.slice(i + 1)];
+}
 
 /** How long an opener waits for the previous conversation to be read back (one small-model call, usually 1–2 s)
  *  before it is written without it. The sheet shows Vana typing meanwhile. */
@@ -245,12 +269,17 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       if (late) unread = await athleteWordsFrom(v, late);
     } else waitUntil(readBackPrevious(v, convId));
   }
-  const ctx = withUnreadTalk(await buildAthleteContext(v, lastText || undefined, anchorDate), anchorDate, unread);
   // Planning writes land on this conversation's own draft; the context's PLAN line describes that draft, not the Plan tab's plan.
   const scope = convKind === 'meal_planning' && convId ? { conversationId: convId } : null;
-  if (scope) { const draft = await getConversationPlan(v, convId, false); ctx.plan = { exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? ctx.plan.batchCooking }; }
-  // The Situation travels with the message and is resolved here from ids; it is never written anywhere.
-  ctx.situation = await resolveSituation(v, body.situation);
+  // Built once when the conversation opens and reused for its turns; a tool write or a new day rebuilds it (mp-276).
+  const { ctx, reused } = await cachedContext(v, persist ? convId : null, anchorDate, async () => {
+    const c = withUnreadTalk(await buildAthleteContext(v, anchorDate), anchorDate, unread);
+    if (scope) { const draft = await getConversationPlan(v, convId, false); c.plan = { exists: !!draft && draft.meals.length > 0, status: draft?.status ?? 'draft', mealsLeft: draft ? draft.meals.reduce((s, m) => s + m.servingsLeft, 0) : 0, batchCooking: draft?.batchCooking ?? c.plan.batchCooking }; }
+    return c;
+  });
+  // The Situation travels with the message and is resolved here from ids; it is never written anywhere, and it rides
+  // on the user message rather than the block (see withSituation).
+  const situation = await resolveSituation(v, body.situation);
   const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
@@ -273,10 +302,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
   const replayed = opener ? messages : await replayHistory(v, convId, messages);
-  const modelMessages = opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed);
+  const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed), situation);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
-  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}` : ''} model=${CHAT_MODEL}`);
+  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
 
   const result = streamText({
     model: CHAT_MODEL,
@@ -285,9 +314,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     tools,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     stopWhen: stepCountIs(general ? 8 : 6),
+    providerOptions: CACHE_PROVIDER_OPTIONS,
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;
+      const cacheRead = cacheReadTokens(u) ?? 0;
       const task = (async () => {
         try {
           if (persist) {
@@ -300,10 +331,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }
-          await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName: opener ? `vana.opener.${convKind}` : `vana.chat.${convKind}`, model: CHAT_MODEL, inputTokens, outputTokens });
+          await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName: opener ? `vana.opener.${convKind}` : `vana.chat.${convKind}`, model: CHAT_MODEL, inputTokens, outputTokens, cacheReadTokens: cacheRead });
           await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens });
           await opts.afterFinish?.({ inputTokens, outputTokens });
-          console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
+          console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} cache_read=${cacheRead} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
         } catch (e) { console.error(`${tag} onFinish task failed:`, (e as Error).message); }
       })();
       waitUntil(task);

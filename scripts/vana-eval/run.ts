@@ -6,6 +6,8 @@
  *   • PICKING turns ≤2 sentences and naming a training fact · PRESENTING (opener) 2–4 sentences with a concrete athlete fact
  *   • every fork ≤4 options, labels only (no trade-off details — 2026-09-04) · EXPLAINING turns explain and recommend
  *   • MILESTONE sentence after confirm (≤1 exclamation mark, only there)
+ *   • the prompt cache (mp-276, mp-290 clause 3): cache-read tokens are recorded per turn and a conversation whose
+ *     second turn read zero fails — the prefix churned, or caching is off
  *
  * This BILLS real model spend (Haiku, ~10 conversations × 2–5 turns) and writes real rows for the eval user
  * (conversations, a draft plan per conversation, and — for the `confirm` turn — a confirmed plan for the week).
@@ -148,7 +150,7 @@ const spec = JSON.parse(Deno.readTextFileSync(new URL('./conversations.json', im
 const todo = spec.conversations.filter((c) => !only || only.includes(c.name));
 if (!todo.length) { console.error('vana-eval: nothing matched --only'); Deno.exit(2); }
 const jwt = await signIn();
-let failures = 0; let turns = 0; let inTok = 0; let outTok = 0;
+let failures = 0; let turns = 0; let inTok = 0; let outTok = 0; let cacheTok = 0;
 type Scored = Exchange & { results: Record<string, string | null> };
 const transcript: Record<string, { conversationId: string | null; exchanges: Scored[] }> = {};
 const resolveSay = (say: string, prev: Exchange | null): string => {
@@ -160,7 +162,8 @@ const resolveSay = (say: string, prev: Exchange | null): string => {
 };
 const show = (label: string, ex: Exchange, results: Record<string, string | null>) => {
   const fails = Object.entries(results).filter(([, v]) => v);
-  console.log(`  ${fails.length ? '✗' : '✓'} ${label}${ex.say ? ` ← "${ex.say}"` : ''}  [${ex.parts.map((p) => p.kind).join(',') || 'text'}]${ex.status.length ? ` tools=${ex.status.join(',')}` : ''}`);
+  const u = ex.usage as { input_tokens?: number; cache_read_tokens?: number | null } | undefined;
+  console.log(`  ${fails.length ? '✗' : '✓'} ${label}${ex.say ? ` ← "${ex.say}"` : ''}  [${ex.parts.map((p) => p.kind).join(',') || 'text'}]${ex.status.length ? ` tools=${ex.status.join(',')}` : ''}  in=${u?.input_tokens ?? '?'} cache_read=${u?.cache_read_tokens ?? 'n/a'}`);
   if (verbose || fails.length) console.log(`      "${ex.text}"`);
   for (const [k, v] of fails) console.log(`      FAIL ${k}: ${v}`);
 };
@@ -170,7 +173,9 @@ for (const conv of todo) {
   const all: Exchange[] = [];
   const { conversationId, ex: opener } = await chat(jwt, { opener: true });
   all.push(opener);
-  const run = (ex: Exchange, expect: string[]) => { const ctx = { prev: all.length > 1 ? all[all.length - 2] : null, opener, all }; const results: Record<string, string | null> = {}; for (const [k, f] of Object.entries(GLOBAL)) results[k] = f(ex, ctx); for (const k of expect) results[k] = CHECKS[k] ? CHECKS[k](ex, ctx) : `unknown check ${k}`; const u = ex.usage as { input_tokens?: number; output_tokens?: number } | undefined; inTok += u?.input_tokens ?? 0; outTok += u?.output_tokens ?? 0; turns++; if (Object.values(results).some(Boolean)) failures++; return results; };
+  const run = (ex: Exchange, expect: string[]) => { const ctx = { prev: all.length > 1 ? all[all.length - 2] : null, opener, all }; const results: Record<string, string | null> = {}; for (const [k, f] of Object.entries(GLOBAL)) results[k] = f(ex, ctx); for (const k of expect) results[k] = CHECKS[k] ? CHECKS[k](ex, ctx) : `unknown check ${k}`; const u = ex.usage as { input_tokens?: number; output_tokens?: number; cache_read_tokens?: number | null } | undefined; inTok += u?.input_tokens ?? 0; outTok += u?.output_tokens ?? 0; cacheTok += u?.cache_read_tokens ?? 0; turns++;
+    // The second turn of every conversation must be served from the cached prefix (mp-290 clause 3).
+    if (all.length === 2) results.cached_second_turn = (u?.cache_read_tokens ?? 0) > 0 ? null : `second turn read ${u?.cache_read_tokens ?? 'no'} cache tokens (input ${u?.input_tokens ?? '?'})`; if (Object.values(results).some(Boolean)) failures++; return results; };
   const rec: { conversationId: string | null; exchanges: Scored[] } = { conversationId, exchanges: [] }; transcript[conv.name] = rec;
   rec.exchanges.push({ ...opener, results: (() => { const r = run(opener, ['presenting']); show('opener', opener, r); return r; })() });
   for (const t of conv.turns) {
@@ -182,6 +187,6 @@ for (const conv of todo) {
     const r = run(ex, t.expect ?? []); show('turn', ex, r); rec.exchanges.push({ ...ex, results: r });
   }
 }
-console.log(`\n${failures ? '✗' : '✓'} ${turns} turns, ${failures} with failures · tokens in=${inTok} out=${outTok}`);
+console.log(`\n${failures ? '✗' : '✓'} ${turns} turns, ${failures} with failures · tokens in=${inTok} cache_read=${cacheTok} out=${outTok}`);
 if (out) { Deno.writeTextFileSync(out, JSON.stringify(transcript, null, 2)); console.log(`transcript → ${out}`); }
 Deno.exit(failures ? 1 : 0);

@@ -6,7 +6,7 @@
  *   {"type":"text","delta":"..."}                 — prose chunk; a "\n" delta separates two text blocks
  *   {"type":"ui","part":{"kind":...}}             — a VanaPart (every tool result that carries `kind`)
  *   {"type":"status","tool":"suggestMeals"}       — emitted when the model starts a tool call; drives "Finding options…"
- *   {"type":"done","usage":{"input_tokens":n,"output_tokens":n}}
+ *   {"type":"done","usage":{"input_tokens":n,"output_tokens":n,"cache_read_tokens":n}}  — cache_read_tokens: the prompt-cache read (mp-276)
  *   {"type":"error","message":"..."}
  *
  * The Dart parser (`ai_coach_chat_repository._parseLine`) ignores unknown `type`s and ignores extra keys on `done`, so
@@ -18,11 +18,16 @@ export type NdjsonLine =
   | { type: 'text'; delta: string }
   | { type: 'ui'; part: unknown }
   | { type: 'status'; tool: string }
-  | { type: 'done'; usage?: { input_tokens: number | null; output_tokens: number | null } }
+  | { type: 'done'; usage?: { input_tokens: number | null; output_tokens: number | null; cache_read_tokens: number | null } }
   | { type: 'error'; message: string };
 
 const enc = new TextEncoder();
 export const ndjsonLine = (l: NdjsonLine): Uint8Array => enc.encode(JSON.stringify(l) + '\n');
+
+/** The prompt-cache read count out of an AI SDK v6 usage: `inputTokenDetails.cacheReadTokens`, or the deprecated
+ *  `cachedInputTokens` an older provider still fills. Null when the provider said nothing; 0 is a real zero. */
+// deno-lint-ignore no-explicit-any
+export const cacheReadTokens = (usage: any): number | null => usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens ?? null;
 
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : 'Vana hit an error');
 
@@ -71,7 +76,7 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
           else if (part.type === 'tool-input-start') push({ type: 'status', tool: part.toolName });
           else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { if ((out as { kind?: string }).kind === 'feedback_saved') filed = true; opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
           else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push({ type: 'error', message: errorMessage(part.error) }); }
-          else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null } }); done = true; }
+          else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null, cache_read_tokens: cacheReadTokens(part.totalUsage) } }); done = true; }
           // step-start / step-finish / tool-call / tool-input-delta carry nothing user-visible.
         }
       } catch (e) {
