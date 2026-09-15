@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
+import '../../nutrition_plan/domain/fuel_log_data.dart';
 import '../../nutrition_plan/domain/nutrition_plan.dart';
 
 /// Converts a NutritionPlan into a compact text block for TP workout descriptions.
@@ -51,6 +52,46 @@ class TpWritebackFormatter {
 
     // No Post line: the macro register is Pre + During ONLY (RULED Xuan,
     // 2026-09-10) — recovery guidance lives in the app, not the TP block.
+
+    lines.add(endDelimiter);
+    return lines.join('\n');
+  }
+
+  /// Format the SAME `[Mealvana Fuel Plan]` block in its logged state — each
+  /// phase line carries `planned · consumed` per field (RULED Xuan,
+  /// 2026-09-10, option A single-block: at fuel-log time the fuel block is
+  /// replaced in-place with the combined form; the rating/notes
+  /// `[Mealvana Feedback]` block stays separate). Pre = absolute
+  /// planned · consumed per field; During = per-hour rates on all fields
+  /// (RULED Xuan, 2026-09-14 — consumed rendered as logged-total ÷ duration
+  /// for apples-to-apples comparison with the planned rate). Same Pre/During
+  /// gating and register as [formatPlanBlock].
+  static String formatLoggedPlanBlock(
+    NutritionPlan plan,
+    FuelLogData fuelLog, {
+    int? durationMinutes,
+  }) {
+    final lines = <String>[];
+    lines.add('---');
+    lines.add(startDelimiter);
+
+    final beforeSection = _findSection(plan, 'before');
+    if (beforeSection != null) {
+      lines.add(_formatBeforeLineLogged(beforeSection, fuelLog));
+    }
+
+    final duringSection = _findSection(plan, 'during');
+    if (duringSection != null) {
+      final effectiveDuration =
+          durationMinutes ?? duringSection.byHourData?.durationMinutes;
+      if (effectiveDuration != null &&
+          effectiveDuration >= 60 &&
+          (duringSection.carbsTarget ?? 0) > 0) {
+        lines.add(
+          _formatDuringLineLogged(duringSection, fuelLog, effectiveDuration),
+        );
+      }
+    }
 
     lines.add(endDelimiter);
     return lines.join('\n');
@@ -137,6 +178,100 @@ class TpWritebackFormatter {
     if (totalSodiumMg != null && totalSodiumMg > 0) {
       final sodiumPerHour = (totalSodiumMg / durationHours).round();
       if (sodiumPerHour > 0) parts.add('${sodiumPerHour}mg/h sodium');
+    }
+
+    return 'During: ${parts.join(', ')}';
+  }
+
+  // ─── Logged (planned · consumed) lines ───
+
+  /// Sum the CONSUMED macros for a phase from the fuel log. Matches items by
+  /// their `sectionId` keyword ('before' / 'during'); the FuelLogItem section
+  /// ids are 'before_run' / 'during_run' / 'after_run', so a keyword contains
+  /// check aligns them with the plan's section ids. Consumed macros come from
+  /// [FuelLogItem.actualNutritionalInfo], which already scales stored
+  /// nutrition by actual ÷ reference quantity (added items included).
+  static ({int carbs, double fluidsMl, int sodium}) _consumedForPhase(
+    FuelLogData fuelLog,
+    String keyword,
+  ) {
+    var carbs = 0;
+    var fluidsMl = 0.0;
+    var sodium = 0;
+    for (final item in fuelLog.items) {
+      if (!item.sectionId.contains(keyword)) continue;
+      final info = item.actualNutritionalInfo;
+      if (info == null) continue;
+      carbs += info.carbs ?? 0;
+      fluidsMl += info.fluids ?? 0;
+      sodium += info.sodium ?? 0;
+    }
+    return (carbs: carbs, fluidsMl: fluidsMl, sodium: sodium);
+  }
+
+  static String _formatBeforeLineLogged(
+    PlanSection section,
+    FuelLogData fuelLog,
+  ) {
+    final consumed = _consumedForPhase(fuelLog, 'before');
+    final parts = <String>[];
+
+    final plannedCarbs = section.carbsTarget?.round();
+    if (plannedCarbs != null && plannedCarbs > 0) {
+      parts.add('${plannedCarbs}g carb planned · ${consumed.carbs}g consumed');
+    }
+
+    final plannedOz = _mlToOz(section.fluidsTarget);
+    if (plannedOz != null && plannedOz > 0) {
+      final consumedOz = _mlToOz(consumed.fluidsMl) ?? 0;
+      parts.add('${plannedOz}oz water planned · ${consumedOz}oz consumed');
+    }
+
+    // Timing parenthetical is preserved from the planned line (only a genuine
+    // `timing` value earns it — same minimal-copy rule as _formatBeforeLine).
+    final timing = section.timing;
+    final timingStr = timing != null ? ' ($timing)' : '';
+    return 'Pre: ${parts.join(', ')}$timingStr';
+  }
+
+  static String _formatDuringLineLogged(
+    PlanSection section,
+    FuelLogData fuelLog,
+    int durationMinutes,
+  ) {
+    final durationHours = durationMinutes / 60.0;
+    final consumed = _consumedForPhase(fuelLog, 'during');
+    final parts = <String>[];
+
+    final plannedCarbsRate = ((section.carbsTarget ?? 0) / durationHours)
+        .round();
+    if (plannedCarbsRate > 0) {
+      final consumedRate = (consumed.carbs / durationHours).round();
+      parts.add(
+        '${plannedCarbsRate}g/h carb planned · ${consumedRate}g/h consumed',
+      );
+    }
+
+    final plannedFluids = section.fluidsTarget;
+    if (plannedFluids != null && plannedFluids > 0) {
+      final plannedRate = (plannedFluids / durationHours).round();
+      if (plannedRate > 0) {
+        final consumedRate = (consumed.fluidsMl / durationHours).round();
+        parts.add(
+          '${plannedRate}ml/h water planned · ${consumedRate}ml/h consumed',
+        );
+      }
+    }
+
+    final plannedSodium = section.sodiumTarget;
+    if (plannedSodium != null && plannedSodium > 0) {
+      final plannedRate = (plannedSodium / durationHours).round();
+      if (plannedRate > 0) {
+        final consumedRate = (consumed.sodium / durationHours).round();
+        parts.add(
+          '${plannedRate}mg/h sodium planned · ${consumedRate}mg/h consumed',
+        );
+      }
     }
 
     return 'During: ${parts.join(', ')}';
