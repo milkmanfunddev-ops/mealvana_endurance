@@ -237,6 +237,7 @@ also the moment frozen functions from §6 can be deleted.
 | P2 | **Functions → prod** from trunk (`deploy_prod.sh`, full `_shared` blast radius, never a FROZEN folder) | `functions list` counters bumped |
 | P3 | **Integration tests — locally** (`run-algorithm-tests.sh --e2e`, Patrol on-sim). Never on CodeMagic. The self-hosted M1 lane (`tests-selfhosted.yml`) is a free second opinion when online | green |
 | P3b | **`/device-sweep` on the release candidate** (UI-bearing bundles) — tier matrix (SE-class → Pro Max → iPad → Android emulator) on a **seeded** account, every contractual state, review-board artifact republished. Suites can be green while the design breaks on one width — that's what this gate exists for | board verdict PASS; findings fixed or explicitly waived |
+| P3c | **Sandbox trial run on both stores — meal-planning releases** (mp-270, mp-289). By hand on physical devices, never in CI: `scripts/sandbox-trial-wizard.sh`, logs in `docs/release/sandbox-trial-runs/` committed with the release. See that folder's README for what counts | a `## Result: GREEN` log for ios **and** android; no green run on both stores → no meal-planning release |
 | P4 | **Merge → `release/*`** — pushing it auto-triggers the CodeMagic release build (billed); no free retries | build in CodeMagic |
 | P5 | **Hand smoke-test on TestFlight** — release breaks where dev worked; get it in your hands. Attach IAP consumables on the version page before *Submit for Review* | core + sync paths behave |
 | P6 | **Release notes + App Store submit** — written at actual release time from git history since the last release (website + ASC copy, brand-voiced); pasted by hand. Not a `release/*`-triggered automation — many release builds never reach the store | build **downloadable** |
@@ -255,7 +256,7 @@ also the moment frozen functions from §6 can be deleted.
 2. **No hide-flags for dev features.** Dev ships visible and breaks freely.
 3. **Never deploy or edit a FROZEN function** without an explicit ruling; the deploy scripts guard it.
 4. **Prod deploys happen from trunk, by hand, in the P-sequence.** Never push `release/*` until
-   P1–P3 (and P3b for UI-bearing bundles) are green.
+   P1–P3 (and P3b for UI-bearing bundles, P3c for meal-planning releases) are green.
 4b. **UI-bearing feature branches run `/device-sweep` before merging to `develop`.** The merge
    auto-cuts a billed dev TestFlight build, so hardware-axis bugs (an SE-width overflow, an iPad
    breakpoint break) must die locally first — the sweep is free, the rebuild is not. Same rule
@@ -265,6 +266,9 @@ also the moment frozen functions from §6 can be deleted.
 5. **Edge functions never deploy from CI.** Nothing deploys on merge.
 6. **Backups.** Prod has no automatic backups on the current plan (confirmed 2026-08-19; Lee owns the
    fix). Until it exists: commit a schema-only dump after every prod apply as the baseline.
+7b. **No meal-planning release without a green sandbox trial run on both stores** (mp-270, mp-289;
+   P3c). Meal planning never ships dark or behind a gate flag, so the trial and purchase path is the
+   release. The run is by hand and never in CI.
 7. **Notion / cut cards.** Run `/release-cut` on every cut (see `CLAUDE.md`).
 
 ---
