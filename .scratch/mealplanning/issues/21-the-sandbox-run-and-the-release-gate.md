@@ -1,8 +1,8 @@
 # 21: The sandbox run and the release gate
 
-**Status:** ready-for-agent (wave 5 failed, 2026-09-16)
-**Blocked by:** 19, 20.
-**Next:** `/implement-lee mealplanning`
+**Status:** built (wave 3, 2026-09-15); waits on Lee's two sandbox runs. Not a wave ticket: an agent cannot subscribe with a sandbox account, so waves 3, 4 and 5 each failed it for that reason alone.
+**Blocked by:** nothing an agent can do.
+**Next:** Lee, on physical phones with fresh sandbox accounts: `scripts/sandbox-trial-wizard.sh preflight`, then `scripts/sandbox-trial-wizard.sh` (see `docs/release/sandbox-trial-runs/README.md`). Tick the last box and set the status to done when both logs are green.
 
 **What to build:** A person with a fresh sandbox account on each store walks a wizard that subscribes through the introductory offer, checks the entitlement is active on day one, checks the Allowance landed, cancels, meets the paywall, and restores; the wizard records each step and the write-up goes with the release. The release checklist gains the trial gate: no meal-planning release without a green run on both stores.
 
@@ -14,4 +14,4 @@
 - [x] The release checklist names the run as a gate for any meal-planning release.
 - [ ] One run on each store is logged green before the ticket closes.
 
-Next: /implement-lee mealplanning
+Next: Lee runs the wizard on both stores; not `/implement-lee`.
