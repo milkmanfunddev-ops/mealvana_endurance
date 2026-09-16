@@ -561,6 +561,8 @@
     "review_your_week": "Your week",
     "review_your_period": "Your {n} days",
     "review_summary": "{meals} meals · {servings} servings",
+    "review_coverage_servings": "{covered} of {slots} servings across {days} days",
+    "review_coverage_nights": "{covered} of {slots} nights planned",
     "review_grouped": "grouped by cooking session",
     "review_night_of": "made the night of",
     "review_keep_planning": "Keep planning",

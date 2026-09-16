@@ -115,6 +115,25 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
       ? null
       : SessionChip.labelInPlan(widget.content, session, widget.plan);
 
+  /// What the plan covers, in the athlete's own mode (mp-231 clauses 3–4): a
+  /// batch is cooked once and eaten across the period, so it fills servings;
+  /// an athlete who cooks the night of fills nights.
+  String _coverageLine() {
+    final coverage = widget.plan.coverage;
+    return ContentKeys.format(
+      widget.content.getValue(
+        widget.plan.batchCooking
+            ? ContentKeys.mpReviewCoverageServings
+            : ContentKeys.mpReviewCoverageNights,
+      ),
+      {
+        'covered': coverage.covered,
+        'slots': coverage.lunchDinnerSlots,
+        'days': coverage.periodDays,
+      },
+    );
+  }
+
   /// "Your week" over seven days, "Your 10 days" over any other period.
   String _title() {
     final days = widget.plan.coverage.periodDays;
@@ -184,6 +203,12 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
                 'servings': totalServings,
               }),
               style: AppTextStyles.bodyMedium.copyWith(color: secondary),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _coverageLine(),
+              key: const ValueKey('meal_planning.review_sheet.coverage'),
+              style: AppTextStyles.bodySmall.copyWith(color: secondary),
             ),
             const SizedBox(height: AppSpacing.md),
             if (widget.plan.meals.isEmpty)

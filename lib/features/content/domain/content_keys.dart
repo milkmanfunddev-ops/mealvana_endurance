@@ -376,6 +376,10 @@ class ContentKeys {
   static const String mpReviewYourWeek = 'meal_planning.review_your_week';
   static const String mpReviewYourPeriod = 'meal_planning.review_your_period';
   static const String mpReviewSummary = 'meal_planning.review_summary';
+  static const String mpReviewCoverageServings =
+      'meal_planning.review_coverage_servings';
+  static const String mpReviewCoverageNights =
+      'meal_planning.review_coverage_nights';
   static const String mpReviewGrouped = 'meal_planning.review_grouped';
   static const String mpReviewNightOf = 'meal_planning.review_night_of';
   static const String mpReviewKeepPlanning =

@@ -60,7 +60,7 @@ export interface MealPlan {
   brief: string | null; rules: PlanRule[]; meals: PlanMeal[]; shopping: ShoppingItem[];
   dayNotes: Record<string, string>;        // ISO date → Vana's one-liner for that day, precomputed (see server/vana/daynotes.ts)
   dayNotesStale?: boolean;
-  coverage: { lunchDinnerSlots: number; covered: number; periodDays: number; perDay: { kcal: number; carbsG: number; proteinG: number } };  // periodDays (additive, 2026-09-15, mp-269): the period the slots and perDay are counted over
+  coverage: { lunchDinnerSlots: number; covered: number; periodDays: number; mealTypes?: MealType[]; perDay: { kcal: number; carbsG: number; proteinG: number } };  // periodDays (additive, 2026-09-15, mp-269): the period the slots and perDay are counted over · mealTypes (additive, 2026-09-16, mp-231): the types the athlete plans, one slot per day of the period each
 }
 /** Meal detail — what /food/meals/:id and cooking mode need; built by the `get_meal` action for a library id or a saved uuid. */
 export interface MealIngredient { name: string; qty: string; role?: string | null }
@@ -140,7 +140,8 @@ export interface AthleteContext {
   // batchKnown (additive, 2026-09-02): whether batch_cooking was ever chosen (plan row or setting memory).
   // Without it the context coalesced to `true` and the persona's "ask once when unknown" fork could never fire.
   // coverageScope (additive, 2026-09-03): the athlete's chosen coverage ('dinners' | 'dinners_lunches' | 'all'), null = never chosen → the persona asks once.
-  plan: { exists: boolean; status: string | null; mealsLeft: number | null; batchCooking: boolean; batchKnown?: boolean; coverageScope?: string | null };
+  // mealTypes (additive, 2026-09-16, mp-231): the meal types the athlete plans, in their order (the `meal_types` setting); null = never chosen, so the coverage scope stands in.
+  plan: { exists: boolean; status: string | null; mealsLeft: number | null; batchCooking: boolean; batchKnown?: boolean; coverageScope?: string | null; mealTypes?: MealType[] | null };
   memories: Memory[];       // top ~10 margin notes by relevance/recency; never an episode (those are lastTalks)
   lastTalks?: { date: string; fact: string }[];   // additive 2026-09-11: the newest conversations' episode sentences, newest first
   // ---- additive 2026-09-03 (plan Phase 2 + 3; server-internal, Dart never sees AthleteContext)

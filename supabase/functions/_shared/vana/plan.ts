@@ -14,17 +14,17 @@ import type { VanaCtx } from './env.ts';
 import { weekStartFor, today } from './env.ts';
 import { invalidateContext } from './context-cache.ts';
 import { getMeal } from './meals.ts';
-import { getSetting, getCoverageScope, getPantryItems, getPlanPeriod } from './memory.ts';
+import { getSetting, getCoverageScope, getPantryItems, getPlanPeriod, getMealTypes } from './memory.ts';
 import { buildShoppingList } from './grocery.ts';
 import { resolveMealIcon } from './meal-icon.ts';
-import { coverageOf, defaultSession } from './plan-math.ts';
+import { coverageOf, defaultSession, servingsToCover } from './plan-math.ts';
 
 export interface PlanScope { planId?: string | null; conversationId?: string | null }
 
 // deno-lint-ignore no-explicit-any
 const toPlanMeal = (r: any): PlanMeal => ({ id: r.id, planId: r.plan_id, source: r.source, libraryMealId: r.library_meal_id ?? null, savedMealId: r.saved_meal_id ?? null, name: r.name, mealType: r.meal_type, session: (r.session ?? null) as Session, servings: r.servings, servingsLeft: r.servings_left, kcal: r.kcal ?? null, carbsG: r.carbs_g == null ? null : Number(r.carbs_g), proteinG: r.protein_g == null ? null : Number(r.protein_g), fatG: r.fat_g == null ? null : Number(r.fat_g), swapsApplied: r.swaps_applied ?? [], comments: r.comments ?? [], position: r.position ?? 0, icon: resolveMealIcon(r.icon, { name: r.name }) });
 
-export { coverageOf, defaultSession };
+export { coverageOf, defaultSession, servingsToCover };
 
 // ---------------------------------------------------------------- resolution
 /** The week a plan made today belongs to: the latest start day (the week_start setting, mp-269) on or before `iso`. */
@@ -67,25 +67,31 @@ async function planIdOfMeal(v: VanaCtx, planMealId: string): Promise<string> {
 }
 // deno-lint-ignore no-explicit-any
 async function hydrate(v: VanaCtx, plan: any): Promise<MealPlan> {
-  const [{ data: rows }, coverageScope, period] = await Promise.all([v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at'), getCoverageScope(v), getPlanPeriod(v)]);
+  const [{ data: rows }, coverageScope, period, mealTypes] = await Promise.all([v.db.from('plan_meals').select('*').eq('plan_id', plan.id).order('position').order('created_at'), getCoverageScope(v), getPlanPeriod(v), getMealTypes(v)]);
   const meals = (rows ?? []).map(toPlanMeal);
-  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope, period.periodDays), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
+  return { id: plan.id, weekStart: plan.week_start, status: plan.status, batchCooking: plan.batch_cooking, conversationId: plan.conversation_id ?? null, brief: plan.brief ?? null, days: (plan.days ?? {}) as Record<string, DayPlan>, rules: (plan.rules ?? []) as PlanRule[], meals, shopping: (plan.shopping ?? []) as ShoppingItem[], coverage: coverageOf(meals, coverageScope, period.periodDays, { batchCooking: !!plan.batch_cooking, mealTypes }), dayNotes: (plan.day_notes ?? {}) as Record<string, string>, dayNotesStale: plan.day_notes_stale !== false };
 }
 
 // ---------------------------------------------------------------- edits
-export async function addMeal(v: VanaCtx, ref: MealRef, servings: number, session?: Session, scope?: PlanScope | null): Promise<MealPlan> {
+/** The servings a meal goes in with when nobody named a number: enough of a batch to cover the period, one when the athlete
+ *  cooks the night of (mp-231 clause 3). The model never passes servings for a normal pick — this is what scales them. */
+export async function defaultServings(v: VanaCtx, batchCooking: boolean): Promise<number> {
+  return servingsToCover((await getPlanPeriod(v)).periodDays, batchCooking);
+}
+export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null, session?: Session, scope?: PlanScope | null): Promise<MealPlan> {
   const plan = (await resolvePlan(v, scope, true))!;
+  const want = servings ?? await defaultServings(v, plan.batchCooking);
   const existing = plan.meals.find((m) => (ref.source === 'library' ? m.libraryMealId === ref.id : m.savedMealId === ref.id));
   if (existing) {
-    await v.db.from('plan_meals').update({ servings: existing.servings + servings, servings_left: existing.servingsLeft + servings, updated_at: new Date().toISOString() }).eq('id', existing.id);
+    await v.db.from('plan_meals').update({ servings: existing.servings + want, servings_left: existing.servingsLeft + want, updated_at: new Date().toISOString() }).eq('id', existing.id);
   } else {
     const s = session === undefined ? defaultSession(plan.batchCooking, ref, plan.meals) : session;
-    const { error } = await v.db.from('plan_meals').insert({ plan_id: plan.id, user_id: v.userId, source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, session: s, servings, servings_left: servings, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, position: plan.meals.length, icon: ref.icon ?? null });
+    const { error } = await v.db.from('plan_meals').insert({ plan_id: plan.id, user_id: v.userId, source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, session: s, servings: want, servings_left: want, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, position: plan.meals.length, icon: ref.icon ?? null });
     if (error) throw new Error(error.message);
   }
   return refreshShopping(v, plan.id);
 }
-export async function addMealById(v: VanaCtx, source: 'library' | 'saved', id: string, servings: number, session?: Session, scope?: PlanScope | null) {
+export async function addMealById(v: VanaCtx, source: 'library' | 'saved', id: string, servings?: number | null, session?: Session, scope?: PlanScope | null) {
   const ref = await getMeal(v, source, id); if (!ref) throw new Error(`meal not found: ${source}/${id}`);
   return addMeal(v, ref, servings, session, scope);
 }
@@ -213,6 +219,30 @@ export async function newPlan(v: VanaCtx, scope?: PlanScope | null): Promise<Mea
   const fresh = await insertDraft(v, cur?.weekStart ?? await currentWeekStart(v), conversationId);
   await invalidateContext(v);
   return fresh;
+}
+
+/** "Same as last time" (mp-231 clause 5): the athlete's last confirmed plan, copied into the one they are building. Fully
+ *  deterministic — the model selects nothing and only presents the result (clause 6). The previous plan's meals come across in
+ *  their own order with the servings they had — it is the same as last time — except when the athlete now cooks the night of,
+ *  where every meal is one night. Sessions are re-derived by the current mode. A meal already in the draft is left alone rather
+ *  than doubled. Throws when the athlete has no confirmed plan to copy.
+ *  Note: `meal_plans` records no period of its own, so a plan built over a different period comes across at its own servings
+ *  rather than rescaled — the athlete adjusts with the stepper. */
+export async function draftFromLastTime(v: VanaCtx, scope?: PlanScope | null): Promise<MealPlan> {
+  const target = (await resolvePlan(v, scope, true))!;
+  const { data } = await v.db.from('meal_plans').select('*').eq('user_id', v.userId).eq('status', 'confirmed').eq('is_deleted', false)
+    .lte('week_start', target.weekStart).neq('id', target.id).order('week_start', { ascending: false }).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+  if (!data) throw new Error('no confirmed plan to copy');
+  const previous = await hydrate(v, data);
+  const have = new Set(target.meals.map((m) => `${m.source}:${m.libraryMealId ?? m.savedMealId}`));
+  for (const m of previous.meals) {
+    const id = m.libraryMealId ?? m.savedMealId;
+    if (!id || have.has(`${m.source}:${id}`)) continue;
+    have.add(`${m.source}:${id}`);
+    const servings = target.batchCooking ? Math.max(1, Math.min(12, m.servings)) : 1;
+    try { await addMealById(v, m.source, id, servings, undefined, { planId: target.id }); } catch (e) { console.warn('[plan] same-as-last-time skipped', id, (e as Error).message); }
+  }
+  return refreshShopping(v, target.id);
 }
 
 // ---------------------------------------------------------------- day planner (meal_plans.days jsonb)

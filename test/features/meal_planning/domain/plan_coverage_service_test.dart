@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart';
@@ -183,4 +186,119 @@ void main() {
       expect(c.toJson()['periodDays'], 7);
     });
   });
+
+  group('the shared coverage fixture — the seam the server holds too', () {
+    // test/features/meal_planning/fixtures/coverage_cases.json is read by BOTH
+    // this test and the server's (supabase/functions/tests/vana/cooking_period.test.ts),
+    // so the two agree on numbers neither one produced.
+    final cases =
+        (jsonDecode(
+                  File(
+                    'test/features/meal_planning/fixtures/coverage_cases.json',
+                  ).readAsStringSync(),
+                )
+                as Map<String, dynamic>)['cases']
+            as List;
+
+    for (final raw in cases) {
+      final c = Map<String, dynamic>.from(raw as Map);
+      test(c['name'] as String, () {
+        final meals = [
+          for (final m in c['meals'] as List)
+            PlanMeal.fromJson(Map<String, dynamic>.from(m as Map)),
+        ];
+        final expected = Map<String, dynamic>.from(c['expected'] as Map);
+        final types = [
+          for (final wire in expected['mealTypes'] as List)
+            MealType.requireWire(wire as String),
+        ];
+        final perDay = Map<String, dynamic>.from(expected['perDay'] as Map);
+
+        // The server sends the denominator; the client's recompute keeps it.
+        final got = PlanCoverageService.compute(
+          meals,
+          lunchDinnerSlots: expected['lunchDinnerSlots'] as int,
+          periodDays: c['periodDays'] as int,
+          batchCooking: c['batchCooking'] as bool,
+          countedTypes: types,
+        );
+        expect(got.covered, expected['covered']);
+        expect(got.lunchDinnerSlots, expected['lunchDinnerSlots']);
+        expect(got.periodDays, expected['periodDays']);
+        expect(got.mealTypes, types);
+        expect(got.perDay.kcal, perDay['kcal']);
+        expect(got.perDay.carbsG, perDay['carbsG']);
+        expect(got.perDay.proteinG, perDay['proteinG']);
+
+        // And the denominator itself: one slot per day of the period for each
+        // type the athlete plans.
+        final derived = PlanCoverageService.compute(
+          meals,
+          periodDays: c['periodDays'] as int,
+          batchCooking: c['batchCooking'] as bool,
+          countedTypes: types,
+        );
+        expect(derived.lunchDinnerSlots, expected['lunchDinnerSlots']);
+      });
+    }
+  });
+
+  group('PlanCoverageService.compute — the mode (mp-231 clauses 3-4)', () {
+    test('per-day counts the nights a meal fills, not its servings', () {
+      final meals = [
+        meal('d1', MealType.dinner, 4),
+        meal('d2', MealType.dinner, 4),
+      ];
+      expect(PlanCoverageService.compute(meals).covered, 8);
+      expect(
+        PlanCoverageService.compute(meals, batchCooking: false).covered,
+        2,
+      );
+    });
+
+    test('a chosen walk counts its own types and nothing else', () {
+      final meals = [
+        meal('b', MealType.breakfast, 3),
+        meal('d', MealType.dinner, 4),
+        meal('l', MealType.lunch, 5),
+      ];
+      final c = PlanCoverageService.compute(
+        meals,
+        countedTypes: const [MealType.breakfast, MealType.dinner],
+      );
+      expect(c.lunchDinnerSlots, 14);
+      expect(c.covered, 7);
+      expect(c.mealTypes, const [MealType.breakfast, MealType.dinner]);
+    });
+
+    test('a server without the walk still reads dinners-only off the slots', () {
+      final c = PlanCoverageService.compute([
+        meal('d', MealType.dinner, 3),
+        meal('l', MealType.lunch, 3),
+      ], lunchDinnerSlots: 7);
+      expect(c.covered, 3);
+      // Inferred for the count, never stamped onto the wire it came from.
+      expect(c.mealTypes, isEmpty);
+    });
+
+    test('the walk round-trips on the wire, and its absence stays absent', () {
+      const c = PlanCoverage(
+        lunchDinnerSlots: 14,
+        covered: 3,
+        mealTypes: [MealType.breakfast, MealType.dinner],
+        perDay: PlanCoveragePerDay(kcal: 1, carbsG: 2, proteinG: 3),
+      );
+      expect(c.toJson()['mealTypes'], ['breakfast', 'dinner']);
+      expect(PlanCoverage.fromJson(c.toJson()), c);
+      expect(
+        PlanCoverage.fromJson(const {
+          'lunchDinnerSlots': 14,
+          'covered': 3,
+          'perDay': {'kcal': 1, 'carbsG': 2, 'proteinG': 3},
+        }).toJson().containsKey('mealTypes'),
+        isFalse,
+      );
+    });
+  });
+
 }

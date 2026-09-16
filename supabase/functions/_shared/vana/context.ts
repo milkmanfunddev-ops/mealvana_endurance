@@ -7,7 +7,8 @@ import { deriveWeekCharacter } from './derive-week-character.ts';
 import { today, addDays, weekStartFor } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { weatherLine } from './weather.ts';
-import { listNotes, recentEpisodes, getSetting, getCoverageScope, getPlanPeriod } from './memory.ts';
+import { listNotes, recentEpisodes, getSetting, getCoverageScope, getPlanPeriod, getMealTypes } from './memory.ts';
+import { walkFor } from './plan-math.ts';
 import { seasonalProduce } from './season.ts';
 import { getPlan } from './plan.ts';
 import { ensureWeekTargets } from './macros.ts';
@@ -46,7 +47,7 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
   await deps.ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
   const period = await getPlanPeriod(v); const weekStart = weekStartFor(t, period.weekStart); // mp-269
-  const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }, likes, { data: survey }] = await Promise.all([
+  const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }, likes, { data: survey }, mealTypes] = await Promise.all([
     d.from('users').select('first_name, dietary_preference, allergies, gut_training_level, home_city, home_lat, home_lon, home_timezone').eq('id', v.userId).maybeSingle(),
     d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, distance_miles, distance_meters, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', t).lt('scheduled_date_time', addDays(end, 1)).order('scheduled_date_time'),
     d.from('daily_macro_targets').select('target_date, carb_g, prot_g, fat_g, tdee, session_kcal, mode').eq('user_id', v.userId).gte('target_date', t).lte('target_date', addDays(t, 21)).order('target_date'),
@@ -63,6 +64,8 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
     // The Voodoo Doll's LIKES and GOALS: read where they already live, never copied into a preferences table.
     likedMeals(v),
     d.from('onboarding_surveys').select('goals').eq('user_id', v.userId).maybeSingle(),
+    // mp-231 clause 1: the types this athlete plans, in their order — the walk the conversation follows.
+    getMealTypes(v),
   ]);
   // deno-lint-ignore no-explicit-any
   const notable = (recentActs ?? []).filter((a: any) => !/cancel|skip|missed/i.test(String(a.status ?? ''))).find((a: any) => (a.duration_minutes ?? 0) >= 75 || /high|race|hard|threshold/i.test(String(a.intensity_level ?? '')));
@@ -101,7 +104,7 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
     holidays,
     // deno-lint-ignore no-explicit-any
     loggedToday: { count: logs?.length ?? 0, carbsG: Math.round((logs ?? []).reduce((s: number, l: any) => s + Number(l.carbs_g ?? 0), 0)) },
-    plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true, batchKnown: batchSetting != null, coverageScope },  // only the setting memory records an explicit choice — a plan row defaults batch_cooking:true at insert, so it cannot distinguish chosen from default
+    plan: { exists: !!plan, status: plan?.status ?? null, mealsLeft: plan ? plan.meals.reduce((s, m) => s + m.servingsLeft, 0) : null, batchCooking: plan?.batchCooking ?? batchSetting ?? true, batchKnown: batchSetting != null, coverageScope, mealTypes },  // only the setting memory records an explicit choice — a plan row defaults batch_cooking:true at insert, so it cannot distinguish chosen from default
     memories,
     lastTalks: episodes.map((m) => ({ date: String(m.lastConfirmedAt).slice(0, 10), fact: m.fact })),
     recentSession, season: seasonalProduce(t), grocery: { weeklyUsd: budgetSetting != null ? Number(budgetSetting) : null }, lastWeek,
@@ -122,6 +125,8 @@ export function contextBlock(c: AthleteContext): string {
     `TARGETS (daily-macros service) today ${b ? `${b.kcal}kcal ≥${b.carbsG}C ≥${b.proteinG}P ${b.fatG}F · formulas ${b.sessionKcal}kcal · meal budget ${b.planningKcal}kcal (lunch+dinner ≈${b.lunchDinnerKcal})` : 'no target for today'} · week ${wk || 'none'}${c.budget.raceWeekCarbsG ? ` · race-week ≥${c.budget.raceWeekCarbsG}C` : ''}`,
     `WEATHER ${c.weather.today ?? 'n/a'}${c.weather.raceDay ? ` · race day ${c.weather.raceDay}` : ''}`,
     `LOGGED TODAY ${c.loggedToday.count} meals ${c.loggedToday.carbsG}C · PLAN ${c.plan.exists ? `${c.plan.status}, ${c.plan.mealsLeft} servings left` : 'none'} · batch ${c.plan.batchKnown === false ? 'never chosen' : c.plan.batchCooking ? 'on' : 'off'} · coverage ${c.plan.coverageScope === 'dinners' ? 'dinners only' : c.plan.coverageScope === 'dinners_lunches' ? 'dinners and lunches' : c.plan.coverageScope === 'all' ? 'every meal' : 'never chosen'}`,
+    // mp-231 clause 1: the walk is the types they plan, in their order — the conversation visits these and nothing else.
+    `WALK ${walkFor(c.plan.mealTypes, c.plan.coverageScope ?? null).join(' \u2192 ')}${(c.plan.mealTypes ?? []).length ? '' : ' (default \u2014 never chosen)'}`,
     `RECENT ${c.recentSession ? `${c.recentSession.date.slice(5)} ${c.recentSession.title}${c.recentSession.minutes ? ` ${c.recentSession.minutes}m` : ''}${c.recentSession.intensity ? ` ${c.recentSession.intensity}` : ''} — done` : 'no notable session in the last 2 days'}`,
     `SEASON in season now: ${(c.season ?? []).join(', ') || 'n/a'}${c.grocery?.weeklyUsd ? ` · BUDGET about $${Math.round(c.grocery.weeklyUsd)}/week` : ''}`,
     `LAST WEEK ${c.lastWeek ? `${c.lastWeek.completed} of ${c.lastWeek.planned} planned meals happened${c.lastWeek.skipReason ? ` (skipped: ${c.lastWeek.skipReason})` : ''}` : 'no debrief yet'}`,

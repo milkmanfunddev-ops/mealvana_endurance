@@ -10,9 +10,9 @@
 
 **Touches:** supabase/functions/_shared/vana/plan-math.ts, supabase/functions/_shared/vana/plan.ts, supabase/functions/_shared/vana/tools.ts, supabase/functions/_shared/vana/persona.ts, supabase/functions/tests/vana/doll.test.ts, lib/features/meal_planning/domain/plan_coverage.dart, lib/features/meal_planning/application/plan_coverage_service.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart
 
-- [ ] Coverage counts servings against the period from the settings; batch mode scales servings to cover it; per-day mode counts days (server and client seams agree on fixtures).
-- [ ] The walk visits only the types the athlete plans, in the order they choose (server seam).
-- [ ] "Same as last time" drafts the period from the previous confirmed plan deterministically (server seam).
+- [x] Coverage counts servings against the period from the settings; batch mode scales servings to cover it; per-day mode counts days (server and client seams agree on fixtures).
+- [x] The walk visits only the types the athlete plans, in the order they choose (server seam).
+- [x] "Same as last time" drafts the period from the previous confirmed plan deterministically (server seam).
 - [ ] Simulator: a ten-day period in batch mode shows servings scaled and coverage against ten days.
 
 Next: /implement-lee mealplanning
