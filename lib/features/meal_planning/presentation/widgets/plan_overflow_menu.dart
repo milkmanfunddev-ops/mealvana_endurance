@@ -8,17 +8,27 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 
 /// The `⋮` beside the plan's summary row (Lee's 09-16 demo: there was no way
 /// to get rid of a plan by hand). Plan-scoped, so it holds only what the
-/// per-tile menu cannot: start a fresh plan, or delete this one. Same Kyle
+/// per-tile menu cannot: start a fresh plan, look at earlier plans, or delete
+/// this one. Same Kyle
 /// popup styling as `CardOverflowMenu`; the two stay siblings rather than one
 /// widget with two action sets, because a plan menu and a tile menu share
 /// nothing but the trigger.
 class PlanOverflowMenu extends ConsumerWidget {
-  const PlanOverflowMenu({super.key, this.onStartNew, this.onDelete});
+  const PlanOverflowMenu({
+    super.key,
+    this.onStartNew,
+    this.onPrevious,
+    this.onDelete,
+  });
 
   final VoidCallback? onStartNew;
+
+  /// Opens the earlier-plans sheet.
+  final VoidCallback? onPrevious;
   final VoidCallback? onDelete;
 
-  bool get isEmpty => onStartNew == null && onDelete == null;
+  bool get isEmpty =>
+      onStartNew == null && onPrevious == null && onDelete == null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,6 +54,7 @@ class PlanOverflowMenu extends ConsumerWidget {
       ),
       onSelected: (action) => switch (action) {
         _PlanAction.startNew => onStartNew?.call(),
+        _PlanAction.previous => onPrevious?.call(),
         _PlanAction.delete => onDelete?.call(),
       },
       itemBuilder: (context) => [
@@ -53,6 +64,15 @@ class PlanOverflowMenu extends ConsumerWidget {
             value: _PlanAction.startNew,
             child: Text(
               content.getValue(ContentKeys.mpPlanStartNew),
+              style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+            ),
+          ),
+        if (onPrevious != null)
+          PopupMenuItem(
+            key: const ValueKey('meal_planning.plan_previous'),
+            value: _PlanAction.previous,
+            child: Text(
+              content.getValue(ContentKeys.mpPlanPrevious),
               style: AppTextStyles.bodyMedium.copyWith(color: textColor),
             ),
           ),
@@ -72,4 +92,4 @@ class PlanOverflowMenu extends ConsumerWidget {
   }
 }
 
-enum _PlanAction { startNew, delete }
+enum _PlanAction { startNew, previous, delete }

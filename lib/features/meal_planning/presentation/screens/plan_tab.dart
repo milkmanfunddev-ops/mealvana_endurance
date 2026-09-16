@@ -23,6 +23,7 @@ import '../widgets/dashed_box.dart';
 import '../widgets/plan_list.dart';
 import '../widgets/plan_overflow_menu.dart';
 import '../widgets/plan_summary.dart';
+import '../widgets/previous_plans_sheet.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 
 /// `intent=new_plan`: the athlete chose a fresh plan, so the opener builds
@@ -31,7 +32,9 @@ import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 const _newPlanRoute = '/vana?c=new&mode=meal_planning&intent=new_plan';
 
 /// The Plan tab (05 §4): Vana's day note, this week's plan with swipe
-/// actions, the dashed empty state, and the confirm / new-plan actions.
+/// actions, the dashed empty state, and the confirm / new-plan actions. The
+/// plan's ⋮ also opens the earlier plans, each viewable read-only at
+/// `/food/plans/:id`.
 /// Tapping a tile opens the meal's detail page. Offline, the day note hides
 /// and the plan renders from the local Drift watch alone.
 class PlanTab extends ConsumerWidget {
@@ -64,26 +67,20 @@ class PlanTab extends ConsumerWidget {
           // point into the chat even before there is a plan to talk about.
           _DayNoteCard(text: home?.vana.text, loading: home == null),
           const SizedBox(height: AppSpacing.md),
-          Text(
-            content.getValue(ContentKeys.mpPlanSectionTitle).toUpperCase(),
-            key: const ValueKey('meal_planning.plan_section'),
-            style: AppTextStyles.overline.copyWith(
-              color:
-                  (Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.cream
-                          : AppColors.blackberry)
-                      .withValues(alpha: 0.6),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
           if (plan == null || plan.meals.isEmpty)
             const _EmptyPlanCard()
           else ...[
+            // The plan's header: its week and meal count, the ⋮ on the right.
+            // (The "This week's plan" overline above it went on 2026-09-16.)
             Row(
               children: [
                 Expanded(child: PlanSummary(plan: plan)),
                 PlanOverflowMenu(
                   onStartNew: () => context.push(_newPlanRoute),
+                  onPrevious: () => showPreviousPlansSheet(
+                    context: context,
+                    onOpen: (id) => context.push('/food/plans/$id'),
+                  ),
                   onDelete: () => _deletePlanWithUndo(context, ref),
                 ),
               ],

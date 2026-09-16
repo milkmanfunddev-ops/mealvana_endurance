@@ -5,6 +5,7 @@ import '../../../shared/services/logging_service.dart';
 import '../domain/home_payload.dart';
 import '../domain/meal_detail.dart';
 import '../domain/meal_plan.dart';
+import '../domain/meal_plan_summary.dart';
 import '../domain/meal_ref.dart';
 import '../domain/shopping_list.dart';
 import '../domain/ui_action.dart';
@@ -43,6 +44,10 @@ class VanaActionResult {
     }
     return out;
   }
+
+  /// `list_plans` → `plans`, newest week first, deleted plans left out.
+  List<MealPlanSummary> get plans =>
+      readRecordList(extras, 'plans', MealPlanSummary.fromJson);
 
   /// `get_home` → `home`.
   HomePayload? get home => switch (asJsonMap(extras['home'])) {
