@@ -158,7 +158,7 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
   Future<void> _confirmUpload() async {
     final bytes = _pendingUpload;
     if (bytes == null) return;
-    await _publish(
+    await _run(
       () => ref
           .read(mealPhotosControllerProvider(widget.mealId).notifier)
           .addUpload(
@@ -166,6 +166,9 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
             credit: _credit.text,
             creditUrl: _creditUrl.text,
           ),
+      ContentKeys.mpPhotosAdded,
+      // Ready for the next one: an add is the only action with a form behind it.
+      clearForm: true,
     );
   }
 
@@ -212,7 +215,7 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
     final url = _previewing;
     // Nothing publishes until the address has actually drawn.
     if (url == null || _previewLoaded != true) return;
-    await _publish(
+    await _run(
       () => ref
           .read(mealPhotosControllerProvider(widget.mealId).notifier)
           .addAddress(
@@ -220,6 +223,8 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
             credit: _credit.text,
             creditUrl: _creditUrl.text,
           ),
+      ContentKeys.mpPhotosAdded,
+      clearForm: true,
     );
   }
 
@@ -262,7 +267,7 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
               content.getValue(ContentKeys.mpPhotosDeleteConfirm),
-              style: const TextStyle(color: AppColors.dragonfruit),
+              style: const TextStyle(color: AppColors.error),
             ),
           ),
         ],
@@ -667,9 +672,7 @@ class _History extends ConsumerWidget {
                                   : () => onDelete!(entry.id),
                               child: Text(
                                 content.getValue(ContentKeys.mpPhotosDelete),
-                                style: const TextStyle(
-                                  color: AppColors.dragonfruit,
-                                ),
+                                style: const TextStyle(color: AppColors.error),
                               ),
                             ),
                           ],
