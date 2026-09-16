@@ -265,10 +265,12 @@ void main() {
 
     /// A conversation started new: New meal plan, or the chat's plus button.
     /// Listened to, the way its screen holds it, so it lives to be named.
+    // One minted key per kind for the group, the way a screen holds its own.
+    final minted = <VanaConversationKind, String>{};
     VanaChatControllerProvider newKey(VanaConversationKind kind) =>
         vanaChatControllerProvider(
           kind: kind,
-          conversationId: vanaNewConversationKey,
+          conversationId: minted.putIfAbsent(kind, newVanaConversationKey),
         );
     VanaChatController newChat(
       ProviderContainer c,

@@ -16,8 +16,22 @@ part 'vana_ambient_conversation_controller.g.dart';
 /// The chat controller key of a conversation started new: New meal plan, the
 /// chat's plus button, the conversations list (`c=new`). Never null, so it is
 /// never the day's unnamed conversation, and naming it never moves the day's
-/// pointer (mp-275 clause 3).
-const vanaNewConversationKey = '';
+/// pointer (mp-275 clause 3). Every screen mints its own with
+/// [newVanaConversationKey]: two "new" screens on the stack at once (the plus
+/// button pressed inside a new conversation, 2026-09-16) must never share a
+/// controller, or the second shows the first's transcript and skips its
+/// opener. The server never sees the key; it names the conversation itself.
+const vanaNewConversationKeyPrefix = 'new:';
+
+String newVanaConversationKey() =>
+    '$vanaNewConversationKeyPrefix${DateTime.now().microsecondsSinceEpoch}';
+
+/// Whether [conversationId] is a key minted by [newVanaConversationKey] (or
+/// no key at all): a conversation with no transcript to load.
+bool isNewVanaConversationKey(String? conversationId) =>
+    conversationId == null ||
+    conversationId.isEmpty ||
+    conversationId.startsWith(vanaNewConversationKeyPrefix);
 
 /// The chat route for the day's ambient conversation: [conversationId] when
 /// the day holds one, else the unnamed general conversation the day's first

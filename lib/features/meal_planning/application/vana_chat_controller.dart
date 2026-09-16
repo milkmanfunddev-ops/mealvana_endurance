@@ -25,6 +25,7 @@ import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
 import 'vana_situation_controller.dart';
 import 'vana_write_refetcher.dart';
+import 'vana_ambient_conversation_controller.dart';
 
 part 'vana_chat_controller.g.dart';
 
@@ -137,7 +138,7 @@ class VanaChatController extends _$VanaChatController {
     required VanaConversationKind kind,
     String? conversationId,
   }) async {
-    if (conversationId == null || conversationId.isEmpty) {
+    if (conversationId == null || isNewVanaConversationKey(conversationId)) {
       return VanaChatState(kind: kind, historyLoaded: true);
     }
     try {

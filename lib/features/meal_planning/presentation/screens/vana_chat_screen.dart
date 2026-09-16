@@ -108,11 +108,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   /// instead of losing it with the rolled-back turn.
   String? _lastSent;
 
-  /// The chat controller key. A conversation started new (`c=new`) has its
-  /// own, so it never shares the day's unnamed conversation and never moves
-  /// the launcher's pointer (mp-275 clause 3).
-  String? get _key => widget.startOpener && widget.conversationId == null
-      ? vanaNewConversationKey
+  /// The chat controller key. A conversation started new (`c=new`) mints its
+  /// own, once, for this screen's life: it never shares the day's unnamed
+  /// conversation, never moves the launcher's pointer (mp-275 clause 3), and
+  /// never shares a controller with another new conversation on the stack.
+  late final String? _key = widget.startOpener && widget.conversationId == null
+      ? newVanaConversationKey()
       : widget.conversationId;
 
   VanaChatController get _controller => ref.read(
