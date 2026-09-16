@@ -17,6 +17,7 @@ class KylePrimaryButton extends ConsumerWidget {
     this.height,
     this.fontSize,
     this.trailing,
+    this.padding = AppSpacing.buttonPadding,
   });
 
   final String text;
@@ -25,6 +26,12 @@ class KylePrimaryButton extends ConsumerWidget {
   final bool isFullWidth;
   final IconData? icon;
   final double? height;
+
+  /// The inset between the button's edge and its label. The default is the
+  /// full-height button's; a shorter button passes less, because the label's
+  /// line (16px at 1.2) does not shrink with the button and a 40px button
+  /// under 24px of vertical padding clips its descenders.
+  final EdgeInsets padding;
 
   /// Override the label size — for the compact, inline uses of the button
   /// (the plan bar's Review action), matching the prototype's
@@ -50,7 +57,7 @@ class KylePrimaryButton extends ConsumerWidget {
           elevation: 0,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
-          padding: AppSpacing.buttonPadding,
+          padding: padding,
           textStyle: AppTextStyles.buttonPrimary.copyWith(fontSize: fontSize),
         ),
         child: isLoading
@@ -95,7 +102,12 @@ class KylePrimaryButton extends ConsumerWidget {
   }
 }
 
-/// Small primary button variant
+/// Small primary button variant.
+///
+/// 40px tall, so the label's line takes most of the height: the vertical
+/// inset is [AppSpacing.xs] rather than the full-height button's
+/// [AppSpacing.sm], which left 16px for a 19.2px line and cut the label's
+/// descenders off ("Approve" on Shop with Kroger, 2026-09-16).
 class KylePrimaryButtonSmall extends ConsumerWidget {
   const KylePrimaryButtonSmall({
     super.key,
@@ -119,6 +131,10 @@ class KylePrimaryButtonSmall extends ConsumerWidget {
       isFullWidth: false,
       icon: icon,
       height: 40,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.xs,
+      ),
     );
   }
 }

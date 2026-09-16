@@ -778,17 +778,24 @@ void main() {
   });
   testWidgets('a control that cannot act is not rendered', (tester) async {
     // No delivery area resolved, so there is no Location to search and
-    // nothing to match against.
+    // nothing to match against. The send is the one exception: it stays on
+    // the screen for the whole review, disabled, so the shopper can see
+    // where the list is going before anything is approved (2026-09-16).
     await tester.runAsync(firstUse);
     await showScreen(tester);
     final copy = loadDefaultContent();
-    expect(find.byKey(const ValueKey('kroger.export')), findsNothing);
+    final send = find.byKey(const ValueKey('kroger.export'));
+    expect(send, findsOneWidget);
     expect(find.text(copy['kroger.choose']!), findsNothing);
     expect(find.text(copy['kroger.match_all']!), findsNothing);
     for (final button in tester.widgetList<ButtonStyleButton>(
       find.byWidgetPredicate((w) => w is ButtonStyleButton),
     )) {
-      expect(button.enabled, true);
+      final isSend = find
+          .ancestor(of: find.byWidget(button), matching: send)
+          .evaluate()
+          .isNotEmpty;
+      expect(button.enabled, !isSend, reason: '${button.runtimeType}');
     }
     await tester.runAsync(() async {
       await controller.setArea('35209');
@@ -797,7 +804,53 @@ void main() {
     await tester.pumpAndSettle();
     expect(current().message, isNull);
     expect(current().draft.ready, true);
-    expect(find.byKey(const ValueKey('kroger.export')), findsOneWidget);
+    expect(send, findsOneWidget);
+    expect(
+      tester
+          .widget<ButtonStyleButton>(
+            find.descendant(of: send, matching: find.byType(ElevatedButton)),
+          )
+          .enabled,
+      true,
+    );
+  });
+  testWidgets('the send is drawn disabled until every match is approved', (
+    tester,
+  ) async {
+    // Two lines matched, none approved: the send is there and greyed. One
+    // approved: still greyed, the other is still waiting. Both: live.
+    final copy = loadDefaultContent();
+    await tester.runAsync(() async {
+      (container.read(shoppingListControllerProvider.notifier) as TestShopping)
+          .twoItems();
+      await sourceChanged();
+      await controller.matchAll();
+    });
+    await showScreen(tester);
+    final send = find.byKey(const ValueKey('kroger.export'));
+    bool sendEnabled() => tester
+        .widget<ButtonStyleButton>(
+          find.descendant(of: send, matching: find.byType(ElevatedButton)),
+        )
+        .enabled;
+    expect(current().draft.matched.map((l) => l.name), ['Broccoli', 'Bread']);
+    expect(sendEnabled(), false);
+    // Disabled means disabled: tapping it asks nothing and sends nothing.
+    await tester.tap(send, warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(find.text(copy['kroger.send_confirm']!), findsNothing);
+    expect(exports, 0);
+    String id(String name) =>
+        current().draft.lines.firstWhere((l) => l.name == name).id;
+    await tester.runAsync(() => controller.approve(id('Broccoli')));
+    await tester.pumpAndSettle();
+    expect(sendEnabled(), false);
+    await tester.runAsync(() => controller.approve(id('Bread')));
+    await tester.pumpAndSettle();
+    expect(sendEnabled(), true);
+    await tester.tap(send);
+    await tester.pumpAndSettle();
+    expect(find.text(copy['kroger.send_confirm']!), findsOneWidget);
   });
   testWidgets('review screen renders editable items and manual additions', (
     tester,
@@ -1260,8 +1313,6 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text(copy['kroger.continue']!));
-      await tester.pumpAndSettle();
       expect(find.text(storeProduct.name), findsWidgets);
       expect(find.textContaining('2.19'), findsNothing);
       expect(find.textContaining(r'$'), findsNothing);
@@ -1320,6 +1371,170 @@ void main() {
       searches.clear();
       await controller.matchAll();
       expect(searches, ['Bread']);
+    });
+    test('approve all approves every line it can, and only those', () async {
+      // Broccoli matched and Bread did not: one line to approve. It is
+      // remembered for the Location the way a single approval is, so the
+      // next matching run prefers it.
+      await twoLines();
+      await controller.matchAll();
+      expect(current().draft.ready, false);
+      await controller.approveAll();
+      expect(
+        current().draft.lines.firstWhere((l) => l.name == 'Broccoli').approved,
+        true,
+      );
+      expect(
+        current().draft.lines.firstWhere((l) => l.name == 'Bread').approved,
+        false,
+      );
+      expect(current().draft.ready, true);
+      expect(current().message, isNull);
+      expect(
+        repo.preferred(account, current().draft.store!.id, 'Broccoli')?.upc,
+        product.upc,
+      );
+      expect(repo.load(account, plan).approvable, isEmpty);
+    });
+    test('approve all leaves an unavailable product unapproved', () async {
+      // A product Kroger cannot deliver cannot be approved by any route, and
+      // "Approve all" does not quietly send it.
+      await twoLines();
+      await controller.matchAll();
+      final out = KrogerProduct(
+        upc: '0000000000001',
+        name: 'Out of stock',
+        available: false,
+      );
+      await controller.choose(lineId('Bread'), out);
+      expect(names(current().draft.matched), ['Broccoli', 'Bread']);
+      expect(names(current().draft.approvable), ['Broccoli']);
+      await controller.approveAll();
+      expect(
+        current().draft.lines.firstWhere((l) => l.name == 'Bread').approved,
+        false,
+      );
+      expect(
+        current().draft.lines.firstWhere((l) => l.name == 'Broccoli').approved,
+        true,
+      );
+      expect(current().draft.ready, false);
+    });
+    test('approve all with nothing to approve is not a failure', () async {
+      await controller.matchAll();
+      await controller.approve(lineId('Broccoli'));
+      await controller.approveAll();
+      expect(current().message, isNull);
+      expect(current().busy, false);
+    });
+    testWidgets('one tap approves every match, then the tap is gone', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await tester.runAsync(() async {
+        (container.read(shoppingListControllerProvider.notifier)
+                as TestShopping)
+            .twoItems();
+        await sourceChanged();
+        await controller.matchAll();
+      });
+      await showScreen(tester);
+      final approveAll = find.byKey(const ValueKey('kroger.approve_all'));
+      expect(approveAll, findsOneWidget);
+      expect(find.text(copy['kroger.approve']!), findsNWidgets(2));
+      await tester.tap(approveAll);
+      await tester.pumpAndSettle();
+      expect(current().draft.matched.every((l) => l.approved), true);
+      expect(approveAll, findsNothing);
+      expect(find.text(copy['kroger.approve']!), findsNothing);
+    });
+    testWidgets(
+      'the product picker searches the line first, then the typed query',
+      (tester) async {
+        // "Change" opens one sheet already searched for the line's own name,
+        // with the query editable at the top. Submitting a new query searches
+        // again; tapping a result chooses it and closes the sheet.
+        final copy = loadDefaultContent();
+        await tester.runAsync(() async {
+          await controller.setArea('35242');
+          await controller.matchAll();
+        });
+        await showScreen(tester);
+        searches.clear();
+        await tester.tap(
+          find.descendant(
+            of: matched,
+            matching: find.text(copy['kroger.change']!),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(searches, ['Broccoli']);
+        final field = find.byKey(const ValueKey('kroger.product_search'));
+        expect(field, findsOneWidget);
+        expect(
+          tester
+              .widget<TextField>(
+                find.descendant(of: field, matching: find.byType(TextField)),
+              )
+              .controller!
+              .text,
+          'Broccoli',
+        );
+        expect(find.text(storeProduct.name), findsWidgets);
+        // No "Continue" step any more: the sheet is the picker.
+        expect(find.text(copy['kroger.continue']!), findsNothing);
+
+        await tester.enterText(field, 'Broccolini');
+        await tester.testTextInput.receiveAction(TextInputAction.search);
+        await tester.pumpAndSettle();
+        expect(searches, ['Broccoli', 'Broccolini']);
+
+        // Typing alone searches too, once the shopper pauses.
+        await tester.enterText(field, 'Broc');
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(searches, ['Broccoli', 'Broccolini']);
+        await tester.enterText(field, 'Brocc');
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpAndSettle();
+        expect(searches, ['Broccoli', 'Broccolini', 'Brocc']);
+
+        await tester.tap(find.text(storeProduct.name).last);
+        await tester.pumpAndSettle();
+        expect(field, findsNothing);
+        expect(current().draft.lines.single.product?.upc, storeProduct.upc);
+        expect(current().draft.lines.single.approved, false);
+      },
+    );
+    testWidgets('the product picker says when it found nothing', (
+      tester,
+    ) async {
+      final copy = loadDefaultContent();
+      await tester.runAsync(controller.matchAll);
+      await showScreen(tester);
+      unmatchable = {'Sourdough'};
+      await tester.tap(
+        find.descendant(
+          of: matched,
+          matching: find.text(copy['kroger.change']!),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(product.name), findsWidgets);
+      final field = find.byKey(const ValueKey('kroger.product_search'));
+      await tester.enterText(field, 'Sourdough');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      expect(
+        find.text(
+          ContentKeys.format(copy['kroger.nothing_found']!, {
+            'query': 'Sourdough',
+          }),
+        ),
+        findsOneWidget,
+      );
+      // The line keeps the product it had: a search that found nothing
+      // chose nothing.
+      expect(current().draft.lines.single.product?.upc, product.upc);
     });
     test('sending sends what matched, and only that', () async {
       await twoLines();

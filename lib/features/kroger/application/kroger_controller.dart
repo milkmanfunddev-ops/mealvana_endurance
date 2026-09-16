@@ -592,6 +592,27 @@ class KrogerController extends _$KrogerController {
       line.product!,
     );
   });
+
+  /// Approves every line [KrogerDraft.approvable] lists, in one action.
+  /// Each is remembered for this Location exactly as [approve] remembers it,
+  /// so a later matching run prefers the same products. Nothing to approve
+  /// is nothing to do, not a failure.
+  Future<void> approveAll() => _run(() async {
+    final draft = state.value!.draft;
+    final ids = {for (final l in draft.approvable) l.id};
+    if (ids.isEmpty) return;
+    await _persist(
+      draft.copyWith(
+        lines: [
+          for (final l in draft.lines)
+            if (ids.contains(l.id)) l.copyWith(approved: true) else l,
+        ],
+      ),
+    );
+    for (final line in draft.approvable) {
+      await _repo.remember(_user!, draft.store!.id, line.name, line.product!);
+    }
+  });
   Future<void> quantity(String id, int count) => _run(() async {
     if (count < 1 || count > 99) return;
     await _updateLine(

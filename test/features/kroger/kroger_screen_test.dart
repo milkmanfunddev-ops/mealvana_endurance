@@ -26,7 +26,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
@@ -161,9 +161,49 @@ void main() {
   bothThemes('review', () => _state());
 
   // Before the review is done: nothing approved yet, and no delivery area
-  // resolved — so the Approve and Set-delivery-area actions are both drawn,
-  // and the send action is not.
+  // resolved — so the Approve, Approve-all and Set-delivery-area actions are
+  // all drawn, and the send action is drawn disabled.
   bothThemes('to_review', () => _state(approved: false, located: false));
+
+  testWidgets('the small Approve button does not clip its label', (
+    tester,
+  ) async {
+    // 2026-09-16, on an iPhone: "Approve" lost its descenders. The small
+    // primary button kept the full-height button's 12px vertical inset on a
+    // 40px button, leaving 16px for a 19.2px line (16px at 1.2), and the
+    // paragraph clipped what did not fit. The label must get its whole line.
+    tester.view.physicalSize = const Size(_seWidth, 1800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          contentServiceProvider.overrideWith(testContentService),
+          krogerControllerProvider(
+            _plan,
+          ).overrideWith(() => _SeededController(_state(approved: false))),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const KrogerScreen(planId: _plan),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final label = find.text(loadDefaultContent()['kroger.approve']!);
+    expect(label, findsOneWidget);
+    final paragraph = tester.renderObject<RenderParagraph>(label);
+    // The room the button leaves the label must hold its line, and the label
+    // must be laid out at its own height rather than squeezed to fit: before
+    // the fix the paragraph was handed 16px and reported 16px.
+    final line =
+        paragraph.text.style!.fontSize! * paragraph.text.style!.height!;
+    expect(paragraph.constraints.maxHeight, greaterThanOrEqualTo(line));
+    expect(
+      paragraph.size.height,
+      paragraph.getMaxIntrinsicHeight(paragraph.size.width),
+    );
+  });
 
   // Before any matching run: every line waits under "Not matched yet", and
   // nothing is said to have no match on Kroger.
