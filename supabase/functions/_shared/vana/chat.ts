@@ -22,7 +22,7 @@ import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
-import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, pickAngle, angleLine, type OpenerVariant } from './opener.ts';
+import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, type OpenerVariant } from './opener.ts';
 import { getPlanPeriod } from './memory.ts';
 import { generalOpener, type GeneralOpenerVariant } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
@@ -127,12 +127,6 @@ export async function priorConversationCount(v: VanaCtx, exceptId: string): Prom
 }
 /** Whether the conversation already holds a turn. An opener written into one (a moment's, VM-1) starts a new exchange, not
  *  the conversation: it is not the first turn. */
-/** The angles the athlete's last two plan openers asked on (metadata.opener_angle on the opener rows), so the next one differs. */
-export async function recentOpenerAngles(v: VanaCtx): Promise<string[]> {
-  const { data, error } = await v.db.from('vana_messages').select('metadata').eq('user_id', v.userId).eq('role', 'assistant').order('created_at', { ascending: false }).limit(40);
-  if (error) { console.error('[vana] recentOpenerAngles:', error.message); return []; }
-  return (data ?? []).map((r: { metadata?: { opener_angle?: unknown } | null }) => r.metadata?.opener_angle).filter((a): a is string => typeof a === 'string').slice(0, 2);
-}
 /** Whether this conversation was opened from "New meal plan": its opener row carries metadata.new_plan (see the insert in runChat). */
 export async function conversationIsNewPlan(v: VanaCtx, conversationId: string): Promise<boolean> {
   const { data } = await v.db.from('vana_messages').select('metadata').eq('conversation_id', conversationId).eq('role', 'assistant').order('created_at', { ascending: true }).limit(3);
@@ -329,7 +323,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
   if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
-  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | GeneralOpenerVariant = 'plan'; let extraContext = ''; let openerAngle: string | undefined;
+  let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | GeneralOpenerVariant = 'plan'; let extraContext = '';
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
   // never sees or writes it, so it cannot be paraphrased away.
@@ -344,8 +338,6 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     const pending = pendingDebrief(openerInput); if (pending && !newPlanConversation) extraContext = `\nDEBRIEF PENDING last week's plan id ${pending.id} (${pending.meals.length} meals: ${pending.meals.map((m) => m.name).join(', ')}) — recordDebrief has not been called yet`;
     const variant = opener ? pickOpener({ ...openerInput, newPlan }) : ({ kind: 'plan' } as OpenerVariant); openerVariant = variant.kind;
     if (newPlan) openerText = NEW_PLAN_OPENER;
-    // The plan opener's question rotates (opener.ts OPENER_ANGLES): never the angle the athlete's last two openers used.
-    if (opener && variant.kind === 'plan') { const angle = pickAngle(await recentOpenerAngles(v)); openerAngle = angle.key; openerText += angleLine(angle); }
     else if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
@@ -375,7 +367,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
             const firstText = (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text;
-            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: firstText ?? (parts.length ? '' : clampSentences(text)), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, opener_angle: openerAngle, new_plan: newPlan || undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
+            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: firstText ?? (parts.length ? '' : clampSentences(text)), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, new_plan: newPlan || undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }
