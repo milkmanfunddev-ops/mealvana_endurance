@@ -10,10 +10,10 @@
 
 **Touches:** supabase/functions/_shared/vana/context.ts, supabase/functions/_shared/vana/situation.ts, supabase/functions/tests/vana/context.test.ts, supabase/functions/tests/vana/situation.test.ts, lib/features/meal_planning/presentation/screens/plan_tab.dart, lib/features/meal_planning/application/vana_ambient_conversation_controller.dart, test/features/meal_planning/application/vana_ambient_conversation_test.dart
 
-- [ ] Events routes in the Situation produce an EVENTS AHEAD section listing every upcoming event; the Plan tab produces the day's plan; any other route produces no section (server seam).
-- [ ] The Doll block itself is unchanged in shape by any entry point (mp-218 test).
-- [ ] The Plan tab note card opens the day's ambient conversation, not a fresh one (controller test).
-- [ ] A conversation started by New meal plan or the plus button does not change the launcher's pointer (controller test).
+- [x] Events routes in the Situation produce an EVENTS AHEAD section listing every upcoming event; the Plan tab produces the day's plan; any other route produces no section (server seam).
+- [x] The Doll block itself is unchanged in shape by any entry point (mp-218 test).
+- [x] The Plan tab note card opens the day's ambient conversation, not a fresh one (controller test).
+- [x] A conversation started by New meal plan or the plus button does not change the launcher's pointer (controller test).
 - [ ] Simulator: note card and launcher land in the same thread.
 
 Next: /implement-lee mealplanning
