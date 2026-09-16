@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/onboarding_widgets.dart';
 import '../providers/onboarding_controller.dart';
+import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/selection/figma_toggle_card.dart';
 import '../../../../shared/widgets/selection/figma_radio_option_card.dart';
@@ -12,6 +13,8 @@ import '../../../../shared/core/screen_mode.dart';
 import '../../../auth/application/auth_service.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
+import 'package:mealvana_endurance/features/integrations/presentation/providers/athlete_zones_provider.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/data/kyle_source_chip.dart';
 
 /// Swimming Details Screen - Unified for both onboarding and settings
 ///
@@ -69,6 +72,9 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
   bool get _isOnboarding => widget.mode == ScreenMode.onboarding;
   bool get _isSettings => widget.mode == ScreenMode.settings;
 
+  /// For the D-2 provenance row (settings mode only).
+  String? _userId;
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +100,7 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
 
       if (mounted) {
         setState(() {
+          _userId = user?.id;
           // Load CSS from user profile (if available)
           if (user?.cssPacePer100mSeconds != null) {
             final totalSeconds = user!.cssPacePer100mSeconds!;
@@ -208,6 +215,11 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
 
           if (!mounted) return;
 
+          // The hub's summary line (and any other settings reader) shows
+          // the saved value immediately — the save path runs through the
+          // onboarding controller and never touches settings state
+          // (Xuan, 2026-09-13: "the page prior doesn't get updated").
+          ref.invalidate(settingsControllerProvider);
           MealvanaSnackbar.showSuccess(context, 'Swimming details updated');
           context.pop();
         } else {
@@ -327,6 +339,42 @@ class _SwimmingDetailsScreenState extends ConsumerState<SwimmingDetailsScreen> {
                             'swimming_prefs.css_seconds_field',
                           ),
                         ),
+
+                        // D-2 source provenance (integrations-data-display.md
+                        // D-2, RATIFIED 2026-09-11; Q-DID2 variant A) — the
+                        // ONE shared chip family, CSS parameterization, on
+                        // the surface the settings hub actually routes to.
+                        if (_isSettings && _userId != null) ...[
+                          const SizedBox(height: 12),
+                          ListenableBuilder(
+                            listenable: Listenable.merge([
+                              _cssMinutesController,
+                              _cssSecondsController,
+                            ]),
+                            builder: (context, _) {
+                              final manual = _calculateCssSeconds();
+                              return KyleSourceProvenanceRow(
+                                manualValue: manual == 0 ? null : manual,
+                                providerValue: ref
+                                    .watch(
+                                      tpCssSecondsPer100mProvider(_userId!),
+                                    )
+                                    .value,
+                                stale: ref
+                                        .watch(tpZonesStaleProvider(_userId!))
+                                        .value ??
+                                    false,
+                                unit: 's/100m',
+                                onAdoptProvider: (v) => setState(() {
+                                  _cssMinutesController.text =
+                                      (v ~/ 60).toString();
+                                  _cssSecondsController.text =
+                                      (v % 60).toString();
+                                }),
+                              );
+                            },
+                          ),
+                        ],
 
                         const SizedBox(height: 28),
 

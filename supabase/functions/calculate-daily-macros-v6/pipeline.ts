@@ -60,7 +60,13 @@ import {
   type ResolvedSessionData,
 } from './formulas/resolve.ts';
 
-export const ALGORITHM_VERSION = 'v6.0.0';
+// v6.1.0 (data-integrations@v1): F4a session pricing — MOBILITY 2.5
+// linear, composites decompose by legs / dominant, unknown sports price
+// EXACTLY 0 with the ESTIMATE_ZERO source (the ?? 11 fallback and the
+// interim strength floor are gone). Same name + same interface -> in-place
+// overwrite per playbook §6; the client gate is a floor, so installed
+// builds accept the newer version without a loop.
+export const ALGORITHM_VERSION = 'v6.1.0';
 
 /**
  * Validate input data
@@ -99,11 +105,16 @@ export function validateInput(input: DailyMacroInput): string | null {
   for (let i = 0; i < input.sessions.length; i++) {
     const session = input.sessions[i];
 
-    if (
-      !session.sport ||
-      !['running', 'cycling', 'swimming', 'strength'].includes(session.sport)
-    ) {
-      return `session ${i}: sport must be running/cycling/swimming/strength`;
+    // F4a (session-demand.md §F4a, RULED Xuan 2026-09-10): the sport domain
+    // is OPEN — mobility class prices at 2.5, composites decompose, genuinely
+    // unknown sports price EXACTLY 0 with ESTIMATE_ZERO (formulas/session.ts
+    // implements all three). This whitelist predated the ruling and rejected
+    // the whole day's payload before pricing ever ran, so one TP "Warm Up
+    // Routine" (sport `other`) 400'd every recompute and permanently disabled
+    // the dashboard (Sentry MEALVANA-ENDURANCE-C6, 2026-09-15). Validate
+    // shape, not membership.
+    if (!session.sport || typeof session.sport !== 'string') {
+      return `session ${i}: sport must be a non-empty string`;
     }
 
     if (

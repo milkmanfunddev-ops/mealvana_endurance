@@ -306,11 +306,19 @@ class IntegrationsRepository with SyncableRepository {
 
   /// Deactivate an integration (soft delete)
   Future<void> deactivateIntegration(String userId, String provider) async {
+    // DI-9 (L-8/Q-INT8, RULED 2026-09-10): disconnect clears the tokens
+    // from EVERY store. The integrations row is the sole custodian, so the
+    // deactivate write empties them here (access_token is NOT NULL — the
+    // empty string is the cleared state) and the upload propagates the
+    // clearing to the server row. Reconnect writes fresh tokens.
     await (_db.update(_db.integrationsTable)
           ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
         .write(
           IntegrationsTableCompanion(
             isActive: const Value(false),
+            accessToken: const Value(''),
+            refreshToken: const Value(null),
+            tokenExpiresAt: const Value(null),
             needsUpload: const Value(true),
             updatedAt: Value(DateTime.now()),
           ),
@@ -411,6 +419,49 @@ class IntegrationsRepository with SyncableRepository {
         .write(
           IntegrationsTableCompanion(
             athleteZonesJson: Value(zonesJson),
+            needsUpload: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+
+    await _pushUserProviderToSupabase(userId, provider);
+  }
+
+  /// Update the TrainingPeaks IsPremium flag (data-integrations@v1 capture).
+  Future<void> updateProviderIsPremium(
+    String userId,
+    String provider, {
+    required bool isPremium,
+  }) async {
+    await (_db.update(_db.integrationsTable)
+          ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
+        .write(
+          IntegrationsTableCompanion(
+            providerIsPremium: Value(isPremium),
+            needsUpload: const Value(true),
+            updatedAt: Value(DateTime.now()),
+          ),
+        );
+
+    await _pushUserProviderToSupabase(userId, provider);
+  }
+
+  /// Update the cached TP body-metrics JSON, optionally refreshing the
+  /// profile weight mirror from the same fetch (TP weight-staleness fix).
+  Future<void> updateAthleteMetrics(
+    String userId,
+    String provider, {
+    required String metricsJson,
+    double? weightKg,
+  }) async {
+    await (_db.update(_db.integrationsTable)
+          ..where((t) => t.userId.equals(userId) & t.provider.equals(provider)))
+        .write(
+          IntegrationsTableCompanion(
+            athleteMetricsJson: Value(metricsJson),
+            providerAthleteWeightKg: weightKg != null
+                ? Value(weightKg)
+                : const Value.absent(),
             needsUpload: const Value(true),
             updatedAt: Value(DateTime.now()),
           ),
@@ -530,6 +581,8 @@ class IntegrationsRepository with SyncableRepository {
       providerAthleteGender: entity.providerAthleteGender,
       providerAthleteBodyFatPct: entity.providerAthleteBodyFatPct,
       athleteZonesJson: entity.athleteZonesJson,
+      providerIsPremium: entity.providerIsPremium,
+      athleteMetricsJson: entity.athleteMetricsJson,
       isActive: entity.isActive,
       lastSyncAt: entity.lastSyncAt,
       lastSyncStatus: entity.lastSyncStatus,
@@ -558,6 +611,8 @@ class IntegrationsRepository with SyncableRepository {
       providerAthleteGender: Value(model.providerAthleteGender),
       providerAthleteBodyFatPct: Value(model.providerAthleteBodyFatPct),
       athleteZonesJson: Value(model.athleteZonesJson),
+      providerIsPremium: Value(model.providerIsPremium),
+      athleteMetricsJson: Value(model.athleteMetricsJson),
       isActive: Value(model.isActive),
       lastSyncAt: Value(model.lastSyncAt),
       lastSyncStatus: Value(model.lastSyncStatus),
@@ -584,6 +639,8 @@ class IntegrationsRepository with SyncableRepository {
       'provider_athlete_gender': entity.providerAthleteGender,
       'provider_athlete_body_fat_pct': entity.providerAthleteBodyFatPct,
       'athlete_zones_json': _decodeZonesForJsonb(entity.athleteZonesJson),
+      'provider_is_premium': entity.providerIsPremium,
+      'athlete_metrics_json': _decodeZonesForJsonb(entity.athleteMetricsJson),
       'is_active': entity.isActive,
       'last_sync_at': entity.lastSyncAt?.toIso8601String(),
       'last_sync_status': entity.lastSyncStatus,
@@ -610,6 +667,8 @@ class IntegrationsRepository with SyncableRepository {
       'provider_athlete_gender': model.providerAthleteGender,
       'provider_athlete_body_fat_pct': model.providerAthleteBodyFatPct,
       'athlete_zones_json': _decodeZonesForJsonb(model.athleteZonesJson),
+      'provider_is_premium': model.providerIsPremium,
+      'athlete_metrics_json': _decodeZonesForJsonb(model.athleteMetricsJson),
       'is_active': model.isActive,
       'last_sync_at': model.lastSyncAt?.toIso8601String(),
       'last_sync_status': model.lastSyncStatus,
@@ -661,6 +720,10 @@ class IntegrationsRepository with SyncableRepository {
         (json['provider_athlete_body_fat_pct'] as num?)?.toDouble(),
       ),
       athleteZonesJson: Value(_zonesJsonAsString(json['athlete_zones_json'])),
+      providerIsPremium: Value(json['provider_is_premium'] as bool?),
+      athleteMetricsJson: Value(
+        _zonesJsonAsString(json['athlete_metrics_json']),
+      ),
       isActive: Value(json['is_active'] as bool? ?? true),
       lastSyncAt: Value(parseTime(json['last_sync_at'])),
       lastSyncStatus: Value(json['last_sync_status'] as String?),

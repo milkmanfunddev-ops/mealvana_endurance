@@ -1,9 +1,9 @@
-/// Tests for the v21 home-location schema step (`.scratch/mealplanning`
+/// Tests for the v22 home-location schema step (v21 until develop's 2026-09-16 merge renumbered it) (`.scratch/mealplanning`
 /// ticket 02).
 ///
 /// Same shape as meal_planning_v20_migration_test.dart:
 ///  - onCreate produces the four `users` columns
-///  - a v20 install gets them from the `from < 21` step
+///  - a v21 install gets them from the `from < 22` step
 ///  - replaying that step is a no-op (web `user_version` re-run safety)
 library;
 
@@ -18,11 +18,11 @@ Future<Set<String>> _columns(AppDatabase db, String table) async {
 const _homeColumns = ['home_city', 'home_lat', 'home_lon', 'home_timezone'];
 
 void main() {
-  group('home location (v21)', () {
-    test('schemaVersion is 21', () async {
+  group('home location (v22)', () {
+    test('schemaVersion is 22', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      expect(db.schemaVersion, 21);
+      expect(db.schemaVersion, 22);
     });
 
     test('onCreate produces the four home columns on users', () async {
@@ -48,12 +48,12 @@ void main() {
             'anything',
       );
 
-      await db.migration.onUpgrade(db.createMigrator(), 20, db.schemaVersion);
+      await db.migration.onUpgrade(db.createMigrator(), 21, db.schemaVersion);
       expect(await _columns(db, 'users'), containsAll(_homeColumns));
 
       // And again — the web user_version replay shape.
       await expectLater(
-        db.migration.onUpgrade(db.createMigrator(), 20, db.schemaVersion),
+        db.migration.onUpgrade(db.createMigrator(), 21, db.schemaVersion),
         completes,
       );
       expect(await _columns(db, 'users'), containsAll(_homeColumns));

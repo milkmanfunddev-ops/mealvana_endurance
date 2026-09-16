@@ -163,7 +163,7 @@ class MacroDashboardAssembler {
         activityId: a.id,
         name: a.title,
         timeLabel: _timeLabel(displayTime),
-        metaLabel: _meta(a),
+        metaLabel: _meta(a, verified: state == WorkoutCardState.doneVerified),
         kcal: _sessionKcal(a, weightKg),
         state: state,
         sport: a.activityType.name,
@@ -543,10 +543,22 @@ class MacroDashboardAssembler {
     return _BuiltEnergy(energy, breakdown);
   }
 
-  String _meta(Activity a) {
-    final minutes = a.actualDurationMinutes ?? a.durationMinutes;
+  /// D-1 card numbers (integrations-data-display.md, RATIFIED 2026-09-11):
+  /// a VERIFIED card shows the measured pair (actual_*); every other state
+  /// shows the planned pair — never a mixed pair (DI-DEV-1, the live prod
+  /// specimen: a verified card rendering planned 8 mi with measured 44 min).
+  String _meta(Activity a, {required bool verified}) {
+    final double? miles;
+    final int? minutes;
+    if (verified) {
+      miles = a.actualDistanceMiles;
+      minutes = a.actualDurationMinutes;
+    } else {
+      miles = a.distanceMiles;
+      minutes = a.durationMinutes;
+    }
     final parts = <String>[
-      if (a.distanceMiles != null) '${_trim(a.distanceMiles!)} mi',
+      if (miles != null) '${_trim(miles)} mi',
       if (minutes != null) '$minutes min',
     ];
     return parts.isEmpty ? a.activityType.name : parts.join(' · ');

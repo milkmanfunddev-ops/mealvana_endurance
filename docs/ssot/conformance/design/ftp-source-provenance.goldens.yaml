@@ -1,0 +1,39 @@
+# Design conformance — performance-value source provenance (FTP / swim CSS)
+#
+# Written at ship of data-integrations@v1 from the RATIFIED
+# spec/design/surfaces/integrations-data-display.md D-2/D-2b/D-2c (Q-DID2
+# RULED 2026-09-11: variant A) and the ratified rendering
+# spec/design/renderings/ftp-source-provenance@v1.html.
+#
+# A golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass.
+
+manifest: ftp-source-provenance
+version: v1
+status: ratified                # app suite pending (DI-15; gated on Q-INT19 wiring)
+spec: spec/design/surfaces/integrations-data-display.md
+rendering: spec/design/renderings/ftp-source-provenance@v1.html
+suite: test/features/settings/ftp_source_provenance_golden_test.dart   # to create — handback addendum 3
+
+goldens:
+  - id: ftp-manual
+    asserts: value + cream "Manual" chip; no sync affordance
+  - id: ftp-tp-sourced
+    asserts: TP value + teal "TrainingPeaks" chip (SOURCE ONLY — no relative time, per the 2026-09-11 chip amendment)
+  - id: ftp-conflict-a
+    asserts: manual value in field (manual-wins); chips "Manual · <w> W" + "TrainingPeaks · <w> W — tap to use"; Sync Now; NO modal
+  - id: ftp-stale
+    asserts: "stale" chip past the 24 h zones window; Sync Now beside source chip
+  - id: css-inherits
+    asserts: Swimming CSS field renders the same pattern (inheritance ratified with P2)
+
+pattern_applications:            # same chip vocabulary, different parameters — D-2b / D-2c
+  - surface: body-composition (weight, body fat)
+    sources: Manual · Garmin
+    stale_window: 30 days
+    precedence: newest-wins (measurement stream; manual edit holds until a newer reading)
+    conflict: older-Garmin/newer-manual only — "Garmin · <v> — tap to use"
+  - surface: events rows
+    sources: Manual · TrainingPeaks · Final Surge
+    stale_window: none
+    precedence: one origin per row; dedupe-match flips to provider; local edit of a provider field flips it manual + exempts it from re-sync overwrite

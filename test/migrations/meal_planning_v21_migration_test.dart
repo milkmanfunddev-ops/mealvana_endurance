@@ -1,11 +1,13 @@
-/// Tests for the v20 meal-planning schema step (Phase 4b of
+/// Tests for the v21 meal-planning schema step (Phase 4b of
 /// docs/implement_mealplanning/05-flutter-feature.md §2).
 ///
-/// Same shape as user_entitlements_v19_migration_test.dart:
+/// Same shape as user_entitlements_v21_migration_test.dart:
 ///  - onCreate produces `meal_plans`, `plan_meals`, `user_memories` with the
 ///    expected columns, and the additive columns on `meal_logs` /
 ///    `saved_meals`
-///  - a v19 install gets everything from the `from < 20` step
+///  - a v19 install gets everything from the `from < 21` step (the
+///    mealplanning steps were renumbered v19/v20 -> v21 on 2026-09-11 so
+///    data-integration could take v20)
 ///  - replaying that step is a no-op (web `user_version` re-run safety)
 ///  - the new rows round-trip through their companions
 library;
@@ -28,13 +30,14 @@ Future<Set<String>> _columns(AppDatabase db, String table) async {
   return rows.map((r) => r.read<String>('name')).toSet();
 }
 
-/// Rewind a fresh (v20) in-memory database to the v19 shape: drop the three
-/// new tables and rebuild `meal_logs` / `saved_meals` without the v20 columns.
-Future<void> _rewindToV19(AppDatabase db) async {
+/// Rewind a fresh (v21) in-memory database to the pre-Vana shape: drop the
+/// three new tables and rebuild `meal_logs` / `saved_meals` without the v21
+/// columns.
+Future<void> _rewindToPreVana(AppDatabase db) async {
   await db.customStatement('DROP TABLE meal_plans');
   await db.customStatement('DROP TABLE plan_meals');
   await db.customStatement('DROP TABLE user_memories');
-  // SQLite < 3.35 has no DROP COLUMN; rebuild the two tables the v19 way.
+  // SQLite < 3.35 has no DROP COLUMN; rebuild the two tables the pre-Vana way.
   await db.customStatement('DROP TABLE meal_logs');
   await db.customStatement('''
     CREATE TABLE meal_logs (
@@ -60,13 +63,14 @@ Future<void> _rewindToV19(AppDatabase db) async {
 }
 
 void main() {
-  group('meal planning (v20)', () {
-    // The head version is pinned by the newest step's test (v21, home
-    // location); this one only needs the v20 step to still be in the ladder.
-    test('schemaVersion is at least 20', () async {
+  group('meal planning (v21)', () {
+    test('schemaVersion is at least 21', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      expect(db.schemaVersion, greaterThanOrEqualTo(20));
+      // 2026-09-11: the mealplanning steps (formerly v19/v20) were
+      // consolidated into v21 so data-integration could take v20; this pins
+      // a floor rather than an exact version.
+      expect(db.schemaVersion, greaterThanOrEqualTo(21));
     });
 
     test('onCreate produces the three tables with their columns', () async {
@@ -166,11 +170,11 @@ void main() {
       );
     });
 
-    test('a v19 install gets everything from the from < 20 step', () async {
+    test('a v19 install gets everything from the from < 21 step', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
 
-      await _rewindToV19(db);
+      await _rewindToPreVana(db);
       expect(await _tables(db), isNot(contains('meal_plans')));
       expect(await _columns(db, 'meal_logs'), isNot(contains('plan_meal_id')));
       expect(await _columns(db, 'saved_meals'), isNot(contains('icon')));
@@ -194,7 +198,7 @@ void main() {
       );
     });
 
-    test('re-running the v20 step when everything exists is a no-op', () async {
+    test('re-running the v21 step when everything exists is a no-op', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
 
@@ -213,7 +217,7 @@ void main() {
     test('an existing saved_meals row survives the column additions', () async {
       final db = AppDatabase.memory();
       addTearDown(db.close);
-      await _rewindToV19(db);
+      await _rewindToPreVana(db);
       await db.customStatement('''
         INSERT INTO saved_meals (id, user_id, name, created_at, updated_at)
         VALUES ('sm-1', 'user-1', 'Oats', 0, 0)''');

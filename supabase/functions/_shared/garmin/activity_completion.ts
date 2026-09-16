@@ -322,6 +322,10 @@ export function buildGarminCompletionUpdate(
 
   const updateFields: Record<string, unknown> = {
     status: "completed",
+    // Q-INT2 revive: measured evidence matching a row soft-hidden by a
+    // disconnect brings it back (id-keyed match-and-revive; hidden is
+    // never a tombstone). A no-op on rows that were never hidden.
+    hidden_by_disconnect: false,
     // Replace the planned start time with the ACTUAL Garmin start time
     // (bug 3a6e3fdb: a run scheduled for 1:30 PM but started at 12:30 PM
     // kept showing 1:30 PM). Local-naive form — see garminTimestampToLocalNaiveISO.
@@ -356,27 +360,24 @@ export function buildGarminCompletionUpdate(
       : null,
   };
 
+  // L-2 planned/actual split (lifecycle.md, RULED Xuan 2026-09-10; the
+  // two-time model generalized to every measurable field): measured values
+  // land ONLY in the actual_* columns. Completion never writes a planner
+  // column — duration_minutes / distance_miles / distance_meters keep the
+  // PLAN (live specimen: Xuan's 2026-09-10 run, whose FS planned duration
+  // was unrecoverable after the old double-write). Consumers resolve
+  // actual ?? planned AS A PAIR (DI-7; the mixed-pair prod bug DI-DEV-1 is
+  // the regression guard). Zero is a valid measured value (a started-and-
+  // stopped run) and must land as actual_* zero — the display reads the
+  // measured pair for verified cards, so the planned 12 mi no longer shows
+  // (feature request 390e3fdb kept, via the pair rule instead of the
+  // planner overwrite).
   if (durationMinutes !== null) {
-    updateFields.duration_minutes = durationMinutes;
     updateFields.actual_duration_minutes = durationMinutes;
   }
 
-  if (distanceMeters !== null) {
-    updateFields.distance_meters = distanceMeters;
-  }
-
-  // Reconcile the *displayed* mileage to what actually happened. When Garmin
-  // completes a planned activity we must replace the planned distance with the
-  // synced activity's actual distance (feature request 390e3fdb…6916): a run
-  // that was started and immediately stopped reports ~0 mi and must not keep
-  // showing the planned 12 mi (which also inflates any distance-derived
-  // calorie estimate). We only overwrite when Garmin actually reported a
-  // distance (a number, including 0). When Garmin omits distance entirely
-  // (e.g. some indoor activities) we leave the planned value untouched rather
-  // than zeroing out a legitimate workout.
   if (derivedDistanceMiles !== null) {
     updateFields.actual_distance_miles = derivedDistanceMiles;
-    updateFields.distance_miles = derivedDistanceMiles;
   }
 
   if (typeof mappedActivity.average_pace_minutes_per_mile === "number") {
@@ -400,6 +401,15 @@ export function buildGarminCompletionUpdate(
 
   if (typeof mappedActivity.garmin_device_name === "string") {
     updateFields.garmin_device_name = mappedActivity.garmin_device_name;
+  }
+
+  // Multisport lineage (Q-INT23): only write when Garmin sent it — a plain
+  // single-sport completion must not null out lineage stamped earlier.
+  if (typeof mappedActivity.parent_summary_id === "string") {
+    updateFields.parent_summary_id = mappedActivity.parent_summary_id;
+  }
+  if (typeof mappedActivity.is_parent === "boolean") {
+    updateFields.is_parent = mappedActivity.is_parent;
   }
 
   return updateFields;
@@ -467,25 +477,23 @@ export async function enrichCompletedGarminActivity(
     const num = (v: unknown): number | null =>
       typeof v === "number" && Number.isFinite(v) ? v : null;
 
+    // L-2 split (DI-7): the enrich path fills MEASURED gaps only — the
+    // planner columns are never touched, even when empty.
     const durationMinutes = num(mappedActivity.duration_minutes);
     if (
       durationMinutes !== null && durationMinutes > 0 &&
-      metricAbsent(existing.duration_minutes)
+      metricAbsent(existing.actual_duration_minutes)
     ) {
-      update.duration_minutes = durationMinutes;
       update.actual_duration_minutes = durationMinutes;
     }
 
     const distanceMeters = num(mappedActivity.distance_meters);
     if (
       distanceMeters !== null && distanceMeters > 0 &&
-      metricAbsent(existing.distance_meters) &&
       metricAbsent(existing.actual_distance_miles)
     ) {
       const miles = num(mappedActivity.distance_miles) ??
         distanceMeters / 1609.34;
-      update.distance_meters = distanceMeters;
-      update.distance_miles = miles;
       update.actual_distance_miles = miles;
     }
 

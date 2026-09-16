@@ -112,9 +112,20 @@ chips, placeholder copy, and a couple of mock errors (duplicate "Day 6", `1800kc
 (`lib/theme/kyle_design/`) stay the only token registry; `VanaAvatar` stays the avatar;
 no mascot, no cream/navy, no color-coded chip outlines, no iOS-only chrome (this ships
 iOS + Android + Web). Per CLAUDE.md, every **new design-bearing widget below is built once
-in `lib/shared/widgets/kyle_design/`** under its spec name, with a
-`docs/ssot/spec/design/components/<name>.md` written first and cited in the header
-comment; feature folders compose, never redefine. What we take from Alex's file is
+in `lib/shared/widgets/kyle_design/`** under its spec name, with its component spec
+**authored in the QA repo** (`qa/spec/design/components/<name>.md`, filed PROPOSED — Xuan
+ratifies) and cited in the widget's header comment by its mirror path once the re-sync
+carries it over; feature folders compose, never redefine.
+
+> **Mirror-policy correction (2026-09-08).** An earlier revision of this paragraph said to
+> write the spec at `docs/ssot/spec/design/components/<name>.md` — i.e. INTO the mirror.
+> That is the policy breach that bit on 2026-09-07: `macro-pill-row.md` and
+> `selectable-chip-grid.md` were authored app-side in the mirror (`d9149827`), the
+> home-shell landing re-sync — correctly treating `docs/ssot/` as a verbatim, read-only
+> mirror of the QA repo — deleted them, and they had to be recovered into QA verbatim
+> (qa `1b2a900`) and re-mirrored (`c4abec2a`). **`docs/ssot/` is never authored into.**
+> Specs are born in `qa/spec/`, ratified there, and arrive here only via the mirror
+> re-sync. Both recovered specs are PROPOSED, on Xuan's ruling desk as of 2026-09-08. What we take from Alex's file is
 **interaction structure and widget inventory**, nothing else. The *visual* target for
 every adopted pattern is the Kyle-styled prototype screens in
 `design-screens/previews/` — compare side-by-side per the map in §8.

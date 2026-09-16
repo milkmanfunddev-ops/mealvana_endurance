@@ -208,12 +208,19 @@ void main() {
 void _versionGateTests() {
   group('algorithm-version gate — older-than floor, never equality', () {
     test('rows at or above the floor are served; older rows are stale', () {
+      // Floor raised to v6.1.0 with F4a (data-integrations@v1): pre-F4a
+      // v6.0.0 rows recalc exactly once.
       expect(
         DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.0.0'),
-        isFalse,
+        isTrue,
+        reason: 'pre-F4a rows are below the floor now',
       );
       expect(
         DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.1.0'),
+        isFalse,
+      );
+      expect(
+        DailyMacroTargetsRepository.isStaleAlgorithmVersion('v6.2.0'),
         isFalse,
         reason: 'newer than the floor is accepted as-is',
       );

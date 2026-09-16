@@ -372,12 +372,25 @@ describe('Garmin Mappers', () => {
       const result = mapGarminActivityToActivity(fixtures.multiSportActivity, USER_ID);
 
       assertEquals(result.activity_type, 'multisport');
+      // data-integrations@v1 (Q-INT23): lineage is now persisted
+      assertEquals(result.is_parent, true);
+      assertEquals(result.parent_summary_id, null);
     });
 
     it('maps child activity sport type', () => {
       const result = mapGarminActivityToActivity(fixtures.childActivity, USER_ID);
 
       assertEquals(result.activity_type, 'running');
+      // data-integrations@v1 (Q-INT23): child leg points at the parent
+      assertEquals(result.parent_summary_id, 'activity-005');
+      assertEquals(result.is_parent, null);
+    });
+
+    it('leaves lineage null on plain single-sport activities (Q-INT23)', () => {
+      const result = mapGarminActivityToActivity(fixtures.runningActivity, USER_ID);
+
+      assertEquals(result.parent_summary_id, null);
+      assertEquals(result.is_parent, null);
     });
 
     it('keeps zero duration/distance/pace so an abandoned run overwrites the plan', () => {

@@ -6,6 +6,7 @@ import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/providers/unit_system_provider.dart';
 import '../../../../shared/utils/unit_formatter.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/kyle_design/materials/dotted_border_decoration.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/brick_metadata.dart';
 import '../../../nutrition_plan/domain/run_parameters.dart';
@@ -139,6 +140,14 @@ class TimelineBrickTile extends ConsumerWidget {
   Widget _brickCard(BuildContext context, Color onSurface, bool useMetric) {
     final segments = brick.brickMetadata?.segments ?? const <BrickSegment>[];
 
+    // D-1b (integrations-data-display.md, RATIFIED 2026-09-11): a brick at
+    // creation renders the DASHED outline like every planned card; the
+    // solid border appears only on self-reported/verified completion.
+    // (Before this the tile drew solid from creation — the ruled
+    // divergence.)
+    final done = brick.status == ActivityStatus.completed ||
+        brick.actualTime != null;
+
     return Semantics(
       container: true,
       label:
@@ -147,8 +156,17 @@ class TimelineBrickTile extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppColors.orange.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.orange.withValues(alpha: 0.45)),
+          border: done
+              ? Border.all(color: AppColors.orange.withValues(alpha: 0.45))
+              : null,
         ),
+        foregroundDecoration: done
+            ? null
+            : DottedBorderDecoration(
+                color: AppColors.orange.withValues(alpha: 0.45),
+                strokeWidth: 1.5,
+                radius: 14,
+              ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

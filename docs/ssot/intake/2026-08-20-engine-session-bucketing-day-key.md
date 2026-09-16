@@ -1,3 +1,4 @@
+> **RESOLVED 2026-09-10 → option 1 (ruling desk 2026-09-10): engine day-bucketing uses actual_time ?? planned_time ?? scheduled_date_time, matching the display rule. Fold: spec/integrations/lifecycle.md L-9.3; app fix in the 2026-09-10 handback**
 type: ruling-request
 bundle: daily-macros-dashboard@v3
 

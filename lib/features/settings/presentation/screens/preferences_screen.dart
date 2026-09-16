@@ -6,6 +6,8 @@ import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters
 import 'package:mealvana_endurance/shared/widgets/app_date_picker.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/widgets/navigation/figma_onboarding_footer.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
+import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../auth/domain/user_preferences.dart';
@@ -25,6 +27,10 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
   // Local state for editing
   Gender? _gender;
   DateTime? _birthday;
+
+  /// For the TP identity provenance badges (Xuan 2026-09-13: every field a
+  /// provider carries shows its badge when the values differ).
+  String? _userId;
   bool? _runsWithWaterBottle;
   UnitSystem? _unitSystem;
   GutTraining? _gutTraining;
@@ -48,6 +54,7 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
       final settingsState = ref.read(settingsControllerProvider).value;
       if (settingsState != null && mounted) {
         setState(() {
+          _userId = settingsState.userId;
           _gender = settingsState.gender;
           _birthday = settingsState.birthday;
           _runsWithWaterBottle = settingsState.runsWithWaterBottle;
@@ -340,6 +347,8 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
             ],
           ),
 
+          _buildTpNameBadge(),
+
           const SizedBox(height: AppSpacing.md),
 
           // Email field
@@ -359,13 +368,130 @@ class _PreferencesScreenState extends ConsumerState<PreferencesScreen> {
 
           // Gender selector (matching onboarding style)
           _buildGenderSelector(context),
+          _buildTpGenderBadge(),
 
           const SizedBox(height: AppSpacing.md),
 
           // Birthday selector
           _buildBirthdaySelector(context),
+          _buildTpBirthdayBadge(),
         ],
       ),
+    );
+  }
+
+  ({String? name, String? birthMonth, String? gender})? get _tpIdentity =>
+      _userId == null
+          ? null
+          : ref.watch(tpAthleteIdentityProvider(_userId!)).value;
+
+  String? get _fsName => _userId == null
+      ? null
+      : ref.watch(fsAthleteNameProvider(_userId!)).value;
+
+  /// Identity badges (Xuan rulings 2026-09-13): EVERY provider with a
+  /// non-null value shows its badge, primary first (TP, then FS for name).
+  /// A differing value renders the tap-to-use pill; a value equal to the
+  /// manual field renders the plain source pill (no pointless affordance).
+  /// Never overwrite, never a modal.
+  Widget _buildTpNameBadge() {
+    final manual =
+        '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+            .trim();
+
+    Widget? badgeFor(String source, String? rawName) {
+      final name = rawName?.trim();
+      if (name == null || name.isEmpty) return null;
+      if (manual.toLowerCase() == name.toLowerCase()) {
+        return KyleSourceChip(source: source);
+      }
+      return KyleTapToUseChip(
+        source: source,
+        value: name,
+        onTap: () {
+          final space = name.lastIndexOf(' ');
+          setState(() {
+            if (space > 0) {
+              _firstNameController.text = name.substring(0, space);
+              _lastNameController.text = name.substring(space + 1);
+            } else {
+              _firstNameController.text = name;
+            }
+          });
+          _markChanged();
+        },
+      );
+    }
+
+    final badges = <Widget>[
+      ?badgeFor('TrainingPeaks', _tpIdentity?.name),
+      ?badgeFor('Final Surge', _fsName),
+    ];
+    if (badges.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(spacing: 8, runSpacing: 6, children: badges),
+    );
+  }
+
+  Widget _buildTpGenderBadge() {
+    final tpGender = switch (_tpIdentity?.gender?.toLowerCase()) {
+      'm' || 'male' => Gender.male,
+      'f' || 'female' => Gender.female,
+      _ => null,
+    };
+    if (tpGender == null) return const SizedBox.shrink();
+    // Match = the value is TP-sourced; show the plain pill so the
+    // provenance stays visible (consistent with the name badge). Differ =
+    // tap-to-use.
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: tpGender == _gender
+          ? const KyleSourceChip(source: 'TrainingPeaks')
+          : KyleTapToUseChip(
+              source: 'TrainingPeaks',
+              value: tpGender == Gender.male ? 'Male' : 'Female',
+              onTap: () {
+                setState(() => _gender = tpGender);
+                _markChanged();
+              },
+            ),
+    );
+  }
+
+  Widget _buildTpBirthdayBadge() {
+    final birthMonth = _tpIdentity?.birthMonth; // 'YYYY-MM' (month precision)
+    if (birthMonth == null || birthMonth.length < 7) {
+      return const SizedBox.shrink();
+    }
+    final year = int.tryParse(birthMonth.substring(0, 4));
+    final month = int.tryParse(birthMonth.substring(5, 7));
+    if (year == null || month == null) return const SizedBox.shrink();
+    final matches = _birthday != null &&
+        _birthday!.year == year &&
+        _birthday!.month == month;
+    const monthNames = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      // Match = TP-sourced, plain pill (provenance stays visible after
+      // applying). Differ = tap-to-use. TP only reports month precision;
+      // adopting keeps the manually-set day (or the 15th) — day-level
+      // semantics await a ruling (qa intake 2026-09-13).
+      child: matches
+          ? const KyleSourceChip(source: 'TrainingPeaks')
+          : KyleTapToUseChip(
+              source: 'TrainingPeaks',
+              value: '${monthNames[month - 1]} $year',
+              onTap: () {
+                setState(() {
+                  _birthday = DateTime(year, month, _birthday?.day ?? 15);
+                });
+                _markChanged();
+              },
+            ),
     );
   }
 

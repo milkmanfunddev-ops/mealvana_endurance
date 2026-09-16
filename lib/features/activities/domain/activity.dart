@@ -99,6 +99,17 @@ class Activity {
     // Garmin completion linkage + device attribution (brand-compliant UI)
     this.garminSummaryId,
     this.garminDeviceName,
+
+    // data-integrations@v1 capture (Q-INT26)
+    this.tssPlanned,
+    this.tssActual,
+    this.ifPlanned,
+    this.ifActual,
+    this.tpCalories,
+    this.tpCaloriesPlanned,
+    this.parentSummaryId,
+    this.isParent,
+    this.hiddenByDisconnect,
   });
 
   final String id;
@@ -210,6 +221,29 @@ class Activity {
   // where we surface Garmin-derived data per brand guidelines.
   final String? garminDeviceName;
 
+  // --- data-integrations@v1 capture (Q-INT26, per-source typed) ---
+  // TP load metrics; null for basic TP athletes (null != 0, never fabricate).
+  final double? tssPlanned;
+  final double? tssActual;
+  final double? ifPlanned;
+  final double? ifActual;
+
+  // TP session energy, record-only — F4/calories_burned stay authoritative.
+  final double? tpCalories;
+  final double? tpCaloriesPlanned;
+
+  // Garmin multisport lineage (Q-INT23): child leg → parent summary id;
+  // parent rows flagged. Feeds brick verification B-2/B-5.
+  final String? parentSummaryId;
+  final bool? isParent;
+
+  // Q-INT2: soft-hidden by provider disconnect — excluded from display and
+  // engine; revives on a matching re-sync (never a tombstone).
+  final bool? hiddenByDisconnect;
+
+  /// Whether this row is currently soft-hidden by a disconnect.
+  bool get isHiddenByDisconnect => hiddenByDisconnect == true;
+
   /// Convenience getter to check if this is a brick activity
   bool get isBrick => activityType == ActivityType.brick;
 
@@ -280,6 +314,15 @@ class Activity {
       'brickId': brickId,
       'garminSummaryId': garminSummaryId,
       'garminDeviceName': garminDeviceName,
+      'tssPlanned': tssPlanned,
+      'tssActual': tssActual,
+      'ifPlanned': ifPlanned,
+      'ifActual': ifActual,
+      'tpCalories': tpCalories,
+      'tpCaloriesPlanned': tpCaloriesPlanned,
+      'parentSummaryId': parentSummaryId,
+      'isParent': isParent,
+      'hiddenByDisconnect': hiddenByDisconnect,
     };
   }
 
@@ -345,6 +388,15 @@ class Activity {
     String? brickId,
     String? garminSummaryId,
     String? garminDeviceName,
+    double? tssPlanned,
+    double? tssActual,
+    double? ifPlanned,
+    double? ifActual,
+    double? tpCalories,
+    double? tpCaloriesPlanned,
+    String? parentSummaryId,
+    bool? isParent,
+    bool? hiddenByDisconnect,
   }) {
     return Activity(
       id: id ?? this.id,
@@ -414,6 +466,15 @@ class Activity {
       brickId: brickId ?? this.brickId,
       garminSummaryId: garminSummaryId ?? this.garminSummaryId,
       garminDeviceName: garminDeviceName ?? this.garminDeviceName,
+      tssPlanned: tssPlanned ?? this.tssPlanned,
+      tssActual: tssActual ?? this.tssActual,
+      ifPlanned: ifPlanned ?? this.ifPlanned,
+      ifActual: ifActual ?? this.ifActual,
+      tpCalories: tpCalories ?? this.tpCalories,
+      tpCaloriesPlanned: tpCaloriesPlanned ?? this.tpCaloriesPlanned,
+      parentSummaryId: parentSummaryId ?? this.parentSummaryId,
+      isParent: isParent ?? this.isParent,
+      hiddenByDisconnect: hiddenByDisconnect ?? this.hiddenByDisconnect,
     );
   }
 
@@ -472,7 +533,16 @@ class Activity {
         other.brickMetadata == brickMetadata &&
         other.brickId == brickId &&
         other.garminSummaryId == garminSummaryId &&
-        other.garminDeviceName == garminDeviceName;
+        other.garminDeviceName == garminDeviceName &&
+        other.tssPlanned == tssPlanned &&
+        other.tssActual == tssActual &&
+        other.ifPlanned == ifPlanned &&
+        other.ifActual == ifActual &&
+        other.tpCalories == tpCalories &&
+        other.tpCaloriesPlanned == tpCaloriesPlanned &&
+        other.parentSummaryId == parentSummaryId &&
+        other.isParent == isParent &&
+        other.hiddenByDisconnect == hiddenByDisconnect;
   }
 
   @override
@@ -534,7 +604,16 @@ class Activity {
           brickId,
           garminSummaryId,
           garminDeviceName,
-        );
+          tssPlanned,
+          tssActual,
+          ifPlanned,
+          ifActual,
+          tpCalories,
+          tpCaloriesPlanned,
+          parentSummaryId,
+          isParent,
+        ) ^
+        (hiddenByDisconnect == true ? 0x1 : 0x0);
   }
 
   @override

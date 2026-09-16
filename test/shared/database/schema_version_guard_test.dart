@@ -105,9 +105,13 @@ void main() {
 }
 
 /// Bump both of these together, deliberately, whenever the schema changes.
-const _pinnedVersion = 21;
+/// 2026-09-13 re-pin at v21 on the data-integration → develop merge: the v21
+/// tables now also carry the v20 data-integration columns (activities capture,
+/// integrations provider fields, events.origin, users sport-prefs), so the
+/// fingerprint is recomputed from the merged shape.
+const _pinnedVersion = 22;
 const _pinnedFingerprint =
-    '2e78527f3e82aafffbfea51aecc351aa2b66936900a907d1b29629501e512a41';
+    '5b68ae5720c8498d97c9fe3e49a4b5a7afba306156add2ee8230fbeb7c537d2a';
 
 /// The migration ladder in app_database.dart starts at `from < 7`; versions
 /// 1–6 predate it and were consolidated. Only guard from here upward.

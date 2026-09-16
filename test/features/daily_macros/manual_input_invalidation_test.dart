@@ -68,7 +68,7 @@ void main() {
         'prospective',
         40.0,
         null,
-        'v6.0.0',
+        'v6.1.0',
         0,
         0,
         0,

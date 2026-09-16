@@ -1,0 +1,37 @@
+# Design conformance — TrainingPeaks write-back consent (opt-out)
+#
+# Written at ship of data-integrations@v1 from the RATIFIED
+# spec/design/surfaces/integrations-data-display.md D-3 (Q-INT16 AMENDED to
+# opt-out 2026-09-11; Q-DID3 RULED) and the ratified rendering
+# spec/design/renderings/tp-writeback-consent@v1.html (opt-out iteration —
+# the only ratified one; the earlier opt-in export was superseded same day).
+#
+# A golden may only be regenerated AFTER the design spec changes — never to
+# make a red test pass.
+
+manifest: tp-writeback-consent
+version: v1
+status: ratified                # app suite pending (DI-15 / handback addendum 2+3)
+spec: spec/design/surfaces/integrations-data-display.md
+rendering: spec/design/renderings/tp-writeback-consent@v1.html
+suite: test/features/integrations/tp_writeback_consent_golden_test.dart   # to create
+
+goldens:
+  - id: sheet-opt-out-notice
+    asserts: title "Your fuel plan goes to your coach"; body names both off-ramps; EXAMPLE block "60 g carbs/hr · 500 ml/hr · 400 mg sodium/hr" (ml/h per amended TP-5); Keep Sharing (filled) + Turn Off Sharing (equal-size outline) + dismiss X; footer "Closing this leaves sharing on."
+  - id: tp-row-toggle-on
+    asserts: "Write fuel plan to TrainingPeaks" toggle PRE-SET ON inside the TP row card, below identity/last-synced; bare toggle (sublabel struck 2026-09-11)
+  - id: premium-blocked
+    asserts: "Unavailable for your TrainingPeaks plan" + Re-check; no dead toggle; consent sheet suppressed while blocked
+  - id: onboarding-variant
+    asserts: same sheet as own step after connect; toggle live in the onboarding TP row
+
+gestures:
+  - id: dismiss-leaves-on
+    asserts: X or scrim dismiss -> toggle remains ON
+  - id: turn-off-flips-toggle
+    asserts: Turn Off Sharing -> row toggle OFF, single tap
+  - id: opt-out-visibility
+    asserts: Turn Off Sharing FULLY visible without scrolling on the smallest supported screen (the ratified layout constraint — the export artboards clipped it)
+  - id: migration-notice-once
+    asserts: already-sharing athletes see the same sheet exactly once on first launch after update

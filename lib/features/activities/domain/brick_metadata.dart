@@ -15,6 +15,7 @@ class BrickMetadata {
     this.originalActivityIds,
     required this.createdFromExisting,
     required this.totalDurationMinutes,
+    this.transitions,
   });
 
   /// Ordered list of sports in this brick (e.g., ['swimming', 'running'])
@@ -32,6 +33,12 @@ class BrickMetadata {
   /// Total calculated duration (sum of all segments)
   final int totalDurationMinutes;
 
+  /// Transition records folded in by the Garmin matcher (B-4, positional
+  /// identity T1..T(n-1): {"T1": {duration_minutes, summary_id, start}}).
+  /// Server-written; carried verbatim so a client round-trip can never
+  /// drop them.
+  final Map<String, dynamic>? transitions;
+
   /// Serialize to JSON for storage in brick_metadata column
   Map<String, dynamic> toJson() {
     return {
@@ -40,6 +47,7 @@ class BrickMetadata {
       'original_activity_ids': originalActivityIds,
       'created_from_existing': createdFromExisting,
       'total_duration_minutes': totalDurationMinutes,
+      if (transitions != null) 'transitions': transitions,
     };
   }
 
@@ -71,8 +79,21 @@ class BrickMetadata {
             0,
             (sum, segment) => sum + segment.durationMinutes,
           ),
+      transitions: json['transitions'] is Map
+          ? (json['transitions'] as Map).cast<String, dynamic>()
+          : null,
     );
   }
+
+  /// B-3 verified predicate (matching.md, RATIFIED): every endurance
+  /// segment carries a Garmin leg stamp. The parent's own summary id is
+  /// checked by the caller (workout_state_resolver) — this answers only
+  /// the all-legs half.
+  bool get allEnduranceLegsStamped =>
+      segments.isNotEmpty &&
+      segments
+          .where((s) => s.sport != 'transition')
+          .every((s) => s.garminSummaryId != null);
 
   BrickMetadata copyWith({
     List<String>? segmentOrder,
@@ -80,6 +101,7 @@ class BrickMetadata {
     List<String>? originalActivityIds,
     bool? createdFromExisting,
     int? totalDurationMinutes,
+    Map<String, dynamic>? transitions,
   }) {
     return BrickMetadata(
       segmentOrder: segmentOrder ?? this.segmentOrder,
@@ -87,6 +109,7 @@ class BrickMetadata {
       originalActivityIds: originalActivityIds ?? this.originalActivityIds,
       createdFromExisting: createdFromExisting ?? this.createdFromExisting,
       totalDurationMinutes: totalDurationMinutes ?? this.totalDurationMinutes,
+      transitions: transitions ?? this.transitions,
     );
   }
 
@@ -142,6 +165,7 @@ class BrickSegment {
     this.elevationGainFt,
     // Running fields (shares distanceMiles with cycling)
     this.paceMinutesPerMile,
+    this.garminStamp,
   });
 
   /// Sport type for this segment ('swimming', 'cycling', 'running')
@@ -189,6 +213,14 @@ class BrickSegment {
   /// Pace in minutes per mile (running only)
   final double? paceMinutesPerMile;
 
+  /// Garmin leg stamp written by the matcher tier (B-2/B-2'):
+  /// {summary_id, start, duration_minutes}. Server-written; carried
+  /// verbatim so a client round-trip can never drop it.
+  final Map<String, dynamic>? garminStamp;
+
+  /// The stamped Garmin summary id, if this leg has been matched (B-3).
+  String? get garminSummaryId => garminStamp?['summary_id'] as String?;
+
   /// Serialize to JSON
   Map<String, dynamic> toJson() {
     return {
@@ -208,6 +240,7 @@ class BrickSegment {
       if (elevationGainFt != null) 'elevation_gain_ft': elevationGainFt,
       if (paceMinutesPerMile != null)
         'pace_minutes_per_mile': paceMinutesPerMile,
+      if (garminStamp != null) 'garmin': garminStamp,
     };
   }
 
@@ -241,6 +274,9 @@ class BrickSegment {
       paceMinutesPerMile: _asDouble(
         json['pace_minutes_per_mile'] ?? json['paceMinutesPerMile'],
       ),
+      garminStamp: json['garmin'] is Map
+          ? (json['garmin'] as Map).cast<String, dynamic>()
+          : null,
     );
   }
 
@@ -259,6 +295,7 @@ class BrickSegment {
     String? indoorOutdoor,
     int? elevationGainFt,
     double? paceMinutesPerMile,
+    Map<String, dynamic>? garminStamp,
   }) {
     return BrickSegment(
       sport: sport ?? this.sport,
@@ -275,6 +312,7 @@ class BrickSegment {
       indoorOutdoor: indoorOutdoor ?? this.indoorOutdoor,
       elevationGainFt: elevationGainFt ?? this.elevationGainFt,
       paceMinutesPerMile: paceMinutesPerMile ?? this.paceMinutesPerMile,
+      garminStamp: garminStamp ?? this.garminStamp,
     );
   }
 

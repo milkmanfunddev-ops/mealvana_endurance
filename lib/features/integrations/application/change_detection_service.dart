@@ -38,14 +38,23 @@ class ChangeDetectionService {
   /// [provider] - Provider name ('final_surge', 'training_peaks')
   ///
   /// Returns [SyncChangeResult] with categorized changes
+  ///
+  /// [completionSignalIds] — provider workout ids whose payload carries a
+  /// provider-reported COMPLETION (FS `WorkoutCompleted`/`ActualTime`, TP
+  /// actual `TotalTime`). M-1.3 provable-fact primacy: such a signal on a
+  /// tombstoned row REVIVES it to completed; a plan re-import (the default
+  /// classification) still drops against the tombstone.
   SyncChangeResult detectChanges({
     required List<Activity> localActivities,
     required List<Activity> remoteWorkouts,
     required String provider,
+    Set<String> completionSignalIds = const {},
   }) {
     final newActivities = <Activity>[];
     final updatedActivities = <ActivityChange>[];
     final deletedActivityIds = <String>[];
+    final revivedActivities = <ActivityChange>[];
+    final unhiddenActivities = <ActivityChange>[];
     int unchangedCount = 0;
     int tombstoneDropped = 0;
 
@@ -131,15 +140,58 @@ class ChangeDetectionService {
           );
         }
       } else if (localActivity.status == ActivityStatus.deleted) {
-        // TOMBSTONE HIT (soft-delete ruling): the athlete deleted this
-        // workout; the row persists precisely so this sync recognizes it.
-        // The incoming provider workout is DROPPED — never re-imported,
-        // never updated, and deletion is not un-doable by sync.
-        tombstoneDropped++;
+        if (completionSignalIds.contains(providerId)) {
+          // M-1.3 (RULED Xuan, 2026-09-10): a keyed COMPLETION is
+          // undeniable fact — the deleted row revives to completed.
+          // Deletion still sticks against everything weaker: only proven
+          // completion pierces the tombstone.
+          revivedActivities.add(
+            ActivityChange(
+              activityId: localActivity.id,
+              updatedActivity: remoteWorkout,
+              scheduleChanged: false,
+              oldScheduledAt: localActivity.scheduledDateTime,
+              newScheduledAt: remoteWorkout.scheduledDateTime,
+            ),
+          );
+          if (kDebugMode) {
+            debugPrint(
+              '   ⚡ KEYED-OVER-TOMBSTONE: ${remoteWorkout.title} '
+              '(provider_id: $providerId) — completion signal revives the '
+              'deleted row (M-1.3)',
+            );
+          }
+        } else {
+          // TOMBSTONE HIT (soft-delete ruling): the athlete deleted this
+          // workout; the row persists precisely so this sync recognizes it.
+          // The incoming provider workout is DROPPED — never re-imported,
+          // never updated, and deletion is not un-doable by a PLAN import.
+          tombstoneDropped++;
+          if (kDebugMode) {
+            debugPrint(
+              '   🪦 TOMBSTONE: ${remoteWorkout.title} '
+              '(provider_id: $providerId) — dropped, not re-imported',
+            );
+          }
+        }
+      } else if (localActivity.isHiddenByDisconnect) {
+        // Q-INT2 revive: the row was soft-hidden by a disconnect and the
+        // provider (re-connected) still carries it — unhide and take the
+        // update. Hidden rows match-and-revive, never suppress.
+        unhiddenActivities.add(
+          ActivityChange(
+            activityId: localActivity.id,
+            updatedActivity: remoteWorkout,
+            scheduleChanged: false,
+            oldScheduledAt: localActivity.scheduledDateTime,
+            newScheduledAt: remoteWorkout.scheduledDateTime,
+          ),
+        );
         if (kDebugMode) {
           debugPrint(
-            '   🪦 TOMBSTONE: ${remoteWorkout.title} '
-            '(provider_id: $providerId) — dropped, not re-imported',
+            '   👁 REVIVED: ${remoteWorkout.title} '
+            '(provider_id: $providerId) — hidden-by-disconnect row unhidden '
+            'by re-sync (Q-INT2)',
           );
         }
       } else {
@@ -241,6 +293,8 @@ class ChangeDetectionService {
       deletedActivityIds: deletedActivityIds,
       unchangedCount: unchangedCount,
       tombstoneDroppedCount: tombstoneDropped,
+      revivedActivities: revivedActivities,
+      unhiddenActivities: unhiddenActivities,
     );
   }
 
@@ -329,6 +383,27 @@ class ChangeDetectionService {
     }
     if (oldActivity.swimmingPoolOrOpenWater !=
         newActivity.swimmingPoolOrOpenWater) {
+      return true;
+    }
+
+    // data-integrations@v1 capture (Q-INT26): a changed TP load metric or
+    // session energy is a real provider edit — without these comparisons a
+    // resync that only updates TSS/IF/calories (e.g. the workout completed
+    // on TP) would never reach the row. Pace ranges ride along for FS.
+    if (oldActivity.tssPlanned != newActivity.tssPlanned) return true;
+    if (oldActivity.tssActual != newActivity.tssActual) return true;
+    if (oldActivity.ifPlanned != newActivity.ifPlanned) return true;
+    if (oldActivity.ifActual != newActivity.ifActual) return true;
+    if (oldActivity.tpCalories != newActivity.tpCalories) return true;
+    if (oldActivity.tpCaloriesPlanned != newActivity.tpCaloriesPlanned) {
+      return true;
+    }
+    if (oldActivity.paceMinMinutesPerMile !=
+        newActivity.paceMinMinutesPerMile) {
+      return true;
+    }
+    if (oldActivity.paceMaxMinutesPerMile !=
+        newActivity.paceMaxMinutesPerMile) {
       return true;
     }
 

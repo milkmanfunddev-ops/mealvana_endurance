@@ -193,6 +193,15 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         homeLat: Value(profile.homeLat),
         homeLon: Value(profile.homeLon),
         homeTimezone: Value(profile.homeTimezone),
+        // Sport preferences (v20 — previously dropped here; Stage E find)
+        cyclingFtpWatts: Value(profile.ftpWatts),
+        swimmingCssSecondsPer100m: Value(profile.cssPacePer100mSeconds),
+        giSensitivity: Value(profile.giSensitivity),
+        typicalBikeBottles: Value(profile.typicalBikeBottles),
+        hasAeroBottle: Value(profile.hasAeroBottle),
+        hasBentoBox: Value(profile.hasBentoBox),
+        typicalWetsuit: Value(profile.typicalWetsuit),
+        typicalSwimCapType: Value(profile.typicalSwimCapType),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -277,6 +286,15 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
         homeLat: Value(profile.homeLat),
         homeLon: Value(profile.homeLon),
         homeTimezone: Value(profile.homeTimezone),
+        // Sport preferences (v20 — previously dropped here; Stage E find)
+        cyclingFtpWatts: Value(profile.ftpWatts),
+        swimmingCssSecondsPer100m: Value(profile.cssPacePer100mSeconds),
+        giSensitivity: Value(profile.giSensitivity),
+        typicalBikeBottles: Value(profile.typicalBikeBottles),
+        hasAeroBottle: Value(profile.hasAeroBottle),
+        hasBentoBox: Value(profile.hasBentoBox),
+        typicalWetsuit: Value(profile.typicalWetsuit),
+        typicalSwimCapType: Value(profile.typicalSwimCapType),
         // Background sync tracking
         needsUpload: Value(needsUpload),
       ),
@@ -426,6 +444,15 @@ class UserDao extends DatabaseAccessor<AppDatabase> with _$UserDaoMixin {
           dbUser.knownSodiumConcentrationMgPerLiter,
       sweatTestDate: dbUser.sweatTestDate,
       sweatTestSource: dbUser.sweatTestSource,
+      // Sport preferences (v20 — the read half of the Stage E fix)
+      ftpWatts: dbUser.cyclingFtpWatts,
+      cssPacePer100mSeconds: dbUser.swimmingCssSecondsPer100m,
+      giSensitivity: dbUser.giSensitivity,
+      typicalBikeBottles: dbUser.typicalBikeBottles,
+      hasAeroBottle: dbUser.hasAeroBottle,
+      hasBentoBox: dbUser.hasBentoBox,
+      typicalWetsuit: dbUser.typicalWetsuit,
+      typicalSwimCapType: dbUser.typicalSwimCapType,
       // Garmin precedence timestamps
       weightPoundsUpdatedAt: dbUser.weightPoundsUpdatedAt,
       bodyFatPctUpdatedAt: dbUser.bodyFatPctUpdatedAt,

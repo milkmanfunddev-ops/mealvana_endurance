@@ -146,8 +146,11 @@ void main() {
   });
 
   group('mapSportForActivity – regression for 766-cal overcount bug', () {
-    test('other activity maps to strength, not running', () {
-      expect(mapSportForActivity('other'), 'strength');
+    test('other passes through — F4a prices unknowns at 0 with the '
+        'estimate flag, never a hidden fallback rate', () {
+      // Pre-F4a this mapped to strength (interim); pre-interim to running
+      // (the 766-cal overcount). F4a (RULED 2026-09-10) removes both.
+      expect(mapSportForActivity('other'), 'other');
     });
 
     test('running activity maps to running', () {
@@ -162,8 +165,9 @@ void main() {
       expect(mapSportForActivity('swimming'), 'swimming');
     });
 
-    test('unknown activity type still defaults to running', () {
-      expect(mapSportForActivity('some_unknown_type'), 'running');
+    test('unknown types pass through to the F4a unknown rung, never '
+        'running', () {
+      expect(mapSportForActivity('some_unknown_type'), 'some_unknown_type');
     });
   });
 }

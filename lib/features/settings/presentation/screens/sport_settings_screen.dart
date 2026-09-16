@@ -6,6 +6,8 @@ import '../../../../shared/widgets/primary_button.dart';
 import '../../../../shared/widgets/content_area.dart';
 import '../providers/settings_controller.dart';
 import '../../../../../../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../integrations/presentation/providers/athlete_zones_provider.dart';
+import '../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 
 /// Sport Settings Screen - Cycling, swimming, and sport-specific preferences
 class SportSettingsScreen extends ConsumerWidget {
@@ -233,6 +235,30 @@ class SportSettingsScreen extends ConsumerWidget {
             }
           },
         ),
+        SizedBox(height: 8.h),
+        // D-2 provenance chips (integrations-data-display.md, RATIFIED
+        // 2026-09-11; Q-DID2 variant A): one shared chip family
+        // (KyleSourceProvenanceRow) — FTP/CSS application, 24 h zones
+        // window, manual-wins with inline conflict.
+        KyleSourceProvenanceRow(
+          manualValue:
+              (state.ftpWatts as int?) == 0 ? null : state.ftpWatts as int?,
+          providerValue: state.userId == null
+              ? null
+              : ref
+                  .watch(tpFtpWattsProvider(state.userId as String))
+                  .value,
+          stale: state.userId == null
+              ? false
+              : (ref
+                      .watch(tpZonesStaleProvider(state.userId as String))
+                      .value ??
+                  false),
+          unit: 'W',
+          onAdoptProvider: (v) => ref
+              .read(settingsControllerProvider.notifier)
+              .updateCyclingPreferences(ftpWatts: v),
+        ),
       ],
     );
   }
@@ -447,6 +473,27 @@ class SportSettingsScreen extends ConsumerWidget {
               }
             }
           },
+        ),
+        SizedBox(height: 8.h),
+        // css-inherits (D-2): the swimming CSS field renders the SAME
+        // provenance pattern — one chip family, different values.
+        KyleSourceProvenanceRow(
+          manualValue: state.cssPacePer100mSeconds as int?,
+          providerValue: state.userId == null
+              ? null
+              : ref
+                  .watch(tpCssSecondsPer100mProvider(state.userId as String))
+                  .value,
+          stale: state.userId == null
+              ? false
+              : (ref
+                      .watch(tpZonesStaleProvider(state.userId as String))
+                      .value ??
+                  false),
+          unit: 's/100m',
+          onAdoptProvider: (v) => ref
+              .read(settingsControllerProvider.notifier)
+              .updateSwimmingPreferences(cssPacePer100mSeconds: v),
         ),
       ],
     );

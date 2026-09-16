@@ -244,6 +244,43 @@ class UserProfilesTable extends Table {
 
   /// IANA timezone of [homeCity], e.g. 'America/Chicago'
   TextColumn get homeTimezone => text().nullable().named('home_timezone')();
+  // Sport preferences (data-integrations@v1, added in v20 after the Stage E
+  // walk showed UserDao silently dropping every one of these on save).
+  // cycling_ftp_watts / swimming_css_seconds_per_100m mirror the production
+  // Supabase columns of the same name (UserProfile.toJson/fromRow already
+  // speak them); the rest are device-local gear/tolerance preferences that
+  // deliberately have no server twin.
+
+  /// FTP in watts (Supabase twin: users.cycling_ftp_watts)
+  IntColumn get cyclingFtpWatts =>
+      integer().nullable().named('cycling_ftp_watts')();
+
+  /// Critical Swim Speed, seconds per 100m (Supabase twin of the same name)
+  IntColumn get swimmingCssSecondsPer100m =>
+      integer().nullable().named('swimming_css_seconds_per_100m')();
+
+  /// GI sensitivity flag (local-only)
+  BoolColumn get giSensitivity =>
+      boolean().nullable().named('gi_sensitivity')();
+
+  /// Typical bike bottle count (local-only)
+  IntColumn get typicalBikeBottles =>
+      integer().nullable().named('typical_bike_bottles')();
+
+  /// Rides with an aero bottle (local-only)
+  BoolColumn get hasAeroBottle =>
+      boolean().nullable().named('has_aero_bottle')();
+
+  /// Rides with a bento box (local-only)
+  BoolColumn get hasBentoBox => boolean().nullable().named('has_bento_box')();
+
+  /// Typically swims in a wetsuit (local-only)
+  BoolColumn get typicalWetsuit =>
+      boolean().nullable().named('typical_wetsuit')();
+
+  /// Typical swim cap type (local-only)
+  TextColumn get typicalSwimCapType =>
+      text().nullable().named('typical_swim_cap_type')();
 
   /// Sync tracking: whether this record needs to be uploaded to Supabase
   /// Used for background sync after onboarding registration

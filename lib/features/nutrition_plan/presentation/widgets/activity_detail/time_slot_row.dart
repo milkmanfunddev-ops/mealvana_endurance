@@ -406,9 +406,13 @@ class TimeSlotRow extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    // Use PlacedSlotFoodWidget for compact inline display with +/- and unassign
+    // Use PlacedSlotFoodWidget for compact inline display with +/- and unassign.
+    // Hand it the RAW food (not the pre-scaled displayFood): the widget scales
+    // the carbs badge off its own slot quantity, so exactly one place scales —
+    // and the raw food keeps isIndivisible/numericQuantity that the display
+    // copy drops. (displayFood stays for the subtitle/quantity string above.)
     final placedWidget = PlacedSlotFoodWidget(
-      food: entry.displayFood,
+      food: entry.sourceFood,
       assignment: entry.assignment,
       sectionColor: sectionColor,
       onAdjustQuantity: (delta) {

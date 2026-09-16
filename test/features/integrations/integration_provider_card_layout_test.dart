@@ -24,7 +24,6 @@ void main() {
     WidgetTester tester, {
     required bool isConnected,
     required bool hasSynced,
-    String? windowCaption,
   }) async {
     tester.view.physicalSize = smallPhoneSize;
     tester.view.devicePixelRatio = 1.0;
@@ -43,7 +42,6 @@ void main() {
                 isConnected: isConnected,
                 hasSynced: hasSynced,
                 specStyle: true,
-                windowCaption: windowCaption,
                 onConnect: () {},
                 onSync: () {},
               ),
@@ -60,7 +58,6 @@ void main() {
       tester,
       isConnected: false,
       hasSynced: false,
-      windowCaption: 'Imports ~30 days of history',
     );
     expectNoRenderOverflow(tester);
   });
@@ -72,7 +69,6 @@ void main() {
       tester,
       isConnected: true,
       hasSynced: false,
-      windowCaption: 'Imports ~30 days of history',
     );
     expect(find.text('Sync Now'), findsOneWidget);
     expectNoRenderOverflow(tester);
@@ -83,26 +79,13 @@ void main() {
       tester,
       isConnected: true,
       hasSynced: true,
-      windowCaption: 'Imports ~30 days of history',
     );
     expect(find.text('Synced!'), findsOneWidget);
     expectNoRenderOverflow(tester);
   });
 
-  testWidgets('the history caption stays on a single line', (tester) async {
-    await pumpSpecRow(
-      tester,
-      isConnected: true,
-      hasSynced: false,
-      windowCaption: 'Imports ~30 days of history',
-    );
-
-    // The whole point of keeping the action narrow: this caption must not
-    // wrap (see the 2026-08 port ruling).
-    final caption = tester.widget<Text>(
-      find.text('Imports ~30 days of history'),
-    );
-    expect(caption.maxLines, 1);
-    expect(caption.softWrap, isFalse);
-  });
+  // The 'history caption stays on a single line' test was removed with ruling
+  // D-4 (spec/design/surfaces/integrations-data-display.md, 2026-09-13): the
+  // provider connect cards no longer carry a history/window sublabel on either
+  // surface, so there is no caption left to pin.
 }

@@ -127,6 +127,11 @@ export function mapGarminActivityToActivity(
     // the device model isn't identified — drop it so the client
     // falls back to "Garmin Connect" cleanly.
     garmin_device_name: normalizeGarminDeviceName(garminActivity.deviceName),
+    // data-integrations@v1 capture (Q-INT23): persist the multisport lineage
+    // so brick verification B-2/B-5 can associate child legs with their
+    // parent session. Parsed since forever, never stored until now.
+    parent_summary_id: garminActivity.parentSummaryId ?? null,
+    is_parent: garminActivity.isParent ?? null,
   };
 
   // Add sport-specific fields (using actual column names)

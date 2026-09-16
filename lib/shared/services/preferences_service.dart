@@ -15,6 +15,8 @@ class PreferencesService {
   static const String _keyHasCompletedInitialSurvey =
       'has_completed_initial_survey';
   static const String _keyTpWritebackEnabled = 'tp_writeback_enabled';
+  static const String _keyTpWritebackNoticeShown =
+      'tp_writeback_notice_shown';
   static const String _keyTpWritebackPremiumBlocked =
       'tp_writeback_premium_blocked';
 
@@ -36,7 +38,30 @@ class PreferencesService {
   // ─── TrainingPeaks Write-Back ───
 
   /// Whether TP write-back is enabled (default ON)
+  /// Q-INT16 as AMENDED (Xuan, 2026-09-11): write-back is OPT-OUT — sharing
+  /// defaults ON for everyone. The `?? true` is the RATIFIED intent (not a
+  /// null-fallback accident); [ensureTpWritebackDefaultExplicit] additionally
+  /// writes the default so the stored value is explicit.
   bool get tpWritebackEnabled => _prefs.getBool(_keyTpWritebackEnabled) ?? true;
+
+  /// Make the ratified default-ON explicit in storage (called at TP connect
+  /// and at the migration notice). A previously stored choice — either way —
+  /// is never overwritten.
+  Future<void> ensureTpWritebackDefaultExplicit() async {
+    if (_prefs.getBool(_keyTpWritebackEnabled) == null) {
+      await _prefs.setBool(_keyTpWritebackEnabled, true);
+    }
+  }
+
+  /// Notice-once semantics (DI-10): the opt-out notice fires exactly once
+  /// per athlete — after a successful TP connect, or once on first launch
+  /// for athletes who were already pushing before the amendment.
+  bool get tpWritebackNoticeShown =>
+      _prefs.getBool(_keyTpWritebackNoticeShown) ?? false;
+
+  Future<void> setTpWritebackNoticeShown(bool shown) async {
+    await _prefs.setBool(_keyTpWritebackNoticeShown, shown);
+  }
 
   Future<void> setTpWritebackEnabled(bool enabled) async {
     await _prefs.setBool(_keyTpWritebackEnabled, enabled);

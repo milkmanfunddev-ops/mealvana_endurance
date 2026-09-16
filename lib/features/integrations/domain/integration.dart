@@ -18,6 +18,8 @@ class IntegrationModel {
     this.providerAthleteGender,
     this.providerAthleteBodyFatPct,
     this.athleteZonesJson,
+    this.providerIsPremium,
+    this.athleteMetricsJson,
     this.isActive = true,
     this.lastSyncAt,
     this.lastSyncStatus,
@@ -50,6 +52,15 @@ class IntegrationModel {
 
   /// Serialized athlete zone data (HR, Speed, Power zones from Training Peaks)
   final String? athleteZonesJson;
+
+  /// TrainingPeaks IsPremium (data-integrations@v1 capture): predicts null
+  /// completed-workout fields for basic athletes and write-back 403s.
+  final bool? providerIsPremium;
+
+  /// Latest TrainingPeaks /v2/metrics body-metrics fetch (weight, HRV, steps,
+  /// stress, sleep quality), serialized JSON; refreshed on the 24 h zones
+  /// staleness clock, premium-gated.
+  final String? athleteMetricsJson;
   final bool isActive;
   final DateTime? lastSyncAt;
   final String? lastSyncStatus; // 'success', 'error', 'pending'
@@ -134,6 +145,8 @@ class IntegrationModel {
     String? providerAthleteGender,
     double? providerAthleteBodyFatPct,
     String? athleteZonesJson,
+    bool? providerIsPremium,
+    String? athleteMetricsJson,
     bool? isActive,
     DateTime? lastSyncAt,
     String? lastSyncStatus,
@@ -160,6 +173,8 @@ class IntegrationModel {
       providerAthleteBodyFatPct:
           providerAthleteBodyFatPct ?? this.providerAthleteBodyFatPct,
       athleteZonesJson: athleteZonesJson ?? this.athleteZonesJson,
+      providerIsPremium: providerIsPremium ?? this.providerIsPremium,
+      athleteMetricsJson: athleteMetricsJson ?? this.athleteMetricsJson,
       isActive: isActive ?? this.isActive,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       lastSyncStatus: lastSyncStatus ?? this.lastSyncStatus,

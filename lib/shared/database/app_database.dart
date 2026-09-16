@@ -290,45 +290,55 @@ class AppDatabase extends _$AppDatabase {
   /// value in migration 20260814120000). Supabase
   /// app_config.current_schema_version must be bumped to 18 when this ships.
   ///
-  /// v19 forked on 2026-09-06: `develop` used v19 for the template_foods
-  /// food-recommendation columns while `mealplanning` used v19 for
-  /// `user_entitlements` (and v20 for the meal-planning tables). The merge
-  /// keeps v20 as the head (Lee, 2026-09-07): the v20 step below carries
-  /// everything either fork could be missing, and every step is idempotent
-  /// (ensureTable / addColumn), so a device coming from develop's v19 gets
-  /// the meal-planning tables + entitlements, and one from the mealplanning
-  /// line's v19 gets those plus the template_foods columns. A device already
-  /// AT the mealplanning line's v20 (Lee's simulator only — that branch never
-  /// had a Codemagic build) does not run onUpgrade and lacks the
-  /// template_foods columns; the startup integrity check wipes and resyncs
-  /// it once. Accepted.
+  /// v19 added template_foods.min_servings_during + is_indivisible (mirrors
+  /// of existing Supabase columns the client solvers now read — §4.2 one-cap
+  /// twin port) and template_foods.solvent_min_ml (catalog-conventions v1.1
+  /// solvent dependency, food-recommendation@v1 §6(e); Supabase migration
+  /// 20260903120000). This is the SHIPPED 1.25.x/1.26.0 step. History note:
+  /// v19 forked on 2026-09-06 (`develop` used v19 for these catalog columns
+  /// while `mealplanning` used v19 for `user_entitlements` and v20 for the
+  /// meal-planning tables); on 2026-09-11 the mealplanning steps were
+  /// consolidated into v21 so the ladder matches what prod actually ran, and
+  /// the v21 step idempotently re-runs both forked sides for dev devices from
+  /// either lineage.
   ///
-  /// v19 added `user_entitlements` — a read-only local mirror of the user's
-  /// Pro subscription rows (docs/implement_mealplanning/04-entitlement.md).
-  /// Server-side the table is written only by the revenuecat-webhook edge
-  /// function; the app caches its own row so the Pro gate can answer offline
-  /// and before RevenueCat responds on a cold start.
+  /// v20: data-integrations@v1 capture columns (Q-INT26 per-source typed
+  /// convention). activities gains the TP load metrics (tss_planned,
+  /// tss_actual, if_planned, if_actual), the record-only TP session energy
+  /// (tp_calories, tp_calories_planned — beside calories_burned, never into
+  /// it), and the Garmin multisport lineage (parent_summary_id, is_parent —
+  /// Q-INT23, brick verification B-2/B-5). integrations gains
+  /// provider_is_premium (TP IsPremium) and athlete_metrics_json (TP
+  /// /v2/metrics body-metrics cache). users gains the eight sport-preference
+  /// columns (cycling_ftp_watts + swimming_css_seconds_per_100m Supabase
+  /// twins, plus six local-only gear/tolerance fields) that the domain model
+  /// carried but the local table never stored. All nullable — a provider
+  /// omitting a field never errors and never fabricates (DI-13). Ships as
+  /// 1.27.0 off the shipped 1.26.0 tree; Supabase
+  /// app_config.current_schema_version must be bumped to 20 when it ships.
   ///
-  /// v20 added the meal-planning user data (Phase 4b of
-  /// docs/implement_mealplanning): `meal_plans`, `plan_meals`, `user_memories`
-  /// (all offline-first with `needs_upload`), `meal_logs.plan_meal_id`, and
-  /// the `saved_meals` planning columns (`icon notes meal_types batch
-  /// library_meal_id`) — plus template_foods.min_servings_during +
-  /// is_indivisible (mirrors of existing Supabase columns the client solvers
-  /// now read — §4.2 one-cap twin port) and template_foods.solvent_min_ml
-  /// (catalog-conventions v1.1 solvent dependency, food-recommendation@v1
-  /// §6(e); Supabase migration 20260903120000). Supabase
-  /// app_config.current_schema_version must be bumped to 20 when the build
+  /// v21: meal planning (Vana) — `user_entitlements` (read-only local mirror
+  /// of the user's Pro subscription rows,
+  /// docs/implement_mealplanning/04-entitlement.md; written server-side only
+  /// by the revenuecat-webhook edge function) plus the Phase 4b user data
+  /// (docs/implement_mealplanning): `meal_plans`, `plan_meals`,
+  /// `user_memories` (all offline-first with `needs_upload`),
+  /// `meal_logs.plan_meal_id`, and the `saved_meals` planning columns (`icon
+  /// notes meal_types batch library_meal_id`). Ships with Vana (1.28.0);
+  /// Supabase app_config.current_schema_version must be bumped to 21 when
+  /// that build ships.
+  ///
+  /// v22: the four home-location columns on `users` (`home_city`, `home_lat`,
+  /// `home_lon`, `home_timezone`), the local mirror of Supabase migration
+  /// 20260909190000. Vana writes them server-side through setHomeLocation;
+  /// without the local columns the device could neither show nor edit where
+  /// the athlete lives. On the mealplanning branch this step was v21 before
+  /// the 2026-09-16 merge of develop renumbered it; a dev device from that
+  /// lineage sits at 21 without the data-integration columns, so the v22 step
+  /// also re-runs the v20 columns idempotently. Supabase
+  /// app_config.current_schema_version must be bumped to 22 when the build
   /// carrying this ships.
-  ///
-  /// v21 added the four home-location columns to `users` (`home_city`,
-  /// `home_lat`, `home_lon`, `home_timezone`) — the local mirror of Supabase
-  /// migration 20260909190000. Vana already writes them server-side through
-  /// setHomeLocation; without the local columns the value only existed on the
-  /// server and the device could neither show nor edit where the athlete
-  /// lives. Supabase app_config.current_schema_version must be bumped to 21
-  /// when the build carrying this ships.
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   /// Ensure sync tracking columns exist for user-authored tables.
   /// Uses ALTER TABLE IF NOT EXISTS which is supported in modern SQLite (3.35+).
@@ -592,22 +602,65 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('activities', 'calories_burned', 'REAL');
         }
 
-        // v19: user_entitlements — local cache of the Pro subscription row
-        // (Phase 3 of meal planning). ensureTable is idempotent for web
-        // user_version replays; no columns change on existing tables.
+        // v19: template_foods catalog columns (food-recommendation@v1) — the
+        // shipped 1.25.x/1.26.0 step, in the slot prod actually ran. All
+        // defaulted or nullable; addColumn is idempotent for web user_version
+        // replays. Values arrive via the template_foods full resync (the
+        // repository selects *).
         if (from < 19) {
-          await ensureTable(userEntitlementsTable);
+          await addColumn(
+            'template_foods',
+            'min_servings_during',
+            'REAL NOT NULL DEFAULT 1.0',
+          );
+          await addColumn(
+            'template_foods',
+            'is_indivisible',
+            'INTEGER NOT NULL DEFAULT 0',
+          );
+          await addColumn('template_foods', 'solvent_min_ml', 'REAL');
         }
 
-        // v20: meal-planning user data (Phase 4b) — three new tables plus
-        // additive nullable/defaulted columns on meal_logs and saved_meals —
-        // and the food-recommendation@v1 catalog columns on template_foods
-        // (develop's former v19; values arrive via the template_foods full
-        // resync, the repository selects *). user_entitlements is ensured
-        // here too: a device coming from develop's own v19 never ran the
-        // step above. Everything is idempotent, so whichever fork a device
-        // came from, re-running is harmless.
+        // v20: data-integrations@v1 capture columns — all nullable, additive.
+        // addColumn is idempotent for web user_version replays.
         if (from < 20) {
+          await addColumn('activities', 'tss_planned', 'REAL');
+          await addColumn('activities', 'tss_actual', 'REAL');
+          await addColumn('activities', 'if_planned', 'REAL');
+          await addColumn('activities', 'if_actual', 'REAL');
+          await addColumn('activities', 'tp_calories', 'REAL');
+          await addColumn('activities', 'tp_calories_planned', 'REAL');
+          await addColumn('activities', 'parent_summary_id', 'TEXT');
+          await addColumn('activities', 'is_parent', 'INTEGER');
+          await addColumn('activities', 'hidden_by_disconnect', 'INTEGER');
+          await addColumn('integrations', 'provider_is_premium', 'INTEGER');
+          await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
+          await addColumn('events', 'origin', 'TEXT');
+          // Sport preferences: UserProfile carried these since ~v1.9 but the
+          // local users table never stored them (every save silently dropped
+          // them — caught in the 2026-09-11 Stage E walk). FTP/CSS mirror the
+          // production Supabase columns; the gear/tolerance fields are
+          // local-only by design.
+          await addColumn('users', 'cycling_ftp_watts', 'INTEGER');
+          await addColumn('users', 'swimming_css_seconds_per_100m', 'INTEGER');
+          await addColumn('users', 'gi_sensitivity', 'INTEGER');
+          await addColumn('users', 'typical_bike_bottles', 'INTEGER');
+          await addColumn('users', 'has_aero_bottle', 'INTEGER');
+          await addColumn('users', 'has_bento_box', 'INTEGER');
+          await addColumn('users', 'typical_wetsuit', 'INTEGER');
+          await addColumn('users', 'typical_swim_cap_type', 'TEXT');
+        }
+
+        // v21: meal planning (Vana), consolidated from the former
+        // mealplanning-lineage v19 (user_entitlements) and v20 (Phase 4b)
+        // steps on 2026-09-11 so data-integration could take v20.
+        // ensureTable / addColumn are idempotent for web user_version
+        // replays, and idempotency also covers the 2026-09-06 fork: a dev
+        // device from the mealplanning lineage (its own v19/v20) re-adds the
+        // template_foods catalog columns here, and one from develop's old
+        // lineage (catalog columns at its v19) gets the meal-planning schema
+        // here.
+        if (from < 21) {
           await ensureTable(userEntitlementsTable);
           await ensureTable(mealPlansTable);
           await ensureTable(planMealsTable);
@@ -622,6 +675,8 @@ class AppDatabase extends _$AppDatabase {
           );
           await addColumn('saved_meals', 'batch', 'INTEGER');
           await addColumn('saved_meals', 'library_meal_id', 'TEXT');
+          // Fork catch-up (idempotent) for mealplanning-lineage dev devices
+          // that never ran the shipped v19 step above:
           await addColumn(
             'template_foods',
             'min_servings_during',
@@ -635,15 +690,37 @@ class AppDatabase extends _$AppDatabase {
           await addColumn('template_foods', 'solvent_min_ml', 'REAL');
         }
 
-        // v21: Home location on the users row — the local mirror of Supabase
-        // migration 20260909190000. Nullable throughout: an athlete who has
-        // never said where they live has no home, and weather and shopping
-        // fall back to the race venue exactly as before.
-        if (from < 21) {
+        // v22: home location (the Voodoo Doll's home Fact). All nullable: an
+        // athlete who never said where they live has no home, and weather and
+        // shopping fall back to the race venue exactly as before. addColumn is
+        // idempotent for web user_version replays.
+        if (from < 22) {
           await addColumn('users', 'home_city', 'TEXT');
           await addColumn('users', 'home_lat', 'REAL');
           await addColumn('users', 'home_lon', 'REAL');
           await addColumn('users', 'home_timezone', 'TEXT');
+          // Fork catch-up (idempotent) for mealplanning-lineage dev devices
+          // whose v21 was home location and never ran the v20 step above:
+          await addColumn('activities', 'tss_planned', 'REAL');
+          await addColumn('activities', 'tss_actual', 'REAL');
+          await addColumn('activities', 'if_planned', 'REAL');
+          await addColumn('activities', 'if_actual', 'REAL');
+          await addColumn('activities', 'tp_calories', 'REAL');
+          await addColumn('activities', 'tp_calories_planned', 'REAL');
+          await addColumn('activities', 'parent_summary_id', 'TEXT');
+          await addColumn('activities', 'is_parent', 'INTEGER');
+          await addColumn('activities', 'hidden_by_disconnect', 'INTEGER');
+          await addColumn('integrations', 'provider_is_premium', 'INTEGER');
+          await addColumn('integrations', 'athlete_metrics_json', 'TEXT');
+          await addColumn('events', 'origin', 'TEXT');
+          await addColumn('users', 'cycling_ftp_watts', 'INTEGER');
+          await addColumn('users', 'swimming_css_seconds_per_100m', 'INTEGER');
+          await addColumn('users', 'gi_sensitivity', 'INTEGER');
+          await addColumn('users', 'typical_bike_bottles', 'INTEGER');
+          await addColumn('users', 'has_aero_bottle', 'INTEGER');
+          await addColumn('users', 'has_bento_box', 'INTEGER');
+          await addColumn('users', 'typical_wetsuit', 'INTEGER');
+          await addColumn('users', 'typical_swim_cap_type', 'TEXT');
         }
       },
 

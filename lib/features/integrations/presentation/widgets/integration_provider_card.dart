@@ -33,10 +33,16 @@ class IntegrationProviderCard extends StatelessWidget {
     this.isNotified = false,
     this.specStyle = false,
     this.windowCaption,
+    this.footer,
   });
 
   /// Provider name (used for placeholder if no logo, not displayed as text)
   final String name;
+
+  /// Optional widget rendered INSIDE the card, under the connection info —
+  /// e.g. the TP write-back consent toggle, which the design places within
+  /// the connected card's border (settings style only).
+  final Widget? footer;
 
   /// Path to provider logo image (PNG or SVG with wordmark)
   final String? iconPath;
@@ -97,8 +103,14 @@ class IntegrationProviderCard extends StatelessWidget {
   /// the settings screen keeps its existing pixels.
   final bool specStyle;
 
-  /// Small history-window note tucked under the logo (spec style only),
-  /// e.g. 'Imports ~7 days of history'.
+  /// Small history-window note tucked under the logo (spec style only).
+  ///
+  /// Retired by ruling D-4 (integrations-data-display.md, 2026-09-13): the
+  /// provider connect cards no longer carry a history/window sublabel on
+  /// either surface — the shipped captions inverted the Q-INT27 window
+  /// contract, and window numbers are the family's most volatile bit. No
+  /// card passes this today; the history story lives in the Garmin
+  /// historical-data primer. Do not reintroduce a window caption here.
   final String? windowCaption;
 
   @override
@@ -220,6 +232,11 @@ class IntegrationProviderCard extends StatelessWidget {
               (athleteName != null || lastSyncAt != null)) ...[
             const SizedBox(height: AppSpacing.sm),
             _buildConnectionInfo(context),
+          ],
+
+          if (!specStyle && isConnected && footer != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            footer!,
           ],
         ],
       ),
@@ -435,7 +452,9 @@ class _SyncButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onSync,
-      onLongPress: () => _showDisconnectDialog(context),
+      // Confirmation is the owner's job: the screen's Q-INT2 dialog
+      // (hide vs delete). No second dialog here.
+      onLongPress: onDisconnect,
       child: Container(
         padding: specStyle
             ? const EdgeInsets.symmetric(vertical: 9, horizontal: 20)
@@ -477,49 +496,6 @@ class _SyncButton extends StatelessWidget {
     );
   }
 
-  void _showDisconnectDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.blackberryLight,
-        title: Text(
-          'Disconnect?',
-          style: AppTextStyles.sectionTitle.copyWith(color: AppColors.textDark),
-        ),
-        content: Text(
-          'This removes the workouts imported from this platform, along with '
-          'any profile details it filled in for you. Anything you entered '
-          'yourself is kept.\n\nTip: Long-press Sync Now to disconnect.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textDarkSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.buttonTertiary.copyWith(
-                color: AppColors.textDarkSecondary,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              onDisconnect?.call();
-            },
-            child: Text(
-              'Disconnect',
-              style: AppTextStyles.buttonTertiary.copyWith(
-                color: AppColors.dragonfruit,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Connect button for unconnected providers
@@ -619,36 +595,12 @@ class _ConnectedBadge extends StatelessWidget {
     if (onDisconnect == null) return badge;
 
     return GestureDetector(
-      onLongPress: () => _showDisconnectDialog(context),
+      // Same deferral: the owner shows the Q-INT2 hide-vs-delete dialog.
+      onLongPress: onDisconnect,
       child: badge,
     );
   }
 
-  void _showDisconnectDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Disconnect'),
-        content: const Text('Are you sure you want to disconnect?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onDisconnect?.call();
-            },
-            child: Text(
-              'Disconnect',
-              style: TextStyle(color: AppColors.dragonfruit),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Notify Me button for coming soon providers

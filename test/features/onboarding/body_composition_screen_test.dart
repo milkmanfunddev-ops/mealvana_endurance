@@ -109,10 +109,12 @@ void main() {
     final controller = container.read(onboardingControllerProvider.notifier);
 
     expect(controller.draft.weightPounds, 161.0);
+    // D-2 provenance pill (KyleSourceChip) replaced the old Garmin badge.
     expect(
-      find.byKey(const ValueKey('body_comp.garmin_badge')),
+      find.byKey(const ValueKey('body_comp.weight_source_pill')),
       findsOneWidget,
     );
+    expect(find.text('Garmin Connect'), findsOneWidget);
   });
 
   testWidgets('no autofill without integration weight', (tester) async {
@@ -120,6 +122,9 @@ void main() {
     final controller = container.read(onboardingControllerProvider.notifier);
 
     expect(controller.draft.weightPounds, 150);
-    expect(find.byKey(const ValueKey('body_comp.garmin_badge')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('body_comp.weight_source_pill')),
+      findsNothing,
+    );
   });
 }

@@ -339,32 +339,35 @@ void main() {
     });
   });
 
-  group('engine and display sport mappings diverge ONLY where ruled', () {
-    test('they agree everywhere except the composite types', () {
-      const composite = {'triathlon', 'duathlon', 'multisport', 'brick'};
-
+  group('engine and display sport mappings are ONE mapping (F4a)', () {
+    // F4a (session-demand.md, RULED Xuan 2026-09-10) resolved the
+    // 2026-08-20 intake that held these two apart: the interim divergence
+    // this group used to pin CANNOT exist anymore.
+    test('display and engine agree for every activity type', () {
       for (final type in ActivityType.values) {
         final name = type.name;
-        if (composite.contains(name)) {
-          expect(SessionInputResolver.displaySport(name), name,
-              reason: '$name stays on the interim conservative rate pending '
-                  'qa/intake/2026-08-20-session-cost-unknown-activity-types.md '
-                  '(for a BRICK this is now only the no-metadata fallback — '
-                  'a brick with segments prices per-leg on both sides, see '
-                  'the brick group above)');
-        } else {
-          expect(
-            SessionInputResolver.displaySport(name),
-            SessionInputResolver.engineSport(name),
-            reason: '$name must price identically on both sides',
-          );
-        }
+        expect(
+          SessionInputResolver.displaySport(name),
+          SessionInputResolver.engineSport(name),
+          reason: '$name must price identically on both sides',
+        );
       }
     });
 
-    test('`other` maps to strength on BOTH sides — engine and display', () {
-      expect(SessionInputResolver.engineSport('other'), 'strength');
-      expect(SessionInputResolver.displaySport('other'), 'strength');
+    test('no hidden fallback: unknown and composite types pass through '
+        'to the F4a rungs', () {
+      // 'other' no longer silently prices as strength — the engine gives it
+      // the F4a unknown rung (0 kcal + estimate flag).
+      expect(SessionInputResolver.engineSport('other'), 'other');
+      for (final sport in const [
+        'triathlon',
+        'duathlon',
+        'multisport',
+        'brick',
+      ]) {
+        expect(SessionInputResolver.engineSport(sport), sport,
+            reason: '$sport decomposes by legs / dominant leg in the engine');
+      }
       expect(
         SessionInputResolver.durationMinutes(activityType: 'other'),
         SessionInputResolver.fallbackOtherMinutes,

@@ -205,6 +205,8 @@ class FinalSurgeSyncService {
       // 4. Transform workouts to Activity objects
       // For workouts with structured data, fetch and pass it to the transformer
       final remoteActivities = <Activity>[];
+      // M-1.3: provider ids whose payload carries completion evidence.
+      final completionSignalIds = <String>{};
       final raceCandidates = <FinalSurgeRaceCandidate>[];
       int filteredCount = 0;
 
@@ -248,6 +250,9 @@ class FinalSurgeSyncService {
         }
 
         remoteActivities.add(result.activity);
+        if (result.providerReportsCompletion) {
+          completionSignalIds.add(result.providerWorkoutId);
+        }
         final candidate = _buildRaceCandidate(workoutJson, result.activity);
         if (candidate != null) {
           raceCandidates.add(candidate);
@@ -299,6 +304,7 @@ class FinalSurgeSyncService {
         localActivities: localActivities,
         remoteWorkouts: dedupedRemoteActivities,
         provider: 'final_surge',
+        completionSignalIds: completionSignalIds,
       );
 
       if (kDebugMode) {
@@ -334,6 +340,20 @@ class FinalSurgeSyncService {
       }
 
       // DELETED: Soft-delete activities removed from provider
+      for (final revive in changes.revivedActivities) {
+        await _activitiesRepository.reviveTombstoneFromProvider(
+          revive.activityId,
+          revive.updatedActivity,
+        );
+      }
+
+      for (final unhide in changes.unhiddenActivities) {
+        await _activitiesRepository.unhideAndUpdateFromProvider(
+          unhide.activityId,
+          unhide.updatedActivity,
+        );
+      }
+
       for (final activityId in changes.deletedActivityIds) {
         await _activitiesRepository.softDeleteFromProvider(activityId);
         if (kDebugMode) {
@@ -518,6 +538,8 @@ class FinalSurgeSyncService {
 
       // Transform workouts to Activity objects (with structured data if available)
       final remoteActivities = <Activity>[];
+      // M-1.3: provider ids whose payload carries completion evidence.
+      final completionSignalIds = <String>{};
       final raceCandidates = <FinalSurgeRaceCandidate>[];
       int filteredCount = 0;
 
@@ -554,6 +576,9 @@ class FinalSurgeSyncService {
         }
 
         remoteActivities.add(result.activity);
+        if (result.providerReportsCompletion) {
+          completionSignalIds.add(result.providerWorkoutId);
+        }
         final candidate = _buildRaceCandidate(workoutJson, result.activity);
         if (candidate != null) {
           raceCandidates.add(candidate);
@@ -582,6 +607,7 @@ class FinalSurgeSyncService {
         localActivities: localActivities,
         remoteWorkouts: dedupedRemoteActivities,
         provider: 'final_surge',
+        completionSignalIds: completionSignalIds,
       );
 
       // Apply changes
@@ -604,6 +630,20 @@ class FinalSurgeSyncService {
       }
 
       // DELETED: Soft-delete activities removed from provider
+      for (final revive in changes.revivedActivities) {
+        await _activitiesRepository.reviveTombstoneFromProvider(
+          revive.activityId,
+          revive.updatedActivity,
+        );
+      }
+
+      for (final unhide in changes.unhiddenActivities) {
+        await _activitiesRepository.unhideAndUpdateFromProvider(
+          unhide.activityId,
+          unhide.updatedActivity,
+        );
+      }
+
       for (final activityId in changes.deletedActivityIds) {
         await _activitiesRepository.softDeleteFromProvider(activityId);
       }

@@ -29,7 +29,9 @@ import 'package:mealvana_endurance/features/onboarding/domain/onboarding_draft.d
 import 'package:mealvana_endurance/features/onboarding/domain/training_insights.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/providers/onboarding_preview_providers.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/daily_plan_preview_screen.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/screens/goals_screen.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/onboarding_pageview_screen.dart';
+import 'package:mealvana_endurance/features/onboarding/presentation/screens/pitfalls_screen.dart';
 import 'package:mealvana_endurance/features/onboarding/presentation/screens/sports_selection_screen.dart';
 
 import '../../helpers/widget_test_harness.dart';
@@ -190,4 +192,67 @@ void main() {
       );
     },
   );
+
+  // Onboarding is one route (a PageView) pushed on top of /welcome. A
+  // system/predictive back (Android) or iOS left-edge swipe is handled at the
+  // route layer; without the PopScope guard it pops the whole route out to
+  // /welcome. These pin the guard: mid-flow it steps back one page; only at
+  // page 0 may it exit to welcome.
+  testWidgets(
+    'system back from a MIDDLE onboarding page steps back one page — never '
+    'to the /welcome start screen (regression: back-swipe jumped to welcome)',
+    (tester) async {
+      // Mirror production: /welcome sits beneath a pushed /onboarding route.
+      final router = buildRouter('/welcome');
+      await pumpRouter(tester, router);
+      router.push('/onboarding');
+      await tester.pumpAndSettle();
+
+      // Advance to a middle question (page 2 = Pitfalls).
+      final pageView = tester.widget<PageView>(find.byType(PageView));
+      pageView.controller!.jumpToPage(2);
+      await tester.pumpAndSettle();
+      expect(find.byType(PitfallsScreen), findsOneWidget);
+
+      // The system/edge back gesture that, pre-fix, popped the route to
+      // /welcome instead of stepping back a page.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byType(GoalsScreen),
+        findsOneWidget,
+        reason: 'system back must step back exactly one page (Pitfalls→Goals)',
+      );
+      expect(find.byType(PitfallsScreen), findsNothing);
+      expect(
+        find.text('WELCOME-MARKER'),
+        findsNothing,
+        reason:
+            'THE BUG: a mid-onboarding back-swipe must not pop the route out '
+            'to the welcome/start screen',
+      );
+    },
+  );
+
+  testWidgets('system back from the FIRST onboarding page exits to /welcome', (
+    tester,
+  ) async {
+    final router = buildRouter('/welcome');
+    await pumpRouter(tester, router);
+    router.push('/onboarding');
+    await tester.pumpAndSettle();
+    expect(find.byType(SportsSelectionScreen), findsOneWidget);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('WELCOME-MARKER'),
+      findsOneWidget,
+      reason:
+          'at page 0 the route may pop out to welcome (matches the page-0 '
+          'back chevron)',
+    );
+  });
 }
