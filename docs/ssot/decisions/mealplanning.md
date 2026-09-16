@@ -1398,15 +1398,21 @@ Feature name: Meal planning and Vana
 - source: plan-tab-v2.md; 02-contract.md
 - work: pending
 
+**Original.** 1. The 23-key classifier stays and the key is stored on library, saved and plan meals, copied along on add and swap, so the data is there when it is wanted.
+2. Icons are not drawn on tiles, cards, the plan bar or the review sheet. Tiles keep their shape without the glyph.
+3. A meal with no photo shows a plain placeholder, not an icon.
+
+**Lee said.** Edit accepted from the category discussion on 2026-09-15: Meal icons are classified and stored, but not drawn
+
 **Context.** Every meal card and plan tile shows a small glyph beside the name, and the glyph stands in when a meal has no photo. The fuel log already had a set of 12 food icons. The meal library needed finer distinctions, and many meals have no photo at all.
 
 **Question.** How each meal gets its glyph without a model call and without blank cards.
 
 **Decision.** 1. The 23-key classifier stays and the key is stored on library, saved and plan meals, copied along on add and swap, so the data is there when it is wanted.
-2. Icons are not drawn on tiles, cards, the plan bar or the review sheet. Tiles keep their shape without the glyph.
-3. A meal with no photo shows a plain placeholder, not an icon.
+2. Icons are not drawn on tiles, cards, the plan bar or the review sheet.
+3. A meal with no photo shows nothing where the picture would be: no placeholder box, no icon. The space is not drawn (ADR 0003).
 
-**Why.** Lee on 2026-09-14: the icons clutter the UI. The classification is cheap to keep and costs nothing unseen.
+**Why.** Lee on 2026-09-14: the icons clutter the UI. The classification is cheap to keep and costs nothing unseen. Lee on 2026-09-15: no plain placeholder box either; a meal has a Dish photo or nothing, which is cleaner.
 
 **What else was considered.** Model-chosen icons, which would cost a call per meal and could drift. Extending the 12 food icons, which lost because the fuel-log set was built for logged foods rather than dishes.
 
@@ -1415,6 +1421,8 @@ Feature name: Meal planning and Vana
 > 2026-09-14 amended by Lee
 > 2026-09-14 rewritten from Lee's words
 > 2026-09-15 approved by Lee
+> 2026-09-15 edited from the category discussion on 2026-09-15 by Lee
+> 2026-09-15 approved again by Lee
 
 ## mp-146 · Directions carry a recorded origin and a badge
 - category: Recipes and cooking
@@ -4149,3 +4157,34 @@ Feature name: Meal planning and Vana
 > 2026-09-15 proposed from the ticket breakdown
 > 2026-09-15 picture captured at 1.26.0+1, 43496fed
 > 2026-09-15 approved by Lee
+
+## mp-323 · The plain placeholder is a tinted rounded square
+- category: Meals tab and library
+- status: rejected
+- image: docs/ssot/decisions/images/mealplanning/meals-tab.png
+- caption:
+- screen: Meals tab
+- source: wave mealplanning 1 ticket 22
+
+**Context.** mp-145 says a meal with no photo shows a plain placeholder, not an icon, and the glyphs come off the tiles. No design-system widget for a missing picture existed, and the glyph file also held the slot colour lookup and was used on three surfaces the ticket did not name.
+
+**Question.** What does the placeholder look like, and where does it live?
+
+**Decision.** 
+1. A flat fill of the host's ink at 10% alpha, no border, nothing inside. On a failed photo load the same box shows, never a blank slot.
+2. A rounded square with radius a quarter of its size, so at 36 points it matches the meal card's picture radius. The old circle is gone.
+3. The widget lives in the meal-planning presentation folder, not in the design system, because it is one tinted box drawn from registry tokens.
+4. The meal sheet header, the shopping list's source rows and the swap screen's "swapping out" row use the same placeholder at their old sizes.
+5. The slot colour lookup moved to the slot chip file, its remaining consumers being the chip and the shopping list.
+
+**Why.** 10% is the hairline alpha the same rows already use, so the box sits at the card's own edge weight. A placeholder that stands in for a photo should read as the photo's box on every surface.
+
+**What else was considered.** Keeping the mosaic spec's 18% tint box minus the glyph. Making the placeholder a design-system component with its own spec.
+
+**What it touches.** Meals tab, Plan tab tiles, the plan bar, the review sheet, the meal sheet, the Shopping tab's source rows, the swap screen.
+
+**Details.** Sizes 36 (tile, meal sheet, swap row), 32 (shopping source row), 30 (plan bar), 28 (review sheet row). Goldens regenerated: plan_draft, plan_confirmed, plan_bar_expanded, light and dark.
+
+> 2026-09-15 proposed from wave 1 ticket 22
+> 2026-09-15 picture captured at 1.26.0+1, f30e3897
+> 2026-09-15 rejected by Lee: No placeholder at all. mp-145 re-ruled on 2026-09-15: a meal with no photo shows nothing (ADR 0003).

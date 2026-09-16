@@ -571,36 +571,6 @@ Last extracted: 1dedc493
 
 > 2026-09-15 opened in wave 1
 
-## mp-323 · The plain placeholder is a tinted rounded square
-- category: Meals tab and library
-- status: proposed
-- image: docs/ssot/decisions/images/mealplanning/meals-tab.png
-- caption:
-- screen: Meals tab
-- source: wave mealplanning 1 ticket 22
-
-**Context.** mp-145 says a meal with no photo shows a plain placeholder, not an icon, and the glyphs come off the tiles. No design-system widget for a missing picture existed, and the glyph file also held the slot colour lookup and was used on three surfaces the ticket did not name.
-
-**Question.** What does the placeholder look like, and where does it live?
-
-**Decision.** 
-1. A flat fill of the host's ink at 10% alpha, no border, nothing inside. On a failed photo load the same box shows, never a blank slot.
-2. A rounded square with radius a quarter of its size, so at 36 points it matches the meal card's picture radius. The old circle is gone.
-3. The widget lives in the meal-planning presentation folder, not in the design system, because it is one tinted box drawn from registry tokens.
-4. The meal sheet header, the shopping list's source rows and the swap screen's "swapping out" row use the same placeholder at their old sizes.
-5. The slot colour lookup moved to the slot chip file, its remaining consumers being the chip and the shopping list.
-
-**Why.** 10% is the hairline alpha the same rows already use, so the box sits at the card's own edge weight. A placeholder that stands in for a photo should read as the photo's box on every surface.
-
-**What else was considered.** Keeping the mosaic spec's 18% tint box minus the glyph. Making the placeholder a design-system component with its own spec.
-
-**What it touches.** Meals tab, Plan tab tiles, the plan bar, the review sheet, the meal sheet, the Shopping tab's source rows, the swap screen.
-
-**Details.** Sizes 36 (tile, meal sheet, swap row), 32 (shopping source row), 30 (plan bar), 28 (review sheet row). Goldens regenerated: plan_draft, plan_confirmed, plan_bar_expanded, light and dark.
-
-> 2026-09-15 proposed from wave 1 ticket 22
-> 2026-09-15 picture captured at 1.26.0+1, f30e3897
-
 ## mp-324 · Whether plan rows should ever show photos
 - category: Plan tab
 - kind: question
@@ -1161,3 +1131,1306 @@ Last extracted: 1dedc493
 **What it touches.** The meal detail screen, the content defaults.
 
 > 2026-09-15 opened in wave 2 ticket 32
+
+## mp-347 · The idle signal is answered at once and written in the background
+- category: Vana's memory
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-347.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 3 ticket 15
+- detail: yes
+
+**Context.** mp-288 puts the idle signal on the chat call and makes the server idempotent. Ticket 15 had to choose how the server answers, what makes a repeat write nothing, and which calls the flag rides on.
+
+**Question.** How the server takes an idle signal.
+
+**Decision.** 
+1. An idle call is answered 202 with the conversation id straight away; the episode and missed notes are written in the background (waitUntil), so a dropped connection cannot cut the write off.
+2. A repeat writes nothing because of the existing read_back_at claim on the conversation. The claim is released when the write fails, is rate limited, or the conversation is too short to extract.
+3. Idle is handled at the top of the chat run for persisted conversations only, on vana-chat and jade-chat, and is never charged a credit. It skips the per-call chat rate limit; the extractor's own limit and the claim bound the model cost.
+
+**Why.** Nothing on the client waits on the reply (mp-288 clause 2), and the claim already stopped double extraction, so no new column was needed.
+
+**What else was considered.** Answering after the write finished; checking whether an episode row exists instead of the claim.
+
+**What it touches.** supabase/functions/_shared/vana/chat.ts, extract.ts, schemas.ts (IdleAckZ), vana-chat.
+
+**Details.** Seam: 5 idle tests in personal_openers.test.ts; vana Deno tests 134 passed. Eval opener-never-waits: headers in 2863 ms with the previous conversation never signalled. The contract doc docs/implement_mealplanning/02-contract.md does not yet list the idle field or the 202 reply.
+
+> 2026-09-15 proposed in wave 3 ticket 15
+
+## mp-348 · When the app tells the server a conversation is idle
+- category: The sheet and launcher
+- status: proposed
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 3 ticket 15
+
+**Context.** mp-288 clause 2 says the client signals idle when the sheet closes, the app goes to the background, or a new conversation starts. The sheet holds one conversation per day, and it can hand a conversation over to the full-screen chat.
+
+**Question.** Exactly which moments in the app send idle, and how often.
+
+**Decision.** 
+1. The ambient conversation controller owns the signal and stays alive with the app, listening for the app being hidden, so the background signal fires with no sheet open.
+2. "A new conversation starts" means the held conversation is replaced: a new day, or the server naming a different conversation.
+3. A conversation is signalled at most once until the sheet opens it again.
+4. Handing the sheet over to the full-screen chat is not idle; the conversation carries on there.
+5. The signal is fire-and-forget; the repository logs a failure and never throws.
+
+**Why.** All three moments are testable through one notifier, and signalling once per opening avoids a function call on every app hide.
+
+**What else was considered.** A lifecycle listener in the host widget; signalling on every hide; treating every sheet pop, hand-off included, as idle.
+
+**What it touches.** Vana sheet (vana_companion.dart), vana_ambient_conversation_controller.dart, vana_chat_repository.dart.
+
+**Details.** 13 notifier tests in vana_ambient_conversation_test.dart. Device check on a pool simulator: told Vana a sister visiting is allergic to sesame, closed the sheet, the episode landed on DEV; a new conversation's opener offered "Ready for Saturday's dinner (Ingrid's visit)".
+
+> 2026-09-15 proposed in wave 3 ticket 15
+> 2026-09-15 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+
+## mp-349 · Does a day's conversation get one episode, or one per close?
+- category: Vana's memory
+- kind: question
+- status: open
+- linked: mp-288
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 3 ticket 15
+
+**Context.** The sheet keeps one conversation for the whole day. The first close writes its episode and stamps the claim, and mp-288 clause 3 says a second signal writes nothing. So an athlete who talks in the morning, closes, and talks again at night gets an episode of the morning only; the client signals again after the sheet reopens, and the server discards it. The code follows the record; the wave's spec review flagged it against the ticket's story (the opener knows what last night established).
+
+**Question.** Should a later close re-extract a conversation that has gained turns since its episode (for example, keyed by message count), or does one episode per day's conversation stand and the client stop re-signalling?
+
+**Why.** Evening planning is the ticket's own example, and today it would not reach the next morning's opener.
+
+**What it touches.** extract.ts claim, the ambient conversation controller, mp-288 clause 3.
+
+> 2026-09-15 opened in wave 3 ticket 15
+
+## mp-350 · Should leaving the full-screen chat signal idle?
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-288
+- image: none
+- caption:
+- screen: Vana chat
+- source: wave mealplanning 3 ticket 15
+
+**Context.** Idle is sent from the sheet and on app background. The full-screen chat's New conversation button and leaving the chat route send nothing, so those conversations get their episode only when the app goes to the background.
+
+**Question.** Should the full-screen chat's New conversation and leaving the chat screen also signal idle?
+
+**Why.** A conversation left in the chat screen while the app stays open has no episode for the next opener.
+
+**What it touches.** vana_chat_screen.dart, the chat controller.
+
+> 2026-09-15 opened in wave 3 ticket 15
+
+## mp-351 · Is the "Remembered" card right now that Vana saves more on her own?
+- category: Vana's memory
+- kind: question
+- status: open
+- linked: mp-277
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 3 ticket 15
+
+**Context.** When the model saves a note it shows a "Remembered: …" card in the sheet. The sharpened remember rule (mp-277 clause 2) makes self-initiated saves more frequent, so the card appears more often.
+
+**Question.** Is the card acceptable for every save, or should saves Vana makes on her own stay silent?
+
+**Why.** It is the athlete-visible cost of saving things as they are said.
+
+**What it touches.** Vana sheet, persona remember rule.
+
+> 2026-09-15 opened in wave 3 ticket 15
+
+## mp-352 · Does picking up last time in an offer count?
+- category: Vana's voice and openers
+- kind: question
+- status: open
+- linked: mp-278
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 3 ticket 15
+
+**Context.** On the device the next opener picked up the previous conversation in one of its offers ("Ready for Saturday's dinner (Ingrid's visit)"), not in its sentence.
+
+**Question.** Is an offer chip that names last time enough, or should the opener's prose say it?
+
+**Why.** The ticket's check was "the opener mentions last time", and this reads it loosely.
+
+**What it touches.** opener prompt, Vana sheet.
+
+> 2026-09-15 opened in wave 3 ticket 15
+
+## mp-353 · How strict is the opener's start-time check?
+- category: Vana's voice and openers
+- kind: question
+- status: open
+- linked: mp-278
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 3 ticket 15
+
+**Context.** The eval fails the opener at 3500 ms to headers. It started in 2863 ms, almost all of it building the context block, so a cold start could trip it; it proves the old wait is gone rather than that the opener starts at once.
+
+**Question.** Should the limit be looser, or should the context build get faster so the limit can be tighter?
+
+**Why.** A flaky eval gets ignored.
+
+**What it touches.** scripts/vana-eval/personalization.ts, context build.
+
+> 2026-09-15 opened in wave 3 ticket 15
+
+## mp-354 · How Restore is tested when a store won't resubscribe outside the app
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-289
+- image: none
+- caption:
+- screen: Paywall
+- source: wave mealplanning 3 ticket 21
+
+**Context.** The sandbox wizard (ticket 21, not merged this wave) tests Restore by resubscribing in the store's own settings after the trial ends, then tapping Restore purchases. Some sandbox stores may offer no resubscribe outside the app.
+
+**Question.** If a store has no way to resubscribe outside the app, how is Restore proven: a second Mealvana account on the same device (which also exercises the transfer path), or something else?
+
+**Why.** Without it the last step of mp-289 cannot go green on that store.
+
+**What it touches.** scripts/sandbox-trial-wizard.sh step 8, the release gate.
+
+> 2026-09-15 opened in wave 3 ticket 21
+
+## mp-355 · How fresh a green sandbox run must be for a release
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-270
+- image: none
+- caption:
+- screen: none (process)
+- source: wave mealplanning 3 ticket 21
+
+**Context.** The wizard's README proposes that a green log counts when its commit is in the release candidate's history and nothing since touched the paywall, the gate, the webhook or the Allowance.
+
+**Question.** Is that the rule, or must the run be on the release candidate itself?
+
+**Why.** The gate in the deploy playbook is only as strong as its freshness rule.
+
+**What it touches.** docs/release/sandbox-trial-runs/README.md, playbook §8 P3c.
+
+> 2026-09-15 opened in wave 3 ticket 21
+
+## mp-356 · The release doc still plans a dark launch
+- category: Process and scope
+- kind: question
+- status: open
+- linked: mp-270
+- image: none
+- caption:
+- screen: none (process)
+- source: wave mealplanning 3 ticket 21
+
+**Context.** docs/implement_mealplanning/07-verification-release.md step 3 still ships the feature dark behind PRO_GATE_ENABLED. mp-270 says no dark launch and no gate flag as the release plan.
+
+**Question.** Should step 3 be rewritten to the trial-and-purchase release, and who owns that doc now?
+
+**Why.** Someone following the doc would release against the record.
+
+**What it touches.** docs/implement_mealplanning/07-verification-release.md.
+
+> 2026-09-15 opened in wave 3 ticket 21
+
+## mp-357 · Something other than the webhook wrote an entitlement row on DEV
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-296
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 3 ticket 21
+
+**Context.** DEV user_entitlements has a row with period_type 'eval' (user 37129f7e…, written 2026-09-15 19:05Z). The RevenueCat webhook never writes that value, and the table is meant to have the webhook as its only writer.
+
+**Question.** What wrote it (an eval script, a test fixture, a hand edit), and should the table refuse writers other than the webhook?
+
+**Why.** The server gates on this cache; a stray writer can grant or deny access.
+
+**What it touches.** user_entitlements on DEV, whatever wrote the row.
+
+> 2026-09-15 opened in wave 3 ticket 21
+
+## mp-358 · Every plan read goes through the athlete's own period
+- category: Data, sync and backend
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-358.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 16
+- detail: yes
+
+**Context.** mp-269 made the week's start day and the period's length settings. Tickets 16 and 29 were built in parallel from the same base, so the Plan tab's in-view section still resolved the week with the Sunday default and derived cook days from seven-day offsets. Both review axes found it; the wave fixed it before closing.
+
+**Question.** Which reads have to go through the athlete's period, not the defaults.
+
+**Decision.** 
+1. Every read that resolves a week or a cook day takes the athlete's period: the in-view section on the Plan tab as well as the context block, the opener and coverage.
+2. Stepping back to the period before this one steps back by the period's length, not by seven days. The debrief opener and the debrief tool both do.
+3. A seam test covers a Monday, ten-day athlete at the place the two tickets meet.
+
+**Why.** A Monday athlete was shown "no plan this week" over a real plan, and a ten-day athlete's debrief never found the plan it was asking about.
+
+**What else was considered.** Threading the period from the chat call instead of reading it where it is used; that call has no period in scope and would have fetched one anyway.
+
+**What it touches.** situation.ts, chat.ts, tools.ts, the Plan tab's section, the debrief.
+
+> 2026-09-15 proposed in wave 4 ticket 16
+
+## mp-359 · How a screen declares the one section it adds
+- category: Situation awareness
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-359.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 16
+- detail: yes
+
+**Context.** mp-273 says the Doll is constant and the Situation is the only variable: one capped section for the entity in view. Ticket 16 had to choose where that section rides and how a route earns one.
+
+**Question.** Where the in-view section lives and how a new entry point gets one.
+
+**Decision.** 
+1. The section rides on the user message, under the Situation note, never in the context block, so the cached prefix stays byte-identical across turns (mp-276).
+2. A route declares its section with one column on the server's existing screen table, so a new entry point adds a row and nothing else (mp-273 clause 4).
+3. Each list is capped at six with "and more"; a day note is clipped at 240 characters.
+4. A plan id that does not resolve falls back to the athlete's own plan for that week rather than erroring.
+
+**Why.** The block is what the cache holds, so anything that changes per message belongs on the message.
+
+**What else was considered.** Putting the section in the block (breaks the cache every turn); a separate table or a branch in the chat path.
+
+**What it touches.** situation.ts, chat.ts, the events screens, the Plan tab.
+
+> 2026-09-15 proposed in wave 4 ticket 16
+
+## mp-360 · One place decides which conversation the day's is
+- category: The sheet and launcher
+- status: proposed
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 16
+
+**Context.** mp-275 says the launcher, its full-screen button, the Plan tab's note card and a moment tap all open the day's ambient conversation, and that New meal plan and the plus button start a new one without moving the launcher's pointer. The note card used to start its own conversation.
+
+**Question.** Who owns the day's pointer, and how a new conversation is kept off it.
+
+**Decision.** 
+1. The ambient conversation controller owns opening the day's conversation. The note card and the launcher both go through it, so the rule lives in one place.
+2. A conversation started new gets its own controller key, so only the day's unnamed general conversation can adopt the server's id. The pointer never moves for a new one.
+
+**Why.** The note card needed the same behaviour as the launcher, and a listener could not otherwise tell the two apart.
+
+**What else was considered.** Repeating the host's naming watch in the Plan tab; a flag on the chat controller.
+
+**What it touches.** Vana sheet, the Plan tab's note card, the ambient conversation controller.
+
+> 2026-09-15 proposed in wave 4 ticket 16
+> 2026-09-16 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+
+## mp-361 · What one sheet height means in practice
+- category: The sheet and launcher
+- status: proposed
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 27
+
+**Context.** mp-265 asks for one standard height, no auto height, no growth on send, no resize while Vana streams and no custom thresholds. The sheet had three heights, a grabber that toggled them and its own dismissal thresholds.
+
+**Question.** What the one height is, and what dismisses the sheet now.
+
+**Decision.** 
+1. The height is three quarters of the screen, the rest height the sheet already used, and its contents scroll.
+2. Dismissal is the platform's own rule: past half the sheet, or a flick. The custom pixel thresholds are gone.
+3. The grabber stays as the drag handle and no longer toggles anything.
+4. The height enum, the size reporter and the one-message exchange helper are removed; the tree keeps one shape so a height change never remounts it (mp-265 clause 5).
+
+**Why.** "No custom thresholds" means the standard rule, and the goldens did not move, so this is the height Lee already saw.
+
+**What else was considered.** A full-screen sheet; an absolute pixel height; dropping the grabber for a close button alone.
+
+**What it touches.** The Kyle sheet widget and its spec (v2, app-authored, awaiting Xuan), the Vana sheet, the goldens.
+
+> 2026-09-15 proposed in wave 4 ticket 27
+> 2026-09-16 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+
+## mp-362 · What the hand-off button is made of
+- category: The sheet and launcher
+- status: proposed
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 27
+
+**Context.** mp-265 clause 4 says every deterministic action is a hand-off: Vana offers a button to the screen that owns the flow instead of doing it in the sheet.
+
+**Question.** What the hand-off is on the wire and where each target lands.
+
+**Decision.** 
+1. A new part in the contract carrying the target screen, a label and an optional entity id, rendered as the existing primary button, not a new design widget.
+2. The model writes the label per call in the athlete's own words, capped at sixty characters.
+3. The tool is offered in general conversations only; the planning conversation is the meal-planning flow already.
+4. Meal plan lands on the meal-planning page, fuelling on the new-activity screen, an event on the event screen, which becomes routable for the first time; carb loading also lands on the event screen, where its action lives.
+5. The full-screen chat renders hand-offs too, since the parts persist in the transcript.
+
+**Why.** A fixed label cannot read as the athlete's own ask, and the four destinations are screens the app already owns.
+
+**What else was considered.** Content-managed labels; a new Kyle component; a sheet-only button.
+
+**What it touches.** The wire contract and its fixtures, the part renderer, the router, the Vana sheet and the full-screen chat.
+
+> 2026-09-15 proposed in wave 4 ticket 27
+> 2026-09-16 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+
+## mp-363 · A plan request with a constraint is still a plan request
+- category: Vana's voice and openers
+- status: proposed
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 27
+
+**Context.** The eval asks for a plan twice. The plain ask was answered with the hand-off button; "Plan my dinners for the week, I want quick ones" was answered in the sheet with a list of meals, because the rule named the plain phrasings only.
+
+**Question.** Whether a plan request carrying a constraint hands off or is answered in the sheet.
+
+**Decision.** A plan request is still a plan request when it names a meal type, a stretch of days or a constraint ("quick ones", "cheap lunches", "vegetarian dinners"). Vana hands off and the constraint is said on that screen, rather than searching meals or listing them in the sheet.
+
+**Why.** mp-265 clause 4 is about what the athlete is trying to do, not how they phrase it; the screen is where a constraint can be seen and changed.
+
+**What else was considered.** Accepting the list for constrained asks; teaching the meal-planning screen to take the constraint from the conversation.
+
+**What it touches.** The persona's hand-off rule, the Vana sheet, the eval.
+
+**Details.** Deployed to dev; the sheet-plan-handoff eval is 3 turns, 0 failures, both phrasings answered with the button.
+
+> 2026-09-15 proposed in wave 4 ticket 27
+> 2026-09-16 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
+
+## mp-364 · What the general opener reads, and in what order
+- category: Vana's voice and openers
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-364.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 28
+- detail: yes
+
+**Context.** mp-268 says the general conversation opens on the screen underneath, and falls back to the personal opener when the screen says nothing useful. The opener already had a moment path.
+
+**Question.** How the opener decides the screen says something useful, and what wins when several do.
+
+**Decision.** 
+1. The order is a moment that resolves, then the screen underneath, then the personal opener.
+2. "Says something useful" is decided by resolving the Situation twice, once with the entity id and once without: a different sentence means the athlete's own row was read. No sentence is parsed and no query is copied.
+3. Event, meal and session screens count; a bare route, an id that belongs to someone else, and an id that is gone all fall back.
+4. The opener's own variant is logged, so the logs say which of the three fired.
+
+**Why.** A moment is a contract the device raised with fixed times; the screen is the next best thing, and neither should be guessed at from the sentence's words.
+
+**What else was considered.** Reading the screen before a moment; copying the row reads into the opener; matching on the sentence text.
+
+**What it touches.** moment.ts, the chat path's logging, the Vana sheet's first line.
+
+> 2026-09-15 proposed in wave 4 ticket 28
+
+## mp-365 · How a period of other than seven days behaves
+- category: Plan tab
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-365.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 29
+
+**Context.** mp-269 makes the start day and the period length settings, with cook days derived from them. Seven days and Sunday were the only shape the code knew.
+
+**Question.** What a ten-day period means for when periods start and when the cooking happens.
+
+**Decision.** 
+1. Period starts keep a weekly cadence on the athlete's start weekday; the length drives the span, the cook offsets, the coverage denominator and when the debrief is due.
+2. The three cooking sessions scale with the length rather than sitting at fixed offsets, and stay inside the period.
+3. The period length travels on the coverage wire and on the week part, so a card built by the server says how long the period is.
+4. The length is limited to between three and fourteen days: below three the three sessions collapse onto one day, and a fortnight is as long as a batch plausibly holds.
+
+**Why.** The weekly cadence keeps the stored week start meaning what it always meant, needs no anchor row, and is exact at the default.
+
+**What else was considered.** Chaining periods from an epoch anchor, which drifts off the start weekday; deriving the anchor from the last plan, which belongs to a later ticket.
+
+**What it touches.** The plan maths on both sides, coverage, the review sheet, the week card, the Plan tab.
+
+> 2026-09-15 proposed in wave 4 ticket 29
+
+## mp-366 · Where the athlete changes the two settings
+- category: Plan tab
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/settings.png
+- caption:
+- screen: Vana settings
+- source: wave mealplanning 4 ticket 29
+
+**Context.** mp-269 says the two settings are the athlete's to change. Vana settings already holds keyed settings like batch cooking, each on a standard row.
+
+**Question.** What the two settings look like, and how the days they name are written.
+
+**Decision.** 
+1. The start day is a popup of the seven days and the length is the existing stepper, both on the rows the screen already uses, with no new design component.
+2. The session labels become content-managed with the weekday filled in ("Cook Monday"), so no day name is hardcoded and the old fixed-day keys keep working.
+3. The settings are written to the device first with upload tracking, like every other setting.
+
+**Why.** Both fit the existing row, and a localized weekday cannot come from a fixed string.
+
+**What else was considered.** A new Kyle picker component; rewriting the existing day-named content values.
+
+**What it touches.** Vana settings, the review sheet, the week card, the session chips.
+
+> 2026-09-15 proposed in wave 4 ticket 29
+> 2026-09-16 picture captured at 1.26.0+1, c4f78733
+
+## mp-367 · Should the Plan tab open on the plan rather than the personal opener?
+- category: Vana's voice and openers
+- kind: question
+- status: open
+- linked: mp-268
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 28
+
+**Context.** The screens that open on what is in view are event, meal and session screens. The Plan tab with a plan in view ("the week of the 7th is draft") falls back to the personal opener.
+
+**Question.** Should the Plan tab with a plan in view open on that plan?
+
+**Why.** It is the screen an athlete is most often on when they open the sheet.
+
+**What it touches.** The general opener, the Plan tab.
+
+> 2026-09-15 opened in wave 4 ticket 28
+
+## mp-368 · Should a live moment outrank the screen underneath?
+- category: Moments: Vana speaks first
+- kind: question
+- status: open
+- linked: mp-268
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 28
+
+**Context.** The opener takes a moment that resolves before the screen underneath. mp-268 says the general conversation "opens with a line that reads the screen underneath".
+
+**Question.** When an athlete opens the sheet on an event screen while a moment is live, which should Vana speak to?
+
+**Why.** They are two different readings of what "reads the screen" means, and only one can be first.
+
+**What it touches.** The general opener, moments.
+
+> 2026-09-15 opened in wave 4 ticket 28
+
+## mp-369 · Should the full-screen general chat open on the screen underneath too?
+- category: Vana's voice and openers
+- kind: question
+- status: open
+- linked: mp-268
+- image: none
+- caption:
+- screen: Vana chat
+- source: wave mealplanning 4 ticket 28
+
+**Context.** The example chips were removed from the full-screen general chat's empty state, but that screen never asks for an opener; only the sheet does. It now opens on an empty state with no line at all.
+
+**Question.** Should the full-screen general chat ask for an opener the way the sheet does?
+
+**Why.** An empty screen with no chips and no line says nothing.
+
+**What it touches.** The full-screen Vana chat.
+
+> 2026-09-15 opened in wave 4 ticket 28
+
+## mp-370 · Should the persona name the in-view section?
+- category: Situation awareness
+- kind: question
+- status: open
+- linked: mp-273
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 16
+
+**Context.** The persona tells Vana what the Situation note is, but nothing tells her what an EVENTS AHEAD or DAY PLAN line under it is. She reads it as context either way.
+
+**Question.** Should the persona name the section the way it names the Situation?
+
+**Why.** What the prompt does not name, the model interprets.
+
+**What it touches.** The persona, the in-view section.
+
+> 2026-09-15 opened in wave 4 ticket 16
+
+## mp-371 · Should the Plan tab's section speak for the day or the week?
+- category: Situation awareness
+- kind: question
+- status: open
+- linked: mp-273
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 16
+
+**Context.** The Plan tab's section carries the day's note and slots and also the week's meals with servings left, because the tab itself shows the week. mp-273 says a section is a few lines, never a dump of the record.
+
+**Question.** Should the section be narrowed to the day on screen, or does the week belong there?
+
+**Why.** It is the longest section, and the cap is the only thing holding it down.
+
+**What it touches.** The in-view section, the Plan tab.
+
+> 2026-09-15 opened in wave 4 ticket 16
+
+## mp-372 · Two new conversations in a row share one screen
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-275
+- image: none
+- caption:
+- screen: Vana chat
+- source: wave mealplanning 4 ticket 16
+
+**Context.** Every conversation started new shares one controller key, which is what keeps the launcher's pointer still. Pressing the plus button from inside a new conversation therefore pushes a second screen showing the first one's transcript. It was true before this ticket as well.
+
+**Question.** Should a second new conversation get its own key, and is that reachable in practice?
+
+**Why.** mp-275 clause 2 says the plus button starts a new conversation, and here the second press does not.
+
+**What it touches.** The full-screen chat's key, the ambient conversation controller.
+
+> 2026-09-15 opened in wave 4 ticket 16
+
+## mp-373 · Carb loading lands on the event screen, not on the picks
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-265
+- image: none
+- caption:
+- screen: Vana chat
+- source: wave mealplanning 4 ticket 27
+
+**Context.** mp-265 clause 4 sends carb loading to the carb-loading picks. The picks screen takes a loaded event, has no route of its own, and hands a protocol back to whoever opened it, so the hand-off lands on the event screen where the carb-loading action lives.
+
+**Question.** Should the picks become a route that takes an event id, so the hand-off can open them directly?
+
+**Why.** As built, the carb-loading hand-off and the event hand-off do the same thing.
+
+**What it touches.** The carb-loading picks, the router, the hand-off targets.
+
+> 2026-09-15 opened in wave 4 ticket 27
+
+## mp-374 · What a hand-off with no entity should do
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-265
+- image: none
+- caption:
+- screen: Vana chat
+- source: wave mealplanning 4 ticket 27
+
+**Context.** When Vana cannot name the event, "plan an event" lands on the blank new-event form and carb loading lands on the events list.
+
+**Question.** Is a blank form or a bare list the right landing, or should Vana be required to name the entity before she offers the button?
+
+**Why.** A button that lands nowhere in particular is worse than a sentence.
+
+**What it touches.** The hand-off tool, the events screens.
+
+> 2026-09-15 opened in wave 4 ticket 27
+
+## mp-375 · Does the fuelling hand-off edit the workout or add one?
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-265
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 27
+
+**Context.** The fuelling hand-off passes the workout's id to the new-activity screen, which prefills from an existing activity. Nobody has watched what saving there does.
+
+**Question.** Does that screen edit the workout Vana named, or create a second one beside it?
+
+**Why.** A duplicated workout would quietly double an athlete's week.
+
+**What it touches.** The new-activity screen, the fuelling hand-off.
+
+> 2026-09-15 opened in wave 4 ticket 27
+
+## mp-376 · Which status chip a hand-off turn shows
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-265
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 27
+
+**Context.** A turn answered with a hand-off button is treated as an update, so it shows the ordinary chip rather than the one that marks something to do.
+
+**Question.** Is a hand-off an update, or a to-do until they tap it?
+
+**Why.** The chip is how the sheet says whether anything is waiting on the athlete.
+
+**What it touches.** The Vana sheet's status chip.
+
+> 2026-09-15 opened in wave 4 ticket 27
+
+## mp-377 · The opener still offers a chip the hand-off now answers
+- category: Vana's voice and openers
+- kind: question
+- status: open
+- linked: mp-268
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 27
+
+**Context.** The general opener still offers "Start a meal plan" as a quick reply. Tapping it now produces a hand-off button, so the athlete taps twice to get to the same screen.
+
+**Question.** Should the opener offer that reply at all, or should it be the hand-off itself?
+
+**Why.** Two taps for one intent.
+
+**What it touches.** The general opener, the Vana sheet's quick replies.
+
+> 2026-09-15 opened in wave 4 ticket 27
+
+## mp-378 · What happens to the plan when the start day changes mid-period
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-269
+- image: none
+- caption:
+- screen: Plan tab
+- source: wave mealplanning 4 ticket 29
+
+**Context.** Changing the start day moves which week the Plan tab binds to. A draft built on the old week stops being this week's plan and the tab shows an empty week.
+
+**Question.** Should the active plan's week move with the setting, should the old plan stay visible until it ends, or is an empty new week right?
+
+**Why.** An athlete who changes a setting should not appear to lose a plan.
+
+**What it touches.** The Plan tab, the plan's stored week start.
+
+> 2026-09-15 opened in wave 4 ticket 29
+
+## mp-379 · Periods longer than a week overlap
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-269
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 29
+
+**Context.** Period starts keep a weekly cadence, so a ten-day period beginning Monday is followed by another start the next Monday: the periods overlap by three days. The ticket that fills a cooking period rather than fourteen slots is still ahead.
+
+**Question.** Does the next ticket need chained, non-overlapping periods, and if so what anchors the chain?
+
+**Why.** Counting meals against a period that overlaps the next one double-counts the shared days.
+
+**What it touches.** The plan maths, the next meal-planning ticket.
+
+> 2026-09-15 opened in wave 4 ticket 29
+
+## mp-380 · Should a plan carry the period it was built for?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-269
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 29
+
+**Context.** A plan stores no period of its own; every screen reads the athlete's current setting. Changing the setting therefore re-reads old plans under the new period. Storing it is a schema change, and none was written or applied.
+
+**Question.** Should a plan record the period it was built for?
+
+**Why.** Otherwise last month's plan is described by this month's setting.
+
+**What it touches.** The meal plans table, coverage, the review sheet.
+
+> 2026-09-15 opened in wave 4 ticket 29
+
+## mp-381 · The reminder text still names fixed days
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-269
+- image: none
+- caption:
+- screen: Vana settings
+- source: wave mealplanning 4 ticket 29
+
+**Context.** The reminders row still reads "The night before cook day and Sunday evening", whatever the athlete's start day is.
+
+**Question.** Should it name the athlete's own days?
+
+**Why.** mp-269 clause 3 has every surface read the settings, and this one still speaks for Sunday.
+
+**What it touches.** Vana settings, the reminder copy.
+
+> 2026-09-15 opened in wave 4 ticket 29
+
+## mp-382 · Can Vana change the two new settings in conversation?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-269
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 4 ticket 29
+
+**Context.** Vana's setting tool still accepts the four older keys only. The start day and the period length can be changed on the settings screen alone.
+
+**Question.** Should Vana be able to set them mid-conversation when an athlete says "my week starts Monday"?
+
+**Why.** Every other setting she can hear, she can save.
+
+**What it touches.** The setting tool, Vana settings.
+
+> 2026-09-15 opened in wave 4 ticket 29
+
+## mp-383 · A design spec was edited in the app repo
+- category: Design system
+- kind: question
+- status: open
+- linked: mp-265
+- image: none
+- caption:
+- screen: none (process)
+- source: wave mealplanning 4 ticket 27
+
+**Context.** The sheet's component spec was raised to v2 in this repo, marked app-authored and awaiting Xuan, because the sheet changed. The rule here says the design specs are a verbatim mirror of the QA repo and are never edited in this repo, with only the decision records carved out. The design sync that the rule asks for after such a change has not been run.
+
+**Question.** Is an app-authored spec revision awaiting ratification the accepted practice, and who runs the design sync?
+
+**Why.** The spec and the widget now disagree with the QA repo, and a blind mirror sync would delete the revision.
+
+**What it touches.** The sheet's component spec, the QA mirror, the design sync.
+
+> 2026-09-15 opened in wave 4 ticket 27
+
+## mp-384 · The opener's own example sits on a screen the launcher never reaches
+- category: The sheet and launcher
+- kind: question
+- status: open
+- linked: mp-268
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 4 ticket 28
+
+**Context.** mp-268 illustrates the general opener with "I see you are planning an event", and ticket 28's own check was to open the sheet on an event and hear about that event. mp-264 puts the launcher on exactly three routes — the main tabs screen, the meal-planning screen and the formula library — and anything pushed over them hides it. The event screen is none of those, so on a device there is no way to open the sheet there: the check could not be run. The server side is built and tested; an event, meal or session screen does produce an opener about the thing in view when a Situation naming it arrives.
+
+**Question.** Should the launcher widen to the screens whose Situation the opener can already speak for (the event, meal and session screens), or should mp-268's example be rewritten to the screens the launcher actually reaches?
+
+**Why.** As it stands the opener's best behaviour is unreachable by hand, and the ticket carries a check nobody can perform.
+
+**What it touches.** The launcher's allow-list, the general opener, the event, meal and session screens.
+
+> 2026-09-15 opened in wave 4 ticket 28
+
+## mp-385 · What the formula editor puts on the wire, and how it is refused
+- category: Situation awareness
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-385.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 17
+
+**Context.** mp-274 makes the formula editor the one named exception to mp-043: its draft travels as structured fields. Ticket 17 had to decide what "validates the shape as it validates routes" means in practice.
+
+**Question.** What the editor sends, and what happens to a draft that does not belong.
+
+**Decision.** 
+1. The draft carries phase, sub-phase, durations, activities, component ids with quantities, and a name capped at forty characters. Nothing else free-form travels.
+2. Only a route whose screen-table row declares the formula section may carry a draft. Any other route's draft is dropped whole: no section, no text in the prompt, and the rest of the Situation still resolves. It is not an error.
+3. Phases and sub-phases are closed sets, ids and tags are shape-checked, and the component list is capped like every other section.
+4. Component names are resolved server-side from the athlete's own foods under their own access, so the client sends ids rather than names.
+
+**Why.** A dropped draft cannot break a legitimate screen report, and resolving names server-side keeps free text off the wire while still letting Vana name the food.
+
+**What else was considered.** Refusing the whole request; sending the snapshot names the components already carry.
+
+**What it touches.** situation.ts, schemas.ts, the formula editor.
+
+> 2026-09-16 proposed in wave 5 ticket 17
+
+## mp-386 · What the FORMULA section tells Vana
+- category: Situation awareness
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-386.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 17
+- detail: yes
+
+**Context.** mp-273 says a section is a few lines, never a dump of the record. The formula editor's section had to choose what counts as the draft's "targets".
+
+**Question.** What the section says about a draft.
+
+**Decision.** The section carries the draft's scope — phase, sub-phase, activities and durations — with its components and their quantities, and a one-line form when the draft is empty. It does not compute fuelling targets or macro totals.
+
+**Why.** mp-274 names those fields; a computed target would be a second engine nobody asked for.
+
+**What else was considered.** Sending macro totals, which would put numbers on the wire that mp-274 does not list.
+
+**What it touches.** situation.ts, the formula editor's conversation.
+
+> 2026-09-16 proposed in wave 5 ticket 17
+
+## mp-387 · Ask Vana sits in the editor and starts a new conversation
+- category: The sheet and launcher
+- status: proposed
+- image: docs/ssot/decisions/images/mealplanning/formula-editor.png
+- caption:
+- screen: Formula editor
+- source: wave mealplanning 5 ticket 17
+
+**Context.** mp-275 clause 2 says a future entry from the formula editor starts a new conversation and never moves the launcher's pointer. The one-shot insight panel used to sit in that spot.
+
+**Question.** Where the entry lives and what it opens.
+
+**Decision.** 
+1. The button stands where the insight panel was, always visible, and opens a new general conversation through the key ticket 16 built, so the day's ambient conversation keeps the pointer.
+2. It is offered even when the draft is empty, because an empty draft has its own one-line section.
+
+**Why.** An athlete building their first formula is exactly who wants to ask about it.
+
+**What else was considered.** Gating the button until the draft has a component, as the old panel did; opening a planning-kind conversation.
+
+**What it touches.** The formula editor, the ambient conversation controller.
+
+> 2026-09-16 proposed in wave 5 ticket 17
+> 2026-09-16 picture captured at 1.26.0+1, 308d2c0f
+
+## mp-388 · How far the coach-feedback retirement goes
+- category: Process and scope
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-388.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 17
+
+**Context.** mp-209 retires Jade everywhere, including coach formula feedback. Ticket 17 replaced the one-shot insight with a conversation.
+
+**Question.** What is deleted now and what is left standing.
+
+**Decision.** 
+1. The insight panel and its controller are deleted, and saving a formula no longer writes an insight.
+2. The ai-coach function and its client stay for their other callers, and an insight already stored on a formula is left as it is.
+
+**Why.** The ticket retires the coach-facing surface, not the function other callers still use.
+
+**What else was considered.** Deleting the client too, which cascades into its tests and other callers.
+
+**What it touches.** The formula editor, the formulas repository, ai-coach.
+
+> 2026-09-16 proposed in wave 5 ticket 17
+
+## mp-389 · How big a batch is, and where a pick's servings come from
+- category: Plan tab
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-389.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** mp-231 clause 3 says the athlete cooks a few meals at one sitting and the servings scale so the batch covers the period. "A few" needed a number, and every pick that named no servings used to default to four — the fourteen-slot assumption in disguise.
+
+**Question.** How many meals a batch holds, and what servings a pick gets when nobody says.
+
+**Decision.** 
+1. A batch is three meals per meal type, so servings are the period divided by three, rounded up: seven days gives three, ten gives four, fourteen gives five.
+2. A pick's servings are computed from the period and the mode rather than defaulting to a fixed number. In per-day mode a pick is one serving.
+
+**Why.** A period carries three cooking sessions, so three meals per type is the batch that matches it.
+
+**What else was considered.** Asking the athlete each time; keeping a fixed four; leaving the model to pass servings.
+
+**What it touches.** plan-math.ts, plan.ts, the planning tools.
+
+> 2026-09-16 proposed in wave 5 ticket 30
+
+## mp-390 · Coverage counts the walk, not a fixed fourteen
+- category: Plan tab
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-390.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** mp-231 clauses 1, 3 and 4 make the walk the athlete's own and the period the span. Coverage counted against a fixed fourteen slots.
+
+**Question.** What coverage counts against, and what changes it.
+
+**Decision.** 
+1. The denominator is the period's days times the meal types the athlete plans. In batch mode the numerator counts servings; in per-day mode it counts the nights a meal covers.
+2. Only an explicit walk setting changes which types are counted. An athlete who has never set one keeps today's dinner-and-lunch reading, so existing plans' numbers do not move under them.
+3. The walk travels on the coverage wire, because slots divided by days cannot say which types they were.
+
+**Why.** Silently widening "every meal" to four slots a day would rewrite the numbers on plans nobody re-planned.
+
+**What else was considered.** Making "every meal" mean four slots a day; leaving coverage scope-only; inferring the types from the denominator.
+
+**What it touches.** plan-math.ts, the coverage wire, plan_coverage.dart, the review sheet.
+
+> 2026-09-16 proposed in wave 5 ticket 30
+
+## mp-391 · "Same as last time" copies at the servings they were cooked at
+- category: The planning conversation
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-391.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** mp-231 clause 5 gives one tap that drafts the period from what they ate last time, and clause 6 says it runs deterministically with the model only presenting it.
+
+**Question.** What the copy does with servings and with a draft already in progress.
+
+**Decision.** 
+1. Meals come across at the servings they were cooked at. They are not rescaled to the current period, because a plan records no period of its own and any rescale would be invented. In per-day mode each meal comes across as one night.
+2. It skips meals already in the draft and never doubles them; a second tap changes nothing.
+3. Vana's description of the tool says exactly this, so she never claims a rescale that did not happen.
+
+**Why.** Rescaling on a guess produces numbers no one can explain; the honest copy is the old servings.
+
+**What else was considered.** Scaling by the ratio of the periods, written and then removed; replacing the draft outright.
+
+**What it touches.** plan.ts, the planning tools, the one-tap draft.
+
+**Details.** The tool's description promised a rescale in the merged code and was corrected during the wave's review; mp-380 asks whether a plan should record its own period, which would make an honest rescale possible.
+
+> 2026-09-16 proposed in wave 5 ticket 30
+
+## mp-392 · A plan payload without a mode means batch
+- category: Data, sync and backend
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-392.svg
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+- detail: yes
+
+**Context.** The server reads a missing batch-cooking flag as batch; the app read it as per-day. The same payload therefore counted servings on one side and nights on the other, which turned a seam test red during the wave.
+
+**Question.** What an absent mode means.
+
+**Decision.** An absent mode means batch, on both sides. The app reads the wire the way the server writes it.
+
+**Why.** Two readings of one payload is a bug generator; the server's reading is the one the stored column already defaults to.
+
+**What else was considered.** Making the server default to per-day; requiring the flag on every payload.
+
+**What it touches.** meal_plan.dart, plan-math.ts, coverage on both sides.
+
+> 2026-09-16 proposed in wave 5 ticket 30
+
+## mp-393 · Vana's carb total disagreed with the editor's
+- category: Situation awareness
+- kind: question
+- status: open
+- linked: mp-274
+- image: none
+- caption:
+- screen: Formula editor
+- source: wave mealplanning 5 ticket 17
+
+**Context.** On the simulator, a saved formula was edited from two bagels to two and a half without saving. The editor's strip read 133g carbs. Ask Vana opened a new conversation whose opener offered "Adjust this bagel formula", so the draft reached her, but asked for the total she answered "Does 142g carbs work for you, or adjust it?".
+
+**Question.** Why the two totals differ, and which one an athlete should be shown — is the section built from different quantities, or is the editor's strip rounding differently?
+
+**Why.** The point of the draft on the wire is that Vana sees what is on screen; two totals for one screen undoes that.
+
+**What it touches.** situation.ts, the formula editor's macro strip.
+
+> 2026-09-16 opened in wave 5 ticket 17
+
+## mp-394 · Should the editor's conversation open on the formula?
+- category: Vana's voice and openers
+- kind: question
+- status: open
+- linked: mp-268
+- image: none
+- caption:
+- screen: Formula editor
+- source: wave mealplanning 5 ticket 17
+
+**Context.** Ask Vana from the editor opens a new general conversation, so she greets with the general opener and offers chips, one of which names the formula.
+
+**Question.** Should the editor's entry open on the formula itself, the way the sheet opens on the screen underneath?
+
+**Why.** The athlete pressed a button on a formula; the first line could say so.
+
+**What it touches.** The general opener, the formula editor's entry.
+
+> 2026-09-16 opened in wave 5 ticket 17
+
+## mp-395 · The stored coach insight is never refreshed again
+- category: Process and scope
+- kind: question
+- status: open
+- linked: mp-209
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 17
+
+**Context.** The insight panel is gone and nothing writes a new insight, but the columns, their readers and the flag that used to gate the feature are still in the code and on the rows.
+
+**Question.** Should the columns and their readers be retired, or do they stay as a fading record?
+
+**Why.** A column nothing writes still shows old text to whoever reads it.
+
+**What it touches.** The formulas repository, the insight columns, the old feature flag.
+
+> 2026-09-16 opened in wave 5 ticket 17
+
+## mp-396 · Is a forty-character name cap the right shape?
+- category: Situation awareness
+- kind: question
+- status: open
+- linked: mp-274
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 17
+
+**Context.** The draft's name is the only free text that travels with a message, capped at forty characters and otherwise unshaped, because it is whatever the athlete typed.
+
+**Question.** Is the cap enough, or should the name be shaped further before it reaches the prompt?
+
+**Why.** mp-043 keeps free text off the wire; this is its one exception.
+
+**What it touches.** situation.ts, the draft on the wire.
+
+> 2026-09-16 opened in wave 5 ticket 17
+
+## mp-397 · Nothing in the app lets an athlete choose their walk
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: Vana settings
+- source: wave mealplanning 5 ticket 30
+
+**Context.** mp-231 clause 1 says the walk covers only the types the athlete plans, in their order. The walk is a keyed setting Vana can write, but the settings screen has no control for it, so it is reachable only through conversation.
+
+**Question.** Does the settings screen get a meal-type picker, and is that its own ticket?
+
+**Why.** A setting only a conversation can change is invisible to most people.
+
+**What it touches.** Vana settings, the walk setting.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-398 · Should "every meal" count four slots a day?
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** Coverage widens only when the athlete sets an explicit walk. An athlete whose scope is "every meal" still has lunch and dinner counted, with breakfast and snacks left as macros.
+
+**Question.** Should choosing "every meal" widen the denominator to four slots a day?
+
+**Why.** It is the one place the old scope and the new walk disagree.
+
+**What it touches.** Coverage on both sides, the review sheet.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-399 · Per-day coverage counts a night, whatever the servings
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** In per-day mode a meal covers one night however many servings it makes, so an athlete cooking two servings for a partner reads as one night covered.
+
+**Question.** Is that the right reading of "people who do not batch plan per day"?
+
+**Why.** It decides what the review sheet tells a couple who cook together.
+
+**What it touches.** Coverage on both sides, the review sheet.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-400 · The one-tap draft has no tap yet
+- category: The planning conversation
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: Vana sheet
+- source: wave mealplanning 5 ticket 30
+
+**Context.** mp-231 clause 5 says one tap drafts the period from what they ate last time. The server has the tool and the action, but no screen sends it: today it is a sentence to Vana.
+
+**Question.** Where does the tap live — a quick reply, a button on the Plan tab, or the plan bar?
+
+**Why.** The decision says one tap, and there is not one.
+
+**What it touches.** The Plan tab, the Vana sheet, the one-tap draft.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-401 · Suggestions do not yet favour what they have cooked
+- category: Meals tab and library
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** mp-231 clause 5 opens with "suggestions give the highest weight to meals the athlete has liked or already cooked". The ticket built the one-tap draft but left the suggestion ranking untouched, and its acceptance criteria never named it.
+
+**Question.** Does the ranking change now, and under which ticket?
+
+**Why.** Half a clause of an approved decision is unbuilt and nothing tracks it.
+
+**What it touches.** The meal search ranking.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-402 · A staples fallback still assumes fourteen slots
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** The staples diagnosis still falls back to fourteen slots when it has no coverage to read — the fixed number this ticket exists to remove.
+
+**Question.** Should it fall back to the athlete's period, or say nothing when it has no coverage?
+
+**Why.** It is the last fourteen left in the planning path.
+
+**What it touches.** The planning tools, the staples diagnosis.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-403 · A scope-only draft reads as empty
+- category: Situation awareness
+- kind: question
+- status: open
+- linked: mp-274
+- image: none
+- caption:
+- screen: Formula editor
+- source: wave mealplanning 5 ticket 17
+
+**Context.** The section calls a draft empty when it has no name, no phase and no components, even when the athlete has already chosen a sub-phase, a duration or an activity. Vana is then told there is nothing in it yet, while the screen shows the scope.
+
+**Question.** Should a draft carrying only its scope be described by that scope rather than called empty?
+
+**Why.** It is the first thing an athlete sets, and Vana is told it is not there.
+
+**What it touches.** situation.ts, the formula editor's conversation.
+
+> 2026-09-16 opened in wave 5 ticket 17
+
+## mp-404 · The shared coverage fixture does not test the part that must agree
+- category: Plan tab
+- kind: question
+- status: open
+- linked: mp-231
+- image: none
+- caption:
+- screen: none (algorithm/data)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** The server and the app now read one fixture so their coverage agrees. For the cases with no explicit walk, the fixture hands the app the list of types the server derives, so the derivation itself — the thing most likely to drift — is compared only in hand-written cases on one side.
+
+**Question.** Should the fixture carry the inputs and let each side derive the walk, so the seam tests the derivation and not the answer?
+
+**Why.** A shared fixture that hands over the answer proves less than it looks.
+
+**What it touches.** The coverage fixture, both coverage seams.
+
+> 2026-09-16 opened in wave 5 ticket 30
+
+## mp-405 · A fuelling conformance test is red before this wave
+- category: Process and scope
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: none (process)
+- source: wave mealplanning 5 ticket 30
+
+**Context.** The suite carries a failing case in the create-flow fuelling controls: the clamp-bound stepper is expected to carry a "Capped: session in …" caption and shows "1 h — early start" instead. It fails the same way at this wave's base commit, so it is not this wave's doing, and it sits beside the two failures already known to be environmental.
+
+**Question.** Is the caption's precedence wrong, or is the test's expectation out of date — and who owns fixing it?
+
+**Why.** A red test nobody owns trains everyone to read red as normal.
+
+**What it touches.** The fuelling window authority, the create-flow conformance test.
+
+> 2026-09-16 opened in wave 5 ticket 30
