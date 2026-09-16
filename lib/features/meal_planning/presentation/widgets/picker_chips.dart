@@ -44,10 +44,11 @@ class VanaPickerScope extends InheritedWidget {
 /// propose-first door (the server's `draftWeek` tool answers it).
 ///
 /// When the turn named its own chips ([suggested], mp-272), those labels
-/// stand in for that set — a tap sends the label exactly as an app chip
-/// does. The two doors out of the strip stay either way: `Something else…`
-/// (the composer) and `Browse meals` (the catalog) are ways to leave the
-/// picker, not answers to it, and the model is told not to re-say them.
+/// stand in for the two replies (`I like these` / `Next: …` and
+/// `Other options`) — a tap sends the label exactly as an app chip does.
+/// Everything else stays either way: the doors out of the strip
+/// (`Something else…`, `Browse meals`, `Draft my whole week`) and the
+/// filters, which mp-230 clause 4 shows once the plan has a meal.
 class PickerChips extends ConsumerWidget {
   const PickerChips({
     super.key,
@@ -115,10 +116,7 @@ class PickerChips extends ConsumerWidget {
     final draftWeek = content.getValue(ContentKeys.mpChipDraftWeek);
     final browse = content.getValue(ContentKeys.mpChipBrowseMeals);
     final showMore = content.getValue(ContentKeys.mpChipShowMore);
-    final showDraftWeek =
-        suggested.isEmpty &&
-        !hasMeals &&
-        VanaPickerScope.isFirstPickerOf(context);
+    final showDraftWeek = !hasMeals && VanaPickerScope.isFirstPickerOf(context);
 
     Widget filter(String key) => ChoiceChipButton(
       label: content.getValue(key),
@@ -180,9 +178,9 @@ class PickerChips extends ConsumerWidget {
           enabled: onBrowse != null,
           onTap: onBrowse ?? () {},
         ),
-        // The filters narrow the app's own set; a turn that named its chips
-        // said what it expects next, and they are not it.
-        if (suggested.isEmpty && hasMeals) ...[
+        // mp-230 clause 4: the filters appear once the plan has a meal,
+        // whether the replies above are the app's or the turn's.
+        if (hasMeals) ...[
           filter(ContentKeys.mpFilterNoRecipe),
           filter(ContentKeys.mpFilterProtein),
           filter(ContentKeys.mpFilterUnder20),

@@ -91,16 +91,7 @@ class _PickerMoreSheetState extends ConsumerState<PickerMoreSheet> {
               style: AppTextStyles.sectionTitle.copyWith(color: textColor),
             ),
             const SizedBox(height: AppSpacing.sm),
-            if (widget.meals.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                child: Text(
-                  content.getValue(ContentKeys.mpPickerMoreEmpty),
-                  style: AppTextStyles.bodySmall.copyWith(color: secondary),
-                ),
-              )
-            else
-              Flexible(
+            Flexible(
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: widget.meals.length,

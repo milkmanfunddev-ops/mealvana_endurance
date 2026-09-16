@@ -358,7 +358,6 @@ class ContentKeys {
   // "Show more" under a picker and the sheet it raises (mp-230 clause 2).
   static const String mpChipShowMore = 'meal_planning.chip_show_more';
   static const String mpPickerMoreTitle = 'meal_planning.picker_more_title';
-  static const String mpPickerMoreEmpty = 'meal_planning.picker_more_empty';
   static const String mpBrowseTitle = 'meal_planning.browse_title';
   static const String mpBrowseDone = 'meal_planning.browse_done';
   static const String mpBrowseAdd = 'meal_planning.browse_add';

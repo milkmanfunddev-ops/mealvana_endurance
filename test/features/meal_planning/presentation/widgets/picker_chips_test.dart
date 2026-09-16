@@ -241,8 +241,8 @@ void main() {
       expect(find.text('Keep it quick'), findsOneWidget);
       expect(find.text('Next: Dinner'), findsNothing);
       expect(find.text('Other options'), findsNothing);
-      // The filters narrow the app's set, so they go with it.
-      expect(find.text('No recipe only'), findsNothing);
+      // Only the replies are replaced; the filters stay (mp-230 clause 4).
+      expect(find.text('No recipe only'), findsOneWidget);
       // The doors stay.
       expect(find.text('Something else…'), findsOneWidget);
       expect(find.text('Browse meals'), findsOneWidget);
@@ -266,8 +266,26 @@ void main() {
       );
       await tester.tap(find.text('Salmon instead'));
       expect(picked, isEmpty);
-      // "Draft my whole week" belongs to the app's set, not to a named one.
-      expect(find.text('Draft my whole week'), findsNothing);
+      // "Draft my whole week" is a door, not a reply: it stays beside the
+      // named chips on the first picker of an empty draft.
+      expect(find.text('Draft my whole week'), findsOneWidget);
+    });
+
+    testWidgets('named chips keep the filters once the plan has a meal', (
+      tester,
+    ) async {
+      // mp-230 clause 4: the filters appear once the plan has a meal; a
+      // turn naming its replies does not take them away.
+      await pumpChips(
+        tester,
+        covered: 1,
+        of: 14,
+        hasMeals: true,
+        suggested: const ['Salmon instead', 'Keep it quick'],
+      );
+      expect(find.text('Salmon instead'), findsOneWidget);
+      expect(find.text('No recipe only'), findsOneWidget);
+      expect(find.text('Other options'), findsNothing);
     });
 
     testWidgets('an empty list leaves the app set exactly as it was', (
