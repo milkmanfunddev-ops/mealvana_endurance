@@ -19,6 +19,7 @@ import 'package:mealvana_endurance/features/subscription/data/subscription_servi
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/pro_gate_redirect.dart';
+import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
@@ -76,6 +77,12 @@ void main() {
 
     test('locked: the paywall renders (no loop)', () {
       expect(gateRedirect(path: kPaywallPath, unlocked: false), isNull);
+    });
+
+    test('the onboarding location is the paywall path with a query', () {
+      final uri = Uri.parse(kOnboardingPaywallLocation);
+      expect(uri.path, kPaywallPath);
+      expect(uri.queryParameters[kOnboardingPaywallQuery], '1');
     });
 
     test('unlocked: app routes render, the paywall yields to /main', () {
@@ -147,21 +154,27 @@ void main() {
             GoRoute(path: '/food/plan', builder: (_, _) => page('food plan')),
             GoRoute(path: kPaywallPath, builder: (_, _) => page('paywall')),
             GoRoute(path: '/welcome', builder: (_, _) => page('welcome')),
+            GoRoute(
+              path: '/auth/email-login',
+              builder: (_, _) => page('email login'),
+            ),
           ],
         );
       });
     }
 
-    Future<void> pump(
+    Future<(ProviderContainer, Provider<GoRouter>)> pump(
       WidgetTester tester, {
       required String initial,
       Duration timeout = const Duration(milliseconds: 60),
+      bool isAdmin = false,
     }) async {
       final c = ProviderContainer(
         overrides: [
           subscriptionServiceProvider.overrideWithValue(service),
           userEntitlementsRepositoryProvider.overrideWithValue(repo),
           entitlementAnswerTimeoutProvider.overrideWithValue(timeout),
+          isAdminProvider.overrideWith((_) async => isAdmin),
         ],
       );
       addTearDown(c.dispose);
@@ -176,12 +189,20 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      return (c, router);
     }
 
     testWidgets('a cached entitlement opens the app', (tester) async {
       when(() => service.fetchStatus()).thenAnswer((_) async => _active);
       await pump(tester, initial: '/');
       expect(find.text('main'), findsOneWidget);
+      expect(find.text('paywall'), findsNothing);
+    });
+
+    testWidgets('an admin with no subscription opens the app', (tester) async {
+      when(() => service.fetchStatus()).thenAnswer((_) async => null);
+      await pump(tester, initial: '/food/plan', isAdmin: true);
+      expect(find.text('food plan'), findsOneWidget);
       expect(find.text('paywall'), findsNothing);
     });
 

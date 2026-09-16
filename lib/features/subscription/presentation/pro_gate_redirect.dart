@@ -8,6 +8,14 @@ library;
 /// Where a locked user is sent, and stays.
 const String kPaywallPath = '/paywall';
 
+/// The paywall as onboarding's last step: plans and Restore only, no
+/// account actions (a person who just created the account is not lapsed).
+/// Same route; the query selects the shape. The gate's redirect still moves
+/// an unlocked account on to `/main`.
+const String kOnboardingPaywallQuery = 'onboarding';
+const String kOnboardingPaywallLocation =
+    '$kPaywallPath?$kOnboardingPaywallQuery=1';
+
 /// Routes the gate never touches: the root (startup), the force-upgrade and
 /// consent screens, and the public welcome / onboarding / auth flows —
 /// everything a person can reach before they have an account to gate.

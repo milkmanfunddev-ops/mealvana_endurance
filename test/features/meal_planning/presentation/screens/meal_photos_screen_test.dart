@@ -83,6 +83,36 @@ class _RecordingPhotoRepository implements MealPhotoRepository {
       addedAt: DateTime(2026, 9, 16, 14, 5),
     );
   }
+
+  /// Every remove / restore / delete that reached the function, in order.
+  final List<Map<String, String>> actions = [];
+
+  @override
+  Future<MealPhoto?> remove(String mealId) async {
+    actions.add({'action': 'remove'});
+    if (failWith case final e?) throw e;
+    return null;
+  }
+
+  @override
+  Future<MealPhoto> restore({
+    required String mealId,
+    required String photoId,
+  }) async {
+    actions.add({'action': 'restore', 'photoId': photoId});
+    if (failWith case final e?) throw e;
+    return const MealPhoto(url: 'https://upload.wikimedia.org/avocado.jpg');
+  }
+
+  @override
+  Future<MealPhoto?> deletePhoto({
+    required String mealId,
+    required String photoId,
+  }) async {
+    actions.add({'action': 'delete', 'photoId': photoId});
+    if (failWith case final e?) throw e;
+    return null;
+  }
 }
 
 void main() {
@@ -512,6 +542,181 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(content['meal_planning.photos_added']!), findsNothing);
+  });
+
+  // ───────────── removing, restoring and deleting (ticket 06) ─────────────
+
+  /// A Meal wearing the newest photograph, with an older one behind it.
+  MealPhotos worn() => const MealPhotos(
+    photo: MealPhoto(url: _address),
+    history: [
+      MealPhotoHistoryEntry(
+        id: 'history-worn',
+        photo: MealPhoto(url: _address),
+        isCurrent: true,
+      ),
+      MealPhotoHistoryEntry(
+        id: 'history-old',
+        photo: MealPhoto(url: 'https://upload.wikimedia.org/avocado.jpg'),
+        isCurrent: false,
+      ),
+    ],
+  );
+
+  testWidgets('a Meal showing nothing offers nothing to remove', (
+    tester,
+  ) async {
+    await pump(tester);
+
+    // Remove is drawn beside the photograph, so a Meal without one has no
+    // button to press. (That it IS drawn when there is one is what the next
+    // test presses.)
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_remove')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Remove takes the photograph down and says so', (tester) async {
+    await pump(tester, seed: worn());
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_remove')));
+    await tester.pumpAndSettle();
+
+    expect(repo.actions, [
+      {'action': 'remove'},
+    ]);
+    expect(find.text(content['meal_planning.photos_removed']!), findsOneWidget);
+    // The Meal shows nothing now, and there is nothing left to remove.
+    expect(find.text(content['meal_planning.photos_none']!), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_remove')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Restore is offered on the older row, not the one being worn', (
+    tester,
+  ) async {
+    await pump(tester, seed: worn());
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_restore_history-old')),
+      findsOneWidget,
+    );
+    // Restoring what the Meal already wears would change nothing.
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_restore_history-worn')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('restoring sends that row and says so', (tester) async {
+    await pump(tester, seed: worn());
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_restore_history-old')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repo.actions, [
+      {'action': 'restore', 'photoId': 'history-old'},
+    ]);
+    expect(
+      find.text(content['meal_planning.photos_restored']!),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Delete asks first, and keeping it sends nothing', (tester) async {
+    await pump(tester, seed: worn());
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_delete_history-old')),
+    );
+    await tester.pumpAndSettle();
+
+    // Nothing is deleted on one tap: it takes the file with it and cannot be
+    // undone (story 40).
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_delete_dialog')),
+      findsOneWidget,
+    );
+    expect(repo.actions, isEmpty);
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_delete_cancel')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repo.actions, isEmpty);
+    expect(find.text(content['meal_planning.photos_deleted']!), findsNothing);
+    // And the row is still there.
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_delete_history-old')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('confirming the deletion sends it once and says so', (
+    tester,
+  ) async {
+    await pump(tester, seed: worn());
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_delete_history-worn')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_delete_confirm')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repo.actions, [
+      {'action': 'delete', 'photoId': 'history-worn'},
+    ]);
+    expect(find.text(content['meal_planning.photos_deleted']!), findsOneWidget);
+    // Gone from History, and the Meal it was worn by shows nothing now.
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_delete_history-worn')),
+      findsNothing,
+    );
+    expect(find.text(content['meal_planning.photos_none']!), findsOneWidget);
+  });
+
+  testWidgets('a refused removal is shown, and nothing is claimed', (
+    tester,
+  ) async {
+    await pump(tester, seed: worn());
+    repo.failWith = const MealPhotoException('not_tester');
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_remove')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(content['meal_planning.photos_not_tester']!),
+      findsOneWidget,
+    );
+    expect(find.text(content['meal_planning.photos_removed']!), findsNothing);
+    // Still showing what athletes still see.
+    expect(find.text(content['meal_planning.photos_none']!), findsNothing);
+  });
+
+  testWidgets('a photograph deleted from under the Tester is reported', (
+    tester,
+  ) async {
+    await pump(tester, seed: worn());
+    repo.failWith = const MealPhotoException('photo_not_found');
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_restore_history-old')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(content['meal_planning.photos_photo_not_found']!),
+      findsOneWidget,
+    );
   });
 }
 

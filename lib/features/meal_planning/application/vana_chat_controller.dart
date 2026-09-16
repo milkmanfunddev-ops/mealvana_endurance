@@ -219,7 +219,15 @@ class VanaChatController extends _$VanaChatController {
   /// With a [moment] it is the moment's opener (vana-moment spec VM-1), and
   /// it lands even on a conversation that already has turns: the moment
   /// starts a new exchange there.
-  Future<void> loadOpener({String? anchorDate, VanaMoment? moment}) async {
+  ///
+  /// [newPlan] is the Plan tab's "New meal plan": the server gives the
+  /// plan-building opener whatever the week already holds, and never asks
+  /// whether the athlete meant to log, swap or adjust the old plan.
+  Future<void> loadOpener({
+    String? anchorDate,
+    VanaMoment? moment,
+    bool newPlan = false,
+  }) async {
     // The opener can be requested in the screen's first post-frame callback,
     // before this notifier's async build() has resolved — writes made before
     // initialization completes are clobbered by the initializer's return.
@@ -233,6 +241,7 @@ class VanaChatController extends _$VanaChatController {
       opener: true,
       anchorDate: anchorDate,
       moment: moment,
+      newPlan: newPlan,
     );
   }
 
@@ -451,6 +460,7 @@ class VanaChatController extends _$VanaChatController {
     required bool opener,
     String? anchorDate,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     final now = DateTime.now();
     final convId = before.conversationId ?? '';
@@ -492,6 +502,7 @@ class VanaChatController extends _$VanaChatController {
         // Whatever screen is underneath — read at send time, never stored.
         situation: ref.read(vanaSituationControllerProvider.notifier).current(),
         moment: moment,
+        newPlan: newPlan,
       );
       final resolvedId = response.conversationId.isNotEmpty
           ? response.conversationId

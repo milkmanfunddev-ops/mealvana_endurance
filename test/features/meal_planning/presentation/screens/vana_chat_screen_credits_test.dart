@@ -47,6 +47,7 @@ class _EmptyWalletRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     sent.add(message);
     throw InsufficientCreditsException.fromMap({

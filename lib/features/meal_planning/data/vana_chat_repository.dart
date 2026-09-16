@@ -108,6 +108,10 @@ class VanaChatRepository {
   /// [moment], with [opener], is what the launcher raised (vana-moment spec
   /// VM-1): the server writes that moment's opener into [conversationId].
   ///
+  /// [newPlan], with [opener], is the Plan tab's "New meal plan" (`new_plan`
+  /// on the wire): the server opens with the plan-building opener and leaves
+  /// the plan the week already holds out of the first message.
+  ///
   /// Throws [VanaUnauthenticatedException], [ProRequiredException],
   /// [VanaRateLimitedException], [VanaOfflineException],
   /// [VanaServerException] (and `InsufficientCreditsException` on
@@ -121,6 +125,7 @@ class VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     final body = <String, dynamic>{
       'kind': kind.wire,
@@ -128,6 +133,7 @@ class VanaChatRepository {
       if (conversationId != null && conversationId.isNotEmpty)
         'conversation_id': conversationId,
       if (opener) 'opener': true,
+      if (opener && newPlan) 'new_plan': true,
       if (anchorDate != null) 'anchor_date': anchorDate,
       // Ids only — the server resolves them into one sentence and stores nothing.
       if (situation != null) 'situation': situation.toJson(),

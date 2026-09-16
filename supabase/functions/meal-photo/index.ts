@@ -5,11 +5,15 @@
  * Body: { action, meal_id, ... }
  *   add_address  { url, credit?, credit_url? }          → { photo, entry }
  *   add_upload   { data (base64 JPEG), credit?, credit_url? } → { photo, entry }
+ *   remove       { }                                    → { photo: null }
+ *   restore      { photo_id }                           → { photo }
+ *   delete       { photo_id }                           → { photo | null }
  *   history      { }                                    → { photo, history: [...] }
  *
  * Errors: 401 {error:'unauthenticated'} · 403 {error:'not_tester'} ·
  *         400 {error:'invalid_input'|'not_an_image'|'too_large'} ·
- *         404 {error:'meal_not_found'} · 500 {error:'server_error'}.
+ *         404 {error:'meal_not_found'|'photo_not_found'} ·
+ *         500 {error:'server_error'}.
  *
  * The 403 is the real gate. The app hides the entry point behind the 7-tap
  * "Mark this device as internal" switch, but hiding a button protects nothing:

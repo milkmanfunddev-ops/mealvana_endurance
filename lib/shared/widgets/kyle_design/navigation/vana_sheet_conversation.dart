@@ -6,16 +6,18 @@
 /// The chrome, launcher and route are in `vana_sheet.dart`; this file is the
 /// same component's conversation surface, split out for length.
 ///
-/// Geometry and colour are the export's (`docs/New Homepage with updated
-/// navbar calendar and chat.html`, the chat sheet): a 20 px column, a 26 px
-/// filled `orange` sparkle avatar 11 px from Vana's prose, which has no
-/// bubble; the athlete's turn right-aligned at most 82 % wide in a cream-tinted
-/// bubble; a status chip and quick replies inset to the prose's left edge; a
-/// 44 px pill composer with a 44 px send circle.
+/// Geometry is the export's (`docs/New Homepage with updated navbar calendar
+/// and chat.html`, the chat sheet): a 20 px column, a 26 px avatar 11 px from
+/// Vana's prose, which has no bubble; the athlete's turn right-aligned at most
+/// 82 % wide in a cream-tinted bubble; quick replies inset to the prose's left
+/// edge; a 44 px pill composer with a 44 px send circle.
+///
+/// Two departures from the export, both Lee's (2026-09-16): the avatar is the
+/// app's own [VanaAvatar] (dragonfruit disc, cream "V"), not the export's
+/// orange sparkle, which read as a plus sign; and the export's status chip
+/// ("UPDATE" / "Fuel plan · to do") above the conversation is not drawn.
 ///
 /// Contracts held here:
-/// * **Status chip** — `orange` for [VanaSheetStatusTone.toDo], `electrolyte`
-///   for [VanaSheetStatusTone.update]. The words are the caller's.
 /// * **Quick replies** — at most two; the first filled, the second outline.
 ///   When they show and when they retire is the caller's (VS-8).
 /// * **Send** — inert grey until [VanaSheetComposer.canSend], `orange` once it
@@ -29,14 +31,15 @@ import 'package:flutter/material.dart';
 
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../icons/vana_avatar.dart';
 
 /// The conversation column's horizontal padding.
 const double kVanaSheetColumnInset = 20;
 
-/// The avatar and the gap after it: where Vana's prose, the status chip and
-/// the quick replies start.
+/// The avatar and the gap after it: where Vana's prose and the quick replies
+/// start.
 const double kVanaSheetProseInset =
-    VanaSparkleAvatar.size + VanaSheetVanaTurn.avatarGap;
+    VanaSheetVanaTurn.avatarSize + VanaSheetVanaTurn.avatarGap;
 
 /// Vana's prose on the sheet: no bubble, cream, 14.5 / 1.5.
 final TextStyle kVanaSheetProseStyle = AppTextStyles.bodyMedium.copyWith(
@@ -45,146 +48,21 @@ final TextStyle kVanaSheetProseStyle = AppTextStyles.bodyMedium.copyWith(
   color: AppColors.cream,
 );
 
-/// What the status chip says about the exchange.
-enum VanaSheetStatusTone {
-  /// Something waits on the athlete — `orange`.
-  toDo,
-
-  /// Nothing does — `electrolyte`.
-  update,
-}
-
-/// The status chip at the top of the conversation, naming what this exchange
-/// is about. Uppercase, a 6 px dot in the ink colour, on a tint of the same.
-class VanaSheetStatusChip extends StatelessWidget {
-  const VanaSheetStatusChip({
+/// One of Vana's turns: her avatar, then [child] flush left with no bubble.
+/// [child] is the prose (in [kVanaSheetProseStyle]) and whatever
+/// generative-UI parts the turn carries, which compose here unchanged.
+/// [pulsing] is for the turn still in flight (the typing indicator).
+class VanaSheetVanaTurn extends StatelessWidget {
+  const VanaSheetVanaTurn({
     super.key,
-    required this.label,
-    required this.tone,
+    required this.child,
+    this.pulsing = false,
   });
 
-  final String label;
-  final VanaSheetStatusTone tone;
-
-  Color get _ink => switch (tone) {
-    VanaSheetStatusTone.toDo => AppColors.orange,
-    VanaSheetStatusTone.update => AppColors.electrolyte,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final ink = _ink;
-    final (fill, line) = switch (tone) {
-      VanaSheetStatusTone.toDo => (0.12, 0.40),
-      VanaSheetStatusTone.update => (0.10, 0.35),
-    };
-    return Semantics(
-      container: true,
-      label: label,
-      excludeSemantics: true,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        decoration: BoxDecoration(
-          color: ink.withValues(alpha: fill),
-          borderRadius: BorderRadius.circular(100),
-          border: Border.all(color: ink.withValues(alpha: line)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(color: ink, shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.smallLabel.copyWith(
-                  fontSize: 10,
-                  letterSpacing: 0.6,
-                  color: ink,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Vana's small filled `orange` avatar with the sparkle.
-class VanaSparkleAvatar extends StatelessWidget {
-  const VanaSparkleAvatar({super.key});
-
-  static const double size = 26;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        color: AppColors.orange,
-        shape: BoxShape.circle,
-      ),
-      child: const Center(
-        child: CustomPaint(
-          size: Size.square(13),
-          painter: _SparklePainter(color: AppColors.blackberry),
-        ),
-      ),
-    );
-  }
-}
-
-/// The export's four-point sparkle, a 24-unit view box.
-class _SparklePainter extends CustomPainter {
-  const _SparklePainter({required this.color});
-
-  final Color color;
-
-  static const _r = Radius.circular(2);
-
-  static Path sparkle() => Path()
-    ..moveTo(12, 2)
-    ..lineTo(13.9, 7.8)
-    ..arcToPoint(const Offset(15.2, 9.1), radius: _r, clockwise: false)
-    ..lineTo(21, 11)
-    ..lineTo(15.2, 12.9)
-    ..arcToPoint(const Offset(13.9, 14.2), radius: _r, clockwise: false)
-    ..lineTo(12, 20)
-    ..lineTo(10.1, 14.2)
-    ..arcToPoint(const Offset(8.8, 12.9), radius: _r, clockwise: false)
-    ..lineTo(3, 11)
-    ..lineTo(8.8, 9.1)
-    ..arcToPoint(const Offset(10.1, 7.8), radius: _r, clockwise: false)
-    ..close();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.save();
-    canvas.scale(size.shortestSide / 24);
-    canvas.drawPath(sparkle(), Paint()..color = color);
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_SparklePainter oldDelegate) => oldDelegate.color != color;
-}
-
-/// One of Vana's turns: the sparkle avatar, then [child] flush left with no
-/// bubble. [child] is the prose (in [kVanaSheetProseStyle]) and whatever
-/// generative-UI parts the turn carries, which compose here unchanged.
-class VanaSheetVanaTurn extends StatelessWidget {
-  const VanaSheetVanaTurn({super.key, required this.child});
-
   final Widget child;
+  final bool pulsing;
 
+  static const double avatarSize = 26;
   static const double avatarGap = 11;
 
   @override
@@ -192,9 +70,9 @@ class VanaSheetVanaTurn extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 1),
-          child: VanaSparkleAvatar(),
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: VanaAvatar(size: avatarSize, isPulsing: pulsing),
         ),
         const SizedBox(width: avatarGap),
         Expanded(

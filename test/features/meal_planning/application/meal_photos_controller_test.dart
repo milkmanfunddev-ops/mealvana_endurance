@@ -108,6 +108,51 @@ class _RecordingPhotoRepository implements MealPhotoRepository {
       addedAt: DateTime(2026, 9, 16, 14, 5),
     );
   }
+
+  /// What the three ticket-06 actions were asked to do, in order.
+  final List<Map<String, String>> actions = [];
+
+  /// What the server says the Meal wears after a delete — null when the
+  /// deleted photograph was the one being worn.
+  MealPhoto? deleteLeaves;
+
+  /// What the server answers a restore with. Deliberately not the row the test
+  /// seeded: a restore must show what the SERVER wrote, not what this device
+  /// happened to be holding.
+  MealPhoto restoreAnswers = const MealPhoto(
+    url: 'https://upload.wikimedia.org/avocado.jpg',
+    credit: 'Photo by Jami430 on Wikimedia Commons (CC BY-SA 4.0)',
+  );
+
+  @override
+  Future<MealPhoto?> remove(String mealId) async {
+    actions.add({'action': 'remove', 'mealId': mealId});
+    if (gate case final g?) await g.future;
+    if (failWith case final error?) throw error;
+    return null;
+  }
+
+  @override
+  Future<MealPhoto> restore({
+    required String mealId,
+    required String photoId,
+  }) async {
+    actions.add({'action': 'restore', 'mealId': mealId, 'photoId': photoId});
+    if (gate case final g?) await g.future;
+    if (failWith case final error?) throw error;
+    return restoreAnswers;
+  }
+
+  @override
+  Future<MealPhoto?> deletePhoto({
+    required String mealId,
+    required String photoId,
+  }) async {
+    actions.add({'action': 'delete', 'mealId': mealId, 'photoId': photoId});
+    if (gate case final g?) await g.future;
+    if (failWith case final error?) throw error;
+    return deleteLeaves;
+  }
 }
 
 MealPhotos _seeded({MealPhoto? photo, List<MealPhotoHistoryEntry> history =
@@ -403,6 +448,171 @@ void main() {
         container.read(mealPhotosControllerProvider(_mealId)).value?.photo?.url,
         _existing.url,
       );
+    });
+  });
+
+  // ─────────────── taking photographs back (ticket 06) ───────────────
+  //
+  // Remove, restore and delete are remote-ack the same way an add is: one
+  // request each, the page moves only once the server has answered, and a
+  // refusal leaves the Tester looking at what athletes really see.
+
+  group('a Tester taking a photograph back', () {
+    /// The Meal is wearing the newest photograph, with an older one behind it.
+    MealPhotos seeded() => _seeded(
+      photo: const MealPhoto(url: _newUrl),
+      history: [
+        const MealPhotoHistoryEntry(
+          id: 'history-worn',
+          photo: MealPhoto(url: _newUrl),
+          isCurrent: true,
+        ),
+        MealPhotoHistoryEntry(
+          id: 'history-old',
+          photo: _existing,
+          isCurrent: false,
+        ),
+      ],
+    );
+
+    MealPhotos read(ProviderContainer c) =>
+        c.read(mealPhotosControllerProvider(_mealId)).value!;
+
+    test('remove sends one request and the Meal then shows nothing', () async {
+      final container = containerFor(seeded());
+      await load(container);
+
+      await notifier(container).remove();
+
+      expect(repo.actions, [
+        {'action': 'remove', 'mealId': _mealId},
+      ]);
+      expect(read(container).photo, isNull);
+      // Nothing was re-read: the page knows what it asked for.
+      expect(repo.historyCalls, 1);
+    });
+
+    test('remove keeps History and brings no older photograph forward', () async {
+      final container = containerFor(seeded());
+      await load(container);
+
+      await notifier(container).remove();
+
+      final photos = read(container);
+      // Both rows are still there, and neither is worn — "remove" does exactly
+      // what it says rather than quietly reverting to the previous photo.
+      expect(photos.history.map((e) => e.id), ['history-worn', 'history-old']);
+      expect(photos.history.map((e) => e.isCurrent), [false, false]);
+    });
+
+    test('remove moves the state only after the server acknowledges', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      repo.gate = Completer<void>();
+
+      final pending = notifier(container).remove();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      // In flight: athletes still see it, so the Tester still sees it.
+      expect(read(container).photo?.url, _newUrl);
+
+      repo.gate!.complete();
+      await pending;
+      expect(read(container).photo, isNull);
+    });
+
+    test('a refused remove leaves the photograph exactly where it was', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      repo.failWith = const MealPhotoException('not_tester');
+
+      await expectLater(
+        notifier(container).remove(),
+        throwsA(isA<MealPhotoException>()),
+      );
+
+      final state = container.read(mealPhotosControllerProvider(_mealId));
+      expect(state.hasError, isFalse);
+      expect(state.value?.photo?.url, _newUrl);
+      expect(state.value?.history.first.isCurrent, isTrue);
+    });
+
+    test('restore names the row and wears the server own answer', () async {
+      final container = containerFor(seeded());
+      await load(container);
+
+      await notifier(container).restore('history-old');
+
+      expect(repo.actions, [
+        {'action': 'restore', 'mealId': _mealId, 'photoId': 'history-old'},
+      ]);
+      final photos = read(container);
+      // The credit shown is the server's, not the one this device was holding:
+      // a stale History must not put stale wording in front of athletes.
+      expect(photos.photo?.url, repo.restoreAnswers.url);
+      expect(photos.photo?.credit, repo.restoreAnswers.credit);
+      // And the restored row is the one marked, with the other let go.
+      expect(photos.history.map((e) => e.isCurrent), [false, true]);
+    });
+
+    test('a refused restore leaves the state unchanged', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      repo.failWith = const MealPhotoException('photo_not_found');
+
+      await expectLater(
+        notifier(container).restore('history-old'),
+        throwsA(isA<MealPhotoException>()),
+      );
+
+      expect(read(container).photo?.url, _newUrl);
+      expect(read(container).history.first.isCurrent, isTrue);
+    });
+
+    test('delete drops the row, and the Meal shows nothing when it was worn', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      repo.deleteLeaves = null; // the server: nothing is worn now
+
+      await notifier(container).delete('history-worn');
+
+      expect(repo.actions, [
+        {'action': 'delete', 'mealId': _mealId, 'photoId': 'history-worn'},
+      ]);
+      final photos = read(container);
+      expect(photos.photo, isNull);
+      // Gone from History for good, so it can never be restored with a tap.
+      expect(photos.history.map((e) => e.id), ['history-old']);
+      expect(photos.history.single.isCurrent, isFalse);
+    });
+
+    test('deleting a photograph that was not worn leaves the current one on', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      // The server's answer: still wearing what it was wearing.
+      repo.deleteLeaves = const MealPhoto(url: _newUrl);
+
+      await notifier(container).delete('history-old');
+
+      final photos = read(container);
+      expect(photos.photo?.url, _newUrl);
+      expect(photos.history.map((e) => e.id), ['history-worn']);
+      expect(photos.history.single.isCurrent, isTrue);
+    });
+
+    test('a refused delete loses nothing', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      repo.failWith = const VanaOfflineException('no route to host');
+
+      await expectLater(
+        notifier(container).delete('history-old'),
+        throwsA(isA<VanaOfflineException>()),
+      );
+
+      final photos = read(container);
+      expect(photos.photo?.url, _newUrl);
+      expect(photos.history, hasLength(2));
     });
   });
 }

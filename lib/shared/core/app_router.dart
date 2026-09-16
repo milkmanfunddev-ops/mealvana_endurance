@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,6 +137,10 @@ class AppRouter {
       // and navigation spans for performance monitoring.
       // The Vana launcher's observer hides it under any dialog or sheet.
       observers: [SentryNavigatorObserver(), vanaCompanionObserver],
+      // Debug builds log every routing decision, so a lost navigation (a
+      // sign-in that came back to the login screen, 2026-09-16) leaves a
+      // trail in docs/logs.txt next time instead of a gap.
+      debugLogDiagnostics: kDebugMode,
       // Redirect logic based on app startup state
       redirect: (context, state) async {
         final currentPath = state.uri.path;
@@ -647,7 +651,10 @@ class AppRouter {
         GoRoute(
           path: kPaywallPath,
           name: 'paywall',
-          builder: (context, state) => const PaywallScreen(),
+          builder: (context, state) => PaywallScreen(
+            onboarding:
+                state.uri.queryParameters[kOnboardingPaywallQuery] == '1',
+          ),
         ),
 
         // AI Credits Paywall - purchase credit packs for AI features
@@ -1154,6 +1161,9 @@ class AppRouter {
               // any other id resumes that conversation.
               conversationId: (c == null || c == 'new') ? null : c,
               startOpener: c == 'new',
+              // `intent=new_plan` (the Plan tab's "New meal plan"): the opener
+              // starts a fresh plan instead of asking about the one on the tab.
+              newPlan: state.uri.queryParameters['intent'] == 'new_plan',
             );
           },
           routes: [

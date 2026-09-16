@@ -97,6 +97,50 @@ class MealPhotosController extends _$MealPhotosController {
     _showEverywhereElse();
   }
 
+  /// Take the current photograph down, so the Meal shows nothing again.
+  ///
+  /// Not a delete: the photograph stays in History and is one tap from coming
+  /// back, and no older photograph is pulled forward in its place (story 42).
+  Future<void> remove() async {
+    final current = state.value ?? const MealPhotos();
+
+    await _repo.remove(mealId);
+
+    if (!ref.mounted) return;
+    state = AsyncData(current.withRemoved());
+    _showEverywhereElse();
+  }
+
+  /// Put a photograph from History back on — the one tap that undoes a mistake
+  /// or somebody else's vandalism (story 38).
+  Future<void> restore(String photoId) async {
+    final current = state.value ?? const MealPhotos();
+
+    // The server's own answer, not the row this device happened to be holding:
+    // a stale History must not put a stale credit in front of athletes.
+    final photo = await _repo.restore(mealId: mealId, photoId: photoId);
+
+    if (!ref.mounted) return;
+    state = AsyncData(current.withRestored(photoId, photo));
+    _showEverywhereElse();
+  }
+
+  /// Delete a photograph for good: out of History, and out of our storage when
+  /// the file was ours (story 39).
+  ///
+  /// Deleting the photograph the Meal is wearing leaves it showing nothing —
+  /// the server says so, and the page is told by its answer rather than
+  /// guessing.
+  Future<void> delete(String photoId) async {
+    final current = state.value ?? const MealPhotos();
+
+    final nowShowing = await _repo.deletePhoto(mealId: mealId, photoId: photoId);
+
+    if (!ref.mounted) return;
+    state = AsyncData(current.withDeleted(photoId, nowShowing));
+    _showEverywhereElse();
+  }
+
   /// The new photograph has to reach the surfaces that already drew this Meal.
   ///
   /// The recipe screen behind the page holds a `keepAlive` detail, the Meals

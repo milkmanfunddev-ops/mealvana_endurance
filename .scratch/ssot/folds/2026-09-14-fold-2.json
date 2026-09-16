@@ -1,0 +1,50 @@
+[
+  {
+    "from": ["mp-057"],
+    "into": {
+      "title": "Vana lives on three screens for now",
+      "category": "The sheet and launcher",
+      "screen": "Main tabs, Plan tab, coach formulas",
+      "source": "Lee on the page 2026-09-14, on mp-049, mp-050, mp-053 to mp-057",
+      "work": "pending",
+      "question": "Where the launcher appears.",
+      "context": "The launcher was built to appear on every ordinary screen, with one list of exclusions for auth, onboarding, paywall and Vana routes and a second list of flow screens whose bottom button it covered. Lee rejected that shape: it is a list nobody can maintain, and Vana is meant to be on a few screens for now.",
+      "decision": "1. The launcher appears on three screens: the main tabs screen, the meal-planning screen and coach formulas. Every other screen has no launcher node at all.\n2. There is no everywhere rule, no flow-screen list and no auth-or-onboarding exclusion list. The rule is an allow-list of three routes.\n3. Any page pushed over one of the three hides the launcher, so a pushed form never needs to name itself.\n4. Widening to more screens is a later decision.",
+      "why": "Lee on 2026-09-14: we only show Vana on a select number of screens right now and cannot maintain a list of exclusions.",
+      "alternatives": "Everywhere with exclusion lists (mp-049, mp-050, mp-053 to mp-056), rejected as unmaintainable. Naming pushed pages so the rule can see them (mp-057), unnecessary once any pushed page hides the launcher.",
+      "touches": "vana_launcher_rule.dart, VanaCompanionObserver, root app widget."
+    }
+  },
+  {
+    "from": ["mp-067", "mp-068", "mp-069"],
+    "into": {
+      "title": "One sheet height, and full screen only when its button is pressed",
+      "category": "The sheet and launcher",
+      "screen": "Vana sheet, full-screen Vana chat",
+      "source": "Lee on the page 2026-09-14, on mp-059, mp-060, mp-063 to mp-066",
+      "work": "pending",
+      "question": "How tall the sheet is, how it moves, and when the athlete goes to full screen.",
+      "context": "The sheet was built with three heights, an auto height that grew on the first send, drag thresholds in pixels, a flick rule, and a grabber that toggled height. Planning actions left the sheet for full screen. Lee rejected all of it as over-designed and janky.",
+      "decision": "1. The sheet has one standard height. Contents scroll within it.\n2. The close button or a normal drag down dismisses it. There is no auto height, no growth on send, no resize while Vana streams, and no custom thresholds.\n3. Full screen happens only when the athlete presses the full-screen button. It opens the full-screen chat on the same conversation and is only a bigger view of the same thing. Nothing changes for Vana.\n4. Planning actions run inside the sheet. When Vana sees the athlete is meal planning, she offers a button that takes them to the meal-planning page instead of planning in the general chat.\n5. Collapsing or dismissing the sheet drops the composer's focus so the keyboard never outlives it. The sheet keeps one widget tree shape so a change of height never remounts it.",
+      "why": "Lee on 2026-09-14: one height and make things standardised; going back and forth to full screen seems janky; only the full-screen button should go to full screen.",
+      "alternatives": "Three heights with auto, 75 and 100 percent (mp-063 to mp-065), export drag thresholds plus a flick (mp-066), and planning actions leaving for full screen (mp-059, mp-060), all rejected.",
+      "touches": "VanaSheet, VanaSheetRoute, sheet chrome, part actions, chat route."
+    }
+  },
+  {
+    "from": ["mp-052"],
+    "into": {
+      "title": "A seven-day trial, then purchase: no free tier and no Pro tier",
+      "category": "Pro and paywall",
+      "screen": "Paywall",
+      "source": "Lee on the page 2026-09-14, on mp-052",
+      "work": "pending",
+      "question": "What a person gets before they pay, and what tapping the launcher does once that runs out.",
+      "context": "The app was freemium: a free tier with AI credits, and Pro for meal planning. The launcher without Pro opened the paywall. Lee is moving the app to a trial model.",
+      "decision": "1. Every new account gets a seven-day free trial of the whole app, then must buy. There is no free tier and no Pro tier, only trial and paid.\n2. Tapping the launcher after the trial has ended opens the paywall. Gating follows the one app gate. There is no Vana-specific gate.\n3. The move away from freemium is its own piece of work; see the open question beside this card.",
+      "why": "Lee on 2026-09-14: we are swapping from a freemium model to a seven-day free trial and then you must buy, so we do not have free and Pro any more.",
+      "alternatives": "Keeping free and Pro with meal planning behind Pro (mp-052 as first written, and the three Pro cards in this category, which still describe the old model).",
+      "touches": "Paywall, entitlements, RevenueCat products, credits system."
+    }
+  }
+]

@@ -74,6 +74,45 @@ void main() {
       },
     );
 
+    test('new_plan rides the opener request and only the opener', () async {
+      final fixture = loadFixture('opener');
+      final h = TransportHarness(
+        status: 200,
+        body: ndjsonFromFixture(fixture),
+        headers: Map<String, String>.from(fixture['headers'] as Map),
+      );
+
+      await _repo(h).streamChat(
+        kind: VanaConversationKind.mealPlanning,
+        opener: true,
+        newPlan: true,
+        anchorDate: '2026-09-01',
+        timezone: 'America/Chicago',
+      );
+      expect(h.requests.single.body, {
+        'kind': 'meal_planning',
+        'opener': true,
+        'new_plan': true,
+        'anchor_date': '2026-09-01',
+        'timezone': 'America/Chicago',
+      });
+
+      // A user turn never carries it, whatever the caller passes.
+      final h2 = TransportHarness(
+        status: 200,
+        body: ndjsonFromFixture(fixture),
+        headers: Map<String, String>.from(fixture['headers'] as Map),
+      );
+      await _repo(h2).streamChat(
+        kind: VanaConversationKind.mealPlanning,
+        message: 'hi',
+        conversationId: 'conv-1',
+        newPlan: true,
+        timezone: 'America/Chicago',
+      );
+      expect(h2.requests.single.body.containsKey('new_plan'), isFalse);
+    });
+
     test(
       'general_turn fixture: text deltas + block separator + status',
       () async {

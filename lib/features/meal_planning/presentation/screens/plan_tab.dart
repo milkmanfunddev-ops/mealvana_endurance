@@ -22,7 +22,7 @@ import '../../domain/ui_action.dart';
 import '../widgets/dashed_box.dart';
 import '../widgets/plan_list.dart';
 import '../widgets/plan_summary.dart';
-import '../widgets/vana_avatar.dart';
+import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 
 /// The Plan tab (05 §4): Vana's day note, this week's plan with swipe
 /// actions, the dashed empty state, and the confirm / new-plan actions.
@@ -104,8 +104,11 @@ class PlanTab extends ConsumerWidget {
                   key: const ValueKey('meal_planning.btn_new_plan'),
                   text: content.getValue(ContentKeys.mpBtnNewPlan),
                   height: 44,
-                  onPressed: () =>
-                      context.push('/vana?c=new&mode=meal_planning'),
+                  // `intent=new_plan`: the athlete chose a fresh plan, so the
+                  // opener builds one and never asks about the plan on this tab.
+                  onPressed: () => context.push(
+                    '/vana?c=new&mode=meal_planning&intent=new_plan',
+                  ),
                 ),
               ),
             ],

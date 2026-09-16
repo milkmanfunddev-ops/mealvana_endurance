@@ -51,7 +51,9 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
     d.from('users').select('first_name, dietary_preference, allergies, gut_training_level, home_city, home_lat, home_lon, home_timezone').eq('id', v.userId).maybeSingle(),
     d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, distance_miles, distance_meters, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', t).lt('scheduled_date_time', addDays(end, 1)).order('scheduled_date_time'),
     d.from('daily_macro_targets').select('target_date, carb_g, prot_g, fat_g, tdee, session_kcal, mode').eq('user_id', v.userId).gte('target_date', t).lte('target_date', addDays(t, 21)).order('target_date'),
-    d.from('events').select('event_name, event_date, location, event_type').eq('user_id', v.userId).gte('event_date', t).lte('event_date', addDays(t, 21)).order('event_date').limit(1),
+    // The next race whatever its distance: getProfile and the EVENTS AHEAD line carry no window, and a 21-day cap here made
+    // the CONTEXT say "RACE none" for an athlete whose A race was ten weeks out. Race-week logic reads daysOut itself.
+    d.from('events').select('event_name, event_date, location, event_type').eq('user_id', v.userId).gte('event_date', t).order('event_date').limit(1),
     d.from('meal_logs').select('carbs_g, calories').eq('user_id', v.userId).eq('log_date', t).eq('is_deleted', false),
     getPlan(v, weekStart),
     getSetting<boolean>(v, 'batch_cooking'),

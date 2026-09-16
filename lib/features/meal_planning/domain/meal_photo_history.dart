@@ -56,9 +56,10 @@ class MealPhotoHistoryEntry extends WireRecord {
     );
   }
 
-  MealPhotoHistoryEntry copyWith({bool? isCurrent}) => MealPhotoHistoryEntry(
+  MealPhotoHistoryEntry copyWith({bool? isCurrent, MealPhoto? photo}) =>
+      MealPhotoHistoryEntry(
     id: id,
-    photo: photo,
+    photo: photo ?? this.photo,
     isCurrent: isCurrent ?? this.isCurrent,
     storagePath: storagePath,
     addedBy: addedBy,
@@ -109,6 +110,52 @@ class MealPhotos {
       added,
       for (final e in history)
         if (e.id != added.id) e.copyWith(isCurrent: false),
+    ],
+  );
+
+  /// The state after the current photograph is taken down: the Meal shows
+  /// nothing, and History is exactly as it was.
+  ///
+  /// No older photograph comes forward — "remove" does what it says (story 42),
+  /// and every row is left restorable.
+  MealPhotos withRemoved() => MealPhotos(
+    history: [for (final e in history) e.copyWith(isCurrent: false)],
+  );
+
+  /// The state after a History row is put back on. [photo] is the server's
+  /// answer, so the address and credit shown are the ones it actually wrote.
+  ///
+  /// The restored row takes that answer too. Where the two disagree — a stale
+  /// History on this device, which is the whole reason the server's answer is
+  /// used — the row and the photograph above it must not show different
+  /// credits until the next reload.
+  MealPhotos withRestored(String id, MealPhoto photo) => MealPhotos(
+    photo: photo,
+    history: [
+      for (final e in history)
+        e.id == id
+            ? e.copyWith(isCurrent: true, photo: photo)
+            : e.copyWith(isCurrent: false),
+    ],
+  );
+
+  /// The state after a photograph is deleted for good: the row leaves History,
+  /// so it can never be restored with a tap.
+  ///
+  /// [nowShowing] is what the server says the Meal wears afterwards — null when
+  /// the deleted row was the one being worn, because deleting the current photo
+  /// leaves the Meal showing nothing rather than pulling an older one forward.
+  ///
+  /// The surviving rows keep the flags they had, which is only sound because
+  /// `meal_photo_delete` can clear the current photo but never swap it for a
+  /// different one — pinned by the seam-3 test "deleting a photograph the Meal
+  /// is not wearing leaves it wearing it". If that ever changes, currency has
+  /// to be read back rather than carried over.
+  MealPhotos withDeleted(String id, MealPhoto? nowShowing) => MealPhotos(
+    photo: nowShowing,
+    history: [
+      for (final e in history)
+        if (e.id != id) nowShowing == null ? e.copyWith(isCurrent: false) : e,
     ],
   );
 }

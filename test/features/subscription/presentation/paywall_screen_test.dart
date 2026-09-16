@@ -381,8 +381,30 @@ void main() {
     expect(settings.signOuts, 0);
   });
 
+  testWidgets('onboarding mode: plans and Restore, no account actions', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [mockAppExternalDeps(), ..._overrides()],
+        child: const MaterialApp(home: PaywallScreen(onboarding: true)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('paywall.plan.monthly')), findsOneWidget);
+    expect(find.byKey(const ValueKey('paywall.plan.annual')), findsOneWidget);
+    expect(find.byKey(_restore), findsOneWidget);
+    expect(find.byKey(_manage), findsNothing);
+    expect(find.byKey(_signOut), findsNothing);
+    expect(find.byKey(_delete), findsNothing);
+  });
+
   group('goldens — the paywall with its four actions', () {
-    Future<void> golden(WidgetTester tester, Brightness brightness) async {
+    Future<void> golden(
+      WidgetTester tester,
+      Brightness brightness, {
+      bool onboarding = false,
+    }) async {
       tester.view.physicalSize = const Size(393, 1320);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
@@ -398,9 +420,9 @@ void main() {
                   ? AppColors.blackberry
                   : AppColors.cream,
             ),
-            home: const RepaintBoundary(
-              key: Key('golden'),
-              child: PaywallScreen(),
+            home: RepaintBoundary(
+              key: const Key('golden'),
+              child: PaywallScreen(onboarding: onboarding),
             ),
           ),
         ),
@@ -409,13 +431,18 @@ void main() {
       expect(tester.takeException(), isNull);
 
       final name = brightness == Brightness.dark ? 'dark' : 'light';
+      final shape = onboarding ? 'onboarding_' : '';
       await expectLater(
         find.byKey(const Key('golden')),
-        matchesGoldenFile('goldens/paywall_$name.png'),
+        matchesGoldenFile('goldens/paywall_$shape$name.png'),
       );
     }
 
     testWidgets('light', (tester) => golden(tester, Brightness.light));
     testWidgets('dark', (tester) => golden(tester, Brightness.dark));
+    testWidgets(
+      'onboarding dark',
+      (tester) => golden(tester, Brightness.dark, onboarding: true),
+    );
   });
 }

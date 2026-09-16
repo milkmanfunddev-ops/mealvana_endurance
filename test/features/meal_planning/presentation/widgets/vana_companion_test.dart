@@ -13,7 +13,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
-import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
@@ -32,6 +31,7 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/m
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
@@ -77,6 +77,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     calls.add({
       'message': message,
@@ -839,78 +840,6 @@ void main() {
       options: ['What should I eat today?', 'Before tomorrow', 'Start a plan'],
     );
 
-    VanaSheetStatusChip chip(WidgetTester tester) =>
-        tester.widget<VanaSheetStatusChip>(find.byType(VanaSheetStatusChip));
-
-    const followUp = VanaChoicesPart(options: ['Before', 'During']);
-
-    testWidgets(
-      'the opening\'s offers are a menu, so the chip opens on Update; '
-      'a question in the thread is a to-do named by the screen underneath, '
-      'and stays one while the athlete\'s answer is in flight',
-      (tester) async {
-        final repo = _FakeChatRepo()
-          ..openerParts = const [offers]
-          ..replyParts = const [followUp];
-        final h = await _pump(tester, initial: '/main', repo: repo);
-        unawaited(h.router.push('/food'));
-        await tester.pumpAndSettle();
-        await _open(tester);
-
-        final content = loadDefaultContent();
-        final update = content['meal_planning.companion_status_update'];
-        expect(chip(tester).tone, VanaSheetStatusTone.update);
-        expect(chip(tester).label, update);
-
-        await _send(tester, 'help me plan this');
-        expect(chip(tester).tone, VanaSheetStatusTone.toDo);
-        expect(
-          chip(tester).label,
-          ContentKeys.format(content['meal_planning.companion_status_to_do']!, {
-            'topic': content['meal_planning.companion_topic_meal_plan'],
-          }),
-        );
-
-        // Answering does not finish the to-do; Vana's next turn does.
-        repo
-          ..replyParts = const []
-          ..hold = Completer<void>();
-        await _send(tester, 'Before');
-        expect(find.byKey(const ValueKey('vana_sheet.typing')), findsNothing);
-        expect(chip(tester).tone, VanaSheetStatusTone.toDo);
-        repo.hold!.complete();
-        await _settleTurn(tester);
-        expect(chip(tester).tone, VanaSheetStatusTone.update);
-        expect(chip(tester).label, update);
-      },
-    );
-
-    testWidgets('a to-do nothing names is a bare to-do; a meal picker names '
-        'the meal plan', (tester) async {
-      final repo = _FakeChatRepo()..replyParts = const [followUp];
-      final h = await _pump(tester, initial: _formulas, repo: repo);
-      await _open(tester);
-      final content = loadDefaultContent();
-
-      await _send(tester, 'what should I eat');
-      expect(chip(tester).tone, VanaSheetStatusTone.toDo);
-      expect(
-        chip(tester).label,
-        content['meal_planning.companion_status_to_do_bare'],
-      );
-
-      repo.replyParts = [_picker];
-      await _send(tester, 'plan my dinners');
-      expect(chip(tester).tone, VanaSheetStatusTone.toDo);
-      expect(
-        chip(tester).label,
-        ContentKeys.format(content['meal_planning.companion_status_to_do']!, {
-          'topic': content['meal_planning.companion_topic_meal_plan'],
-        }),
-      );
-      expect(h.location, _formulas);
-    });
-
     testWidgets('quick replies: the opening\'s offers, at most two, the first '
         'filled and the second outline; a tap sends it', (tester) async {
       final repo = _FakeChatRepo()..openerParts = const [offers];
@@ -994,7 +923,6 @@ void main() {
       // The opener is in flight with nothing said yet.
       expect(find.byKey(const ValueKey('vana_sheet.typing')), findsOneWidget);
       expect(find.byType(VanaSheetQuickReplies), findsNothing);
-      expect(find.byType(VanaSheetStatusChip), findsNothing);
 
       repo.holdFirst!.complete();
       await _settleTurn(tester);
@@ -1083,7 +1011,12 @@ void main() {
         matching: find.byType(VanaSheetVanaTurn),
       );
       expect(turn, findsOneWidget);
-      // It starts where the prose starts, right of the sparkle avatar.
+      // Vana's turn is drawn with her one avatar, the "V" disc.
+      expect(
+        find.descendant(of: turn, matching: find.byType(VanaAvatar)),
+        findsOneWidget,
+      );
+      // It starts where the prose starts, right of the avatar.
       final prose = tester.getTopLeft(find.text('Sure.')).dx;
       expect(tester.getTopLeft(picker).dx, closeTo(prose, 0.5));
     });

@@ -14,7 +14,8 @@ rate-limit buckets. It owns no tool inventory ([`tools.md`](tools.md)) and no co
 
 ## Envelope (NDJSON — what both clients speak)
 
-Request `{message?, conversation_id?, kind: meal_planning | general, timezone?, opener?: bool, anchor_date?: YYYY-MM-DD}`.
+Request `{message?, conversation_id?, kind: meal_planning | general, timezone?, opener?: bool, anchor_date?: YYYY-MM-DD, new_plan?: bool}`.
+`new_plan` with `opener` on a planning conversation is the Plan tab's "New meal plan": the plan opener is used whatever the week holds, and the first message never raises the existing plan.
 Response headers `x-conversation-id`, `x-vana-conversation` (alias), `x-vana-kind`; body
 `application/x-ndjson`, one JSON object per line:
 

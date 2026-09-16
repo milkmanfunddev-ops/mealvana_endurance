@@ -90,7 +90,11 @@ instead of the AI SDK UI-message stream the prototype uses. The prototype's web 
 thing that changes (Phase 1 adds an NDJSON transport to it so both clients speak the same thing).
 
 Request: `{message?, conversation_id?, kind: 'meal_planning'|'general', timezone, opener?: bool,
-anchor_date?: 'YYYY-MM-DD'}`. Headers back: `x-conversation-id`, `x-vana-kind`.
+anchor_date?: 'YYYY-MM-DD', new_plan?: bool}`. Headers back: `x-conversation-id`, `x-vana-kind`.
+`new_plan` (with `opener`, planning only, 2026-09-16) is the Plan tab's "New meal plan": the plan opener
+wins over a check-in or debrief, the screen's Situation is replaced by a fixed "starting a new meal plan"
+line, and the opener text forbids raising the plan the week already holds (archived by `confirm_meal_plan`
+when the new one is confirmed, never at open).
 Lines: `{"type":"text","delta"}` (a `"\n"` delta separates text blocks) · `{"type":"ui","part":VanaPart}` ·
 `{"type":"status","tool":name}` (on tool-input-start — drives the "Finding options…" line) ·
 `{"type":"done","usage":{input_tokens,output_tokens}}` · `{"type":"error","message"}`. Pre-stream errors: 401

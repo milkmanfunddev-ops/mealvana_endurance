@@ -33,7 +33,7 @@ import '../widgets/picker_chips.dart';
 import '../widgets/plan_bar.dart';
 import '../widgets/review_sheet.dart';
 import '../widgets/vana_attach_sheet.dart';
-import '../widgets/vana_avatar.dart';
+import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import '../widgets/vana_date_divider.dart';
 import '../widgets/vana_mic_button.dart';
 import '../widgets/vana_round_button.dart';
@@ -67,6 +67,7 @@ class VanaChatScreen extends ConsumerStatefulWidget {
     this.kind = VanaConversationKind.mealPlanning,
     this.conversationId,
     this.startOpener = false,
+    this.newPlan = false,
   });
 
   final VanaConversationKind kind;
@@ -76,6 +77,11 @@ class VanaChatScreen extends ConsumerStatefulWidget {
 
   /// Planning chats opened with `c=new` stream the scripted opener.
   final bool startOpener;
+
+  /// With [startOpener]: the athlete tapped "New meal plan" on the Plan tab.
+  /// The opener request carries `new_plan`, so the server builds a fresh plan
+  /// and never asks about the plan the week already holds.
+  final bool newPlan;
 
   @override
   ConsumerState<VanaChatScreen> createState() => _VanaChatScreenState();
@@ -685,7 +691,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     if (_openerRequested) return;
     _openerRequested = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _controller.loadOpener();
+      if (mounted) _controller.loadOpener(newPlan: widget.newPlan);
     });
   }
 

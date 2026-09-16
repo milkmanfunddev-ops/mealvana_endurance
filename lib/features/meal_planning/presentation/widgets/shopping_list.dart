@@ -13,7 +13,7 @@ import '../../application/shopping_qty_formatter.dart';
 import '../../domain/plan_meal.dart';
 import '../../domain/shopping_item.dart';
 import 'slot_chip.dart';
-import 'vana_avatar.dart';
+import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'vana_bubble.dart';
 
 /// The aisle-grouped shopping list: the item-count header, Vana's "I left

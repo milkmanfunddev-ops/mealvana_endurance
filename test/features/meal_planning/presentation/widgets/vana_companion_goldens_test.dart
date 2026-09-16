@@ -10,17 +10,19 @@
 // a fake repository, so a golden that moves means the sheet moved.
 //
 // The inside of the sheet (ticket 07, "Inside the sheet"): OPEN is the
-// opening — Vana's prose with the sparkle avatar and her offers as the two
-// quick replies, under the electrolyte Update chip (offers are a menu, not a
-// to-do); STREAMING is the athlete's turn and the typing indicator; THREAD is
-// the athlete's turn answered with a follow-up question, which is a to-do on
-// the Fuel Timeline, so the chip is the orange "Fuel plan · to do" and the
-// question's chips compose in Vana's column; THREAD at large text is the same
-// at iPhone-SE width with the text scaled to 200 %.
+// opening — Vana's prose with her avatar and her offers as the two quick
+// replies; STREAMING is the athlete's turn and the typing indicator; THREAD
+// is the athlete's turn answered with a follow-up question, whose chips
+// compose in Vana's column; THREAD at large text is the same at iPhone-SE
+// width with the text scaled to 200 %.
 //
 // OPEN and STREAMING were regenerated for ticket 07 without a spec change:
 // ticket 06 drew a placeholder interior, knowingly short of the spec's
 // "Inside the sheet", and these are the first goldens of the spec's own.
+// OPEN, STREAMING and both THREADs were regenerated again on 2026-09-16 at
+// Lee's direction, ahead of the spec: the status chip ("UPDATE" / "Fuel plan
+// · to do") is gone and Vana's avatar is the app's own "V" disc, not the
+// export's orange sparkle.
 //
 // The launcher when Vana speaks first (vana-moment spec, Conformance L1):
 // PILL — the to-do's line out beside the tinted launcher, the tab bar
@@ -88,6 +90,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     final hold = this.hold;
     Stream<VanaStreamEvent> events() async* {
@@ -361,8 +364,8 @@ void main() {
       await _frames(tester, 10);
     });
 
-    testWidgets("THREAD — the athlete's turn answered with a question, under "
-        'the to-do chip ($mode)', (tester) async {
+    testWidgets("THREAD — the athlete's turn answered with a question "
+        '($mode)', (tester) async {
       await _pump(tester, dark: dark);
       await _open(tester);
       await _sendAndLand(tester);

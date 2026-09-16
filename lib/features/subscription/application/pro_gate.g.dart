@@ -12,8 +12,10 @@ part of 'pro_gate.dart';
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. keepAlive so the router's `ref.read` sees the same value every
-/// screen watches.
+/// seconds. The admin read is consulted only for an inactive status and is
+/// bounded by the same timeout, so a slow network still lands on the
+/// paywall instead of hanging the redirect. keepAlive so the router's
+/// `ref.read` sees the same value every screen watches.
 
 @ProviderFor(AppGate)
 const appGateProvider = AppGateProvider._();
@@ -22,15 +24,19 @@ const appGateProvider = AppGateProvider._();
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. keepAlive so the router's `ref.read` sees the same value every
-/// screen watches.
+/// seconds. The admin read is consulted only for an inactive status and is
+/// bounded by the same timeout, so a slow network still lands on the
+/// paywall instead of hanging the redirect. keepAlive so the router's
+/// `ref.read` sees the same value every screen watches.
 final class AppGateProvider extends $AsyncNotifierProvider<AppGate, bool> {
   /// The app gate, as the router reads it (mp-280: everything is behind it).
   ///
   /// Loading while the status is unresolved — the status controller bounds
   /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-  /// seconds. keepAlive so the router's `ref.read` sees the same value every
-  /// screen watches.
+  /// seconds. The admin read is consulted only for an inactive status and is
+  /// bounded by the same timeout, so a slow network still lands on the
+  /// paywall instead of hanging the redirect. keepAlive so the router's
+  /// `ref.read` sees the same value every screen watches.
   const AppGateProvider._()
     : super(
         from: null,
@@ -50,14 +56,16 @@ final class AppGateProvider extends $AsyncNotifierProvider<AppGate, bool> {
   AppGate create() => AppGate();
 }
 
-String _$appGateHash() => r'8ad711452018e7bf6ca4cd582a758e6a20870e2c';
+String _$appGateHash() => r'758e37f4397588f1f102e164e4a138e613e06c19';
 
 /// The app gate, as the router reads it (mp-280: everything is behind it).
 ///
 /// Loading while the status is unresolved — the status controller bounds
 /// that wait (mp-284), so awaiting `.future` here answers within a couple of
-/// seconds. keepAlive so the router's `ref.read` sees the same value every
-/// screen watches.
+/// seconds. The admin read is consulted only for an inactive status and is
+/// bounded by the same timeout, so a slow network still lands on the
+/// paywall instead of hanging the redirect. keepAlive so the router's
+/// `ref.read` sees the same value every screen watches.
 
 abstract class _$AppGate extends $AsyncNotifier<bool> {
   FutureOr<bool> build();

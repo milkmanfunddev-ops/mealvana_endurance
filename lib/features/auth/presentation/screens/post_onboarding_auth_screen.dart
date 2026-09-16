@@ -17,15 +17,21 @@ import '../../../daily_macros/presentation/providers/daily_macros_controller.dar
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
+import '../../../content/domain/content_keys.dart';
+import '../../../subscription/application/pro_paywall_controller.dart';
+import '../../../subscription/presentation/pro_gate_redirect.dart';
 import '../../application/auth_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
 import '../../../coach_mode/application/coach_service.dart';
 
 /// Post-Onboarding Authentication Screen
-/// Shown after the daily-plan preview (2026-08 onboarding redesign) to
-/// encourage account creation: "Your plan is ready. Don't leave it behind."
-/// Offers Apple Sign-In, Google Sign-In, Email/Password, or Skip.
+/// Shown after the daily-plan preview (2026-08 onboarding redesign). The
+/// account is required: it holds the plan and the subscription the paywall
+/// sells next (mp-279 maps the purchase onto the auth id), so there is no
+/// guest path (Lee, 2026-09-16). Offers Apple Sign-In, Google Sign-In and
+/// Email/Password; the one line under the title states the trial terms so
+/// the plan screen that follows is expected, not a surprise.
 /// Visual language matches the redesigned onboarding steps (dark blackberry
 /// scaffold, Sansita/orange title); controller wiring (credential linking,
 /// saveAllOnboardingData, background upload, Settings anon→upgrade branch)
@@ -386,19 +392,6 @@ class _PostOnboardingAuthScreenState
     }
   }
 
-  Future<void> _handleSkip() async {
-    final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
-    await controller.skipAuthentication();
-
-    if (mounted) {
-      // Save all cached onboarding data before navigating as guest (anonymous user)
-      await _saveOnboardingDataAndNavigate(
-        authProvider: 'anonymous',
-        isAnonymous: true,
-      );
-    }
-  }
-
   /// Navigate directly to main app (for login mode - no onboarding data to save)
   /// On web, coaches are redirected to the coach portal instead.
   Future<void> _navigateToMain() async {
@@ -518,15 +511,18 @@ class _PostOnboardingAuthScreenState
       final currentUser = await authService.getCurrentUser();
 
       logger.info(
-        'Navigating to /main',
+        'Navigating to the paywall (onboarding mode)',
         context: 'NAV',
         data: {'hasUser': currentUser != null, 'userId': currentUser?.id},
       );
 
-      // Navigate to main app immediately after local save. The upload below
-      // still runs if this screen was disposed during the lookup above — the
-      // data is saved either way and must reach Supabase.
-      if (mounted) context.go('/main');
+      // Navigate straight after the local save. A new account has no
+      // entitlement, so the next step is the plan screen in its onboarding
+      // shape (mp-297: onboarding ends on the paywall); the gate's redirect
+      // moves an already-unlocked account (admin, restored) on to /main. The
+      // upload below still runs if this screen was disposed during the
+      // lookup above — the data is saved either way and must reach Supabase.
+      if (mounted) context.go(kOnboardingPaywallLocation);
 
       // Push the onboarding data to Supabase in the background.
       //
@@ -690,24 +686,20 @@ class _PostOnboardingAuthScreenState
 
                 const SizedBox(height: 8),
 
-                // Subtitle (spec: Apercu 14 cream-62%, left-aligned)
-                Text(
-                  key: ValueKey(
-                    isLogin
-                        ? 'login_options.subtitle'
-                        : 'post_onboarding.subtitle',
-                  ),
-                  contentService.getValue(
-                    isLogin
-                        ? 'auth.login.subtitle'
-                        : 'auth.post_onboarding.subtitle',
-                    defaultValue: isLogin
-                        ? 'Welcome back'
-                        : 'Save it in seconds. Free through launch month, '
-                              'no card needed.',
-                  ),
-                  style: kOnboardingSubtitleStyle,
-                ),
+                // Subtitle (spec: Apercu 14 cream-62%, left-aligned). In
+                // signup mode it is the trial line: the terms of what the
+                // next screen sells, from store prices when they load.
+                if (isLogin)
+                  Text(
+                    key: const ValueKey('login_options.subtitle'),
+                    contentService.getValue(
+                      'auth.login.subtitle',
+                      defaultValue: 'Welcome back',
+                    ),
+                    style: kOnboardingSubtitleStyle,
+                  )
+                else
+                  const _TrialLine(key: ValueKey('post_onboarding.subtitle')),
 
                 const SizedBox(height: 16),
 
@@ -786,52 +778,6 @@ class _PostOnboardingAuthScreenState
                       : (isLogin ? _handleEmailLogin : _handleEmailSignUp),
                   isLoading: false,
                 ),
-
-                // Skip button (only for signup mode)
-                if (!isLogin) ...[
-                  const SizedBox(height: 16),
-
-                  TextButton(
-                    key: const ValueKey('create_account.skip_button'),
-                    onPressed: asyncState.isLoading ? null : _handleSkip,
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.all(10),
-                    ),
-                    child: Text(
-                      contentService.getValue(
-                        'auth.post_onboarding.skip_button',
-                        defaultValue: 'Continue without an account',
-                      ),
-                      style: const TextStyle(
-                        fontFamily: OnbTokens.fontBody,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        color: OnbTokens.cream,
-                        decoration: TextDecoration.underline,
-                        decorationColor: OnbTokens.cream,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 2),
-
-                  // Skip reminder text (local-only note)
-                  Text(
-                    contentService.getValue(
-                      'auth.post_onboarding.skip_reminder',
-                      defaultValue:
-                          'Your plan stays on this device only — save it to '
-                          'keep it if you switch phones.',
-                    ),
-                    style: TextStyle(
-                      fontFamily: OnbTokens.fontBody,
-                      fontSize: 11.5,
-                      height: 1.4,
-                      color: OnbTokens.creamA(0.4),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
 
                 const SizedBox(height: AppSpacing.xxl),
               ],
@@ -1107,5 +1053,42 @@ class _SpecAuthButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// The one line of terms above the sign-in buttons: "{days} days free, then
+/// {monthly} a month or {annual} a year. Cancel any time." from the store's
+/// prices and introductory offer; the price-free fallback while the store
+/// answers or when it cannot. Reads the same plans the paywall renders, so
+/// the two screens never disagree.
+class _TrialLine extends ConsumerWidget {
+  const _TrialLine({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
+    final plans = ref.watch(paywallPlansProvider).value;
+    final monthly = plans?.monthly;
+    final annual = plans?.annual;
+    final String text;
+    if (monthly == null || annual == null) {
+      text = content.getValue(ContentKeys.postOnboardingTrialFallback);
+    } else {
+      final offer = plans!.introOfferFor(monthly);
+      final prices = {
+        'monthly': monthly.storeProduct.priceString,
+        'annual': annual.storeProduct.priceString,
+      };
+      text = offer == null
+          ? ContentKeys.format(
+              content.getValue(ContentKeys.postOnboardingPlansLine),
+              prices,
+            )
+          : ContentKeys.format(
+              content.getValue(ContentKeys.postOnboardingTrialLine),
+              {...prices, 'days': offer.freeDays},
+            );
+    }
+    return Text(text, style: kOnboardingSubtitleStyle);
   }
 }

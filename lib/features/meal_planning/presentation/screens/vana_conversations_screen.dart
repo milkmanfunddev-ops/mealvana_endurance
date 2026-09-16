@@ -15,7 +15,7 @@ import '../../application/vana_conversations_controller.dart';
 import '../../domain/vana_conversation.dart';
 import '../../domain/vana_conversation_kind.dart';
 import '../widgets/dashed_box.dart';
-import '../widgets/vana_avatar.dart';
+import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import '../widgets/vana_round_button.dart';
 
 /// `/vana/conversations` (05 §4): the two histories — "Ask Vana" and "Meal

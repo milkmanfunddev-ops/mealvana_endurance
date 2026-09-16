@@ -58,6 +58,7 @@ class _IdleRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     situations.add(situation);
     return VanaChatResponse(

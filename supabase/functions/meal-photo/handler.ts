@@ -6,12 +6,13 @@
  * takes an already-authenticated caller: `index.ts` resolves the JWT, this
  * decides whether that caller is a Tester and what they may do.
  *
- * Actions (ticket 04): `add_address`, `history`. `add_upload` (ticket 05) and
- * `remove` / `restore` / `delete` (ticket 06) land here too, against the same
- * Tester check and the same one-transaction SQL functions.
+ * Actions: `add_address` and `history` (ticket 04), `add_upload` (ticket 05),
+ * and `remove` / `restore` / `delete` (ticket 06) — all behind the same Tester
+ * check, each write one transaction through its own SQL function.
  *
  * Errors: 401 unauthenticated (index.ts) · 403 not_tester · 400 invalid_input /
- * not_an_image · 404 meal_not_found · 500 server_error.
+ * not_an_image / too_large · 404 meal_not_found / photo_not_found ·
+ * 500 server_error.
  */
 import type { Db } from '../_shared/vana/env.ts';
 
@@ -159,6 +160,12 @@ export async function handleMealPhoto(
       return await addAddress(mealId, body, deps);
     case 'add_upload':
       return await addUpload(mealId, body, deps);
+    case 'remove':
+      return await removePhoto(mealId, deps);
+    case 'restore':
+      return await restorePhoto(mealId, body, deps);
+    case 'delete':
+      return await deletePhoto(mealId, body, deps);
     case 'history':
       return await history(mealId, admin);
     default:
@@ -192,17 +199,7 @@ async function addAddress(
     p_account: userId,
   });
 
-  if (error) {
-    // The SQL function raises before writing anything when the Meal is unknown.
-    // P0002 is the SQLSTATE `raise ... using errcode = 'no_data_found'` arrives
-    // as; the message is checked too, so a reworded raise still maps to 404.
-    const code = (error as { code?: string }).code;
-    if (code === 'P0002' || error.message.includes('meal_not_found')) {
-      return fail(404, 'meal_not_found');
-    }
-    console.error('[meal-photo] meal_photo_add failed:', error.message);
-    return fail(500, 'server_error');
-  }
+  if (error) return rpcFailure(error, 'meal_photo_add');
 
   const answer = (data ?? {}) as { photo?: PhotoJson; entry?: Record<string, unknown> };
   if (!answer.photo || !answer.entry) {
@@ -274,12 +271,7 @@ async function addUpload(
     // The row was never written, so the file it would have named is litter in
     // a public bucket. Take it back out before answering.
     await storage.remove(path);
-    const code = (error as { code?: string }).code;
-    if (code === 'P0002' || error.message.includes('meal_not_found')) {
-      return fail(404, 'meal_not_found');
-    }
-    console.error('[meal-photo] meal_photo_add failed:', error.message);
-    return fail(500, 'server_error');
+    return rpcFailure(error, 'meal_photo_add');
   }
 
   const answer = (data ?? {}) as { photo?: PhotoJson; entry?: Record<string, unknown> };
@@ -289,6 +281,130 @@ async function addUpload(
     return fail(500, 'server_error');
   }
   return ok({ photo: answer.photo, entry: answer.entry });
+}
+
+/**
+ * A refusal from one of the photo SQL functions, as an answer.
+ *
+ * They raise `meal_not_found` and `photo_not_found` before writing anything,
+ * with errcode `no_data_found` — which arrives as SQLSTATE P0002. The code is
+ * matched as well as the prose, so a reworded raise still answers 404 rather
+ * than turning into a 500 the Tester cannot act on.
+ */
+function rpcFailure(
+  error: { message: string; code?: string },
+  rpcName: string,
+): HandlerResult {
+  // Only the two the functions actually raise: a wider match would turn some
+  // unrelated Postgres error mentioning "not found" into a 404 the Tester
+  // cannot act on.
+  const photoMissing = error.message.includes('photo_not_found');
+  const mealMissing = error.message.includes('meal_not_found');
+  if (photoMissing || mealMissing || error.code === 'P0002') {
+    return fail(404, photoMissing ? 'photo_not_found' : 'meal_not_found');
+  }
+  console.error(`[meal-photo] ${rpcName} failed:`, error.message);
+  return fail(500, 'server_error');
+}
+
+/**
+ * A History row id as the app sends it. Checked here so a malformed id is a
+ * clear 400 rather than Postgres refusing the cast and the Tester being shown
+ * a server error.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function photoIdFrom(body: Record<string, unknown>): string | null {
+  const id = str(body.photo_id);
+  return id !== null && UUID.test(id) ? id : null;
+}
+
+/**
+ * Take the current photograph down: the Meal shows nothing again.
+ *
+ * History is untouched and NO older photograph comes back — "remove" does
+ * exactly what it says (story 42), and the photograph just taken down is still
+ * one tap from being restored. Nothing is deleted from storage: the row still
+ * points at the file.
+ */
+async function removePhoto(
+  mealId: string,
+  { admin, userId }: PhotoDeps,
+): Promise<HandlerResult> {
+  const { data, error } = await admin.rpc('meal_photo_remove', {
+    p_meal_id: mealId,
+    p_account: userId,
+  });
+  if (error) return rpcFailure(error, 'meal_photo_remove');
+  // Always null — answered in the same shape as every other action, so the app
+  // reads "what the Meal shows now" from one place whatever it asked for.
+  return ok({ photo: (data as { photo?: PhotoJson | null } | null)?.photo ?? null });
+}
+
+/**
+ * Put a History row back on as the current photograph — the one tap that undoes
+ * a mistake or somebody else's vandalism (story 38).
+ *
+ * The SQL looks the row up by Meal as well as by id, so one Meal's photo id is
+ * not a way to paste its photograph onto another Meal.
+ */
+async function restorePhoto(
+  mealId: string,
+  body: Record<string, unknown>,
+  { admin, userId }: PhotoDeps,
+): Promise<HandlerResult> {
+  const photoId = photoIdFrom(body);
+  if (photoId === null) {
+    return fail(400, 'invalid_input', 'photo_id is required');
+  }
+
+  const { data, error } = await admin.rpc('meal_photo_restore', {
+    p_meal_id: mealId,
+    p_photo_id: photoId,
+    p_account: userId,
+  });
+  if (error) return rpcFailure(error, 'meal_photo_restore');
+
+  const photo = (data as { photo?: PhotoJson } | null)?.photo;
+  if (!photo) {
+    console.error('[meal-photo] meal_photo_restore answered without a photo');
+    return fail(500, 'server_error');
+  }
+  return ok({ photo });
+}
+
+/**
+ * Delete a photograph for good: out of History, and out of the bucket when the
+ * file was ours, so an inappropriate image is really gone (story 39).
+ *
+ * The file goes AFTER the row, never before: a file with no row is litter
+ * nobody will find again, while a row pointing at a deleted file would be a
+ * Meal promising a photograph that draws nothing. The audit events survive both
+ * (the FK sets `photo_id` null and the address stays on the event), so what
+ * happened is still readable afterwards.
+ */
+async function deletePhoto(
+  mealId: string,
+  body: Record<string, unknown>,
+  { admin, userId, storage }: PhotoDeps,
+): Promise<HandlerResult> {
+  const photoId = photoIdFrom(body);
+  if (photoId === null) {
+    return fail(400, 'invalid_input', 'photo_id is required');
+  }
+
+  const { data, error } = await admin.rpc('meal_photo_delete', {
+    p_meal_id: mealId,
+    p_photo_id: photoId,
+    p_account: userId,
+  });
+  if (error) return rpcFailure(error, 'meal_photo_delete');
+
+  const answer = (data ?? {}) as { photo?: PhotoJson | null; storagePath?: string | null };
+  // Null for a web address: it is shown where it lives, and we have no file of
+  // our own to take out.
+  if (answer.storagePath) await storage.remove(answer.storagePath);
+  return ok({ photo: answer.photo ?? null });
 }
 
 /** The two-byte SOI plus the marker every JPEG opens with. */
@@ -379,9 +495,18 @@ export function bucketStorage(admin: Db, baseUrl: string): PhotoStorage {
         .upload(path, bytes, { contentType, upsert: false });
       return error ? error.message : null;
     },
+    // Best-effort on purpose, and it must never throw. Both callers have
+    // already committed — a failed add has no row, a delete has no History row
+    // — so turning a storage hiccup into an error would tell the Tester their
+    // change failed when it did not. A file nobody points at is litter; a
+    // Tester who retries a completed delete is a bug.
     async remove(path) {
-      const { error } = await admin.storage.from(PHOTO_BUCKET).remove([path]);
-      if (error) console.warn('[meal-photo] could not remove', path, error.message);
+      try {
+        const { error } = await admin.storage.from(PHOTO_BUCKET).remove([path]);
+        if (error) console.warn('[meal-photo] could not remove', path, error.message);
+      } catch (e) {
+        console.warn('[meal-photo] could not remove', path, (e as Error).message);
+      }
     },
     // The bucket is public, so the object URL needs no signing and never
     // expires — a card can draw straight from the address History stores.

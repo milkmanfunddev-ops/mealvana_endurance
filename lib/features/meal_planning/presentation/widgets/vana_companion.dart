@@ -364,17 +364,17 @@ String vanaMomentPillLine(ContentService content, VanaMoment moment) {
 /// for the day's first sheet — and stays the sheet's key for its whole life;
 /// the host adopts the id the server gives a new one.
 ///
-/// The export's surface ([VanaExchange] decides what shows): the status chip,
-/// Vana's turns with the sparkle avatar and no bubble, the athlete's in a
-/// cream-tinted bubble, the opening's offers as at most two quick replies,
-/// the typing indicator, and the composer. Planning actions a part offers
+/// The export's surface ([VanaExchange] decides what shows): Vana's turns
+/// with her avatar and no bubble, the athlete's in a cream-tinted bubble, the
+/// opening's offers as at most two quick replies, the typing indicator, and
+/// the composer. The export's status chip is not drawn (Lee, 2026-09-16). Planning actions a part offers
 /// (picking a meal, accepting a rule, the pantry) open the full-screen chat on
 /// the same conversation, where the plan bar lives. A hand-off button closes
 /// the sheet and opens the app's own screen for it (mp-265 clause 4).
 ///
 /// Opened on a live [moment] (VM-1), the sheet writes the moment's opener
 /// into the conversation, even one with a thread, and reads the exchange from
-/// there: its two quick replies and the orange to-do chip. [momentStart] is
+/// there: its two quick replies. [momentStart] is
 /// where an earlier sheet already wrote it; a dismiss (VM-2) leaves it there
 /// for the next sheet. The host answers the moment (VM-3) when a turn is
 /// sent in its exchange.
@@ -403,10 +403,6 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   /// What the retry button repeats: the opener, or the last message sent.
   Future<void> Function()? _lastAttempt;
 
-  /// The screen underneath, as the Situation has it when the sheet opens. It
-  /// names a to-do the transcript does not name itself.
-  String? _situationRoute;
-
   /// Set by the athlete's first send, so the quick replies stay retired even
   /// if that turn fails and leaves the transcript (VS-8).
   bool _repliesRetired = false;
@@ -425,10 +421,6 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   @override
   void initState() {
     super.initState();
-    _situationRoute = ref
-        .read(vanaSituationControllerProvider.notifier)
-        .current()
-        ?.route;
     _text.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) => _openToOpener());
   }
@@ -519,9 +511,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
             state.messages,
             isStreaming: state.isStreaming,
             start: _exchangeStart,
-            situationRoute: _situationRoute,
             repliesRetired: _repliesRetired,
-            raisedFor: widget.moment?.kind.topic,
           );
 
     return VanaSheet(
@@ -531,7 +521,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
       onFullScreen: _fullScreen,
       body: state == null || exchange == null
           ? const SizedBox.shrink()
-          : _body(content, state, exchange),
+          : _body(state, exchange),
       composer: VanaSheetComposer(
         fieldKey: const ValueKey('vana_sheet.composer'),
         sendKey: const ValueKey('vana_sheet.send'),
@@ -545,11 +535,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     );
   }
 
-  Widget _body(
-    ContentService content,
-    VanaChatState state,
-    VanaExchange exchange,
-  ) {
+  Widget _body(VanaChatState state, VanaExchange exchange) {
     final callbacks = VanaPartCallbacks(
       onTapMeal: (meal) => _leaveTo('/food/meals/${meal.id}'),
       onPickMeal: (_, _) => _fullScreen(),
@@ -587,34 +573,15 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
           ),
         ),
     ];
-    final status = exchange.status;
 
-    // The sheet has one height (mp-265): the transcript sits under the chip
-    // and scrolls inside it.
+    // The sheet has one height (mp-265): the transcript scrolls inside it.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (status != null)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              kVanaSheetColumnInset + kVanaSheetProseInset,
-              4,
-              kVanaSheetColumnInset,
-              AppSpacing.xs,
-            ),
-            child: VanaSheetStatusChip(
-              key: const ValueKey('vana_sheet.status'),
-              label: _statusLabel(content, exchange),
-              tone: switch (status) {
-                VanaExchangeStatus.toDo => VanaSheetStatusTone.toDo,
-                VanaExchangeStatus.update => VanaSheetStatusTone.update,
-              },
-            ),
-          ),
         Flexible(
-          // A short conversation sits under the chip, as the export draws it;
-          // a long one fills the sheet and sticks to its newest turn.
+          // A short conversation sits at the top, as the export draws it; a
+          // long one fills the sheet and sticks to its newest turn.
           child: ListView.separated(
             reverse: true,
             shrinkWrap: true,
@@ -647,6 +614,7 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     if (inFlight && exchange.typing) {
       return const VanaSheetVanaTurn(
         key: ValueKey('vana_sheet.typing'),
+        pulsing: true,
         child: Align(
           alignment: Alignment.centerLeft,
           child: VanaSheetTypingDots(),
@@ -682,24 +650,6 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
           ],
         ],
       ),
-    );
-  }
-
-  String _statusLabel(ContentService content, VanaExchange exchange) {
-    if (exchange.status == VanaExchangeStatus.update) {
-      return content.getValue(ContentKeys.mpCompanionStatusUpdate);
-    }
-    final topic = switch (exchange.topic) {
-      VanaExchangeTopic.fuelPlan => ContentKeys.mpCompanionTopicFuelPlan,
-      VanaExchangeTopic.mealPlan => ContentKeys.mpCompanionTopicMealPlan,
-      null => null,
-    };
-    if (topic == null) {
-      return content.getValue(ContentKeys.mpCompanionStatusToDoBare);
-    }
-    return ContentKeys.format(
-      content.getValue(ContentKeys.mpCompanionStatusToDo),
-      {'topic': content.getValue(topic)},
     );
   }
 

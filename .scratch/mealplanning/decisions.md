@@ -2651,3 +2651,56 @@ Last extracted: 1dedc493
 **What it touches.** sync.mjs simulator claim, the dev paywall gate.
 
 > 2026-09-16 opened in wave 6 ticket 31
+
+## mp-416 · A team admin opens the app without a subscription
+- category: Pro and paywall
+- status: proposed
+- image: test/features/subscription/presentation/goldens/paywall_dark.png
+- caption:
+- screen: Paywall
+- source: Lee in the terminal 2026-09-16
+- linked: mp-279, mp-286
+
+**Context.** mp-279 makes RevenueCat's entitlement the only gate, and mp-286 gives no one a branch. The team's own accounts (test@test.com and any other account with `users.is_admin` set by hand) then meet the paywall on every device without a receipt, which is what mp-415 hit on a pool simulator. `users.is_admin` already exists for the meal review box (mp-144).
+
+**Question.** Whether an admin account is gated.
+
+**Decision.** 
+1. The app gate opens for an account whose `users.is_admin` is true, whatever the subscription status. No other exception: no build flag, no tester grant, no coach branch.
+2. The admin read runs only when the status is inactive, and is bounded by the same two-second answer window as the entitlement, so a slow network still lands on the paywall.
+3. The server keeps checking the entitlement on every debiting and Vana call (mp-285); the bypass is the client gate only.
+
+**Why.** Lee on 2026-09-16: test@test.com and other admin accounts must not be shown this screen and should access the account like normal. Setting the flag by hand keeps the exception to accounts the team names.
+
+**What else was considered.** A dev-only bypass switch (a build flag, ruled out by mp-279), copying the dev simulator's receipt onto every pool device (mp-415).
+
+**What it touches.** pro_gate.dart, is_admin_provider.dart, the gate tests.
+
+> 2026-09-16 proposed from Lee's terminal ruling; code landed the same day
+
+## mp-417 · The account is required, and the plan screen is onboarding's last step
+- category: Pro and paywall
+- status: proposed
+- image: test/features/subscription/presentation/goldens/paywall_onboarding_dark.png
+- caption:
+- screen: Paywall
+- source: Lee in the terminal 2026-09-16
+- linked: mp-279, mp-280, mp-297
+
+**Context.** The account screen at the end of onboarding still offered "Continue without signing in". Under the trial model every route is behind the one gate, so a guest finishes onboarding and meets the paywall at once, and cannot buy from an anonymous session because the purchase is mapped onto the auth id (mp-279). The paywall then arrived as a lock screen with Sign out and Delete account beside the buy buttons, on an account made a moment ago, with nothing having told the athlete a plan choice was coming.
+
+**Question.** How onboarding ends: what the account screen says and offers, and what shape the paywall takes right after sign-up.
+
+**Decision.** 
+1. The account is required. The guest path and its "create one later in Settings" note are gone from the account screen. The anonymous session stays as plumbing that sign-up links onto so onboarding answers survive.
+2. The account screen's one line of copy under the title is the trial line, from store prices: "{days} days free, then {monthly} a month or {annual} a year. Cancel any time." A price-free fallback shows while the store answers.
+3. After sign-up the athlete lands on the paywall in its onboarding shape: the app name, the two plans and Restore purchases only. Manage subscription, Sign out and Delete account belong to the lapsed shape (mp-280) and do not appear.
+4. The onboarding shape is the same route with a query; the gate's redirect still moves an unlocked account on to the app, so an admin (mp-416) or a restored account never sees it.
+
+**Why.** Account first is forced by where the purchase is stored; the fix is to say so before the account is made and to make the plan screen read as the next step rather than a wall.
+
+**What else was considered.** Plan choice before the account (the purchase would have no auth id to map onto); keeping the guest path (leads straight to a paywall the guest cannot pay).
+
+**What it touches.** post_onboarding_auth_screen.dart, post_onboarding_auth_controller.dart, paywall_screen.dart, pro_gate_redirect.dart, app_router.dart, content_defaults.json, the onboarding sign-up Patrol flow.
+
+> 2026-09-16 proposed from Lee's terminal ruling; code landed the same day

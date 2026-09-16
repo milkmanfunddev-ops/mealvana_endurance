@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
+import '../domain/meal_photo.dart';
 import '../domain/meal_photo_history.dart';
 import '../domain/wire_record.dart';
 import 'vana_exceptions.dart';
@@ -119,6 +120,58 @@ class MealPhotoRepository {
       throw const MealPhotoException('server_error');
     }
     return entry;
+  }
+
+  /// Take the current photograph down. The Meal then shows nothing, and every
+  /// photograph stays in History — including the one just removed.
+  ///
+  /// Answers null, always: the Meal's new current photo, in the same shape
+  /// every other action answers it.
+  Future<MealPhoto?> remove(String mealId) async {
+    final body = await _call({'action': 'remove', 'meal_id': mealId});
+    return MealPhoto.fromJsonOrNull(asJsonMap(body['photo']));
+  }
+
+  /// Put a History row back on as the Meal's photograph.
+  ///
+  /// Answers the photograph the server wrote, rather than the one the page had
+  /// in hand: the credit and address shown are then the ones athletes get, even
+  /// if this device's History was stale.
+  Future<MealPhoto> restore({
+    required String mealId,
+    required String photoId,
+  }) async {
+    final body = await _call({
+      'action': 'restore',
+      'meal_id': mealId,
+      'photo_id': photoId,
+    });
+    final photo = MealPhoto.fromJsonOrNull(asJsonMap(body['photo']));
+    if (photo == null) {
+      _logger.error(
+        'meal-photo restore acked without a photo',
+        context: _context,
+      );
+      throw const MealPhotoException('server_error');
+    }
+    return photo;
+  }
+
+  /// Delete a photograph for good — out of History, and out of our storage when
+  /// the file was ours.
+  ///
+  /// Answers what the Meal shows afterwards: null when the deleted photograph
+  /// was the one being worn.
+  Future<MealPhoto?> deletePhoto({
+    required String mealId,
+    required String photoId,
+  }) async {
+    final body = await _call({
+      'action': 'delete',
+      'meal_id': mealId,
+      'photo_id': photoId,
+    });
+    return MealPhoto.fromJsonOrNull(asJsonMap(body['photo']));
   }
 
   Future<Map<String, dynamic>> _call(Map<String, dynamic> body) async {

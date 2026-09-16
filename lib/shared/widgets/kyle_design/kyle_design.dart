@@ -16,6 +16,7 @@ export 'inputs/kyle_switch.dart';
 export 'inputs/selectable_chip_grid.dart';
 export 'icons/activity_icon.dart';
 export 'icons/food_icon.dart';
+export 'icons/vana_avatar.dart';
 export 'cards/base_card.dart';
 export 'cards/activity_hero_card.dart';
 export 'cards/nutrition_section_card.dart';
