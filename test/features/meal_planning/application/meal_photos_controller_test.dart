@@ -555,6 +555,27 @@ void main() {
       expect(photos.history.map((e) => e.isCurrent), [false, true]);
     });
 
+    test('the restored row itself shows what the server wrote', () async {
+      final container = containerFor(seeded());
+      await load(container);
+      // This device's History is stale: the credit on its row for history-old
+      // has since been reworded on the server.
+      repo.restoreAnswers = const MealPhoto(
+        url: 'https://upload.wikimedia.org/avocado.jpg',
+        credit: 'Photo by Jami430 on Wikimedia Commons (CC BY-SA 4.0, 2026)',
+      );
+
+      await notifier(container).restore('history-old');
+
+      final row = read(
+        container,
+      ).history.firstWhere((e) => e.id == 'history-old');
+      // The row and the photograph above it must not show different credits
+      // until the next reload.
+      expect(row.photo.credit, repo.restoreAnswers.credit);
+      expect(row.photo.credit, read(container).photo?.credit);
+    });
+
     test('a refused restore leaves the state unchanged', () async {
       final container = containerFor(seeded());
       await load(container);

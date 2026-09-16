@@ -177,6 +177,12 @@ class KrogerDraft {
       included.where((l) => l.product == null && !l.noMatch).toList();
   List<KrogerLine> get skipped => lines.where((l) => l.excluded).toList();
 
+  /// The matched lines one tap could approve: not yet approved, and holding
+  /// a product Kroger can actually deliver. An unavailable product is not
+  /// approvable by any route, so "Approve all" never claims it.
+  List<KrogerLine> get approvable =>
+      matched.where((l) => !l.approved && l.product!.available).toList();
+
   /// Whether what the shopper has approved is fit to send.
   ///
   /// An unmatched line does not hold the order back. A delivery catalogue

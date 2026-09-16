@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -273,6 +275,20 @@ class _Body extends ConsumerWidget {
             key: const ValueKey('kroger.matched'),
             title: krogerText(ref, ContentKeys.krogerMatchedHeading),
             children: [
+              // Every match in one tap. Drawn only while there is a line it
+              // would approve: once there is none, it would be a control
+              // that does nothing.
+              if (!view.draft.exported && view.draft.approvable.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
+                  child: _LeftAction(
+                    child: KyleSecondaryButtonSmall(
+                      key: const ValueKey('kroger.approve_all'),
+                      text: krogerText(ref, ContentKeys.krogerApproveAll),
+                      onPressed: controller.approveAll,
+                    ),
+                  ),
+                ),
               for (final line in view.draft.matched)
                 _MatchedLine(line: line, state: view, controller: controller),
             ],
@@ -330,17 +346,26 @@ class _Body extends ConsumerWidget {
             ),
           ),
         const SizedBox(height: AppSpacing.md),
-        // Rendered only when it can send. A permanently greyed button is a
-        // control the shopper cannot learn anything from by tapping.
-        if (!view.draft.exported && view.connected && view.draft.ready)
+        // Drawn for the whole of the review, and disabled until the review
+        // is done: the shopper sees from the start where the list is going,
+        // and the button waking up is how they learn that everything matched
+        // is approved. Only approved lines are ever sent; `export` refuses a
+        // draft that is not `ready` on its own, whatever the button says.
+        if (!view.draft.exported && view.connected)
           KylePrimaryButton(
             key: const ValueKey('kroger.export'),
             text: krogerText(ref, ContentKeys.krogerSend),
-            onPressed: () async {
-              if (await _confirm(context, ref, ContentKeys.krogerSendConfirm)) {
-                await controller.export();
-              }
-            },
+            onPressed: view.draft.ready
+                ? () async {
+                    if (await _confirm(
+                      context,
+                      ref,
+                      ContentKeys.krogerSendConfirm,
+                    )) {
+                      await controller.export();
+                    }
+                  }
+                : null,
           ),
         // Sending again is a separate thing, asked for outright. Kroger's cart
         // takes additions and nothing else, so this adds a second copy of
@@ -819,7 +844,6 @@ Future<String?> _promptForText(
   BuildContext context,
   WidgetRef ref,
   String key, {
-  String initial = '',
   bool numeric = false,
 }) => _sheet<String>(
   context,
@@ -827,7 +851,6 @@ Future<String?> _promptForText(
     title: krogerText(ref, key),
     cancel: krogerText(ref, ContentKeys.krogerCancel),
     submit: krogerText(ref, ContentKeys.krogerContinue),
-    initial: initial,
     numeric: numeric,
   ),
 );
@@ -837,17 +860,16 @@ class _InputSheet extends StatefulWidget {
     required this.title,
     required this.cancel,
     required this.submit,
-    required this.initial,
     required this.numeric,
   });
-  final String title, cancel, submit, initial;
+  final String title, cancel, submit;
   final bool numeric;
   @override
   State<_InputSheet> createState() => _InputSheetState();
 }
 
 class _InputSheetState extends State<_InputSheet> {
-  late final text = TextEditingController(text: widget.initial);
+  final text = TextEditingController();
 
   @override
   void dispose() {
@@ -919,42 +941,175 @@ Future<void> _promptForArea(
   await controller.setArea(area);
 }
 
+/// The product picker: one sheet, already searched for the line's own name
+/// when it opens, with the query editable at the top and Kroger's answers
+/// below. Tapping an answer chooses it for the line and closes the sheet.
 Future<void> _chooseProduct(
   BuildContext context,
   WidgetRef ref,
   KrogerController controller,
   KrogerLine line,
-) async {
-  final query = await _promptForText(
-    context,
-    ref,
-    ContentKeys.krogerSearchHint,
-    initial: line.name,
-  );
-  if (query == null || !context.mounted) return;
-  final products = await controller.search(line.id, query);
-  if (products.isEmpty || !context.mounted) return;
-  await _sheet<void>(
-    context,
-    (context) => ConstrainedBox(
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.sizeOf(context).height * 0.6,
-      ),
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          for (final p in products)
-            _ProductChoice(
-              product: p,
-              onTap: () {
-                Navigator.pop(context);
-                controller.choose(line.id, p);
-              },
+) => _sheet<void>(
+  context,
+  (context) => _ProductPickerSheet(controller: controller, line: line),
+);
+
+/// How long the picker waits after the last keystroke before searching
+/// again. Long enough that a word typed at speed is one search, not five.
+const _searchIdle = Duration(milliseconds: 400);
+
+class _ProductPickerSheet extends ConsumerStatefulWidget {
+  const _ProductPickerSheet({required this.controller, required this.line});
+  final KrogerController controller;
+  final KrogerLine line;
+  @override
+  ConsumerState<_ProductPickerSheet> createState() =>
+      _ProductPickerSheetState();
+}
+
+class _ProductPickerSheetState extends ConsumerState<_ProductPickerSheet> {
+  late final query = TextEditingController(text: widget.line.name);
+  Timer? _idle;
+  var _products = const <KrogerProduct>[];
+
+  /// The query the results on screen answer; null until the first has.
+  String? _answered;
+
+  /// Whether a search is in flight, and the query typed while it was. The
+  /// controller runs one action at a time and refuses a second search
+  /// outright, so the sheet queues the latest query itself rather than show
+  /// that refusal as "nothing found".
+  var _searching = false;
+  String? _pending;
+
+  @override
+  void initState() {
+    super.initState();
+    // After the first frame, not during it: the search publishes the
+    // controller's busy state, and a provider must not change while the
+    // tree that opened this sheet is still building.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _search(widget.line.name);
+    });
+  }
+
+  @override
+  void dispose() {
+    _idle?.cancel();
+    query.dispose();
+    super.dispose();
+  }
+
+  void _typed(String value) {
+    _idle?.cancel();
+    _idle = Timer(_searchIdle, () => _search(value));
+  }
+
+  void _submitted(String value) {
+    _idle?.cancel();
+    _search(value);
+  }
+
+  Future<void> _search(String raw) async {
+    final value = raw.trim();
+    if (value.isEmpty) return;
+    if (_searching) {
+      _pending = value;
+      return;
+    }
+    setState(() {
+      _searching = true;
+      _pending = null;
+    });
+    final found = await widget.controller.search(widget.line.id, value);
+    if (!mounted) return;
+    setState(() {
+      _searching = false;
+      _products = found;
+      _answered = value;
+    });
+    if (_pending case final next?) {
+      _pending = null;
+      await _search(next);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cream = AppColors.cream;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              krogerText(ref, ContentKeys.krogerSearch),
+              style: AppTextStyles.sectionTitle.copyWith(color: cream),
             ),
-        ],
+            const SizedBox(height: AppSpacing.md),
+            Semantics(
+              label: krogerText(ref, ContentKeys.krogerSearch),
+              textField: true,
+              child: KyleInputField(
+                key: const ValueKey('kroger.product_search'),
+                controller: query,
+                hintText: krogerText(ref, ContentKeys.krogerSearchHint),
+                textInputAction: TextInputAction.search,
+                inputFormatters: [LengthLimitingTextInputFormatter(100)],
+                onChanged: _typed,
+                onSubmitted: _submitted,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (_searching)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                child: Center(
+                  child: SizedBox.square(
+                    dimension: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: cream,
+                    ),
+                  ),
+                ),
+              )
+            else if (_answered case final answered? when _products.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Text(
+                  _format(ref, ContentKeys.krogerNothingFound, {
+                    'query': answered,
+                  }),
+                  style: AppTextStyles.bodyMedium.copyWith(color: cream),
+                ),
+              )
+            else
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final p in _products)
+                      _ProductChoice(
+                        product: p,
+                        onTap: () {
+                          Navigator.pop(context);
+                          widget.controller.choose(widget.line.id, p);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 /// One search result on the glass sheet: Kroger's photograph whole, and

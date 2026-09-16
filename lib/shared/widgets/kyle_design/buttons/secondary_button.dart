@@ -17,6 +17,7 @@ class KyleSecondaryButton extends ConsumerWidget {
     this.height,
     this.fontSize,
     this.variant = SecondaryButtonVariant.orange,
+    this.padding = AppSpacing.buttonPadding,
   });
 
   final String text;
@@ -25,6 +26,11 @@ class KyleSecondaryButton extends ConsumerWidget {
   final bool isFullWidth;
   final IconData? icon;
   final double? height;
+
+  /// The inset between the button's edge and its label. The default is the
+  /// full-height button's; the small variant passes less so its 19.2px label
+  /// line fits inside 44px with room to spare (see [KylePrimaryButton]).
+  final EdgeInsets padding;
 
   /// Override the label size — for the compact, inline uses of the button
   /// (the plan bar's Review action), matching the prototype's
@@ -47,7 +53,7 @@ class KyleSecondaryButton extends ConsumerWidget {
           disabledForegroundColor: colors.foreground.withOpacity(0.4),
           side: BorderSide(color: colors.border, width: 2),
           shape: RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
-          padding: AppSpacing.buttonPadding,
+          padding: padding,
           textStyle: AppTextStyles.buttonPrimary.copyWith(fontSize: fontSize),
         ),
         child: isLoading
@@ -142,6 +148,10 @@ class KyleSecondaryButtonSmall extends ConsumerWidget {
       icon: icon,
       height: 44,
       variant: variant,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.xs,
+      ),
     );
   }
 }
