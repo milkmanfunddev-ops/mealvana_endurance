@@ -21,6 +21,8 @@ void main() {
     List<String> picked = const [],
     bool? isFirstPicker,
     VoidCallback? onBrowse,
+    VoidCallback? onShowMore,
+    List<String> suggested = const [],
   }) async {
     final chips = PickerChips(
       covered: covered,
@@ -31,6 +33,8 @@ void main() {
       onPick: picked.add,
       onSomethingElse: () {},
       onBrowse: onBrowse,
+      onShowMore: onShowMore,
+      suggested: suggested,
     );
     await tester.pumpWidget(
       ProviderScope(
@@ -215,6 +219,105 @@ void main() {
       expect(find.text('Browse meals'), findsOneWidget);
       // No gesture behind it — tapping does nothing and does not throw.
       await tester.tap(find.text('Browse meals'), warnIfMissed: false);
+    });
+  });
+
+  /// mp-272 — the turn may name the chips it expects next; the app still
+  /// draws them, and its own doors out of the picker stay put.
+  group('a turn names its chips (mp-272, ticket 31)', () {
+    testWidgets('the named labels stand in for the app set', (tester) async {
+      final picked = <String>[];
+      await pumpChips(
+        tester,
+        covered: 3,
+        of: 14,
+        nextType: MealType.dinner,
+        hasMeals: true,
+        picked: picked,
+        suggested: const ['Salmon instead', 'Keep it quick'],
+      );
+
+      expect(find.text('Salmon instead'), findsOneWidget);
+      expect(find.text('Keep it quick'), findsOneWidget);
+      expect(find.text('Next: Dinner'), findsNothing);
+      expect(find.text('Other options'), findsNothing);
+      // The filters narrow the app's set, so they go with it.
+      expect(find.text('No recipe only'), findsNothing);
+      // The doors stay.
+      expect(find.text('Something else…'), findsOneWidget);
+      expect(find.text('Browse meals'), findsOneWidget);
+
+      await tester.tap(find.text('Salmon instead'));
+      expect(picked, ['Salmon instead']);
+    });
+
+    testWidgets('a named chip is spent with the rest of the strip', (
+      tester,
+    ) async {
+      final picked = <String>[];
+      await pumpChips(
+        tester,
+        covered: 0,
+        of: 14,
+        hasMeals: false,
+        enabled: false,
+        picked: picked,
+        suggested: const ['Salmon instead', 'Keep it quick'],
+      );
+      await tester.tap(find.text('Salmon instead'));
+      expect(picked, isEmpty);
+      // "Draft my whole week" belongs to the app's set, not to a named one.
+      expect(find.text('Draft my whole week'), findsNothing);
+    });
+
+    testWidgets('an empty list leaves the app set exactly as it was', (
+      tester,
+    ) async {
+      await pumpChips(
+        tester,
+        covered: 3,
+        of: 14,
+        nextType: MealType.dinner,
+        hasMeals: true,
+        suggested: const [],
+      );
+      expect(find.text('Next: Dinner'), findsOneWidget);
+      expect(find.text('Other options'), findsOneWidget);
+      expect(find.text('No recipe only'), findsOneWidget);
+    });
+
+    testWidgets('"Show more" is drawn only when the picker has a tail', (
+      tester,
+    ) async {
+      await pumpChips(tester, covered: 0, of: 14, hasMeals: false);
+      expect(find.text('Show more'), findsNothing);
+
+      var raised = 0;
+      await pumpChips(
+        tester,
+        covered: 0,
+        of: 14,
+        hasMeals: false,
+        onShowMore: () => raised++,
+      );
+      await tester.tap(find.text('Show more'));
+      expect(raised, 1);
+    });
+
+    testWidgets('"Show more" stays live once the strip is spent', (
+      tester,
+    ) async {
+      var raised = 0;
+      await pumpChips(
+        tester,
+        covered: 0,
+        of: 14,
+        hasMeals: false,
+        enabled: false,
+        onShowMore: () => raised++,
+      );
+      await tester.tap(find.text('Show more'));
+      expect(raised, 1);
     });
   });
 }

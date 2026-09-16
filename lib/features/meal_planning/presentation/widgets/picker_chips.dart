@@ -42,6 +42,12 @@ class VanaPickerScope extends InheritedWidget {
 /// has at least one meal. On the conversation's first picker, while the
 /// draft is still empty, a leading "Draft my whole week" chip offers the
 /// propose-first door (the server's `draftWeek` tool answers it).
+///
+/// When the turn named its own chips ([suggested], mp-272), those labels
+/// stand in for that set — a tap sends the label exactly as an app chip
+/// does. The two doors out of the strip stay either way: `Something else…`
+/// (the composer) and `Browse meals` (the catalog) are ways to leave the
+/// picker, not answers to it, and the model is told not to re-say them.
 class PickerChips extends ConsumerWidget {
   const PickerChips({
     super.key,
@@ -52,6 +58,8 @@ class PickerChips extends ConsumerWidget {
     required this.onPick,
     required this.onSomethingElse,
     this.onBrowse,
+    this.onShowMore,
+    this.suggested = const [],
     this.enabled = true,
   });
 
@@ -71,6 +79,15 @@ class PickerChips extends ConsumerWidget {
   /// Null (no conversation id yet: the opener still streaming) renders the
   /// chip disabled. Like `Something else…`, it never spends the strip.
   final VoidCallback? onBrowse;
+
+  /// "Show more" — raise the sheet over the rest of this picker's search
+  /// (mp-230 clause 2). Null when the search had nothing past the tiles, and
+  /// then the chip is not drawn at all: an empty sheet is not a door.
+  final VoidCallback? onShowMore;
+
+  /// The labels this turn named (mp-272). Two to four, already clamped by
+  /// the part. Empty — the common case — and the app's own set applies.
+  final List<String> suggested;
 
   /// One chip of the strip has been acted on — all but
   /// `Something else…` / `Browse meals` disable until the next picker
@@ -97,7 +114,11 @@ class PickerChips extends ConsumerWidget {
     final somethingElse = content.getValue(ContentKeys.mpChipSomethingElse);
     final draftWeek = content.getValue(ContentKeys.mpChipDraftWeek);
     final browse = content.getValue(ContentKeys.mpChipBrowseMeals);
-    final showDraftWeek = !hasMeals && VanaPickerScope.isFirstPickerOf(context);
+    final showMore = content.getValue(ContentKeys.mpChipShowMore);
+    final showDraftWeek =
+        suggested.isEmpty &&
+        !hasMeals &&
+        VanaPickerScope.isFirstPickerOf(context);
 
     Widget filter(String key) => ChoiceChipButton(
       label: content.getValue(key),
@@ -105,6 +126,33 @@ class PickerChips extends ConsumerWidget {
       enabled: enabled,
       onTap: () => onPick(content.getValue(key)),
     );
+
+    // mp-272 clause 2: the labels are the model's, the widget and its style
+    // are the app's — a named chip is a [ChoiceChipButton] like any other.
+    final replies = suggested.isEmpty
+        ? <Widget>[
+            ChoiceChipButton(
+              label: primary,
+              emphasized: true,
+              enabled: enabled,
+              onTap: () => onPick(primary),
+            ),
+            ChoiceChipButton(
+              label: other,
+              enabled: enabled,
+              onTap: () => onPick(other),
+            ),
+          ]
+        : <Widget>[
+            for (final (index, label) in suggested.indexed)
+              ChoiceChipButton(
+                key: ValueKey('meal_planning.chip_suggested_$index'),
+                label: label,
+                emphasized: index == 0,
+                enabled: enabled,
+                onTap: () => onPick(label),
+              ),
+          ];
 
     return Wrap(
       spacing: AppSpacing.sm,
@@ -118,17 +166,13 @@ class PickerChips extends ConsumerWidget {
             enabled: enabled,
             onTap: () => onPick(draftWeek),
           ),
-        ChoiceChipButton(
-          label: primary,
-          emphasized: true,
-          enabled: enabled,
-          onTap: () => onPick(primary),
-        ),
-        ChoiceChipButton(
-          label: other,
-          enabled: enabled,
-          onTap: () => onPick(other),
-        ),
+        ...replies,
+        if (onShowMore != null)
+          ChoiceChipButton(
+            key: const ValueKey('meal_planning.chip_show_more'),
+            label: showMore,
+            onTap: onShowMore!,
+          ),
         ChoiceChipButton(label: somethingElse, onTap: onSomethingElse),
         ChoiceChipButton(
           key: const ValueKey('meal_planning.chip_browse_meals'),
@@ -136,7 +180,9 @@ class PickerChips extends ConsumerWidget {
           enabled: onBrowse != null,
           onTap: onBrowse ?? () {},
         ),
-        if (hasMeals) ...[
+        // The filters narrow the app's own set; a turn that named its chips
+        // said what it expects next, and they are not it.
+        if (suggested.isEmpty && hasMeals) ...[
           filter(ContentKeys.mpFilterNoRecipe),
           filter(ContentKeys.mpFilterProtein),
           filter(ContentKeys.mpFilterUnder20),

@@ -48,6 +48,79 @@ void main() {
       expect(m.myVote, isNotNull);
     });
 
+    /// mp-272 / mp-230 clause 4 (ticket 31) — the turn may name the chips it
+    /// expects next; the client clamps the same way the producer does, so a
+    /// list that slipped through never reaches the strip malformed.
+    group('meal_picker chips and more (mp-272, ticket 31)', () {
+      Map<String, dynamic> pickerWith(Map<String, dynamic> extra) => {
+        ...loadFixture('meal_picker'),
+        ...extra,
+      };
+
+      test('the frozen fixture names no chips and no more', () {
+        final part =
+            VanaPart.fromJson(loadFixture('meal_picker'))
+                as VanaMealPickerPart;
+        expect(part.chips, isEmpty);
+        expect(part.more, isEmpty);
+        expect(part.toJson().containsKey('chips'), isFalse);
+        expect(part.toJson().containsKey('more'), isFalse);
+      });
+
+      test('a named list of two to four rides through and round-trips', () {
+        final json = pickerWith({
+          'chips': ['These three', 'Lighter ones', 'Show me pasta'],
+        });
+        final part = VanaPart.fromJson(json) as VanaMealPickerPart;
+        expect(part.chips, ['These three', 'Lighter ones', 'Show me pasta']);
+        expectRoundTrip(json, part.toJson());
+      });
+
+      test('more than four is clamped to the first four', () {
+        final part =
+            VanaPart.fromJson(pickerWith({
+                  'chips': ['a', 'b', 'c', 'd', 'e'],
+                }))
+                as VanaMealPickerPart;
+        expect(part.chips, ['a', 'b', 'c', 'd']);
+      });
+
+      test('fewer than two — after trimming, blanks and repeats — is dropped', () {
+        for (final chips in [
+          <dynamic>[],
+          <dynamic>['Only one'],
+          <dynamic>['Same', ' Same '],
+          <dynamic>['', '   '],
+          <dynamic>[1, true],
+          'not a list',
+        ]) {
+          final part =
+              VanaPart.fromJson(pickerWith({'chips': chips}))
+                  as VanaMealPickerPart;
+          expect(part.chips, isEmpty, reason: 'chips $chips is not a list');
+          expect(part.toJson().containsKey('chips'), isFalse);
+        }
+      });
+
+      test('labels are trimmed and capped at 40 characters', () {
+        final part =
+            VanaPart.fromJson(pickerWith({
+                  'chips': [' These three ', 'x' * 60],
+                }))
+                as VanaMealPickerPart;
+        expect(part.chips.first, 'These three');
+        expect(part.chips.last.length, 40);
+      });
+
+      test('more carries the tail of the same search as MealRefs', () {
+        final json = pickerWith({'more': loadFixture('meal_picker')['meals']});
+        final part = VanaPart.fromJson(json) as VanaMealPickerPart;
+        expect(part.more, hasLength(3));
+        expect(part.more.first.name, part.meals.first.name);
+        expectRoundTrip(json, part.toJson());
+      });
+    });
+
     test('choices without details reads as detail-less', () {
       final part = VanaPart.fromJson(loadFixture('choices')) as VanaChoicesPart;
       expect(part.details, isEmpty);

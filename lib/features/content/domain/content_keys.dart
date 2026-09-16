@@ -355,6 +355,10 @@ class ContentKeys {
   static const String mpAttachPhotoFailed = 'meal_planning.attach_photo_failed';
   static const String mpAttachBrowseMeals = 'meal_planning.attach_browse_meals';
   static const String mpChipBrowseMeals = 'meal_planning.chip_browse_meals';
+  // "Show more" under a picker and the sheet it raises (mp-230 clause 2).
+  static const String mpChipShowMore = 'meal_planning.chip_show_more';
+  static const String mpPickerMoreTitle = 'meal_planning.picker_more_title';
+  static const String mpPickerMoreEmpty = 'meal_planning.picker_more_empty';
   static const String mpBrowseTitle = 'meal_planning.browse_title';
   static const String mpBrowseDone = 'meal_planning.browse_done';
   static const String mpBrowseAdd = 'meal_planning.browse_add';

@@ -27,6 +27,7 @@ void main() {
     VanaPart part, {
     void Function(String label)? onChipPick,
     void Function(MealRef meal, int servings)? onPickMeal,
+    ValueChanged<MealRef>? onTapMeal,
     ValueChanged<VanaHandOffPart>? onHandOff,
   }) async {
     await tester.pumpWidget(
@@ -38,7 +39,7 @@ void main() {
               child: VanaPartRenderer(
                 part: part,
                 callbacks: VanaPartCallbacks(
-                  onTapMeal: (_) {},
+                  onTapMeal: onTapMeal ?? (_) {},
                   onPickMeal: onPickMeal ?? (_, __) {},
                   onChipPick: onChipPick ?? (_) {},
                   onSomethingElse: () {},
@@ -117,6 +118,123 @@ void main() {
     // The chip strip renders under the picker (primary + other + something).
     expect(find.text('I like these'), findsOneWidget);
     expect(find.text('Something else…'), findsOneWidget);
+  });
+
+  group('a turn names its chips, Show more opens the library (ticket 31)', () {
+    VanaMealPickerPart picker({List<String> chips = const [], int more = 0}) {
+      final base = VanaMealPickerPart.fromJson(fixture('meal_picker'));
+      return base.copyWith(chips: chips, more: base.meals.take(more).toList());
+    }
+
+    testWidgets('named chips replace the app set; a tap sends the label', (
+      tester,
+    ) async {
+      final sent = <String>[];
+      await pumpPart(
+        tester,
+        picker(chips: const ['These three', 'Lighter ones', 'Show me pasta']),
+        onChipPick: sent.add,
+      );
+
+      for (final label in ['These three', 'Lighter ones', 'Show me pasta']) {
+        expect(find.text(label), findsOneWidget);
+      }
+      // The app's own set is gone — the turn said what it expects next.
+      expect(find.text('I like these'), findsNothing);
+      expect(find.text('Other options'), findsNothing);
+      // The doors out of the picker stay.
+      expect(find.text('Something else…'), findsOneWidget);
+      expect(find.text('Browse meals'), findsOneWidget);
+
+      await tester.tap(find.text('Lighter ones'));
+      expect(sent, ['Lighter ones']);
+    });
+
+    testWidgets('no chips named — the app set applies, tap sends its label', (
+      tester,
+    ) async {
+      final sent = <String>[];
+      await pumpPart(tester, picker(), onChipPick: sent.add);
+
+      expect(find.text('I like these'), findsOneWidget);
+      expect(find.text('Other options'), findsOneWidget);
+      await tester.tap(find.text('I like these'));
+      expect(sent, ['I like these']);
+    });
+
+    testWidgets('an empty list is no list at all', (tester) async {
+      final part = VanaPart.fromJson({
+        ...fixture('meal_picker'),
+        'chips': <String>[],
+      })!;
+      await pumpPart(tester, part);
+      expect(find.text('I like these'), findsOneWidget);
+    });
+
+    testWidgets('Show more appears only when the search had a tail', (
+      tester,
+    ) async {
+      await pumpPart(tester, picker());
+      expect(find.text('Show more'), findsNothing);
+
+      await pumpPart(tester, picker(more: 2));
+      expect(find.text('Show more'), findsOneWidget);
+    });
+
+    testWidgets('Show more raises the sheet; the tick adds, the row opens', (
+      tester,
+    ) async {
+      final part = picker(more: 3);
+      final tail = part.more;
+      final added = <String>[];
+      final opened = <String>[];
+      await pumpPart(
+        tester,
+        part,
+        onPickMeal: (meal, servings) {
+          added.add(meal.id);
+          expect(servings, part.defaultServings);
+        },
+        onTapMeal: (meal) => opened.add(meal.id),
+      );
+
+      await tester.tap(find.text('Show more'));
+      await tester.pumpAndSettle();
+
+      // The sheet is the same search, past the tiles.
+      expect(
+        find.byKey(const ValueKey('meal_planning.picker_more_title')),
+        findsOneWidget,
+      );
+      for (final meal in tail) {
+        expect(
+          find.byKey(ValueKey('meal_planning.picker_more_${meal.id}')),
+          findsOneWidget,
+        );
+      }
+
+      // The tick adds — and nothing else does.
+      await tester.tap(
+        find.byKey(
+          ValueKey('meal_planning.picker_more_tick_${tail.first.id}'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(added, [tail.first.id]);
+      expect(opened, isEmpty);
+
+      // The row opens detail, and the sheet gets out of the way first.
+      await tester.tap(
+        find.byKey(ValueKey('meal_planning.picker_more_${tail.last.id}')),
+      );
+      await tester.pumpAndSettle();
+      expect(opened, [tail.last.id]);
+      expect(added, [tail.first.id]);
+      expect(
+        find.byKey(const ValueKey('meal_planning.picker_more_title')),
+        findsNothing,
+      );
+    });
   });
 
   testWidgets('choices renders the question and options', (tester) async {
