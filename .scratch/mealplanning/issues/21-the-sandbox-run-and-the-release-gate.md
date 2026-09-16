@@ -10,8 +10,8 @@
 
 **Touches:** scripts/sandbox-trial-wizard.sh, docs/release, docs/deployment/supabase-deploy-playbook.md
 
-- [ ] A bash wizard walks the two-store run step by step and writes a dated log under docs/release.
-- [ ] The release checklist names the run as a gate for any meal-planning release.
+- [x] A bash wizard walks the two-store run step by step and writes a dated log under docs/release.
+- [x] The release checklist names the run as a gate for any meal-planning release.
 - [ ] One run on each store is logged green before the ticket closes.
 
 Next: /implement-lee mealplanning
