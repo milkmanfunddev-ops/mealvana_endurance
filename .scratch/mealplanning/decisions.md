@@ -2438,7 +2438,7 @@ Last extracted: 1dedc493
 ## mp-406 · Named chips replace the replies, nothing else
 - category: The planning conversation
 - status: proposed
-- image: none
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 - caption:
 - screen: vana-sheet
 - source: wave mealplanning 6 ticket 31
@@ -2458,11 +2458,12 @@ Last extracted: 1dedc493
 **What it touches.** picker_chips.dart, persona.ts.
 
 > 2026-09-16 proposed in wave 6 ticket 31
+> 2026-09-16 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 
 ## mp-407 · Show more is the tail of the same search, carried on the part
 - category: The planning conversation
 - status: proposed
-- image: none
+- image: test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 - caption:
 - screen: vana-sheet
 - source: wave mealplanning 6 ticket 31
@@ -2482,12 +2483,14 @@ Last extracted: 1dedc493
 **What it touches.** contracts.ts, schemas.ts, tools.ts, picker_more_sheet.dart.
 
 > 2026-09-16 proposed in wave 6 ticket 31
+> 2026-09-16 picture reused from test/features/meal_planning/presentation/goldens/vana_sheet_open_light.png
 
 ## mp-408 · Both sides clamp the chip list, and a broken list means the app's set
 - category: Data, sync and backend
 - status: proposed
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-408.svg
 - screen: none (contract)
 - source: wave mealplanning 6 ticket 31
 - detail: yes
@@ -2512,6 +2515,7 @@ Last extracted: 1dedc493
 - status: proposed
 - image: none
 - caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-409.svg
 - screen: none (contract)
 - source: wave mealplanning 6 ticket 31
 - detail: yes
