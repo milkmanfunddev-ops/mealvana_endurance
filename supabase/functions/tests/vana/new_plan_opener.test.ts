@@ -60,3 +60,24 @@ Deno.test('the new-plan situation names the choice, not the plan on screen', () 
   // situation.ts's Plan tab sentence is "looking at the Plan tab…; the week of <date> is confirmed" — it must not be the one carried.
   assert(!/looking at the Plan tab|; the week of/.test(text), 'the screen sentence about the confirmed week is not carried');
 });
+
+// ---- the intent outlives the opener (Lee, 2026-09-16, second sighting: one turn in, Vana pointed him back at the old plan)
+import { conversationIsNewPlan } from '../../_shared/vana/chat.ts';
+import { NEW_PLAN_STANDING } from '../../_shared/vana/persona.ts';
+import { testCtx, TEST_USER_ID } from './support/vana_ctx.ts';
+
+Deno.test('a conversation whose opener row carries new_plan is a new-plan conversation on every later turn', async () => {
+  const v = testCtx({
+    vana_messages: [
+      { id: 'o1', conversation_id: 'conv-fresh', user_id: TEST_USER_ID, role: 'assistant', content: 'Fresh start.', metadata: { opener: true, new_plan: true } },
+      { id: 'o2', conversation_id: 'conv-plain', user_id: TEST_USER_ID, role: 'assistant', content: 'Check-in.', metadata: { opener: true } },
+    ],
+  } as never);
+  assertEquals(await conversationIsNewPlan(v, 'conv-fresh'), true);
+  assertEquals(await conversationIsNewPlan(v, 'conv-plain'), false);
+  assertEquals(await conversationIsNewPlan(v, 'conv-none'), false);
+});
+
+Deno.test('the standing rule tells the model, every turn, that the old plan is being replaced', () => {
+  for (const phrase of ['FRESH plan', 'being replaced', 'Never tell them they are set', 'never suggest eating from the old plan']) assertStringIncludes(NEW_PLAN_STANDING, phrase);
+});

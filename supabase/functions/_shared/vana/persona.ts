@@ -69,6 +69,9 @@ export const OPENERS = {
  *  already hold a confirmed plan; it stays on the Plan tab until this one is confirmed, when confirm_meal_plan archives it. The
  *  athlete chose to start over, so the old plan is never mentioned and never asked about (Lee, 2026-09-16: "are you here to log
  *  a meal, swap something, or adjust the week ahead?" is the wrong first message). */
+/** Every turn of a "New meal plan" conversation carries this in the system prompt (chat.ts extraContext): the opener is not stored,
+ *  so without it the second turn forgets and points the athlete back at the plan being replaced. */
+export const NEW_PLAN_STANDING = `\nNEW PLAN: the athlete opened this conversation from "New meal plan". They are building a FRESH plan here; whatever plan is on their Plan tab is the one being replaced, and it is replaced the moment this one is confirmed. Never tell them they are set, never point them at the Plan tab's meals, never suggest eating from the old plan, never ask whether they meant to log or swap. If this draft is still empty, build it: ask what they want or propose meals. If they ask why they see no plan, say the new one is not built or confirmed yet, and build it.`;
 export const NEW_PLAN_OPENER = `[The athlete tapped "New meal plan": they have chosen to build a fresh plan from scratch. Any plan they already have for this week is theirs to keep until this new one is confirmed, when it replaces the old one — so do NOT mention the existing plan, do NOT ask whether they meant to log a meal, swap something or adjust it, and do NOT open a check-in or a debrief. Build the new plan.] ${OPENERS.meal_planning}`;
 
 // ---- Phase 3 opener variants (chat.ts picks them; see pickOpener). Both are the model's first user message, like OPENERS.

@@ -13,7 +13,7 @@ import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools } from './tools.ts';
-import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, checkinOpener, debriefOpener } from './persona.ts';
+import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STANDING, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, type Situation } from './situation.ts';
@@ -127,6 +127,11 @@ export async function priorConversationCount(v: VanaCtx, exceptId: string): Prom
 }
 /** Whether the conversation already holds a turn. An opener written into one (a moment's, VM-1) starts a new exchange, not
  *  the conversation: it is not the first turn. */
+/** Whether this conversation was opened from "New meal plan": its opener row carries metadata.new_plan (see the insert in runChat). */
+export async function conversationIsNewPlan(v: VanaCtx, conversationId: string): Promise<boolean> {
+  const { data } = await v.db.from('vana_messages').select('metadata').eq('conversation_id', conversationId).eq('role', 'assistant').order('created_at', { ascending: true }).limit(3);
+  return (data ?? []).some((r: { metadata?: { new_plan?: unknown } | null }) => r.metadata?.new_plan === true);
+}
 export async function conversationHasTurns(v: VanaCtx, conversationId: string): Promise<boolean> {
   if (!conversationId) return false;
   const { data } = await v.db.from('vana_messages').select('id').eq('conversation_id', conversationId).eq('user_id', v.userId).limit(1);
@@ -308,7 +313,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // "New meal plan" from the Plan tab: the screen underneath is the plan being replaced, so its sentence and DAY PLAN section
   // are left out of this one turn (opener.ts NEW_PLAN_SITUATION); every later turn resolves the ids the client sends as usual.
   const newPlan = opener && convKind === 'meal_planning' && body.new_plan === true;
-  const [situation, inView] = newPlan ? [NEW_PLAN_SITUATION, null] : await Promise.all([resolveSituation(v, body.situation), inViewSection(v, body.situation, anchorDate)]);
+  // The intent outlives the opener: the opener row records new_plan, and every later turn of that conversation reads it back,
+  // so the Plan tab underneath (the plan being replaced) never re-enters the situation and the model is told, every turn,
+  // that a fresh plan is being built (Lee, 2026-09-16: one turn in, Vana pointed him back at the old plan).
+  const newPlanConversation = newPlan || (convKind === 'meal_planning' && !opener && persist && !!convId && (await conversationIsNewPlan(v, convId)));
+  const [situation, inView] = newPlanConversation ? [NEW_PLAN_SITUATION, null] : await Promise.all([resolveSituation(v, body.situation), inViewSection(v, body.situation, anchorDate)]);
   const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
@@ -325,7 +334,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   if (convKind === 'meal_planning') {
     const openerInput = await loadOpenerInput(v, anchorDate);
     // The opener's synthetic user message is never stored, so later turns need the pending debrief restated in the context.
-    const pending = pendingDebrief(openerInput); if (pending) extraContext = `\nDEBRIEF PENDING last week's plan id ${pending.id} (${pending.meals.length} meals: ${pending.meals.map((m) => m.name).join(', ')}) — recordDebrief has not been called yet`;
+    if (newPlanConversation) extraContext = NEW_PLAN_STANDING;
+    const pending = pendingDebrief(openerInput); if (pending && !newPlanConversation) extraContext = `\nDEBRIEF PENDING last week's plan id ${pending.id} (${pending.meals.length} meals: ${pending.meals.map((m) => m.name).join(', ')}) — recordDebrief has not been called yet`;
     const variant = opener ? pickOpener({ ...openerInput, newPlan }) : ({ kind: 'plan' } as OpenerVariant); openerVariant = variant.kind;
     if (newPlan) openerText = NEW_PLAN_OPENER;
     else if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
