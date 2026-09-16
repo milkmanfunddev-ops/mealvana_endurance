@@ -1,6 +1,6 @@
 # 17: Ask Vana about the formula on screen
 
-**Status:** in-progress (wave 5, 2026-09-16)
+**Status:** done (wave 5, 2026-09-16)
 **Blocked by:** 15 (touches supabase/functions/_shared/vana/schemas.ts), 16 (touches supabase/functions/_shared/vana/situation.ts).
 **Next:** `/implement-lee mealplanning`
 
