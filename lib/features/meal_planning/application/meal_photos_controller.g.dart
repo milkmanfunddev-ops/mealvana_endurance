@@ -99,7 +99,7 @@ final class MealPhotosControllerProvider
 }
 
 String _$mealPhotosControllerHash() =>
-    r'44d3909e653c9201984c5a750f53a196f6b04593';
+    r'619f9753e2050578252b9db1c8e8373c8a5371c6';
 
 /// One library Meal's photographs, for the Meal photos page (ADR 0003).
 ///

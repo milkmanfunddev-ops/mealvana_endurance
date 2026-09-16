@@ -1,0 +1,573 @@
+[
+  {
+    "from": ["mp-071", "mp-072", "mp-073", "mp-074", "mp-075"],
+    "into": {
+      "title": "The status chip above the transcript",
+      "screen": "Vana sheet",
+      "question": "What the small chip above the sheet's transcript says, and when.",
+      "context": "The Vana sheet is the slide-up companion that opens from the launcher. A small status chip sits above its transcript. The design export draws it in two states and lets it scroll away with the thread.",
+      "decision": "1. The chip reads \"Fuel plan · to do\" in orange when Vana's latest settled turn asks the athlete for something, and \"Update\" in electrolyte when it does not. Before Vana has spoken there is no chip.\n2. Only Vana's latest settled turn sets the tone. The athlete's turns and a turn still streaming do not count, so answering a question does not clear the to-do. Vana's next turn does.\n3. The general opener's two choices are a menu, not a to-do, so a fresh sheet opens on \"Update\". Orange on open is reserved for a moment.\n4. The topic word comes from a planning part if there is one, else from the screen underneath: Timeline, fuel log and session plan read \"Fuel plan\", the Plan tab, a meal and cooking mode read \"Meal plan\", anywhere else reads a bare \"To do\".\n5. The chip is pinned and does not scroll with the transcript.",
+      "why": "The athlete sees at a glance whether there is something to do, and the chip stays readable in a long thread.",
+      "alternatives": "Reading the newest turn from either side, which cleared the to-do the moment the athlete sent. Opening on the orange to-do as the export draws, which would mark every fresh sheet as unfinished business. Letting the chip scroll away, which hides it on any long thread.",
+      "touches": "vana_exchange.dart, sheet conversation, content keys.",
+      "details": "All chip strings are content keys."
+    }
+  },
+  {
+    "from": ["mp-076", "mp-077"],
+    "into": {
+      "title": "Quick replies under the opener",
+      "screen": "Vana sheet on open",
+      "question": "How many quick replies the opener shows, and when they go.",
+      "context": "Quick replies are the tappable answers under Vana's opening line in the sheet. The server's opener ends in a choice question and its prompt asks for two to three options. The export draws exactly two chips.",
+      "decision": "1. The opening's choice part becomes the quick replies. The first two options show, the first filled and the second outline. A third option is dropped.\n2. The replies vanish the moment the thread has anything in it, not when the athlete types a draft, and they stay gone for the sheet's life even if that first send fails.\n3. The opening's choices are drawn only as quick replies, never also inline. A choice part later in the thread renders as ordinary chips.",
+      "why": "The export shows two chips, and drawing the opening's choices twice would bring the replies back.",
+      "alternatives": "Asking the prompt for exactly two, which costs a server deploy for the same result. Hiding the replies on typing a draft, which the spec prose said but the spec table and export did not.",
+      "touches": "Sheet conversation, VanaExchange, persona."
+    }
+  },
+  {
+    "from": ["mp-078", "mp-079", "mp-080", "mp-081"],
+    "into": {
+      "title": "How the sheet's messages and composer look",
+      "screen": "Vana sheet",
+      "question": "Whether the sheet reuses the full-screen chat's message card and composer, or follows its own export.",
+      "context": "The full-screen Vana chat draws her turns in an existing message card. The sheet is a new, smaller surface with its own design export, its own typing indicator, and a composer with a send button and placeholder text.",
+      "decision": "1. Vana's messages sit flush left with a small filled orange sparkle avatar and no bubble. The athlete's turns are right-aligned in a soft cream bubble.\n2. The typing indicator is the in-flight turn with no prose yet, drawn in Vana's row. It never shows beside quick replies.\n3. Send is grey with an empty draft and grey while a turn is in flight, orange otherwise. Lee has not ruled on the in-flight grey.\n4. The composer keeps the general placeholder, not the export's \"Ask about your fueling\".",
+      "why": "The export draws the sheet this way, and the sheet is a general conversation rather than a fuelling one.",
+      "alternatives": "Reusing the existing Vana message card, which does not match the export. Orange send on any draft, as the export keys it, which lights a button the controller ignores mid-stream. The export's fuelling placeholder, which narrows the sheet.",
+      "touches": "Sheet conversation, sheet composer."
+    }
+  },
+  {
+    "from": ["mp-070"],
+    "into": {
+      "title": "The launcher is its own accessibility node",
+      "detail": true,
+      "question": "How the launcher presents itself to a screen reader.",
+      "context": "The launcher floats above every screen at the app's root. On the device its label merged into the root, so VoiceOver read the entire screen as one button called \"Ask Vana\".",
+      "decision": "The launcher is its own accessibility node with its own label. Its semantics no longer merge into the app root.",
+      "why": "VoiceOver read the whole screen as one \"Ask Vana\" button.",
+      "touches": "VanaLauncher."
+    }
+  },
+  {
+    "from": ["mp-082", "mp-083", "mp-091", "mp-092"],
+    "into": {
+      "title": "Two fuelling windows make Vana speak first: before a workout and after one",
+      "screen": "Any screen with the launcher",
+      "question": "What makes Vana speak first, and where that is decided.",
+      "context": "A moment is Vana speaking first: the launcher rings, a pill shows a question, and the sheet opens on her already talking. Three candidate trigger sets were on the table, and meal-plan beats such as a cook check-in are decided on the server.",
+      "decision": "1. Only two windows raise a moment: the pre-workout window and the recovery window. Both are resolved on the device from local rows. Meal-plan beats and informational moments are deferred and the \"planning…\" pill is not built.\n2. Pre-workout raises for a planned, not-completed workout today whose window has opened and whose start has not passed, with no meal logged at or after the window opened. Import-only workouts raise nothing.\n3. Recovery raises for a completed endurance session of 60 minutes or more with nothing logged since. Strength and import-only sessions never do. The pill says \"Recovery fuel?\".\n4. The recovery moment stays live 4 hours when the next fuel-demanding session is under 8 hours away, else 2 hours. This is a reading of the SSOT's urgent and relaxed branches, not a ruling. Lee and Xuan have not ruled.",
+      "why": "A companion that interrupts on the wrong trigger is worse than one that waits. The server decides plan beats and the launcher cannot know them without a call. The SSOT names the 60 minute endurance clause and no single recovery window.",
+      "alternatives": "Windows plus existing plan beats, or a server moment endpoint, both needing a server call the launcher cannot afford. Any session the during-workout spec fuels, which made the 60 minute clause meaningless. Stopping to ask for a recovery window, which would have blocked the ticket.",
+      "touches": "Moment resolver, launcher, recovery_window_authority.dart."
+    }
+  },
+  {
+    "from": ["mp-084", "mp-093"],
+    "into": {
+      "title": "Where the window numbers come from",
+      "detail": true,
+      "question": "Where the resolver gets a workout's window length and a session's end time.",
+      "context": "The pre-workout window length varies by workout and the app already has a fuelling window authority that owns it. A session's end has to be computed from a row where mark-done and Garmin write different things into the completed field.",
+      "decision": "1. The resolver reads the workout's stored pre-workout minutes and falls back to the authority's default from duration and intensity. A workout created close to its start is clamped so its window opens the minute it is created. The device sends the window to the server so Vana names the same one.\n2. A session's end is the actual start, else the scheduled start, plus the actual duration, else the planned duration. The completed timestamp is never read.",
+      "why": "The fuelling window authority already owns the number, and two writers fill the completed field with different meanings.",
+      "alternatives": "A fixed window in the resolver, which would put a second window number outside the authority. Reading the completed time, which mark-done and Garmin fill differently.",
+      "touches": "fueling_window_authority.dart, moment resolver, moment.ts, chat body."
+    }
+  },
+  {
+    "from": ["mp-085", "mp-086"],
+    "into": {
+      "title": "What the athlete sees when a moment raises",
+      "screen": "Any screen with the launcher",
+      "question": "The order and timing of the ring, the pill and the tinted launcher.",
+      "context": "A moment has three visible pieces on the launcher: a ring animation, a pill carrying the question, and a tinted resting state. The spec table lists all three and the export overlaps the first two. The pill sits beside the tab bar.",
+      "decision": "1. The launcher rings, then the pill shows for a few seconds, then the launcher stays tinted until the moment retires. The pill never opens during the ring. Reduced motion skips straight to tinted with the pill.\n2. While the pill shows, the tab bar collapses to its home button, and the two must not overlap at iPhone SE width.",
+      "why": "The spec's table reads as a sequence, and the export collapses the bar while the pill is open.",
+      "alternatives": "The pill during the ring, as the export does, which the spec table contradicts.",
+      "touches": "VanaLauncher states, tab bar, home shell.",
+      "details": "Ring about 2 s, pill 240 px for 4 s, then orange with a cream top highlight and the mark in blackberry."
+    }
+  },
+  {
+    "from": ["mp-087", "mp-094", "mp-095", "mp-096", "mp-097"],
+    "into": {
+      "title": "How often Vana speaks first",
+      "question": "How many times a day a moment may ring, and what remembers that it already did.",
+      "context": "A moment rings when it first raises. The athlete may switch screens, or kill and reopen the app, while a window is still open. With two moment kinds, a day with a morning and an evening session could raise four moments, and two windows can be open at once.",
+      "decision": "1. \"Rang for this workout and window\" is stored on the device per user per day, so a restart does not ring again. A raised moment waits for a launcher on screen before ringing.\n2. A recovery moment is keyed on the activity alone, with no time in it, so Garmin refining a marked-done session's start does not ring it again.\n3. At most two rings a day. Once two have rung, an unrung moment is not raised at all. A moment that already rang stays live.\n4. When a pre-workout and a recovery window overlap, the one that closes sooner speaks.\n5. The controller re-resolves every minute while either window is open, because a window can close with no row changing.",
+      "why": "An athlete with a morning and an evening session hears from Vana at most twice, and never twice for the same thing.",
+      "alternatives": "In-memory only, which rings again after every restart. No cap, which nags, or a cap of one, which silences the evening session. Pre-workout always wins, which can let a closing recovery window pass unspoken.",
+      "touches": "Moment controller, moment resolver, rung record."
+    }
+  },
+  {
+    "from": ["mp-088", "mp-089", "mp-090"],
+    "into": {
+      "title": "Tapping a moment, and what ends it",
+      "screen": "Vana sheet on a moment",
+      "question": "What tapping the pill writes into the conversation, and which actions retire the moment.",
+      "context": "Tapping the pill or the tinted launcher opens the sheet. Each day has one ambient conversation that may already hold turns. Once a moment has raised the athlete can dismiss the sheet, reply, log a meal, or start the workout.",
+      "decision": "1. The client sends the moment kind and activity id as an opener into the existing conversation, even mid-thread. The opener names the session, its time and the window, and ends in a choice with two options. Landing mid-thread is not a first turn, so there is no second feedback tip and no read-back.\n2. A moment starts a new exchange explicitly, so its quick replies show and the chip reads \"Fuel plan · to do\" even mid-thread.\n3. Dismissing the sheet leaves the launcher tinted with no second ring. Any send in the moment's exchange answers it. A meal logged in the window or the workout starting retires it on the next resolve.\n4. A retired, unanswered moment leaves its turn in the thread with its options drawn inline.",
+      "why": "The sheet should open on Vana already naming the run. The nudge persists quietly but never nags, and the history stays honest.",
+      "alternatives": "A new conversation per moment, which breaks one conversation per day. Special-casing the moment in the exchange logic, which scatters the rule. Retiring on dismiss, which loses the nudge, or removing the turn on retire, which rewrites history.",
+      "touches": "chat.ts runChat, companion host, VanaExchange, moment controller, sheet transcript."
+    }
+  },
+  {
+    "from": ["mp-098", "mp-099"],
+    "into": {
+      "title": "What the recovery opener says, and its tone",
+      "screen": "Vana sheet on a recovery moment",
+      "question": "What Vana says when the athlete taps a recovery moment, and whether a relaxed recovery deserves orange.",
+      "context": "The SSOT post-workout spec has urgent and relaxed branches and forbids presenting the 2 hour protein anchor as a window. The component spec assigns the recovery moment the orange to-do, while the SSOT's relaxed badge reads \"with your next meal\".",
+      "decision": "1. Urgent names the next session and says to keep carbs coming through the next 4 hours. Relaxed says there is no rush and gives no deadline; with a session 8 to 24 hours away it leans \"earlier rather than later today\". Both mention 20 to 30 g protein within a couple of hours.\n2. Relaxed recovery uses the same orange to-do and \"Recovery fuel?\" pill as urgent. This is the current reading, not a ruling. It could raise nothing, or raise a calmer news tone.",
+      "why": "The SSOT forbids presenting the 2 hour anchor as a window, and the component spec assigns recovery the orange tone.",
+      "alternatives": "Naming the window in every recovery opener, which the SSOT forbids for the relaxed branch. Raising nothing for relaxed, or a news tone, both open for a ruling.",
+      "touches": "chat.ts recovery opener, launcher, moment resolver."
+    }
+  },
+  {
+    "from": ["mp-100", "mp-101"],
+    "into": {
+      "title": "Meal-plan moments are deferred, and the proactive loop runs through the opener",
+      "screen": "Vana chat",
+      "question": "Whether Vana speaks first about the plan itself, and how those touchpoints reach the athlete.",
+      "context": "Beyond fuelling, the plan has beats where Vana could speak first: a cook check-in before a cooking session and a debrief after the week. Those are decided on the server. Push notifications and a cron job were on the table.",
+      "decision": "1. Cook check-in and week debrief moments wait until the fuelling moments have been lived with. Open: how often to ask the server, what happens offline, and whether a plan moment may take one of the day's two rings.\n2. Meanwhile the two touchpoints arrive as the opener of the next app open, stamped so they never repeat: a prep-day check-in when a cook session is today or tomorrow, and a debrief for a finished undebriefed week up to 14 days old.\n3. Local notifications at 18:00 exist but default off.",
+      "why": "Proactive must not mean naggy. An opener on open has zero spam risk, and the server-decided beats need a cadence decision first.",
+      "alternatives": "Building plan moments alongside the fuelling ones before the cadence and offline questions were answered. Cron or push through OneSignal, which can interrupt an athlete who did not open the app.",
+      "touches": "opener.ts pickOpener, plan_debriefs, reminder service, moment controller."
+    }
+  },
+  {
+    "from": ["mp-102", "mp-103", "mp-104", "mp-105", "mp-108"],
+    "into": {
+      "title": "Pickers, and the chips around them",
+      "screen": "Vana chat",
+      "question": "How a picker and its chips look and behave, and who draws the chips.",
+      "context": "In the planning chat Vana asks choice questions drawn as chips, and shows pickers: carousels of suggested meals. Lee's walkthroughs on 09-03 and 09-04 found accidental picks and chip rows that did not earn their space. The wire contract has no field saying which slot comes next.",
+      "decision": "1. A choice question takes two to four options as plain strings, drawn as compact pills. Bigger sets go through the selectable chip grid.\n2. A picker shows five meals by default and the model may flex between four and six.\n3. Tapping a picker tile opens meal detail. Only the tick adds it to the draft. Picked tiles get a swap circle. Chat tiles have no overflow menu, title, \"tap to add\" or why blurb.\n4. The chips under a picker are drawn by the app, never the model: \"I like these\", then \"Next: type\" or \"That's my week\" by coverage, plus \"Other options\" and \"Something else…\". Filter chips appear once the plan has a meal. Tapping a chip sends its label.\n5. \"Other options\" never repeats a meal already in the draft or already shown in the conversation.",
+      "why": "Whole-card adding caused accidental picks, three meals felt thin, the model kept naming the wrong next type, and repeats read as not listening.",
+      "alternatives": "Two-line label and detail rows, stripped as not earning their space. MealBuddy's five to seven option groups. A fixed three meals. Model-authored chips, or a next-slot hint on the wire the contract does not carry.",
+      "touches": "askChoice schema, choice chips, suggestMeals tool, picker carousel, PickerChips, persona rule 3.",
+      "details": "The tick sits top-left and the swap circle top-right on picked tiles. The shown set is parsed from stored picker and staples parts."
+    }
+  },
+  {
+    "from": ["mp-106", "mp-107", "mp-111"],
+    "into": {
+      "title": "How the week fills up",
+      "screen": "Vana chat",
+      "question": "The order the meal types are walked, what counts as covered, and how \"decide for me\" works.",
+      "context": "A week's plan covers several meal types and the plan bar shows how much of the week is covered. Breakfast and snacks are staples. Not every athlete wants lunches planned, and Xuan's scenario has an athlete who trusts Vana to decide for them.",
+      "decision": "1. After picks, \"Next\" advances to the first uncovered type in the order dinner, lunch, breakfast, snack. Then \"That's my week\", then Review, then Confirm.\n2. Coverage is the share of 14 lunch and dinner slots covered by picked servings, capped per type. A scope of dinners only gives 7 slots. The scope is asked once as a fork before leaving dinners.\n3. \"Draft my whole week\" on the first picker runs a deterministic full draft: five dinners, or five dinners plus three lunches, plus breakfast and snack for the full scope. The model selects nothing and only presents the result.",
+      "why": "Dinners are the hard part and the walk mirrors how athletes plan. Breakfast and snacks are staples, not planned meals. \"If you trust us, we decide for you\" without a three-plan carousel.",
+      "alternatives": "Always walking all four types, which plans slots some athletes do not want. MealBuddy's three alternative whole plans with Regenerate.",
+      "touches": "Chip logic, planning prompt, coverage service, plan bar denominator, setSetting, draftWeek tool."
+    }
+  },
+  {
+    "from": ["mp-109", "mp-110"],
+    "into": {
+      "title": "Batch cooking is asked once",
+      "screen": "Vana chat",
+      "question": "When Vana asks about batch cooking, and whether a mid-plan change sticks.",
+      "context": "Batch cooking groups the week's meals into cooking sessions. The prototype defaulted it to true, so its ask-when-unknown rule never fired, and it went straight to rebuild-or-keep when the athlete switched it off.",
+      "decision": "1. Batch cooking is a keyed setting. When it has never been chosen, Vana asks before showing lunches and saves the answer. Settings has the same switch. Off means no cooking sessions and meals are \"make the night of\".\n2. Switching it off during a plan first asks whether the change is for good or just this week, then asks rebuild-or-keep.",
+      "why": "It only changes grouping, so asking every plan is noise, and a one-week change should not overwrite the setting.",
+      "alternatives": "A per-plan question, which is noise. Asking rebuild-or-keep straight away, as the prototype did, which silently overwrote the setting.",
+      "touches": "user_memories, Vana settings, review sheet sessions, persona, set_setting."
+    }
+  },
+  {
+    "from": ["mp-112", "mp-113", "mp-114"],
+    "into": {
+      "title": "What Vana suggests, and what she never invents",
+      "screen": "Vana chat",
+      "question": "Where suggestions, staples and day guidance come from, and what the model is allowed to make up.",
+      "context": "The standing rule is that numbers and meals never come from the model. The search tool feeds pickers from the library and the athlete's saved meals. A 2026-08-28 design auto-added staples under \"act, don't ask\". Rest days were the biggest gap the research found unaddressed.",
+      "decision": "1. Staples are suggested from the athlete's own logs and nothing enters the plan until the athlete ticks. The staples card is a chat part only.\n2. Day guidance for rest days, carb-load days and race week is computed from the budget, the workouts and the library's picks. The model only phrases it. A race-week rule can be a specific meal and is only proposed when a race exists. Race day carries no carb number.\n3. Search applies allergies and dietary preference as a hard filter in the database, returns saved and library rows together with saved boosted, nudges common assemblies up, and rejects pairs no athlete has been documented eating.",
+      "why": "Lee ruled twice that auto-adding surprised users. Numbers never come from the model, and the model may never emit a meal a tool did not vet.",
+      "alternatives": "The \"act, don't ask\" auto-add. Model-generated day advice. Model-side filtering, which lets the model emit a meal the tool did not vet.",
+      "touches": "diagnoseStaples, Plan tab, dayGuidance, day cards, rule chip, search_meals, meal library pairs."
+    }
+  },
+  {
+    "from": ["mp-115", "mp-116", "mp-117"],
+    "into": {
+      "title": "The plan bar",
+      "screen": "Vana chat plan bar",
+      "question": "What the pinned plan bar shows, where Confirm lives, and which plan it reads.",
+      "context": "The plan bar is pinned above the composer in the planning chat and grows as meals are picked. The server sends a plan snapshot whenever the draft changes. The 2026-08-28 design kept Confirm always visible, and \"New meal plan\" was opening on the confirmed plan with meals already in it.",
+      "decision": "1. A plan snapshot is never a message bubble. It updates the draft and the bar, and history rows have snapshots stripped on load.\n2. The bar opens as \"Your plan · 0 meals\" and collapses on every turn. Tiles carry remove with Undo, a slot chip and a servings stepper. \"Review plan\" is secondary until three meals, then primary.\n3. Confirm lives only in the Review sheet, grouped by cooking session when batch cooking is on. It is not in the bar or in Vana's chips.\n4. The bar and picks in chat read and write the conversation's draft, never the device's active week plan.",
+      "why": "The plan is state, not a message. Nothing commits without an explicit review, and the bar must not crowd the transcript.",
+      "alternatives": "Rendering each snapshot as a card, which fills the transcript with state. Confirm always visible in the bar, which let a plan commit without a review.",
+      "touches": "Chat controller, PlanBar, ReviewSheet, applyDraftPlan."
+    }
+  },
+  {
+    "from": ["mp-118", "mp-119", "mp-120"],
+    "into": {
+      "title": "Confirm, and what comes after",
+      "screen": "Vana chat",
+      "question": "What confirming a plan hands the athlete, where it lands them, and whether meals are laid across days.",
+      "context": "Confirm is the moment of value. A confirmed plan is a collection of meals with servings. MealBuddy assigns every meal to a day at generation. Calendar, email and PDF integrations were candidates, and the first build landed on a bare route with no tab bar.",
+      "decision": "1. Confirm shows a \"you're set\" card with the week, the sessions, the list size and where things live. It offers an OS share sheet for plain text and a \"remind me the night before cook day\" chip. No calendar, email or PDF in the first version.\n2. Confirm lands on the main shell with the Food tab's Shopping segment selected, so the tab bar is present.\n3. The chips after confirm are Open shopping list, Lay it across the week, and Adjust. Laying it across renders read-only day cards. Athletes who ignore it keep the collection-only plan.",
+      "why": "Most of the felt value at a fraction of the cost. The shopping list is the moment of value and the athlete should not be stranded off the shell. Research on batch cooks says collections, not day grids.",
+      "alternatives": "Calendar and email APIs. A bare food route. MealBuddy's Day 1 to Day 6 slotting up front, which the research argues against.",
+      "touches": "ConfirmedCard, share service, reminder service, router food parameter, planWeek, week part."
+    }
+  },
+  {
+    "from": ["mp-122", "mp-123", "mp-124", "mp-125"],
+    "into": {
+      "title": "The composer's plus menu: pantry, fridge photo and browse",
+      "screen": "Vana chat",
+      "question": "How the composer is arranged, and what the plus menu offers.",
+      "context": "The composer is the input row at the bottom of the planning chat. It takes text, voice, photos and a way into the catalog. Lee reviewed the layout on the simulator on 2026-09-07. The prototype offered a generic pantry list, and other AI surfaces charge credits.",
+      "decision": "1. One pill with a flat plus on the left, a mic while empty and an up-arrow send when there is text. Web gets no camera and no mic.\n2. The plus sheet offers Snap my fridge, Choose a photo, Use what I have and Browse meals.\n3. The pantry question seeds a chip grid from the athlete's own 30-day logs, saved-meal components and the last plan's have or checked items, top 8. \"Use these\" writes pantry items and marks shopping rows as had.\n4. Snap my fridge reuses the meal-logging upload path and vision model. It is metered with no credit charge. Pro is the price.\n5. Browse meals opens the catalog tied to the conversation. Every card carries a tick that picks into the draft, and the chat refreshes its draft on return.",
+      "why": "Lee's 2026-09-07 simulator pass. Personalisation only reads as personal when shown. AI surfaces stay on and meal planning is already paid for. Lee wanted the v5 browse-sheet pattern inside the app's own catalog.",
+      "alternatives": "Separate composer buttons, rejected on the simulator. A hardcoded staples list, or a top 14. Charging credits per photo, which double-charges a Pro feature. Look-only browsing from chat.",
+      "touches": "Chat composer, speech to text, askPantry, set_pantry, grocery.ts, pantry_photo action, ai_usage, MealCatalogBrowser, MealAddButton, refreshDraft."
+    }
+  },
+  {
+    "from": ["mp-126", "mp-127"],
+    "into": {
+      "title": "General mode's empty state, and what each failure shows",
+      "screen": "Vana chat",
+      "question": "What the general chat looks like when empty, and what the athlete sees when a turn fails.",
+      "context": "Vana has a general conversation for questions and a planning one for building a week. The chat can fail four ways: offline, rate-limited, out of credits, or no Pro.",
+      "decision": "1. The general conversation opens with three example chips and no plan bar. It can offer \"Start a meal plan\" or \"Not now\".\n2. Offline shows a bubble. A rate limit says \"Give me N seconds\". Out of credits opens the credits paywall. No Pro goes to the Pro screen.",
+      "why": "General questions should not look like planning, and each failure has one recoverable outcome.",
+      "touches": "Vana chat screen, transport."
+    }
+  },
+  {
+    "from": ["mp-128", "mp-129", "mp-140"],
+    "into": {
+      "title": "Meal planning lives under Food, and the plan is the landing",
+      "screen": "Food tab",
+      "question": "Where meal planning lives in the app, and whether the athlete lands on chat or on the plan.",
+      "context": "The Food tab holds Meals, Formulas and Shopping. The Sage canvas concept was chat-first. Six live tests were run with real users, and research finding 6 says users land on a structured surface with the assistant embedded.",
+      "decision": "1. Meal planning is a segment of the Food tab beside Meals, Formulas and Shopping. It is not its own tab.\n2. The Plan tab is the plan and Vana is reached from it. Chat is escalation, not the landing.\n3. The Vana message card at the top of the Plan tab opens the general conversation, not a planning one.",
+      "why": "Nobody opened with chat in six live tests. Users skim chat. The day note is about the day, not the plan.",
+      "alternatives": "A separate Plan tab, or a chat-first tab. The Sage canvas.",
+      "touches": "Tabs screen, food routes, Plan tab, Vana entry points, router."
+    }
+  },
+  {
+    "from": ["mp-130", "mp-135", "mp-136", "mp-137", "mp-138"],
+    "into": {
+      "title": "The Plan tab is a tile list",
+      "screen": "Plan tab",
+      "question": "What the Plan tab shows, and what tap, swipe, Swap and \"Ate it\" do on a tile.",
+      "context": "The Plan tab shows the confirmed week. The prototype drew a \"Your day\" grid, plan detail routes, a plans history and a gear in the header. The app's other lists already use swipe rows. The dietitian will not recommend daily logging.",
+      "decision": "1. A message from Vana, then every meal as a tile with icon, name, slot chip and servings. The buttons are Add meal and New meal plan. No day grid, chevron, detail route, swipe hint, status tag, Edit button or gear.\n2. Tap opens a sheet with a servings stepper, Swap, Remove and Ate it. Swipe right removes with Undo. Swipe left swaps.\n3. A swap keeps the same plan-meal id, so a servings edit after a swap is exact.\n4. \"Ate it\" waits for the server, hides when no servings are left, writes a meal log with source plan and decrements servings. There are no daily logging reminders.\n5. Plan meal macros are stored per serving.",
+      "why": "Lee wanted the plan list without a brief or shopping there. Name matching was ambiguous with two same-named meals. A servings-left count does the logging job without a loop the dietitian will not recommend.",
+      "alternatives": "A \"Your day\" grid, detail routes and a plans history, which Lee cut. Delete-and-insert on swap, which loses the id. A logging loop. Storing macro totals and dividing at log time.",
+      "touches": "Plan tab, plan tile sheet, Swap screen, PlanList, logFromPlan, meal_logs, log_from_plan RPC, coverage service."
+    }
+  },
+  {
+    "from": ["mp-131", "mp-132"],
+    "into": {
+      "title": "The week starts on Sunday and cook days are fixed",
+      "question": "Which day the plan week starts, and which days cooking sessions fall on.",
+      "context": "The week start decides which plan is this week's. The server already used Sunday and a Dart comment said Monday. Cooking sessions need dates, and the athlete's real cook day is not modelled anywhere.",
+      "decision": "1. The plan week starts on Sunday.\n2. Cooking sessions fall on the week start, plus three and plus five days. The athlete's real cook day is not modelled yet and stays an open question.",
+      "why": "The server already used Sunday. Deterministic sessions without asking.",
+      "alternatives": "Monday-start weeks, which disagreed with the server. Asking the athlete's cook day, deferred.",
+      "touches": "Week start, plan queries, Plan tab header, session dates, review sheet, check-in opener."
+    }
+  },
+  {
+    "from": ["mp-133", "mp-134"],
+    "into": {
+      "title": "One confirmed plan per week, and a fresh draft per conversation",
+      "screen": "Plan tab",
+      "question": "How plans, drafts and conversations relate, and what \"New meal plan\" does.",
+      "context": "Plans were keyed by week start, so a new conversation reopened the confirmed plan with three meals already in it. The Plan tab expects exactly one active plan for the week.",
+      "decision": "1. Each conversation keys its own draft. A partial unique index allows one confirmed plan per athlete-week and any number of drafts.\n2. Confirming archives every other non-archived plan for that week, drafts from other conversations included. The Plan tab keeps the confirmed plan until a new one is confirmed.\n3. \"New meal plan\" archives the scope's plan and returns a fresh empty draft.",
+      "why": "Keying plans by week made a new conversation reopen the confirmed plan with meals in it.",
+      "alternatives": "One plan per week shared by all conversations. Archiving only the previous confirmed plan as the prototype did, which left stray drafts.",
+      "touches": "plan.ts resolvePlan, confirm_meal_plan RPC, vana-action, Plan tab button."
+    }
+  },
+  {
+    "from": ["mp-141", "mp-142", "mp-143"],
+    "into": {
+      "title": "The Meals tab is for looking",
+      "screen": "Meals tab",
+      "question": "What the catalog is for on its own, how search results look, and where Recents come from.",
+      "context": "Meals is the catalog: the library of about 1,900 meals plus the athlete's own saved foods. Meals reach a plan through Vana's pickers or a swap on a plan tile. The app keeps a local fuel log, but many entries are just a typed name.",
+      "decision": "1. Four rails in this order: Recents, My Foods, Assemblies and Recipes. A search icon reveals a search bar and a filter popover narrows by meal type and by recipe or no-recipe. Add and Swap buttons appear only in swap mode from a plan tile.\n2. Search results reuse the rail card. Meals excluded by the athlete's allergens are greyed, not hidden. A Vana row at the bottom offers \"Want me to build the week instead?\".\n3. Offline, Recents come from local logs and skip name-only entries. Online, the server's recent meals list replaces the local one.",
+      "why": "The catalog is for looking. Adding belongs to the plan flows. One card, one look across the tab. Only the server can resolve a logged name to a library meal.",
+      "alternatives": "An Add button on every card, which gives plain browsing two ways to change the plan. A dedicated dense row for results.",
+      "touches": "Meal catalog, search_meals, MealCatalog, catalog controller, Recents screen.",
+      "details": "Semantic search runs once a query reaches three characters, and the type filter is dropped while a query is active."
+    }
+  },
+  {
+    "from": ["mp-147", "mp-148", "mp-149", "mp-150"],
+    "into": {
+      "title": "Cooking mode",
+      "screen": "Cooking mode",
+      "question": "How cooking mode is laid out on the phone, how timers are made, and how one alerts.",
+      "context": "From a meal's detail screen the athlete can start cooking mode, a hands-busy view read from across a counter. Steps come from many origins and are not structured. The shared notification service only talks to OneSignal.",
+      "decision": "1. Three phases: an overview, one big step per screen, then a done screen that asks for a thumb vote. Steps move by swipe, oversized tap zones, and Back and Next. The wake lock is held only during the cooking phase.\n2. Timer chips are parsed from each step's text, at most three per step. Timers run at the same time and keep running when the athlete moves on.\n3. A finished timer fires a local notification and a vibration. The ringing chip on screen is the fallback. No audio.\n4. Wave-to-advance over the proximity sensor exists only on phones.",
+      "why": "A screen that stays on only when needed. Deterministic timers with no model call. The shared notification service has no immediate-show call. Browsers expose no proximity API.",
+      "alternatives": "In-app audio, which would need an asset and a sound session for a case the notification already covers.",
+      "touches": "CookingSessionController, CookingModeScreen, cooking timers, cooking mode route.",
+      "details": "A duration must be between 5 seconds and 12 hours. A range takes its upper bound. Timers tick once a second."
+    }
+  },
+  {
+    "from": ["mp-151", "mp-152", "mp-153", "mp-154"],
+    "into": {
+      "title": "The shopping list",
+      "screen": "Shopping tab",
+      "question": "Where the list is built, what the tab shows, and which unit system it uses.",
+      "context": "When the athlete confirms a plan they land on the Shopping tab. Building the list means adding up ingredients across every meal and serving. Most plan edits write locally first. The prototype had aisle groups, a pickup placeholder, and filtered out items the athlete already has.",
+      "decision": "1. The list is aggregated deterministically on the server at confirm, and confirm waits for the server's acknowledgement. It is rebuilt after every plan edit. The device never computes it.\n2. Nine aisle groups. Each row has a checkbox and a quantity. A row from more than one meal carries a count badge that opens a sheet listing those meals. Share sends plain text. No pickup button.\n3. Quantities render imperial unless Settings says metric, on screen and in the shared text.\n4. Items marked as had are filtered out and only Vana's \"Add back\" restores them. There is no per-row \"have it\" toggle. That toggle is logged as an open question.",
+      "why": "The list is the moment of value and must exist before the athlete lands on it. Kroger and other surfaces read it too, so there is one builder. US users read imperial.",
+      "alternatives": "Computing on the device, which gives two builders that disagree. A metric default. Keeping the unwired per-row toggle.",
+      "touches": "grocery.ts, confirm_meal_plan, Shopping tab, ShoppingListController, quantity formatter.",
+      "details": "Plans confirmed before a change keep their old quantities until reconfirmed. Always-have items match on whole phrases, and catalog rows with a blank quantity get a default."
+    }
+  },
+  {
+    "from": ["mp-155", "mp-157", "mp-158", "mp-159", "mp-162"],
+    "into": {
+      "title": "Typing feedback to Vana is the feedback system",
+      "screen": "Vana chat",
+      "question": "Whether talking to Vana is the feedback channel, what counts as feedback, and how it is filed.",
+      "context": "The only existing channel was a Wiredash form buried in Settings that nobody used. Vana is already the surface athletes talk to. In testing Vana apologised instead of filing about half the time, filed feature requests under the wrong heading, and twice said \"saved\" without calling the tool.",
+      "decision": "1. A complaint, praise or suggestion typed to Vana files a row in the athlete's own words, with a sentiment, an about-field and the conversation id. Taste comments such as \"not those\" write no row. The Wiredash card stays for anything that needs a screenshot.\n2. A message that is both a complaint and a question keeps Vana's answer. A pure vent gets the acknowledgement alone.\n3. \"I have told you\" and \"you keep getting this wrong\" count as feedback. The feedback rule sits at the top of the prompt's rules.\n4. A request for something new is filed as a suggestion. Praise or a complaint about Vana's meal ideas is about Vana, even when the athlete says \"the app\".\n5. Vana must call the tool before claiming feedback is saved, and the conversation id travels apart from the plan scope so general mode keeps it.",
+      "why": "The athlete should not have to find a form. Position beat wording. Feature requests were going to the wrong pile.",
+      "alternatives": "A feedback form or screen. Silence on every feedback message, which leaves a question unanswered.",
+      "touches": "save-feedback tool, user_feedback table, chat.ts, general prompt."
+    }
+  },
+  {
+    "from": ["mp-156", "mp-161"],
+    "into": {
+      "title": "What Vana says after feedback, and the one-time prompt",
+      "screen": "Vana chat after feedback",
+      "question": "What Vana says once feedback is saved, and how a new athlete learns they can type it.",
+      "context": "When Vana saves feedback a \"Saved for the team\" row appears. On the Haiku model her own reply after it tended to apologise and start troubleshooting, and three prompt rewrites failed. Athletes will not know they can type feedback unless something tells them, and Vana's prose can be paraphrased away.",
+      "decision": "1. The \"Saved for the team\" row is the whole acknowledgement. Every later text delta from the model is dropped from the stream and the transcript.\n2. After the opener of a brand-new athlete's first conversation, the server appends a fixed \"Have feedback for me? Just type it here.\" part. The model never sees it. It never appears again.",
+      "why": "Lee ruled that the athlete should not be troubleshot when venting. One nudge is enough, and server-authored text cannot be paraphrased away.",
+      "alternatives": "Clamping Vana to one sentence, which kept the apology. A stronger model for that turn. Putting the line in the persona prompt, or repeating it.",
+      "touches": "chat.ts silenceAfterFeedback, feedback_saved part, feedback_prompt part, FeedbackPromptRow."
+    }
+  },
+  {
+    "from": ["mp-160"],
+    "into": {
+      "title": "Praise asserts sentiment only, not the about-field",
+      "detail": true,
+      "question": "How strict the praise eval is about the about-field.",
+      "context": "Live evals send test messages to Vana on dev and inspect the row she files. Praise such as \"this app planned my week perfectly\" names the app while describing Vana's planning.",
+      "decision": "The praise eval checks for positive sentiment and rating. It logs the about-field but does not assert on it.",
+      "why": "Praise naming \"this app\" while describing Vana's planning is genuinely either.",
+      "touches": "Personalisation eval."
+    }
+  },
+  {
+    "from": ["mp-163", "mp-164"],
+    "into": {
+      "title": "Problem reports go through Wiredash, from a card or a shake",
+      "screen": "Vana chat, shake sheet",
+      "question": "How a problem that needs a screenshot reaches the team.",
+      "context": "Some problems need a screenshot, which typed feedback cannot carry. Wiredash exists but its full flow asks for an email and several steps.",
+      "decision": "1. A problem report produces a card in the chat with a \"Send to the team\" button that opens Wiredash. Vana never claims to have sent anything and no longer mentions shaking.\n2. Two shakes open a Kyle sheet, then Wiredash cut down to two steps with no email prompt and an optional screenshot. The text also lands in the app's own feedback table.",
+      "why": "The card sends, not Vana. A two-step Wiredash is one people will finish.",
+      "touches": "Problem report card, shake detector, Wiredash config, feedback table.",
+      "details": "Shake threshold 3.2 g or more, twice."
+    }
+  },
+  {
+    "from": ["mp-166", "mp-167", "mp-172"],
+    "into": {
+      "title": "Pro: what it covers and what it costs",
+      "screen": "Pro screen",
+      "question": "What Pro gates, what it costs, and whether buying it grants credits.",
+      "context": "Meal planning needed a paywall. The app already sells AI credit bundles for chat. Apple product ids are team-unique, so prod ids need their own suffix.",
+      "decision": "1. Meal planning is gated by a Pro subscription, enforced on the server through the entitlements table, and never debits credits. General chat keeps its one-credit debit for free users and is free for Pro.\n2. Pro is 9.99 dollars monthly and 69.99 dollars annual on both stores in all territories. The RevenueCat offering is the default one.\n3. Buying Pro grants no credit bundle.",
+      "why": "One gate, enforced where it cannot be bypassed.",
+      "touches": "Entitlements table, Pro screen, RevenueCat offering, store products.",
+      "details": "Prod Apple product ids carry a prod suffix. Apple equalises prices across regions."
+    }
+  },
+  {
+    "from": ["mp-168", "mp-169", "mp-170", "mp-171"],
+    "into": {
+      "title": "Shipping dark: the gate flag and the Buy button",
+      "screen": "Pro screen",
+      "question": "How the feature ships to prod before the paywall and store products exist.",
+      "context": "The paywall design and the App Review screenshot were not ready. A gate flag decides whether the Food tab and the functions are locked.",
+      "decision": "1. Prod ships with the gate on and no Food tab. The feature opens later by granting entitlements or enabling purchase.\n2. A missing gate flag means the gate is on everywhere except dev. Dev builds force it off. Prod builds fail if the key is absent.\n3. A subscription status still resolving counts as locked. A deep link into meal planning lands on the Pro screen, not an error.\n4. The Pro screen shows real store prices and a working Restore. Buy waits behind a purchase flag until the paywall design and the review screenshot land.",
+      "why": "Nothing unfinished reaches a paying customer, and a missing flag fails closed.",
+      "touches": "Gate flag, Pro screen, purchase flag, router."
+    }
+  },
+  {
+    "from": ["mp-173", "mp-174"],
+    "into": {
+      "title": "Webhook ordering and the tester switch",
+      "detail": true,
+      "question": "How out-of-order store events and internal testers are handled.",
+      "context": "RevenueCat events can arrive out of order. Testers need to pass both the tab gate and the function gate without buying.",
+      "decision": "1. An event older than the stored row is acknowledged as stale and ignored. A transfer event moves the entitlement between users.\n2. The seven-tap tester switch also writes the internal flag on the server. The flag is self-service and accepted as a team convenience. The webhook's entitlement row remains the real paywall.",
+      "why": "A late event must not roll a subscription back, and testers need one switch.",
+      "touches": "Webhook handler, internal-device switch, users.internal flag."
+    }
+  },
+  {
+    "from": ["mp-175", "mp-176", "mp-177", "mp-178"],
+    "into": {
+      "title": "Vana runs as edge functions on the existing wire",
+      "detail": true,
+      "question": "Where Vana runs, what shape the wire is, and whose credentials the functions use.",
+      "context": "The prototype ran on Vercel. The app already parses an NDJSON envelope, and the prototype's fixtures define the contract.",
+      "decision": "1. Vana runs as three Supabase edge functions: chat, action and day notes. There is no Vercel service.\n2. The wire is the existing NDJSON envelope extended with status lines. The prototype speaks the same transport.\n3. The wire shape is camelCase and the frozen fixture files are the truth for both clients.\n4. The functions read as the caller so row-level security filters. The service key is kept only for call logs, pair refresh and macro fills.",
+      "why": "One backend, one contract, and the database does the authorisation.",
+      "touches": "vana-chat, vana-action, vana-day-notes, contracts file, fixtures."
+    }
+  },
+  {
+    "from": ["mp-179", "mp-180"],
+    "into": {
+      "title": "Openers live in the chat function, and the old chat route survives one release",
+      "detail": true,
+      "question": "Whether the opener is its own function, and what happens to the old chat route and tables.",
+      "context": "Clients already shipped call the old chat route. General openers used to be synthetic and unstored.",
+      "decision": "1. There is no separate opener function. An opener flag on the chat call runs it. General openers are persisted. The old chat route keeps its unstored opener for shipped clients.\n2. The old chat function becomes Vana in general mode under the old route, and the app's old chat path redirects there. The route stays until the minimum app version passes 1.24. The old tables are renamed to Vana names with compatibility views under the old names.",
+      "why": "Shipped clients keep working while the app moves.",
+      "touches": "vana-chat opener flag, old chat function, table renames and views."
+    }
+  },
+  {
+    "from": ["mp-181", "mp-182"],
+    "into": {
+      "title": "Which writes wait for the server",
+      "question": "Which meal-planning writes are local-first and which must wait for the server.",
+      "context": "The app is offline-first, but shopping lists, day notes and coverage are computed on the server, and a coach may act on an athlete's plan.",
+      "decision": "1. Servings, remove, session, shopping ticks, day slots, settings, comments, memory delete and saved-meal notes write locally first and upload later, last writer wins.\n2. Pick, swap, plan day, new plan, log-from-plan and confirm wait for the server.\n3. A failed server write restores the previous plan and throws a needs-connection or Pro-required error the screen catches with a snackbar. Offline is caught before any request is made.",
+      "why": "Anything the server computes from must reach it, and a failure must never leave a half-applied plan.",
+      "touches": "Meal plan repository, plan controller, screens."
+    }
+  },
+  {
+    "from": ["mp-183", "mp-184", "mp-185"],
+    "into": {
+      "title": "What syncs and what does not",
+      "question": "Which meal-planning tables are mirrored to the device and when they sync.",
+      "context": "The meal library is about 1,900 rows with embeddings. The app's rule is repository-level sync on demand, never a startup sync-all. Entitlements are written only by the webhook.",
+      "decision": "1. The meal library is never mirrored. Search and detail hit the server, with an in-memory cache for the session and a local text search as fallback.\n2. Plans and memories sync when their controller first builds and on pull-to-refresh on the Plan tab. Nothing syncs from startup.\n3. The entitlements table is a read-only mirror with no upload path.",
+      "why": "The library is too big and too alive to mirror, and startup sync-all is banned.",
+      "touches": "Catalog repository, plan and memory repositories, entitlements table."
+    }
+  },
+  {
+    "from": ["mp-186"],
+    "into": {
+      "title": "An action targets the plan id, else the conversation's draft, else the week",
+      "detail": true,
+      "question": "Which plan an action hits when it does not name one.",
+      "context": "Actions arrive from chat parts, the Plan tab and the Review sheet, not all of which know a plan id.",
+      "decision": "An action that names a plan id hits that plan. Otherwise it hits the conversation's draft. Otherwise it hits the week's active plan.",
+      "why": "One resolution order, so every caller gets the plan it means.",
+      "touches": "vana-action plan resolution."
+    }
+  },
+  {
+    "from": ["mp-187", "mp-188", "mp-189"],
+    "into": {
+      "title": "Home location is a Fact set in conversation",
+      "question": "Where the athlete's home lives, how it is set, and what reads it.",
+      "context": "Weather and Kroger coverage keyed off the race venue because the app had no home. There is no settings screen for it.",
+      "decision": "1. Home is four nullable columns on the user record: city, latitude, longitude and timezone. A profile tool geocodes what the athlete says in conversation and sets them. No settings screen edits home.\n2. When home is set, weather and Kroger coverage use it. When it is null they fall back to the race venue.\n3. Clearing nutrition overrides is one flag on the profile copy, not a field-by-field rebuild.",
+      "why": "Home is something the athlete tells Vana once, and the rest of the app should read it from the one place it lives.",
+      "touches": "users table, profile tool, weather, Kroger coverage, settings controller.",
+      "details": "Device schema version 21."
+    }
+  },
+  {
+    "from": ["mp-190", "mp-191", "mp-192"],
+    "into": {
+      "title": "Everything is dev-only until the cutover",
+      "question": "What reaches prod before the cutover, and what the cutover must do.",
+      "context": "Prod has no pgvector. The home-location migration adds columns the users upsert needs. Bundled content defaults were losing to a stale cache.",
+      "decision": "1. Nothing is pushed to the develop or release branches. The home-location migration rides the cutover, whose schema target reads 21. A build that reaches prod before the columns exist fails every users upsert.\n2. The prod seed re-embeds the library. The verify step requires every row embedded before the seed counts as done.\n3. Bundled content defaults load before the first frame and win over a stale cache.",
+      "why": "A half-migrated prod breaks sign-in for everyone.",
+      "touches": "Cutover runbook, seed script, content service.",
+      "details": "About 1,922 embedding calls at seed time."
+    }
+  },
+  {
+    "from": ["mp-193", "mp-194", "mp-195", "mp-196"],
+    "into": {
+      "title": "The sheet and launcher are design-bearing widgets",
+      "screen": "Any screen with the launcher",
+      "question": "How the sheet and launcher enter the design system, and which numbers win when the export disagrees with the tokens.",
+      "context": "Design-bearing widgets are implemented once under their spec name with one token registry. The design export drew its own radius and scrim, and the tab bar spec reserved a bottom-right slot for the AI companion.",
+      "decision": "1. A component spec is written from the existing glass surface and tab-bar tokens. The widget is implemented once under that spec name in the shared library and the app shell composes it.\n2. Token values beat the export where they disagree.\n3. The launcher mark is a speech-bubble outline drawn as a path, the first branded glyph on the shell.\n4. The launcher takes the tab bar's reserved utility slot and inherits the old floating button's clearance rule. The scrim comes from the calendar sheet.",
+      "why": "One registry, one implementation, and the tab bar spec needs no re-ratification.",
+      "touches": "kyle_design navigation widgets, vana-sheet.md spec, tab bar spec.",
+      "details": "Radius token 24 not the export's 26. Scrim token 60 percent not 45. Launcher 52 px."
+    }
+  },
+  {
+    "from": ["mp-198", "mp-199", "mp-200"],
+    "into": {
+      "title": "Feature widgets and slot colours",
+      "screen": "Food tab, meal cards",
+      "question": "Which meal-planning widgets are custom, what colour each slot is, and how meal icons are tinted.",
+      "context": "The shared segmented control renders enum names and the shared plus-minus control is full width. The prototype fixed a colour per meal type and always tinted icons electrolyte. An agent later proposed an ink tint on cards.",
+      "decision": "1. The Plan, Meals, Shopping selector and the servings stepper are custom feature widgets.\n2. Breakfast is orange, lunch electrolyte dark, dinner purple and snack dragonfruit, as ported from the prototype.\n3. Meal icons on cards are ink-tinted in the current code, against the prototype's electrolyte rule. Lee has not ruled and is to see it on a device.",
+      "why": "Labels must come from content keys, and the shared controls did not fit.",
+      "touches": "Food tab segments, servings stepper, slot chip colours, meal icon tint."
+    }
+  },
+  {
+    "from": ["mp-201", "mp-202", "mp-203"],
+    "into": {
+      "title": "How the planning chat and plan present themselves",
+      "screen": "Vana chat, Plan tab",
+      "question": "How planning parts arrive, what the app bar says, and which macros show.",
+      "context": "Widgets arriving mid-stream jumped. The planning chat's app bar had a subtitle. Meal cards, tiles, the bar and the review sheet all show macro pills.",
+      "decision": "1. Planning parts wait behind the typing dots until prose arrives, then grow and fade in with a soft stagger. The plan bar fades and slides in.\n2. The planning app bar reads \"New meal plan\" only.\n3. Macros are on by default and show kcal, carbs, protein and fat only. The picker carousel tile stays kcal-only.",
+      "why": "Parts should land, not jump, and the pills should carry only what an athlete reads at a glance.",
+      "touches": "Chat part animation, planning app bar, macro pills, show-macros setting.",
+      "details": "Stagger over 520 ms."
+    }
+  },
+  {
+    "from": ["mp-204", "mp-205", "mp-206"],
+    "into": {
+      "title": "The QA repo, ratification and the prototype stay where they are",
+      "question": "Who owns the design specs and the prototype, and what a sync must never delete.",
+      "context": "The QA repo is Xuan's. The app authored three component specs it needed before Xuan could ratify them. The TanStack prototype is the living reference and source of fixtures.",
+      "decision": "1. Specs written app-side sit in the app's design spec folder marked \"authored app-side, awaiting Xuan\". A sync must keep any spec carrying that line. The QA repo is not touched.\n2. Ratifying is Xuan's job. Design-sync publishes only ratified things, so it does not run on a proposed spec.\n3. The prototype stays in its own repo. No TypeScript is copied into the app. SQL migrations live in the app repo.",
+      "why": "Two owners, no drift, and a blind sync must not delete app-side work.",
+      "touches": "docs/ssot/spec/design/components, design-sync, prototype repo."
+    }
+  },
+  {
+    "from": ["mp-207", "mp-208"],
+    "into": {
+      "title": "Seams, and what never runs in CI",
+      "detail": true,
+      "question": "Where the tests sit and which ones run by hand only.",
+      "context": "Server pure functions, live model evals and client controllers each need a different kind of test. Live evals cost money and the plan-build flow talks to a real model.",
+      "decision": "1. Three seams: server pure functions with a fake database, live personalisation evals by hand against dev, and client controller tests through the real notifier plus goldens. A test feeds producer-shaped rows and never asserts on prompt wording.\n2. The eval, lifecycle and personalisation scripts and the end-to-end plan-build test never run in CI. The Pro-gate flow that does run asserts that the tab and the routes agree.",
+      "why": "Tests that cost money or depend on a live model are run on purpose, not on every push.",
+      "touches": "test/, scripts/vana-eval, CI lists."
+    }
+  }
+]

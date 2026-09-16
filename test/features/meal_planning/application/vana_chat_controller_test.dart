@@ -55,6 +55,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     calls.add({
       'message': message,
@@ -63,6 +64,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
       'anchorDate': anchorDate,
       'situation': situation?.toJson(),
       'moment': moment?.toWire(),
+      'newPlan': newPlan,
     });
     if (throwOnStream != null) throw throwOnStream!;
     return VanaChatResponse(
@@ -219,10 +221,28 @@ void main() {
       expect(s.messages.single.parts.single, isA<VanaMealPickerPart>());
       expect(repo.calls.single['opener'], isTrue);
       expect(repo.calls.single['anchorDate'], '2026-09-01');
+      expect(repo.calls.single['newPlan'], isFalse);
       // The status line was visible mid-stream.
       expect(seen.any((st) => st.statusTool == 'suggestMeals'), isTrue);
     },
   );
+
+  test('"New meal plan" opener carries the new_plan intent to the server', () async {
+    // Lee, 2026-09-16: tapping "New meal plan" over a confirmed week opened
+    // with "are you here to log a meal, swap something, or adjust the week
+    // ahead?". The intent rides the opener request so the server builds a
+    // fresh plan and never asks about the old one.
+    repo.events = eventsFromFixture('opener');
+    final (:notifier, seen: _) = make();
+    await notifier.future;
+
+    await notifier.loadOpener(newPlan: true);
+
+    expect(repo.calls.single['opener'], isTrue);
+    expect(repo.calls.single['newPlan'], isTrue);
+    expect(notifier.state.value!.conversationId, 'conv-server');
+    expect(notifier.state.value!.messages, hasLength(1));
+  });
 
   test('a moment\'s opener is written into a conversation that already has '
       'turns, and carries the moment', () async {

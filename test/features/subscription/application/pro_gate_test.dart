@@ -1,5 +1,5 @@
 /// Unit tests for the app gate ([computeUnlocked] / `appGateProvider` /
-/// [readAppGate]). The gate is the status and nothing else: no build flag,
+/// [readAppGate]). The gate is the status, or a team admin: no build flag,
 /// no tester grant, no coach branch (mp-279, mp-286).
 library;
 
@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 
 const _active = SubscriptionStatus(
   active: true,
@@ -36,20 +37,29 @@ class _DeferredStatus extends SubscriptionStatusController {
 void main() {
   group('computeUnlocked', () {
     test('active → unlocked', () {
-      expect(computeUnlocked(_active), isTrue);
+      expect(computeUnlocked(_active, isAdmin: false), isTrue);
     });
 
     test('none → locked', () {
-      expect(computeUnlocked(SubscriptionStatus.none), isFalse);
+      expect(computeUnlocked(SubscriptionStatus.none, isAdmin: false), isFalse);
+    });
+
+    test('an admin is unlocked whatever the status', () {
+      expect(computeUnlocked(SubscriptionStatus.none, isAdmin: true), isTrue);
+      expect(computeUnlocked(_active, isAdmin: true), isTrue);
     });
   });
 
   group('appGateProvider', () {
     ProviderContainer container(
-      SubscriptionStatusController Function() status,
-    ) {
+      SubscriptionStatusController Function() status, {
+      Future<bool> Function(Ref ref)? admin,
+    }) {
       final c = ProviderContainer(
-        overrides: [subscriptionStatusProvider.overrideWith(status)],
+        overrides: [
+          subscriptionStatusProvider.overrideWith(status),
+          isAdminProvider.overrideWith(admin ?? (_) async => false),
+        ],
       );
       addTearDown(c.dispose);
       return c;
@@ -62,6 +72,30 @@ void main() {
 
     test('reflects a locked status once resolved', () async {
       final c = container(() => _FixedStatus(SubscriptionStatus.none));
+      expect(await c.read(appGateProvider.future), isFalse);
+    });
+
+    test('an admin with no subscription is unlocked', () async {
+      final c = container(
+        () => _FixedStatus(SubscriptionStatus.none),
+        admin: (_) async => true,
+      );
+      expect(await c.read(appGateProvider.future), isTrue);
+    });
+
+    test('an admin read that never answers locks within the bound', () async {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionStatusProvider.overrideWith(
+            () => _FixedStatus(SubscriptionStatus.none),
+          ),
+          isAdminProvider.overrideWith((_) => Completer<bool>().future),
+          entitlementAnswerTimeoutProvider.overrideWithValue(
+            const Duration(milliseconds: 20),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
       expect(await c.read(appGateProvider.future), isFalse);
     });
 
@@ -98,6 +132,7 @@ void main() {
       final c = ProviderContainer(
         overrides: [
           subscriptionStatusProvider.overrideWith(() => _FixedStatus(_active)),
+          isAdminProvider.overrideWith((_) async => false),
         ],
       );
       addTearDown(c.dispose);
@@ -110,7 +145,10 @@ void main() {
     test('waits for an unresolved status', () async {
       final deferred = _DeferredStatus();
       final c = ProviderContainer(
-        overrides: [subscriptionStatusProvider.overrideWith(() => deferred)],
+        overrides: [
+          subscriptionStatusProvider.overrideWith(() => deferred),
+          isAdminProvider.overrideWith((_) async => false),
+        ],
       );
       addTearDown(c.dispose);
 

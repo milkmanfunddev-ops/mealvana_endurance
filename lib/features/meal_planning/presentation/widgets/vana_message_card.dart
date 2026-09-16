@@ -6,7 +6,7 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../domain/vana_message.dart';
 import 'part_entrance.dart';
 import 'streamed_text.dart';
-import 'vana_avatar.dart';
+import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'vana_bubble.dart';
 import 'vana_part_renderer.dart';
 

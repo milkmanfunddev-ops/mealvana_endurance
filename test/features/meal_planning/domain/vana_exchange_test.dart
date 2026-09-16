@@ -30,7 +30,7 @@ void main() {
 }
 
 /// A moment starts a new exchange mid-thread (vana-moment spec VM-1): the
-/// exchange is read from where it starts, and a raised opening is a to-do.
+/// exchange is read from where it starts.
 void exchangeStartTests() {
   const offers = VanaChoicesPart(
     options: ['What should I eat today?', 'Start a meal plan'],
@@ -80,28 +80,5 @@ void exchangeStartTests() {
       expect(exchange.quickReplies, isEmpty);
     });
 
-    test('a raised opening is a to-do about what raised it', () {
-      final raised = VanaExchange.of(
-        [...thread, moment],
-        isStreaming: false,
-        start: 3,
-        raisedFor: VanaExchangeTopic.fuelPlan,
-      );
-      expect(raised.status, VanaExchangeStatus.toDo);
-      expect(raised.topic, VanaExchangeTopic.fuelPlan);
-
-      final asked = VanaExchange.of([moment], isStreaming: false);
-      expect(asked.status, VanaExchangeStatus.update);
-    });
-
-    test('once the athlete answers, the chip reads Vana\'s latest turn', () {
-      final exchange = VanaExchange.of(
-        [...thread, moment, _athlete('Walk me through it'), _vana('A bagel.')],
-        isStreaming: false,
-        start: 3,
-        raisedFor: VanaExchangeTopic.fuelPlan,
-      );
-      expect(exchange.status, VanaExchangeStatus.update);
-    });
   });
 }

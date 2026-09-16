@@ -13,7 +13,7 @@ import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools } from './tools.ts';
-import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, checkinOpener, debriefOpener } from './persona.ts';
+import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, checkinOpener, debriefOpener } from './persona.ts';
 import { checkRateLimit } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, type Situation } from './situation.ts';
@@ -22,7 +22,7 @@ import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
-import { pickOpener, pendingDebrief, type OpenerVariant } from './opener.ts';
+import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, type OpenerVariant } from './opener.ts';
 import { getPlanPeriod } from './memory.ts';
 import { generalOpener, type GeneralOpenerVariant } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
@@ -236,7 +236,11 @@ export interface ChatBody { message?: string; conversation_id?: string | null; k
   /** The client says `conversation_id` is idle (mp-288): no turn, its episode and missed notes are written once. */
   idle?: boolean;
   /** With `opener`: the device raised a moment (vana-moment spec VM-1) — `{ kind, activity_id, window_minutes, branch?, next_activity_id? }`. */
-  moment?: unknown }
+  moment?: unknown;
+  /** With `opener` on a planning conversation: the athlete tapped "New meal plan" on the Plan tab. The plan opener wins over a
+   *  check-in or debrief, the screen's Situation is replaced by NEW_PLAN_SITUATION, and the opener text forbids raising the plan
+   *  the week already holds (it is archived by confirm_meal_plan when this one is confirmed, never at open). Ignored otherwise. */
+  new_plan?: boolean }
 export interface ChatRunOpts {
   /** `ai_usage.function_name` / log tag: 'vana-chat' | 'jade-chat'. */
   functionName: string;
@@ -301,7 +305,10 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   });
   // The Situation travels with the message and is resolved here from ids; it is never written anywhere, and it rides
   // on the user message rather than the block (see withSituation).
-  const [situation, inView] = await Promise.all([resolveSituation(v, body.situation), inViewSection(v, body.situation, anchorDate)]);
+  // "New meal plan" from the Plan tab: the screen underneath is the plan being replaced, so its sentence and DAY PLAN section
+  // are left out of this one turn (opener.ts NEW_PLAN_SITUATION); every later turn resolves the ids the client sends as usual.
+  const newPlan = opener && convKind === 'meal_planning' && body.new_plan === true;
+  const [situation, inView] = newPlan ? [NEW_PLAN_SITUATION, null] : await Promise.all([resolveSituation(v, body.situation), inViewSection(v, body.situation, anchorDate)]);
   const tools = makeVanaTools(v, ctx, convKind, { scope, conversationId: convId || null, shownIds: shownMealIds(messages) });
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
@@ -319,15 +326,16 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     const openerInput = await loadOpenerInput(v, anchorDate);
     // The opener's synthetic user message is never stored, so later turns need the pending debrief restated in the context.
     const pending = pendingDebrief(openerInput); if (pending) extraContext = `\nDEBRIEF PENDING last week's plan id ${pending.id} (${pending.meals.length} meals: ${pending.meals.map((m) => m.name).join(', ')}) — recordDebrief has not been called yet`;
-    const variant = opener ? pickOpener(openerInput) : ({ kind: 'plan' } as OpenerVariant); openerVariant = variant.kind;
-    if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
+    const variant = opener ? pickOpener({ ...openerInput, newPlan }) : ({ kind: 'plan' } as OpenerVariant); openerVariant = variant.kind;
+    if (newPlan) openerText = NEW_PLAN_OPENER;
+    else if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
   const replayed = opener ? messages : await replayHistory(v, convId, messages);
   const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed), situation, inView);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
-  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
+  console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
 
   const result = streamText({
     model: CHAT_MODEL,
@@ -349,7 +357,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
             const firstText = (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text;
-            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: firstText ?? (parts.length ? '' : clampSentences(text)), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
+            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: firstText ?? (parts.length ? '' : clampSentences(text)), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, new_plan: newPlan || undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }

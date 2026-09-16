@@ -25,12 +25,21 @@ final paywallUrlLauncherProvider = Provider<Future<bool> Function(Uri uri)>(
 /// Delete account. There is no close button: nothing renders behind it, and
 /// the router moves the person into the app the moment the gate opens.
 ///
+/// Two shapes of the one screen:
+/// - lapsed (default): the four actions above;
+/// - [onboarding]: the last step after account creation (mp-297). Plans and
+///   Restore only — Manage, Sign out and Delete are for a lapsed account,
+///   not one made a moment ago.
+///
 /// UI only: purchase / restore / management URL live in
 /// [ProPaywallController]; sign-out and delete reuse [SettingsController]'s
 /// flows; the gate itself is `appGateProvider`. All copy comes from
 /// [ContentKeys].
 class PaywallScreen extends ConsumerWidget {
-  const PaywallScreen({super.key});
+  const PaywallScreen({super.key, this.onboarding = false});
+
+  /// Reached as onboarding's last step: plans and Restore only.
+  final bool onboarding;
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
     final content = ref.read(contentServiceProvider);
@@ -199,67 +208,39 @@ class PaywallScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: AppSpacing.xl),
-              // Hero
-              Column(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.orange, AppColors.dragonfruit],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: isDark
-                          ? null
-                          : [
-                              BoxShadow(
-                                color: AppColors.orange.withValues(alpha: 0.3),
-                                blurRadius: 20,
-                                offset: const Offset(0, 10),
-                              ),
-                            ],
-                    ),
-                    child: Icon(Icons.bolt, size: 48, color: textColor),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    key: const ValueKey('paywall.title'),
-                    content.getValue(ContentKeys.paywallTitle),
-                    style: AppTextStyles.h1.copyWith(color: textColor),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    content.getValue(ContentKeys.paywallSubtitle),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: secondaryColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+              // The app's name and one line on what the prices below buy.
+              // No hero, no pitch beyond that (Lee, 2026-09-16).
+              Text(
+                key: const ValueKey('paywall.title'),
+                content.getValue(ContentKeys.paywallTitle),
+                style: AppTextStyles.h1.copyWith(color: textColor),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                key: const ValueKey('paywall.subtitle'),
+                content.getValue(ContentKeys.paywallSubtitle),
+                style: AppTextStyles.bodyMedium.copyWith(color: secondaryColor),
+                textAlign: TextAlign.center,
               ),
 
               const SizedBox(height: AppSpacing.xxxl),
 
               // Plans
+              // A content card: solid fill + hairline, never glass
+              // (tokens.md §Materials, boundaries).
               BaseCard(
                 key: const ValueKey('paywall.pricing_card'),
                 backgroundColor: isDark
-                    ? AppColors.blackberryLight.withValues(alpha: 0.5)
+                    ? AppColors.surfaceDark
                     : AppColors.surfaceLight,
+                border: Border.all(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
+                ),
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      content.getValue(ContentKeys.paywallPricingTitle),
-                      style: AppTextStyles.h4.copyWith(color: textColor),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
                     plansAsync.when(
                       loading: () => const Center(
                         child: Padding(
@@ -334,49 +315,44 @@ class PaywallScreen extends ConsumerWidget {
                         );
                       },
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      content.getValue(ContentKeys.paywallCancelNote),
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: secondaryColor,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
                   ],
                 ),
               ),
 
               const SizedBox(height: AppSpacing.xxl),
 
-              // The four actions, and nothing else (mp-280 §2).
+              // The four actions, and nothing else (mp-280 §2); Restore alone
+              // in onboarding mode.
               KyleSecondaryButton(
                 key: const ValueKey('paywall.restore_button'),
                 text: content.getValue(ContentKeys.paywallRestoreButton),
                 isLoading: isBusy,
                 onPressed: isBusy ? null : () => _restore(context, ref),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              KyleTertiaryButton(
-                key: const ValueKey('paywall.manage_button'),
-                text: content.getValue(ContentKeys.paywallManageButton),
-                onPressed: isBusy ? null : () => _manage(context, ref),
-              ),
-              KyleTertiaryButton(
-                key: const ValueKey('paywall.sign_out_button'),
-                text: content.getValue(ContentKeys.paywallSignOutButton),
-                onPressed: isBusy ? null : () => _signOut(context, ref),
-              ),
-              TextButton(
-                key: const ValueKey('paywall.delete_account_button'),
-                onPressed: isBusy ? null : () => _deleteAccount(context, ref),
-                child: Text(
-                  content.getValue(ContentKeys.paywallDeleteAccountButton),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.dragonfruit,
-                    decoration: TextDecoration.underline,
+              if (!onboarding) ...[
+                const SizedBox(height: AppSpacing.sm),
+                KyleTertiaryButton(
+                  key: const ValueKey('paywall.manage_button'),
+                  text: content.getValue(ContentKeys.paywallManageButton),
+                  onPressed: isBusy ? null : () => _manage(context, ref),
+                ),
+                KyleTertiaryButton(
+                  key: const ValueKey('paywall.sign_out_button'),
+                  text: content.getValue(ContentKeys.paywallSignOutButton),
+                  onPressed: isBusy ? null : () => _signOut(context, ref),
+                ),
+                TextButton(
+                  key: const ValueKey('paywall.delete_account_button'),
+                  onPressed: isBusy ? null : () => _deleteAccount(context, ref),
+                  child: Text(
+                    content.getValue(ContentKeys.paywallDeleteAccountButton),
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.dragonfruit,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
-              ),
+              ],
 
               const SizedBox(height: AppSpacing.huge),
             ],

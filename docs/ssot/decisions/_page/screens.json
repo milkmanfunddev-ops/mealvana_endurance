@@ -74,7 +74,7 @@
       "lib/features/meal_planning/presentation/widgets/plan_list.dart",
       "lib/features/meal_planning/presentation/widgets/plan_summary.dart",
       "lib/features/meal_planning/presentation/widgets/dashed_box.dart",
-      "lib/features/meal_planning/presentation/widgets/vana_avatar.dart",
+      "lib/shared/widgets/kyle_design/icons/vana_avatar.dart",
       "lib/features/meal_planning/presentation/widgets/day_card.dart",
       "lib/features/meal_planning/presentation/widgets/week_card.dart",
       "lib/features/meal_planning/presentation/widgets/meal_card.dart",
@@ -211,7 +211,7 @@
       "lib/features/meal_planning/presentation/widgets/plan_bar.dart",
       "lib/features/meal_planning/presentation/widgets/review_sheet.dart",
       "lib/features/meal_planning/presentation/widgets/vana_attach_sheet.dart",
-      "lib/features/meal_planning/presentation/widgets/vana_avatar.dart",
+      "lib/shared/widgets/kyle_design/icons/vana_avatar.dart",
       "lib/features/meal_planning/presentation/widgets/vana_date_divider.dart",
       "lib/features/meal_planning/presentation/widgets/vana_message_card.dart",
       "lib/features/meal_planning/presentation/widgets/vana_mic_button.dart",
@@ -266,7 +266,7 @@
     "code": [
       "lib/features/meal_planning/presentation/screens/vana_conversations_screen.dart",
       "lib/features/meal_planning/presentation/widgets/dashed_box.dart",
-      "lib/features/meal_planning/presentation/widgets/vana_avatar.dart",
+      "lib/shared/widgets/kyle_design/icons/vana_avatar.dart",
       "lib/features/meal_planning/presentation/widgets/vana_round_button.dart"
     ],
     "drive": [

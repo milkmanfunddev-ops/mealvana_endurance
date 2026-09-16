@@ -118,6 +118,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
+    bool newPlan = false,
   }) async {
     calls.add({
       'message': message,
@@ -328,15 +329,6 @@ Future<void> _finish(WidgetTester tester, _Harness h) async {
   await h.logs.close();
 }
 
-/// The chip reads `Fuel plan · to do`, in the to-do's orange.
-void _expectToDo(WidgetTester tester) {
-  final chip = tester.widget<VanaSheetStatusChip>(
-    find.byType(VanaSheetStatusChip),
-  );
-  expect(chip.label, 'Fuel plan · to do');
-  expect(chip.tone, VanaSheetStatusTone.toDo);
-}
-
 VanaLauncherState _state(WidgetTester tester) =>
     tester.widget<VanaLauncher>(find.byType(VanaLauncher)).state;
 
@@ -466,14 +458,13 @@ void main() {
         'window_minutes': 120,
         'branch': 'relaxed',
       });
-      _expectToDo(tester);
       await _finish(tester, h);
     });
   });
 
   group('VM-1 to VM-3: the sheet opens on the moment', () {
     testWidgets('VM-1 mid-thread: the opener lands in the day\'s '
-        'conversation with two quick replies and the orange to-do', (
+        'conversation with two quick replies', (
       tester,
     ) async {
       final h = await _pump(
@@ -499,7 +490,6 @@ void main() {
       expect(find.text('Oats at breakfast.'), findsOneWidget);
       expect(find.text(_walk), findsOneWidget);
       expect(find.text(_handle), findsOneWidget);
-      _expectToDo(tester);
       await _finish(tester, h);
     });
 
@@ -517,7 +507,6 @@ void main() {
       await _open(tester);
       expect(h.repo.calls, hasLength(1), reason: 'the opener was sent twice');
       expect(find.text(_walk), findsOneWidget);
-      _expectToDo(tester);
       await _finish(tester, h);
     });
 
@@ -567,7 +556,6 @@ void main() {
       expect(h.repo.calls.single['conversationId'], isNull);
       expect(h.repo.calls.single['moment'], isNotNull);
       expect(find.text(_walk), findsOneWidget);
-      _expectToDo(tester);
       await _finish(tester, h);
     });
   });

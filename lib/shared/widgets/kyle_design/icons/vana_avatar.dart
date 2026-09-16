@@ -6,6 +6,10 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 /// Vana's avatar — a dragonfruit disc with a cream "V" in Sansita, pulsing
 /// while the model streams (the Vana analogue of `AiCoachAvatar`). Mirrors
 /// `.v-avatar` in the prototype.
+///
+/// The one avatar for every Vana surface: the chat route, the plan tab, the
+/// shopping list, the message cards and the sheet conversation
+/// (`navigation/vana_sheet_conversation.dart`). Nothing else draws Vana.
 class VanaAvatar extends StatefulWidget {
   const VanaAvatar({
     super.key,

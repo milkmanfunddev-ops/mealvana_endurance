@@ -5,19 +5,14 @@
 ///     → body_composition → nutrition_settings → plan_reveal
 ///     → daily_plan_preview → auth ("Your plan is ready…").
 ///
-/// Two flows, in declaration order:
+/// One flow (the anonymous "skip everything" flow was removed on 2026-09-16
+/// with the guest path itself; mp-417: the account is required):
 ///
-///   1. **Skip-everything anonymous** — minimal selections, skip the connect
-///      step, defaults on every form, "Continue without an account" → lands
-///      on /main as an anonymous user with no error snackbar. Needs a fresh
-///      install (guards on the welcome screen and self-skips otherwise).
-///   2. **Happy path** — Running + a goal, "I don't use training plan apps"
-///      tile, personal info, one plan-reveal edit, a daily-preview tab
-///      switch, "Save My Plan", then email signup → lands on the tabs shell.
-///      When flow 1 just ran, this flow recovers to the welcome screen by
-///      signing the anonymous user out via the keyed Settings path
-///      (`settings.sign_out_button` → `signout_dialog.sign_out_anyway_button`,
-///      which routes to /welcome); otherwise it self-skips.
+///   **Happy path** — Running + a goal, "I don't use training plan apps"
+///   tile, personal info, one plan-reveal edit, a daily-preview tab switch,
+///   "Save My Plan", then email signup → lands on the paywall in its
+///   onboarding shape (plans + Restore only; a brand-new account has no
+///   entitlement, mp-297). When a session is present the flow self-skips.
 ///
 /// The connect-FAILURE path (error snackbar → card back in Connect state →
 /// retry / Skip still advances) is deliberately NOT scripted here: Patrol
@@ -56,93 +51,14 @@ import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
-    'skip-everything onboarding lands on main as an anonymous user',
-    ($) async {
-      await launchApp();
-      await _settleFirstFrame($);
-
-      if (!await _onWelcomeScreen($)) {
-        markTestSkipped(
-          'Welcome screen not present — app launched with an existing '
-          'session. Reinstall the app for a clean onboarding run.',
-        );
-        return;
-      }
-
-      await _startOnboardingFromWelcome($);
-
-      // ---- Sports (≥1 required; everything after is skippable) ----------
-      await $(const ValueKey('sport_selection.running_chip')).tap();
-      await $(const ValueKey('sport_selection.continue_button')).tap();
-
-      // ---- Goals + Pitfalls: non-blocking, continue straight through ----
-      await $(const ValueKey('goals.continue_button')).tap();
-      await $(const ValueKey('pitfalls.continue_button')).tap();
-
-      // ---- Connect training → Continue (the 2026-08 design owner removed
-      // Skip-for-now: it was equivalent to Continue) -----------------------
-      await $(const ValueKey('connect_training.continue_button')).tap();
-
-      // ---- Personal info (gender + birth year gate the continue) --------
-      await _fillPersonalInfoMinimum($);
-
-      // ---- Body composition + nutrition settings: defaults --------------
-      await $(const ValueKey('body_comp.continue_button')).tap();
-      await $(const ValueKey('nutrition_settings.continue_button')).tap();
-
-      // ---- Plan reveal: wait out the loader (footer disabled during it) --
-      await _waitForPlanReveal($);
-      await $(const ValueKey('plan_reveal.continue_button')).tap();
-
-      // ---- Daily preview → Save My Plan ---------------------------------
-      await $(
-        const ValueKey('daily_preview.save_button'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 15));
-      await $(const ValueKey('daily_preview.save_button')).tap();
-
-      // ---- Auth screen → Continue without an account --------------------
-      await $(
-        const ValueKey('create_account.skip_button'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 15));
-      await $(const ValueKey('create_account.skip_button')).tap();
-
-      // ---- Landed on the tabs shell, with the local save succeeding -----
-      // (The Drift survey row is not reachable from the Patrol process — the
-      // app owns the database connection — so the flow asserts the two
-      // user-visible facts instead: navigation happened, and the
-      // "Failed to save your preferences" MealvanaSnackbar did not.)
-      await $(
-        const ValueKey('kyle_tab_bar.item.timeline'),
-      ).waitUntilVisible(timeout: const Duration(seconds: 40));
-      expect(
-        $(const ValueKey('kyle_tab_bar.item.timeline')),
-        findsOneWidget,
-        reason:
-            'Expected the tabs shell after skipping account creation. If this '
-            'fails, saveAllOnboardingData failed or the anonymous redirect '
-            'changed.',
-      );
-      expect(
-        find.textContaining('Failed to save'),
-        findsNothing,
-        reason:
-            'The anonymous save path must not surface the save-failure '
-            'snackbar.',
-      );
-    },
-    timeout: const Timeout(Duration(minutes: 12)),
-  );
-
-  patrolTest(
     'new user completes onboarding, edits a target, and signs up with email',
     ($) async {
       await launchApp();
       await _settleFirstFrame($);
 
-      // Fresh install → welcome directly. Anonymous session left behind by
-      // the flow above → recover via the keyed Settings sign-out (routes to
-      // /welcome). Anything else (signed-in tester account) → skip.
-      if (!await _onWelcomeScreen($) && !await _recoverToWelcome($)) {
+      // Fresh install → welcome directly. Anything else (a signed-in
+      // session) → skip.
+      if (!await _onWelcomeScreen($)) {
         markTestSkipped(
           'Could not reach the welcome screen (existing non-anonymous '
           'session?). Reinstall the app for a clean onboarding run.',
@@ -229,16 +145,23 @@ void main() {
       ).enterText(password);
       await $(const ValueKey('signup_email.create_account_button')).tap();
 
-      // ---- Landed on the tabs shell with the plan saved -----------------
+      // ---- Landed on the paywall's onboarding shape with the plan saved --
+      // (a new account has no entitlement; Restore is the only action
+      // beside the plans — mp-297, mp-417).
       await $(
-        const ValueKey('kyle_tab_bar.item.timeline'),
+        const ValueKey('paywall.restore_button'),
       ).waitUntilVisible(timeout: const Duration(seconds: 40));
       expect(
-        $(const ValueKey('kyle_tab_bar.item.timeline')),
+        $(const ValueKey('paywall.restore_button')),
         findsOneWidget,
         reason:
-            'Expected the tabs shell after signup. If this fails, the signup '
+            'Expected the paywall after signup. If this fails, the signup '
             'round-trip did not complete or the post-signup redirect changed.',
+      );
+      expect(
+        $(const ValueKey('paywall.sign_out_button')),
+        findsNothing,
+        reason: 'The onboarding shape carries no account actions.',
       );
       expect(
         find.textContaining('Failed to save'),
@@ -350,49 +273,6 @@ Future<bool> _onWelcomeScreen(PatrolIntegrationTester $) async {
     await $.pump(const Duration(milliseconds: 500));
   }
   return $(welcomeKey).exists;
-}
-
-/// Best-effort recovery from an ANONYMOUS session (left behind by the
-/// skip-everything flow) back to /welcome, using the keyed Settings sign-out
-/// path that only anonymous users get. Returns true when the welcome screen
-/// is reached. Never throws — a failed recovery becomes a test skip.
-Future<bool> _recoverToWelcome(PatrolIntegrationTester $) async {
-  try {
-    if (!$(const ValueKey('kyle_tab_bar.item.timeline')).exists) return false;
-
-    await $(
-      const ValueKey('kyle_date_header.settings'),
-    ).waitUntilVisible(timeout: const Duration(seconds: 20));
-    await $(
-      const ValueKey('kyle_date_header.settings'),
-    ).tap(settlePolicy: SettlePolicy.noSettle);
-    await $.pump(const Duration(milliseconds: 600));
-
-    // The anonymous sign-out button sits below the account section.
-    if (!await _scrollIntoView($, const ValueKey('settings.sign_out_button'))) {
-      return false;
-    }
-    await $(
-      const ValueKey('settings.sign_out_button'),
-    ).tap(settlePolicy: SettlePolicy.noSettle);
-    await $.pump(const Duration(milliseconds: 400));
-
-    await $(
-      const ValueKey('signout_dialog.sign_out_anyway_button'),
-    ).waitUntilVisible(timeout: const Duration(seconds: 10));
-    await $(
-      const ValueKey('signout_dialog.sign_out_anyway_button'),
-    ).tap(settlePolicy: SettlePolicy.noSettle);
-
-    // signOut + context.go('/welcome') round-trip.
-    await $(
-      const ValueKey('welcome.get_started_button'),
-    ).waitUntilVisible(timeout: const Duration(seconds: 20));
-    return true;
-  } on Exception catch (e) {
-    debugPrint('[onboarding_signup] recovery to welcome failed: $e');
-    return $(const ValueKey('welcome.get_started_button')).exists;
-  }
 }
 
 /// Taps "Build My Plan" and lands on the sports step, answering the regional

@@ -65,6 +65,12 @@ export const OPENERS = {
   general: `[New conversation. In one or two sentences say what today looks like for fueling (use the TARGETS and today's workout from the context), made theirs. ${MAKE_IT_THEIRS} Then askChoice with 2–3 things you can help with right now; when LAST TALKS left something open that bears on the next few days, one option picks it up (e.g. "Saturday's ride with Marco"), otherwise e.g. "What should I eat today?", "Before tomorrow's session", "Start a meal plan". No greeting.]`,
 } as const;
 
+/** "New meal plan" from the Plan tab (chat.ts ChatBody.new_plan): the plan opener with one rule in front of it. The week may
+ *  already hold a confirmed plan; it stays on the Plan tab until this one is confirmed, when confirm_meal_plan archives it. The
+ *  athlete chose to start over, so the old plan is never mentioned and never asked about (Lee, 2026-09-16: "are you here to log
+ *  a meal, swap something, or adjust the week ahead?" is the wrong first message). */
+export const NEW_PLAN_OPENER = `[The athlete tapped "New meal plan": they have chosen to build a fresh plan from scratch. Any plan they already have for this week is theirs to keep until this new one is confirmed, when it replaces the old one — so do NOT mention the existing plan, do NOT ask whether they meant to log a meal, swap something or adjust it, and do NOT open a check-in or a debrief. Build the new plan.] ${OPENERS.meal_planning}`;
+
 // ---- Phase 3 opener variants (chat.ts picks them; see pickOpener). Both are the model's first user message, like OPENERS.
 import type { MealPlan } from './contracts.ts';
 const mealList = (p: MealPlan) => p.meals.slice(0, 6).map((m) => `${m.name} ×${m.servings}`).join(', ');

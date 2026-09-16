@@ -68,22 +68,33 @@ _Avoid_: Combo, no-cook meal, snack
 ### Meal imagery
 
 **Dish photo**:
-A photograph of the finished Meal itself. The only image that depicts what the person will
-actually eat, and therefore always preferred over any substitute.
-_Avoid_: Hero, thumbnail (those are placements, not kinds of image)
+A photograph of the finished Meal itself, reached by one image address that points either at our
+storage or at the web. A Meal has one Dish photo or none, and nothing stands in for a missing one.
+Where a photo came from makes no difference to how it is shown. It may carry one credit line,
+shown under it only when present.
+_Avoid_: Hero, thumbnail (those are placements, not kinds of image); Kitchen photo, Stock photo
+(there are no kinds of Dish photo)
+
+**Tester**:
+An account that has turned on "Mark this device as internal", reached by tapping the version in
+Settings seven times. Anyone who finds the gesture can become one; nothing else is required.
+_Avoid_: Admin, developer (a Tester holds no role granted by us)
 
 **Tile**:
 A photograph of a single ingredient, held in `ingredient_images` and keyed by slug, reusable
-across every Meal that contains that ingredient. A Tile depicts an ingredient and never a Meal.
+across every Meal that contains that ingredient. A Tile depicts an ingredient and never a Meal, so
+a Tile is never shown as a Meal's picture.
 
 **Mosaic**:
 Two to four Tiles composed into one frame at render time to stand in for a Meal that has no Dish
 photo. A Mosaic is a substitute, never a preference: where a Dish photo exists it wins. Composed
-client-side in Flutter, never pre-rendered.
+client-side in Flutter, never pre-rendered. Mosaics are kept but not shown to athletes until a
+Mosaic good enough to stand in for a Meal exists.
 
 **Image mode**:
-Which of the above a Meal is currently showing — `dish`, `mosaic`, `tile`, or `none`. It records
-what the Meal fell back to, so the size of the substitute population is always countable.
+Which of the above a Meal's picture is — `dish`, `mosaic`, `tile`, or `none`. It records what the
+Meal would fall back to, so the size of the substitute population is always countable. Only
+`dish` is shown; every other mode shows no picture.
 
 **Separable / Transformed**:
 Whether a Meal's named components stay individually recognisable in the finished food. A
@@ -98,8 +109,8 @@ from Verdicts; coverage is not a measure of anything.
 _Avoid_: Score, rating (those are the text ranking, which decides nothing)
 
 **Judge**:
-The model call that reaches a Verdict. It is a gate, not an audit: no picture is stored for a
-Meal unless the Judge has already rated it `ok` for that Meal.
+The model call that reached a Verdict, used only by the frozen image pipeline. A photo a Tester
+adds never goes through the Judge.
 
 ### Vana and what she knows
 

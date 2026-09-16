@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/activities/data/activity_mapper.dart';
 import 'package:mealvana_endurance/features/activities/domain/activity.dart';
 import 'package:mealvana_endurance/features/meal_logging/domain/meal_log.dart';
-import 'package:mealvana_endurance/features/meal_planning/domain/vana_exchange.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/recovery_window_authority.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
@@ -211,9 +210,8 @@ void main() {
     expect(_resolve(now: _at(17, 20), activities: [ride])!.windowMinutes, 40);
   });
 
-  test('the moment says what it is about and that it is a to-do', () {
+  test('the moment is a to-do', () {
     final moment = _resolve(now: _at(16, 45))!;
-    expect(moment.kind.topic, VanaExchangeTopic.fuelPlan);
     expect(moment.kind.toDo, isTrue);
     expect(moment.partOfDay, VanaMomentPartOfDay.evening);
   });
@@ -228,7 +226,6 @@ void main() {
       expect(moment.windowOpensAt, _at(7, 30));
       expect(moment.rings, isTrue);
       expect(moment.kind.toDo, isTrue);
-      expect(moment.kind.topic, VanaExchangeTopic.fuelPlan);
       expect(moment.partOfDay, VanaMomentPartOfDay.morning);
     });
 

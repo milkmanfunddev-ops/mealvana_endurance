@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/inputs/text_field.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
@@ -30,9 +31,10 @@ import '../widgets/meal_photo_view.dart';
 /// the router otherwise, so an unnamed push would leave analytics and Vana's
 /// screen situation looking at the recipe screen underneath.
 ///
-/// This ticket builds the current photo, adding by web address or by camera
-/// and gallery, and History as a read-only record. Remove/Restore/Delete
-/// (ticket 06) land in the same sections.
+/// Every action a Meal's photograph has: what athletes see now (with Remove),
+/// adding one by web address or by camera and gallery, and History — every
+/// photograph this Meal has shown, each one restorable, each one deletable for
+/// good after a confirmation.
 ///
 /// Only one add is ever in flight: a pending upload and a pending address
 /// replace each other, so Confirm is never ambiguous about what it publishes.
@@ -167,24 +169,29 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
     );
   }
 
-  /// Send one add and say what happened — the same for a pasted address and a
-  /// photograph, so the two can never drift into reporting differently.
+  /// Send one photo change and say what happened — adds, removals, restores
+  /// and deletions all come through here, so they can never drift into
+  /// reporting differently.
   ///
   /// Success is only said once [send] returns, because that is when the server
   /// has it and therefore when every athlete has it (story 32). An offline
-  /// failure says so plainly and queues nothing: a photograph every athlete
-  /// sees must not publish later, unwatched (story 33).
-  Future<void> _publish(Future<void> Function() send) async {
+  /// failure says so plainly and queues nothing: a change every athlete sees
+  /// must not publish later, unwatched (story 33).
+  Future<void> _run(
+    Future<void> Function() send,
+    String successKey, {
+    bool clearForm = false,
+  }) async {
     if (_sending) return;
     final content = ref.read(contentServiceProvider);
     setState(() => _sending = true);
     try {
       await send();
       if (!mounted) return;
-      _cancel();
+      if (clearForm) _cancel();
       MealvanaSnackbar.showSuccess(
         context,
-        content.getValue(ContentKeys.mpPhotosAdded),
+        content.getValue(successKey),
         duration: MealvanaSnackbar.shortDuration,
       );
     } on VanaOfflineException {
@@ -213,6 +220,61 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
             credit: _credit.text,
             creditUrl: _creditUrl.text,
           ),
+    );
+  }
+
+  /// Take the current photograph down. The Meal shows nothing afterwards, and
+  /// the photograph stays in History, one tap from coming back.
+  Future<void> _remove() => _run(
+    () => ref
+        .read(mealPhotosControllerProvider(widget.mealId).notifier)
+        .remove(),
+    ContentKeys.mpPhotosRemoved,
+  );
+
+  /// Put a History row back on as the Meal's photograph.
+  Future<void> _restore(String photoId) => _run(
+    () => ref
+        .read(mealPhotosControllerProvider(widget.mealId).notifier)
+        .restore(photoId),
+    ContentKeys.mpPhotosRestored,
+  );
+
+  /// Delete a photograph for good — but never on one tap. Deleting takes the
+  /// file with it and cannot be undone, so the Tester is asked first (story 40).
+  Future<void> _delete(String photoId) async {
+    final content = ref.read(contentServiceProvider);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const ValueKey('meal_planning.photos_delete_dialog'),
+        backgroundColor: Theme.of(dialogContext).scaffoldBackgroundColor,
+        title: Text(content.getValue(ContentKeys.mpPhotosDeleteTitle)),
+        content: Text(content.getValue(ContentKeys.mpPhotosDeleteBody)),
+        actions: [
+          TextButton(
+            key: const ValueKey('meal_planning.photos_delete_cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(content.getValue(ContentKeys.mpPhotosDeleteCancel)),
+          ),
+          TextButton(
+            key: const ValueKey('meal_planning.photos_delete_confirm'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              content.getValue(ContentKeys.mpPhotosDeleteConfirm),
+              style: const TextStyle(color: AppColors.dragonfruit),
+            ),
+          ),
+        ],
+      ),
+    );
+    // Dismissed by tapping outside, or kept: nothing is sent.
+    if (confirmed != true || !mounted) return;
+    await _run(
+      () => ref
+          .read(mealPhotosControllerProvider(widget.mealId).notifier)
+          .delete(photoId),
+      ContentKeys.mpPhotosDeleted,
     );
   }
 
@@ -262,7 +324,11 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              _CurrentPhoto(photos: photos),
+              _CurrentPhoto(
+                photos: photos,
+                // Offered only when there is something to take down.
+                onRemove: _sending ? null : _remove,
+              ),
               const SizedBox(height: AppSpacing.lg),
               if (_pendingUpload case final bytes?)
                 _buildUploadPreview(content, bytes)
@@ -276,7 +342,11 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
                 _buildAddByAddress(content, textColor, isDark),
               ],
               const SizedBox(height: AppSpacing.lg),
-              _History(entries: photos.history),
+              _History(
+                entries: photos.history,
+                onRestore: _sending ? null : _restore,
+                onDelete: _sending ? null : _delete,
+              ),
             ],
           ),
         ),
@@ -451,9 +521,13 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
 /// What athletes see right now — the Meal's photo at the recipe screen's
 /// shape, with its credit line, or a plain line saying there is none.
 class _CurrentPhoto extends ConsumerWidget {
-  const _CurrentPhoto({required this.photos});
+  const _CurrentPhoto({required this.photos, required this.onRemove});
 
   final MealPhotos photos;
+
+  /// Takes the photograph down. Null while another change is in flight; the
+  /// button is not drawn at all when there is nothing to remove.
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -485,18 +559,41 @@ class _CurrentPhoto extends ConsumerWidget {
                   launchUrl(uri, mode: LaunchMode.externalApplication),
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          // Taking a photograph down is not deleting it: it stays in History
+          // and is one tap from coming back, so this needs no confirmation.
+          KyleSecondaryButton(
+            key: const ValueKey('meal_planning.photos_remove'),
+            text: content.getValue(ContentKeys.mpPhotosRemove),
+            height: 40,
+            onPressed: onRemove,
+          ),
         ],
       ],
     );
   }
 }
 
-/// Every photograph this Meal has shown, newest first. Read-only here:
-/// Restore and Delete arrive with ticket 06.
+/// Every photograph this Meal has shown, newest first, with who added it and
+/// when — the honest record behind "a mistake or vandalism is one tap to undo"
+/// (stories 37, 38).
+///
+/// Restore is offered on every row but the one being worn; restoring the
+/// current photograph would change nothing. Delete is offered on all of them,
+/// and asks first.
 class _History extends ConsumerWidget {
-  const _History({required this.entries});
+  const _History({
+    required this.entries,
+    required this.onRestore,
+    required this.onDelete,
+  });
 
   final List<MealPhotoHistoryEntry> entries;
+
+  /// Null while another change is in flight, which disables both actions
+  /// rather than letting a second one race the first.
+  final ValueChanged<String>? onRestore;
+  final ValueChanged<String>? onDelete;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -545,6 +642,38 @@ class _History extends ConsumerWidget {
                               color: textColor.withValues(alpha: 0.55),
                             ),
                           ),
+                        Row(
+                          children: [
+                            // Restoring what the Meal already wears would
+                            // change nothing, so that row is not offered it.
+                            if (!entry.isCurrent)
+                              TextButton(
+                                key: ValueKey(
+                                  'meal_planning.photos_restore_${entry.id}',
+                                ),
+                                onPressed: onRestore == null
+                                    ? null
+                                    : () => onRestore!(entry.id),
+                                child: Text(
+                                  content.getValue(ContentKeys.mpPhotosRestore),
+                                ),
+                              ),
+                            TextButton(
+                              key: ValueKey(
+                                'meal_planning.photos_delete_${entry.id}',
+                              ),
+                              onPressed: onDelete == null
+                                  ? null
+                                  : () => onDelete!(entry.id),
+                              child: Text(
+                                content.getValue(ContentKeys.mpPhotosDelete),
+                                style: const TextStyle(
+                                  color: AppColors.dragonfruit,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

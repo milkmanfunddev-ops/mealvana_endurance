@@ -12,5 +12,6 @@ String? mealPhotoMessageKey(String code) => switch (code) {
   'invalid_input' => ContentKeys.mpPhotosInvalidInput,
   'not_tester' => ContentKeys.mpPhotosNotTester,
   'meal_not_found' => ContentKeys.mpPhotosMealNotFound,
+  'photo_not_found' => ContentKeys.mpPhotosPhotoNotFound,
   _ => null,
 };

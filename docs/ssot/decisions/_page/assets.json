@@ -67,7 +67,15 @@
     "sha256": "34fc39e63cc2d3b283ab3da11e970feb2ecbfd67ed87ffe1cfef1aeae0a962b3"
   },
   "test/features/subscription/presentation/goldens/paywall_light.png": {
-    "id": "bddc7510e78ac29fa9a7440519b485c5",
-    "sha256": "cfaf0b917555d56b2a26fb94853cabcc1b0c517905c5e11fa88273cd4267f847"
+    "id": "55a0ae7fde5351eb84d3ed944ad7af8e",
+    "sha256": "19c2da286239d8645d582ce8f1465c9ee4583d2dd91d1b6c46cec626efd13a7e"
+  },
+  "test/features/subscription/presentation/goldens/paywall_dark.png": {
+    "id": "df334c77bb1b2fe4f2a1fa453ba0c221",
+    "sha256": "5429b58ddc6c86bc13e08dafc7c07755a5f59974a1e9a1658926874efebca0db"
+  },
+  "test/features/subscription/presentation/goldens/paywall_onboarding_dark.png": {
+    "id": "60ea0d189fe0786b4ff9bf0d6a285207",
+    "sha256": "cba99237595e97b87febd9577c115105a142b801eea95481da126efde02f42c4"
   }
 }

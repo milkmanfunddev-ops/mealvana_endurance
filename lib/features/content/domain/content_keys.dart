@@ -4,7 +4,6 @@ class ContentKeys {
   // Paywall (the one app gate, mp-280) — lib/features/subscription
   static const String paywallTitle = 'paywall.title';
   static const String paywallSubtitle = 'paywall.subtitle';
-  static const String paywallPricingTitle = 'paywall.pricing_title';
   static const String paywallPricingUnavailable = 'paywall.pricing_unavailable';
   static const String paywallMonthlyLabel = 'paywall.monthly_label';
   static const String paywallAnnualLabel = 'paywall.annual_label';
@@ -13,7 +12,6 @@ class ContentKeys {
   static const String paywallIntroLine = 'paywall.intro_line';
   static const String paywallStartTrialButton = 'paywall.start_trial_button';
   static const String paywallSubscribeButton = 'paywall.subscribe_button';
-  static const String paywallCancelNote = 'paywall.cancel_note';
   static const String paywallRestoreButton = 'paywall.restore_button';
   static const String paywallManageButton = 'paywall.manage_button';
   static const String paywallSignOutButton = 'paywall.sign_out_button';
@@ -35,6 +33,14 @@ class ContentKeys {
   static const String paywallDeleteConfirmAction =
       'paywall.delete_confirm_action';
   static const String paywallCancel = 'paywall.cancel';
+
+  // Post-onboarding account screen: the trial line (mp-279 terms).
+  static const String postOnboardingTrialLine =
+      'auth.post_onboarding.trial_line';
+  static const String postOnboardingPlansLine =
+      'auth.post_onboarding.plans_line';
+  static const String postOnboardingTrialFallback =
+      'auth.post_onboarding.trial_fallback';
 
   // Main Screen
   static const String mainScreenTitle = 'main_screen.title';
@@ -469,6 +475,21 @@ class ContentKeys {
   static const String mpPhotosUnreadable = 'meal_planning.photos_unreadable';
   static const String mpPhotosPickFailed = 'meal_planning.photos_pick_failed';
   static const String mpPhotosTooLarge = 'meal_planning.photos_too_large';
+  // Taking a photo down, putting one back, deleting one for good (ticket 06).
+  static const String mpPhotosRemove = 'meal_planning.photos_remove';
+  static const String mpPhotosRemoved = 'meal_planning.photos_removed';
+  static const String mpPhotosRestore = 'meal_planning.photos_restore';
+  static const String mpPhotosRestored = 'meal_planning.photos_restored';
+  static const String mpPhotosDelete = 'meal_planning.photos_delete';
+  static const String mpPhotosDeleted = 'meal_planning.photos_deleted';
+  static const String mpPhotosDeleteTitle = 'meal_planning.photos_delete_title';
+  static const String mpPhotosDeleteBody = 'meal_planning.photos_delete_body';
+  static const String mpPhotosDeleteConfirm =
+      'meal_planning.photos_delete_confirm';
+  static const String mpPhotosDeleteCancel =
+      'meal_planning.photos_delete_cancel';
+  static const String mpPhotosPhotoNotFound =
+      'meal_planning.photos_photo_not_found';
   static const String mpDetailAddDirections =
       'meal_planning.detail_add_directions';
   static const String mpDetailEditSave = 'meal_planning.detail_edit_save';
@@ -612,18 +633,6 @@ class ContentKeys {
   static const String mpCompanionFullScreen =
       'meal_planning.companion_full_screen';
   static const String mpCompanionSend = 'meal_planning.companion_send';
-  // The sheet's status chip: `{topic} · to do`, a to-do nothing names, and an
-  // update; and the topics a to-do can name.
-  static const String mpCompanionStatusToDo =
-      'meal_planning.companion_status_to_do';
-  static const String mpCompanionStatusToDoBare =
-      'meal_planning.companion_status_to_do_bare';
-  static const String mpCompanionStatusUpdate =
-      'meal_planning.companion_status_update';
-  static const String mpCompanionTopicFuelPlan =
-      'meal_planning.companion_topic_fuel_plan';
-  static const String mpCompanionTopicMealPlan =
-      'meal_planning.companion_topic_meal_plan';
   // The launcher when Vana speaks first (vana-moment spec): its label with a
   // moment live, the pre-workout pill by time of day, the recovery pill, and
   // the session nouns the pre-workout pill names.
@@ -715,6 +724,9 @@ class ContentKeys {
   static const String krogerNoProducts = 'kroger.no_products';
   static const String krogerSearch = 'kroger.search';
   static const String krogerSearchHint = 'kroger.search_hint';
+
+  /// The product picker's empty state, naming the query it searched for.
+  static const String krogerNothingFound = 'kroger.nothing_found';
   static const String krogerAddItem = 'kroger.add_item';
   static const String krogerItemName = 'kroger.item_name';
   static const String krogerAdd = 'kroger.add';
@@ -731,6 +743,10 @@ class ContentKeys {
   static const String krogerChoose = 'kroger.choose';
   static const String krogerChange = 'kroger.change';
   static const String krogerApprove = 'kroger.approve';
+
+  /// One tap for every matched line that can be approved; drawn only while
+  /// there is at least one.
+  static const String krogerApproveAll = 'kroger.approve_all';
   static const String krogerApproved = 'kroger.approved';
   static const String krogerSkip = 'kroger.skip';
   static const String krogerInclude = 'kroger.include';

@@ -94,6 +94,117 @@ function addRpc(db: FakeDb) {
   };
 }
 
+/** What `meal_photo_remove` does: clear the current photo, keep History. */
+function removeRpc(db: FakeDb) {
+  // deno-lint-ignore no-explicit-any
+  return (args: any) => {
+    const meal = db.rows('meal_library').find((m) => m.id === args.p_meal_id);
+    if (!meal) throw new Error('meal_not_found');
+    // Nothing to take down: answered, but not recorded — the event log says who
+    // changed a photograph, and this changed none.
+    if (meal.photo_url == null) return { photo: null };
+
+    const wasUrl = meal.photo_url;
+    const wasRow = meal.photo_history_id;
+    meal.photo_url = null;
+    meal.photo_credit = null;
+    meal.photo_credit_url = null;
+    meal.photo_history_id = null;
+    db.rows('meal_photo_events').push({
+      id: crypto.randomUUID(),
+      action: 'remove',
+      meal_id: args.p_meal_id,
+      photo_id: wasRow,
+      photo_url: wasUrl,
+      account_id: args.p_account ?? null,
+      created_at: new Date().toISOString(),
+    });
+    return { photo: null };
+  };
+}
+
+/** What `meal_photo_restore` does: a History row becomes the current photo. */
+function restoreRpc(db: FakeDb) {
+  // deno-lint-ignore no-explicit-any
+  return (args: any) => {
+    const meal = db.rows('meal_library').find((m) => m.id === args.p_meal_id);
+    if (!meal) throw new Error('meal_not_found');
+    // By Meal as well as by id: one Meal's photo id is not a way onto another.
+    const row = db
+      .rows('meal_photo_history')
+      .find((r) => r.id === args.p_photo_id && r.meal_id === args.p_meal_id);
+    if (!row) throw new Error('photo_not_found');
+
+    meal.photo_url = row.url;
+    meal.photo_credit = row.credit;
+    meal.photo_credit_url = row.credit_url;
+    meal.photo_history_id = row.id;
+    db.rows('meal_photo_events').push({
+      id: crypto.randomUUID(),
+      action: 'restore',
+      meal_id: args.p_meal_id,
+      photo_id: row.id,
+      photo_url: row.url,
+      account_id: args.p_account ?? null,
+      created_at: new Date().toISOString(),
+    });
+    return {
+      photo: {
+        url: row.url,
+        credit: row.credit,
+        creditUrl: row.credit_url,
+        historyId: row.id,
+      },
+    };
+  };
+}
+
+/** What `meal_photo_delete` does: the row goes, the events stay. */
+function deleteRpc(db: FakeDb) {
+  // deno-lint-ignore no-explicit-any
+  return (args: any) => {
+    const meal = db.rows('meal_library').find((m) => m.id === args.p_meal_id);
+    if (!meal) throw new Error('meal_not_found');
+    const row = db
+      .rows('meal_photo_history')
+      .find((r) => r.id === args.p_photo_id && r.meal_id === args.p_meal_id);
+    if (!row) throw new Error('photo_not_found');
+
+    // Deleting what the Meal is wearing leaves it showing nothing; it does not
+    // pull an older photograph forward.
+    if (meal.photo_history_id === row.id) {
+      meal.photo_url = null;
+      meal.photo_credit = null;
+      meal.photo_credit_url = null;
+      meal.photo_history_id = null;
+    }
+    db.rows('meal_photo_events').push({
+      id: crypto.randomUUID(),
+      action: 'delete',
+      meal_id: args.p_meal_id,
+      // The real FK is ON DELETE SET NULL, so the event keeps the address
+      // rather than a pointer to a row that no longer exists.
+      photo_id: null,
+      photo_url: row.url,
+      account_id: args.p_account ?? null,
+      created_at: new Date().toISOString(),
+    });
+    db.tables['meal_photo_history'] = db
+      .rows('meal_photo_history')
+      .filter((r) => r.id !== row.id);
+
+    return {
+      photo: meal.photo_url == null ? null : {
+        url: meal.photo_url,
+        credit: meal.photo_credit,
+        creditUrl: meal.photo_credit_url,
+        historyId: meal.photo_history_id,
+      },
+      storagePath: row.storage_path ?? null,
+    };
+  };
+}
+
 interface Harness {
   db: FakeDb;
   deps: PhotoDeps;
@@ -158,8 +269,18 @@ function harness(
       meal_photo_history: [],
       meal_photo_events: [],
     },
-    // deno-lint-ignore no-explicit-any
-    { rpc: { meal_photo_add: (args: any) => addRpc(db)(args) } },
+    {
+      rpc: {
+        // deno-lint-ignore no-explicit-any
+        meal_photo_add: (args: any) => addRpc(db)(args),
+        // deno-lint-ignore no-explicit-any
+        meal_photo_remove: (args: any) => removeRpc(db)(args),
+        // deno-lint-ignore no-explicit-any
+        meal_photo_restore: (args: any) => restoreRpc(db)(args),
+        // deno-lint-ignore no-explicit-any
+        meal_photo_delete: (args: any) => deleteRpc(db)(args),
+      },
+    },
   );
   const store = new FakeStore();
   return {
@@ -555,4 +676,280 @@ Deno.test('an uploaded photo replaces whatever the Meal showed, keeping the old 
   assertEquals(rows[0].storagePath !== null, true);
   assertEquals(rows[1].url, IMAGE);
   assertEquals(rows[1].storagePath, null);
+});
+
+// ───────────────── remove, restore and delete (ticket 06) ─────────────────
+//
+// The three ways a Tester takes a photograph back. Every assertion is about
+// what the server stores — the Meal's current photo, what is left in History,
+// what the event log says and what is left in the bucket.
+
+/** Add a photograph and answer the History row id it was written as. */
+async function addAddressTo(h: Harness, url: string, credit?: string): Promise<string> {
+  const res = await handleMealPhoto(
+    { action: 'add_address', meal_id: 'AD-001', url, credit },
+    h.deps,
+  );
+  assertEquals(res.status, 200);
+  return (res.body.entry as Record<string, unknown>).id as string;
+}
+
+Deno.test('remove clears the current photo and records who did it', async () => {
+  const h = harness();
+  const photoId = await addAddressTo(h, IMAGE);
+
+  const res = await handleMealPhoto({ action: 'remove', meal_id: 'AD-001' }, h.deps);
+
+  assertEquals(res.status, 200);
+  assertEquals(res.body, { photo: null });
+
+  // The Meal shows nothing at all now.
+  const meal = h.db.rows('meal_library')[0];
+  assertEquals(meal.photo_url, null);
+  assertEquals(meal.photo_credit, null);
+  assertEquals(meal.photo_credit_url, null);
+  assertEquals(meal.photo_history_id, null);
+
+  // History is untouched: what was taken down is still one tap from coming back.
+  const history = h.db.rows('meal_photo_history');
+  assertEquals(history.length, 1);
+  assertEquals(history[0].id, photoId);
+
+  const events = h.db.rows('meal_photo_events');
+  assertEquals(events.map((e) => e.action), ['add', 'remove']);
+  assertEquals(events[1].account_id, TESTER);
+  // The record says WHICH photograph came down, so it still reads after that
+  // row is later deleted for good.
+  assertEquals(events[1].photo_url, IMAGE);
+});
+
+Deno.test('remove does not bring an older photograph back', async () => {
+  const h = harness();
+  await addAddressTo(h, IMAGE + '?first');
+  await addAddressTo(h, IMAGE + '?second');
+
+  await handleMealPhoto({ action: 'remove', meal_id: 'AD-001' }, h.deps);
+
+  const res = await handleMealPhoto({ action: 'history', meal_id: 'AD-001' }, h.deps);
+  // Nothing shown, both photographs still listed, neither marked current
+  // (story 42) — "remove" does exactly what it says.
+  assertEquals(res.body.photo, null);
+  const rows = res.body.history as Record<string, unknown>[];
+  assertEquals(rows.length, 2);
+  assertEquals(rows.map((r) => r.isCurrent), [false, false]);
+});
+
+Deno.test('removing from a Meal that shows nothing changes nothing', async () => {
+  const h = harness();
+  const res = await handleMealPhoto({ action: 'remove', meal_id: 'AD-001' }, h.deps);
+
+  assertEquals(res.status, 200);
+  assertEquals(res.body, { photo: null });
+  // Not recorded: the event log answers "who changed this photo", and this
+  // changed none.
+  assertEquals(h.db.rows('meal_photo_events'), []);
+});
+
+Deno.test('restore puts a History row back on, with its own credit', async () => {
+  const h = harness();
+  const first = await addAddressTo(h, IMAGE + '?first', 'Photo by Lee');
+  await addAddressTo(h, IMAGE + '?second');
+
+  const res = await handleMealPhoto(
+    { action: 'restore', meal_id: 'AD-001', photo_id: first },
+    h.deps,
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(res.body.photo, {
+    url: IMAGE + '?first',
+    credit: 'Photo by Lee',
+    creditUrl: null,
+    historyId: first,
+  });
+
+  const meal = h.db.rows('meal_library')[0];
+  assertEquals(meal.photo_url, IMAGE + '?first');
+  assertEquals(meal.photo_credit, 'Photo by Lee');
+  assertEquals(meal.photo_history_id, first);
+
+  // Nothing is lost by restoring: both rows are still there, and the restored
+  // one is the one marked.
+  const listed = await handleMealPhoto({ action: 'history', meal_id: 'AD-001' }, h.deps);
+  const rows = listed.body.history as Record<string, unknown>[];
+  assertEquals(rows.length, 2);
+  assertEquals(rows.map((r) => r.isCurrent), [false, true]);
+
+  const events = h.db.rows('meal_photo_events');
+  assertEquals(events[events.length - 1].action, 'restore');
+  assertEquals(events[events.length - 1].account_id, TESTER);
+});
+
+Deno.test('restoring after a remove brings that photograph back', async () => {
+  const h = harness();
+  const photoId = await addAddressTo(h, IMAGE);
+  await handleMealPhoto({ action: 'remove', meal_id: 'AD-001' }, h.deps);
+
+  const res = await handleMealPhoto(
+    { action: 'restore', meal_id: 'AD-001', photo_id: photoId },
+    h.deps,
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(h.db.rows('meal_library')[0].photo_url, IMAGE);
+});
+
+Deno.test('delete removes the row for good and takes the stored file with it', async () => {
+  const h = harness();
+  await handleMealPhoto(
+    { action: 'add_upload', meal_id: 'AD-001', data: base64(JPEG_BYTES) },
+    h.deps,
+  );
+  const stored = [...h.store.files.keys()][0];
+  const photoId = h.db.rows('meal_photo_history')[0].id;
+
+  const res = await handleMealPhoto(
+    { action: 'delete', meal_id: 'AD-001', photo_id: photoId },
+    h.deps,
+  );
+
+  assertEquals(res.status, 200);
+  // It was the photograph being worn, so the Meal shows nothing now — and no
+  // older photograph is pulled forward.
+  assertEquals(res.body, { photo: null });
+  assertEquals(h.db.rows('meal_library')[0].photo_url, null);
+
+  // Out of History, so it can never be restored with a tap (story 39)…
+  assertEquals(h.db.rows('meal_photo_history'), []);
+  // …and really gone from the bucket, not just unlinked.
+  assertEquals(h.store.files.size, 0);
+  assertEquals(h.store.removed, [stored]);
+
+  // The audit events survive the photograph they describe.
+  const events = h.db.rows('meal_photo_events');
+  assertEquals(events.map((e) => e.action), ['add', 'delete']);
+  assertEquals(events[1].photo_url, h.store.publicUrl(stored));
+  assertEquals(events[1].account_id, TESTER);
+});
+
+Deno.test('deleting a web address deletes no file of ours', async () => {
+  const h = harness();
+  const photoId = await addAddressTo(h, IMAGE);
+
+  const res = await handleMealPhoto(
+    { action: 'delete', meal_id: 'AD-001', photo_id: photoId },
+    h.deps,
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals(h.db.rows('meal_photo_history'), []);
+  // A hotlinked photograph is shown where it lives; there was never a file of
+  // ours to take out.
+  assertEquals(h.store.removed, []);
+});
+
+Deno.test('deleting a photograph the Meal is not wearing leaves it wearing it', async () => {
+  const h = harness();
+  const first = await addAddressTo(h, IMAGE + '?first');
+  await addAddressTo(h, IMAGE + '?second');
+
+  const res = await handleMealPhoto(
+    { action: 'delete', meal_id: 'AD-001', photo_id: first },
+    h.deps,
+  );
+
+  assertEquals(res.status, 200);
+  assertEquals((res.body.photo as Record<string, unknown>).url, IMAGE + '?second');
+  assertEquals(h.db.rows('meal_library')[0].photo_url, IMAGE + '?second');
+  assertEquals(h.db.rows('meal_photo_history').length, 1);
+});
+
+Deno.test('an unknown photograph is a 404, whichever way it is named', async () => {
+  const h = harness();
+  await addAddressTo(h, IMAGE);
+  const strangerId = crypto.randomUUID();
+
+  for (const action of ['restore', 'delete']) {
+    const res = await handleMealPhoto(
+      { action, meal_id: 'AD-001', photo_id: strangerId },
+      h.deps,
+    );
+    assertEquals(res.status, 404);
+    assertEquals(res.body, { error: 'photo_not_found' });
+  }
+  // Nothing moved on the way to being refused.
+  assertEquals(h.db.rows('meal_photo_history').length, 1);
+  assertEquals(h.db.rows('meal_library')[0].photo_url, IMAGE);
+});
+
+Deno.test('one Meal cannot reach another Meal photograph', async () => {
+  const h = harness({
+    meals: [salad(), salad({ id: 'AD-002', name: 'Chicken burrito bowl' })],
+  });
+  const photoId = await addAddressTo(h, IMAGE);
+
+  // A real History row id, but it belongs to AD-001.
+  const res = await handleMealPhoto(
+    { action: 'restore', meal_id: 'AD-002', photo_id: photoId },
+    h.deps,
+  );
+
+  assertEquals(res.status, 404);
+  assertEquals(res.body, { error: 'photo_not_found' });
+  const other = h.db.rows('meal_library').find((m) => m.id === 'AD-002')!;
+  assertEquals(other.photo_url, null);
+});
+
+Deno.test('an unknown Meal is a 404 for every action', async () => {
+  const h = harness();
+  for (const body of [
+    { action: 'remove', meal_id: 'NOPE-999' },
+    { action: 'restore', meal_id: 'NOPE-999', photo_id: crypto.randomUUID() },
+    { action: 'delete', meal_id: 'NOPE-999', photo_id: crypto.randomUUID() },
+  ]) {
+    const res = await handleMealPhoto(body, h.deps);
+    assertEquals(res.status, 404);
+    assertEquals(res.body, { error: 'meal_not_found' });
+  }
+});
+
+Deno.test('a missing or malformed photo_id is refused before anything is read', async () => {
+  const h = harness();
+  await addAddressTo(h, IMAGE);
+
+  for (const body of [
+    { action: 'restore', meal_id: 'AD-001' },
+    { action: 'restore', meal_id: 'AD-001', photo_id: 'not-a-uuid' },
+    { action: 'delete', meal_id: 'AD-001', photo_id: '   ' },
+  ]) {
+    const res = await handleMealPhoto(body, h.deps);
+    assertEquals(res.status, 400);
+    assertEquals(res.body.error, 'invalid_input');
+  }
+  assertEquals(h.db.rows('meal_photo_history').length, 1);
+  assertEquals(h.db.rows('meal_library')[0].photo_url, IMAGE);
+});
+
+Deno.test('a non-Tester cannot remove, restore or delete, and nothing moves', async () => {
+  // Seeded by a real Tester first, then attempted by an athlete.
+  const h = harness();
+  const photoId = await addAddressTo(h, IMAGE);
+  h.deps.userId = ATHLETE;
+
+  for (const body of [
+    { action: 'remove', meal_id: 'AD-001' },
+    { action: 'restore', meal_id: 'AD-001', photo_id: photoId },
+    { action: 'delete', meal_id: 'AD-001', photo_id: photoId },
+  ]) {
+    const res = await handleMealPhoto(body, h.deps);
+    assertEquals(res.status, 403);
+    assertEquals(res.body, { error: 'not_tester' });
+  }
+
+  // The hidden button is not the gate: the photograph, its row and the bucket
+  // are all exactly as the Tester left them (story 45).
+  assertEquals(h.db.rows('meal_library')[0].photo_url, IMAGE);
+  assertEquals(h.db.rows('meal_photo_history').length, 1);
+  assertEquals(h.db.rows('meal_photo_events').map((e) => e.action), ['add']);
+  assertEquals(h.store.removed, []);
 });

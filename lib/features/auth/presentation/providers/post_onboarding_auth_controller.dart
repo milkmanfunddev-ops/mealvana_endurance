@@ -369,17 +369,4 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
 
     return !state.hasError;
   }
-
-  /// Track when user skips authentication
-  Future<void> skipAuthentication() async {
-    _logger.info(
-      'Post-onboarding auth: User skipped authentication',
-      context: 'AUTH',
-    );
-
-    await _analytics.track(
-      'auth_skipped',
-      properties: {'source': 'post_onboarding'},
-    );
-  }
 }

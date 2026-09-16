@@ -11,28 +11,23 @@ import '../../meal_logging/domain/meal_log.dart';
 import '../../nutrition_plan/domain/fueling_window_authority.dart';
 import '../../nutrition_plan/domain/intensity_distribution.dart';
 import '../../nutrition_plan/domain/recovery_window_authority.dart';
-import 'vana_exchange.dart';
 
-/// Which moment. Each is a to-do or news (its tone), and has a topic the
-/// sheet's chip names.
+/// Which moment. Each is a to-do or news (its tone).
 enum VanaMomentKind {
   /// M-1: a workout's pre-workout window has opened and nothing is logged.
-  preWorkout('pre_workout', toDo: true, topic: VanaExchangeTopic.fuelPlan),
+  preWorkout('pre_workout', toDo: true),
 
   /// M-2: a session has finished, its recovery window is open and nothing is
   /// logged since it ended.
-  recovery('recovery', toDo: true, topic: VanaExchangeTopic.fuelPlan);
+  recovery('recovery', toDo: true);
 
-  const VanaMomentKind(this.wire, {required this.toDo, required this.topic});
+  const VanaMomentKind(this.wire, {required this.toDo});
 
   /// The name the chat body carries.
   final String wire;
 
   /// A to-do (`orange`, with a pill) rather than news (`electrolyte`).
   final bool toDo;
-
-  /// What the exchange the moment opens is about.
-  final VanaExchangeTopic topic;
 }
 
 /// When in the day a session starts, for the words that name it ("this
