@@ -5,10 +5,13 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/daily_macros/presentation/providers/daily_macros_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/home_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/previous_plans.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_settings_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan_summary.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/week_start.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
 
 import '../../domain/fixture_helpers.dart';
@@ -44,12 +47,17 @@ void main() {
     WidgetTester tester, {
     required _FakePlanController plan,
     HomePayload? home,
+    List<MealPlanSummary> previous = const [],
   }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
           mealPlanControllerProvider.overrideWith(() => plan),
+          previousPlansProvider.overrideWith((ref) async => previous),
+          planPeriodProvider.overrideWith(
+            (ref) => Stream.value(const PlanPeriod()),
+          ),
           homeControllerProvider.overrideWith(() => _FakeHomeController(home)),
           vanaSettingsControllerProvider.overrideWith(
             _FakeSettingsController.new,
@@ -120,7 +128,7 @@ void main() {
     );
   });
 
-  testWidgets('a plan with meals carries the ⋮ with both plan actions', (
+  testWidgets('a plan with meals carries the ⋮ with all three plan actions', (
     tester,
   ) async {
     await pumpTab(tester, plan: _FakePlanController(confirmedPlan));
@@ -134,9 +142,63 @@ void main() {
       findsOneWidget,
     );
     expect(
+      find.byKey(const ValueKey('meal_planning.plan_previous')),
+      findsOneWidget,
+    );
+    expect(
       find.byKey(const ValueKey('meal_planning.plan_delete')),
       findsOneWidget,
     );
+  });
+
+  /// 2026-09-16: the "THIS WEEK'S PLAN" overline is gone; the summary row
+  /// is the header, with the ⋮ on its right.
+  testWidgets('the summary row is the header, with no overline above it', (
+    tester,
+  ) async {
+    await pumpTab(tester, plan: _FakePlanController(confirmedPlan));
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_summary.coverage')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_section')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Previous plans opens the sheet with the earlier plans', (
+    tester,
+  ) async {
+    final earlier = MealPlanSummary.fromJson({
+      'id': 'plan-prev',
+      'weekStart': '2026-08-23',
+      'status': 'archived',
+      'batchCooking': true,
+      'mealCount': 3,
+    });
+    await pumpTab(
+      tester,
+      plan: _FakePlanController(confirmedPlan),
+      previous: [earlier],
+    );
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_overflow')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_previous')));
+    await settle(tester);
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.previous_plans_sheet')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('meal_planning.previous_plan_plan-prev')),
+      findsOneWidget,
+    );
+    expect(find.text('Aug 23 – Aug 29'), findsOneWidget);
+    expect(find.text('3 meals'), findsOneWidget);
   });
 
   testWidgets('Delete plan asks first, then deletes and offers Undo', (

@@ -84,6 +84,7 @@ import '../../features/meal_planning/domain/vana_conversation_kind.dart';
 import '../../features/meal_planning/presentation/screens/cooking_mode_screen.dart';
 import '../../features/meal_planning/presentation/screens/food_screen.dart';
 import '../../features/kroger/presentation/kroger_screen.dart';
+import '../../features/meal_planning/presentation/screens/previous_plan_screen.dart';
 import '../../features/meal_planning/presentation/screens/meal_detail_screen.dart';
 import '../../features/meal_planning/presentation/screens/recents_screen.dart';
 import '../../features/meal_planning/presentation/screens/swap_meal_screen.dart';
@@ -1143,6 +1144,13 @@ class AppRouter {
               name: 'food-kroger',
               builder: (context, state) =>
                   KrogerScreen(planId: state.pathParameters['planId']!),
+            ),
+            // An earlier plan, read-only, under the same chrome and Pro gate.
+            GoRoute(
+              path: 'plans/:id',
+              name: 'food-previous-plan',
+              builder: (context, state) =>
+                  PreviousPlanScreen(planId: state.pathParameters['id']!),
             ),
           ],
         ),

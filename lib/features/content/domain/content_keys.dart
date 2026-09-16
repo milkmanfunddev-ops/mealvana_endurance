@@ -220,7 +220,6 @@ class ContentKeys {
       'meal_planning.shopping_share_summary_one';
   static const String mpShoppingShareSummaryMany =
       'meal_planning.shopping_share_summary_many';
-  static const String mpPlanSectionTitle = 'meal_planning.plan_section_title';
   static const String mpPlanWeekMeals = 'meal_planning.plan_week_meals';
   static const String mpPlanWeekMealOne = 'meal_planning.plan_week_meal_one';
   static const String mpCoverageLine = 'meal_planning.coverage_line';
@@ -296,6 +295,16 @@ class ContentKeys {
   static const String mpPlanDeleteConfirm = 'meal_planning.plan_delete_confirm';
   static const String mpPlanDeleteCancel = 'meal_planning.plan_delete_cancel';
   static const String mpPlanDeleted = 'meal_planning.plan_deleted';
+  // Earlier plans (2026-09-16): the ⋮ item, its sheet, and the read-only view.
+  static const String mpPlanPrevious = 'meal_planning.plan_previous';
+  static const String mpPreviousPlansEmpty =
+      'meal_planning.previous_plans_empty';
+  static const String mpPreviousPlansFailed =
+      'meal_planning.previous_plans_failed';
+  static const String mpPreviousPlanReadOnly =
+      'meal_planning.previous_plan_read_only';
+  static const String mpPreviousPlanMissing =
+      'meal_planning.previous_plan_missing';
   static const String mpSwapIngredient = 'meal_planning.swap_ingredient';
   static const String mpSwapIngredientEmpty =
       'meal_planning.swap_ingredient_empty';
