@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4DACCA0DA27C5E880B245091 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 6F6F49C8F2FCACA3EC7B6480 /* FlutterGeneratedPluginSwiftPackage */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		35340C5A0F8E6DD34A46EE6A /* RunnerUITests.m in Sources */ = {isa = PBXBuildFile; fileRef = 00F88A91056451EDC9E0C836 /* RunnerUITests.m */; };
@@ -120,6 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4DACCA0DA27C5E880B245091 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 				83A06A9B4C1059645D2C6513 /* Foundation.framework in Frameworks */,
 				B57A6874BCE2C16D42B54195 /* Pods_Runner_RunnerUITests.framework in Frameworks */,
 			);
@@ -345,6 +347,9 @@
 				D097625020F71F6A6842C097 /* PBXTargetDependency */,
 			);
 			name = RunnerUITests;
+			packageProductDependencies = (
+				6F6F49C8F2FCACA3EC7B6480 /* FlutterGeneratedPluginSwiftPackage */,
+			);
 			productName = RunnerUITests;
 			productReference = D24B688FBEF25286DA087019 /* RunnerUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -1914,6 +1919,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlutterGeneratedPluginSwiftPackage;
+		};
+		6F6F49C8F2FCACA3EC7B6480 /* FlutterGeneratedPluginSwiftPackage */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FlutterGeneratedPluginSwiftPackage;
 		};

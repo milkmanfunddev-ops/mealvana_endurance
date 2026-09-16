@@ -183,7 +183,7 @@ Foundation: the Deno harness `supabase/functions/run-algorithm-tests.sh` (§1 de
 - Run Patrol on **iPhone 17 Pro / iOS 26** (booted) + Android emulator (after Phase 0 picker fix).
 - Each Patrol iteration ≈ 1–10 min (build cached ~34 s; failures pay long timeouts).
 - Direct edge-fn tests run in seconds — push the big matrices there.
-- Known toolchain pins: `patrol 4.6.1 ↔ patrol_cli 4.4.0`, `test_directory: integration_test`, `--flavor dev`, creds via `--dart-define-from-file=secrets/integration_test.env`.
+- Known toolchain pins: `patrol 4.10.0 ↔ patrol_cli 4.8.0`, `test_directory: integration_test`, `--flavor dev`, creds via `--dart-define-from-file=secrets/integration_test.env`.
 
 ## Progress Log (2026-06-24)
 

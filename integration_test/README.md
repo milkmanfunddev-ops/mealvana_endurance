@@ -12,12 +12,15 @@ build the native harness and will not run these correctly.
 ## Toolchain
 
 `patrol_cli` must match the `patrol` package version in `pubspec.lock`
-(currently **patrol 4.6.1**). Per the Patrol compatibility table, that pairs
-with **patrol_cli 4.4.0** — newer CLIs (4.5.x) report
-"Version incompatibility detected!" and refuse to run.
+(currently **patrol 4.10.0**). Per the Patrol compatibility table, that pairs
+with **patrol_cli 4.8.0**: 4.8.0 emits the `PATROL_INTEGRATION_TEST_IOS_RUNNER_STATIC_BASE`
+runner macro and no longer accepts the older `_STATIC_BEGIN`/`_END` form, so it
+needs patrol 4.10.0 or newer. A mismatched pair fails at link time with undefined
+XCTest symbols (`XCUIApplication`, `__swift_FORCE_LOAD_$_XCTestSwiftSupport`) in
+`PatrolImpl.o`, not with a version warning.
 
 ```bash
-dart pub global activate patrol_cli 4.4.0
+dart pub global activate patrol_cli 4.8.0
 export PATH="$HOME/.pub-cache/bin:$PATH"
 patrol doctor
 ```
@@ -77,7 +80,7 @@ is non-deterministic). Run those by hand against a freshly-erased simulator.
 Two workflows in `codemagic.yaml` run these on Apple-silicon Mac runners:
 
 - **`integration-tests`** — auto-triggers on `release/*` pull requests. Installs
-  patrol_cli 4.4.0, writes `secrets/integration_test.env` from the
+  patrol_cli 4.8.0, writes `secrets/integration_test.env` from the
   `INTEGRATION_TEST_ENV` secure var, boots a simulator, and runs the whole suite
   via `patrol test --target integration_test`.
 - **`integration-test-quick`** — manual only. Runs a single flow selected by the

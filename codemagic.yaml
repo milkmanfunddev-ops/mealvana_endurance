@@ -371,14 +371,14 @@ definitions:
 
     - &install_patrol_cli
       name: Install Patrol CLI
-      # patrol_cli MUST match the `patrol` package (pubspec.lock: 4.6.1). Per the
-      # Patrol compatibility table, patrol 4.6.1 pairs with patrol_cli 4.4.0 — the
-      # latest CLI (4.5.x) prints "Version incompatibility detected!" and refuses
-      # to run. Pin it. `patrol test` drives the native RunnerUITests XCUITest
+      # patrol_cli MUST match the `patrol` package (pubspec.lock: 4.10.0). Per the
+      # Patrol compatibility table, patrol 4.10.0 pairs with patrol_cli 4.8.0, which
+      # emits the STATIC_BASE runner macro and rejects the older form. Pin it: a
+      # mismatched pair fails at link time with undefined XCTest symbols. `patrol test` drives the native RunnerUITests XCUITest
       # target, so this replaces the old (broken) `flutter test integration_test/`
       # invocation, which never ran the patrolTest() bodies as native tests.
       script: |
-        dart pub global activate patrol_cli 4.4.0
+        dart pub global activate patrol_cli 4.8.0
         echo "PATH=$HOME/.pub-cache/bin:$PATH" >> $CM_ENV
         "$HOME/.pub-cache/bin/patrol" doctor || true
 

@@ -30,9 +30,10 @@
 #  3. The Patrol job passed `-t lib/main_dev.dart`. For patrol_cli, `-t` IS
 #     `--target`, so that registered main_dev.dart as a test target and the CLI
 #     bailed with `target lib/main_dev.dart is invalid`.
-#  4. `dart pub global activate patrol_cli` (unpinned) installs 4.6.1, which is
-#     incompatible with the `patrol: ^4.5.0` package resolved at 4.6.1. The CLI
-#     refuses to run. patrol_cli 4.4.0 is the compatible pairing.
+#  4. `dart pub global activate patrol_cli` (unpinned) installs whatever is
+#     newest, which need not pair with the `patrol` package in pubspec.lock.
+#     Pin it. A mismatched pair fails at link time with undefined XCTest symbols
+#     in PatrolImpl.o, not with a version warning (2026-09-16).
 #
 # Also: macOS `pmset sleep` was 1 minute on this box. Run once, with sudo:
 #     sudo pmset -a sleep 0 disksleep 0 womp 1
@@ -56,9 +57,9 @@ concurrency:
 env:
   # Every installed simulator is iOS 26.2. Keep this in sync with the runner.
   PATROL_DEVICE: iPhone 17 Pro
-  # patrol_cli 4.4.0 <-> patrol 4.6.x. See the compatibility table:
+  # patrol_cli 4.8.0 <-> patrol 4.10.x. See the compatibility table:
   # https://patrol.leancode.co/documentation/compatibility-table
-  PATROL_CLI_VERSION: 4.4.0
+  PATROL_CLI_VERSION: 4.8.0
   # Below this the box swaps hard enough to kill the runner's heartbeat.
   MIN_FREE_DISK_GB: 25
   # patrolTest() case count across the --target list below. 19 targets, but

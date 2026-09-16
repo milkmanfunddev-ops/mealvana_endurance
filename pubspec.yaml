@@ -132,6 +132,7 @@ dependencies:
   vibration: ^3.2.0
   share_plus: ^12.0.2
   shake: ^3.0.0
+  crop_your_image: ^2.0.0
 
 
 dev_dependencies:
@@ -148,7 +149,7 @@ dev_dependencies:
 
   # Testing
   mocktail: ^1.0.4
-  patrol: ^4.9.0
+  patrol: ^4.10.0
   
   # Code Generation
   build_runner: ^2.6.0
