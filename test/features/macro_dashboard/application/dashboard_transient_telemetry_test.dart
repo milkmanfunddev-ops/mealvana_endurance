@@ -52,7 +52,9 @@ void main() {
 
     expect(captured, hasLength(2));
     expect(captured.last.message, 'Dashboard targets transient resolved');
-    expect(captured.last.level, SentryLevel.info);
+    // Warning on purpose: release beforeSend drops info-level events — the
+    // patch-#1 info-level resolved event never reached prod Sentry.
+    expect(captured.last.level, SentryLevel.warning);
     expect(captured.last.data['duration_ms'], isA<int>());
     expect(captured.last.data['duration_ms'] as int, greaterThanOrEqualTo(0));
   });
