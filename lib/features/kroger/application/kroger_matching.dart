@@ -12,8 +12,11 @@ class KrogerMatching {
         (m) => '${m[1] ?? '0'}${entry.value}',
       );
     }
+    // "servings" is the server's honest fallback for a saved meal with no
+    // ingredients; it parses so the line reads, and its own dimension keeps
+    // it from ever matching a package.
     final match = RegExp(
-      r'^(\d+(?:\.\d+)?|\d+/\d+)\s*(kg|g|grams?|lb|lbs|oz|ml|l|fl oz|ct|count|each)?$',
+      r'^(\d+(?:\.\d+)?|\d+/\d+)\s*(kg|g|grams?|lb|lbs|oz|ml|l|fl oz|ct|count|each|servings?)?$',
     ).firstMatch(s);
     if (match == null) return null;
     final raw = match[1]!;
@@ -31,6 +34,7 @@ class KrogerMatching {
       'l' => (1000.0, 'volume'),
       'ml' => (1.0, 'volume'),
       'fl oz' => (29.5735295625, 'volume'),
+      'serving' || 'servings' => (1.0, 'serving'),
       _ => (1.0, 'count'),
     };
     return (amount: n * factor, dimension: dimension);

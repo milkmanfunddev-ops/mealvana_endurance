@@ -552,6 +552,8 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
         final to = vanaHandOffDestination(part);
         _leaveTo(to.location, extra: to.extra);
       },
+      // Playtest §10: the Undo on a receipt card runs the write's own undo.
+      onUndoReceipt: _controller.undoReceipt,
     );
     final messages = state.messages;
     final rows = <Widget>[

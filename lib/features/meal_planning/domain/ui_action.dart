@@ -635,6 +635,21 @@ class PantryPhotoAction extends UiAction {
   Map<String, Object?> payloadFields() => {'photoPath': photoPath};
 }
 
+/// The Undo button on a receipt card (Lee's playtest 2026-09-16 §10): the
+/// receipt's own `undo.params`, sent back verbatim. Returns
+/// `{parts: [receipt(action: 'undo')]}`.
+class UndoReceiptAction extends UiAction {
+  const UndoReceiptAction({required this.params});
+
+  final Map<String, dynamic> params;
+
+  @override
+  String get type => 'undo_receipt';
+
+  @override
+  Map<String, Object?> payloadFields() => Map<String, Object?>.from(params);
+}
+
 /// `{conversationId, items}` — the names the athlete ticked on a `pantry`
 /// card ("Use these"). Returns `{parts: []}`.
 class SetPantryAction extends UiAction {
@@ -648,4 +663,141 @@ class SetPantryAction extends UiAction {
 
   @override
   Map<String, Object?> payloadFields() => {'items': items};
+}
+
+// ── Shopping lists (2026-09-16, several lists with hand edits) ───────────────
+// Every one answers `{parts: [], list: ShoppingListDetail}` (or `lists`),
+// read through [VanaActionResult.shoppingList] / [VanaActionResult.shoppingLists].
+
+/// `{limit?}` → `{lists: ShoppingListSummary[]}`, most recent first.
+class ListShoppingListsAction extends UiAction {
+  const ListShoppingListsAction({this.limit});
+
+  final int? limit;
+
+  @override
+  String get type => 'list_shopping_lists';
+
+  @override
+  Map<String, Object?> payloadFields() => {if (limit != null) 'limit': limit};
+}
+
+/// `{id?}` → `{list: ShoppingListDetail | null}`; no id = the most recent by
+/// confirmation, else creation.
+class GetShoppingListAction extends UiAction {
+  const GetShoppingListAction({this.id});
+
+  final String? id;
+
+  @override
+  String get type => 'get_shopping_list';
+
+  @override
+  Map<String, Object?> payloadFields() => {if (id != null) 'id': id};
+}
+
+/// `{name?, fromPlan?}` — an empty hand-made list, or one seeded from the
+/// active plan's lines when [fromPlan] is true.
+class CreateShoppingListAction extends UiAction {
+  const CreateShoppingListAction({this.name, this.fromPlan = false});
+
+  final String? name;
+  final bool fromPlan;
+
+  @override
+  String get type => 'create_shopping_list';
+
+  @override
+  Map<String, Object?> payloadFields() => {
+    if (name != null) 'name': name,
+    if (fromPlan) 'fromPlan': true,
+  };
+}
+
+/// `{id, name}`.
+class RenameShoppingListAction extends UiAction {
+  const RenameShoppingListAction({required this.id, required this.name});
+
+  final String id;
+  final String name;
+
+  @override
+  String get type => 'rename_shopping_list';
+
+  @override
+  Map<String, Object?> payloadFields() => {'id': id, 'name': name};
+}
+
+/// `{listId, name, qty?, aisle?}` — the server guesses the aisle when none
+/// is given.
+class AddShoppingItemAction extends UiAction {
+  const AddShoppingItemAction({
+    required this.listId,
+    required this.name,
+    this.qty,
+    this.aisle,
+  });
+
+  final String listId;
+  final String name;
+  final String? qty;
+  final String? aisle;
+
+  @override
+  String get type => 'add_shopping_item';
+
+  @override
+  Map<String, Object?> payloadFields() => {
+    'listId': listId,
+    'name': name,
+    if (qty != null) 'qty': qty,
+    if (aisle != null) 'aisle': aisle,
+  };
+}
+
+/// `{id, name?, qty?, aisle?, checked?, have?}` — only the keys given are
+/// written; a name or qty change marks the row `edited`.
+class UpdateShoppingItemAction extends UiAction {
+  const UpdateShoppingItemAction({
+    required this.id,
+    this.name,
+    this.qty,
+    this.aisle,
+    this.checked,
+    this.have,
+  });
+
+  final String id;
+  final String? name;
+  final String? qty;
+  final String? aisle;
+  final bool? checked;
+  final bool? have;
+
+  @override
+  String get type => 'update_shopping_item';
+
+  @override
+  Map<String, Object?> payloadFields() => {
+    'id': id,
+    if (name != null) 'name': name,
+    if (qty != null) 'qty': qty,
+    if (aisle != null) 'aisle': aisle,
+    if (checked != null) 'checked': checked,
+    if (have != null) 'have': have,
+  };
+}
+
+/// `{id}` — a manual row is deleted; a plan-built row becomes a tombstone
+/// (`have`, `edited`) so the next re-plan does not bring it back.
+class DeleteShoppingItemAction extends UiAction {
+  const DeleteShoppingItemAction({required this.id});
+
+  final String id;
+
+  @override
+  String get type => 'delete_shopping_item';
+
+  @override
+  Map<String, Object?> payloadFields() => {'id': id};
 }

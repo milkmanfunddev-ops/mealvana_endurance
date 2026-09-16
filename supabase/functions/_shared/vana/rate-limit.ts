@@ -11,6 +11,7 @@ const WINDOWS = {
   'vana.embed': { seconds: 60, max: 30 },
   'vana.extract': { seconds: 60, max: 3 },   // extraction at idle: one per conversation the client signals idle (a repeat signal never reaches the model)
   'vana.summary': { seconds: 60, max: 3 },   // the rolling history summary: one per twenty messages of a conversation, plus a catch-up
+  'vana.ingredients': { seconds: 60, max: 10 }, // ingredients for a dish-level saved meal joining a plan: once per meal ever, so a burst is "same as last time" copying many
 } as const;
 export type RateLimitedFn = keyof typeof WINDOWS;
 

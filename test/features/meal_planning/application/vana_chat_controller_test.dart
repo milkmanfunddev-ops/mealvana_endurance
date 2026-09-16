@@ -14,6 +14,7 @@ import 'package:mealvana_endurance/features/feedback/domain/typed_feedback.dart'
 import 'package:mealvana_endurance/features/meal_logging/application/meal_ai_service.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/vana_write_refetcher.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
@@ -145,6 +146,19 @@ class _FakeFeedbackFiler extends Fake implements WiredashFeedbackFiler {
   }
 }
 
+/// Records which receipts asked for a refetch instead of touching the sync
+/// coordinator (playtest §10).
+class _FakeRefetcher extends Fake implements VanaWriteRefetcher {
+  final List<VanaReceiptPart> after_ = [];
+  Object? failWith;
+
+  @override
+  Future<void> after(VanaReceiptPart part) async {
+    if (failWith != null) throw failWith!;
+    after_.add(part);
+  }
+}
+
 class _FakeMemoryRepo extends Fake implements UserMemoryRepository {
   final List<UserMemory> applied = [];
 
@@ -169,6 +183,7 @@ void main() {
   late _FakeActionClient actions;
   late _FakeMealAiService mealAi;
   late _FakeFeedbackFiler filer;
+  late _FakeRefetcher refetcher;
 
   setUp(() {
     repo = _FakeChatRepo();
@@ -177,6 +192,7 @@ void main() {
     actions = _FakeActionClient();
     mealAi = _FakeMealAiService();
     filer = _FakeFeedbackFiler();
+    refetcher = _FakeRefetcher();
   });
 
   ({VanaChatController notifier, List<VanaChatState> seen}) make({
@@ -191,6 +207,7 @@ void main() {
       vanaActionClientProvider.overrideWithValue(actions),
       mealAiServiceProvider.overrideWithValue(mealAi),
       wiredashFeedbackFilerProvider.overrideWithValue(filer),
+      vanaWriteRefetcherProvider.overrideWithValue(refetcher),
     ]);
     final provider = vanaChatControllerProvider(
       kind: kind,
@@ -227,22 +244,25 @@ void main() {
     },
   );
 
-  test('"New meal plan" opener carries the new_plan intent to the server', () async {
-    // Lee, 2026-09-16: tapping "New meal plan" over a confirmed week opened
-    // with "are you here to log a meal, swap something, or adjust the week
-    // ahead?". The intent rides the opener request so the server builds a
-    // fresh plan and never asks about the old one.
-    repo.events = eventsFromFixture('opener');
-    final (:notifier, seen: _) = make();
-    await notifier.future;
+  test(
+    '"New meal plan" opener carries the new_plan intent to the server',
+    () async {
+      // Lee, 2026-09-16: tapping "New meal plan" over a confirmed week opened
+      // with "are you here to log a meal, swap something, or adjust the week
+      // ahead?". The intent rides the opener request so the server builds a
+      // fresh plan and never asks about the old one.
+      repo.events = eventsFromFixture('opener');
+      final (:notifier, seen: _) = make();
+      await notifier.future;
 
-    await notifier.loadOpener(newPlan: true);
+      await notifier.loadOpener(newPlan: true);
 
-    expect(repo.calls.single['opener'], isTrue);
-    expect(repo.calls.single['newPlan'], isTrue);
-    expect(notifier.state.value!.conversationId, 'conv-server');
-    expect(notifier.state.value!.messages, hasLength(1));
-  });
+      expect(repo.calls.single['opener'], isTrue);
+      expect(repo.calls.single['newPlan'], isTrue);
+      expect(notifier.state.value!.conversationId, 'conv-server');
+      expect(notifier.state.value!.messages, hasLength(1));
+    },
+  );
 
   test('a moment\'s opener is written into a conversation that already has '
       'turns, and carries the moment', () async {
@@ -776,6 +796,100 @@ void main() {
 
       expect(repo.calls, isEmpty);
       expect(notifier.state.value!.error, VanaChatErrorKind.rateLimited);
+    });
+  });
+
+  // Lee's playtest 2026-09-16 §10: a receipt is the cue to refetch the
+  // offline-first store it names; Undo runs the receipt's own action.
+  group('receipt (Vana writes)', () {
+    List<VanaStreamEvent> receiptTurn(String fixture) => [
+      VanaStreamEvent.fromJson({'type': 'ui', 'part': loadFixture(fixture)})!,
+      const VanaTextEvent('Done.'),
+      const VanaDoneEvent(),
+    ];
+
+    test('a receipt in the stream lands in the transcript and asks for the '
+        'entity it names to be refetched', () async {
+      repo.events = receiptTurn('receipt');
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+
+      await notifier.send('delete my Ironman, yes');
+      await settle();
+
+      final reply = notifier.state.value!.messages.last;
+      final part = reply.parts.single as VanaReceiptPart;
+      expect(part.action, VanaReceiptAction.deleteEvent);
+      expect(reply.content, 'Done.');
+      expect(refetcher.after_.single.entity, VanaReceiptEntity.event);
+      expect(actions.ran, isEmpty, reason: 'the stream write is the server\'s');
+    });
+
+    test('a failed refetch is logged, never shown', () async {
+      repo.events = receiptTurn('receipt_no_undo');
+      refetcher.failWith = StateError('sync down');
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.send('start over');
+      await settle();
+
+      final s = notifier.state.value!;
+      expect(s.error, isNull);
+      expect(s.messages.last.parts.single, isA<VanaReceiptPart>());
+    });
+
+    test('undoReceipt sends the receipt\'s params verbatim as undo_receipt '
+        'and refetches from the answering receipt', () async {
+      final part = VanaPart.fromJson(loadFixture('receipt')) as VanaReceiptPart;
+      final answered = VanaPart.fromJson({
+        ...loadFixture('receipt_no_undo'),
+        'action': 'undo',
+        'entity': 'event',
+        'summary': 'Put back IRONMAN Cozumel',
+      })!;
+      actions.byType['undo_receipt'] = VanaActionResult(
+        parts: [answered],
+        extras: const {},
+      );
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+
+      await notifier.undoReceipt(part);
+
+      final undo = actions.ran.single as UndoReceiptAction;
+      expect(undo.toJson()['payload'], part.undo!.params);
+      expect(
+        (undo.toJson()['payload'] as Map)['row'],
+        loadFixture('receipt')['undo']['params']['row'],
+      );
+      expect(refetcher.after_.single.action, VanaReceiptAction.undo);
+      expect(refetcher.after_.single.entity, VanaReceiptEntity.event);
+    });
+
+    test('undoReceipt surfaces a failed action to the caller', () async {
+      final part = VanaPart.fromJson(loadFixture('receipt')) as VanaReceiptPart;
+      actions.failByType['undo_receipt'] = const VanaServerException(
+        400,
+        'boom',
+      );
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+
+      await expectLater(
+        notifier.undoReceipt(part),
+        throwsA(isA<VanaServerException>()),
+      );
+      expect(refetcher.after_, isEmpty);
+    });
+
+    test('a receipt without an undo is a no-op', () async {
+      final part =
+          VanaPart.fromJson(loadFixture('receipt_no_undo')) as VanaReceiptPart;
+      final (:notifier, seen: _) = make(kind: VanaConversationKind.general);
+      await notifier.future;
+      await notifier.undoReceipt(part);
+      expect(actions.ran, isEmpty);
     });
   });
 

@@ -10,6 +10,8 @@ import { diagnoseStaples, dayGuidance, planDayPart } from './tools.ts';
 import { buildAthleteContext } from './context.ts';
 import { getMeal, saveLibraryMeal, getMealDetail, recentMeals, setSavedMealNotes, setMealFeedback } from './meals.ts';
 import { ensureDayNotes, refreshDayNotesSoon } from './daynotes.ts';
+import * as shopping from './shopping.ts';
+import { undoReceipt } from './writes.ts';
 
 const shop = (items: ShoppingItem[]): VanaPart => ({ kind: 'shopping_list', items, itemCount: items.filter((x) => !x.have).length, skipped: items.filter((x) => x.have).map((x) => x.name) });
 
@@ -96,6 +98,30 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       const restored = await plan.restorePlan(v, { conversationId }, snap);
       return { parts: [{ kind: 'batch', plan: restored }], removed: (gone ?? []).length };
     }
+    // ---- additive 2026-09-16: several shopping lists with hand edits (shopping.ts). Every one answers `{ parts: [], list }`
+    // (or `lists`), never a part — the tab reads the extra, the chat never renders these.
+    case 'list_shopping_lists': return { parts: [], lists: await shopping.listLists(v, Math.min(Number(p.limit ?? 30), 100)) };
+    case 'get_shopping_list': return { parts: [], list: await shopping.getList(v, p.id ? String(p.id) : null) };
+    case 'create_shopping_list': {
+      const fromPlan = !!pick(p, 'fromPlan', 'from_plan');
+      const seed = fromPlan ? ((await plan.getPlan(v))?.shopping ?? []) : null;
+      return { parts: [], list: await shopping.createList(v, p.name == null ? null : String(p.name), seed) };
+    }
+    case 'rename_shopping_list': return { parts: [], list: await shopping.renameList(v, String(p.id), String(p.name ?? '')) };
+    case 'add_shopping_item': return { parts: [], list: await shopping.addItem(v, String(pick(p, 'listId', 'list_id')), String(p.name ?? ''), String(p.qty ?? ''), p.aisle == null ? null : String(p.aisle)) };
+    case 'update_shopping_item': {
+      const patch: shopping.ItemPatch = {};
+      if (p.name !== undefined) patch.name = String(p.name);
+      if (p.qty !== undefined) patch.qty = String(p.qty);
+      if (p.aisle !== undefined) patch.aisle = String(p.aisle);
+      if (p.checked !== undefined) patch.checked = !!p.checked;
+      if (p.have !== undefined) patch.have = !!p.have;
+      return { parts: [], list: await shopping.updateItem(v, String(p.id), patch) };
+    }
+    case 'delete_shopping_item': return { parts: [], list: await shopping.deleteItem(v, String(p.id)) };
+    // ---- additive 2026-09-16 (Vana writes, playtest §10): the Undo button on a receipt card. The payload is the receipt's own
+    // `undo.params`; it answers a receipt of its own (writes.ts undoReceipt).
+    case 'undo_receipt': return { parts: [await undoReceipt(v, p)] };
     default: return null;
   }
 }

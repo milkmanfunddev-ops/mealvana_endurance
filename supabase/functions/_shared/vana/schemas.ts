@@ -35,6 +35,10 @@ export const PlanMealZ = z.object({
 }).strict();
 export const PlanRuleZ = z.object({ day: z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']), rule: z.string(), mealId: z.string().optional(), accepted: z.boolean() }).strict();
 export const ShoppingItemZ = z.object({ aisle: z.string(), name: z.string(), qty: z.string(), checked: z.boolean(), have: z.boolean(), fromMealIds: z.array(z.string()) }).strict();
+// additive 2026-09-16 (several shopping lists): the `list` / `lists` extras the shopping actions answer with.
+export const ShoppingListItemZ = ShoppingItemZ.extend({ id: z.string().min(1), listId: z.string().min(1), source: z.enum(['plan', 'manual']), edited: z.boolean(), position: z.number().int() }).strict();
+export const ShoppingListSummaryZ = z.object({ id: z.string().min(1), planId: z.string().nullable(), name: z.string(), createdAt: z.string(), updatedAt: z.string(), confirmedAt: z.string().nullable(), itemCount: z.number().int() }).strict();
+export const ShoppingListDetailZ = ShoppingListSummaryZ.extend({ items: z.array(ShoppingListItemZ) }).strict();
 export const DaySlotRefZ = z.object({ source: z.enum(['plan', 'saved', 'library']), id: z.string(), name: z.string(), kcal: numOrNull.optional(), carbsG: numOrNull.optional() }).strict();
 export const DayPlanZ = z.object({ breakfast: DaySlotRefZ.nullable().optional(), lunch: DaySlotRefZ.nullable().optional(), dinner: DaySlotRefZ.nullable().optional(), snack: DaySlotRefZ.nullable().optional() }).strict();
 export const DayTargetZ = z.object({ date: z.string(), kcal: z.number(), carbsG: z.number(), proteinG: z.number(), fatG: z.number(), sessionKcal: z.number(), planningKcal: z.number(), lunchDinnerKcal: z.number(), mode: z.string().nullable() }).strict();
@@ -96,7 +100,13 @@ export const FeedbackPromptPartZ = z.object({ kind: z.literal('feedback_prompt')
 export const DebriefPartZ = z.object({ kind: z.literal('debrief'), planId: z.string(), completed: z.number(), planned: z.number(), skipReason: z.string().nullable(), memories: z.array(MemoryZ) }).strict();
 export const HandOffTargetZ = z.enum(['meal_plan', 'new_activity', 'event', 'carb_loading']);
 export const HandOffPartZ = z.object({ kind: z.literal('hand_off'), target: HandOffTargetZ, label: z.string().min(1).max(60), entityId: z.string().min(1).nullable() }).strict();
-export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ, PantryPartZ, WeekPartZ, DebriefPartZ, FeedbackSavedPartZ, FeedbackPromptPartZ, HandOffPartZ]);
+// ---- additive 2026-09-16 (Vana writes, playtest §10): a receipt for every write, a needs_confirmation for an unconfirmed delete.
+export const ReceiptActionZ = z.enum(['new_plan', 'create_event', 'update_event', 'delete_event', 'log_meal', 'delete_logged_meal', 'undo']);
+export const ReceiptEntityZ = z.enum(['plan', 'event', 'meal_log']);
+export const ReceiptUndoZ = z.object({ action: z.literal('undo_receipt'), params: z.object({ action: ReceiptActionZ }).passthrough() }).strict();
+export const ReceiptPartZ = z.object({ kind: z.literal('receipt'), action: ReceiptActionZ, entity: ReceiptEntityZ, summary: z.string().min(1).max(200), entityId: z.string().min(1), undo: ReceiptUndoZ.nullable() }).strict();
+export const NeedsConfirmationPartZ = z.object({ kind: z.literal('needs_confirmation'), action: ReceiptActionZ, entity: ReceiptEntityZ, summary: z.string().min(1).max(200), entityId: z.string().min(1) }).strict();
+export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ, PantryPartZ, WeekPartZ, DebriefPartZ, FeedbackSavedPartZ, FeedbackPromptPartZ, HandOffPartZ, ReceiptPartZ, NeedsConfirmationPartZ]);
 
 // ---- the Situation (situation.ts), as the client puts it on a message
 /** One component of the formula editor's draft: which food, how much of it (mp-274). */

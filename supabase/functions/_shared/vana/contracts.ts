@@ -49,6 +49,11 @@ export interface PlanMeal {
 }
 export interface PlanRule { day: 'mon'|'tue'|'wed'|'thu'|'fri'|'sat'|'sun'; rule: string; mealId?: string; accepted: boolean }
 export interface ShoppingItem { aisle: string; name: string; qty: string; checked: boolean; have: boolean; fromMealIds: string[] }
+// ---- additive 2026-09-16 (several shopping lists, Lee's playtest §5/§6): a list with its own rows (shopping.ts)
+/** One `shopping_items` row: a ShoppingItem with an id, its list, where it came from and whether a hand edited it. */
+export interface ShoppingListItem extends ShoppingItem { id: string; listId: string; source: 'plan' | 'manual'; edited: boolean; position: number }
+export interface ShoppingListSummary { id: string; planId: string | null; name: string; createdAt: string; updatedAt: string; confirmedAt: string | null; itemCount: number }
+export interface ShoppingListDetail extends ShoppingListSummary { items: ShoppingListItem[] }
 export type DaySlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export interface DaySlotRef { source: 'plan' | 'saved' | 'library'; id: string; name: string; kcal?: number | null; carbsG?: number | null }
 export type DayPlan = Partial<Record<DaySlot, DaySlotRef | null>>;
@@ -113,7 +118,20 @@ export type VanaPart =
   | { kind: 'feedback_saved'; message: string; sentiment: 'positive' | 'negative' | 'neutral'; about: 'vana' | 'app' | 'suggestion' } // saveFeedback — the athlete's words landed in user_feedback; the client draws the whole acknowledgement from it (the model writes nothing)
   | { kind: 'feedback_prompt' }                                                                                                             // server-appended after the FIRST conversation's opener: "Have feedback for me? Just type it here." (plain text)
   // ---- additive 2026-09-15 (mp-265 clause 4, ticket 27) — a deterministic action is a hand-off to the app's own screen, never done in the chat
-  | { kind: 'hand_off'; target: HandOffTarget; label: string; entityId: string | null };                                                  // handOff — the app renders a button that navigates; entityId = the workout / event it is about, null when none
+  | { kind: 'hand_off'; target: HandOffTarget; label: string; entityId: string | null }                                                   // handOff — the app renders a button that navigates; entityId = the workout / event it is about, null when none
+  // ---- additive 2026-09-16 (Lee's playtest §10) — Vana writes the app's own objects herself. Every write answers a receipt the
+  // app draws as a small card ("Removed IRONMAN Cozumel · Undo"); `entity` tells the device which local store to refetch, and
+  // `undo`, when present, is the `undo_receipt` action that puts it back. A delete without `confirmed: true` writes nothing and
+  // answers `needs_confirmation` instead, so the model asks first (askChoice) and calls again after a yes.
+  | { kind: 'receipt'; action: ReceiptAction; entity: ReceiptEntity; summary: string; entityId: string; undo: ReceiptUndo | null }
+  | { kind: 'needs_confirmation'; action: ReceiptAction; entity: ReceiptEntity; summary: string; entityId: string };
+
+/** What a receipt records. `undo` is the receipt the Undo button itself produces. */
+export type ReceiptAction = 'new_plan' | 'create_event' | 'update_event' | 'delete_event' | 'log_meal' | 'delete_logged_meal' | 'undo';
+/** The app object a write touched — the device refetches that store when the receipt arrives (events / meal logs are offline-first). */
+export type ReceiptEntity = 'plan' | 'event' | 'meal_log';
+/** `POST vana-action { type: 'undo_receipt', payload: params }` — `params.action` names the write being undone and carries what it needs. */
+export interface ReceiptUndo { action: 'undo_receipt'; params: Record<string, unknown> & { action: ReceiptAction } }
 
 /** The screens a hand-off lands on: meal_plan → the meal-planning page · new_activity → fuelling a workout ·
  *  event → planning an event · carb_loading → the carb-loading picks (on the event). */
@@ -128,7 +146,15 @@ export interface UiAction {
     // additive 2026-09-03: rewind{conversationId, messageId} (drop every message after messageId and restore that turn's draft-plan snapshot) ·
     // pantry_photo{conversationId, photoPath} (ingredient detection on a `meal-photos` upload → a persisted `pantry` part) ·
     // set_pantry{conversationId, items: string[]} (what's on hand → shopping `have`) · swap_ingredient{planMealId, from, to} (saved variant + swap in place)
-    | 'rewind' | 'pantry_photo' | 'set_pantry' | 'swap_ingredient';
+    | 'rewind' | 'pantry_photo' | 'set_pantry' | 'swap_ingredient'
+    // additive 2026-09-16 (several shopping lists): list_shopping_lists{} → {lists} · get_shopping_list{id?} → {list|null} (default = most
+    // recent by coalesce(confirmed_at, created_at)) · create_shopping_list{name?, fromPlan?} → {list} · rename_shopping_list{id, name} →
+    // {list} · add_shopping_item{listId, name, qty?, aisle?} → {list} · update_shopping_item{id, name?, qty?, aisle?, checked?, have?} →
+    // {list} (name/qty set edited=true) · delete_shopping_item{id} → {list}. All `parts: []`.
+    | 'list_shopping_lists' | 'get_shopping_list' | 'create_shopping_list' | 'rename_shopping_list' | 'add_shopping_item' | 'update_shopping_item' | 'delete_shopping_item'
+    // additive 2026-09-16 (Vana writes, playtest §10): undo_receipt{...ReceiptUndo.params} — the Undo button on a receipt card. Answers
+    // `{ parts: [receipt(action: 'undo')] }`; the device refetches the receipt's entity as for any receipt.
+    | 'undo_receipt';
   payload: Record<string, unknown>;
 }
 

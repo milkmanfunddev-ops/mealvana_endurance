@@ -6,6 +6,7 @@ import '../domain/home_payload.dart';
 import '../domain/meal_detail.dart';
 import '../domain/meal_plan.dart';
 import '../domain/meal_ref.dart';
+import '../domain/shopping_list.dart';
 import '../domain/ui_action.dart';
 import '../domain/user_memory.dart';
 import '../domain/vana_part.dart';
@@ -80,6 +81,16 @@ class VanaActionResult {
 
   /// `rewind` → `removed` (how many `vana_messages` rows were deleted).
   int? get removed => readInt(extras, 'removed');
+
+  /// The shopping actions → `list` (null when the account has no list yet).
+  ShoppingListDetail? get shoppingList => switch (asJsonMap(extras['list'])) {
+    final map? => ShoppingListDetail.fromJson(map),
+    null => null,
+  };
+
+  /// `list_shopping_lists` → `lists`, most recent first.
+  List<ShoppingListSummary> get shoppingLists =>
+      readRecordList(extras, 'lists', ShoppingListSummary.fromJson);
 
   /// `pantry_photo` → `messageId` (the persisted assistant message that
   /// carries the returned `pantry` part).

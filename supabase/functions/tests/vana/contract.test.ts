@@ -149,6 +149,37 @@ Deno.test('contract: the handOff tool returns the hand_off part, in the sheet\'s
   assertEquals(withId.entityId, 'ev-1');
 });
 
+// ---- Lee's playtest 2026-09-16 §10: Vana writes the app's own objects; every write answers a receipt, an unconfirmed delete a needs_confirmation.
+Deno.test('contract: receipt.json / needs_confirmation.json — a card for every write, a question before a delete', async () => {
+  const { ReceiptPartZ, NeedsConfirmationPartZ } = await import('../../_shared/vana/schemas.ts');
+  const r = parse(ReceiptPartZ, fixture('receipt'), 'receipt.json');
+  assertEquals(r.action, 'delete_event'); assertEquals(r.entity, 'event');
+  assertEquals(r.undo?.action, 'undo_receipt'); assertEquals(r.undo?.params.action, 'delete_event');
+  assert((r.undo?.params as { row?: { id?: string } }).row?.id, 'the deleted row rides on the undo so the device can put it back');
+  const plain = parse(ReceiptPartZ, fixture('receipt_no_undo'), 'receipt_no_undo.json');
+  assertEquals(plain.action, 'new_plan'); assertEquals(plain.undo, null);
+  const ask = parse(NeedsConfirmationPartZ, fixture('needs_confirmation'), 'needs_confirmation.json');
+  assertEquals(ask.entityId, r.entityId);
+  for (const f of ['receipt', 'receipt_no_undo', 'needs_confirmation']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
+  assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), undo: undefined }).success, 'undo is always sent, null when there is none');
+  assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), action: 'delete_plan' }).success, 'action is one the app knows');
+  assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), summary: '' }).success, 'summary is the card\'s line');
+  assert(!ReceiptPartZ.safeParse({ ...fixture('receipt'), undo: { action: 'undo_receipt', params: {} } }).success, 'undo params name the action');
+  // The action result of an Undo is an ordinary parts list with one receipt.
+  parse(ActionResultZ, { parts: [{ ...fixture('receipt_no_undo'), action: 'undo' }] }, 'undo_receipt result');
+});
+
+Deno.test('contract: both personas carry the write rules and the delete-asks-first rule', async () => {
+  const { GENERAL_PROMPT, PLANNING_PROMPT, WRITE_RULES, NEW_PLAN_STANDING } = await import('../../_shared/vana/persona.ts');
+  for (const p of [GENERAL_PROMPT, PLANNING_PROMPT]) {
+    assert(p.includes(WRITE_RULES), 'the shared write rules are in the prompt');
+    for (const t of ['startNewPlan', 'createEvent', 'updateEvent', 'deleteEvent', 'logMeal', 'deleteLoggedMeal', 'listEvents']) assert(p.includes(t), `names ${t}`);
+    assert(p.includes('confirmed: true'), 'a delete asks first');
+  }
+  assert(!GENERAL_PROMPT.includes('Planning or adding a race or event → target event'), 'adding an event is a write now, not a hand-off');
+  assert(NEW_PLAN_STANDING.includes('never call startNewPlan'), 'in a New meal plan conversation the draft is the new plan');
+});
+
 Deno.test('contract: the general persona names the four hand-offs and never builds a plan in the sheet', async () => {
   const { GENERAL_PROMPT } = await import('../../_shared/vana/persona.ts');
   for (const target of ['meal_plan', 'new_activity', 'event', 'carb_loading']) assert(GENERAL_PROMPT.includes(target), `GENERAL_PROMPT names ${target}`);

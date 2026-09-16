@@ -34,6 +34,8 @@ class ShoppingList extends ConsumerWidget {
     required this.onAddBack,
     this.units = UnitSystem.imperial,
     this.onOpenMeal,
+    this.onEditItem,
+    this.onDeleteItem,
   });
 
   final ShoppingListState state;
@@ -43,6 +45,12 @@ class ShoppingList extends ConsumerWidget {
 
   /// Opens a source meal's recipe. Null disables the tap-through.
   final ValueChanged<PlanMeal>? onOpenMeal;
+
+  /// Each row's `⋮` menu (2026-09-16): Edit opens the name/qty sheet,
+  /// Delete takes the line off the list. Both null and no menu is drawn —
+  /// the offline mirror has no rows to write to.
+  final ValueChanged<ShoppingItem>? onEditItem;
+  final ValueChanged<ShoppingItem>? onDeleteItem;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -87,14 +95,17 @@ class ShoppingList extends ConsumerWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          ContentKeys.format(content.getValue(ContentKeys.mpShoppingTotals), {
-            'servings': state.totalServings,
-            'meals': state.mealCount,
-          }),
-          style: AppTextStyles.bodySmall.copyWith(color: secondary),
-        ),
+        // A hand-made list has no meals behind it: no totals line.
+        if (state.mealCount > 0) ...[
+          const SizedBox(height: 2),
+          Text(
+            ContentKeys.format(content.getValue(ContentKeys.mpShoppingTotals), {
+              'servings': state.totalServings,
+              'meals': state.mealCount,
+            }),
+            style: AppTextStyles.bodySmall.copyWith(color: secondary),
+          ),
+        ],
         if (state.skipped.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
           _LeftOffNote(
@@ -138,6 +149,12 @@ class ShoppingList extends ConsumerWidget {
                           ? null
                           : () =>
                                 _showSources(context, content, entry.value[i]),
+                      onEdit: onEditItem == null
+                          ? null
+                          : () => onEditItem!(entry.value[i]),
+                      onDelete: onDeleteItem == null
+                          ? null
+                          : () => onDeleteItem!(entry.value[i]),
                     ),
                 ],
               ),
@@ -246,9 +263,13 @@ class _ShoppingRow extends StatelessWidget {
     required this.accent,
     required this.onToggleChecked,
     required this.onOpenSources,
+    this.onEdit,
+    this.onDelete,
   });
 
   final ShoppingItem item;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   /// [ShoppingItem.qty] already rendered in the athlete's units.
   final String qty;
@@ -331,11 +352,85 @@ class _ShoppingRow extends StatelessWidget {
               ),
             ),
           ),
+          if (onEdit != null || onDelete != null)
+            _RowMenu(
+              menuKey: ValueKey('meal_planning.shopping_row_menu_${item.name}'),
+              name: item.name,
+              color: secondary,
+              onEdit: onEdit,
+              onDelete: onDelete,
+            ),
         ],
       ),
     );
   }
 }
+
+/// The row's `⋮`: Edit / Delete, Kyle-styled like [CardOverflowMenu] on
+/// the plan cards, so a hand edit is one tap away and never a swipe the
+/// athlete has to discover.
+class _RowMenu extends ConsumerWidget {
+  const _RowMenu({
+    required this.menuKey,
+    required this.name,
+    required this.color,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Key menuKey;
+  final String name;
+  final Color color;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
+    return PopupMenuButton<_RowAction>(
+      key: menuKey,
+      tooltip: content.getValue(ContentKeys.mpShoppingRowMore),
+      padding: EdgeInsets.zero,
+      color: surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: textColor.withValues(alpha: 0.12)),
+      ),
+      icon: Icon(Icons.more_vert, size: 20, color: color),
+      onSelected: (action) => switch (action) {
+        _RowAction.edit => onEdit?.call(),
+        _RowAction.delete => onDelete?.call(),
+      },
+      itemBuilder: (context) => [
+        if (onEdit != null)
+          PopupMenuItem(
+            key: ValueKey('meal_planning.shopping_edit_$name'),
+            value: _RowAction.edit,
+            child: Text(
+              content.getValue(ContentKeys.mpShoppingEditAction),
+              style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+            ),
+          ),
+        if (onDelete != null)
+          PopupMenuItem(
+            key: ValueKey('meal_planning.shopping_delete_$name'),
+            value: _RowAction.delete,
+            child: Text(
+              content.getValue(ContentKeys.mpShoppingDeleteAction),
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.dragonfruitLight,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+enum _RowAction { edit, delete }
 
 /// A quiet 18pt pill with the number of meals a line feeds — the only hint
 /// that the row opens something, so it stays tonal (secondary text on a

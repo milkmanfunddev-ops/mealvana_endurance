@@ -24,6 +24,7 @@ import '../domain/vana_stream_event.dart';
 import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
 import 'vana_situation_controller.dart';
+import 'vana_write_refetcher.dart';
 
 part 'vana_chat_controller.g.dart';
 
@@ -592,6 +593,10 @@ class VanaChatController extends _$VanaChatController {
         if (part is VanaFeedbackSavedPart) {
           await _fileFeedback(part, conversationId);
         }
+        if (part is VanaReceiptPart) {
+          // Never awaited: the card lands now, the store catches up behind it.
+          unawaited(_refetchAfter(part));
+        }
         if (lastIndex >= 0) {
           messages[lastIndex] = messages[lastIndex].appendPart(part);
         }
@@ -684,6 +689,36 @@ class VanaChatController extends _$VanaChatController {
         'Failed to file feedback_saved part to Wiredash',
         context: _context,
         error: e,
+      );
+    }
+  }
+
+  /// The Undo button on a receipt card (playtest §10): runs the receipt's
+  /// own `undo_receipt` action, then refetches whatever the answering
+  /// receipt names. Throws on failure so the card can say so; a receipt
+  /// with no undo is a no-op.
+  Future<void> undoReceipt(VanaReceiptPart part) async {
+    final undo = part.undo;
+    if (undo == null) return;
+    final result = await _actions.run(UndoReceiptAction(params: undo.params));
+    for (final p in result.parts) {
+      if (p is VanaReceiptPart) await _refetchAfter(p);
+    }
+  }
+
+  /// A server-side write bypassed the device's offline-first stores: pull
+  /// the one the receipt names (`VanaWriteRefetcher`). A failed pull is
+  /// only logged — the next screen open syncs anyway.
+  Future<void> _refetchAfter(VanaReceiptPart part) async {
+    try {
+      await ref.read(vanaWriteRefetcherProvider).after(part);
+    } catch (e, st) {
+      _logger.warning(
+        'Refetch after a Vana write failed',
+        context: _context,
+        error: e,
+        stackTrace: st,
+        data: {'entity': part.entity.wire, 'action': part.action.wire},
       );
     }
   }

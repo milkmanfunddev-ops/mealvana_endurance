@@ -24,6 +24,9 @@ void main() {
       'pantry': VanaPantryPart,
       'week': VanaWeekPart,
       'debrief': VanaDebriefPart,
+      'receipt': VanaReceiptPart,
+      'receipt_no_undo': VanaReceiptPart,
+      'needs_confirmation': VanaNeedsConfirmationPart,
     }.entries) {
       test(entry.key, () {
         final json = loadFixture(entry.key);
@@ -36,6 +39,67 @@ void main() {
         expect(VanaPart.fromJson(json).hashCode, part.hashCode);
       });
     }
+
+    // Lee's playtest 2026-09-16 §10: every write answers a receipt, an
+    // unconfirmed delete a needs_confirmation.
+    group('receipt', () {
+      test('carries the action, the entity and the undo verbatim', () {
+        final part =
+            VanaPart.fromJson(loadFixture('receipt')) as VanaReceiptPart;
+        expect(part.action, VanaReceiptAction.deleteEvent);
+        expect(part.entity, VanaReceiptEntity.event);
+        expect(part.summary, 'Removed IRONMAN Cozumel');
+        expect(part.entityId, 'a7e76d6c-bbf7-4d29-bebc-59a42c462b0d');
+        final undo = part.undo!;
+        expect(undo.params['action'], 'delete_event');
+        // The deleted row rides on the undo untouched — it is what goes back.
+        expect(
+          (undo.params['row'] as Map)['start_time'],
+          '2026-11-22T06:30:00.000',
+        );
+        expect(undo.toJson(), loadFixture('receipt')['undo']);
+      });
+
+      test('a receipt with no undo has none; needs_confirmation draws the '
+          'question', () {
+        final plain =
+            VanaPart.fromJson(loadFixture('receipt_no_undo'))
+                as VanaReceiptPart;
+        expect(plain.action, VanaReceiptAction.newPlan);
+        expect(plain.entity, VanaReceiptEntity.plan);
+        expect(plain.undo, isNull);
+        final ask =
+            VanaPart.fromJson(loadFixture('needs_confirmation'))
+                as VanaNeedsConfirmationPart;
+        expect(ask.summary, 'Delete IRONMAN Cozumel on Nov 22?');
+        expect(ask.entityId, isNot(plain.entityId));
+      });
+
+      test('an action or entity this client does not know drops the part', () {
+        expect(
+          VanaPart.fromJson({
+            ...loadFixture('receipt_no_undo'),
+            'action': 'delete_plan',
+          }),
+          isNull,
+        );
+        expect(
+          VanaPart.fromJson({
+            ...loadFixture('receipt_no_undo'),
+            'entity': 'activity',
+          }),
+          isNull,
+        );
+        // An undo whose params name no action is malformed, so the part goes.
+        expect(
+          VanaPart.fromJson({
+            ...loadFixture('receipt_no_undo'),
+            'undo': {'action': 'undo_receipt', 'params': <String, Object?>{}},
+          }),
+          isNull,
+        );
+      });
+    });
 
     test('meal_picker carries every MealRef field', () {
       final part =
@@ -59,8 +123,7 @@ void main() {
 
       test('the frozen fixture names no chips and no more', () {
         final part =
-            VanaPart.fromJson(loadFixture('meal_picker'))
-                as VanaMealPickerPart;
+            VanaPart.fromJson(loadFixture('meal_picker')) as VanaMealPickerPart;
         expect(part.chips, isEmpty);
         expect(part.more, isEmpty);
         expect(part.toJson().containsKey('chips'), isFalse);
@@ -78,35 +141,42 @@ void main() {
 
       test('more than four is clamped to the first four', () {
         final part =
-            VanaPart.fromJson(pickerWith({
-                  'chips': ['a', 'b', 'c', 'd', 'e'],
-                }))
+            VanaPart.fromJson(
+                  pickerWith({
+                    'chips': ['a', 'b', 'c', 'd', 'e'],
+                  }),
+                )
                 as VanaMealPickerPart;
         expect(part.chips, ['a', 'b', 'c', 'd']);
       });
 
-      test('fewer than two — after trimming, blanks and repeats — is dropped', () {
-        for (final chips in [
-          <dynamic>[],
-          <dynamic>['Only one'],
-          <dynamic>['Same', ' Same '],
-          <dynamic>['', '   '],
-          <dynamic>[1, true],
-          'not a list',
-        ]) {
-          final part =
-              VanaPart.fromJson(pickerWith({'chips': chips}))
-                  as VanaMealPickerPart;
-          expect(part.chips, isEmpty, reason: 'chips $chips is not a list');
-          expect(part.toJson().containsKey('chips'), isFalse);
-        }
-      });
+      test(
+        'fewer than two — after trimming, blanks and repeats — is dropped',
+        () {
+          for (final chips in [
+            <dynamic>[],
+            <dynamic>['Only one'],
+            <dynamic>['Same', ' Same '],
+            <dynamic>['', '   '],
+            <dynamic>[1, true],
+            'not a list',
+          ]) {
+            final part =
+                VanaPart.fromJson(pickerWith({'chips': chips}))
+                    as VanaMealPickerPart;
+            expect(part.chips, isEmpty, reason: 'chips $chips is not a list');
+            expect(part.toJson().containsKey('chips'), isFalse);
+          }
+        },
+      );
 
       test('labels are trimmed and capped at 40 characters', () {
         final part =
-            VanaPart.fromJson(pickerWith({
-                  'chips': [' These three ', 'x' * 60],
-                }))
+            VanaPart.fromJson(
+                  pickerWith({
+                    'chips': [' These three ', 'x' * 60],
+                  }),
+                )
                 as VanaMealPickerPart;
         expect(part.chips.first, 'These three');
         expect(part.chips.last.length, 40);

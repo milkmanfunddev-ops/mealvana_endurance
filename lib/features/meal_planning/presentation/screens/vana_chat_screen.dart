@@ -134,20 +134,14 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   Widget build(BuildContext context) {
     final content = ref.read(contentServiceProvider);
     final chatAsync = ref.watch(
-      vanaChatControllerProvider(
-        kind: widget.kind,
-        conversationId: _key,
-      ),
+      vanaChatControllerProvider(kind: widget.kind, conversationId: _key),
     );
     final state = chatAsync.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.blackberry : AppColors.cream;
 
     ref.listen<AsyncValue<VanaChatState>>(
-      vanaChatControllerProvider(
-        kind: widget.kind,
-        conversationId: _key,
-      ),
+      vanaChatControllerProvider(kind: widget.kind, conversationId: _key),
       (previous, next) {
         final s = next.value;
         if (s == null) return;
@@ -407,6 +401,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
         final to = vanaHandOffDestination(part);
         context.push(to.location, extra: to.extra);
       },
+      // Playtest §10: the Undo on a receipt card runs the write's own undo.
+      onUndoReceipt: _controller.undoReceipt,
       // Disabled until the opener's response header has named the
       // conversation — there is no draft to browse into before that.
       onBrowseMeals: (state.conversationId ?? widget.conversationId) == null
@@ -873,10 +869,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
   String? get _conversationId =>
       ref
           .read(
-            vanaChatControllerProvider(
-              kind: widget.kind,
-              conversationId: _key,
-            ),
+            vanaChatControllerProvider(kind: widget.kind, conversationId: _key),
           )
           .value
           ?.conversationId ??

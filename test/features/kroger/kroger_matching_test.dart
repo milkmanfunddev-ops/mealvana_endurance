@@ -40,6 +40,17 @@ void main() {
       );
     }
   });
+  group('servings (the server fallback for a saved meal with no ingredients)', () {
+    test('parses with its own dimension', () {
+      expect(KrogerMatching.parse('4 servings'), (amount: 4.0, dimension: 'serving'));
+      expect(KrogerMatching.parse('1 serving'), (amount: 1.0, dimension: 'serving'));
+    });
+    test('never matches a package, so the line stays honestly unmatched', () {
+      expect(KrogerMatching.packages('4 servings', '12 ct'), null);
+      expect(KrogerMatching.packages('4 servings', '1 lb'), null);
+      expect(KrogerMatching.packages('4 servings', '1 serving'), 4);
+    });
+  });
   test('stable IDs survive reorder and preserve reviewed choices', () {
     var draft = KrogerMatching.reconcile(const KrogerDraft(planId: plan), [
       source(),

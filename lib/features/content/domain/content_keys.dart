@@ -449,23 +449,28 @@ class ContentKeys {
   static const String mpPhotosNone = 'meal_planning.photos_none';
   static const String mpPhotosAdd = 'meal_planning.photos_add';
   static const String mpPhotosChange = 'meal_planning.photos_change';
-  static const String mpPhotosAddressTitle = 'meal_planning.photos_address_title';
+  static const String mpPhotosAddressTitle =
+      'meal_planning.photos_address_title';
   static const String mpPhotosAddressHint = 'meal_planning.photos_address_hint';
   static const String mpPhotosCreditHint = 'meal_planning.photos_credit_hint';
   static const String mpPhotosCreditUrlHint =
       'meal_planning.photos_credit_url_hint';
   static const String mpPhotosPreview = 'meal_planning.photos_preview';
-  static const String mpPhotosPreviewLabel = 'meal_planning.photos_preview_label';
+  static const String mpPhotosPreviewLabel =
+      'meal_planning.photos_preview_label';
   static const String mpPhotosConfirm = 'meal_planning.photos_confirm';
   static const String mpPhotosCancel = 'meal_planning.photos_cancel';
   static const String mpPhotosAdded = 'meal_planning.photos_added';
   static const String mpPhotosHistory = 'meal_planning.photos_history';
-  static const String mpPhotosHistoryEmpty = 'meal_planning.photos_history_empty';
+  static const String mpPhotosHistoryEmpty =
+      'meal_planning.photos_history_empty';
   static const String mpPhotosShowingNow = 'meal_planning.photos_showing_now';
   static const String mpPhotosNotAnImage = 'meal_planning.photos_not_an_image';
-  static const String mpPhotosInvalidInput = 'meal_planning.photos_invalid_input';
+  static const String mpPhotosInvalidInput =
+      'meal_planning.photos_invalid_input';
   static const String mpPhotosNotTester = 'meal_planning.photos_not_tester';
-  static const String mpPhotosMealNotFound = 'meal_planning.photos_meal_not_found';
+  static const String mpPhotosMealNotFound =
+      'meal_planning.photos_meal_not_found';
   // Taking or choosing a photo (ticket 05). The app prepares the bytes before
   // anything leaves the phone — cropped, shrunk and stripped of EXIF.
   static const String mpPhotosTake = 'meal_planning.photos_take';
@@ -555,6 +560,39 @@ class ContentKeys {
   static const String mpShoppingFromMany = 'meal_planning.shopping_from_many';
   static const String mpShoppingSourcesHint =
       'meal_planning.shopping_sources_hint';
+  // Several shopping lists with hand edits (2026-09-16).
+  static const String mpShoppingNewList = 'meal_planning.shopping_new_list';
+  static const String mpShoppingNewListDone =
+      'meal_planning.shopping_new_list_done';
+  static const String mpShoppingListUntitled =
+      'meal_planning.shopping_list_untitled';
+  static const String mpShoppingAddNameHint =
+      'meal_planning.shopping_add_name_hint';
+  static const String mpShoppingAddQtyHint =
+      'meal_planning.shopping_add_qty_hint';
+  static const String mpShoppingAddAction = 'meal_planning.shopping_add_action';
+  static const String mpShoppingAdded = 'meal_planning.shopping_added';
+  static const String mpShoppingRemoved = 'meal_planning.shopping_removed';
+  static const String mpShoppingSaved = 'meal_planning.shopping_saved';
+  static const String mpShoppingEditTitle = 'meal_planning.shopping_edit_title';
+  static const String mpShoppingEditAction =
+      'meal_planning.shopping_edit_action';
+  static const String mpShoppingDeleteAction =
+      'meal_planning.shopping_delete_action';
+  static const String mpShoppingSaveAction =
+      'meal_planning.shopping_save_action';
+  static const String mpShoppingRowMore = 'meal_planning.shopping_row_more';
+  static const String mpShoppingPrevious = 'meal_planning.shopping_previous';
+  static const String mpShoppingPreviousEmpty =
+      'meal_planning.shopping_previous_empty';
+  static const String mpShoppingViewingPrior =
+      'meal_planning.shopping_viewing_prior';
+  static const String mpShoppingBackToCurrent =
+      'meal_planning.shopping_back_to_current';
+  static const String mpShoppingFailed = 'meal_planning.shopping_failed';
+  static const String mpShoppingConfirmedOn =
+      'meal_planning.shopping_confirmed_on';
+  static const String mpShoppingCreatedOn = 'meal_planning.shopping_created_on';
   static const String mpSettingsVanaTitle = 'meal_planning.settings_vana_title';
   static const String mpSettingsBatch = 'meal_planning.settings_batch';
   static const String mpSettingsBatchSub = 'meal_planning.settings_batch_sub';
@@ -613,6 +651,8 @@ class ContentKeys {
   static const String mpMemorySavedRow = 'meal_planning.memory_saved_row';
   static const String mpFeedbackPrompt = 'meal_planning.feedback_prompt';
   static const String mpFeedbackSavedRow = 'meal_planning.feedback_saved_row';
+  static const String mpReceiptUndone = 'meal_planning.receipt_undone';
+  static const String mpReceiptUndoFailed = 'meal_planning.receipt_undo_failed';
   static const String mpLoggedDoneToast = 'meal_planning.logged_done_toast';
   static const String mpAteIt = 'meal_planning.ate_it';
   static const String mpMealTypeBreakfast = 'meal_planning.meal_type_breakfast';

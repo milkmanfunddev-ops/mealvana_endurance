@@ -29,6 +29,7 @@ void main() {
     void Function(MealRef meal, int servings)? onPickMeal,
     ValueChanged<MealRef>? onTapMeal,
     ValueChanged<VanaHandOffPart>? onHandOff,
+    Future<void> Function(VanaReceiptPart)? onUndoReceipt,
   }) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -46,6 +47,7 @@ void main() {
                   onAcceptRule: (_) {},
                   onViewShopping: () {},
                   onHandOff: onHandOff,
+                  onUndoReceipt: onUndoReceipt,
                 ),
               ),
             ),
@@ -103,6 +105,79 @@ void main() {
       );
       await tester.tap(button);
       expect(tapped?.target, VanaHandOffTarget.mealPlan);
+    });
+  });
+
+  // Lee's playtest 2026-09-16 §10: a card for every write Vana makes.
+  group('receipt', () {
+    final undoKey = find.byKey(const ValueKey('meal_planning.receipt_undo'));
+    final undoneKey = find.byKey(
+      const ValueKey('meal_planning.receipt_undone'),
+    );
+
+    testWidgets('draws the summary and an Undo; a tap hands the part over '
+        'and the card reads Undone', (tester) async {
+      VanaReceiptPart? undone;
+      final part = VanaPart.fromJson(fixture('receipt'))!;
+      await pumpPart(
+        tester,
+        part,
+        onUndoReceipt: (p) async {
+          undone = p;
+        },
+      );
+
+      expect(find.text('Removed IRONMAN Cozumel'), findsOneWidget);
+      expect(undoKey, findsOneWidget);
+      expect(
+        find.descendant(of: undoKey, matching: find.text('Undo')),
+        findsOneWidget,
+      );
+      await tester.tap(undoKey);
+      await tester.pump();
+      expect(undone?.entityId, 'a7e76d6c-bbf7-4d29-bebc-59a42c462b0d');
+      expect(undoKey, findsNothing, reason: 'one undo per receipt');
+      expect(undoneKey, findsOneWidget);
+      expect(find.text('Undone'), findsOneWidget);
+    });
+
+    testWidgets('a failed undo says so and keeps the button', (tester) async {
+      final part = VanaPart.fromJson(fixture('receipt'))!;
+      await pumpPart(
+        tester,
+        part,
+        onUndoReceipt: (_) async => throw StateError('offline'),
+      );
+      await tester.tap(undoKey);
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('meal_planning.receipt_undo_failed')),
+        findsOneWidget,
+      );
+      expect(undoKey, findsOneWidget);
+      expect(undoneKey, findsNothing);
+    });
+
+    testWidgets('no undo on the receipt, or no host handler, no button', (
+      tester,
+    ) async {
+      final plain = VanaPart.fromJson(fixture('receipt_no_undo'))!;
+      await pumpPart(tester, plain, onUndoReceipt: (_) async {});
+      expect(find.textContaining('Started a new plan'), findsOneWidget);
+      expect(undoKey, findsNothing);
+
+      final withUndo = VanaPart.fromJson(fixture('receipt'))!;
+      await pumpPart(tester, withUndo);
+      expect(find.text('Removed IRONMAN Cozumel'), findsOneWidget);
+      expect(undoKey, findsNothing);
+    });
+
+    testWidgets('needs_confirmation draws nothing — the askChoice that '
+        'follows is the question', (tester) async {
+      final ask = VanaPart.fromJson(fixture('needs_confirmation'))!;
+      expect(ask, isA<VanaNeedsConfirmationPart>());
+      await pumpPart(tester, ask);
+      expect(find.textContaining('Delete IRONMAN'), findsNothing);
     });
   });
 
@@ -215,9 +290,7 @@ void main() {
 
       // The tick adds — and nothing else does.
       await tester.tap(
-        find.byKey(
-          ValueKey('meal_planning.picker_more_tick_${tail.first.id}'),
-        ),
+        find.byKey(ValueKey('meal_planning.picker_more_tick_${tail.first.id}')),
       );
       await tester.pumpAndSettle();
       expect(added, [tail.first.id]);

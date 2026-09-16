@@ -16,8 +16,10 @@ import { invalidateContext } from './context-cache.ts';
 import { getMeal } from './meals.ts';
 import { getSetting, getCoverageScope, getPantryItems, getPlanPeriod, getMealTypes } from './memory.ts';
 import { buildShoppingList } from './grocery.ts';
+import { ensureSavedMealIngredients, backfillPlanIngredients } from './saved-ingredients.ts';
 import { resolveMealIcon } from './meal-icon.ts';
 import { coverageOf, defaultSession, servingsToCover } from './plan-math.ts';
+import { syncPlanList, markListConfirmed, toggleByName } from './shopping.ts';
 
 export interface PlanScope { planId?: string | null; conversationId?: string | null }
 
@@ -89,6 +91,8 @@ export async function addMeal(v: VanaCtx, ref: MealRef, servings?: number | null
     const { error } = await v.db.from('plan_meals').insert({ plan_id: plan.id, user_id: v.userId, source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, session: s, servings: want, servings_left: want, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, position: plan.meals.length, icon: ref.icon ?? null });
     if (error) throw new Error(error.message);
   }
+  // A dish-level saved meal (made from a log) gets its ingredients once before the list is built (saved-ingredients.ts).
+  if (ref.source === 'saved') await ensureSavedMealIngredients(v, ref.id);
   return refreshShopping(v, plan.id);
 }
 export async function addMealById(v: VanaCtx, source: 'library' | 'saved', id: string, servings?: number | null, session?: Session, scope?: PlanScope | null) {
@@ -151,13 +155,19 @@ export async function confirmPlan(v: VanaCtx, scope?: PlanScope | null): Promise
   const { data, error } = await v.db.rpc('confirm_meal_plan', { p_plan_id: plan.id, p_shopping: plan.shopping });
   if (error) throw new Error(`confirm_meal_plan: ${error.message}`);
   if (!data) throw new Error('confirm_meal_plan returned nothing');
+  await markListConfirmed(v, plan.id); // the plan's list (shopping.ts) sorts to the top of the Shopping tab from now
   return hydrate(v, Array.isArray(data) ? data[0] : data);
 }
+/** Rebuild the plan's lines from its meals. Since 2026-09-16 the lines live in `shopping_lists` / `shopping_items`
+ *  (shopping.ts): the plan-built rows are replaced, hand-added and hand-edited rows survive, and the merged list is
+ *  mirrored into `meal_plans.shopping` for Kroger and every older reader. `checked` / `have` carry over by name. */
 export async function refreshShopping(v: VanaCtx, planId?: string | null): Promise<MealPlan> {
   const plan = (planId ? await getPlanById(v, planId) : await getPlan(v))!;
   const prev = new Map(plan.shopping.map((i) => [i.name.toLowerCase(), i]));
+  await backfillPlanIngredients(v, plan.meals); // dish-level saved meals already planned get their ingredients once (saved-ingredients.ts)
   const items = await buildShoppingList(v, plan, await getPantryItems(v));
-  const merged = items.map((i) => { const p = prev.get(i.name.toLowerCase()); return p ? { ...i, checked: p.checked, have: i.have || p.have } : i; });
+  const fresh = items.map((i) => { const p = prev.get(i.name.toLowerCase()); return p ? { ...i, checked: p.checked, have: i.have || p.have } : i; });
+  const merged = await syncPlanList(v, plan, fresh);
   await v.db.from('meal_plans').update({ shopping: merged, day_notes_stale: true, updated_at: new Date().toISOString() }).eq('id', plan.id);
   await invalidateContext(v); // every meal edit ends here: the PLAN line changed
   return { ...plan, shopping: merged, dayNotesStale: true };
@@ -166,6 +176,7 @@ export async function toggleShopping(v: VanaCtx, name: string, field: 'checked' 
   const plan = (await getPlan(v))!;
   const shopping = plan.shopping.map((i) => (i.name.toLowerCase() === name.toLowerCase() ? { ...i, [field]: value } : i));
   await v.db.from('meal_plans').update({ shopping }).eq('id', plan.id);
+  await toggleByName(v, plan.id, name, field, value); // the list row too, so the tab and the mirror agree
   return shopping;
 }
 /** "Ate it": the `plan_log_from_plan` SQL function decrements servings_left and writes the meal_logs row (source='plan',
@@ -196,6 +207,7 @@ export async function swapMeal(v: VanaCtx, planMealId: string, source: 'library'
   const ref = await getMeal(v, source, id); if (!ref) throw new Error(`meal not found: ${source}/${id}`);
   const eaten = cur.servings - cur.servings_left;
   await v.db.from('plan_meals').update({ source: ref.source, library_meal_id: ref.source === 'library' ? ref.id : null, saved_meal_id: ref.source === 'saved' ? ref.id : null, name: ref.name, meal_type: ref.mealType, kcal: ref.kcal, carbs_g: ref.carbsG, protein_g: ref.proteinG, fat_g: ref.fatG, icon: ref.icon ?? null, servings_left: Math.max(0, cur.servings - eaten), swaps_applied: [], comments: [...((cur.comments ?? []) as unknown[]), { role: 'vana', text: `Swapped ${cur.name} → ${ref.name}`, at: new Date().toISOString() }], updated_at: new Date().toISOString() }).eq('id', planMealId);
+  if (ref.source === 'saved') await ensureSavedMealIngredients(v, ref.id); // same hook as addMeal
   return refreshShopping(v, cur.plan_id);
 }
 

@@ -70,7 +70,7 @@ export function parseQty(q: string): { n: number | null; unit: string } {
   return { n, unit };
 }
 /** Count-style units read as words, so they take an s. */
-const PLURAL: Record<string, string> = { clove: 'cloves', stalk: 'stalks', bunch: 'bunches', sheet: 'sheets', cup: 'cups', can: 'cans', slice: 'slices', piece: 'pieces', head: 'heads' };
+const PLURAL: Record<string, string> = { clove: 'cloves', stalk: 'stalks', bunch: 'bunches', sheet: 'sheets', cup: 'cups', can: 'cans', slice: 'slices', piece: 'pieces', head: 'heads', serving: 'servings' };
 const plural = (u: string, n: number) => (n > 1 && PLURAL[u]) || u;
 const fmt = (n: number) => { const r = Math.round(n * 4) / 4; const w = Math.floor(r); const f = r - w; const fs = f === 0.5 ? '½' : f === 0.25 ? '¼' : f === 0.75 ? '¾' : ''; return w === 0 && fs ? fs : fs ? `${w} ${fs}` : String(Math.round(r * 100) / 100); };
 export function aggregate(entries: { qty: string; mult: number }[]): string {
@@ -95,6 +95,15 @@ export function buildItems(meals: { id: string; servings: number; baseServings: 
   return items;
 }
 
+/** A saved meal's per-serving ingredient rows: the extracted `ingredients_json` when present (a dish-level meal made
+ *  from a log, see saved-ingredients.ts), else its `items` — real ingredient rows on a "Save to mine" copy, or the
+ *  dish itself ("1 serving") when nothing was extracted, which then reads honestly as "4 servings". Pure — unit-tested. */
+export function savedMealIngredients(row: { items?: unknown; ingredients_json?: unknown } | null | undefined): { name: string; qty: string }[] {
+  const extracted = row?.ingredients_json;
+  if (Array.isArray(extracted) && extracted.length) return (extracted as { name?: string; qty?: string }[]).map((i) => ({ name: String(i.name ?? ''), qty: String(i.qty ?? '') })).filter((i) => i.name);
+  return ((row?.items ?? []) as { name?: string; food_name?: string; portion?: string; quantity?: string | number; serving?: string }[]).map((i) => ({ name: i.name ?? i.food_name ?? '', qty: String(i.portion ?? i.quantity ?? i.serving ?? '') }));
+}
+
 /** Staples the user logged ≥2× in 30 days (by item name) count as "have". */
 async function pantryFromLogs(v: VanaCtx): Promise<Set<string>> {
   const since = new Date(Date.now() - 30 * 86400_000).toISOString().slice(0, 10);
@@ -114,9 +123,8 @@ export async function buildShoppingList(v: VanaCtx, plan: MealPlan, onHand: stri
       for (const sw of m.swapsApplied) ings = ings.map((i) => (canonicalName(i.name) === canonicalName(sw.from) ? { ...i, name: sw.to } : i));
       resolved.push({ id: m.id, servings: m.servings, baseServings: 1, ingredients: ings });   // library portions are per athlete serving
     } else if (m.savedMealId) {
-      const { data } = await v.db.from('saved_meals').select('items').eq('id', m.savedMealId).maybeSingle();
-      const ings = ((data?.items ?? []) as { name?: string; food_name?: string; portion?: string; quantity?: string | number; serving?: string }[]).map((i) => ({ name: i.name ?? i.food_name ?? '', qty: String(i.portion ?? i.quantity ?? i.serving ?? '') }));
-      resolved.push({ id: m.id, servings: m.servings, baseServings: 1, ingredients: ings });
+      const { data } = await v.db.from('saved_meals').select('items, ingredients_json').eq('id', m.savedMealId).maybeSingle();
+      resolved.push({ id: m.id, servings: m.servings, baseServings: 1, ingredients: savedMealIngredients(data) });
     }
   }
   // Phase 7.4 — what the athlete said is in the house ("Use these" / fridge photo) counts as have, alongside the logged staples.

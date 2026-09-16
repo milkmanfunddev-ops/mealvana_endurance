@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
+import '../../../../shared/widgets/kyle_design/buttons/tertiary_button.dart';
+import '../../../../shared/widgets/kyle_design/cards/base_card.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
@@ -45,6 +47,7 @@ class VanaPartCallbacks {
     this.onEditMessage,
     this.onBrowseMeals,
     this.onHandOff,
+    this.onUndoReceipt,
   });
 
   /// Navigate to `/food/meals/:id`.
@@ -98,6 +101,11 @@ class VanaPartCallbacks {
   /// `hand_off` part → the athlete tapped the button: the host navigates to
   /// the part's screen (mp-265 clause 4). Null renders the button inert.
   final ValueChanged<VanaHandOffPart>? onHandOff;
+
+  /// `receipt` part → the athlete tapped Undo: the host runs the receipt's
+  /// `undo_receipt` action (playtest §10). Throws to say it failed. Null
+  /// hides the button.
+  final Future<void> Function(VanaReceiptPart part)? onUndoReceipt;
 }
 
 /// Switches a [VanaPart] to its widget (02 §3). `batch` parts are folded
@@ -213,10 +221,121 @@ class VanaPartRenderer extends ConsumerWidget {
         );
       case VanaDayPart p:
         return _DayWidget(part: p);
+      case VanaReceiptPart p:
+        return ReceiptCard(
+          key: ValueKey('meal_planning.receipt.${p.entityId}'),
+          part: p,
+          onUndo: callbacks.onUndoReceipt,
+        );
       case VanaBatchPart():
       case VanaBriefPart():
+      // An unconfirmed delete: the model asks with an askChoice right
+      // after; the part itself is only the transcript's record.
+      case VanaNeedsConfirmationPart():
         return const SizedBox.shrink();
     }
+  }
+}
+
+/// `receipt` — "Removed IRONMAN Cozumel · Undo" (playtest §10). One line
+/// on a [BaseCard]; the Undo is a small tertiary button that becomes
+/// "Undone" once the host's [onUndo] returns, or a failure line when it
+/// throws. Hidden when the receipt carries no undo or the host offers none.
+class ReceiptCard extends ConsumerStatefulWidget {
+  const ReceiptCard({super.key, required this.part, this.onUndo});
+
+  final VanaReceiptPart part;
+  final Future<void> Function(VanaReceiptPart part)? onUndo;
+
+  @override
+  ConsumerState<ReceiptCard> createState() => _ReceiptCardState();
+}
+
+enum _UndoState { idle, busy, undone, failed }
+
+class _ReceiptCardState extends ConsumerState<ReceiptCard> {
+  _UndoState _undo = _UndoState.idle;
+
+  Future<void> _tapUndo() async {
+    final onUndo = widget.onUndo;
+    if (onUndo == null) return;
+    setState(() => _undo = _UndoState.busy);
+    try {
+      await onUndo(widget.part);
+      if (mounted) setState(() => _undo = _UndoState.undone);
+    } catch (_) {
+      if (mounted) setState(() => _undo = _UndoState.failed);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = ref.read(contentServiceProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    final canUndo = widget.part.undo != null && widget.onUndo != null;
+    final undone = _undo == _UndoState.undone;
+
+    return BaseCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(
+                undone ? Icons.undo : Icons.check_circle_outline,
+                size: 18,
+                color: accent,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  widget.part.summary,
+                  key: const ValueKey('meal_planning.receipt_summary'),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                    decoration: undone ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ),
+              if (canUndo && !undone)
+                KyleTertiaryButtonSmall(
+                  key: const ValueKey('meal_planning.receipt_undo'),
+                  text: content.getValue(ContentKeys.mpUndo),
+                  isLoading: _undo == _UndoState.busy,
+                  onPressed: _tapUndo,
+                ),
+              if (undone)
+                Text(
+                  content.getValue(ContentKeys.mpReceiptUndone),
+                  key: const ValueKey('meal_planning.receipt_undone'),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: textColor.withValues(alpha: 0.65),
+                  ),
+                ),
+            ],
+          ),
+          if (_undo == _UndoState.failed)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                content.getValue(ContentKeys.mpReceiptUndoFailed),
+                key: const ValueKey('meal_planning.receipt_undo_failed'),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: textColor.withValues(alpha: 0.65),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

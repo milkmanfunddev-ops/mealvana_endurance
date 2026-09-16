@@ -8,18 +8,36 @@ part of 'shopping_list_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Groups the active plan's `shopping` by aisle and routes the local-first
-/// `checked` / `have` toggles through [MealPlanController].
+/// Reads the most recent list (or the one opened from "Previous lists")
+/// through `vana-action`, groups it by aisle, and routes every edit — tick,
+/// add, rename, delete, new list — back through the same actions. Each
+/// write is optimistic on screen and settled by the server's answer.
+///
+/// Offline the server is unreachable, so the active plan's own mirror
+/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
+/// lines, no ids, no edits.
 
 @ProviderFor(ShoppingListController)
 const shoppingListControllerProvider = ShoppingListControllerProvider._();
 
-/// Groups the active plan's `shopping` by aisle and routes the local-first
-/// `checked` / `have` toggles through [MealPlanController].
+/// Reads the most recent list (or the one opened from "Previous lists")
+/// through `vana-action`, groups it by aisle, and routes every edit — tick,
+/// add, rename, delete, new list — back through the same actions. Each
+/// write is optimistic on screen and settled by the server's answer.
+///
+/// Offline the server is unreachable, so the active plan's own mirror
+/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
+/// lines, no ids, no edits.
 final class ShoppingListControllerProvider
     extends $AsyncNotifierProvider<ShoppingListController, ShoppingListState> {
-  /// Groups the active plan's `shopping` by aisle and routes the local-first
-  /// `checked` / `have` toggles through [MealPlanController].
+  /// Reads the most recent list (or the one opened from "Previous lists")
+  /// through `vana-action`, groups it by aisle, and routes every edit — tick,
+  /// add, rename, delete, new list — back through the same actions. Each
+  /// write is optimistic on screen and settled by the server's answer.
+  ///
+  /// Offline the server is unreachable, so the active plan's own mirror
+  /// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
+  /// lines, no ids, no edits.
   const ShoppingListControllerProvider._()
     : super(
         from: null,
@@ -40,10 +58,16 @@ final class ShoppingListControllerProvider
 }
 
 String _$shoppingListControllerHash() =>
-    r'17f76595643089ab22371f5eca4ee8edb4a69252';
+    r'71cb280fcc28a90bf2b706838b4d71098cb8e463';
 
-/// Groups the active plan's `shopping` by aisle and routes the local-first
-/// `checked` / `have` toggles through [MealPlanController].
+/// Reads the most recent list (or the one opened from "Previous lists")
+/// through `vana-action`, groups it by aisle, and routes every edit — tick,
+/// add, rename, delete, new list — back through the same actions. Each
+/// write is optimistic on screen and settled by the server's answer.
+///
+/// Offline the server is unreachable, so the active plan's own mirror
+/// (`meal_plans.shopping`, kept in Drift) stands in read-only: the same
+/// lines, no ids, no edits.
 
 abstract class _$ShoppingListController
     extends $AsyncNotifier<ShoppingListState> {

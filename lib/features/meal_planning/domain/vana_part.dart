@@ -58,6 +58,10 @@ sealed class VanaPart extends WireRecord {
           return const VanaFeedbackPromptPart();
         case 'hand_off':
           return VanaHandOffPart.fromJson(json);
+        case 'receipt':
+          return VanaReceiptPart.fromJson(json);
+        case 'needs_confirmation':
+          return VanaNeedsConfirmationPart.fromJson(json);
         default:
           return null;
       }
@@ -607,6 +611,160 @@ class VanaHandOffPart extends VanaPart {
     'kind': kind,
     'target': target.wire,
     'label': label,
+    'entityId': entityId,
+  };
+}
+
+/// What a receipt records (`ReceiptAction` in `contracts.ts`). [undo] is
+/// the receipt the Undo button itself produces.
+enum VanaReceiptAction {
+  newPlan('new_plan'),
+  createEvent('create_event'),
+  updateEvent('update_event'),
+  deleteEvent('delete_event'),
+  logMeal('log_meal'),
+  deleteLoggedMeal('delete_logged_meal'),
+  undo('undo');
+
+  const VanaReceiptAction(this.wire);
+
+  final String wire;
+
+  static VanaReceiptAction? fromWire(String? wire) =>
+      values.where((a) => a.wire == wire).firstOrNull;
+}
+
+/// The app object a write touched (`ReceiptEntity`). Events and meal logs
+/// are owned offline-first by the device, so a receipt for one of those is
+/// the cue to refetch that store.
+enum VanaReceiptEntity {
+  plan('plan'),
+  event('event'),
+  mealLog('meal_log');
+
+  const VanaReceiptEntity(this.wire);
+
+  final String wire;
+
+  static VanaReceiptEntity? fromWire(String? wire) =>
+      values.where((e) => e.wire == wire).firstOrNull;
+}
+
+/// The `undo_receipt` action a receipt carries: [params] is sent back as
+/// the payload verbatim (it names the action being undone and what it
+/// needs: the deleted row, the columns before an update, the log id).
+class VanaReceiptUndo extends WireRecord {
+  const VanaReceiptUndo({required this.params});
+
+  final Map<String, dynamic> params;
+
+  factory VanaReceiptUndo.fromJson(Map<String, dynamic> json) {
+    if (json['action'] != 'undo_receipt') {
+      throw FormatException('unknown undo action', json['action']);
+    }
+    final params = requireJsonMap(json, 'params');
+    if (params['action'] is! String) {
+      throw const FormatException('undo params name no action');
+    }
+    return VanaReceiptUndo(params: Map.unmodifiable(params));
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {'action': 'undo_receipt', 'params': params};
+}
+
+/// A write Vana made herself (Lee's playtest 2026-09-16 §10): the card
+/// "Removed IRONMAN Cozumel · Undo". [entityId] is the row written;
+/// [undo] is null when the write cannot be put back (a fresh plan, a
+/// created event).
+class VanaReceiptPart extends VanaPart {
+  const VanaReceiptPart({
+    required this.action,
+    required this.entity,
+    required this.summary,
+    required this.entityId,
+    this.undo,
+  });
+
+  final VanaReceiptAction action;
+  final VanaReceiptEntity entity;
+  final String summary;
+  final String entityId;
+  final VanaReceiptUndo? undo;
+
+  @override
+  String get kind => 'receipt';
+
+  /// An action or entity this client does not know is a [FormatException],
+  /// so the part is dropped at parse time like an unknown kind.
+  factory VanaReceiptPart.fromJson(Map<String, dynamic> json) {
+    final action = VanaReceiptAction.fromWire(readString(json, 'action'));
+    final entity = VanaReceiptEntity.fromWire(readString(json, 'entity'));
+    if (action == null || entity == null) {
+      throw FormatException('unknown receipt action or entity', json);
+    }
+    return VanaReceiptPart(
+      action: action,
+      entity: entity,
+      summary: requireString(json, 'summary'),
+      entityId: requireString(json, 'entityId'),
+      undo: switch (asJsonMap(json['undo'])) {
+        final map? => VanaReceiptUndo.fromJson(map),
+        null => null,
+      },
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'action': action.wire,
+    'entity': entity.wire,
+    'summary': summary,
+    'entityId': entityId,
+    'undo': undo?.toJson(),
+  };
+}
+
+/// A delete tool was called without `confirmed: true`: nothing was
+/// written, and Vana asks with an `askChoice` before calling again. The
+/// part is parsed so the transcript keeps it; it draws nothing.
+class VanaNeedsConfirmationPart extends VanaPart {
+  const VanaNeedsConfirmationPart({
+    required this.action,
+    required this.entity,
+    required this.summary,
+    required this.entityId,
+  });
+
+  final VanaReceiptAction action;
+  final VanaReceiptEntity entity;
+  final String summary;
+  final String entityId;
+
+  @override
+  String get kind => 'needs_confirmation';
+
+  factory VanaNeedsConfirmationPart.fromJson(Map<String, dynamic> json) {
+    final action = VanaReceiptAction.fromWire(readString(json, 'action'));
+    final entity = VanaReceiptEntity.fromWire(readString(json, 'entity'));
+    if (action == null || entity == null) {
+      throw FormatException('unknown receipt action or entity', json);
+    }
+    return VanaNeedsConfirmationPart(
+      action: action,
+      entity: entity,
+      summary: requireString(json, 'summary'),
+      entityId: requireString(json, 'entityId'),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson() => {
+    'kind': kind,
+    'action': action.wire,
+    'entity': entity.wire,
+    'summary': summary,
     'entityId': entityId,
   };
 }
