@@ -6,7 +6,7 @@
 // meal costs nothing in correctness — it stays unjudged and the next run picks
 // it up — but a run that skips half the library measures half the library.
 //
-// Run with:  node --test scripts/meal-images/lib/fetch-tile.test.mjs
+// Run with:  node --test scripts/_archived/meal-images/lib/fetch-tile.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

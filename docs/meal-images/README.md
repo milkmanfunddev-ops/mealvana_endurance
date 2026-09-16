@@ -1,10 +1,21 @@
 # Meal library imagery
 
+**Frozen — 2026-09-15. Do not run these passes.** A Meal now shows one Dish photo or
+nothing, and Testers maintain the photos:
+[ADR 0003](../adr/0003-a-meal-shows-a-dish-photo-or-nothing.md). The scripts moved to
+`scripts/_archived/meal-images/`, and running one would overwrite a Tester's photo.
+
+Nothing it wrote was deleted. The Verdicts, the Tile bank (`ingredient_images`), each
+Meal's Tile list and `image_mode` all stay in the database on purpose, so Mosaics can
+come back later without re-sourcing. The app no longer reads any of those columns — it
+reads `photo_url`, `photo_credit` and `photo_credit_url`. Everything below records what
+the pipeline did and what it measured.
+
 How `meal_library` rows get a picture, where those pictures come from, and what
 we are and are not allowed to do with them.
 
-Scripts: `scripts/meal-images/`. Dev only — `lib/db.mjs` hard-codes the dev
-project ref so a stray env var cannot point a bulk write at prod.
+Scripts: `scripts/_archived/meal-images/`, frozen. Dev only — `lib/db.mjs` hard-codes
+the dev project ref so a stray env var cannot point a bulk write at prod.
 
 ## Where it stands (2026-09-11)
 
@@ -78,14 +89,14 @@ stored: the Meal itself, the detail screen and every other list are unaffected.
 No Dish photo carries a Mosaic today (the ladder writes `image_tiles` only when
 there is no `image_url`), so in practice the fallback is the icon.
 
-The rules that pick the rung live in `scripts/meal-images/lib/ladder.mjs` —
+The rules that pick the rung live in `scripts/_archived/meal-images/lib/ladder.mjs` —
 `resolveMealImage(meal, bank)`, a pure function that touches no network, no
 database and no model. Pass 3 is only the part that cannot be pure: it reads the
 bank and the meals, applies the rules and writes the answers. So changing what a
 meal shows is an edit to one function with an assertion beside it:
 
 ```bash
-node --test scripts/meal-images/lib/ladder.test.mjs
+node --test scripts/_archived/meal-images/lib/ladder.test.mjs
 ```
 
 Every rule in that file was argued for and should break exactly one test when it
@@ -118,16 +129,16 @@ So there is one description of the grid, and neither side computes it:
 
 | | |
 |---|---|
-| the description | `scripts/meal-images/lib/mosaic-geometry.json` — cell rectangles for 1-4 tiles, the hairline's width and colour, the fit |
-| the formula behind it | `scripts/meal-images/lib/mosaic-geometry.mjs` |
-| the file the judge sees | `scripts/meal-images/lib/compose-mosaic.mjs` (pass 8 calls it; also a CLI) |
+| the description | `scripts/_archived/meal-images/lib/mosaic-geometry.json` — cell rectangles for 1-4 tiles, the hairline's width and colour, the fit |
+| the formula behind it | `scripts/_archived/meal-images/lib/mosaic-geometry.mjs` |
+| the file the judge sees | `scripts/_archived/meal-images/lib/compose-mosaic.mjs` (pass 8 calls it; also a CLI) |
 | the picture the athlete sees | `lib/shared/widgets/kyle_design/data/meal_image_mosaic.dart` |
 
 Both sides are asserted against the JSON, and the two drawings are compared
 pixel for pixel from the same four source images:
 
 ```bash
-node --test scripts/meal-images/lib/mosaic-geometry.test.mjs
+node --test scripts/_archived/meal-images/lib/mosaic-geometry.test.mjs
 flutter test test/shared/widgets/kyle_design/meal_image_mosaic_geometry_test.dart
 ```
 
@@ -157,7 +168,7 @@ was nothing to clear — the invariant starts clean.
 To eyeball what the judge sees for a set of tiles, without spending anything:
 
 ```bash
-node scripts/meal-images/lib/compose-mosaic.mjs --out /tmp/grid.png a.jpg b.jpg c.jpg
+node scripts/_archived/meal-images/lib/compose-mosaic.mjs --out /tmp/grid.png a.jpg b.jpg c.jpg
 ```
 
 ## Pipeline
@@ -192,17 +203,17 @@ run actually cost is in [honesty.md](honesty.md).
 
 ```bash
 set -a; source secrets/image_apis.env; source secrets/ai_gateway.env; set +a
-node scripts/meal-images/01-build-bank.mjs
-node scripts/meal-images/02-fetch-images.mjs      # LIMIT= CONCURRENCY= to sample
+node scripts/_archived/meal-images/01-build-bank.mjs
+node scripts/_archived/meal-images/02-fetch-images.mjs      # LIMIT= CONCURRENCY= to sample
 deno run --allow-net --allow-read --allow-env --allow-sys \
-  scripts/meal-images/05-vision-verify.ts        # RECHECK=1 to re-judge
-node scripts/meal-images/03-assign-tiles.mjs
+  scripts/_archived/meal-images/05-vision-verify.ts        # RECHECK=1 to re-judge
+node scripts/_archived/meal-images/03-assign-tiles.mjs
 deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
-  scripts/meal-images/08-verify-meal-image.ts    # LIMIT= to sample, DRY=1 to price it
+  scripts/_archived/meal-images/08-verify-meal-image.ts    # LIMIT= to sample, DRY=1 to price it
 deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
-  scripts/meal-images/10-source-dish-photos.ts   # QUEUE=transformed|blocked|wrong|recipes|all
-node scripts/meal-images/09-image-report.mjs --write
-node scripts/meal-images/04-contact-sheet.mjs
+  scripts/_archived/meal-images/10-source-dish-photos.ts  # QUEUE=transformed|blocked|wrong|recipes|all
+node scripts/_archived/meal-images/09-image-report.mjs --write
+node scripts/_archived/meal-images/04-contact-sheet.mjs
 ```
 
 ## Pass 5 — why vision verification exists
@@ -252,7 +263,8 @@ nothing to re-judge.
 Both new files are pure and tested without a network, a database or a model:
 
 ```bash
-node --test scripts/meal-images/lib/dish-query.test.mjs scripts/meal-images/lib/dish-score.test.mjs
+node --test scripts/_archived/meal-images/lib/dish-query.test.mjs \
+            scripts/_archived/meal-images/lib/dish-score.test.mjs
 ```
 
 **Ranking decides the spend, not the outcome.** A better ranking is fewer paid
@@ -291,7 +303,7 @@ more on the same queue: those meals are out of rounds, so they are retired
 straight to their icon without another search. Retiring is tested on its own:
 
 ```bash
-node --test scripts/meal-images/lib/retire.test.mjs
+node --test scripts/_archived/meal-images/lib/retire.test.mjs
 ```
 
 A recipe wearing an `ok` or `weak` grid keeps it when no photograph is found:
@@ -315,7 +327,7 @@ by construction, and both were found by putting the sourced photographs on a
 contact sheet and looking:
 
 ```bash
-SUBJECT=meals SINCE=<iso> node scripts/meal-images/04-contact-sheet.mjs
+SUBJECT=meals SINCE=<iso> node scripts/_archived/meal-images/04-contact-sheet.mjs
 ```
 
 **A picture can pass while its subject is packaging.** "Baby food pouch, ultra

@@ -16,7 +16,7 @@
  * roughly one small vision call per bank tile.
  *
  *   set -a; source secrets/ai_gateway.env; set +a
- *   deno run --allow-net --allow-read --allow-env --allow-sys scripts/meal-images/05-vision-verify.ts
+ *   deno run --allow-net --allow-read --allow-env --allow-sys scripts/_archived/meal-images/05-vision-verify.ts
  *
  * Idempotent: only tiles with status='ok' and no verdict yet are examined.
  * LIMIT=n to sample, RECHECK=1 to re-examine tiles already verified.

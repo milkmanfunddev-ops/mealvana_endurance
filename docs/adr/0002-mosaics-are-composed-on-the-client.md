@@ -2,6 +2,9 @@
 
 Status: accepted (2026-09-08, recorded 2026-09-11)
 
+Mosaics are kept but not shown to athletes since 2026-09-15. See
+[0003](0003-a-meal-shows-a-dish-photo-or-nothing.md).
+
 A Mosaic is two to four Tiles drawn into one frame by the app, at render time
 (`MealImageMosaic`, `lib/shared/widgets/kyle_design/data/meal_image_mosaic.dart`). The server
 stores only the list of Tiles in `meal_library.image_tiles`. No composed image exists in storage.
@@ -24,11 +27,11 @@ Composing on the client also keeps three contracts that a single file cannot:
 
 ## Consequences
 
-- **The judge has to draw the grid a second time.** Pass 8 and pass 10 judge a composed picture,
-  so the pipeline has its own compositor (`scripts/meal-images/lib/compose-mosaic.mjs`). Nothing
-  but tests keeps the two drawings the same. Both sides assert against one description,
-  `scripts/meal-images/lib/mosaic-geometry.json`, and a change to the grid invalidates every
-  stored Verdict on a `mosaic` or `tile` Meal. The re-measure protocol is in
+- **The judge has to draw the grid a second time.** Pass 8 and pass 10 judge a composed picture, so
+  the pipeline has its own compositor (`scripts/_archived/meal-images/lib/compose-mosaic.mjs`).
+  Nothing but tests keeps the two drawings the same. Both sides assert against one description,
+  `scripts/_archived/meal-images/lib/mosaic-geometry.json`, and a change to the grid invalidates
+  every stored Verdict on a `mosaic` or `tile` Meal. The re-measure protocol is in
   `docs/meal-images/README.md` under "Compositor parity".
 - **Up to four image requests per card instead of one.** On a slow connection a grid loads cell by
   cell. Tiles are shared across Meals, so in a scrolling list many of those requests are

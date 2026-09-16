@@ -5,7 +5,7 @@
 // these tests hold is that the retired picture can never come back — not from
 // the next rung down, not from a later run of pass 3.
 //
-// Run with:  node --test scripts/meal-images/lib/retire.test.mjs
+// Run with:  node --test scripts/_archived/meal-images/lib/retire.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

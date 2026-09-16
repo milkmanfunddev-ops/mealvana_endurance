@@ -65,7 +65,7 @@ class MealPhoto extends WireRecord {
   /// from is what says they are the same picture. A stock CDN's resize
   /// parameters are not part of the picture, so the query string is dropped.
   /// Keyed the same way as `pictureIdentity` in the frozen pipeline's
-  /// `scripts/meal-images/lib/ladder.mjs`.
+  /// `scripts/_archived/meal-images/lib/ladder.mjs`.
   Set<String> get identity => {
     url.split('?').first,
     if (creditUrl case final page? when page.isNotEmpty) page,

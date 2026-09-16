@@ -10,10 +10,10 @@
 //
 // Costs nothing and changes no meal. Safe to run whenever.
 //
-//   node scripts/meal-images/09-image-report.mjs           # print the measure
-//   node scripts/meal-images/09-image-report.mjs --write    # …and record it
-//   node scripts/meal-images/09-image-report.mjs --wrong    # the whole work queue
-//   node scripts/meal-images/09-image-report.mjs --wrong --csv > queue.csv
+//   node scripts/_archived/meal-images/09-image-report.mjs           # print the measure
+//   node scripts/_archived/meal-images/09-image-report.mjs --write    # …and record it
+//   node scripts/_archived/meal-images/09-image-report.mjs --wrong    # the whole work queue
+//   node scripts/_archived/meal-images/09-image-report.mjs --wrong --csv > queue.csv
 import { selectAll } from './lib/db.mjs';
 import { rankByReach, renderReport, summarise } from './lib/honesty.mjs';
 import { pinnedGeometry } from './lib/mosaic-geometry.mjs';

@@ -5,7 +5,7 @@
 // read `mosaic-geometry.json`, so changing the grid on one side alone breaks
 // the other side's test rather than silently invalidating stored verdicts.
 //
-// Run with:  node --test scripts/meal-images/lib/mosaic-geometry.test.mjs
+// Run with:  node --test scripts/_archived/meal-images/lib/mosaic-geometry.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

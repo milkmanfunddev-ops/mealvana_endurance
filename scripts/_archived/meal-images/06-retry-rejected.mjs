@@ -13,10 +13,10 @@
 // remembering the URL that failed, so a re-run of pass 2 has to choose
 // something else. The loop is:
 //
-//   node scripts/meal-images/06-retry-rejected.mjs     # arm the retries
-//   node scripts/meal-images/02-fetch-images.mjs       # fetch, skipping rejects
-//   deno run ... scripts/meal-images/05-vision-verify.ts   # judge the new tiles
-//   node scripts/meal-images/03-assign-tiles.mjs       # re-resolve the ladder
+//   node scripts/_archived/meal-images/06-retry-rejected.mjs     # arm the retries
+//   node scripts/_archived/meal-images/02-fetch-images.mjs       # fetch, skipping rejects
+//   deno run ... scripts/_archived/meal-images/05-vision-verify.ts   # judge the new tiles
+//   node scripts/_archived/meal-images/03-assign-tiles.mjs       # re-resolve the ladder
 //
 // Repeat while it keeps recovering slugs. MAX_ATTEMPTS stops a slug that has no
 // good photograph anywhere from being retried forever.
@@ -85,4 +85,4 @@ if (DRY) {
 
 const written = await updateMany('ingredient_images', updates, { key: 'slug' });
 console.log(`\narmed ${written} slugs for retry (${references} meal references in play)`);
-console.log('next: node scripts/meal-images/02-fetch-images.mjs');
+console.log('next: node scripts/_archived/meal-images/02-fetch-images.mjs');

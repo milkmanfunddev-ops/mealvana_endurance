@@ -2,11 +2,15 @@
 
 Status: accepted (2026-09-08, recorded 2026-09-11)
 
-A meal-library picture is copied into our `meal-images` storage bucket when it comes from an
-archive (Wikimedia Commons, Openverse) and is hotlinked to the provider's CDN when it comes from a
+The pipeline that applied this rule is frozen since 2026-09-15. Existing addresses stay as they
+are, and Tester-added photos don't follow it. See
+[0003](0003-a-meal-shows-a-dish-photo-or-nothing.md).
+
+A meal-library picture is copied into our `meal-images` storage bucket when it comes from an archive
+(Wikimedia Commons, Openverse) and is hotlinked to the provider's CDN when it comes from a
 stock-photo API (Unsplash, Pexels). The rule is `MAY_MIRROR` in
-`scripts/meal-images/lib/providers.mjs`. It is a licensing rule, not a performance setting, and the
-two halves go opposite ways for opposite reasons.
+`scripts/_archived/meal-images/lib/providers.mjs`. It is a licensing rule, not a performance
+setting, and the two halves go opposite ways for opposite reasons.
 
 Archive material is mirrored because nothing obliges us to fetch it from the archive, and the
 archive is a poor host for an app. Every archive photograph we keep carries a Creative Commons or

@@ -7,7 +7,7 @@ const DEV_REF = 'vlmtsdzpnjnavdgytcmi';
 
 function devKey() {
   if (process.env.SUPABASE_DEV_SERVICE_ROLE_KEY) return process.env.SUPABASE_DEV_SERVICE_ROLE_KEY;
-  const md = readFileSync(new URL('../../../secrets/supabase_service_role_keys.md', import.meta.url), 'utf8');
+  const md = readFileSync(new URL('../../../../secrets/supabase_service_role_keys.md', import.meta.url), 'utf8');
   const dev = md.split(/^##\s+/m).find((s) => s.includes(DEV_REF));
   const key = dev && dev.match(/eyJ[A-Za-z0-9._-]+/);
   if (!key) throw new Error('dev service-role key not found in secrets/supabase_service_role_keys.md');

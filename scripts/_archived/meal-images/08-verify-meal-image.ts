@@ -27,7 +27,7 @@
  *
  *   set -a; source secrets/ai_gateway.env; set +a
  *   deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
- *     scripts/meal-images/08-verify-meal-image.ts
+ *     scripts/_archived/meal-images/08-verify-meal-image.ts
  *
  * Resumable: each verdict is written as it is reached, not batched to the end,
  * so a run killed at meal 900 keeps 900 verdicts and the next run picks up the
@@ -243,4 +243,4 @@ const runRow = renderRunRow({
   judged, skipped, ...usage, spendUsd,
 });
 if (await appendRun(runRow)) console.log('spend appended to docs/meal-images/honesty.md');
-console.log('\nnow: node scripts/meal-images/09-image-report.mjs --write');
+console.log('\nnow: node scripts/_archived/meal-images/09-image-report.mjs --write');

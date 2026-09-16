@@ -7,7 +7,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { spliceRegion } from './honesty.mjs';
 
-export const REPORT_PATH = new URL('../../../docs/meal-images/honesty.md', import.meta.url);
+export const REPORT_PATH = new URL('../../../../docs/meal-images/honesty.md', import.meta.url);
 
 /** Replace the measured figures. Returns false when the document is missing. */
 export async function writeMeasure(body) {

@@ -3,7 +3,7 @@
 // Every assertion here is a rule someone argued for in the spec, so a rule
 // change should break exactly one of these and read as a deliberate edit.
 //
-// Run with:  node --test scripts/meal-images/lib/ladder.test.mjs
+// Run with:  node --test scripts/_archived/meal-images/lib/ladder.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

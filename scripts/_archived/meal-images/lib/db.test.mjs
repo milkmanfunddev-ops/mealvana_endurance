@@ -6,7 +6,7 @@
 // 1,922 meals; the meals it missed keep a stale `image_mode` and nothing says
 // so. `rows_using.desc` is not a fix — hundreds of ingredients share a count.
 //
-// Run with:  node --test scripts/meal-images/lib/db.test.mjs
+// Run with:  node --test scripts/_archived/meal-images/lib/db.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

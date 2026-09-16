@@ -27,7 +27,7 @@
  *
  *   set -a; source secrets/ai_gateway.env; set +a
  *   deno run --allow-net --allow-read --allow-env --allow-sys \
- *     scripts/meal-images/07-classify-separability.ts
+ *     scripts/_archived/meal-images/07-classify-separability.ts
  *
  * Idempotent: only meals with no verdict yet are classified. LIMIT=n to
  * sample, RECLASSIFY=1 to redo the whole library, DRY=1 to print without

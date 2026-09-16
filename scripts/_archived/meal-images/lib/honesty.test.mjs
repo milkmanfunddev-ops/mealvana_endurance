@@ -5,7 +5,7 @@
 // merely has a picture for. Every assertion is a definition someone argued for,
 // so a change to what counts as honest should break exactly one of these.
 //
-// Run with:  node --test scripts/meal-images/lib/honesty.test.mjs
+// Run with:  node --test scripts/_archived/meal-images/lib/honesty.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 

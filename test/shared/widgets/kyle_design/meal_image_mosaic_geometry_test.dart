@@ -1,5 +1,5 @@
 // The grid the athlete sees, checked against the description the judge draws
-// with — `scripts/meal-images/lib/mosaic-geometry.json`.
+// with — `scripts/_archived/meal-images/lib/mosaic-geometry.json`.
 //
 // Two programs draw this mosaic: this widget, and pass 8's compositor, which
 // renders it so a model can rate it. Every verdict in `meal_library` is a
@@ -9,7 +9,7 @@
 //
 // Mutation check: swap two cells, change the 3-tile split, drop the hairline or
 // let a cell use BoxFit.contain, and either this test or
-// `node --test scripts/meal-images/lib/mosaic-geometry.test.mjs` fails.
+// `node --test scripts/_archived/meal-images/lib/mosaic-geometry.test.mjs` fails.
 //
 // A change to that JSON invalidates every stored `image_verdict`; the library
 // must be re-judged. See docs/meal-images/README.md, "Compositor parity".
@@ -26,8 +26,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/meal_image_mosaic.dart';
 
 /// The one description of the grid, shared with the judging compositor.
-const _geometryPath = 'scripts/meal-images/lib/mosaic-geometry.json';
-const _compositorPath = 'scripts/meal-images/lib/compose-mosaic.mjs';
+const _geometryPath = 'scripts/_archived/meal-images/lib/mosaic-geometry.json';
+const _compositorPath = 'scripts/_archived/meal-images/lib/compose-mosaic.mjs';
 
 /// How far a sampled pixel may differ, per channel, between the two drawings.
 /// Non-zero only because they resample with different filters.

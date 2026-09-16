@@ -9,7 +9,7 @@
 // Needs python3 with Pillow. Usage as a CLI, for eyeballing what the judge is
 // shown for a set of tiles without spending anything:
 //
-//   node scripts/meal-images/lib/compose-mosaic.mjs --out grid.png a.png b.png
+//   node scripts/_archived/meal-images/lib/compose-mosaic.mjs --out grid.png a.png b.png
 //
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { execFile } from 'node:child_process';

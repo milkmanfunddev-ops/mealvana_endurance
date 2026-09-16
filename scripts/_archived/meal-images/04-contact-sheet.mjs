@@ -12,7 +12,7 @@
 // that a page of them reads as one stock library's idea of food. Only a person
 // looking at them together can, and this is what they look at.
 //
-//   SUBJECT=meals SINCE=2026-09-10T19:00 node scripts/meal-images/04-contact-sheet.mjs
+//   SUBJECT=meals SINCE=2026-09-10T19:00 node scripts/_archived/meal-images/04-contact-sheet.mjs
 //   OUT=/tmp keeps a local copy as well as uploading.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';

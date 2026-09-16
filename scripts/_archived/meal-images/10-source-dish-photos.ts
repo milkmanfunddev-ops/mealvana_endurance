@@ -28,7 +28,7 @@
  *
  *   set -a; source secrets/image_apis.env; source secrets/ai_gateway.env; set +a
  *   deno run --allow-net --allow-read --allow-write --allow-run --allow-env --allow-sys \
- *     scripts/meal-images/10-source-dish-photos.ts
+ *     scripts/_archived/meal-images/10-source-dish-photos.ts
  *
  * QUEUE=transformed  meals a mosaic can never serve (the default)
  *      =blocked      every meal the ladder found nothing for
@@ -673,4 +673,4 @@ const row = renderRunRow({
   spendUsd,
 });
 if (await appendRun(row)) console.log('spend appended to docs/meal-images/honesty.md');
-console.log('\nnow: node scripts/meal-images/09-image-report.mjs --write');
+console.log('\nnow: node scripts/_archived/meal-images/09-image-report.mjs --write');
