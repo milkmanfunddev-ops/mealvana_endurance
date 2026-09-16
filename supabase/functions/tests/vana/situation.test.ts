@@ -234,3 +234,26 @@ Deno.test('the section rides on the user message under the Situation note, never
   const out = withSituation([{ role: 'user', content: [{ type: 'text', text: 'Which?' }] }], 'looking at their events', events);
   assertEquals(out[0].content, [{ type: 'text', text: 'Which?' }, { type: 'text', text: `${note}\n${events}` }]);
 });
+
+/** mp-269 with mp-273: the section is built for the athlete's own period, not for a Sunday week of seven days.
+ *  Tickets 16 and 29 were built in parallel from the same base; this is the seam where they meet. */
+const mondayTenWorld = (): Tables => {
+  const w = planWorld();
+  w.meal_plans[0].week_start = '2026-09-07';
+  w.user_memories = [
+    { id: 'set-1', user_id: U, kind: 'setting', key: 'week_start', value: 'mon', is_deleted: false },
+    { id: 'set-2', user_id: U, kind: 'setting', key: 'period_days', value: 10, is_deleted: false },
+  ];
+  return w;
+};
+
+Deno.test("the Plan tab reads the athlete's own week start and period length", async () => {
+  // Their week runs Monday to Monday, so Saturday's plan is the one starting 2026-09-07, not the Sunday before it.
+  const out = (await section(mondayTenWorld(), { route: '/food', date: '2026-09-12' }))!;
+  assert(out.includes('week of 2026-09-07 confirmed'), out);
+  // Ten days moves the top-up cook off the seven-day offset (+3, 2026-09-10) to +4.
+  const topUp = (await section(mondayTenWorld(), { route: '/food', date: '2026-09-11' }))!;
+  assert(topUp.includes('· cook: top-up'), topUp);
+  const sevenDayOffset = (await section(mondayTenWorld(), { route: '/food', date: '2026-09-10' }))!;
+  assert(!sevenDayOffset.includes('cook:'), sevenDayOffset);
+});

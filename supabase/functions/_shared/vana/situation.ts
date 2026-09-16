@@ -12,6 +12,7 @@
 import type { VanaCtx } from './env.ts';
 import { dayName, weekStartFor } from './env.ts';
 import { sessionDates } from './opener.ts';
+import { getPlanPeriod } from './memory.ts';
 import { getPlan, getPlanById } from './plan.ts';
 import type { MealPlan } from './contracts.ts';
 
@@ -155,12 +156,14 @@ async function dayPlan(v: VanaCtx, s: Situation, todayIso: string): Promise<stri
   const id = s.entityId?.trim() || null;
   // The id the tab sent, else the week's own plan for that day: an id that does not resolve is not an error.
   const byId = id ? await getPlanById(v, id) : null;
-  const plan: MealPlan | null = byId ?? (await getPlan(v, weekStartFor(date)));
+  // mp-269: the week and the cook dates read the athlete's start day and period length, like every other plan read.
+  const period = await getPlanPeriod(v);
+  const plan: MealPlan | null = byId ?? (await getPlan(v, weekStartFor(date, period.weekStart)));
   if (!plan) return `${head} · no plan this week`;
   const bits = [head, `week of ${plan.weekStart} ${plan.status}`];
   const note = plan.dayNotes?.[date]?.trim();
   if (note) bits.push(`note: ${note.length > NOTE_CAP ? `${note.slice(0, NOTE_CAP - 1)}…` : note}`);
-  const onDate = sessionDates(plan.weekStart);
+  const onDate = sessionDates(plan.weekStart, period.periodDays);
   const cooks = [...new Set(plan.meals.map((m) => m.session).filter((x): x is Exclude<typeof x, null> => !!x && onDate[x] === date))];
   if (cooks.length) bits.push(`cook: ${cooks.map((c) => SESSION_LABEL[c] ?? c).join(', ')}`);
   const slots = Object.entries(plan.days?.[date] ?? {}).filter(([, ref]) => ref?.name).map(([slot, ref]) => `${slot} ${ref!.name}`);

@@ -53,7 +53,8 @@ const promptFor = (kind: ConversationKind) => (kind === 'general' ? GENERAL_PROM
 async function loadOpenerInput(v: VanaCtx, t: string) {
   const period = await getPlanPeriod(v); // mp-269: the week and the cook dates read the athlete's start day and period length
   const ws = weekStartFor(t, period.weekStart);
-  const [current, previous] = await Promise.all([getPlan(v, ws), getPlan(v, addDays(ws, -7))]);
+  // The period before this one is a period back, not a fixed week (mp-269 clause 2).
+  const [current, previous] = await Promise.all([getPlan(v, ws), getPlan(v, addDays(ws, -period.periodDays))]);
   const stamp = async (p: MealPlan | null) => { if (!p) return null; const { data } = await v.db.from('meal_plans').select('checkin_done_at, debrief_done_at').eq('id', p.id).maybeSingle(); return { ...p, checkinDoneAt: data?.checkin_done_at ?? null, debriefDoneAt: data?.debrief_done_at ?? null }; };
   return { today: t, current: await stamp(current), previous: await stamp(previous), periodDays: period.periodDays };
 }
