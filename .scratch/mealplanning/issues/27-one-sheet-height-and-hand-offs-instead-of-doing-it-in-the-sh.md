@@ -1,6 +1,6 @@
 # 27: One sheet height, and hand-offs instead of doing it in the sheet
 
-**Status:** in-progress (wave 4, 2026-09-15)
+**Status:** done (wave 4, 2026-09-16)
 **Blocked by:** 15 (touches lib/features/meal_planning/presentation/widgets/vana_companion.dart), 26 (touches supabase/functions/_shared/vana/tools.ts).
 **Next:** `/implement-lee mealplanning`
 
@@ -13,6 +13,6 @@
 - [x] One height, no auto or three-quarter state, no custom thresholds; goldens regenerated and the component spec updated with its version.
 - [x] A hand-off part in the contract (target screen, label, entity id) rendered as a button that navigates; the frozen fixtures carry it (contract test).
 - [x] The persona names the four hand-offs and the eval shows a meal-plan request in the sheet answered with the button, not a picker.
-- [ ] Simulator: ask for a plan from the sheet, tap the button, land on the meal-planning page.
+- [x] Simulator: ask for a plan from the sheet, tap the button, land on the meal-planning page.
 
 Next: /implement-lee mealplanning

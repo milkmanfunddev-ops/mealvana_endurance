@@ -1,6 +1,6 @@
 # 29: Week start and period length are settings
 
-**Status:** in-progress (wave 4, 2026-09-15)
+**Status:** done (wave 4, 2026-09-16)
 **Blocked by:** 15 (touches supabase/functions/_shared/vana/opener.ts), 22 (touches lib/features/meal_planning/presentation/widgets/review_sheet.dart).
 **Next:** `/implement-lee mealplanning`
 
@@ -13,6 +13,6 @@
 - [x] Two keyed settings, week start and period days, with defaults Sunday and 7, editable in Vana settings (controller test).
 - [x] weekStartFor and the cook-day offsets read the settings; a Monday start moves cook, top-up and fresh days accordingly (server seam).
 - [x] Coverage, the review sheet and the week card read the period length (widget tests).
-- [ ] Simulator: change the start day and see the Plan tab's week move.
+- [x] Simulator: change the start day and see the Plan tab's week move.
 
 Next: /implement-lee mealplanning

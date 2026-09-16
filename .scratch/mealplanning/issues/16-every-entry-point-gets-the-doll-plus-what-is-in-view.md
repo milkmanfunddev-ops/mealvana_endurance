@@ -1,6 +1,6 @@
 # 16: Every entry point gets the Doll plus what is in view
 
-**Status:** in-progress (wave 4, 2026-09-15)
+**Status:** done (wave 4, 2026-09-16)
 **Blocked by:** 13 (touches supabase/functions/_shared/vana/context.ts), 15 (touches lib/features/meal_planning/application/vana_ambient_conversation_controller.dart).
 **Next:** `/implement-lee mealplanning`
 
@@ -14,6 +14,6 @@
 - [x] The Doll block itself is unchanged in shape by any entry point (mp-218 test).
 - [x] The Plan tab note card opens the day's ambient conversation, not a fresh one (controller test).
 - [x] A conversation started by New meal plan or the plus button does not change the launcher's pointer (controller test).
-- [ ] Simulator: note card and launcher land in the same thread.
+- [x] Simulator: note card and launcher land in the same thread.
 
 Next: /implement-lee mealplanning
