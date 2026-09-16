@@ -80,6 +80,23 @@ class VanaServerException extends VanaException {
   String toString() => 'VanaServerException($statusCode): ${error ?? body}';
 }
 
+/// The `meal-photo` function refused a Tester's photo change, and why.
+///
+/// [code] is the function's own (`not_tester`, `not_an_image`, `invalid_input`,
+/// `meal_not_found`, `server_error`); `mealPhotoMessageKey` maps each to a
+/// content key. Nothing here carries user-facing copy.
+///
+/// Lives here rather than beside the repository because [VanaException] is
+/// sealed: one base, so a caller can catch every edge-function refusal at once.
+class MealPhotoException extends VanaException {
+  const MealPhotoException(this.code);
+
+  final String code;
+
+  @override
+  String toString() => 'MealPhotoException($code)';
+}
+
 /// Thrown by remote-ack controller operations (`pick_meals`, `swap_meal`,
 /// `confirm_plan`, `new_plan`, `log_from_plan`, `plan_day`) when the device
 /// is offline, before anything is sent. Local-first operations never throw

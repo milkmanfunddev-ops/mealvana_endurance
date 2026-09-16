@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/providers/is_admin_provider.dart';
+import '../../../../shared/services/analytics/internal_user_service.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
@@ -24,6 +25,7 @@ import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/choice_chip_button.dart';
 import '../widgets/directions_origin_label.dart';
+import '../widgets/meal_photo_entry_points.dart';
 import '../widgets/meal_photo_view.dart';
 import '../widgets/servings_sheet.dart';
 import '../widgets/dashed_box.dart';
@@ -156,6 +158,11 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
     final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
     final meal = detail.meal;
     final isSaved = meal.source == MealSource.saved;
+    // A Tester is anyone who turned on "Mark this device as internal" in
+    // Settings (ADR 0003). Library meals only: a saved meal has no
+    // meal_library row, so it has no photos page to open. The server re-checks
+    // users.is_internal on every call — this only decides what to draw.
+    final isTester = ref.watch(internalDeviceFlagProvider) && !isSaved;
 
     String cap(String v) => v.isEmpty ? v : v[0].toUpperCase() + v.substring(1);
 
@@ -188,7 +195,19 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         // The Dish photo, or nothing: a Meal without one opens at its name,
         // with no empty space above it (ADR 0003).
         if (detail.photo case final photo?) ...[
-          MealPhotoHero(photo: photo),
+          Stack(
+            children: [
+              MealPhotoHero(photo: photo),
+              // A small camera icon on the photograph, for a Tester only: an
+              // athlete's recipe screen stays about cooking (stories 14, 16).
+              if (isTester)
+                Positioned(
+                  top: AppSpacing.xs,
+                  right: AppSpacing.xs,
+                  child: MealPhotoChangeIcon(meal: meal),
+                ),
+            ],
+          ),
           // One credit line, only when the photo carries one, opening the
           // photograph's page when it has one.
           Padding(
@@ -199,6 +218,12 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                   launchUrl(uri, mode: LaunchMode.externalApplication),
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+        ] else if (isTester) ...[
+          // Where the picture would be: the line that shows a Tester which
+          // meals still need a photograph, while they are cooking one
+          // (story 17). An athlete sees nothing here at all.
+          MealAddPhotoLine(meal: meal),
           const SizedBox(height: AppSpacing.sm),
         ],
 

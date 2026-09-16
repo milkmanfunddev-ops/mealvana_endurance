@@ -109,14 +109,15 @@ run_flutter_layer() {
 
 run_edge_layer() {
   echo ""
-  echo -e "${BLUE}━━━ edge — deno test supabase/functions/tests/vana ━━━${NC}"
+  echo -e "${BLUE}━━━ edge — deno test supabase/functions/tests/{vana,meal_photo} ━━━${NC}"
   if ! command -v deno >/dev/null 2>&1; then
     echo -e "${YELLOW}deno not installed — edge layer skipped${NC}"
     return
   fi
   # Same flags the repo-wide runner uses for local (fetch-stubbed) tests.
-  if deno test --allow-read --allow-write --allow-env --node-modules-dir=none \
-       supabase/functions/tests/vana; then
+  # --allow-sys: the meal-photo handler tests reach Deno's crypto.randomUUID.
+  if deno test --allow-read --allow-write --allow-env --allow-sys --node-modules-dir=none \
+       supabase/functions/tests/vana supabase/functions/tests/meal_photo; then
     PASSED+=(edge)
   else
     FAILED+=(edge)

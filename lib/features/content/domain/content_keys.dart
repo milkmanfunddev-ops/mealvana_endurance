@@ -431,6 +431,32 @@ class ContentKeys {
   static const String mpDetailReviewSend = 'meal_planning.detail_review_send';
   static const String mpDetailReviewSent = 'meal_planning.detail_review_sent';
   static const String mpDetailSwapsTitle = 'meal_planning.detail_swaps_title';
+
+  // Meal photos page — Testers only (ADR 0003, meal-imagery ticket 04). The
+  // failure strings are keyed by the `meal-photo` function's own error codes;
+  // a code with no key of its own falls back to [mpServerError].
+  static const String mpPhotosTitle = 'meal_planning.photos_title';
+  static const String mpPhotosCurrent = 'meal_planning.photos_current';
+  static const String mpPhotosNone = 'meal_planning.photos_none';
+  static const String mpPhotosAdd = 'meal_planning.photos_add';
+  static const String mpPhotosChange = 'meal_planning.photos_change';
+  static const String mpPhotosAddressTitle = 'meal_planning.photos_address_title';
+  static const String mpPhotosAddressHint = 'meal_planning.photos_address_hint';
+  static const String mpPhotosCreditHint = 'meal_planning.photos_credit_hint';
+  static const String mpPhotosCreditUrlHint =
+      'meal_planning.photos_credit_url_hint';
+  static const String mpPhotosPreview = 'meal_planning.photos_preview';
+  static const String mpPhotosPreviewLabel = 'meal_planning.photos_preview_label';
+  static const String mpPhotosConfirm = 'meal_planning.photos_confirm';
+  static const String mpPhotosCancel = 'meal_planning.photos_cancel';
+  static const String mpPhotosAdded = 'meal_planning.photos_added';
+  static const String mpPhotosHistory = 'meal_planning.photos_history';
+  static const String mpPhotosHistoryEmpty = 'meal_planning.photos_history_empty';
+  static const String mpPhotosShowingNow = 'meal_planning.photos_showing_now';
+  static const String mpPhotosNotAnImage = 'meal_planning.photos_not_an_image';
+  static const String mpPhotosInvalidInput = 'meal_planning.photos_invalid_input';
+  static const String mpPhotosNotTester = 'meal_planning.photos_not_tester';
+  static const String mpPhotosMealNotFound = 'meal_planning.photos_meal_not_found';
   static const String mpDetailAddDirections =
       'meal_planning.detail_add_directions';
   static const String mpDetailEditSave = 'meal_planning.detail_edit_save';

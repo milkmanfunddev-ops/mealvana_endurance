@@ -19,8 +19,11 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/meal_detail_screen.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/meal_photo.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_photo_view.dart';
 
+import 'package:mealvana_endurance/shared/services/analytics/internal_user_service.dart';
+import '../helpers/tester_flag.dart';
 import '../helpers/test_content.dart';
 
 /// The minimal detail layout (2026-09-03 cleanup): title + original-recipe
@@ -63,13 +66,19 @@ void main() {
 
   late _FixedDetailController controller;
 
-  Future<void> pumpScreen(WidgetTester tester, {bool admin = false}) async {
-    controller = _FixedDetailController(detail);
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    bool admin = false,
+    bool isTester = false,
+    MealDetail? show,
+  }) async {
+    controller = _FixedDetailController(show ?? detail);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
           isAdminProvider.overrideWith((ref) async => admin),
+          internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(isTester)),
           mealDetailControllerProvider('D-100').overrideWith(() => controller),
         ],
         child: const MaterialApp(home: MealDetailScreen(id: 'D-100')),
@@ -190,6 +199,69 @@ void main() {
     });
   });
 
+  // ── Tester photo entry points (ADR 0003, meal-imagery ticket 04) ──────
+  group('the photo entry point', () {
+    const changeKey = ValueKey('meal_planning.detail_photo_change');
+    const addKey = ValueKey('meal_planning.detail_photo_add');
+
+    /// The same salad, wearing a photograph.
+    final withPhoto = MealDetail(
+      meal: detail.meal,
+      ingredients: detail.ingredients,
+      methodSteps: detail.methodSteps,
+      directions: detail.directions,
+      photo: const MealPhoto(url: 'https://upload.wikimedia.org/salad.jpg'),
+      sourceUrl: detail.sourceUrl,
+      source: detail.source,
+      swaps: detail.swaps,
+      servings: detail.servings,
+    );
+
+    testWidgets('an athlete sees neither, with a photo or without', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+      expect(find.byKey(addKey), findsNothing);
+      expect(find.byKey(changeKey), findsNothing);
+      expect(find.text(content['meal_planning.photos_add']!), findsNothing);
+
+      await pumpScreen(tester, show: withPhoto);
+      expect(find.byKey(changeKey), findsNothing);
+      expect(find.byKey(addKey), findsNothing);
+    });
+
+    testWidgets('a Tester gets the camera icon on the photograph', (
+      tester,
+    ) async {
+      await pumpScreen(tester, isTester: true, show: withPhoto);
+
+      expect(find.byKey(changeKey), findsOneWidget);
+      // Not the other entry point: the Meal has a photograph.
+      expect(find.byKey(addKey), findsNothing);
+      // On the picture, above the meal's name.
+      expect(
+        tester.getTopLeft(find.byKey(changeKey)).dy,
+        lessThan(
+          tester
+              .getTopLeft(
+                find.text('Salmon, quinoa, asparagus & spinach salad'),
+              )
+              .dy,
+        ),
+      );
+    });
+
+    testWidgets('a Tester gets the Add photo line where the picture would be', (
+      tester,
+    ) async {
+      await pumpScreen(tester, isTester: true);
+
+      expect(find.byKey(addKey), findsOneWidget);
+      expect(find.text(content['meal_planning.photos_add']!), findsOneWidget);
+      expect(find.byKey(changeKey), findsNothing);
+    });
+  });
+
   testWidgets('none of the removed clutter renders', (tester) async {
     await pumpScreen(tester);
 
@@ -237,6 +309,7 @@ void main() {
         ProviderScope(
           overrides: [
             contentServiceProvider.overrideWith(testContentService),
+            internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
             mealDetailControllerProvider(
               d.meal.id,
             ).overrideWith(() => _FixedDetailController(d)),
@@ -379,6 +452,7 @@ void main() {
         ProviderScope(
           overrides: [
             contentServiceProvider.overrideWith(testContentService),
+            internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
             mealDetailControllerProvider(
               'D-100',
             ).overrideWith(() => _FixedDetailController(detail)),
@@ -432,6 +506,7 @@ void main() {
         ProviderScope(
           overrides: [
             contentServiceProvider.overrideWith(testContentService),
+            internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
             isAdminProvider.overrideWith((ref) async => false),
             mealDetailControllerProvider(
               'D-100',

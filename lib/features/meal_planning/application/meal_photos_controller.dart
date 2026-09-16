@@ -1,0 +1,74 @@
+import 'dart:async';
+
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../data/meal_photo_repository.dart';
+import '../domain/meal_photo_history.dart';
+import 'meal_catalog_controller.dart';
+import 'meal_detail_controller.dart';
+import 'plan_meal_photos.dart';
+
+part 'meal_photos_controller.g.dart';
+
+/// One library Meal's photographs, for the Meal photos page (ADR 0003).
+///
+/// Every write is **remote-ack only**: no local write, no Drift row, no upload
+/// queue. A photograph publishes to every athlete, so "Photo added" may only be
+/// said once the server has it (story 32), and with no signal the add must fail
+/// where the Tester can see it rather than publish later unwatched (story 33).
+///
+/// A failure therefore leaves the state exactly as it was and is rethrown for
+/// the screen — the page keeps showing what athletes really see, rather than
+/// replacing it with an error. (The spec's `AsyncValue.guard()` would instead
+/// put the failure *in* the state, which changes it; the ticket's "a thrown
+/// failure leaves state unchanged and reaches the screen" wins, and it is what
+/// `MealDetailController.review` already does for the other cross-user write.)
+///
+/// Not `keepAlive`: the page is the only watcher, and reopening it should ask
+/// the server again rather than show a Tester a cached History.
+@riverpod
+class MealPhotosController extends _$MealPhotosController {
+  MealPhotoRepository get _repo => ref.read(mealPhotoRepositoryProvider);
+
+  @override
+  FutureOr<MealPhotos> build(String mealId) => _repo.history(mealId);
+
+  /// Publish a web address as this Meal's photo.
+  ///
+  /// The server checks the address really answers with an image before
+  /// anything is written, so a refusal here means nothing changed.
+  Future<void> addAddress({
+    required String url,
+    String? credit,
+    String? creditUrl,
+  }) async {
+    // Never a silent return: a page that has not finished loading must still
+    // send, or Confirm would say "Photo added" having sent nothing (story 32).
+    final current = state.value ?? const MealPhotos();
+
+    // Nothing before the ack. If this throws — offline, not a Tester, not an
+    // image — `state` is still `current` and the screen shows the failure.
+    final added = await _repo.addAddress(
+      mealId: mealId,
+      url: url,
+      credit: credit,
+      creditUrl: creditUrl,
+    );
+
+    if (!ref.mounted) return;
+    state = AsyncData(current.withAdded(added));
+    _showEverywhereElse();
+  }
+
+  /// The new photograph has to reach the surfaces that already drew this Meal.
+  ///
+  /// The recipe screen behind the page holds a `keepAlive` detail, the Meals
+  /// tab holds its rails and results, and an open plan holds its photo lookup —
+  /// none of them re-read on their own, so without this a Tester would have to
+  /// leave the screen to see their own photograph (the debt ticket 03 left).
+  void _showEverywhereElse() {
+    ref.invalidate(mealDetailControllerProvider(mealId));
+    ref.invalidate(mealCatalogControllerProvider);
+    ref.invalidate(planMealPhotosProvider);
+  }
+}

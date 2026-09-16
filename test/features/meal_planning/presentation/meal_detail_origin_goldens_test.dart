@@ -24,6 +24,8 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart'
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/meal_detail_screen.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 
+import 'package:mealvana_endurance/shared/services/analytics/internal_user_service.dart';
+import 'helpers/tester_flag.dart';
 import 'helpers/test_content.dart';
 
 const _width = 390.0;
@@ -84,6 +86,10 @@ void main() {
               overrides: [
                 contentServiceProvider.overrideWith(testContentService),
                 isAdminProvider.overrideWith((ref) async => false),
+                // What an athlete sees. A debug test build is forced internal,
+                // so without this the goldens would pin a Tester-only surface
+                // (the "Add photo" line) onto every athlete's screen.
+                internalDeviceFlagProvider.overrideWith(() => StubInternalDeviceFlag(false)),
                 mealDetailControllerProvider(
                   'D-100',
                 ).overrideWith(() => _FixedDetailController(detail)),
