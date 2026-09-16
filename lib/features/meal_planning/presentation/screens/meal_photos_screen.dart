@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../features/content/application/content_service.dart';
@@ -10,8 +13,11 @@ import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../application/dish_photo_capture.dart';
+import '../providers/dish_photo_cropper.dart';
 import '../../application/meal_photos_controller.dart';
 import '../../data/vana_exceptions.dart';
+import '../../domain/dish_photo_preparation.dart';
 import '../../domain/meal_photo_history.dart';
 import '../../domain/meal_photo_messages.dart';
 import '../widgets/meal_photo_view.dart';
@@ -24,9 +30,12 @@ import '../widgets/meal_photo_view.dart';
 /// the router otherwise, so an unnamed push would leave analytics and Vana's
 /// screen situation looking at the recipe screen underneath.
 ///
-/// This ticket builds the current photo, adding by web address, and History as
-/// a read-only record. Take/Choose photo (ticket 05) and Remove/Restore/Delete
+/// This ticket builds the current photo, adding by web address or by camera
+/// and gallery, and History as a read-only record. Remove/Restore/Delete
 /// (ticket 06) land in the same sections.
+///
+/// Only one add is ever in flight: a pending upload and a pending address
+/// replace each other, so Confirm is never ambiguous about what it publishes.
 class MealPhotosScreen extends ConsumerStatefulWidget {
   const MealPhotosScreen({
     super.key,
@@ -63,6 +72,10 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
   /// Confirm waits rather than publishing an address that may be a 404 page.
   bool? _previewLoaded;
 
+  /// The cropped photograph waiting for Confirm, or null when there is none.
+  /// Held in memory only: nothing is stored anywhere until the Tester confirms.
+  Uint8List? _pendingUpload;
+
   bool _sending = false;
 
   @override
@@ -88,28 +101,87 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
     setState(() {
       _previewing = null;
       _previewLoaded = null;
+      _pendingUpload = null;
       _address.clear();
       _credit.clear();
       _creditUrl.clear();
     });
   }
 
-  Future<void> _confirm() async {
-    final url = _previewing;
-    if (url == null || _previewLoaded != true || _sending) return;
+  /// Take a photo, or choose one, then crop it — and stop at any point the
+  /// Tester backs out. Nothing is prepared, sent or stored here: the bytes sit
+  /// in memory until Confirm (story 24).
+  Future<void> _pick(ImageSource source) async {
+    final content = ref.read(contentServiceProvider);
+    final pick = ref.read(dishPhotoPickerProvider);
+    final crop = ref.read(dishPhotoCropperProvider);
+
+    Uint8List? picked;
+    try {
+      picked = await pick(source);
+    } catch (_) {
+      // A refused camera permission, or no gallery on this device.
+      if (!mounted) return;
+      MealvanaSnackbar.showError(
+        context,
+        content.getValue(ContentKeys.mpPhotosPickFailed),
+      );
+      return;
+    }
+    // Backed out of the picker: changes nothing.
+    if (picked == null || !mounted) return;
+
+    final cropped = await crop(context, picked);
+    // Cancelled at the crop step: also changes nothing (story 25).
+    if (cropped == null || !mounted) return;
+
+    setState(() {
+      _pendingUpload = cropped;
+      // One add at a time — a half-typed address is dropped rather than left
+      // to make Confirm ambiguous. The credit goes with it: a credit typed for
+      // an address the Tester walked away from must not be attached to this
+      // photograph behind their back.
+      _previewing = null;
+      _previewLoaded = null;
+      _address.clear();
+      _credit.clear();
+      _creditUrl.clear();
+    });
+  }
+
+  /// Publish the cropped photograph.
+  ///
+  /// The controller prepares it first — shrink and strip the EXIF — so a
+  /// [DishPhotoUnreadable] here means nothing was sent at all.
+  Future<void> _confirmUpload() async {
+    final bytes = _pendingUpload;
+    if (bytes == null) return;
+    await _publish(
+      () => ref
+          .read(mealPhotosControllerProvider(widget.mealId).notifier)
+          .addUpload(
+            bytes: bytes,
+            credit: _credit.text,
+            creditUrl: _creditUrl.text,
+          ),
+    );
+  }
+
+  /// Send one add and say what happened — the same for a pasted address and a
+  /// photograph, so the two can never drift into reporting differently.
+  ///
+  /// Success is only said once [send] returns, because that is when the server
+  /// has it and therefore when every athlete has it (story 32). An offline
+  /// failure says so plainly and queues nothing: a photograph every athlete
+  /// sees must not publish later, unwatched (story 33).
+  Future<void> _publish(Future<void> Function() send) async {
+    if (_sending) return;
     final content = ref.read(contentServiceProvider);
     setState(() => _sending = true);
     try {
-      await ref
-          .read(mealPhotosControllerProvider(widget.mealId).notifier)
-          .addAddress(
-            url: url,
-            credit: _credit.text,
-            creditUrl: _creditUrl.text,
-          );
+      await send();
       if (!mounted) return;
       _cancel();
-      // Only now: the server has it, so every athlete has it (story 32).
       MealvanaSnackbar.showSuccess(
         context,
         content.getValue(ContentKeys.mpPhotosAdded),
@@ -117,8 +189,6 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
       );
     } on VanaOfflineException {
       if (!mounted) return;
-      // Nothing was queued: a photograph every athlete sees must not publish
-      // later, unwatched (story 33).
       MealvanaSnackbar.showWarning(
         context,
         content.getValue(ContentKeys.mpNeedsConnection),
@@ -129,6 +199,21 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  Future<void> _confirm() async {
+    final url = _previewing;
+    // Nothing publishes until the address has actually drawn.
+    if (url == null || _previewLoaded != true) return;
+    await _publish(
+      () => ref
+          .read(mealPhotosControllerProvider(widget.mealId).notifier)
+          .addAddress(
+            url: url,
+            credit: _credit.text,
+            creditUrl: _creditUrl.text,
+          ),
+    );
   }
 
   @override
@@ -179,13 +264,103 @@ class _MealPhotosScreenState extends ConsumerState<MealPhotosScreen> {
               const SizedBox(height: AppSpacing.md),
               _CurrentPhoto(photos: photos),
               const SizedBox(height: AppSpacing.lg),
-              _buildAddByAddress(content, textColor, isDark),
+              if (_pendingUpload case final bytes?)
+                _buildUploadPreview(content, bytes)
+              else ...[
+                // Hidden while an address is being previewed: one add at a
+                // time, so Confirm always means one obvious thing.
+                if (_previewing == null) ...[
+                  _buildTakeOrChoose(content),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+                _buildAddByAddress(content, textColor, isDark),
+              ],
               const SizedBox(height: AppSpacing.lg),
               _History(entries: photos.history),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  /// Take photo and Choose photo. On a simulator the camera is not there at
+  /// all, which the picker reports as a failure — the gallery is the way in.
+  Widget _buildTakeOrChoose(ContentService content) {
+    return Row(
+      children: [
+        Expanded(
+          child: KylePrimaryButton(
+            key: const ValueKey('meal_planning.photos_take'),
+            text: content.getValue(ContentKeys.mpPhotosTake),
+            height: 40,
+            onPressed: _sending ? null : () => _pick(ImageSource.camera),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: KylePrimaryButton(
+            key: const ValueKey('meal_planning.photos_choose'),
+            text: content.getValue(ContentKeys.mpPhotosChoose),
+            height: 40,
+            onPressed: _sending ? null : () => _pick(ImageSource.gallery),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The cropped photograph, drawn at the shape the recipe screen draws it —
+  /// exactly what athletes will see (story 23) — with the credit fields and
+  /// Confirm.
+  ///
+  /// Straight from memory, so there is no loading state and nothing to fail:
+  /// the bytes are already in hand, unlike a pasted address.
+  Widget _buildUploadPreview(ContentService content, Uint8List bytes) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Label(content.getValue(ContentKeys.mpPhotosPreviewLabel)),
+        const SizedBox(height: AppSpacing.xs),
+        AspectRatio(
+          aspectRatio: kDishPhotoAspectRatio,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.memory(
+              bytes,
+              key: const ValueKey('meal_planning.photos_upload_preview_image'),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        KyleTextField(
+          key: const ValueKey('meal_planning.photos_upload_credit_field'),
+          controller: _credit,
+          hint: content.getValue(ContentKeys.mpPhotosCreditHint),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        KyleTextField(
+          key: const ValueKey('meal_planning.photos_upload_credit_url_field'),
+          controller: _creditUrl,
+          hint: content.getValue(ContentKeys.mpPhotosCreditUrlHint),
+          keyboardType: TextInputType.url,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        KylePrimaryButton(
+          key: const ValueKey('meal_planning.photos_upload_confirm'),
+          text: content.getValue(ContentKeys.mpPhotosConfirm),
+          height: 40,
+          isLoading: _sending,
+          onPressed: _confirmUpload,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TextButton(
+          key: const ValueKey('meal_planning.photos_upload_cancel'),
+          onPressed: _sending ? null : _cancel,
+          child: Text(content.getValue(ContentKeys.mpPhotosCancel)),
+        ),
+      ],
     );
   }
 
@@ -469,6 +644,9 @@ class _Label extends StatelessWidget {
 /// top of the page and a refused Confirm answer the same way.
 String _failureKey(Object error) => switch (error) {
   VanaOfflineException() => ContentKeys.mpNeedsConnection,
+  // The picked file never decoded, so nothing was sent — a different photo is
+  // the fix, not a retry.
+  DishPhotoUnreadable() => ContentKeys.mpPhotosUnreadable,
   MealPhotoException(:final code) =>
     mealPhotoMessageKey(code) ?? ContentKeys.mpServerError,
   _ => ContentKeys.mpServerError,

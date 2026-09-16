@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import 'dart:typed_data';
+
 import '../data/meal_photo_repository.dart';
+import 'dish_photo_capture.dart';
+import '../domain/dish_photo_preparation.dart';
 import '../domain/meal_photo_history.dart';
 import 'meal_catalog_controller.dart';
 import 'meal_detail_controller.dart';
@@ -51,6 +55,39 @@ class MealPhotosController extends _$MealPhotosController {
     final added = await _repo.addAddress(
       mealId: mealId,
       url: url,
+      credit: credit,
+      creditUrl: creditUrl,
+    );
+
+    if (!ref.mounted) return;
+    state = AsyncData(current.withAdded(added));
+    _showEverywhereElse();
+  }
+
+  /// Publish a photo the Tester took or chose.
+  ///
+  /// [bytes] are the raw picked (and cropped) file. Preparation happens here,
+  /// not on the page and not on the server: it is the step that strips the
+  /// EXIF, so it must sit between the picker and anything that can send, with
+  /// nothing able to skip past it. A file that cannot be read throws
+  /// [DishPhotoUnreadable] before a single byte leaves the phone.
+  ///
+  /// It runs off the UI isolate ([dishPhotoPreparer]): decoding, resizing and
+  /// re-encoding a photo straight off a phone camera would otherwise freeze the
+  /// page, including the spinner that is supposed to show something is
+  /// happening.
+  Future<void> addUpload({
+    required Uint8List bytes,
+    String? credit,
+    String? creditUrl,
+  }) async {
+    final current = state.value ?? const MealPhotos();
+
+    final prepared = await ref.read(dishPhotoPreparerProvider)(bytes);
+
+    final added = await _repo.addUpload(
+      mealId: mealId,
+      bytes: prepared,
       credit: credit,
       creditUrl: creditUrl,
     );

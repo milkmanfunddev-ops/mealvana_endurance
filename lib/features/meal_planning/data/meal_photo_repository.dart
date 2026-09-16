@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -76,6 +78,42 @@ class MealPhotoRepository {
     if (entry == null) {
       _logger.error(
         'meal-photo add_address acked without a usable History row',
+        context: _context,
+      );
+      throw const MealPhotoException('server_error');
+    }
+    return entry;
+  }
+
+  /// Publish prepared bytes as this Meal's photo.
+  ///
+  /// [bytes] are what `prepareDishPhoto` produced — already cropped, shrunk
+  /// and stripped of EXIF. Nothing here re-encodes them, so the photograph
+  /// athletes get is the one the Tester previewed, and the location data is
+  /// gone before the phone opens a socket rather than after the server
+  /// receives it.
+  ///
+  /// Sent as base64 inside the JSON body: the function takes one JSON shape
+  /// for every action, and a prepared photo is a few hundred KB, well inside
+  /// what an edge function accepts.
+  Future<MealPhotoHistoryEntry> addUpload({
+    required String mealId,
+    required Uint8List bytes,
+    String? credit,
+    String? creditUrl,
+  }) async {
+    final body = await _call({
+      'action': 'add_upload',
+      'meal_id': mealId,
+      'data': base64Encode(bytes),
+      'credit': credit?.trim(),
+      'credit_url': creditUrl?.trim(),
+    });
+
+    final entry = MealPhotoHistoryEntry.fromJsonOrNull(asJsonMap(body['entry']));
+    if (entry == null) {
+      _logger.error(
+        'meal-photo add_upload acked without a usable History row',
         context: _context,
       );
       throw const MealPhotoException('server_error');

@@ -3,12 +3,13 @@
  *
  * POST /functions/v1/meal-photo     Auth: Supabase user JWT
  * Body: { action, meal_id, ... }
- *   add_address  { url, credit?, credit_url? } → { photo }
- *   history      { }                           → { photo, history: [...] }
+ *   add_address  { url, credit?, credit_url? }          → { photo, entry }
+ *   add_upload   { data (base64 JPEG), credit?, credit_url? } → { photo, entry }
+ *   history      { }                                    → { photo, history: [...] }
  *
  * Errors: 401 {error:'unauthenticated'} · 403 {error:'not_tester'} ·
- *         400 {error:'invalid_input'|'not_an_image'} · 404 {error:'meal_not_found'} ·
- *         500 {error:'server_error'}.
+ *         400 {error:'invalid_input'|'not_an_image'|'too_large'} ·
+ *         404 {error:'meal_not_found'} · 500 {error:'server_error'}.
  *
  * The 403 is the real gate. The app hides the entry point behind the 7-tap
  * "Mark this device as internal" switch, but hiding a button protects nothing:
@@ -24,7 +25,8 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { jsonResponse } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
-import { handleMealPhoto, probeImageOverNetwork } from './handler.ts';
+import { bucketStorage, handleMealPhoto, probeImageOverNetwork } from './handler.ts';
+import { SUPABASE_URL } from '../_shared/vana/env.ts';
 
 initSentry();
 
@@ -47,6 +49,9 @@ serve(withSentry(async (req: Request) => {
     admin: auth.v.admin,
     userId: auth.v.userId,
     probeImage: probeImageOverNetwork,
+    // Uploads go to the public bucket with the service role: it has no storage
+    // policies, so nothing but this function can write there.
+    storage: bucketStorage(auth.v.admin, SUPABASE_URL),
   });
 
   console.log(

@@ -460,6 +460,15 @@ class ContentKeys {
   static const String mpPhotosInvalidInput = 'meal_planning.photos_invalid_input';
   static const String mpPhotosNotTester = 'meal_planning.photos_not_tester';
   static const String mpPhotosMealNotFound = 'meal_planning.photos_meal_not_found';
+  // Taking or choosing a photo (ticket 05). The app prepares the bytes before
+  // anything leaves the phone — cropped, shrunk and stripped of EXIF.
+  static const String mpPhotosTake = 'meal_planning.photos_take';
+  static const String mpPhotosChoose = 'meal_planning.photos_choose';
+  static const String mpPhotosCropTitle = 'meal_planning.photos_crop_title';
+  static const String mpPhotosCropConfirm = 'meal_planning.photos_crop_confirm';
+  static const String mpPhotosUnreadable = 'meal_planning.photos_unreadable';
+  static const String mpPhotosPickFailed = 'meal_planning.photos_pick_failed';
+  static const String mpPhotosTooLarge = 'meal_planning.photos_too_large';
   static const String mpDetailAddDirections =
       'meal_planning.detail_add_directions';
   static const String mpDetailEditSave = 'meal_planning.detail_edit_save';

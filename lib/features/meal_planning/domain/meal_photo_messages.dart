@@ -8,6 +8,7 @@ import '../../content/domain/content_keys.dart';
 /// live in the content system.
 String? mealPhotoMessageKey(String code) => switch (code) {
   'not_an_image' => ContentKeys.mpPhotosNotAnImage,
+  'too_large' => ContentKeys.mpPhotosTooLarge,
   'invalid_input' => ContentKeys.mpPhotosInvalidInput,
   'not_tester' => ContentKeys.mpPhotosNotTester,
   'meal_not_found' => ContentKeys.mpPhotosMealNotFound,

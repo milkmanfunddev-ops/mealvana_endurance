@@ -25,7 +25,37 @@ export interface PhotoDeps {
    * loaded at all. Injected so a test never leaves the process.
    */
   probeImage: (url: string) => Promise<string | null>;
+  /**
+   * The public image bucket, as a port rather than a Supabase client, so the
+   * Deno test drives a fake store with no network. Only the service role
+   * writes here — the bucket has no storage policies at all.
+   */
+  storage: PhotoStorage;
 }
+
+/** What `add_upload` needs of the `meal-images` bucket, and nothing more. */
+export interface PhotoStorage {
+  /** Stores the bytes, answering an error message or null. */
+  upload(path: string, bytes: Uint8Array, contentType: string): Promise<string | null>;
+  /** Best-effort delete, used to clean up after a failed write. */
+  remove(path: string): Promise<void>;
+  /** The address athletes will load the photograph from. */
+  publicUrl(path: string): string;
+}
+
+/** The bucket a Meal's photographs live in (see the bucket migration). */
+export const PHOTO_BUCKET = 'meal-images';
+
+/**
+ * The bucket's own ceiling. The app prepares uploads to ~1600px JPEG, far
+ * inside this, so hitting it means something is wrong with the photo rather
+ * than with the Tester — checked here so the answer is a clear 400 rather than
+ * a storage error surfacing as a 500.
+ */
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+
+/** The longest base64 string that could still decode to a legal upload. */
+const BASE64_CEILING = Math.ceil(MAX_UPLOAD_BYTES / 3) * 4 + 4;
 
 export interface HandlerResult {
   status: number;
@@ -127,6 +157,8 @@ export async function handleMealPhoto(
   switch (action) {
     case 'add_address':
       return await addAddress(mealId, body, deps);
+    case 'add_upload':
+      return await addUpload(mealId, body, deps);
     case 'history':
       return await history(mealId, admin);
     default:
@@ -180,6 +212,96 @@ async function addAddress(
   // `entry` is the History row the app shows, carrying the server's own id,
   // account and clock — nothing about the new row is invented on the device.
   return ok({ photo: answer.photo, entry: answer.entry });
+}
+
+/**
+ * A photograph the Tester took or chose: prepared bytes in, a stored file out.
+ *
+ * The app has already cropped, shrunk and stripped the photo of its EXIF
+ * before it left the phone (`prepareDishPhoto`) — this does NOT re-encode, so
+ * what athletes see is exactly what the Tester previewed. The server's job is
+ * to check the bytes really are a JPEG, put them somewhere public, and record
+ * the photograph the same way an address is recorded.
+ *
+ * The storage path is kept on the History row so ticket 06 can delete the file
+ * when the row is deleted for good, and so the cutover knows which files it has
+ * to carry into prod.
+ */
+async function addUpload(
+  mealId: string,
+  body: Record<string, unknown>,
+  { admin, userId, storage }: PhotoDeps,
+): Promise<HandlerResult> {
+  const encoded = str(body.data);
+  if (encoded === null) return fail(400, 'invalid_input', 'data is required');
+
+  // Refuse on the encoded length first: base64 is 4 bytes per 3, so this bounds
+  // the real size without materialising a huge payload in memory to measure it.
+  if (encoded.length > BASE64_CEILING) return fail(400, 'too_large');
+
+  let bytes: Uint8Array;
+  try {
+    bytes = decodeBase64(encoded);
+  } catch {
+    return fail(400, 'invalid_input', 'data is not base64');
+  }
+  if (bytes.length === 0) return fail(400, 'invalid_input', 'data is empty');
+  if (bytes.length > MAX_UPLOAD_BYTES) return fail(400, 'too_large');
+  // The app only ever sends JPEG, and the bucket only accepts image types, but
+  // a hidden button is not protection here either: anyone with a JWT can call
+  // this, so the bytes are checked rather than trusted.
+  if (!isJpeg(bytes)) return fail(400, 'not_an_image');
+
+  // One folder per Meal, a fresh name per photograph: replacing a photo never
+  // overwrites the file the old History row still points at (story 41).
+  const path = `photos/${mealId}/${crypto.randomUUID()}.jpg`;
+  const uploadError = await storage.upload(path, bytes, 'image/jpeg');
+  if (uploadError !== null) {
+    console.error('[meal-photo] upload failed:', uploadError);
+    return fail(500, 'server_error');
+  }
+
+  const { data, error } = await admin.rpc('meal_photo_add', {
+    p_meal_id: mealId,
+    p_url: storage.publicUrl(path),
+    p_credit: str(body.credit),
+    p_credit_url: str(body.credit_url),
+    p_storage_path: path,
+    p_account: userId,
+  });
+
+  if (error) {
+    // The row was never written, so the file it would have named is litter in
+    // a public bucket. Take it back out before answering.
+    await storage.remove(path);
+    const code = (error as { code?: string }).code;
+    if (code === 'P0002' || error.message.includes('meal_not_found')) {
+      return fail(404, 'meal_not_found');
+    }
+    console.error('[meal-photo] meal_photo_add failed:', error.message);
+    return fail(500, 'server_error');
+  }
+
+  const answer = (data ?? {}) as { photo?: PhotoJson; entry?: Record<string, unknown> };
+  if (!answer.photo || !answer.entry) {
+    await storage.remove(path);
+    console.error('[meal-photo] meal_photo_add answered without a photo or entry');
+    return fail(500, 'server_error');
+  }
+  return ok({ photo: answer.photo, entry: answer.entry });
+}
+
+/** The two-byte SOI plus the marker every JPEG opens with. */
+function isJpeg(bytes: Uint8Array): boolean {
+  return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
+
+/** base64 (as the app sends it) to bytes. Throws on anything that is not. */
+function decodeBase64(encoded: string): Uint8Array {
+  const binary = atob(encoded);
+  const out = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
+  return out;
 }
 
 /**
@@ -246,4 +368,24 @@ export async function probeImageOverNetwork(url: string): Promise<string | null>
     console.warn('[meal-photo] address could not be loaded:', (e as Error).message);
     return null;
   }
+}
+
+/** The `meal-images` bucket through the service-role client. */
+export function bucketStorage(admin: Db, baseUrl: string): PhotoStorage {
+  return {
+    async upload(path, bytes, contentType) {
+      const { error } = await admin.storage
+        .from(PHOTO_BUCKET)
+        .upload(path, bytes, { contentType, upsert: false });
+      return error ? error.message : null;
+    },
+    async remove(path) {
+      const { error } = await admin.storage.from(PHOTO_BUCKET).remove([path]);
+      if (error) console.warn('[meal-photo] could not remove', path, error.message);
+    },
+    // The bucket is public, so the object URL needs no signing and never
+    // expires — a card can draw straight from the address History stores.
+    publicUrl: (path) =>
+      `${baseUrl}/storage/v1/object/public/${PHOTO_BUCKET}/${path}`,
+  };
 }

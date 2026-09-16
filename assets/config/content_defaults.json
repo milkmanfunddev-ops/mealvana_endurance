@@ -752,7 +752,14 @@
     "photos_not_an_image": "That address didn't load as an image. Check the link and try again.",
     "photos_invalid_input": "Paste an https address that points straight at an image.",
     "photos_not_tester": "This account isn't marked internal, so it can't change photos.",
-    "photos_meal_not_found": "This meal is no longer in the library."
+    "photos_meal_not_found": "This meal is no longer in the library.",
+    "photos_take": "Take photo",
+    "photos_choose": "Choose photo",
+    "photos_crop_title": "Crop the photo",
+    "photos_crop_confirm": "Use this crop",
+    "photos_unreadable": "That file could not be read as a photo. Try another one.",
+    "photos_pick_failed": "Could not open the camera or photo library.",
+    "photos_too_large": "That photo is too large to publish. Try another one."
   },
   "ai_credits": {
     "allowance_line": "Your plan includes {n} tokens a month",

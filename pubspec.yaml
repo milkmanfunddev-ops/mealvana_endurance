@@ -133,6 +133,12 @@ dependencies:
   share_plus: ^12.0.2
   shake: ^3.0.0
   crop_your_image: ^2.0.0
+  # Direct since the Tester photo preparation (ADR 0003): decode, crop to the
+  # recipe screen's aspect and re-encode as JPEG with no EXIF, so a Tester's
+  # home address never ships with a meal photo. Already vendored transitively
+  # by crop_your_image; pinned to the version that was already resolved so a
+  # new direct dep does not drag archive and printing up with it.
+  image: ^4.5.4
 
 
 dev_dependencies:

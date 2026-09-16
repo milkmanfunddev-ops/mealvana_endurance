@@ -14,7 +14,7 @@
  *        --node-modules-dir=none supabase/functions/tests/meal_photo
  */
 import { assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { handleMealPhoto } from '../../meal-photo/handler.ts';
+import { handleMealPhoto, MAX_UPLOAD_BYTES } from '../../meal-photo/handler.ts';
 import type { PhotoDeps } from '../../meal-photo/handler.ts';
 import { fakeDb } from '../vana/support/fake_db.ts';
 import type { FakeDb, Row } from '../vana/support/fake_db.ts';
@@ -99,6 +99,46 @@ interface Harness {
   deps: PhotoDeps;
   /** Every address the handler asked about, so a refusal proves it looked. */
   probed: string[];
+  /** The fake bucket, so a test can see whether a file was really stored. */
+  store: FakeStore;
+}
+
+/**
+ * The `meal-images` bucket, in memory. Holds what was stored so a test can
+ * assert a photograph really landed, and records removals so the cleanup after
+ * a failed write is visible rather than assumed.
+ */
+class FakeStore {
+  readonly files = new Map<string, { bytes: Uint8Array; contentType: string }>();
+  readonly removed: string[] = [];
+  failWith: string | null = null;
+
+  upload(path: string, bytes: Uint8Array, contentType: string): Promise<string | null> {
+    if (this.failWith) return Promise.resolve(this.failWith);
+    this.files.set(path, { bytes, contentType });
+    return Promise.resolve(null);
+  }
+  remove(path: string): Promise<void> {
+    this.removed.push(path);
+    this.files.delete(path);
+    return Promise.resolve();
+  }
+  publicUrl(path: string): string {
+    return `https://dev.supabase.co/storage/v1/object/public/meal-images/${path}`;
+  }
+}
+
+/** A minimal real JPEG: the SOI + APP0 marker, then a byte of body. */
+const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]);
+
+/** Spreading a multi-megabyte array into `fromCharCode` overflows the stack,
+ *  so the oversized-upload case is encoded in chunks. */
+function base64(bytes: Uint8Array): string {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  }
+  return btoa(binary);
 }
 
 function harness(
@@ -121,9 +161,11 @@ function harness(
     // deno-lint-ignore no-explicit-any
     { rpc: { meal_photo_add: (args: any) => addRpc(db)(args) } },
   );
+  const store = new FakeStore();
   return {
     db,
     probed,
+    store,
     deps: {
       admin: db as unknown as Db,
       userId,
@@ -131,6 +173,7 @@ function harness(
         probed.push(url);
         return Promise.resolve(contentType);
       },
+      storage: store,
     },
   };
 }
@@ -352,4 +395,164 @@ Deno.test('a missing or unknown action is refused', async () => {
     assertEquals(res.body.error, 'invalid_input');
   }
   assertEquals(h.db.rows('meal_photo_history'), []);
+});
+
+// ─────────────────────────── add_upload (ticket 05) ───────────────────────────
+
+Deno.test('an upload stores the file and records where it was put', async () => {
+  const h = harness();
+  const res = await handleMealPhoto(
+    {
+      action: 'add_upload',
+      meal_id: 'AD-001',
+      data: base64(JPEG_BYTES),
+      credit: 'Photo by Lee',
+    },
+    h.deps,
+  );
+
+  assertEquals(res.status, 200);
+
+  // The file really landed, once, under a per-Meal folder.
+  assertEquals(h.store.files.size, 1);
+  const [path, file] = [...h.store.files.entries()][0];
+  assertEquals(path.startsWith('photos/AD-001/'), true);
+  assertEquals(path.endsWith('.jpg'), true);
+  assertEquals(file.contentType, 'image/jpeg');
+  assertEquals(file.bytes, JPEG_BYTES);
+
+  // History carries the storage path, so ticket 06 can delete the file and the
+  // cutover knows which files have to travel to prod.
+  const history = h.db.rows('meal_photo_history');
+  assertEquals(history.length, 1);
+  assertEquals(history[0].storage_path, path);
+  assertEquals(history[0].url, h.store.publicUrl(path));
+  assertEquals(history[0].credit, 'Photo by Lee');
+  assertEquals(history[0].added_by, TESTER);
+
+  // And it is the photograph the Meal now wears, with one event to say so.
+  const meal = h.db.rows('meal_library')[0];
+  assertEquals(meal.photo_url, h.store.publicUrl(path));
+  assertEquals(meal.photo_history_id, history[0].id);
+  const events = h.db.rows('meal_photo_events');
+  assertEquals(events.length, 1);
+  assertEquals(events[0].action, 'add');
+  assertEquals(events[0].account_id, TESTER);
+
+  assertEquals((res.body.entry as Record<string, unknown>).storagePath, path);
+});
+
+Deno.test('a non-Tester cannot upload, and nothing is stored', async () => {
+  const h = harness({ userId: ATHLETE });
+  const res = await handleMealPhoto(
+    { action: 'add_upload', meal_id: 'AD-001', data: base64(JPEG_BYTES) },
+    h.deps,
+  );
+
+  assertEquals(res.status, 403);
+  assertEquals(res.body, { error: 'not_tester' });
+  // Refused before the bytes were even written down.
+  assertEquals(h.store.files.size, 0);
+  assertEquals(h.db.rows('meal_photo_history'), []);
+});
+
+Deno.test('bytes that are not a JPEG are refused and never stored', async () => {
+  const h = harness();
+  const res = await handleMealPhoto(
+    {
+      action: 'add_upload',
+      meal_id: 'AD-001',
+      data: base64(new Uint8Array([0x89, 0x50, 0x4e, 0x47])), // a PNG header
+    },
+    h.deps,
+  );
+
+  assertEquals(res.status, 400);
+  assertEquals(res.body, { error: 'not_an_image' });
+  assertEquals(h.store.files.size, 0);
+  assertEquals(h.db.rows('meal_photo_history'), []);
+});
+
+Deno.test('an upload past the bucket limit is refused before it is stored', async () => {
+  const h = harness();
+  const huge = new Uint8Array(MAX_UPLOAD_BYTES + 1);
+  huge.set(JPEG_BYTES);
+
+  const res = await handleMealPhoto(
+    { action: 'add_upload', meal_id: 'AD-001', data: base64(huge) },
+    h.deps,
+  );
+
+  assertEquals(res.status, 400);
+  assertEquals(res.body, { error: 'too_large' });
+  assertEquals(h.store.files.size, 0);
+});
+
+Deno.test('data that is not base64, or missing, is refused', async () => {
+  const h = harness();
+  for (const body of [
+    { action: 'add_upload', meal_id: 'AD-001' },
+    { action: 'add_upload', meal_id: 'AD-001', data: 'not base64 at all!!' },
+    { action: 'add_upload', meal_id: 'AD-001', data: '' },
+  ]) {
+    const res = await handleMealPhoto(body, h.deps);
+    assertEquals(res.status, 400);
+    assertEquals(res.body.error, 'invalid_input');
+  }
+  assertEquals(h.store.files.size, 0);
+  assertEquals(h.db.rows('meal_photo_history'), []);
+});
+
+Deno.test('an upload for an unknown Meal leaves no orphan file behind', async () => {
+  const h = harness();
+  const res = await handleMealPhoto(
+    { action: 'add_upload', meal_id: 'NOPE-999', data: base64(JPEG_BYTES) },
+    h.deps,
+  );
+
+  assertEquals(res.status, 404);
+  assertEquals(res.body, { error: 'meal_not_found' });
+  // The row was never written, so the file it would have named must not be
+  // left sitting in a public bucket.
+  assertEquals(h.store.files.size, 0);
+  assertEquals(h.store.removed.length, 1);
+  assertEquals(h.db.rows('meal_photo_history'), []);
+});
+
+Deno.test('a bucket that refuses the write is a 500, and nothing is recorded', async () => {
+  const h = harness();
+  h.store.failWith = 'bucket is full';
+
+  const res = await handleMealPhoto(
+    { action: 'add_upload', meal_id: 'AD-001', data: base64(JPEG_BYTES) },
+    h.deps,
+  );
+
+  assertEquals(res.status, 500);
+  assertEquals(res.body, { error: 'server_error' });
+  assertEquals(h.db.rows('meal_photo_history'), []);
+  assertEquals(h.db.rows('meal_photo_events'), []);
+  assertEquals(h.db.rows('meal_library')[0].photo_url, null);
+});
+
+Deno.test('an uploaded photo replaces whatever the Meal showed, keeping the old row', async () => {
+  const h = harness();
+  await handleMealPhoto(
+    { action: 'add_address', meal_id: 'AD-001', url: IMAGE },
+    h.deps,
+  );
+  await handleMealPhoto(
+    { action: 'add_upload', meal_id: 'AD-001', data: base64(JPEG_BYTES) },
+    h.deps,
+  );
+
+  const res = await handleMealPhoto({ action: 'history', meal_id: 'AD-001' }, h.deps);
+  const rows = res.body.history as Record<string, unknown>[];
+
+  assertEquals(rows.length, 2);
+  // Newest first: the upload is current, the pasted address is still there.
+  assertEquals(rows.map((r) => r.isCurrent), [true, false]);
+  assertEquals(rows[0].storagePath !== null, true);
+  assertEquals(rows[1].url, IMAGE);
+  assertEquals(rows[1].storagePath, null);
 });

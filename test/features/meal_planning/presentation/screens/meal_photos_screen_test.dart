@@ -1,5 +1,5 @@
-// The Meal photos page: a Tester pastes an address, sees a preview, and only
-// then may confirm (ADR 0003, meal-imagery ticket 04).
+// The Meal photos page: a Tester pastes an address, or takes or chooses a
+// photo, sees a preview, and only then may confirm (ADR 0003, tickets 04, 05).
 //
 // The page drives the real notifier with a recording fake repository behind it,
 // so what is under test is the page's own rule — nothing publishes until the
@@ -15,7 +15,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/dish_photo_capture.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/providers/dish_photo_cropper.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_photo_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/dish_photo_preparation.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_photo.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_photo_history.dart';
@@ -37,6 +41,31 @@ class _RecordingPhotoRepository implements MealPhotoRepository {
 
   @override
   Future<MealPhotos> history(String mealId) async => seed;
+
+  final List<Uint8List> uploaded = [];
+
+  @override
+  Future<MealPhotoHistoryEntry> addUpload({
+    required String mealId,
+    required Uint8List bytes,
+    String? credit,
+    String? creditUrl,
+  }) async {
+    uploaded.add(bytes);
+    if (failWith case final e?) throw e;
+    return MealPhotoHistoryEntry(
+      id: 'history-upload',
+      photo: MealPhoto(
+        url: 'https://dev.supabase.co/storage/v1/object/public/meal-images/'
+            'photos/AD-001/stored.jpg',
+        credit: credit,
+        creditUrl: creditUrl,
+      ),
+      isCurrent: true,
+      storagePath: 'photos/AD-001/stored.jpg',
+      addedAt: DateTime(2026, 9, 16, 14, 5),
+    );
+  }
 
   @override
   Future<MealPhotoHistoryEntry> addAddress({
@@ -69,7 +98,21 @@ void main() {
   void serveImages() =>
       debugNetworkImageHttpClientProvider = () => _FixedHttpClient(imageBytes);
 
+  /// What the fake picker answers, and what the fake crop editor answers.
+  /// Null stands for the Tester backing out of that step.
+  Uint8List? picked;
+  Uint8List? cropped;
+  Object? pickerThrows;
+  final pickedFrom = <ImageSource>[];
+
   Future<void> pump(WidgetTester tester, {MealPhotos? seed}) async {
+    // Each test gets its own picker and crop editor. Without this the thrown
+    // picker from one case leaks into every case after it, and `pickedFrom`
+    // accumulates across tests.
+    picked = null;
+    cropped = null;
+    pickerThrows = null;
+    pickedFrom.clear();
     repo = _RecordingPhotoRepository(seed ?? const MealPhotos());
     tester.view.physicalSize = const Size(1000, 2600);
     tester.view.devicePixelRatio = 1.0;
@@ -79,6 +122,22 @@ void main() {
         overrides: [
           contentServiceProvider.overrideWith(testContentService),
           mealPhotoRepositoryProvider.overrideWithValue(repo),
+          // The camera and the crop editor are platform widgets — they are
+          // checked on a device. What is under test here is the page's own
+          // rule: nothing publishes until the Tester has seen it and confirmed.
+          dishPhotoPickerProvider.overrideWithValue((source) async {
+            pickedFrom.add(source);
+            if (pickerThrows case final e?) throw e;
+            return picked;
+          }),
+          dishPhotoCropperProvider.overrideWithValue((_, __) async => cropped),
+          // The very same preparation, run inline: a real isolate never
+          // resolves inside `pumpAndSettle`'s fake-async zone. The bytes a
+          // photo is published as are asserted in the seam-2 controller test,
+          // which does go through the isolate.
+          dishPhotoPreparerProvider.overrideWithValue(
+            (bytes) async => prepareDishPhoto(bytes),
+          ),
         ],
         child: const MaterialApp(
           home: MealPhotosScreen(mealId: _mealId, mealName: 'Salmon salad'),
@@ -300,6 +359,159 @@ void main() {
     );
     expect(repo.adds, hasLength(1));
     _stopServing();
+  });
+
+  testWidgets('a Tester is offered the camera and the gallery', (tester) async {
+    await pump(tester);
+
+    expect(find.text(content['meal_planning.photos_take']!), findsOneWidget);
+    expect(find.text(content['meal_planning.photos_choose']!), findsOneWidget);
+  });
+
+  testWidgets('a chosen photo is previewed, and nothing is sent yet', (
+    tester,
+  ) async {
+    await pump(tester);
+    picked = imageBytes;
+    cropped = imageBytes;
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_choose')));
+    await tester.pumpAndSettle();
+
+    expect(pickedFrom, [ImageSource.gallery]);
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_upload_preview_image')),
+      findsOneWidget,
+    );
+    // Seen, not sent: publishing waits for Confirm (story 24).
+    expect(repo.uploaded, isEmpty);
+  });
+
+  testWidgets('Take photo asks the camera', (tester) async {
+    await pump(tester);
+    picked = imageBytes;
+    cropped = imageBytes;
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_take')));
+    await tester.pumpAndSettle();
+
+    expect(pickedFrom, [ImageSource.camera]);
+  });
+
+  testWidgets('backing out of the picker changes nothing', (tester) async {
+    await pump(tester);
+    picked = null;
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_choose')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_upload_preview_image')),
+      findsNothing,
+    );
+    expect(repo.uploaded, isEmpty);
+    expect(find.text(content['meal_planning.photos_none']!), findsOneWidget);
+  });
+
+  testWidgets('cancelling at the crop step changes nothing', (tester) async {
+    await pump(tester);
+    picked = imageBytes;
+    cropped = null; // backed out of the crop editor
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_choose')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_upload_preview_image')),
+      findsNothing,
+    );
+    expect(repo.uploaded, isEmpty);
+  });
+
+  testWidgets('a picker that will not open is reported', (tester) async {
+    await pump(tester);
+    pickerThrows = Exception('camera unavailable');
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_take')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(content['meal_planning.photos_pick_failed']!),
+      findsOneWidget,
+    );
+    expect(repo.uploaded, isEmpty);
+  });
+
+  testWidgets('confirming an upload sends it once, then says so', (
+    tester,
+  ) async {
+    await pump(tester);
+    picked = imageBytes;
+    cropped = imageBytes;
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_choose')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('meal_planning.photos_upload_credit_field')),
+      'Photo by Lee',
+    );
+    await tester.pump();
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_upload_confirm')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repo.uploaded, hasLength(1));
+    // Said only once the server has it.
+    expect(find.text(content['meal_planning.photos_added']!), findsOneWidget);
+    // And the page is back to offering the next one.
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_upload_confirm')),
+      findsNothing,
+    );
+    expect(find.text(content['meal_planning.photos_take']!), findsOneWidget);
+  });
+
+  testWidgets('Cancel on a chosen photo publishes nothing', (tester) async {
+    await pump(tester);
+    picked = imageBytes;
+    cropped = imageBytes;
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_choose')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_upload_cancel')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repo.uploaded, isEmpty);
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_upload_preview_image')),
+      findsNothing,
+    );
+    expect(find.text(content['meal_planning.photos_take']!), findsOneWidget);
+  });
+
+  testWidgets('a refused upload is shown, and nothing is claimed', (
+    tester,
+  ) async {
+    await pump(tester);
+    picked = imageBytes;
+    cropped = imageBytes;
+    repo.failWith = const MealPhotoException('too_large');
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_choose')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_upload_confirm')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(content['meal_planning.photos_too_large']!),
+      findsOneWidget,
+    );
+    expect(find.text(content['meal_planning.photos_added']!), findsNothing);
   });
 }
 
