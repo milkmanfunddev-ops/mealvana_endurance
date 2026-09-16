@@ -59,7 +59,9 @@ class MealPlan extends WireRecord {
   /// plan), it is computed with [PlanCoverageService].
   factory MealPlan.fromJson(Map<String, dynamic> json) {
     final meals = readRecordList(json, 'meals', PlanMeal.fromJson);
-    final batchCooking = readBool(json, 'batchCooking') ?? false;
+    // Absent means batch, the same reading the server takes (plan-math.ts `opts.batchCooking !== false`);
+    // a payload without the flag must not count nights here and servings there (mp-231 clauses 3-4).
+    final batchCooking = readBool(json, 'batchCooking') ?? true;
     final coverageJson = asJsonMap(json['coverage']);
     final daysJson = asJsonMap(json['days']) ?? const <String, dynamic>{};
     final days = <String, DayPlan>{};
