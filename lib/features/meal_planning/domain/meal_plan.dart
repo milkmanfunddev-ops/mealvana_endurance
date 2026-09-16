@@ -135,11 +135,12 @@ class MealPlan extends WireRecord {
       dayNotes: dayNotes ?? this.dayNotes,
       dayNotesStale: dayNotesStale ?? this.dayNotesStale,
       // A local recompute keeps the server's denominator (the athlete's
-      // coverage scope) — only the numerator changes client-side.
+      // coverage scope and period) — only the numerator changes client-side.
       coverage: recomputeCoverage
           ? PlanCoverageService.compute(
               nextMeals,
               lunchDinnerSlots: (coverage ?? this.coverage).lunchDinnerSlots,
+              periodDays: (coverage ?? this.coverage).periodDays,
             )
           : (coverage ?? this.coverage),
     );

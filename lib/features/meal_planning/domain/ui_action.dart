@@ -327,7 +327,9 @@ class SetSettingAction extends UiAction {
   });
 
   final VanaSetting key;
-  final bool value;
+
+  /// A bool, a `week_start` day (`'mon'`) or a `period_days` int.
+  final Object value;
 
   @override
   String get type => 'set_setting';

@@ -95,7 +95,7 @@ export type VanaPart =
   | { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }                // planDay / setDaySlot
   // ---- additive 2026-09-03 (plan Phases 3, 7, 8)
   | { kind: 'pantry'; title: string; items: { name: string; selected: boolean }[]; allowCustom: boolean; origin: 'suggested' | 'photo' }   // askPantry / pantry_photo — what's in the house; nothing is used until the athlete taps "Use these"
-  | { kind: 'week'; days: { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }[] }                              // planWeek — the confirmed collection laid across the week (Phase 8)
+  | { kind: 'week'; periodDays?: number; days: { kind: 'day'; date: string; label: string; slots: DayPlan; filled: DaySlot[] }[] }                              // planWeek — the confirmed collection laid across the week (Phase 8)
   | { kind: 'debrief'; planId: string; completed: number; planned: number; skipReason: string | null; memories: Memory[] }                 // recordDebrief — end-of-week debrief captured (Phase 3)
   // ---- additive 2026-09-09 (feedback loop) — typing feedback INTO Vana is the feedback system
   | { kind: 'feedback_saved'; message: string; sentiment: 'positive' | 'negative' | 'neutral'; about: 'vana' | 'app' | 'suggestion' } // saveFeedback — the athlete's words landed in user_feedback; the client draws the whole acknowledgement from it (the model writes nothing)

@@ -150,4 +150,37 @@ void main() {
       expect(PlanCoverage.fromJson(c.toJson()), c);
     });
   });
+
+  group('PlanCoverageService.compute — period length (mp-269)', () {
+    test('ten days: a lunch and a dinner per day, per-day over ten', () {
+      final c = PlanCoverageService.compute([
+        meal('d', MealType.dinner, 10, kcal: 700, carbsG: 70, proteinG: 35),
+      ], periodDays: 10);
+      expect(c.periodDays, 10);
+      expect(c.lunchDinnerSlots, 20);
+      expect(c.covered, 10);
+      expect(c.perDay.kcal, 700);
+      expect(c.perDay.carbsG, 70);
+    });
+
+    test('dinners only over ten days is ten slots of dinners', () {
+      final c = PlanCoverageService.compute(
+        [meal('d', MealType.dinner, 4), meal('l', MealType.lunch, 4)],
+        lunchDinnerSlots: 10,
+        periodDays: 10,
+      );
+      expect(c.lunchDinnerSlots, 10);
+      expect(c.covered, 4);
+    });
+
+    test('a server that predates periodDays reads as seven days', () {
+      final c = PlanCoverage.fromJson(const {
+        'lunchDinnerSlots': 14,
+        'covered': 3,
+        'perDay': {'kcal': 1, 'carbsG': 2, 'proteinG': 3},
+      });
+      expect(c.periodDays, 7);
+      expect(c.toJson()['periodDays'], 7);
+    });
+  });
 }

@@ -180,11 +180,16 @@ class PlanReminderService {
     return when.isAfter(now ?? DateTime.now()) ? when : null;
   }
 
-  /// 18:00 on the Sunday that closes the week (`weekStart + 7`), or `null`
-  /// when that is already past.
+  /// 18:00 on the day after the period closes (`weekStart + periodDays`,
+  /// the next Sunday by default), or `null` when that is already past.
   static DateTime? debriefTimeFor(MealPlan plan, {DateTime? now}) {
     final start = DateTime.parse(plan.weekStart);
-    final when = DateTime(start.year, start.month, start.day + 7, reminderHour);
+    final when = DateTime(
+      start.year,
+      start.month,
+      start.day + plan.coverage.periodDays,
+      reminderHour,
+    );
     return when.isAfter(now ?? DateTime.now()) ? when : null;
   }
 }

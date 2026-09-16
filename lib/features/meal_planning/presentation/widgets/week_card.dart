@@ -13,7 +13,7 @@ import 'slot_chip.dart';
 import 'vana_tag.dart';
 
 /// `week` part (plan Phase 8): the confirmed collection laid across the
-/// week — one read-only row per `day` part (label · date, then each filled
+/// athlete's period — one read-only row per `day` part (label · date, then each filled
 /// slot as a chip + meal name) and a tertiary "Open Plan tab" action. The
 /// Plan tab owns the editing; this is the receipt in the transcript.
 class WeekCard extends ConsumerWidget {
@@ -43,7 +43,14 @@ class WeekCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            content.getValue(ContentKeys.mpWeekTitle),
+            // "Your week, laid out" over seven days; the period's length
+            // otherwise (mp-269).
+            (part.periodDays ?? 7) == 7
+                ? content.getValue(ContentKeys.mpWeekTitle)
+                : ContentKeys.format(
+                    content.getValue(ContentKeys.mpWeekTitlePeriod),
+                    {'n': part.periodDays},
+                  ),
             style: AppTextStyles.sectionTitle.copyWith(
               color: textColor,
               fontSize: 16,

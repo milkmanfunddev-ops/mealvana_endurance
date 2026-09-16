@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/meal_plan_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/data/user_memory_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_setting.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_source.dart';
@@ -133,6 +135,47 @@ void main() {
     container.listen(mealPlanControllerProvider, (_, __) {});
     return container.read(mealPlanControllerProvider.notifier);
   }
+
+  test(
+    'a Monday week start moves the week the controller binds to (mp-269)',
+    () async {
+      final memories = UserMemoryRepository(
+        database: db,
+        logger: FakeLogger(),
+        remote: RecordingUserMemoryRemote(),
+      );
+      final c = controller();
+      await c.future;
+      expect(c.weekStart, weekStartFor());
+
+      await memories.setSetting(_user, VanaSetting.weekStart, 'mon');
+      await memories.setSetting(_user, VanaSetting.periodDays, 10);
+      await settle(const Duration(milliseconds: 80));
+      await c.future;
+
+      expect(c.weekStart, weekStartFor(null, DateTime.monday));
+      expect(DateTime.parse(c.weekStart).weekday, DateTime.monday);
+      // The Sunday plan is not this week's any more.
+      expect(c.state.value, isNull);
+    },
+  );
+
+  test(
+    'a plan read under a ten-day period counts coverage over ten days',
+    () async {
+      final memories = UserMemoryRepository(
+        database: db,
+        logger: FakeLogger(),
+        remote: RecordingUserMemoryRemote(),
+      );
+      await memories.setSetting(_user, VanaSetting.periodDays, 10);
+      final c = controller();
+      final plan = await c.future;
+      expect(plan!.coverage.periodDays, 10);
+      expect(plan.coverage.lunchDinnerSlots, 20);
+      expect(plan.coverage.covered, 8);
+    },
+  );
 
   test(
     'build emits the local plan and asks the coordinator for meal_plans',

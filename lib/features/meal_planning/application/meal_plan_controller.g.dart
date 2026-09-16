@@ -8,6 +8,55 @@ part of 'meal_plan_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// The athlete's plan period (mp-269) from the `week_start` / `period_days`
+/// settings rows in Drift. Re-emits only when either changes, so
+/// [MealPlanController] rebinds to the new week exactly then.
+
+@ProviderFor(planPeriod)
+const planPeriodProvider = PlanPeriodProvider._();
+
+/// The athlete's plan period (mp-269) from the `week_start` / `period_days`
+/// settings rows in Drift. Re-emits only when either changes, so
+/// [MealPlanController] rebinds to the new week exactly then.
+
+final class PlanPeriodProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<PlanPeriod>,
+          PlanPeriod,
+          Stream<PlanPeriod>
+        >
+    with $FutureModifier<PlanPeriod>, $StreamProvider<PlanPeriod> {
+  /// The athlete's plan period (mp-269) from the `week_start` / `period_days`
+  /// settings rows in Drift. Re-emits only when either changes, so
+  /// [MealPlanController] rebinds to the new week exactly then.
+  const PlanPeriodProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'planPeriodProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$planPeriodHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<PlanPeriod> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<PlanPeriod> create(Ref ref) {
+    return planPeriod(ref);
+  }
+}
+
+String _$planPeriodHash() => r'b007a97bf91866f78dff740a5f4c23c85b60464e';
+
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
 ///
@@ -82,7 +131,7 @@ final class MealPlanControllerProvider
 }
 
 String _$mealPlanControllerHash() =>
-    r'71fc103ea74559126eabcf8e23fc7fcf1b9f06fb';
+    r'd2e07e9106a6d309c4b5d381d9725502a1c8fe88';
 
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.

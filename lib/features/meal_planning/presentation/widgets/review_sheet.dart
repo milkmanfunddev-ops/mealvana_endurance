@@ -17,6 +17,7 @@ import '../../domain/meal_plan_status.dart';
 import '../../domain/plan_meal.dart';
 import 'dashed_box.dart';
 import 'meal_picture_placeholder.dart';
+import 'session_chip.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
 
@@ -109,18 +110,22 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
     ].map((e) => (_sessionLabel(e.$1), e.$2)).toList();
   }
 
-  String? _sessionLabel(CookingSession? session) => switch (session) {
-    CookingSession.cookSun => widget.content.getValue(
-      ContentKeys.mpSessionCookSun,
-    ),
-    CookingSession.topupWed => widget.content.getValue(
-      ContentKeys.mpSessionTopupWed,
-    ),
-    CookingSession.freshFri => widget.content.getValue(
-      ContentKeys.mpSessionFreshFri,
-    ),
-    null => null,
-  };
+  /// "Cook Monday" — the day the session falls on in this plan's period,
+  /// derived from its week start and period length (mp-269).
+  String? _sessionLabel(CookingSession? session) => session == null
+      ? null
+      : SessionChip.labelInPlan(widget.content, session, widget.plan);
+
+  /// "Your week" over seven days, "Your 10 days" over any other period.
+  String _title() {
+    final days = widget.plan.coverage.periodDays;
+    return days == 7
+        ? widget.content.getValue(ContentKeys.mpReviewYourWeek)
+        : ContentKeys.format(
+            widget.content.getValue(ContentKeys.mpReviewYourPeriod),
+            {'n': days},
+          );
+  }
 
   Future<void> _confirm() async {
     setState(() => _confirming = true);
@@ -165,7 +170,7 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
           children: [
             // What the week adds up to, before the meal-by-meal list.
             Text(
-              label.getValue(ContentKeys.mpReviewYourWeek),
+              _title(),
               key: const ValueKey('meal_planning.review_sheet.title'),
               style: AppTextStyles.sectionTitle.copyWith(
                 color: textColor,

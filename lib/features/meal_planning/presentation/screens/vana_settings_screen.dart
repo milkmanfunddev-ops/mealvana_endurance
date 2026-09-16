@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
@@ -8,14 +9,22 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/vana_settings_controller.dart';
+import '../../domain/week_start.dart';
 import '../widgets/memory_drawer.dart';
+import '../widgets/stepper.dart';
 import '../widgets/vana_round_button.dart';
 
-/// `/settings/vana` (05 §4): the Meal planning switches — batch cooking,
-/// show-macros (the two Vana can flip from inside a conversation) and the
+/// `/settings/vana` (05 §4): the Meal planning settings — batch cooking,
+/// show-macros (the two Vana can flip from inside a conversation), the day
+/// a plan week starts and how many days it runs (mp-269), and the
 /// device-local check-in/debrief reminders — over "What Vana knows".
 class VanaSettingsScreen extends ConsumerWidget {
   const VanaSettingsScreen({super.key});
+
+  /// The localized weekday name for `DateTime.monday` … `DateTime.sunday`.
+  static String weekdayName(int weekday) =>
+      // 2026-09-13 is a Sunday; weekday % 7 counts days after it.
+      DateFormat('EEEE').format(DateTime(2026, 9, 13 + weekday % 7));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,6 +37,7 @@ class VanaSettingsScreen extends ConsumerWidget {
     final state = ref.watch(vanaSettingsControllerProvider).value;
     final controller = ref.read(vanaSettingsControllerProvider.notifier);
     final showMacros = state?.showMacros ?? true;
+    final period = state?.period ?? const PlanPeriod();
 
     return Scaffold(
       key: const ValueKey('meal_planning.vana_settings_screen'),
@@ -77,8 +87,10 @@ class VanaSettingsScreen extends ConsumerWidget {
                     rowKey: const ValueKey('meal_planning.settings_batch'),
                     title: content.getValue(ContentKeys.mpSettingsBatch),
                     subtitle: content.getValue(ContentKeys.mpSettingsBatchSub),
-                    value: state?.batchCooking ?? true,
-                    onChanged: controller.setBatchCooking,
+                    trailing: _SettingSwitch(
+                      value: state?.batchCooking ?? true,
+                      onChanged: controller.setBatchCooking,
+                    ),
                     showDivider: true,
                   ),
                   _SettingRow(
@@ -91,8 +103,43 @@ class VanaSettingsScreen extends ConsumerWidget {
                           ? ContentKeys.mpSettingsMacrosOn
                           : ContentKeys.mpSettingsMacrosOff,
                     ),
-                    value: showMacros,
-                    onChanged: controller.setShowMacros,
+                    trailing: _SettingSwitch(
+                      value: showMacros,
+                      onChanged: controller.setShowMacros,
+                    ),
+                    showDivider: true,
+                  ),
+                  _SettingRow(
+                    rowKey: const ValueKey('meal_planning.settings_week_start'),
+                    title: content.getValue(ContentKeys.mpSettingsWeekStart),
+                    subtitle: content.getValue(
+                      ContentKeys.mpSettingsWeekStartSub,
+                    ),
+                    trailing: _WeekStartPicker(
+                      weekday: period.startWeekday,
+                      onChanged: controller.setWeekStart,
+                    ),
+                    showDivider: true,
+                  ),
+                  _SettingRow(
+                    rowKey: const ValueKey(
+                      'meal_planning.settings_period_days',
+                    ),
+                    title: content.getValue(ContentKeys.mpSettingsPeriodDays),
+                    subtitle: ContentKeys.format(
+                      content.getValue(ContentKeys.mpPeriodDays),
+                      {'n': period.days},
+                    ),
+                    trailing: ServingsStepper(
+                      key: const ValueKey(
+                        'meal_planning.settings_period_days_stepper',
+                      ),
+                      value: period.days,
+                      min: PlanPeriod.minDays,
+                      max: PlanPeriod.maxDays,
+                      dense: true,
+                      onChanged: controller.setPeriodDays,
+                    ),
                     showDivider: true,
                   ),
                   _SettingRow(
@@ -101,8 +148,10 @@ class VanaSettingsScreen extends ConsumerWidget {
                     subtitle: content.getValue(
                       ContentKeys.mpSettingsRemindersSub,
                     ),
-                    value: state?.remindersEnabled ?? false,
-                    onChanged: controller.setRemindersEnabled,
+                    trailing: _SettingSwitch(
+                      value: state?.remindersEnabled ?? false,
+                      onChanged: controller.setRemindersEnabled,
+                    ),
                     showDivider: false,
                   ),
                 ],
@@ -130,23 +179,21 @@ class VanaSettingsScreen extends ConsumerWidget {
   }
 }
 
-/// One 56pt settings row: title over its explanation, with the switch on the
-/// trailing edge.
+/// One 56pt settings row: title over its explanation, with the control on
+/// the trailing edge.
 class _SettingRow extends StatelessWidget {
   const _SettingRow({
     required this.rowKey,
     required this.title,
     required this.subtitle,
-    required this.value,
-    required this.onChanged,
+    required this.trailing,
     required this.showDivider,
   });
 
   final Key rowKey;
   final String title;
   final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
+  final Widget trailing;
   final bool showDivider;
 
   @override
@@ -189,12 +236,68 @@ class _SettingRow extends StatelessWidget {
               ],
             ),
           ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.blackberry,
-            activeTrackColor: AppColors.electrolyte,
+          trailing,
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingSwitch extends StatelessWidget {
+  const _SettingSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Switch(
+    value: value,
+    onChanged: onChanged,
+    activeThumbColor: AppColors.blackberry,
+    activeTrackColor: AppColors.electrolyte,
+  );
+}
+
+/// The start day as its name with a chevron; tapping opens the seven days,
+/// Sunday first (the `week_start` wire order).
+class _WeekStartPicker extends StatelessWidget {
+  const _WeekStartPicker({required this.weekday, required this.onChanged});
+
+  final int weekday;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? AppColors.cream : AppColors.blackberry;
+    final accent = isDark ? AppColors.electrolyte : AppColors.electrolyteDark;
+    return PopupMenuButton<int>(
+      key: const ValueKey('meal_planning.settings_week_start_picker'),
+      initialValue: weekday,
+      onSelected: onChanged,
+      color: isDark ? AppColors.blackberryLight : AppColors.cream,
+      itemBuilder: (_) => [
+        for (final wire in PlanPeriod.weekdayWires)
+          PopupMenuItem<int>(
+            key: ValueKey('meal_planning.settings_week_start_$wire'),
+            value: PlanPeriod.weekdayFromWire(wire),
+            child: Text(
+              VanaSettingsScreen.weekdayName(PlanPeriod.weekdayFromWire(wire)!),
+              style: AppTextStyles.bodyMedium.copyWith(color: textColor),
+            ),
           ),
+      ],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            VanaSettingsScreen.weekdayName(weekday),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: accent,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Icon(Icons.keyboard_arrow_down, color: accent, size: 20),
         ],
       ),
     );

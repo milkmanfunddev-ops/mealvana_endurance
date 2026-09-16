@@ -165,8 +165,11 @@ class _ConfirmedCardState extends ConsumerState<ConfirmedCard> {
     final body = PlanShareService.text(
       content,
       plan,
-      weekLabel: PlanSummary.weekLabel(plan.weekStart),
-      sessionLabel: (s) => SessionChip.labelFor(content, s),
+      weekLabel: PlanSummary.weekLabel(
+        plan.weekStart,
+        plan.coverage.periodDays,
+      ),
+      sessionLabel: (s) => SessionChip.labelInPlan(content, s, plan),
     );
     if (body.isEmpty) return;
     SharePlus.instance.share(ShareParams(text: body));
@@ -235,7 +238,7 @@ class _PlanLine extends ConsumerWidget {
 
     return Text(
       [
-        PlanSummary.weekLabel(plan.weekStart),
+        PlanSummary.weekLabel(plan.weekStart, plan.coverage.periodDays),
         meals,
         if (sessionCount > 0) sessions,
       ].join(' · '),
