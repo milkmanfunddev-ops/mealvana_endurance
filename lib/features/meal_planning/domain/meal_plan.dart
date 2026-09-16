@@ -59,6 +59,7 @@ class MealPlan extends WireRecord {
   /// plan), it is computed with [PlanCoverageService].
   factory MealPlan.fromJson(Map<String, dynamic> json) {
     final meals = readRecordList(json, 'meals', PlanMeal.fromJson);
+    final batchCooking = readBool(json, 'batchCooking') ?? false;
     final coverageJson = asJsonMap(json['coverage']);
     final daysJson = asJsonMap(json['days']) ?? const <String, dynamic>{};
     final days = <String, DayPlan>{};
@@ -70,7 +71,7 @@ class MealPlan extends WireRecord {
       id: requireString(json, 'id'),
       weekStart: requireString(json, 'weekStart'),
       status: MealPlanStatus.requireWire(readString(json, 'status')),
-      batchCooking: readBool(json, 'batchCooking') ?? false,
+      batchCooking: batchCooking,
       days: Map.unmodifiable(days),
       conversationId: readString(json, 'conversationId'),
       brief: readString(json, 'brief'),
@@ -80,7 +81,7 @@ class MealPlan extends WireRecord {
       dayNotes: readStringMap(json, 'dayNotes'),
       dayNotesStale: readBool(json, 'dayNotesStale') ?? false,
       coverage: coverageJson == null
-          ? PlanCoverageService.compute(meals)
+          ? PlanCoverageService.compute(meals, batchCooking: batchCooking)
           : PlanCoverage.fromJson(coverageJson),
     );
   }
@@ -141,6 +142,8 @@ class MealPlan extends WireRecord {
               nextMeals,
               lunchDinnerSlots: (coverage ?? this.coverage).lunchDinnerSlots,
               periodDays: (coverage ?? this.coverage).periodDays,
+              batchCooking: batchCooking ?? this.batchCooking,
+              countedTypes: (coverage ?? this.coverage).mealTypes,
             )
           : (coverage ?? this.coverage),
     );

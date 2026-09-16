@@ -1,0 +1,103 @@
+{
+  "note": "Coverage cases for the cooking period (mp-231, ticket 30). BOTH seams read this file: the server's coverageOf (supabase/functions/tests/vana/cooking_period.test.ts) and the client's PlanCoverageService.compute (test/features/meal_planning/domain/plan_coverage_service_test.dart). Meals are producer-shaped — the wire rows the server sends — so neither seam is fed its own output. `expected` is what both must produce.",
+  "cases": [
+    {
+      "name": "batch, a week, dinners and lunches: servings fill the period's slots",
+      "scope": null,
+      "periodDays": 7,
+      "batchCooking": true,
+      "mealTypes": null,
+      "meals": [
+        {"id": "m-d1", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Lentil bolognese", "mealType": "dinner", "session": "cook-sun", "servings": 4, "servingsLeft": 4, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-l1", "planId": "p1", "source": "library", "libraryMealId": "L-001", "savedMealId": null, "name": "Chicken rice bowl", "mealType": "lunch", "session": "cook-sun", "servings": 3, "servingsLeft": 3, "kcal": 500, "carbsG": 50, "proteinG": 30, "fatG": 12, "swapsApplied": [], "comments": [], "position": 1, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 14, "covered": 7, "periodDays": 7, "mealTypes": ["dinner", "lunch"], "perDay": {"kcal": 614, "carbsG": 61, "proteinG": 33}}
+    },
+    {
+      "name": "batch, ten days: the same two meals scaled cover twelve of twenty slots",
+      "scope": null,
+      "periodDays": 10,
+      "batchCooking": true,
+      "mealTypes": null,
+      "meals": [
+        {"id": "m-d1", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Lentil bolognese", "mealType": "dinner", "session": "cook-sun", "servings": 7, "servingsLeft": 7, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-l1", "planId": "p1", "source": "library", "libraryMealId": "L-001", "savedMealId": null, "name": "Chicken rice bowl", "mealType": "lunch", "session": "topup-wed", "servings": 5, "servingsLeft": 5, "kcal": 500, "carbsG": 50, "proteinG": 30, "fatG": 12, "swapsApplied": [], "comments": [], "position": 1, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 20, "covered": 12, "periodDays": 10, "mealTypes": ["dinner", "lunch"], "perDay": {"kcal": 740, "carbsG": 74, "proteinG": 40}}
+    },
+    {
+      "name": "batch, ten days, dinners only: ten slots, lunches count for macros alone",
+      "scope": "dinners",
+      "periodDays": 10,
+      "batchCooking": true,
+      "mealTypes": null,
+      "meals": [
+        {"id": "m-d1", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Lentil bolognese", "mealType": "dinner", "session": "cook-sun", "servings": 10, "servingsLeft": 10, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-l1", "planId": "p1", "source": "library", "libraryMealId": "L-001", "savedMealId": null, "name": "Chicken rice bowl", "mealType": "lunch", "session": "fresh-fri", "servings": 4, "servingsLeft": 4, "kcal": 500, "carbsG": 50, "proteinG": 30, "fatG": 12, "swapsApplied": [], "comments": [], "position": 1, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 10, "covered": 10, "periodDays": 10, "mealTypes": ["dinner"], "perDay": {"kcal": 900, "carbsG": 90, "proteinG": 47}}
+    },
+    {
+      "name": "per-day, a week: five meals made the night of cover five days",
+      "scope": null,
+      "periodDays": 7,
+      "batchCooking": false,
+      "mealTypes": null,
+      "meals": [
+        {"id": "m-d1", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Lentil bolognese", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-d2", "planId": "p1", "source": "library", "libraryMealId": "D-002", "savedMealId": null, "name": "Chickpea curry", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 1, "icon": null},
+        {"id": "m-d3", "planId": "p1", "source": "library", "libraryMealId": "D-003", "savedMealId": null, "name": "Salmon and rice", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 2, "icon": null},
+        {"id": "m-d4", "planId": "p1", "source": "library", "libraryMealId": "D-004", "savedMealId": null, "name": "Tofu stir fry", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 3, "icon": null},
+        {"id": "m-l1", "planId": "p1", "source": "library", "libraryMealId": "L-001", "savedMealId": null, "name": "Chicken rice bowl", "mealType": "lunch", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 500, "carbsG": 50, "proteinG": 30, "fatG": 12, "swapsApplied": [], "comments": [], "position": 4, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 14, "covered": 5, "periodDays": 7, "mealTypes": ["dinner", "lunch"], "perDay": {"kcal": 471, "carbsG": 47, "proteinG": 24}}
+    },
+    {
+      "name": "per-day counts nights, not servings: two dinners for three cover two days",
+      "scope": null,
+      "periodDays": 7,
+      "batchCooking": false,
+      "mealTypes": null,
+      "meals": [
+        {"id": "m-d1", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Lentil bolognese", "mealType": "dinner", "session": null, "servings": 3, "servingsLeft": 3, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-d2", "planId": "p1", "source": "library", "libraryMealId": "D-002", "savedMealId": null, "name": "Chickpea curry", "mealType": "dinner", "session": null, "servings": 3, "servingsLeft": 3, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 1, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 14, "covered": 2, "periodDays": 7, "mealTypes": ["dinner", "lunch"], "perDay": {"kcal": 600, "carbsG": 60, "proteinG": 30}}
+    },
+    {
+      "name": "per-day, ten days, dinners only: covered stops at the ten days",
+      "scope": "dinners",
+      "periodDays": 10,
+      "batchCooking": false,
+      "mealTypes": null,
+      "meals": [
+        {"id": "m-d01", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Dinner 1", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-d02", "planId": "p1", "source": "library", "libraryMealId": "D-002", "savedMealId": null, "name": "Dinner 2", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 1, "icon": null},
+        {"id": "m-d03", "planId": "p1", "source": "library", "libraryMealId": "D-003", "savedMealId": null, "name": "Dinner 3", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 2, "icon": null},
+        {"id": "m-d04", "planId": "p1", "source": "library", "libraryMealId": "D-004", "savedMealId": null, "name": "Dinner 4", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 3, "icon": null},
+        {"id": "m-d05", "planId": "p1", "source": "library", "libraryMealId": "D-005", "savedMealId": null, "name": "Dinner 5", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 4, "icon": null},
+        {"id": "m-d06", "planId": "p1", "source": "library", "libraryMealId": "D-006", "savedMealId": null, "name": "Dinner 6", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 5, "icon": null},
+        {"id": "m-d07", "planId": "p1", "source": "library", "libraryMealId": "D-007", "savedMealId": null, "name": "Dinner 7", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 6, "icon": null},
+        {"id": "m-d08", "planId": "p1", "source": "library", "libraryMealId": "D-008", "savedMealId": null, "name": "Dinner 8", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 7, "icon": null},
+        {"id": "m-d09", "planId": "p1", "source": "library", "libraryMealId": "D-009", "savedMealId": null, "name": "Dinner 9", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 8, "icon": null},
+        {"id": "m-d10", "planId": "p1", "source": "library", "libraryMealId": "D-010", "savedMealId": null, "name": "Dinner 10", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 9, "icon": null},
+        {"id": "m-d11", "planId": "p1", "source": "library", "libraryMealId": "D-011", "savedMealId": null, "name": "Dinner 11", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 10, "icon": null},
+        {"id": "m-d12", "planId": "p1", "source": "library", "libraryMealId": "D-012", "savedMealId": null, "name": "Dinner 12", "mealType": "dinner", "session": null, "servings": 1, "servingsLeft": 1, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 11, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 10, "covered": 10, "periodDays": 10, "mealTypes": ["dinner"], "perDay": {"kcal": 840, "carbsG": 84, "proteinG": 42}}
+    },
+    {
+      "name": "a chosen walk counts only its types: breakfasts and dinners, lunches for macros alone",
+      "scope": null,
+      "periodDays": 7,
+      "batchCooking": true,
+      "mealTypes": ["breakfast", "dinner"],
+      "meals": [
+        {"id": "m-b1", "planId": "p1", "source": "library", "libraryMealId": "B-001", "savedMealId": null, "name": "Overnight oats", "mealType": "breakfast", "session": "cook-sun", "servings": 4, "servingsLeft": 4, "kcal": 400, "carbsG": 60, "proteinG": 20, "fatG": 10, "swapsApplied": [], "comments": [], "position": 0, "icon": null},
+        {"id": "m-d1", "planId": "p1", "source": "library", "libraryMealId": "D-001", "savedMealId": null, "name": "Lentil bolognese", "mealType": "dinner", "session": "cook-sun", "servings": 5, "servingsLeft": 5, "kcal": 700, "carbsG": 70, "proteinG": 35, "fatG": 18, "swapsApplied": [], "comments": [], "position": 1, "icon": null},
+        {"id": "m-l1", "planId": "p1", "source": "library", "libraryMealId": "L-001", "savedMealId": null, "name": "Chicken rice bowl", "mealType": "lunch", "session": "fresh-fri", "servings": 4, "servingsLeft": 4, "kcal": 500, "carbsG": 50, "proteinG": 30, "fatG": 12, "swapsApplied": [], "comments": [], "position": 2, "icon": null}
+      ],
+      "expected": {"lunchDinnerSlots": 14, "covered": 9, "periodDays": 7, "mealTypes": ["breakfast", "dinner"], "perDay": {"kcal": 1014, "carbsG": 113, "proteinG": 54}}
+    }
+  ]
+}

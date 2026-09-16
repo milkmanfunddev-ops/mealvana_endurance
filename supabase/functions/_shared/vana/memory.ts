@@ -1,5 +1,6 @@
 /** user_memories — what Vana knows. Settings are memories with kind='setting' + key. All through the caller's client (RLS). */
-import type { Memory } from './contracts.ts';
+import type { MealType, Memory } from './contracts.ts';
+import { isMealType, WALK_TYPES } from './plan-math.ts';
 import type { VanaCtx, DayKey } from './env.ts';
 import { DAY_KEYS } from './env.ts';
 import { embedText, vec } from './embeddings.ts';
@@ -128,13 +129,13 @@ export async function getSetting<T = unknown>(v: VanaCtx, key: string): Promise<
   const { data } = await v.db.from('user_memories').select('value').eq('user_id', v.userId).eq('kind', 'setting').eq('key', key).eq('is_deleted', false).maybeSingle();
   return (data?.value ?? null) as T | null;
 }
-export type SettingKey = 'batch_cooking' | 'show_macros' | 'coverage_scope' | 'weekly_budget_usd' | 'pantry_items' | 'week_start' | 'period_days';
-export type SettingValue = boolean | CoverageScope | number | string[] | DayKey;
+export type SettingKey = 'batch_cooking' | 'show_macros' | 'coverage_scope' | 'weekly_budget_usd' | 'pantry_items' | 'week_start' | 'period_days' | 'meal_types';
+export type SettingValue = boolean | CoverageScope | number | string[] | DayKey | MealType[];
 export type CoverageScope = 'dinners' | 'dinners_lunches' | 'all';
 export const COVERAGE_SCOPES: readonly CoverageScope[] = ['dinners', 'dinners_lunches', 'all'];
 /** What a setting means when the athlete never chose it. show_macros defaults ON (plan §2 Q-4: "runners want to see
  *  numbers", 2026-09-03); coverage_scope has no default — "never chosen" is what makes the persona ask once. */
-export const SETTING_DEFAULTS: { batch_cooking: boolean; show_macros: boolean; coverage_scope: CoverageScope | null; weekly_budget_usd: number | null; pantry_items: string[]; week_start: DayKey; period_days: number } = { batch_cooking: true, show_macros: true, coverage_scope: null, weekly_budget_usd: null, pantry_items: [], week_start: 'sun', period_days: 7 };
+export const SETTING_DEFAULTS: { batch_cooking: boolean; show_macros: boolean; coverage_scope: CoverageScope | null; weekly_budget_usd: number | null; pantry_items: string[]; week_start: DayKey; period_days: number; meal_types: MealType[] | null } = { batch_cooking: true, show_macros: true, coverage_scope: null, weekly_budget_usd: null, pantry_items: [], week_start: 'sun', period_days: 7, meal_types: null };
 /** The range the period_days setting accepts (mp-269). Under three days the three cooking sessions would share a day; two weeks is
  *  the longest a batch holds. The Dart settings stepper uses the same bounds (domain/week_start.dart PlanPeriod). */
 export const PERIOD_DAYS_MIN = 3;
@@ -149,6 +150,10 @@ export async function getPlanPeriod(v: VanaCtx): Promise<PlanPeriod> {
 }
 const DAY_NAMES: Record<DayKey, string> = { sun: 'Sunday', mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday' };
 export const isCoverageScope = (x: unknown): x is CoverageScope => typeof x === 'string' && (COVERAGE_SCOPES as readonly string[]).includes(x);
+/** The `meal_types` setting's contract (mp-231 clause 1): one to four known meal types, no repeats — the walk, in the athlete's order. */
+export const isMealTypes = (x: unknown): x is MealType[] => Array.isArray(x) && x.length > 0 && x.length <= WALK_TYPES.length && x.every(isMealType) && new Set(x).size === x.length;
+/** The types this athlete plans, in their order, or null when they never chose (the coverage scope stands in — see walkFor). */
+export async function getMealTypes(v: VanaCtx): Promise<MealType[] | null> { const x = await getSetting(v, 'meal_types'); return isMealTypes(x) ? x : null; }
 /** The coverage scope the athlete chose, or null when never chosen (an unknown stored value reads as never chosen). */
 export async function getCoverageScope(v: VanaCtx): Promise<CoverageScope | null> { const s = await getSetting(v, 'coverage_scope'); return isCoverageScope(s) ? s : null; }
 /** What the athlete said is in the house (set_pantry / "Use these"); feeds the shopping list's `have`. Empty when never set. */
@@ -160,6 +165,7 @@ export async function setSetting(v: VanaCtx, key: SettingKey, value: SettingValu
     : key === 'pantry_items' ? `Has on hand: ${(value as string[]).join(', ')}`
     : key === 'week_start' ? `Starts the plan week on ${DAY_NAMES[value as DayKey] ?? String(value)}`
     : key === 'period_days' ? `Plans ${Number(value)} days at a time`
+    : key === 'meal_types' ? `Plans ${(value as string[]).join(', then ')}`
     : value === 'dinners' ? 'Plans dinners only' : value === 'dinners_lunches' ? 'Plans dinners and lunches' : 'Plans every meal of the week';
   return rememberFact(v, { kind: 'setting', key, value, fact, confidence: 1, source });
 }

@@ -18,7 +18,12 @@ import '../helpers/test_content.dart';
 
 /// The draft batch fixture with two batch meals, the first cooked on the
 /// period's cook day and the second at its top-up.
-MealPlan _plan({required String weekStart, required int periodDays}) {
+MealPlan _plan({
+  required String weekStart,
+  required int periodDays,
+  bool batchCooking = true,
+  int covered = 8,
+}) {
   final json = Map<String, dynamic>.from(
     (loadFixture('batch')['parts'] as List).first['plan'] as Map,
   );
@@ -34,12 +39,13 @@ MealPlan _plan({required String weekStart, required int periodDays}) {
     ...json,
     'weekStart': weekStart,
     'status': 'draft',
-    'batchCooking': true,
+    'batchCooking': batchCooking,
     'meals': meals,
     'coverage': {
       ...Map<String, dynamic>.from(json['coverage'] as Map),
       'periodDays': periodDays,
       'lunchDinnerSlots': periodDays * 2,
+      'covered': covered,
     },
   });
 }
@@ -99,6 +105,31 @@ void main() {
         expect(find.text('Cook Sunday'), findsNothing);
       },
     );
+  });
+
+  group('review sheet coverage (mp-231)', () {
+    testWidgets('a batch counts servings against the period', (tester) async {
+      await openReview(
+        tester,
+        _plan(weekStart: '2026-09-14', periodDays: 10, covered: 8),
+      );
+      expect(find.text('8 of 20 servings across 10 days'), findsOneWidget);
+    });
+
+    testWidgets('an athlete who cooks the night of counts nights', (
+      tester,
+    ) async {
+      await openReview(
+        tester,
+        _plan(
+          weekStart: '2026-09-13',
+          periodDays: 7,
+          batchCooking: false,
+          covered: 5,
+        ),
+      );
+      expect(find.text('5 of 14 nights planned'), findsOneWidget);
+    });
   });
 
   group('week card', () {

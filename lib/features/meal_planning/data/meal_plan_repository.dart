@@ -306,6 +306,7 @@ class MealPlanRepository with SyncableRepository {
             planMeals,
             lunchDinnerSlots: coverage.slots,
             periodDays: coverage.periodDays,
+            countedTypes: coverage.types,
           );
         });
   }
@@ -333,6 +334,7 @@ class MealPlanRepository with SyncableRepository {
         planMeals,
         lunchDinnerSlots: coverage.slots,
         periodDays: coverage.periodDays,
+        countedTypes: coverage.types,
       );
     });
   }
@@ -347,6 +349,10 @@ class MealPlanRepository with SyncableRepository {
   static const _weekStartKey = 'week_start';
   static const _periodDaysKey = 'period_days';
 
+  /// `user_memories.key` of the walk — the meal types the athlete plans, in
+  /// their order (mp-231 clause 1).
+  static const _mealTypesKey = 'meal_types';
+
   /// The denominator and period the server uses for this athlete's coverage.
   /// Drift keeps no coverage column (the server sends it on every plan), so
   /// the local-first recompute in [_assemble] derives it from the k/v
@@ -354,7 +360,9 @@ class MealPlanRepository with SyncableRepository {
   /// lunch and a dinner per day; the period is `period_days` (7 when unset).
   /// The rows reach Drift through the memories sync, so a plan built before
   /// they land shows the defaults until the next emit.
-  Future<({int slots, int periodDays})> _coverageFor(String userId) async {
+  Future<({int slots, int periodDays, List<MealType> types})> _coverageFor(
+    String userId,
+  ) async {
     final t = _database.userMemoriesTable;
     final rows =
         await (_database.select(t)..where(
@@ -366,16 +374,37 @@ class MealPlanRepository with SyncableRepository {
                     _coverageScopeKey,
                     _weekStartKey,
                     _periodDaysKey,
+                    _mealTypesKey,
                   ]),
             ))
             .get();
     final values = _settingValues(rows);
     final period = _periodFrom(values);
+    final types = _mealTypesFrom(values[_mealTypesKey]);
+    if (types.isNotEmpty) {
+      return (
+        slots: period.days * types.length,
+        periodDays: period.days,
+        types: types,
+      );
+    }
     final dinners = values[_coverageScopeKey] == _coverageScopeDinners;
     return (
       slots: dinners ? period.days : period.days * 2,
       periodDays: period.days,
+      types: const <MealType>[],
     );
+  }
+
+  /// The `meal_types` setting's value as types, unknown entries dropped;
+  /// empty when it was never chosen (the coverage scope then decides).
+  static List<MealType> _mealTypesFrom(Object? value) {
+    if (value is! List) return const [];
+    return [
+      for (final wire in value)
+        if (MealType.fromWire(wire is String ? wire : null) case final type?)
+          type,
+    ];
   }
 
   /// The athlete's plan period (week start + length) from the settings rows,
@@ -720,6 +749,7 @@ class MealPlanRepository with SyncableRepository {
     List<PlanMealEntry> meals, {
     int? lunchDinnerSlots,
     int periodDays = PlanCoverageService.defaultPeriodDays,
+    List<MealType> countedTypes = const [],
   }) {
     final sorted = [...meals]
       ..sort((a, b) {
@@ -760,6 +790,10 @@ class MealPlanRepository with SyncableRepository {
         planMeals,
         lunchDinnerSlots: lunchDinnerSlots,
         periodDays: periodDays,
+        // mp-231 clauses 3-4: a batch fills servings, a per-day plan fills
+        // nights, and only the types they plan are counted.
+        batchCooking: plan.batchCooking,
+        countedTypes: countedTypes,
       ),
     );
   }

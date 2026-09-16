@@ -66,7 +66,7 @@ Deno.test('season: every month has produce', () => { for (let m = 1; m <= 12; m+
 // ---- mp-273 clause 1 / mp-218: the Doll is the constant every entry point sends
 
 /** The Doll's lines, in order. A new entry point adds a row to the screen table, never a line here (clause 4). */
-const DOLL_LINES = ['ATHLETE', 'WEEK', 'RACE', 'HOLIDAYS', 'TARGETS', 'WEATHER', 'LOGGED TODAY', 'RECENT', 'SEASON', 'LAST WEEK', 'MEMORIES', 'LAST TALKS', 'LIKES', 'GOALS'];
+const DOLL_LINES = ['ATHLETE', 'WEEK', 'RACE', 'HOLIDAYS', 'TARGETS', 'WEATHER', 'LOGGED TODAY', 'WALK', 'RECENT', 'SEASON', 'LAST WEEK', 'MEMORIES', 'LAST TALKS', 'LIKES', 'GOALS'];
 
 Deno.test('the Doll is the same block, in the same shape, whichever entry point the message comes from', async () => {
   const U = TEST_USER_ID; const anchor = '2026-09-12';
