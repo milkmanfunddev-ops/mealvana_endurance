@@ -1,9 +1,9 @@
 {
   "screen": "Formula editor",
   "key": "formula-editor",
-  "capturedAt": "2026-09-15T13:09:34.651Z",
-  "commit": "f84827b9",
+  "capturedAt": "2026-09-16T10:56:46.647Z",
+  "commit": "308d2c0f",
   "appVersion": "1.26.0+1",
-  "device": "grill-mealplanning",
+  "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }

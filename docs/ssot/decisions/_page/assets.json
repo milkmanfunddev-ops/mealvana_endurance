@@ -27,8 +27,8 @@
   "test/features/home_shell/goldens/tab_bar_expanded_5.png": "25f9558e75769b0685d6221533fb31ab",
   "docs/new_mealplanning/figma/16-plan-detail-modal.png": "712b5bf4ced576aca498ca5352b47c0f",
   "docs/ssot/decisions/images/mealplanning/vana-chat.png": {
-    "id": "33aa66978f0b15a650d070f118162885",
-    "sha256": "4885b8ecaa38177abb4ceafa08a1ebb7d89520483d1f8c51e20b84e31ee296c5"
+    "id": "6b27e55ae9dadf0d511961bcbc9f2585",
+    "sha256": "3c0685a36148a75a635d062d345e85cdf0fac86f7857d4ebb1112d038adfe557"
   },
   "docs/ssot/decisions/images/mealplanning/settings.png": {
     "id": "e8c1ce188d0bcfa70b2b3d07c1c6898a",
@@ -55,12 +55,12 @@
     "sha256": "cba76454ba9c6e88424de6bb5bf71147c109b690d7058546cbe0f8662d20f7b9"
   },
   "docs/ssot/decisions/images/mealplanning/plan-tab.png": {
-    "id": "8dcc46d15a28e99aa55a3c89b415c36b",
-    "sha256": "e22aa4016d613401a68dfbe9c774fbe6329a11028985d56bbd034bc1ed2c2970"
+    "id": "f2390449d2167dc67657e312a5e40ca4",
+    "sha256": "ab0731cc67393d330a9083998e85efcc79f94e3f6d503d15648bd33ff26ef169"
   },
   "docs/ssot/decisions/images/mealplanning/formula-editor.png": {
-    "id": "1c5f34322e5f4e720c2ec199cc4c1013",
-    "sha256": "13512af7fd15a072a9d24f3b91bccd3cd838ddae101344d362be4b7546cd7d46"
+    "id": "50c0cd347325b4b308e18554b1dfc297",
+    "sha256": "cfc7a3c2e4f43e5904a6a08ad517860e49f19bb1ff097a278d65ef3da425ae25"
   },
   "docs/ssot/decisions/images/mealplanning/shopping-tab.png": {
     "id": "0696526653dbfb0ff1a7c0499c260f19",
