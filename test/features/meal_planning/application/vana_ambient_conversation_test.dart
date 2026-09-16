@@ -20,6 +20,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_ambient_conversation_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
+import 'package:mealvana_endurance/features/meal_planning/application/vana_situation_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
@@ -44,6 +45,9 @@ class _IdleRepo extends Fake implements VanaChatRepository {
   /// The ids the server gives new conversations, in order.
   final List<String> names = [];
 
+  /// What each turn said the athlete was looking at.
+  final List<VanaSituation?> situations = [];
+
   @override
   Future<VanaChatResponse> streamChat({
     String? message,
@@ -54,11 +58,15 @@ class _IdleRepo extends Fake implements VanaChatRepository {
     String? timezone,
     VanaSituation? situation,
     VanaMoment? moment,
-  }) async => VanaChatResponse(
-    conversationId: conversationId ?? names.removeAt(0),
-    kind: kind,
-    events: Stream.fromIterable(const [VanaDoneEvent()]),
-  );
+  }) async {
+    situations.add(situation);
+    return VanaChatResponse(
+      conversationId: conversationId ?? names.removeAt(0),
+      kind: kind,
+      events: Stream.fromIterable(const [VanaDoneEvent()]),
+    );
+  }
+
 }
 
 void main() {
@@ -328,6 +336,44 @@ void main() {
       expect(named(c, VanaConversationKind.general), 'conv-later');
       expect(await notifier(c).openToday(), 'conv-day');
       expect(repo.idle, isEmpty, reason: 'nothing replaced the day\'s');
+    });
+
+    test('Ask Vana from the formula editor starts a new conversation that '
+        'sees the draft, and leaves the pointer where it is', () async {
+      final c = containerFor('user-1');
+      repo.names.addAll(['conv-day', 'conv-formula']);
+
+      // The day is under way: the launcher named today's conversation.
+      expect(await notifier(c).openToday(), isNull);
+      await dayChat(c).loadOpener();
+      await pumpEventQueue();
+      expect(c.read(vanaAmbientConversationProvider).value, 'conv-day');
+
+      // The editor is on screen with a quantity the athlete just changed and
+      // nothing has saved. Ask Vana opens `/vana?c=new&mode=general`, which is
+      // the new-conversation key.
+      final situation = VanaSituation.formulaEditor(
+        formulaId: 'pf-1',
+        draft: const VanaFormulaDraft(
+          name: 'Long ride bottle',
+          phase: 'during',
+          activities: ['cycling'],
+          components: [VanaFormulaDraftComponent(id: 'tf-banana', qty: 1.5)],
+        ),
+      );
+      c.read(vanaSituationControllerProvider.notifier).report(situation);
+      await newChat(
+        c,
+        VanaConversationKind.general,
+      ).send('is that enough carbs?');
+
+      expect(named(c, VanaConversationKind.general), 'conv-formula');
+      // The draft travelled with the question, unsaved edit included.
+      expect(repo.situations.last?.toJson(), situation.toJson());
+      // And the launcher still comes back to the day's conversation (mp-275
+      // clause 3).
+      expect(c.read(vanaAmbientConversationProvider).value, 'conv-day');
+      expect(await notifier(c).openToday(), 'conv-day');
     });
   });
 }

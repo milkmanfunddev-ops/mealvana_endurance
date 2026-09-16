@@ -323,8 +323,8 @@ void main() {
 
     // FormulaEditorScreen: null formulaId = create-new mode. Seeds empty draft.
     // "Save formula" button is disabled (canSave = false for empty draft).
-    // CoachInsightPanel is hidden (components empty) so coachInsightProvider
-    // is not triggered.
+    // The one-shot insight panel is retired (mp-295); the Ask Vana button in
+    // its place calls nothing until it is tapped.
     testWidgets('FormulaEditorScreen (create new) renders without overflow', (
       tester,
     ) async {

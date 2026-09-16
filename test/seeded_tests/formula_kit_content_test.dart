@@ -400,11 +400,15 @@ void main() {
   // ── FormulaEditorScreen (create-new) ──────────────────────────────────────
 
   group('FormulaEditorScreen (create-new, Before phase)', () {
-    testWidgets('hides coach insight when release flag is off', (tester) async {
+    // mp-295: the one-shot insight panel is gone; the editor offers a
+    // conversation instead, and it offers it whether or not there is a food in
+    // the draft yet.
+    testWidgets('offers Ask Vana, not a one-shot coach insight', (
+      tester,
+    ) async {
       await _pumpWithRouter(
         tester,
         const FormulaEditorScreen(formulaId: null, phase: FormulaPhase.before),
-        appConfig: AppConfig.forTesting(coachInsightsEnabled: false),
         overrides: [
           formulaEditorControllerProvider(
             null,
@@ -413,6 +417,10 @@ void main() {
         ],
       );
 
+      expect(
+        find.byKey(const ValueKey('formula_kit.editor_ask_vana')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey('formula_kit.coach_insight_panel')),
         findsNothing,

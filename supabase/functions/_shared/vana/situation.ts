@@ -16,7 +16,31 @@ import { getPlanPeriod } from './memory.ts';
 import { getPlan, getPlanById } from './plan.ts';
 import type { MealPlan } from './contracts.ts';
 
-/** What the client puts on each message. Ids only. */
+/** One component of a formula draft: which food, and how much of it (mp-274). Ids only. */
+export interface DraftComponent {
+  /** `template_foods.id` or `user_foods.id`. */
+  id: string;
+  /** Servings multiplier. During formulas carry none — the solver derives amounts. */
+  qty?: number | null;
+}
+
+/**
+ * The formula editor's draft, as it is on screen, unsaved edits included (mp-274).
+ *
+ * The one named exception to mp-043: structured fields, every one of them shaped and capped here
+ * the way routes are shaped, and only for the editor route. Nothing free-form travels but the
+ * name, which the athlete typed and which is capped at [DRAFT_NAME_CAP].
+ */
+export interface FormulaDraft {
+  phase?: string | null;
+  subPhase?: string | null;
+  durations?: string[] | null;
+  activities?: string[] | null;
+  components?: DraftComponent[] | null;
+  name?: string | null;
+}
+
+/** What the client puts on each message. Ids only, plus the formula editor's draft (mp-274). */
 export interface Situation {
   /** The matched route pattern, e.g. '/plan', '/food/meals/:id'. */
   route: string;
@@ -26,13 +50,15 @@ export interface Situation {
   date?: string | null;
   /** Meal-log screens only: which slot is being logged. */
   slot?: string | null;
+  /** The formula editor only: the draft on screen. Any other route's draft is refused. */
+  draft?: FormulaDraft | null;
 }
 
 /** Which kind of thing the route's `entityId` points at. */
-export type EntityKind = 'plan' | 'meal' | 'activity' | 'event' | null;
+export type EntityKind = 'plan' | 'meal' | 'activity' | 'event' | 'formula' | null;
 
 /** The one capped section a screen adds for what is in view (mp-273 clause 2). Most screens add none. */
-export type SectionKind = 'events_ahead' | 'day_plan';
+export type SectionKind = 'events_ahead' | 'day_plan' | 'formula';
 
 /** The screen table, verbatim from the spec. Longest prefix wins.
  *  `exact` rows match only themselves: `/food` is the Plan tab, but `/food/meals/recents` and
@@ -51,6 +77,9 @@ const SCREENS: { route: string; entity: EntityKind; wantsDate: boolean; wantsSlo
   { route: '/events', entity: 'event', wantsDate: false, exact: true, section: 'events_ahead' },
   { route: '/meal-log', entity: null, wantsDate: true, wantsSlot: true },
   { route: '/main', entity: null, wantsDate: true },
+  // The personal-formula editor, create (`personal/create`) and edit (`personal/:id`) alike: one
+  // prefix row, and it is the only route allowed to carry a draft (mp-274).
+  { route: '/settings/food-preferences/formula-library/personal', entity: 'formula', wantsDate: false, section: 'formula' },
 ];
 
 /** The table row for a route, or null when the route carries nothing but itself. */
@@ -106,6 +135,12 @@ export async function resolveSituation(v: VanaCtx, s: Situation | null | undefin
       const day = `the Plan tab${on(s!.date)}`;
       return p ? `looking at ${day}; the week of ${p.week_start} is ${p.status}` : `looking at ${day}`;
     }
+    case 'formula': {
+      // The draft carries its own name (mp-274), so the sentence needs no read at all.
+      const name = acceptDraft(route, s!.draft)?.name ?? null;
+      if (name) return `editing the formula "${name}"`;
+      return id ? 'editing one of their own formulas' : 'building a new formula';
+    }
     default: {
       const slot = s!.slot && SLOTS.has(String(s!.slot).toLowerCase()) ? String(s!.slot).toLowerCase() : null;
       if (screen.wantsSlot) return `logging ${slot ? `a ${slot}` : 'a meal'}${on(s!.date)}`;
@@ -137,8 +172,94 @@ export async function inViewSection(v: VanaCtx, s: Situation | null | undefined,
   switch (screenFor(route)?.section) {
     case 'events_ahead': return await eventsAhead(v, todayIso);
     case 'day_plan': return await dayPlan(v, s!, todayIso);
+    case 'formula': return await formulaSection(v, route, s!.draft);
     default: return null;
   }
+}
+
+// ---------------------------------------------------------------- the formula draft (mp-274)
+/** The athlete typed the name; it is the only free text that travels, and it stops here. */
+export const DRAFT_NAME_CAP = 40;
+/** Values the app itself writes into the draft's scope chips. Anything else is dropped, never echoed. */
+const PHASES = new Set(['before', 'during', 'after']);
+const SUB_PHASES = new Set(['full_meal', 'snack', 'top_up']);
+/** A scope chip's stored value — '90-150 min', 'triathlon_bike'. Shaped like the routes are shaped. */
+const TAG_SHAPE = /^[A-Za-z0-9 _<>-]{1,24}$/;
+/** A food id: `template_foods.id` or `user_foods.id`, never prose. */
+const FOOD_ID_SHAPE = /^[A-Za-z0-9:_-]{1,64}$/;
+
+/** The validated draft: every field the server is willing to say out loud, and nothing else. */
+export interface AcceptedDraft {
+  name: string | null;
+  phase: string | null;
+  subPhase: string | null;
+  durations: string[];
+  activities: string[];
+  components: { id: string; qty: number | null }[];
+}
+
+const tags = (xs: unknown): string[] =>
+  (Array.isArray(xs) ? xs : []).filter((x): x is string => typeof x === 'string' && TAG_SHAPE.test(x.trim())).map((x) => x.trim()).slice(0, SECTION_CAP);
+
+/**
+ * The draft, validated, or null when it is refused (mp-274 clause 2).
+ *
+ * Refused means refused: a draft on any route but the formula editor's is dropped whole — the
+ * server validates the shape as it validates routes, and a screen that is not the editor has no
+ * business carrying one. Inside the editor, each field stands or falls on its own shape, so one
+ * bad chip never costs the athlete the rest of what is on screen.
+ */
+export function acceptDraft(route: string, draft: FormulaDraft | null | undefined): AcceptedDraft | null {
+  if (!draft || typeof draft !== 'object') return null;
+  const r = (route ?? '').trim();
+  if (!r || !ROUTE_SHAPE.test(r) || screenFor(r)?.section !== 'formula') return null;
+  const rawName = typeof draft.name === 'string' ? draft.name.replace(/\s+/g, ' ').trim() : '';
+  const components = (Array.isArray(draft.components) ? draft.components : [])
+    .filter((c): c is DraftComponent => !!c && typeof c === 'object' && typeof c.id === 'string' && FOOD_ID_SHAPE.test(c.id.trim()))
+    .slice(0, SECTION_CAP + 1)
+    .map((c) => ({ id: c.id.trim(), qty: typeof c.qty === 'number' && Number.isFinite(c.qty) && c.qty > 0 && c.qty <= 999 ? Math.round(c.qty * 100) / 100 : null }));
+  return {
+    name: rawName ? rawName.slice(0, DRAFT_NAME_CAP) : null,
+    phase: typeof draft.phase === 'string' && PHASES.has(draft.phase) ? draft.phase : null,
+    subPhase: typeof draft.subPhase === 'string' && SUB_PHASES.has(draft.subPhase) ? draft.subPhase : null,
+    durations: tags(draft.durations),
+    activities: tags(draft.activities),
+    components,
+  };
+}
+
+/**
+ * The FORMULA section: what the draft targets, and what is in it right now (mp-274 clause 1).
+ *
+ * The client sends ids and quantities; the names come from the athlete's own rows and the catalog,
+ * under their RLS, capped like every other section. An empty draft is still worth a line — it says
+ * the editor is open with nothing in it, which is exactly the question an athlete asks there.
+ */
+async function formulaSection(v: VanaCtx, route: string, draft: FormulaDraft | null | undefined): Promise<string> {
+  const d = acceptDraft(route, draft);
+  if (!d || (!d.components.length && !d.name && !d.phase)) return 'FORMULA a new formula with nothing in it yet';
+  const targets = [d.phase, d.subPhase, d.activities.length ? `activities: ${d.activities.join(', ')}` : null, d.durations.length ? `durations: ${d.durations.join(', ')}` : null].filter(Boolean);
+  const bits = [`FORMULA ${d.name ? `"${d.name}"` : 'unnamed'}`, ...(targets.length ? [targets.join(', ')] : [])];
+  if (!d.components.length) return `${bits.join(' · ')} · nothing in it yet`;
+  const names = await foodNames(v, d.components.map((c) => c.id));
+  const items = d.components.map((c) => `${names[c.id] ?? 'a food the catalog does not have'}${c.qty == null ? '' : ` x${c.qty}`}`);
+  return `${bits.join(' · ')} · ${capped(items, d.components.length)}`;
+}
+
+/** Component ids to display names, from the catalog and the athlete's own foods. */
+async function foodNames(v: VanaCtx, ids: string[]): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (!ids.length) return out;
+  const [{ data: template }, { data: mine }] = await Promise.all([
+    v.db.from('template_foods').select('id, name, display_name').in('id', ids),
+    v.db.from('user_foods').select('id, name, display_name').eq('user_id', v.userId).in('id', ids),
+  ]);
+  // deno-lint-ignore no-explicit-any
+  for (const row of [...((template ?? []) as any[]), ...((mine ?? []) as any[])]) {
+    const name = row.display_name ?? row.name;
+    if (row.id && name) out[String(row.id)] = String(name);
+  }
+  return out;
 }
 
 async function eventsAhead(v: VanaCtx, todayIso: string): Promise<string> {

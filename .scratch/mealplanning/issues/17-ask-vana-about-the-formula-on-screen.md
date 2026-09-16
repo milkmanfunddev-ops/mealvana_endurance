@@ -10,10 +10,10 @@
 
 **Touches:** supabase/functions/_shared/vana/situation.ts, supabase/functions/_shared/vana/schemas.ts, supabase/functions/tests/vana/situation.test.ts, lib/features/formula_kit/presentation/screens/formula_editor_screen.dart, lib/features/formula_kit/presentation/widgets/coach_insight_panel.dart, lib/features/formula_kit/application/coach_insight_controller.dart, lib/features/meal_planning/application/vana_situation_controller.dart, lib/features/meal_planning/presentation/widgets/vana_situation_scope.dart
 
-- [ ] The Situation schema accepts a formula draft for the editor route only; any other route with a draft is refused (server seam).
-- [ ] A draft in produces a FORMULA section out with its components and targets; an empty draft produces a one-line section (server seam).
-- [ ] Ask Vana from the editor starts a new conversation and does not move the launcher's pointer (controller test).
-- [ ] The insight panel's one-shot call is removed from the editor; the ai-coach function is left as it is for other callers.
+- [x] The Situation schema accepts a formula draft for the editor route only; any other route with a draft is refused (server seam).
+- [x] A draft in produces a FORMULA section out with its components and targets; an empty draft produces a one-line section (server seam).
+- [x] Ask Vana from the editor starts a new conversation and does not move the launcher's pointer (controller test).
+- [x] The insight panel's one-shot call is removed from the editor; the ai-coach function is left as it is for other callers.
 - [ ] Simulator: edit a component, tap Ask Vana, she names the edited quantity.
 
 Next: /implement-lee mealplanning

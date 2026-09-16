@@ -79,6 +79,27 @@ export const HandOffTargetZ = z.enum(['meal_plan', 'new_activity', 'event', 'car
 export const HandOffPartZ = z.object({ kind: z.literal('hand_off'), target: HandOffTargetZ, label: z.string().min(1).max(60), entityId: z.string().min(1).nullable() }).strict();
 export const VanaPartZ = z.discriminatedUnion('kind', [ChoicesPartZ, BriefPartZ, DayGuidancePartZ, StaplesPartZ, MealPickerPartZ, BatchPartZ, RulePartZ, ShoppingListPartZ, MemorySavedPartZ, LoggedPartZ, DayPartZ, PantryPartZ, WeekPartZ, DebriefPartZ, FeedbackSavedPartZ, FeedbackPromptPartZ, HandOffPartZ]);
 
+// ---- the Situation (situation.ts), as the client puts it on a message
+/** One component of the formula editor's draft: which food, how much of it (mp-274). */
+export const DraftComponentZ = z.object({ id: z.string().min(1).max(64), qty: z.number().positive().max(999).nullable().optional() }).strict();
+/** The formula editor's draft — the one named exception to mp-043, for one screen, every field shaped and capped. */
+export const FormulaDraftZ = z.object({
+  name: z.string().max(40).nullable().optional(),
+  phase: z.enum(['before', 'during', 'after']).nullable().optional(),
+  subPhase: z.string().max(24).nullable().optional(),
+  durations: z.array(z.string().max(24)).nullable().optional(),
+  activities: z.array(z.string().max(24)).nullable().optional(),
+  components: z.array(DraftComponentZ).nullable().optional(),
+}).strict();
+/** Ids only, plus the draft the formula editor alone may send. `situation.ts` is the enforcer; this is the shape. */
+export const SituationZ = z.object({
+  route: z.string().min(1).max(81),
+  entityId: z.string().nullable().optional(),
+  date: z.string().nullable().optional(),
+  slot: z.string().nullable().optional(),
+  draft: FormulaDraftZ.nullable().optional(),
+}).strict();
+
 // ---- wire
 export const NdjsonLineZ = z.discriminatedUnion('type', [
   z.object({ type: z.literal('text'), delta: z.string() }).strict(),
