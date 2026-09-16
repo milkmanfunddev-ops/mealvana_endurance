@@ -16,9 +16,12 @@ import '../../../shared/services/performance_telemetry.dart';
 /// signals per episode:
 ///  - `Dashboard shown without targets` (warning) when it opens — countable
 ///    per-user frequency without waiting for a crash;
-///  - `Dashboard targets transient resolved` (info) when it closes — carries
-///    `duration_ms`, i.e. how long the user could have been staring at the
-///    placeholder. If the app dies while stuck, the open event still shipped.
+///  - `Dashboard targets transient resolved` (warning; release `beforeSend`
+///    drops info-level events) when it closes — carries `duration_ms`, i.e.
+///    how long the user could have been staring at the placeholder. If the
+///    app dies while stuck, the open event still shipped. Episodes live in
+///    process memory: a restart between open and close loses the duration
+///    (the open event survives — it already shipped).
 ///
 /// Pure Dart on plugins already in the shipped binary — Shorebird-patchable.
 abstract final class DashboardTransientTelemetry {
@@ -51,7 +54,12 @@ abstract final class DashboardTransientTelemetry {
       final startedAt = _openEpisodes.remove(key);
       if (startedAt != null) {
         final duration = DateTime.now().difference(startedAt);
-        _capture('Dashboard targets transient resolved', SentryLevel.info, {
+        // WARNING, not info: every flavour's release `beforeSend` drops
+        // info-level events (sentry_event_filter.dart documents MetricKit
+        // being silently thrown away on the same path) — patch #1 shipped
+        // this at info and prod never saw a single duration. Volume is one
+        // event per healed episode, so warning costs nothing.
+        _capture('Dashboard targets transient resolved', SentryLevel.warning, {
           'date_key': dateKey,
           'duration_ms': duration.inMilliseconds,
         });
