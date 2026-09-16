@@ -358,5 +358,72 @@ void main() {
       final logged = await c.logFromPlan('pm-1');
       expect(logged!.servingsLeft, 3);
     });
+
+    /// Lee's 09-16 demo: a plan could not be deleted by hand. The producer
+    /// answers a `receipt` and no `batch` — the plan is gone — so nothing is
+    /// applied and the local copy goes on the follow-up sync.
+    test(
+      'deletePlan sends delete_plan and returns the server receipt',
+      () async {
+        final result = VanaActionResult.fromJson({
+          'parts': [loadFixture('receipt_delete_plan')],
+        });
+        actions = _FakeActionClient((_) => result);
+        final c = controller();
+        await c.future;
+
+        final receipt = await c.deletePlan();
+
+        final sent = actions.calls.whereType<DeletePlanAction>().single;
+        expect(sent.type, 'delete_plan');
+        expect(
+          sent.toPayloadJson(),
+          isEmpty,
+          reason: 'no id → the active plan',
+        );
+        expect(receipt!.action, VanaReceiptAction.deletePlan);
+        expect(receipt.entity, VanaReceiptEntity.plan);
+        expect(receipt.undo!.params['action'], 'delete_plan');
+        expect(sync.ensured, contains('force:meal_plans'));
+      },
+    );
+
+    test('deletePlan names a plan when given one', () async {
+      actions = _FakeActionClient(
+        (_) => VanaActionResult.fromJson({
+          'parts': [loadFixture('receipt_delete_plan')],
+        }),
+      );
+      final c = controller();
+      await c.future;
+      await c.deletePlan(id: 'plan-1');
+      expect(
+        actions.calls.whereType<DeletePlanAction>().single.toPayloadJson(),
+        {'id': 'plan-1'},
+      );
+    });
+
+    test('undoDeletePlan sends the receipt undo params verbatim', () async {
+      final receiptJson = loadFixture('receipt_delete_plan');
+      actions = _FakeActionClient(
+        (action) => action is UndoReceiptAction
+            ? VanaActionResult.fromJson({
+                'parts': [
+                  {...receiptJson, 'action': 'undo', 'undo': null},
+                ],
+              })
+            : VanaActionResult.fromJson({
+                'parts': [receiptJson],
+              }),
+      );
+      final c = controller();
+      await c.future;
+
+      final receipt = await c.deletePlan();
+      await c.undoDeletePlan(receipt!);
+
+      final undo = actions.calls.whereType<UndoReceiptAction>().single;
+      expect(undo.toPayloadJson(), receiptJson['undo']['params']);
+    });
   });
 }

@@ -328,6 +328,32 @@ class MealPlanController extends _$MealPlanController {
   Future<MealPlan?> newPlan({String? conversationId}) =>
       _remoteAck(NewPlanAction(conversationId: conversationId), (r) => r.plan);
 
+  /// Delete a plan outright (`delete_plan`), [id] naming it and the active
+  /// plan standing in when it is omitted. Lee's 09-16 demo: the tab offered
+  /// no way to get rid of a plan by hand.
+  ///
+  /// The result carries no `batch` — the plan is gone — so [_remoteAck]
+  /// applies nothing; [refresh] is what drops it locally, because
+  /// `syncFromRemote` deletes a non-archived plan the server no longer has.
+  /// The returned receipt is what the caller offers Undo from.
+  Future<VanaReceiptPart?> deletePlan({String? id}) async {
+    final receipt = await _remoteAck(
+      DeletePlanAction(id: id),
+      (r) => r.parts.whereType<VanaReceiptPart>().firstOrNull,
+    );
+    await refresh();
+    return receipt;
+  }
+
+  /// Put back the plan [receipt] deleted, sending its undo params verbatim.
+  /// The server restores the rows; [refresh] pulls them back into Drift.
+  Future<void> undoDeletePlan(VanaReceiptPart receipt) async {
+    final undo = receipt.undo;
+    if (undo == null) return;
+    await _remoteAck(UndoReceiptAction(params: undo.params), (r) => r);
+    await refresh();
+  }
+
   /// Log one serving of a plan meal (`log_from_plan` → meal_logs row +
   /// servings_left decrement). Returns the `logged` part.
   Future<VanaLoggedPart?> logFromPlan(

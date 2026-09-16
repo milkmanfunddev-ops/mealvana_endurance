@@ -1,4 +1,5 @@
-/** Vana writes the app's own objects (Lee's playtest 2026-09-16 §10): a fresh plan, events, meal logs.
+/** Vana writes the app's own objects (Lee's playtest 2026-09-16 §10): a fresh plan, a deleted plan, events, workouts
+ *  (`activities`), meal logs.
  *
  *  Before this the chat could only hand off to a screen for anything outside the meal plan. Now "delete my Ironman"
  *  or "log that I ate the lentil salad" is a write Vana makes herself, and every write answers a `receipt` part the
@@ -20,6 +21,7 @@
 import type { VanaCtx } from './env.ts';
 import type { ReceiptAction, ReceiptEntity, ReceiptUndo, VanaPart } from './contracts.ts';
 import { today } from './env.ts';
+import { getPlanPeriod } from './memory.ts';
 import { invalidateContext } from './context-cache.ts';
 import * as plan from './plan.ts';
 import type { PlanScope } from './plan.ts';
@@ -53,6 +55,29 @@ export const shortDate = (iso: string | null | undefined) => iso ? new Date(`${i
 export async function startNewPlan(v: VanaCtx, scope: PlanScope | null): Promise<ReceiptPart> {
   const fresh = await plan.newPlan(v, scope);
   return receipt('new_plan', 'plan', 'Started a new plan — the old one is archived', fresh.id, null);
+}
+
+/** "Sep 13 – Sep 19" for a plan's period, the way the Plan tab's summary line says it. */
+async function planLabel(v: VanaCtx, weekStart: string): Promise<string> {
+  const days = (await getPlanPeriod(v)).periodDays;
+  const end = new Date(`${weekStart}T12:00:00Z`); end.setUTCDate(end.getUTCDate() + days - 1);
+  return `${shortDate(weekStart)} – ${shortDate(end.toISOString().slice(0, 10))}`;
+}
+
+/** Delete a plan outright (the `is_deleted` tombstone the app's sync reads as "gone"; the meals stay attached for Undo).
+ *  `id` names one plan; without it the scope's plan (a conversation's draft, else the week's active plan). The Plan tab calls
+ *  this with a confirm dialog of its own, so `confirmed` here is the chat's rule only: the tool asks first, the tab already did. */
+export async function deletePlan(v: VanaCtx, id: string | null, scope: PlanScope | null, confirmed: boolean | undefined): Promise<ReceiptPart | NeedsConfirmationPart> {
+  const cur = id ? await plan.getPlanById(v, id) : await plan.resolvePlan(v, scope, false);
+  if (!cur) throw new Error('no plan to delete');
+  const label = await planLabel(v, cur.weekStart);
+  const ask = guardDelete(confirmed, 'delete_plan', 'plan', `Delete the plan for ${label} (${cur.meals.length} meal${cur.meals.length === 1 ? '' : 's'})?`, cur.id);
+  if (ask) return ask;
+  const { error } = await v.admin.from('meal_plans').update({ is_deleted: true, updated_at: new Date().toISOString() }).eq('id', cur.id).eq('user_id', v.userId);
+  if (error) throw new Error(error.message);
+  await invalidateContext(v);
+  console.log(`[vana] deletePlan user=${v.userId} id=${cur.id} week=${cur.weekStart}`);
+  return receipt('delete_plan', 'plan', `Deleted the plan for ${label}`, cur.id, { id: cur.id });
 }
 
 // ---------------------------------------------------------------- events
@@ -148,6 +173,101 @@ export async function listEvents(v: VanaCtx) {
   return (data ?? []).map((e: any) => ({ id: e.id, name: e.event_name, date: e.event_date, type: e.event_type, distance: e.event_subtype, location: e.location, daysOut: e.event_date ? Math.round((new Date(e.event_date).getTime() - new Date(today()).getTime()) / 864e5) : null }));
 }
 
+// ---------------------------------------------------------------- activities (planned workouts)
+/** `activities.intensity_level` (intensity_enum). */
+export const INTENSITIES = ['easy', 'moderate', 'hard', 'race'] as const;
+export type Intensity = typeof INTENSITIES[number];
+export interface ActivityInput { title: string; date: string; time?: string | null; type: EventType; durationMinutes?: number | null; distanceMiles?: number | null; intensity?: Intensity | null; notes?: string | null }
+export type ActivityPatch = Partial<ActivityInput>;
+/** A workout the athlete named only by day starts at a training hour, not the event default. */
+export const DEFAULT_ACTIVITY_TIME = '06:30';
+
+/** The row `ActivityMapper.toSupabaseJson` sends: text id, `scheduled_date_time` as a naive local ISO, `status: 'planned'`, `origin` none. */
+// deno-lint-ignore no-explicit-any
+const activityRow = (v: VanaCtx, id: string, i: ActivityInput): Record<string, any> => ({
+  id, user_id: v.userId, title: i.title, activity_type: i.type, status: 'planned',
+  scheduled_date_time: startTimeFor(i.date, i.time ?? DEFAULT_ACTIVITY_TIME),
+  duration_minutes: i.durationMinutes ?? null, distance_miles: i.distanceMiles ?? null, intensity_level: i.intensity ?? null, notes: i.notes ?? null,
+  completion_type: 'manual', is_fasted: false, needs_nutrition_refresh: false,
+  created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+});
+
+/** A patch in the tool's terms → the `activities` columns it touches. `date`/`time` move `scheduled_date_time` together. */
+// deno-lint-ignore no-explicit-any
+export function activityColumns(patch: ActivityPatch, current: Record<string, any>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (patch.title !== undefined) out.title = patch.title;
+  if (patch.type !== undefined) out.activity_type = patch.type;
+  if (patch.durationMinutes !== undefined) out.duration_minutes = patch.durationMinutes;
+  if (patch.distanceMiles !== undefined) out.distance_miles = patch.distanceMiles;
+  if (patch.intensity !== undefined) out.intensity_level = patch.intensity;
+  if (patch.notes !== undefined) out.notes = patch.notes;
+  if (patch.date !== undefined || patch.time !== undefined) {
+    const cur = typeof current.scheduled_date_time === 'string' ? current.scheduled_date_time : '';
+    const date = patch.date ?? cur.slice(0, 10);
+    const time = patch.time ?? (cur.length >= 16 ? cur.slice(11, 16) : DEFAULT_ACTIVITY_TIME);
+    out.scheduled_date_time = startTimeFor(date, time);
+    // The app flags a moved session so its fuelling plan is rebuilt; a server move must do the same.
+    out.schedule_changed_at = new Date().toISOString(); out.needs_nutrition_refresh = true;
+  }
+  return out;
+}
+
+// deno-lint-ignore no-explicit-any
+async function ownActivity(v: VanaCtx, id: string): Promise<Record<string, any>> {
+  const { data, error } = await v.admin.from('activities').select('*').eq('id', id).eq('user_id', v.userId).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data || data.deleted_at || data.status === 'deleted') throw new Error('workout not found');
+  return data;
+}
+
+const activityLabel = (row: Record<string, unknown>) => `${row.title ?? 'workout'}${typeof row.scheduled_date_time === 'string' ? ` · ${shortDate(row.scheduled_date_time.slice(0, 10))}` : ''}`;
+
+/** Planned and recent workouts with ids — the model needs ids for update/delete; the WEEK line in the context has none. */
+export async function listActivities(v: VanaCtx, opts: { from?: string | null; to?: string | null } = {}) {
+  const from = opts.from ?? (() => { const d = new Date(`${today()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 7); return d.toISOString().slice(0, 10); })();
+  const to = opts.to ?? (() => { const d = new Date(`${today()}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 28); return d.toISOString().slice(0, 10); })();
+  const { data, error } = await v.admin.from('activities').select('id, title, activity_type, scheduled_date_time, duration_minutes, distance_miles, intensity_level, status, completed_at, synced_from_provider')
+    .eq('user_id', v.userId).is('deleted_at', null).neq('status', 'deleted').gte('scheduled_date_time', `${from}T00:00:00`).lte('scheduled_date_time', `${to}T23:59:59`).order('scheduled_date_time', { ascending: true }).limit(60);
+  if (error) throw new Error(error.message);
+  // deno-lint-ignore no-explicit-any
+  return (data ?? []).map((a: any) => ({ id: a.id, title: a.title, type: a.activity_type, date: String(a.scheduled_date_time ?? '').slice(0, 10), time: String(a.scheduled_date_time ?? '').slice(11, 16) || null, durationMinutes: a.duration_minutes, distanceMiles: a.distance_miles, intensity: a.intensity_level, status: a.status, completed: !!a.completed_at, from: a.synced_from_provider ?? 'manual' }));
+}
+
+export async function createActivity(v: VanaCtx, i: ActivityInput): Promise<ReceiptPart> {
+  const id = crypto.randomUUID();
+  const row = activityRow(v, id, i);
+  const { error } = await v.admin.from('activities').insert(row);
+  if (error) throw new Error(error.message);
+  await invalidateContext(v); // the WEEK line
+  console.log(`[vana] createActivity user=${v.userId} id=${id} "${i.title}" ${i.date}`);
+  return receipt('create_activity', 'activity', `Added ${activityLabel(row)}`, id, { id });
+}
+
+export async function updateActivity(v: VanaCtx, id: string, patch: ActivityPatch): Promise<ReceiptPart> {
+  const cur = await ownActivity(v, id);
+  const cols = activityColumns(patch, cur);
+  if (!Object.keys(cols).length) throw new Error('nothing to change');
+  const before: Record<string, unknown> = {}; for (const k of Object.keys(cols)) before[k] = cur[k] ?? null;
+  const { error } = await v.admin.from('activities').update({ ...cols, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', v.userId);
+  if (error) throw new Error(error.message);
+  await invalidateContext(v);
+  return receipt('update_activity', 'activity', `Updated ${activityLabel({ ...cur, ...cols })}`, id, { id, before });
+}
+
+/** The same tombstone the app leaves (`status: 'deleted'` + `deleted_at`), so every device's sync matcher sees it. */
+export async function deleteActivity(v: VanaCtx, id: string, confirmed: boolean | undefined): Promise<ReceiptPart | NeedsConfirmationPart> {
+  const cur = await ownActivity(v, id);
+  const ask = guardDelete(confirmed, 'delete_activity', 'activity', `Delete ${activityLabel(cur)}?`, id);
+  if (ask) return ask;
+  const now = new Date().toISOString();
+  const { error } = await v.admin.from('activities').update({ status: 'deleted', deleted_at: now, updated_at: now }).eq('id', id).eq('user_id', v.userId);
+  if (error) throw new Error(error.message);
+  await invalidateContext(v);
+  console.log(`[vana] deleteActivity user=${v.userId} id=${id}`);
+  return receipt('delete_activity', 'activity', `Removed ${cur.title ?? 'the workout'}`, id, { id, before: { status: cur.status ?? 'planned' } });
+}
+
 // ---------------------------------------------------------------- meal logs
 export interface LogItem { name: string; portion?: string | null; calories?: number | null; carbG?: number | null; proteinG?: number | null; fatG?: number | null }
 export interface FreeTextLog { name: string; mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'; date?: string | null; kcal?: number | null; carbsG?: number | null; proteinG?: number | null; fatG?: number | null; items?: LogItem[] | null; notes?: string | null }
@@ -197,6 +317,45 @@ export async function deleteLoggedMeal(v: VanaCtx, id: string, confirmed: boolea
 export async function undoReceipt(v: VanaCtx, params: Record<string, unknown>): Promise<ReceiptPart> {
   const action = String(params.action ?? '');
   switch (action) {
+    case 'delete_plan': {
+      const id = String(params.id ?? '');
+      if (!id) throw new Error('undo delete_plan needs id');
+      const { data: cur } = await v.admin.from('meal_plans').select('id, week_start').eq('id', id).eq('user_id', v.userId).maybeSingle();
+      if (!cur) throw new Error('plan not found');
+      const { error } = await v.admin.from('meal_plans').update({ is_deleted: false, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', v.userId);
+      if (error) throw new Error(error.message);
+      await invalidateContext(v);
+      return receipt('undo', 'plan', `Put back the plan for ${await planLabel(v, String(cur.week_start))}`, id, null);
+    }
+    case 'create_activity': {
+      const id = String(params.id ?? '');
+      if (!id) throw new Error('undo create_activity needs id');
+      const cur = await ownActivity(v, id);
+      const now = new Date().toISOString();
+      const { error } = await v.admin.from('activities').update({ status: 'deleted', deleted_at: now, updated_at: now }).eq('id', id).eq('user_id', v.userId);
+      if (error) throw new Error(error.message);
+      await invalidateContext(v);
+      return receipt('undo', 'activity', `Removed ${String(cur.title ?? 'the workout')}`, id, null);
+    }
+    case 'update_activity': {
+      const id = String(params.id ?? ''); const before = params.before as Record<string, unknown> | undefined;
+      if (!id || !before) throw new Error('undo update_activity needs id and before');
+      const cur = await ownActivity(v, id);
+      const { error } = await v.admin.from('activities').update({ ...before, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', v.userId);
+      if (error) throw new Error(error.message);
+      await invalidateContext(v);
+      return receipt('undo', 'activity', `Reverted ${String(before.title ?? cur.title ?? 'the workout')}`, id, null);
+    }
+    case 'delete_activity': {
+      const id = String(params.id ?? ''); const before = (params.before ?? {}) as Record<string, unknown>;
+      if (!id) throw new Error('undo delete_activity needs id');
+      const { data: cur } = await v.admin.from('activities').select('id, title').eq('id', id).eq('user_id', v.userId).maybeSingle();
+      if (!cur) throw new Error('workout not found');
+      const { error } = await v.admin.from('activities').update({ status: String(before.status ?? 'planned'), deleted_at: null, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', v.userId);
+      if (error) throw new Error(error.message);
+      await invalidateContext(v);
+      return receipt('undo', 'activity', `Put back ${String(cur.title ?? 'the workout')}`, id, null);
+    }
     case 'delete_event': {
       const row = params.row as Record<string, unknown> | undefined;
       if (!row || typeof row.id !== 'string') throw new Error('undo delete_event needs the row');

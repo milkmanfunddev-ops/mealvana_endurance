@@ -2,6 +2,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
 import '../../../shared/services/sync/sync_coordinator.dart';
+import '../../activities/data/activities_repository.dart';
+import '../../activities/presentation/providers/activities_controller.dart';
 import '../../events/data/events_repository.dart';
 import '../../events/presentation/providers/events_controller.dart';
 import '../../meal_logging/data/meal_log_repository.dart';
@@ -50,6 +52,18 @@ class VanaWriteRefetcher {
         _ref.invalidate(eventsControllerProvider);
         _ref.invalidate(allEventsProvider);
         _ref.invalidate(nextUpcomingEventProvider);
+      case VanaReceiptEntity.activity:
+        // Activities are the same offline-first shape as events: a Drift
+        // store with `needs_upload`, so a server-side write only lands
+        // here through a forced pull. The controller and the all-list are
+        // one-shot reads, not Drift streams.
+        await sync.forceSyncRepository(
+          'activities',
+          userId,
+          repository: _ref.read(activitiesRepositoryProvider),
+        );
+        _ref.invalidate(activitiesControllerProvider);
+        _ref.invalidate(allActivitiesProvider);
       case VanaReceiptEntity.mealLog:
         // The day's log providers stream from Drift and re-emit on their
         // own; only the recents list is a one-shot read.

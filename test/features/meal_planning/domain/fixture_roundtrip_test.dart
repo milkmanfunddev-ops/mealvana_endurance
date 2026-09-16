@@ -26,6 +26,8 @@ void main() {
       'debrief': VanaDebriefPart,
       'receipt': VanaReceiptPart,
       'receipt_no_undo': VanaReceiptPart,
+      'receipt_delete_plan': VanaReceiptPart,
+      'receipt_activity': VanaReceiptPart,
       'needs_confirmation': VanaNeedsConfirmationPart,
     }.entries) {
       test(entry.key, () {
@@ -75,18 +77,38 @@ void main() {
         expect(ask.entityId, isNot(plain.entityId));
       });
 
+      /// The hand delete on the Plan tab and Vana's activity writes
+      /// (2026-09-16): the plan receipt undoes by id, an activity receipt is
+      /// the cue to refetch the offline-first activities store.
+      test('delete_plan and the activity entity are known values', () {
+        final deleted =
+            VanaPart.fromJson(loadFixture('receipt_delete_plan'))
+                as VanaReceiptPart;
+        expect(deleted.action, VanaReceiptAction.deletePlan);
+        expect(deleted.entity, VanaReceiptEntity.plan);
+        expect(deleted.undo!.params['action'], 'delete_plan');
+        expect(deleted.undo!.params['id'], deleted.entityId);
+
+        final activity =
+            VanaPart.fromJson(loadFixture('receipt_activity'))
+                as VanaReceiptPart;
+        expect(activity.action, VanaReceiptAction.createActivity);
+        expect(activity.entity, VanaReceiptEntity.activity);
+        expect(activity.undo, isNull);
+      });
+
       test('an action or entity this client does not know drops the part', () {
         expect(
           VanaPart.fromJson({
             ...loadFixture('receipt_no_undo'),
-            'action': 'delete_plan',
+            'action': 'rename_plan',
           }),
           isNull,
         );
         expect(
           VanaPart.fromJson({
             ...loadFixture('receipt_no_undo'),
-            'entity': 'activity',
+            'entity': 'shopping_list',
           }),
           isNull,
         );

@@ -243,4 +243,28 @@ void main() {
       findsNothing,
     );
   });
+
+  // Lee, 2026-09-16: "the ingredients on the right are not justified". A
+  // loose Flexible name beside a Spacer split the free width, so each
+  // quantity sat wherever its name ended. Every quantity now ends on the
+  // same x, whatever the name's length.
+  testWidgets('quantities share one right edge across rows', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final items = [
+      const ShoppingItem(name: 'Lime', qty: '1', aisle: 'Produce'),
+      const ShoppingItem(name: 'Shredded carrot', qty: '2', aisle: 'Produce'),
+      const ShoppingItem(name: 'Broccoli', qty: '2 cups', aisle: 'Produce'),
+    ];
+    await pumpList(tester, stateWith(items));
+
+    double rightEdge(String name) => tester
+        .getTopRight(find.byKey(ValueKey('meal_planning.shopping_qty_$name')))
+        .dx;
+    final lime = rightEdge('Lime');
+    expect(rightEdge('Shredded carrot'), moreOrLessEquals(lime, epsilon: 0.5));
+    expect(rightEdge('Broccoli'), moreOrLessEquals(lime, epsilon: 0.5));
+  });
 }

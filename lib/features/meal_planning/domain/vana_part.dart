@@ -619,9 +619,13 @@ class VanaHandOffPart extends VanaPart {
 /// the receipt the Undo button itself produces.
 enum VanaReceiptAction {
   newPlan('new_plan'),
+  deletePlan('delete_plan'),
   createEvent('create_event'),
   updateEvent('update_event'),
   deleteEvent('delete_event'),
+  createActivity('create_activity'),
+  updateActivity('update_activity'),
+  deleteActivity('delete_activity'),
   logMeal('log_meal'),
   deleteLoggedMeal('delete_logged_meal'),
   undo('undo');
@@ -640,6 +644,7 @@ enum VanaReceiptAction {
 enum VanaReceiptEntity {
   plan('plan'),
   event('event'),
+  activity('activity'),
   mealLog('meal_log');
 
   const VanaReceiptEntity(this.wire);

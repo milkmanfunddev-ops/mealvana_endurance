@@ -101,8 +101,8 @@ export const DebriefPartZ = z.object({ kind: z.literal('debrief'), planId: z.str
 export const HandOffTargetZ = z.enum(['meal_plan', 'new_activity', 'event', 'carb_loading']);
 export const HandOffPartZ = z.object({ kind: z.literal('hand_off'), target: HandOffTargetZ, label: z.string().min(1).max(60), entityId: z.string().min(1).nullable() }).strict();
 // ---- additive 2026-09-16 (Vana writes, playtest §10): a receipt for every write, a needs_confirmation for an unconfirmed delete.
-export const ReceiptActionZ = z.enum(['new_plan', 'create_event', 'update_event', 'delete_event', 'log_meal', 'delete_logged_meal', 'undo']);
-export const ReceiptEntityZ = z.enum(['plan', 'event', 'meal_log']);
+export const ReceiptActionZ = z.enum(['new_plan', 'delete_plan', 'create_event', 'update_event', 'delete_event', 'create_activity', 'update_activity', 'delete_activity', 'log_meal', 'delete_logged_meal', 'undo']);
+export const ReceiptEntityZ = z.enum(['plan', 'event', 'activity', 'meal_log']);
 export const ReceiptUndoZ = z.object({ action: z.literal('undo_receipt'), params: z.object({ action: ReceiptActionZ }).passthrough() }).strict();
 export const ReceiptPartZ = z.object({ kind: z.literal('receipt'), action: ReceiptActionZ, entity: ReceiptEntityZ, summary: z.string().min(1).max(200), entityId: z.string().min(1), undo: ReceiptUndoZ.nullable() }).strict();
 export const NeedsConfirmationPartZ = z.object({ kind: z.literal('needs_confirmation'), action: ReceiptActionZ, entity: ReceiptEntityZ, summary: z.string().min(1).max(200), entityId: z.string().min(1) }).strict();

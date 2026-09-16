@@ -8,6 +8,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/meal_plan_
 import 'package:mealvana_endurance/features/meal_planning/application/vana_settings_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/home_payload.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/plan_tab.dart';
 
 import '../../domain/fixture_helpers.dart';
@@ -109,6 +110,86 @@ void main() {
     );
   });
 
+  /// Lee's 09-16 demo: there was no way to delete a plan by hand. The menu
+  /// belongs to the plan, so it only exists when there is one.
+  testWidgets('no plan means no plan menu', (tester) async {
+    await pumpTab(tester, plan: _FakePlanController(null));
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_overflow')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('a plan with meals carries the ⋮ with both plan actions', (
+    tester,
+  ) async {
+    await pumpTab(tester, plan: _FakePlanController(confirmedPlan));
+    final menu = find.byKey(const ValueKey('meal_planning.plan_overflow'));
+    expect(menu, findsOneWidget);
+
+    await tester.tap(menu);
+    await settle(tester);
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_new')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_delete')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Delete plan asks first, then deletes and offers Undo', (
+    tester,
+  ) async {
+    final controller = _FakePlanController(confirmedPlan);
+    await pumpTab(tester, plan: controller);
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_overflow')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_delete')));
+    await settle(tester);
+
+    // Nothing is sent until the question is answered.
+    expect(
+      find.byKey(const ValueKey('meal_planning.plan_delete_confirm')),
+      findsOneWidget,
+    );
+    expect(controller.deleted, 0);
+
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_delete_go')),
+    );
+    await settle(tester);
+
+    expect(controller.deleted, 1);
+    final content = loadDefaultContent();
+    expect(find.text(content['meal_planning.plan_deleted']!), findsOneWidget);
+    expect(find.text(content['meal_planning.undo']!), findsOneWidget);
+
+    // Undo sends the receipt the server answered with, untouched.
+    await tester.tap(find.text(content['meal_planning.undo']!));
+    await settle(tester);
+    expect(controller.undone, hasLength(1));
+    expect(controller.undone.single.action, VanaReceiptAction.deletePlan);
+  });
+
+  testWidgets('Keep it sends nothing', (tester) async {
+    final controller = _FakePlanController(confirmedPlan);
+    await pumpTab(tester, plan: controller);
+
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_overflow')));
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey('meal_planning.plan_delete')));
+    await settle(tester);
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.plan_delete_cancel')),
+    );
+    await settle(tester);
+
+    expect(controller.deleted, 0);
+  });
+
   testWidgets('the day note renders when the home payload carries one', (
     tester,
   ) async {
@@ -139,6 +220,25 @@ class _FakePlanController extends MealPlanController {
 
   @override
   Future<void> removeMeal(String planMealId) async {}
+
+  int deleted = 0;
+  final List<VanaReceiptPart> undone = [];
+
+  /// The producer's receipt for a hand delete, verbatim from the fixture the
+  /// contract test reads.
+  static final receipt =
+      VanaPart.fromJson(loadFixture('receipt_delete_plan'))! as VanaReceiptPart;
+
+  @override
+  Future<VanaReceiptPart?> deletePlan({String? id}) async {
+    deleted++;
+    return receipt;
+  }
+
+  @override
+  Future<void> undoDeletePlan(VanaReceiptPart receipt) async {
+    undone.add(receipt);
+  }
 }
 
 class _FakeHomeController extends HomeController {

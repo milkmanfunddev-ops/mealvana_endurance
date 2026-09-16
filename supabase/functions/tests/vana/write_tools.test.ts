@@ -33,7 +33,7 @@ const planningToolsFor = (v: any) => makeVanaTools(v, {} as never, 'meal_plannin
 Deno.test('both tool sets carry the write tools; the sheet keeps handOff for what still needs a screen', () => {
   const v = testCtx();
   const general = toolsFor(v); const planning = planningToolsFor(v);
-  for (const name of ['startNewPlan', 'listEvents', 'createEvent', 'updateEvent', 'deleteEvent', 'logMeal', 'deleteLoggedMeal']) { assert(general[name], `general has ${name}`); assert(planning[name], `planning has ${name}`); }
+  for (const name of ['startNewPlan', 'deletePlan', 'listEvents', 'createEvent', 'updateEvent', 'deleteEvent', 'listActivities', 'createActivity', 'updateActivity', 'deleteActivity', 'logMeal', 'deleteLoggedMeal']) { assert(general[name], `general has ${name}`); assert(planning[name], `planning has ${name}`); }
   assert(general.handOff, 'general keeps handOff'); assert(!planning.handOff, 'planning has nothing to hand off to');
 });
 
@@ -240,4 +240,133 @@ Deno.test('undo_receipt refuses what it cannot undo', async () => {
   const v = testCtx();
   await assertRejects(() => act(v, 'undo_receipt', { action: 'create_event' }), Error, 'nothing to undo');
   await assertRejects(() => act(v, 'undo_receipt', {}), Error, 'nothing to undo');
+});
+
+// ---------------------------------------------------------------- deletePlan (Lee, 2026-09-16: he could not delete the demo's plan by hand or through Vana)
+const PLAN_ROW: Row = { id: 'p-9', user_id: U, conversation_id: 'conv-1', week_start: '2026-09-13', status: 'confirmed', batch_cooking: true, is_deleted: false, shopping: [], created_at: '2026-09-13T00:00:00Z', updated_at: '2026-09-13T00:00:00Z' };
+const PLAN_MEALS: Row[] = [
+  { id: 'pm-9a', plan_id: 'p-9', user_id: U, name: 'Chili', meal_type: 'dinner', servings: 4, servings_left: 4, source: 'library', library_meal_id: 'D-1', is_deleted: false },
+  { id: 'pm-9b', plan_id: 'p-9', user_id: U, name: 'Salmon bowl', meal_type: 'dinner', servings: 2, servings_left: 2, source: 'library', library_meal_id: 'D-2', is_deleted: false },
+];
+
+Deno.test('deletePlan without confirmed writes nothing and names the plan by its period and meal count', async () => {
+  const v = testCtx({ meal_plans: [PLAN_ROW], plan_meals: PLAN_MEALS });
+  const out = await planningToolsFor(v).deletePlan.execute({}, CALL);
+  NeedsConfirmationPartZ.parse(out);
+  assertEquals(out.kind, 'needs_confirmation'); assertEquals(out.entity, 'plan'); assertEquals(out.entityId, 'p-9');
+  assertEquals(out.summary, 'Delete the plan for Sep 13 – Sep 19 (2 meals)?');
+  assertEquals(v.fake.writes, []);
+});
+
+Deno.test('deletePlan with confirmed: true leaves the is_deleted tombstone the app syncs as gone; Undo lifts it', async () => {
+  const v = testCtx({ meal_plans: [PLAN_ROW], plan_meals: PLAN_MEALS });
+  const out = await planningToolsFor(v).deletePlan.execute({ confirmed: true }, CALL);
+  ReceiptPartZ.parse(out); VanaPartZ.parse(out);
+  assertEquals(out.action, 'delete_plan'); assertEquals(out.entity, 'plan'); assertEquals(out.entityId, 'p-9');
+  assertEquals(out.summary, 'Deleted the plan for Sep 13 – Sep 19');
+  assertEquals(out.undo, { action: 'undo_receipt', params: { action: 'delete_plan', id: 'p-9' } });
+  assertEquals(v.fake.rows('meal_plans')[0].is_deleted, true);
+  assertEquals(v.fake.writesTo('meal_plans', 'delete'), [], 'a tombstone, never a hard delete');
+  assertEquals(v.fake.rows('plan_meals').length, 2, 'the meals stay attached for Undo');
+
+  const undone = await act(v, 'undo_receipt', out.undo.params);
+  assertEquals(undone.parts[0], { kind: 'receipt', action: 'undo', entity: 'plan', summary: 'Put back the plan for Sep 13 – Sep 19', entityId: 'p-9', undo: null });
+  assertEquals(v.fake.rows('meal_plans')[0].is_deleted, false);
+});
+
+Deno.test('the Plan tab\'s delete_plan action is the confirmed delete (its own dialog stood in for askChoice) and takes an explicit id', async () => {
+  const other: Row = { ...PLAN_ROW, id: 'p-8', conversation_id: null, week_start: '2026-09-06', status: 'archived' };
+  const v = testCtx({ meal_plans: [PLAN_ROW, other], plan_meals: PLAN_MEALS });
+  const res = await act(v, 'delete_plan', { id: 'p-8' });
+  const r = ReceiptPartZ.parse(res.parts[0]);
+  assertEquals(r.action, 'delete_plan'); assertEquals(r.entityId, 'p-8');
+  assertEquals(res.parts.length, 1, 'no batch part — the plan is gone');
+  assertEquals(v.fake.rows('meal_plans').find((p) => p.id === 'p-8')!.is_deleted, true);
+  assertEquals(v.fake.rows('meal_plans').find((p) => p.id === 'p-9')!.is_deleted, false);
+});
+
+Deno.test('deletePlan on an athlete with no plan is an error, not a receipt', async () => {
+  const v = testCtx({ meal_plans: [] });
+  await assertRejects(() => toolsFor(v).deletePlan.execute({ confirmed: true }, CALL), Error, 'no plan to delete');
+});
+
+// ---------------------------------------------------------------- activities (planned workouts)
+/** The `activities` row the app uploads for a planned session: text id, naive local scheduled_date_time, status planned. */
+const LONG_RIDE: Row = { id: 'a-ride', user_id: U, title: 'Long ride', activity_type: 'cycling', status: 'planned', scheduled_date_time: '2026-09-19T07:00:00.000', duration_minutes: 180, distance_miles: 60, intensity_level: 'moderate', notes: null, deleted_at: null, completed_at: null, synced_from_provider: null, created_at: '2026-09-10T00:00:00Z', updated_at: '2026-09-10T00:00:00Z' };
+const GARMIN_RUN: Row = { ...LONG_RIDE, id: 'a-run', title: 'Tempo run', activity_type: 'running', scheduled_date_time: '2026-09-15T06:00:00.000', duration_minutes: 50, distance_miles: 7, intensity_level: 'hard', synced_from_provider: 'garmin', completed_at: '2026-09-15T07:05:00.000', status: 'completed' };
+const GONE: Row = { ...LONG_RIDE, id: 'a-gone', title: 'Old swim', status: 'deleted', deleted_at: '2026-09-01T00:00:00Z' };
+const THEIRS: Row = { ...LONG_RIDE, id: 'a-theirs', user_id: OTHER };
+
+Deno.test('listActivities answers the athlete\'s live sessions with ids, never tombstones or another athlete\'s', async () => {
+  const v = testCtx({ activities: [LONG_RIDE, GARMIN_RUN, GONE, THEIRS] });
+  const out = await toolsFor(v).listActivities.execute({ from: '2026-09-13', to: '2026-09-20' }, CALL);
+  assertEquals(out.map((a: { id: string }) => a.id), ['a-run', 'a-ride']);
+  assertEquals(out[1], { id: 'a-ride', title: 'Long ride', type: 'cycling', date: '2026-09-19', time: '07:00', durationMinutes: 180, distanceMiles: 60, intensity: 'moderate', status: 'planned', completed: false, from: 'manual' });
+  assertEquals(out[0].from, 'garmin'); assertEquals(out[0].completed, true);
+});
+
+Deno.test('createActivity writes the row the app\'s mapper writes and the receipt undoes it with the app\'s tombstone', async () => {
+  const v = testCtx({ activities: [] });
+  const out = await toolsFor(v).createActivity.execute({ title: 'Easy spin', date: '2026-09-20', type: 'cycling', durationMinutes: 45, intensity: 'easy' }, CALL);
+  ReceiptPartZ.parse(out); VanaPartZ.parse(out);
+  assertEquals(out.action, 'create_activity'); assertEquals(out.entity, 'activity'); assertEquals(out.summary, 'Added Easy spin · Sep 20');
+  const row = v.fake.rows('activities')[0];
+  assertEquals(row.id, out.entityId); assertEquals(row.user_id, U); assertEquals(row.status, 'planned');
+  assertEquals(row.scheduled_date_time, '2026-09-20T06:30:00.000', 'a naive local ISO at the training-hour default');
+  assertEquals(row.activity_type, 'cycling'); assertEquals(row.duration_minutes, 45); assertEquals(row.intensity_level, 'easy'); assertEquals(row.distance_miles, null);
+  assert(!('needs_upload' in row));
+
+  const undone = await act(v, 'undo_receipt', out.undo.params);
+  const u = ReceiptPartZ.parse(undone.parts[0]); assertEquals(u.action, 'undo'); assertEquals(u.entity, 'activity');
+  const after = v.fake.rows('activities')[0];
+  assertEquals(after.status, 'deleted'); assert(after.deleted_at, 'the app\'s tombstone, so every device drops it');
+});
+
+Deno.test('updateActivity moves date and time together, flags the fuelling refresh, and Undo restores what it touched', async () => {
+  const v = testCtx({ activities: [LONG_RIDE] });
+  const out = await toolsFor(v).updateActivity.execute({ id: 'a-ride', patch: { date: '2026-09-20', durationMinutes: 240 } }, CALL);
+  ReceiptPartZ.parse(out);
+  assertEquals(out.action, 'update_activity'); assertEquals(out.summary, 'Updated Long ride · Sep 20');
+  const row = v.fake.rows('activities')[0];
+  assertEquals(row.scheduled_date_time, '2026-09-20T07:00:00.000', 'the time it had, on the new day');
+  assertEquals(row.duration_minutes, 240); assertEquals(row.needs_nutrition_refresh, true); assert(row.schedule_changed_at);
+  assertEquals(out.undo.params.before.scheduled_date_time, '2026-09-19T07:00:00.000');
+  assertEquals(out.undo.params.before.duration_minutes, 180);
+
+  const undone = await act(v, 'undo_receipt', out.undo.params);
+  assertEquals(ReceiptPartZ.parse(undone.parts[0]).summary, 'Reverted Long ride');
+  const back = v.fake.rows('activities')[0];
+  assertEquals(back.scheduled_date_time, '2026-09-19T07:00:00.000'); assertEquals(back.duration_minutes, 180);
+});
+
+Deno.test('updateActivity with a time alone keeps the day', async () => {
+  const v = testCtx({ activities: [LONG_RIDE] });
+  await toolsFor(v).updateActivity.execute({ id: 'a-ride', patch: { time: '15:30' } }, CALL);
+  assertEquals(v.fake.rows('activities')[0].scheduled_date_time, '2026-09-19T15:30:00.000');
+});
+
+Deno.test('deleteActivity asks first, then leaves the app\'s status=deleted tombstone; Undo brings the old status back', async () => {
+  const v = testCtx({ activities: [LONG_RIDE, GARMIN_RUN] });
+  const ask = await toolsFor(v).deleteActivity.execute({ id: 'a-ride' }, CALL);
+  NeedsConfirmationPartZ.parse(ask);
+  assertEquals(ask.summary, 'Delete Long ride · Sep 19?'); assertEquals(v.fake.writes, []);
+
+  const out = await toolsFor(v).deleteActivity.execute({ id: 'a-run', confirmed: true }, CALL);
+  ReceiptPartZ.parse(out);
+  assertEquals(out.summary, 'Removed Tempo run'); assertEquals(out.entity, 'activity');
+  const row = v.fake.rows('activities').find((r) => r.id === 'a-run')!;
+  assertEquals(row.status, 'deleted'); assert(row.deleted_at);
+  assertEquals(v.fake.writesTo('activities', 'delete'), [], 'never a hard delete — the sync matcher needs the tombstone');
+
+  const undone = await act(v, 'undo_receipt', out.undo.params);
+  assertEquals(ReceiptPartZ.parse(undone.parts[0]).summary, 'Put back Tempo run');
+  const back = v.fake.rows('activities').find((r) => r.id === 'a-run')!;
+  assertEquals(back.status, 'completed', 'the status it had, not a blanket planned'); assertEquals(back.deleted_at, null);
+});
+
+Deno.test('a deleted workout, or another athlete\'s, is not found — even with confirmed', async () => {
+  const v = testCtx({ activities: [GONE, THEIRS] });
+  await assertRejects(() => toolsFor(v).deleteActivity.execute({ id: 'a-gone', confirmed: true }, CALL), Error, 'workout not found');
+  await assertRejects(() => toolsFor(v).updateActivity.execute({ id: 'a-theirs', patch: { title: 'Mine now' } }, CALL), Error, 'workout not found');
+  assertEquals(v.fake.writes, []);
 });

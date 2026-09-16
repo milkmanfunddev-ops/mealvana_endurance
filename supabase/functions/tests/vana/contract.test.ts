@@ -162,7 +162,7 @@ Deno.test('contract: receipt.json / needs_confirmation.json — a card for every
   assertEquals(ask.entityId, r.entityId);
   for (const f of ['receipt', 'receipt_no_undo', 'needs_confirmation']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
   assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), undo: undefined }).success, 'undo is always sent, null when there is none');
-  assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), action: 'delete_plan' }).success, 'action is one the app knows');
+  assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), action: 'eat_plan' }).success, 'action is one the app knows');
   assert(!ReceiptPartZ.safeParse({ ...fixture('receipt_no_undo'), summary: '' }).success, 'summary is the card\'s line');
   assert(!ReceiptPartZ.safeParse({ ...fixture('receipt'), undo: { action: 'undo_receipt', params: {} } }).success, 'undo params name the action');
   // The action result of an Undo is an ordinary parts list with one receipt.
@@ -184,4 +184,16 @@ Deno.test('contract: the general persona names the four hand-offs and never buil
   const { GENERAL_PROMPT } = await import('../../_shared/vana/persona.ts');
   for (const target of ['meal_plan', 'new_activity', 'event', 'carb_loading']) assert(GENERAL_PROMPT.includes(target), `GENERAL_PROMPT names ${target}`);
   assert(!GENERAL_PROMPT.includes('"Start a meal plan"'), 'a plan request is a hand-off, not a chip');
+});
+
+// ---- 2026-09-16 (Lee: delete a plan by hand or through Vana; Vana edits workouts): the plan delete receipt and an activity receipt.
+Deno.test('contract: receipt_delete_plan.json / receipt_activity.json — the Plan tab\'s delete and a workout write', async () => {
+  const { ReceiptPartZ } = await import('../../_shared/vana/schemas.ts');
+  const del = parse(ReceiptPartZ, fixture('receipt_delete_plan'), 'receipt_delete_plan.json');
+  assertEquals(del.action, 'delete_plan'); assertEquals(del.entity, 'plan');
+  assertEquals(del.undo?.params, { action: 'delete_plan', id: del.entityId }, 'undo needs only the id — the tombstone is lifted, nothing re-inserted');
+  const act = parse(ReceiptPartZ, fixture('receipt_activity'), 'receipt_activity.json');
+  assertEquals(act.action, 'create_activity'); assertEquals(act.entity, 'activity');
+  for (const f of ['receipt_delete_plan', 'receipt_activity']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
+  parse(ActionResultZ, { parts: [fixture('receipt_delete_plan')] }, 'delete_plan action result');
 });

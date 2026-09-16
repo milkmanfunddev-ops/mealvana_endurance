@@ -440,6 +440,22 @@ class NewPlanAction extends UiAction {
   Map<String, Object?> payloadFields() => const {};
 }
 
+/// Delete a plan outright (`delete_plan`), [id] naming it and the scoped or
+/// active plan standing in when it is omitted. Lee's 09-16 demo: there was
+/// no way to get rid of a plan by hand. The result carries no `batch` — the
+/// plan is gone — only a `receipt` whose undo puts it back.
+class DeletePlanAction extends UiAction {
+  const DeletePlanAction({this.id, super.planId, super.conversationId});
+
+  final String? id;
+
+  @override
+  String get type => 'delete_plan';
+
+  @override
+  Map<String, Object?> payloadFields() => {if (id != null) 'id': id};
+}
+
 /// `{id?}` — a specific plan, else the scoped/active one.
 class GetPlanAction extends UiAction {
   const GetPlanAction({this.id, super.planId, super.conversationId});

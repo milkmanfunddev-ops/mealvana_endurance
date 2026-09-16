@@ -287,6 +287,15 @@ class ContentKeys {
   static const String mpSettingsRemindersSub =
       'meal_planning.settings_reminders_sub';
   static const String mpCardMore = 'meal_planning.card_more';
+  // The plan's own ⋮ (2026-09-16): start a new plan, or delete this one.
+  static const String mpPlanMore = 'meal_planning.plan_more';
+  static const String mpPlanStartNew = 'meal_planning.plan_start_new';
+  static const String mpPlanDelete = 'meal_planning.plan_delete';
+  static const String mpPlanDeleteTitle = 'meal_planning.plan_delete_title';
+  static const String mpPlanDeleteBody = 'meal_planning.plan_delete_body';
+  static const String mpPlanDeleteConfirm = 'meal_planning.plan_delete_confirm';
+  static const String mpPlanDeleteCancel = 'meal_planning.plan_delete_cancel';
+  static const String mpPlanDeleted = 'meal_planning.plan_deleted';
   static const String mpSwapIngredient = 'meal_planning.swap_ingredient';
   static const String mpSwapIngredientEmpty =
       'meal_planning.swap_ingredient_empty';

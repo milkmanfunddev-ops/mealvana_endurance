@@ -11,7 +11,7 @@ import { buildAthleteContext } from './context.ts';
 import { getMeal, saveLibraryMeal, getMealDetail, recentMeals, setSavedMealNotes, setMealFeedback } from './meals.ts';
 import { ensureDayNotes, refreshDayNotesSoon } from './daynotes.ts';
 import * as shopping from './shopping.ts';
-import { undoReceipt } from './writes.ts';
+import { undoReceipt, deletePlan } from './writes.ts';
 
 const shop = (items: ShoppingItem[]): VanaPart => ({ kind: 'shopping_list', items, itemCount: items.filter((x) => !x.have).length, skipped: items.filter((x) => x.have).map((x) => x.name) });
 
@@ -121,6 +121,13 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'delete_shopping_item': return { parts: [], list: await shopping.deleteItem(v, String(p.id)) };
     // ---- additive 2026-09-16 (Vana writes, playtest §10): the Undo button on a receipt card. The payload is the receipt's own
     // `undo.params`; it answers a receipt of its own (writes.ts undoReceipt).
+    // delete_plan{id?, planId?, conversationId?} — the Plan tab's Delete (its own confirm dialog stands in for the chat's askChoice, so
+    // confirmed is implied here); answers the receipt with its Undo, no batch part (the plan is gone).
+    case 'delete_plan': {
+      const planId = pick(p, 'planId', 'plan_id'); const conversationId = pick(p, 'conversationId', 'conversation_id');
+      const scope: plan.PlanScope | null = planId ? { planId: String(planId) } : conversationId ? { conversationId: String(conversationId) } : null;
+      return { parts: [await deletePlan(v, p.id ? String(p.id) : null, scope, true)] };
+    }
     case 'undo_receipt': return { parts: [await undoReceipt(v, p)] };
     default: return null;
   }

@@ -21,8 +21,14 @@ import '../../domain/plan_meal.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/dashed_box.dart';
 import '../widgets/plan_list.dart';
+import '../widgets/plan_overflow_menu.dart';
 import '../widgets/plan_summary.dart';
 import '../../../../shared/widgets/kyle_design/icons/vana_avatar.dart';
+
+/// `intent=new_plan`: the athlete chose a fresh plan, so the opener builds
+/// one and never asks about the plan on this tab. Both ways in — the button
+/// and the plan's ⋮ — send exactly this.
+const _newPlanRoute = '/vana?c=new&mode=meal_planning&intent=new_plan';
 
 /// The Plan tab (05 §4): Vana's day note, this week's plan with swipe
 /// actions, the dashed empty state, and the confirm / new-plan actions.
@@ -73,7 +79,15 @@ class PlanTab extends ConsumerWidget {
           if (plan == null || plan.meals.isEmpty)
             const _EmptyPlanCard()
           else ...[
-            PlanSummary(plan: plan),
+            Row(
+              children: [
+                Expanded(child: PlanSummary(plan: plan)),
+                PlanOverflowMenu(
+                  onStartNew: () => context.push(_newPlanRoute),
+                  onDelete: () => _deletePlanWithUndo(context, ref),
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
             PlanList(
               meals: plan.meals,
@@ -104,11 +118,7 @@ class PlanTab extends ConsumerWidget {
                   key: const ValueKey('meal_planning.btn_new_plan'),
                   text: content.getValue(ContentKeys.mpBtnNewPlan),
                   height: 44,
-                  // `intent=new_plan`: the athlete chose a fresh plan, so the
-                  // opener builds one and never asks about the plan on this tab.
-                  onPressed: () => context.push(
-                    '/vana?c=new&mode=meal_planning&intent=new_plan',
-                  ),
+                  onPressed: () => context.push(_newPlanRoute),
                 ),
               ),
             ],
@@ -123,6 +133,84 @@ class PlanTab extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Delete the plan by hand: ask first (it takes the week's meals and the
+  /// shopping list with it), then offer Undo for as long as the snackbar is
+  /// up. The receipt the server answers with is what Undo sends back.
+  Future<void> _deletePlanWithUndo(BuildContext context, WidgetRef ref) async {
+    final controller = ref.read(mealPlanControllerProvider.notifier);
+    final content = ref.read(contentServiceProvider);
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        key: const ValueKey('meal_planning.plan_delete_confirm'),
+        backgroundColor: Theme.of(dialogContext).scaffoldBackgroundColor,
+        title: Text(content.getValue(ContentKeys.mpPlanDeleteTitle)),
+        content: Text(content.getValue(ContentKeys.mpPlanDeleteBody)),
+        actions: [
+          TextButton(
+            key: const ValueKey('meal_planning.plan_delete_cancel'),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(content.getValue(ContentKeys.mpPlanDeleteCancel)),
+          ),
+          TextButton(
+            key: const ValueKey('meal_planning.plan_delete_go'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(
+              content.getValue(ContentKeys.mpPlanDeleteConfirm),
+              style: const TextStyle(color: AppColors.dragonfruitLight),
+            ),
+          ),
+        ],
+      ),
+    );
+    // Dismissed by tapping outside, or kept: nothing is sent.
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      final receipt = await controller.deletePlan();
+      if (!context.mounted) return;
+      MealvanaSnackbar.showInfo(
+        context,
+        content.getValue(ContentKeys.mpPlanDeleted),
+        duration: MealvanaSnackbar.longDuration,
+        // A receipt with no undo (the server could not put it back) gets no
+        // Undo button rather than one that fails on tap.
+        actionLabel: receipt?.undo == null
+            ? null
+            : content.getValue(ContentKeys.mpUndo),
+        onAction: receipt?.undo == null
+            ? null
+            : () async {
+                try {
+                  await controller.undoDeletePlan(receipt!);
+                } on Exception {
+                  if (context.mounted) {
+                    MealvanaSnackbar.showError(
+                      context,
+                      content.getValue(ContentKeys.mpServerError),
+                    );
+                  }
+                }
+              },
+      );
+    } on NeedsConnectionException {
+      if (context.mounted) {
+        MealvanaSnackbar.showWarning(
+          context,
+          content.getValue(ContentKeys.mpNeedsConnection),
+        );
+      }
+    } on Exception {
+      if (context.mounted) {
+        MealvanaSnackbar.showError(
+          context,
+          content.getValue(ContentKeys.mpServerError),
+        );
+      }
+    }
   }
 
   void _removeWithUndo(BuildContext context, WidgetRef ref, PlanMeal meal) {

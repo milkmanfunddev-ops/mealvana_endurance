@@ -127,9 +127,9 @@ export type VanaPart =
   | { kind: 'needs_confirmation'; action: ReceiptAction; entity: ReceiptEntity; summary: string; entityId: string };
 
 /** What a receipt records. `undo` is the receipt the Undo button itself produces. */
-export type ReceiptAction = 'new_plan' | 'create_event' | 'update_event' | 'delete_event' | 'log_meal' | 'delete_logged_meal' | 'undo';
+export type ReceiptAction = 'new_plan' | 'delete_plan' | 'create_event' | 'update_event' | 'delete_event' | 'create_activity' | 'update_activity' | 'delete_activity' | 'log_meal' | 'delete_logged_meal' | 'undo';
 /** The app object a write touched — the device refetches that store when the receipt arrives (events / meal logs are offline-first). */
-export type ReceiptEntity = 'plan' | 'event' | 'meal_log';
+export type ReceiptEntity = 'plan' | 'event' | 'activity' | 'meal_log';
 /** `POST vana-action { type: 'undo_receipt', payload: params }` — `params.action` names the write being undone and carries what it needs. */
 export interface ReceiptUndo { action: 'undo_receipt'; params: Record<string, unknown> & { action: ReceiptAction } }
 
@@ -154,7 +154,10 @@ export interface UiAction {
     | 'list_shopping_lists' | 'get_shopping_list' | 'create_shopping_list' | 'rename_shopping_list' | 'add_shopping_item' | 'update_shopping_item' | 'delete_shopping_item'
     // additive 2026-09-16 (Vana writes, playtest §10): undo_receipt{...ReceiptUndo.params} — the Undo button on a receipt card. Answers
     // `{ parts: [receipt(action: 'undo')] }`; the device refetches the receipt's entity as for any receipt.
-    | 'undo_receipt';
+    | 'undo_receipt'
+    // additive 2026-09-16 (Lee: the athlete deletes a plan by hand): delete_plan{id?, planId?, conversationId?} — the Plan tab's Delete.
+    // Answers `{ parts: [receipt(action: 'delete_plan', undo: {…})] }` and no batch part; Undo is the receipt's undo_receipt.
+    | 'delete_plan';
   payload: Record<string, unknown>;
 }
 

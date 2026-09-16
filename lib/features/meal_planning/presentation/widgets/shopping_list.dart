@@ -314,39 +314,55 @@ class _ShoppingRow extends StatelessWidget {
                 height: 48,
                 child: Row(
                   children: [
-                    Flexible(
-                      child: Text(
-                        item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: item.checked
-                              ? textColor.withValues(alpha: 0.5)
-                              : textColor,
-                          decoration: item.checked
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
+                    // The name column takes every pixel the quantity does
+                    // not, so the quantity sits on the row's right edge for
+                    // every row. (A loose Flexible beside a Spacer split the
+                    // free width in half and the quantity landed wherever the
+                    // name ended — the ragged column Lee saw on 2026-09-16.)
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              item.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: item.checked
+                                    ? textColor.withValues(alpha: 0.5)
+                                    : textColor,
+                                decoration: item.checked
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          if (sourceCount > 1) ...[
+                            const SizedBox(width: 8),
+                            _CountBadge(
+                              key: ValueKey(
+                                'meal_planning.shopping_sources_${item.name}',
+                              ),
+                              count: sourceCount,
+                              color: secondary,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    if (sourceCount > 1) ...[
-                      const SizedBox(width: 8),
-                      _CountBadge(
-                        key: ValueKey(
-                          'meal_planning.shopping_sources_${item.name}',
-                        ),
-                        count: sourceCount,
-                        color: secondary,
-                      ),
-                    ],
-                    const Spacer(),
-                    if (qty.isNotEmpty)
+                    if (qty.isNotEmpty) ...[
+                      const SizedBox(width: 12),
                       Text(
+                        key: ValueKey(
+                          'meal_planning.shopping_qty_${item.name}',
+                        ),
                         qty,
+                        textAlign: TextAlign.right,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: secondary,
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
