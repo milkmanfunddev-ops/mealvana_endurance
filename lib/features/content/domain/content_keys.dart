@@ -237,6 +237,7 @@ class ContentKeys {
   static const String mpPantryScanFridge = 'meal_planning.pantry_scan_fridge';
   static const String mpChipGridAdd = 'meal_planning.chip_grid_add';
   static const String mpWeekTitle = 'meal_planning.week_title';
+  static const String mpWeekTitlePeriod = 'meal_planning.week_title_period';
   static const String mpWeekOpenPlan = 'meal_planning.week_open_plan';
   static const String mpDebriefLine = 'meal_planning.debrief_line';
   static const String mpDebriefSkipReason = 'meal_planning.debrief_skip_reason';
@@ -373,6 +374,7 @@ class ContentKeys {
   static const String mpReviewConfirm = 'meal_planning.review_confirm';
   static const String mpReviewConfirmed = 'meal_planning.review_confirmed';
   static const String mpReviewYourWeek = 'meal_planning.review_your_week';
+  static const String mpReviewYourPeriod = 'meal_planning.review_your_period';
   static const String mpReviewSummary = 'meal_planning.review_summary';
   static const String mpReviewGrouped = 'meal_planning.review_grouped';
   static const String mpReviewNightOf = 'meal_planning.review_night_of';
@@ -394,6 +396,12 @@ class ContentKeys {
   static const String mpSessionTopupWed = 'meal_planning.session_topup_wed';
   static const String mpSessionFreshFri = 'meal_planning.session_fresh_fri';
   static const String mpSessionNone = 'meal_planning.session_none';
+
+  /// Session labels that name the day the session falls on in the athlete's
+  /// period (mp-269): `{day}` is the localized weekday.
+  static const String mpSessionCookOn = 'meal_planning.session_cook_on';
+  static const String mpSessionTopupOn = 'meal_planning.session_topup_on';
+  static const String mpSessionFreshOn = 'meal_planning.session_fresh_on';
   static const String mpDetailIngredients = 'meal_planning.detail_ingredients';
   static const String mpDetailDirections = 'meal_planning.detail_directions';
   static const String mpDetailStartCooking =
@@ -493,6 +501,12 @@ class ContentKeys {
       'meal_planning.settings_section_meal_planning';
   static const String mpSettingsMacrosOn = 'meal_planning.settings_macros_on';
   static const String mpSettingsMacrosOff = 'meal_planning.settings_macros_off';
+  static const String mpSettingsWeekStart = 'meal_planning.settings_week_start';
+  static const String mpSettingsWeekStartSub =
+      'meal_planning.settings_week_start_sub';
+  static const String mpSettingsPeriodDays =
+      'meal_planning.settings_period_days';
+  static const String mpPeriodDays = 'meal_planning.period_days';
   static const String mpSettingsMemoriesEmpty =
       'meal_planning.settings_memories_empty';
   static const String mpSettingsMemoryConfirmed =

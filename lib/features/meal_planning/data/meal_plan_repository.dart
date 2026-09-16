@@ -23,6 +23,7 @@ import '../domain/plan_rule.dart';
 import '../domain/shopping_item.dart';
 import '../domain/ui_action.dart';
 import '../domain/memory_kind.dart';
+import '../domain/week_start.dart';
 import '../domain/wire_record.dart';
 import 'meal_plan_remote.dart';
 
@@ -299,10 +300,12 @@ class MealPlanRepository with SyncableRepository {
         .asyncMap((picked) async {
           if (picked == null) return null;
           final (plan, planMeals) = picked;
+          final coverage = await _coverageFor(plan.userId);
           return _assemble(
             plan,
             planMeals,
-            lunchDinnerSlots: await _coverageSlotsFor(plan.userId),
+            lunchDinnerSlots: coverage.slots,
+            periodDays: coverage.periodDays,
           );
         });
   }
@@ -324,10 +327,12 @@ class MealPlanRepository with SyncableRepository {
         for (final row in rows)
           if (row.readTableOrNull(meals) case final m?) m,
       ];
+      final coverage = await _coverageFor(plan.userId);
       return _assemble(
         plan,
         planMeals,
-        lunchDinnerSlots: await _coverageSlotsFor(plan.userId),
+        lunchDinnerSlots: coverage.slots,
+        periodDays: coverage.periodDays,
       );
     });
   }
@@ -338,37 +343,80 @@ class MealPlanRepository with SyncableRepository {
   /// The `coverage_scope` value under which only dinner servings count.
   static const _coverageScopeDinners = 'dinners';
 
-  /// The denominator the server uses for this athlete's coverage. Drift keeps
-  /// no coverage column (the server sends it on every plan), so the
-  /// local-first recompute in [_assemble] derives it from the
-  /// `coverage_scope` k/v settings row: `dinners` → 7, anything else (or no
-  /// row yet) → 14. The setting row reaches Drift through the memories sync,
-  /// so a plan built before it lands shows the default until the next emit.
-  Future<int> _coverageSlotsFor(String userId) async {
+  /// `user_memories.key`s of the plan-period settings (mp-269).
+  static const _weekStartKey = 'week_start';
+  static const _periodDaysKey = 'period_days';
+
+  /// The denominator and period the server uses for this athlete's coverage.
+  /// Drift keeps no coverage column (the server sends it on every plan), so
+  /// the local-first recompute in [_assemble] derives it from the k/v
+  /// settings rows: a dinner per day of the period for `dinners`, else a
+  /// lunch and a dinner per day; the period is `period_days` (7 when unset).
+  /// The rows reach Drift through the memories sync, so a plan built before
+  /// they land shows the defaults until the next emit.
+  Future<({int slots, int periodDays})> _coverageFor(String userId) async {
     final t = _database.userMemoriesTable;
-    final row =
-        await (_database.select(t)
-              ..where(
-                (t) =>
-                    t.userId.equals(userId) &
-                    t.isDeleted.equals(false) &
-                    t.kind.equals(MemoryKind.setting.wire) &
-                    t.key.equals(_coverageScopeKey),
-              )
-              ..limit(1))
-            .getSingleOrNull();
-    final raw = row?.value;
-    if (raw == null) return PlanCoverageService.lunchDinnerSlots;
-    // The column is JSON-encoded (`"dinners"`); tolerate a bare string too.
-    Object? decoded;
-    try {
-      decoded = jsonDecode(raw);
-    } on FormatException {
-      decoded = raw;
+    final rows =
+        await (_database.select(t)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  t.isDeleted.equals(false) &
+                  t.kind.equals(MemoryKind.setting.wire) &
+                  t.key.isIn(const [
+                    _coverageScopeKey,
+                    _weekStartKey,
+                    _periodDaysKey,
+                  ]),
+            ))
+            .get();
+    final values = _settingValues(rows);
+    final period = _periodFrom(values);
+    final dinners = values[_coverageScopeKey] == _coverageScopeDinners;
+    return (
+      slots: dinners ? period.days : period.days * 2,
+      periodDays: period.days,
+    );
+  }
+
+  /// The athlete's plan period (week start + length) from the settings rows,
+  /// re-emitting only when it changes — what the Plan tab's week binds to.
+  Stream<PlanPeriod> watchPlanPeriod(String userId) {
+    final t = _database.userMemoriesTable;
+    final query = _database.select(t)
+      ..where(
+        (t) =>
+            t.userId.equals(userId) &
+            t.isDeleted.equals(false) &
+            t.kind.equals(MemoryKind.setting.wire) &
+            t.key.isIn(const [_weekStartKey, _periodDaysKey]),
+      );
+    return query
+        .watch()
+        .map((rows) => _periodFrom(_settingValues(rows)))
+        .distinct();
+  }
+
+  static PlanPeriod _periodFrom(Map<String, Object?> values) =>
+      PlanPeriod.fromSettings(
+        weekStart: values[_weekStartKey],
+        periodDays: values[_periodDaysKey],
+      );
+
+  /// Setting rows keyed by `key`, values JSON-decoded (`"dinners"`, `10`);
+  /// a bare string that is not JSON is kept as is.
+  static Map<String, Object?> _settingValues(List<UserMemoryEntry> rows) {
+    final out = <String, Object?>{};
+    for (final row in rows) {
+      final key = row.key;
+      final raw = row.value;
+      if (key == null || raw == null) continue;
+      try {
+        out[key] = jsonDecode(raw);
+      } on FormatException {
+        out[key] = raw;
+      }
     }
-    return decoded == _coverageScopeDinners
-        ? PlanCoverageService.dinnerOnlySlots
-        : PlanCoverageService.lunchDinnerSlots;
+    return out;
   }
 
   Future<MealPlan?> getActivePlan(String userId, String weekStart) =>
@@ -670,7 +718,8 @@ class MealPlanRepository with SyncableRepository {
   MealPlan _assemble(
     MealPlanEntry plan,
     List<PlanMealEntry> meals, {
-    int lunchDinnerSlots = PlanCoverageService.lunchDinnerSlots,
+    int? lunchDinnerSlots,
+    int periodDays = PlanCoverageService.defaultPeriodDays,
   }) {
     final sorted = [...meals]
       ..sort((a, b) {
@@ -710,6 +759,7 @@ class MealPlanRepository with SyncableRepository {
       coverage: PlanCoverageService.compute(
         planMeals,
         lunchDinnerSlots: lunchDinnerSlots,
+        periodDays: periodDays,
       ),
     );
   }

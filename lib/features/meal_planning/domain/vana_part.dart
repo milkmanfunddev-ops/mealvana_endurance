@@ -804,24 +804,34 @@ class VanaPantryPart extends VanaPart {
 /// parts (`{ days: VanaDayPart[] }`), rendered read-only with a way into
 /// the Plan tab.
 class VanaWeekPart extends VanaPart {
-  const VanaWeekPart({required this.days});
+  const VanaWeekPart({required this.days, this.periodDays});
 
   final List<VanaDayPart> days;
+
+  /// The athlete's period length when the week was laid out (mp-269);
+  /// null from a server that predates it, which laid out seven days.
+  final int? periodDays;
 
   @override
   String get kind => 'week';
 
-  factory VanaWeekPart.fromJson(Map<String, dynamic> json) =>
-      VanaWeekPart(days: readRecordList(json, 'days', VanaDayPart.fromJson));
+  factory VanaWeekPart.fromJson(Map<String, dynamic> json) => VanaWeekPart(
+    days: readRecordList(json, 'days', VanaDayPart.fromJson),
+    periodDays: readInt(json, 'periodDays'),
+  );
 
   @override
   Map<String, dynamic> toJson() => {
     'kind': kind,
     'days': days.map((d) => d.toJson()).toList(),
+    if (periodDays != null) 'periodDays': periodDays,
   };
 
-  VanaWeekPart copyWith({List<VanaDayPart>? days}) =>
-      VanaWeekPart(days: days ?? this.days);
+  VanaWeekPart copyWith({List<VanaDayPart>? days, int? periodDays}) =>
+      VanaWeekPart(
+        days: days ?? this.days,
+        periodDays: periodDays ?? this.periodDays,
+      );
 }
 
 /// `recordDebrief` — how last week went (plan Phase 3.3): `{ planId,

@@ -40,9 +40,13 @@ export const MACROS_FN = 'calculate-daily-macros-v6';
 
 export const today = () => new Date().toISOString().slice(0, 10);
 export const addDays = (iso: string, n: number) => new Date(new Date(iso + 'T00:00:00Z').getTime() + n * 86400_000).toISOString().slice(0, 10);
-/** Sunday-start week (cook day Sunday), matching the design's "Aug 23 – 29". */
-export function weekStartFor(iso = today()) { const d = new Date(iso + 'T00:00:00Z'); return addDays(iso, -d.getUTCDay()); }
-export const dayKey = (iso: string) => ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][new Date(iso + 'T00:00:00Z').getUTCDay()] as 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+export type DayKey = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
+/** getUTCDay order: index 0 is Sunday. The `week_start` setting stores one of these. */
+export const DAY_KEYS: readonly DayKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+/** The plan week containing `iso`: the latest `startDay` on or before it (mp-269; the `week_start` setting, Sunday by
+ *  default, matching the design's "Aug 23 – 29"). The Dart port is `weekStartFor` in domain/week_start.dart — keep in lockstep. */
+export function weekStartFor(iso = today(), startDay: DayKey = 'sun') { const d = new Date(iso + 'T00:00:00Z'); const back = (d.getUTCDay() - DAY_KEYS.indexOf(startDay) + 7) % 7; return addDays(iso, -back); }
+export const dayKey = (iso: string) => DAY_KEYS[new Date(iso + 'T00:00:00Z').getUTCDay()];
 export const dayName = (iso: string) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
 /** YYYY-MM-DD in the athlete's timezone (falls back to UTC on a bad IANA name). */
 export function localDate(tz: string | null | undefined): string {

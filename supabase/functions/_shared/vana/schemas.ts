@@ -41,7 +41,7 @@ export const MealPlanZ = z.object({
   id: z.string(), weekStart: z.string(), status: z.enum(['draft', 'confirmed', 'archived']), batchCooking: z.boolean(), days: z.record(DayPlanZ).optional(),
   conversationId: z.string().nullable().optional(), brief: z.string().nullable(), rules: z.array(PlanRuleZ), meals: z.array(PlanMealZ), shopping: z.array(ShoppingItemZ),
   dayNotes: z.record(z.string()), dayNotesStale: z.boolean().optional(),
-  coverage: z.object({ lunchDinnerSlots: z.number(), covered: z.number(), perDay: z.object({ kcal: z.number(), carbsG: z.number(), proteinG: z.number() }).strict() }).strict(),
+  coverage: z.object({ lunchDinnerSlots: z.number(), covered: z.number(), periodDays: z.number(), perDay: z.object({ kcal: z.number(), carbsG: z.number(), proteinG: z.number() }).strict() }).strict(),
 }).strict();
 export const MemoryZ = z.object({ id: z.string(), kind: z.enum(['preference', 'constraint', 'pattern', 'episode', 'setting']), key: z.string().nullable(), fact: z.string(), value: z.unknown(), confidence: z.number(), lastConfirmedAt: z.string(), source: z.string().nullable().optional() }).strict();
 export const MealDetailZ = z.object({
@@ -69,7 +69,7 @@ export const MemorySavedPartZ = z.object({ kind: z.literal('memory_saved'), memo
 export const LoggedPartZ = z.object({ kind: z.literal('logged'), planMealId: z.string(), name: z.string(), servingsLeft: z.number() }).strict();
 export const DayPartZ = z.object({ kind: z.literal('day'), date: z.string(), label: z.string(), slots: DayPlanZ, filled: z.array(MealTypeZ) }).strict();
 export const PantryPartZ = z.object({ kind: z.literal('pantry'), title: z.string(), items: z.array(z.object({ name: z.string(), selected: z.boolean() }).strict()), allowCustom: z.boolean(), origin: z.enum(['suggested', 'photo']) }).strict();
-export const WeekPartZ = z.object({ kind: z.literal('week'), days: z.array(DayPartZ) }).strict();
+export const WeekPartZ = z.object({ kind: z.literal('week'), periodDays: z.number().optional(), days: z.array(DayPartZ) }).strict();
 export const FeedbackSavedPartZ = z.object({ kind: z.literal('feedback_saved'), message: z.string().min(1).max(2000), sentiment: z.enum(['positive', 'negative', 'neutral']), about: z.enum(['vana', 'app', 'suggestion']) }).strict();
 export const FeedbackPromptPartZ = z.object({ kind: z.literal('feedback_prompt') }).strict();
 export const DebriefPartZ = z.object({ kind: z.literal('debrief'), planId: z.string(), completed: z.number(), planned: z.number(), skipReason: z.string().nullable(), memories: z.array(MemoryZ) }).strict();

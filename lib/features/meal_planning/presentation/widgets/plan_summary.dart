@@ -16,12 +16,14 @@ class PlanSummary extends ConsumerWidget {
 
   final MealPlan plan;
 
-  /// "Aug 30 – Sep 5" for the seven days starting at [weekStart].
-  static String weekLabel(String weekStart) {
+  /// "Aug 30 – Sep 5" for the [periodDays] days starting at [weekStart]
+  /// (the athlete's plan period, mp-269).
+  static String weekLabel(String weekStart, [int periodDays = 7]) {
     final start = DateTime.tryParse(weekStart);
     if (start == null) return weekStart;
     final fmt = DateFormat('MMM d');
-    return '${fmt.format(start)} – ${fmt.format(start.add(const Duration(days: 6)))}';
+    final end = DateTime(start.year, start.month, start.day + periodDays - 1);
+    return '${fmt.format(start)} – ${fmt.format(end)}';
   }
 
   @override
@@ -46,7 +48,9 @@ class PlanSummary extends ConsumerWidget {
           color: textColor,
         ),
         children: [
-          TextSpan(text: weekLabel(plan.weekStart)),
+          TextSpan(
+            text: weekLabel(plan.weekStart, plan.coverage.periodDays),
+          ),
           TextSpan(
             text: ' · $meals',
             style: const TextStyle(color: AppColors.orange),

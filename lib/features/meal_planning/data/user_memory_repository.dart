@@ -87,9 +87,9 @@ class SupabaseUserMemoryRemote implements UserMemoryRemote {
   }
 }
 
-/// Repository for `user_memories` — "What Vana knows" plus the two boolean
-/// settings (`batch_cooking`, `show_macros`) stored as `kind = 'setting'`
-/// rows.
+/// Repository for `user_memories` — "What Vana knows" plus the keyed
+/// settings ([VanaSetting]: `batch_cooking`, `show_macros`, `week_start`,
+/// `period_days`) stored as `kind = 'setting'` rows.
 ///
 /// Local-first: [setSetting] and [deleteMemory] write Drift with
 /// `needs_upload` and are replayed by [uploadDirtyRecords] as an upsert
@@ -301,8 +301,9 @@ class UserMemoryRepository with SyncableRepository {
     return value is bool ? value : null;
   }
 
-  /// Both settings as a stream (re-emits on change).
-  Stream<Map<VanaSetting, bool?>> watchSettings(String userId) {
+  /// Every [VanaSetting] as its decoded JSON value, null when unset, as a
+  /// stream (re-emits on change). Callers type the value per key.
+  Stream<Map<VanaSetting, Object?>> watchSettings(String userId) {
     final query = _database.select(_database.userMemoriesTable)
       ..where(
         (t) =>
@@ -311,14 +312,13 @@ class UserMemoryRepository with SyncableRepository {
             t.kind.equals(MemoryKind.setting.wire),
       );
     return query.watch().map((rows) {
-      final out = <VanaSetting, bool?>{
+      final out = <VanaSetting, Object?>{
         for (final s in VanaSetting.values) s: null,
       };
       for (final row in rows) {
         final setting = VanaSetting.fromWire(row.key);
         if (setting == null) continue;
-        final value = _decodeValue(row.value);
-        if (value is bool) out[setting] = value;
+        out[setting] = _decodeValue(row.value);
       }
       return out;
     });
@@ -328,12 +328,14 @@ class UserMemoryRepository with SyncableRepository {
   // Local-first writes
   // ========================================================================
 
-  /// Write a boolean setting locally (one live row per key) and mark it for
-  /// upload. Returns the resulting memory.
+  /// Write a setting locally (one live row per key) and mark it for upload.
+  /// [value] is the JSON value the server stores: a bool for the switches,
+  /// a `'sun'` … `'sat'` string for `week_start`, an int for `period_days`.
+  /// Returns the resulting memory.
   Future<UserMemory> setSetting(
     String userId,
     VanaSetting setting,
-    bool value,
+    Object value,
   ) async {
     final now = DateTime.now();
     final existing = await _liveSetting(userId, setting.wire);
@@ -437,17 +439,31 @@ class UserMemoryRepository with SyncableRepository {
   /// The `fact` text the server writes for a setting (`memory.ts
   /// setSetting`), kept identical so a local-first write reads the same in
   /// "What Vana knows".
-  static String settingFact(VanaSetting setting, bool value) =>
+  static String settingFact(VanaSetting setting, Object value) =>
       switch (setting) {
         VanaSetting.batchCooking =>
-          value
+          value == true
               ? 'Cooks in batches (cook once, eat across the week)'
               : 'Cooks most nights — no batch cooking',
         VanaSetting.showMacros =>
-          value
+          value == true
               ? 'Wants macro numbers shown by default'
               : 'Keeps macro numbers behind a tap',
+        VanaSetting.weekStart =>
+          'Starts the plan week on ${_dayNames[value] ?? value}',
+        VanaSetting.periodDays => 'Plans $value days at a time',
       };
+
+  /// `memory.ts DAY_NAMES` — the stored fact is server-authored English.
+  static const _dayNames = {
+    'sun': 'Sunday',
+    'mon': 'Monday',
+    'tue': 'Tuesday',
+    'wed': 'Wednesday',
+    'thu': 'Thursday',
+    'fri': 'Friday',
+    'sat': 'Saturday',
+  };
 
   Future<UserMemoryEntry?> _liveSetting(String userId, String key) =>
       (_database.select(_database.userMemoriesTable)

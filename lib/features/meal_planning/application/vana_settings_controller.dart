@@ -14,6 +14,7 @@ import '../domain/ui_action.dart';
 import '../domain/user_memory.dart';
 import '../domain/vana_part.dart';
 import '../domain/vana_setting.dart';
+import '../domain/week_start.dart';
 import 'meal_plan_controller.dart';
 import 'plan_reminder_service.dart';
 
@@ -26,6 +27,7 @@ class VanaSettingsState {
     this.showMacros = true,
     this.remindersEnabled = false,
     this.memories = const [],
+    this.period = const PlanPeriod(),
   });
 
   /// Server defaults: batch cooking on, macros shown (flipped on with the
@@ -38,16 +40,22 @@ class VanaSettingsState {
   final bool remindersEnabled;
   final List<UserMemory> memories;
 
+  /// The plan period (mp-269): the `week_start` and `period_days` settings,
+  /// Sunday and seven days until the athlete changes them.
+  final PlanPeriod period;
+
   VanaSettingsState copyWith({
     bool? batchCooking,
     bool? showMacros,
     bool? remindersEnabled,
     List<UserMemory>? memories,
+    PlanPeriod? period,
   }) => VanaSettingsState(
     batchCooking: batchCooking ?? this.batchCooking,
     showMacros: showMacros ?? this.showMacros,
     remindersEnabled: remindersEnabled ?? this.remindersEnabled,
     memories: memories ?? this.memories,
+    period: period ?? this.period,
   );
 }
 
@@ -64,7 +72,7 @@ class VanaSettingsController extends _$VanaSettingsController {
   static const _context = 'VANA_SETTINGS_CONTROLLER';
 
   String? _userId;
-  StreamSubscription<Map<VanaSetting, bool?>>? _settingsSub;
+  StreamSubscription<Map<VanaSetting, Object?>>? _settingsSub;
   StreamSubscription<List<UserMemory>>? _memoriesSub;
 
   @override
@@ -104,13 +112,19 @@ class VanaSettingsController extends _$VanaSettingsController {
 
   static VanaSettingsState _fold(
     VanaSettingsState base,
-    Map<VanaSetting, bool?> settings,
+    Map<VanaSetting, Object?> settings,
     List<UserMemory> memories,
   ) => base.copyWith(
-    batchCooking: settings[VanaSetting.batchCooking] ?? true,
-    showMacros: settings[VanaSetting.showMacros] ?? true,
+    batchCooking: _bool(settings[VanaSetting.batchCooking]) ?? true,
+    showMacros: _bool(settings[VanaSetting.showMacros]) ?? true,
+    period: PlanPeriod.fromSettings(
+      weekStart: settings[VanaSetting.weekStart],
+      periodDays: settings[VanaSetting.periodDays],
+    ),
     memories: memories,
   );
+
+  static bool? _bool(Object? value) => value is bool ? value : null;
 
   Future<void> _ensureSynced(String userId) async {
     try {
@@ -132,6 +146,18 @@ class VanaSettingsController extends _$VanaSettingsController {
   Future<void> setShowMacros(bool value) =>
       _setSetting(VanaSetting.showMacros, value);
 
+  /// The day a plan week starts (`DateTime.monday` … `DateTime.sunday`).
+  /// The Plan tab's week follows through the settings row in Drift.
+  Future<void> setWeekStart(int weekday) =>
+      _setSetting(VanaSetting.weekStart, PlanPeriod.weekdayToWire(weekday));
+
+  /// How many days one plan covers, within [PlanPeriod.minDays] …
+  /// [PlanPeriod.maxDays]; anything outside is ignored.
+  Future<void> setPeriodDays(int days) async {
+    if (!PlanPeriod.isValidDays(days)) return;
+    await _setSetting(VanaSetting.periodDays, days);
+  }
+
   /// The reminders toggle — a device preference, never a `set_setting`.
   /// Turning it on with a confirmed plan in hand schedules that plan's two
   /// notifications; turning it off cancels them.
@@ -150,14 +176,28 @@ class VanaSettingsController extends _$VanaSettingsController {
     });
   }
 
-  Future<void> _setSetting(VanaSetting setting, bool value) async {
+  Future<void> _setSetting(VanaSetting setting, Object value) async {
     final userId = _userId;
     final current = state.value;
     if (userId == null || current == null) return;
 
+    final period = current.period;
     state = AsyncData(switch (setting) {
-      VanaSetting.batchCooking => current.copyWith(batchCooking: value),
-      VanaSetting.showMacros => current.copyWith(showMacros: value),
+      VanaSetting.batchCooking => current.copyWith(batchCooking: value == true),
+      VanaSetting.showMacros => current.copyWith(showMacros: value == true),
+      VanaSetting.weekStart => current.copyWith(
+        period: PlanPeriod(
+          startWeekday:
+              PlanPeriod.weekdayFromWire(value) ?? period.startWeekday,
+          days: period.days,
+        ),
+      ),
+      VanaSetting.periodDays => current.copyWith(
+        period: PlanPeriod(
+          startWeekday: period.startWeekday,
+          days: value is int ? value : period.days,
+        ),
+      ),
     });
     state = await AsyncValue.guard(() async {
       await _repo.setSetting(userId, setting, value);
@@ -171,7 +211,7 @@ class VanaSettingsController extends _$VanaSettingsController {
   Future<void> _pushSetting(
     String userId,
     VanaSetting setting,
-    bool value,
+    Object value,
   ) async {
     if (!await ref.read(connectivityCheckerProvider).isOnline()) return;
     try {

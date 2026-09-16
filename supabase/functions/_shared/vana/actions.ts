@@ -4,7 +4,7 @@ import type { UiAction, VanaPart, DaySlot, DayPlan, ShoppingItem } from './contr
 import type { VanaCtx } from './env.ts';
 import { today } from './env.ts';
 import * as plan from './plan.ts';
-import { setSetting, forgetMemory, listMemories, isCoverageScope, type CoverageScope } from './memory.ts';
+import { setSetting, forgetMemory, listMemories, isCoverageScope, isDayKey, isPeriodDays, PERIOD_DAYS_MIN, PERIOD_DAYS_MAX, type SettingValue } from './memory.ts';
 import { detectPantryFromPhoto, persistAssistantPart } from './pantry.ts';
 import { diagnoseStaples, dayGuidance, planDayPart } from './tools.ts';
 import { buildAthleteContext } from './context.ts';
@@ -38,7 +38,7 @@ export async function runAction(v: VanaCtx, a: UiAction): Promise<ActionResult> 
     case 'confirm_plan': { const pl = await plan.confirmPlan(v, scope); refreshDayNotesSoon(v, String(p.date ?? today()), pl.id); return { parts: [{ kind: 'batch', plan: pl }, shop(pl.shopping)] }; }
     case 'toggle_shopping': { const items = await plan.toggleShopping(v, String(p.name), p.field === 'have' ? 'have' : 'checked', !!p.value); return { parts: [shop(items)] }; }
     case 'log_from_plan': { const id = planMealId(); const r = await plan.logFromPlan(v, id, pick(p, 'mealType', 'meal_type'), p.date ? String(p.date) : undefined); return { parts: [{ kind: 'logged', planMealId: id, name: r.name, servingsLeft: r.servingsLeft }, { kind: 'batch', plan: (await plan.getPlan(v))! }], logId: r.logId }; }
-    case 'set_setting': { if (p.key !== 'batch_cooking' && p.key !== 'show_macros' && p.key !== 'coverage_scope') throw new Error(`unknown setting ${String(p.key)}`); if (p.key === 'coverage_scope' && !isCoverageScope(p.value)) throw new Error('coverage_scope must be dinners | dinners_lunches | all'); const m = await setSetting(v, p.key, p.key === 'coverage_scope' ? (p.value as CoverageScope) : !!p.value, 'settings'); if (p.key === 'batch_cooking') { const pl = await plan.setBatchCooking(v, !!p.value, scope); return { parts: [{ kind: 'memory_saved', memory: m }, { kind: 'batch', plan: pl }] }; } return { parts: [{ kind: 'memory_saved', memory: m }] }; }
+    case 'set_setting': { if (p.key !== 'batch_cooking' && p.key !== 'show_macros' && p.key !== 'coverage_scope' && p.key !== 'week_start' && p.key !== 'period_days') throw new Error(`unknown setting ${String(p.key)}`); if (p.key === 'coverage_scope' && !isCoverageScope(p.value)) throw new Error('coverage_scope must be dinners | dinners_lunches | all'); if (p.key === 'week_start' && !isDayKey(p.value)) throw new Error('week_start must be sun | mon | tue | wed | thu | fri | sat'); if (p.key === 'period_days' && !isPeriodDays(p.value)) throw new Error(`period_days must be a whole number from ${PERIOD_DAYS_MIN} to ${PERIOD_DAYS_MAX}`); const keyed = p.key === 'coverage_scope' || p.key === 'week_start' || p.key === 'period_days'; const m = await setSetting(v, p.key, keyed ? (p.value as SettingValue) : !!p.value, 'settings'); if (p.key === 'batch_cooking') { const pl = await plan.setBatchCooking(v, !!p.value, scope); return { parts: [{ kind: 'memory_saved', memory: m }, { kind: 'batch', plan: pl }] }; } return { parts: [{ kind: 'memory_saved', memory: m }] }; }
     case 'delete_memory': { await forgetMemory(v, String(p.id)); return { parts: [], memories: await listMemories(v) }; }
     // ---- day planner
     case 'set_day_slot': { // { date?, slot, source: 'plan'|'saved'|'library', id }

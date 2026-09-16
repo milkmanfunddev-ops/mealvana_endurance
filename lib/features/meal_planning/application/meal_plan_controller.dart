@@ -24,6 +24,15 @@ import 'plan_reminder_service.dart';
 
 part 'meal_plan_controller.g.dart';
 
+/// The athlete's plan period (mp-269) from the `week_start` / `period_days`
+/// settings rows in Drift. Re-emits only when either changes, so
+/// [MealPlanController] rebinds to the new week exactly then.
+@Riverpod(keepAlive: true)
+Stream<PlanPeriod> planPeriod(Ref ref) async* {
+  final userId = await ref.watch(userIdProvider.future);
+  yield* ref.watch(mealPlanRepositoryProvider).watchPlanPeriod(userId);
+}
+
 /// The active plan for the current week — what the Plan tab, the Shopping
 /// tab, the chat's plan bar and the day planner all read.
 ///
@@ -52,14 +61,18 @@ class MealPlanController extends _$MealPlanController {
   String? _userId;
   String? _weekStart;
 
-  /// The week this controller is bound to (`YYYY-MM-DD`, Sunday).
+  /// The week this controller is bound to (`YYYY-MM-DD`, on the athlete's
+  /// week-start day — Sunday by default).
   String get weekStart => _weekStart ?? weekStartFor();
 
   @override
   FutureOr<MealPlan?> build() async {
     final userId = await ref.watch(userIdProvider.future);
     _userId = userId;
-    _weekStart = weekStartFor();
+    // The week follows the athlete's start-day setting; a change rebuilds
+    // this controller onto the new week (mp-269).
+    final period = await ref.watch(planPeriodProvider.future);
+    _weekStart = period.startFor();
 
     ref.onDispose(() {
       _subscription?.cancel();

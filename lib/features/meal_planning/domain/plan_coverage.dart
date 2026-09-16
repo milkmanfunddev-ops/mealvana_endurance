@@ -2,22 +2,28 @@ import 'meal_type.dart';
 import 'plan_meal.dart';
 import 'wire_record.dart';
 
-/// `MealPlan.coverage` — how much of the week's main-meal slots the plan
+/// `MealPlan.coverage` — how much of the period's main-meal slots the plan
 /// fills, and the per-day macro contribution. The slot count follows the
-/// athlete's coverage scope (plan §5 Phase 1.6).
+/// athlete's coverage scope (plan §5 Phase 1.6) and period length (mp-269).
 class PlanCoverage extends WireRecord {
   const PlanCoverage({
     required this.lunchDinnerSlots,
     required this.covered,
     required this.perDay,
+    this.periodDays = PlanCoverageService.defaultPeriodDays,
   });
 
-  /// 14 (7 lunches + 7 dinners) by default; 7 when the athlete chose
-  /// "dinners only" — see [PlanCoverageService.dinnerOnlySlots].
+  /// A lunch and a dinner per day of the period (14 over seven days); one
+  /// dinner per day when the athlete chose "dinners only".
   final int lunchDinnerSlots;
 
   /// Σ servings of the counted meal types, capped at [lunchDinnerSlots].
   final int covered;
+
+  /// The period the slots and [perDay] are counted over — the athlete's
+  /// `period_days` setting when the plan was read (7 from a server that
+  /// predates it).
+  final int periodDays;
   final PlanCoveragePerDay perDay;
 
   bool get isComplete => covered >= lunchDinnerSlots;
@@ -27,6 +33,8 @@ class PlanCoverage extends WireRecord {
         readInt(json, 'lunchDinnerSlots') ??
         PlanCoverageService.lunchDinnerSlots,
     covered: readInt(json, 'covered') ?? 0,
+    periodDays:
+        readInt(json, 'periodDays') ?? PlanCoverageService.defaultPeriodDays,
     perDay: PlanCoveragePerDay.fromJson(
       asJsonMap(json['perDay']) ?? const <String, dynamic>{},
     ),
@@ -36,21 +44,24 @@ class PlanCoverage extends WireRecord {
   Map<String, dynamic> toJson() => {
     'lunchDinnerSlots': lunchDinnerSlots,
     'covered': covered,
+    'periodDays': periodDays,
     'perDay': perDay.toJson(),
   };
 
   PlanCoverage copyWith({
     int? lunchDinnerSlots,
     int? covered,
+    int? periodDays,
     PlanCoveragePerDay? perDay,
   }) => PlanCoverage(
     lunchDinnerSlots: lunchDinnerSlots ?? this.lunchDinnerSlots,
     covered: covered ?? this.covered,
+    periodDays: periodDays ?? this.periodDays,
     perDay: perDay ?? this.perDay,
   );
 }
 
-/// `coverage.perDay` — weekly totals ÷ 7, rounded.
+/// `coverage.perDay` — the plan's totals ÷ the period's days, rounded.
 class PlanCoveragePerDay extends WireRecord {
   const PlanCoveragePerDay({
     required this.kcal,
@@ -90,22 +101,31 @@ class PlanCoveragePerDay extends WireRecord {
 /// path (servings/remove edits applied to Drift before the round trip) so the
 /// Plan bar never shows a stale number. Callers pass the server's
 /// `lunchDinnerSlots` back in so a local recompute keeps the denominator the
-/// athlete's coverage scope chose.
+/// athlete's coverage scope chose, and the plan's `periodDays` so the
+/// dinners-only signal (slots == days) and the per-day average hold for any
+/// period length (mp-269).
 class PlanCoverageService {
   const PlanCoverageService._();
+
+  /// The default period: seven days.
+  static const int defaultPeriodDays = 7;
 
   /// The default denominator: 7 lunches + 7 dinners.
   static const int lunchDinnerSlots = 14;
 
-  /// The "dinners only" denominator — the server's signal that only dinner
-  /// servings count.
+  /// The seven-day "dinners only" denominator — the server's signal that
+  /// only dinner servings count is `lunchDinnerSlots == periodDays`.
   static const int dinnerOnlySlots = 7;
 
+  /// [lunchDinnerSlots] defaults to a lunch and a dinner per day of
+  /// [periodDays].
   static PlanCoverage compute(
     List<PlanMeal> meals, {
-    int lunchDinnerSlots = lunchDinnerSlots,
+    int? lunchDinnerSlots,
+    int periodDays = defaultPeriodDays,
   }) {
-    final dinnersOnly = lunchDinnerSlots == dinnerOnlySlots;
+    final slots = lunchDinnerSlots ?? periodDays * 2;
+    final dinnersOnly = slots == periodDays;
     var slotServings = 0;
     var kcal = 0.0;
     var carbs = 0.0;
@@ -120,14 +140,13 @@ class PlanCoverageService {
       protein += (m.proteinG ?? 0) * m.servings;
     }
     return PlanCoverage(
-      lunchDinnerSlots: lunchDinnerSlots,
-      covered: slotServings < lunchDinnerSlots
-          ? slotServings
-          : lunchDinnerSlots,
+      lunchDinnerSlots: slots,
+      covered: slotServings < slots ? slotServings : slots,
+      periodDays: periodDays,
       perDay: PlanCoveragePerDay(
-        kcal: _jsRound(kcal / 7),
-        carbsG: _jsRound(carbs / 7),
-        proteinG: _jsRound(protein / 7),
+        kcal: _jsRound(kcal / periodDays),
+        carbsG: _jsRound(carbs / periodDays),
+        proteinG: _jsRound(protein / periodDays),
       ),
     );
   }

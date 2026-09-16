@@ -7,7 +7,7 @@ import { deriveWeekCharacter } from './derive-week-character.ts';
 import { today, addDays, weekStartFor } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { weatherLine } from './weather.ts';
-import { listNotes, recentEpisodes, getSetting, getCoverageScope } from './memory.ts';
+import { listNotes, recentEpisodes, getSetting, getCoverageScope, getPlanPeriod } from './memory.ts';
 import { seasonalProduce } from './season.ts';
 import { getPlan } from './plan.ts';
 import { ensureWeekTargets } from './macros.ts';
@@ -45,13 +45,14 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
   const t = anchorDate ?? today();
   await deps.ensureWeekTargets(v, t); // fill the week from the daily-macros engine when the app hasn't
   const d = v.db; const end = addDays(t, 7);
+  const period = await getPlanPeriod(v); const weekStart = weekStartFor(t, period.weekStart); // mp-269
   const [{ data: user }, { data: acts }, { data: macros }, { data: events }, { data: logs }, plan, batchSetting, coverageScope, { data: recentActs }, budgetSetting, { data: debriefs }, likes, { data: survey }] = await Promise.all([
     d.from('users').select('first_name, dietary_preference, allergies, gut_training_level, home_city, home_lat, home_lon, home_timezone').eq('id', v.userId).maybeSingle(),
     d.from('activities').select('scheduled_date_time, title, activity_type, duration_minutes, intensity_level, distance_miles, distance_meters, status').eq('user_id', v.userId).is('deleted_at', null).gte('scheduled_date_time', t).lt('scheduled_date_time', addDays(end, 1)).order('scheduled_date_time'),
     d.from('daily_macro_targets').select('target_date, carb_g, prot_g, fat_g, tdee, session_kcal, mode').eq('user_id', v.userId).gte('target_date', t).lte('target_date', addDays(t, 21)).order('target_date'),
     d.from('events').select('event_name, event_date, location, event_type').eq('user_id', v.userId).gte('event_date', t).lte('event_date', addDays(t, 21)).order('event_date').limit(1),
     d.from('meal_logs').select('carbs_g, calories').eq('user_id', v.userId).eq('log_date', t).eq('is_deleted', false),
-    getPlan(v, weekStartFor(t)),
+    getPlan(v, weekStart),
     getSetting<boolean>(v, 'batch_cooking'),
     getCoverageScope(v),
     // Phase 2.2 — the notable session of the last two days (done, not cancelled): the "you crushed a century yesterday" beat.
@@ -93,7 +94,7 @@ export async function buildAthleteContext(v: VanaCtx, anchorDate?: string, deps:
   return {
     profile: { firstName: user?.first_name ?? null, diet: user?.dietary_preference ?? null, allergies: (user?.allergies ?? []) as string[], gutTraining: user?.gut_training_level ?? null },
     // deno-lint-ignore no-explicit-any
-    week: { start: weekStartFor(t), character: wk.weekCharacter, anchor: wk.anchorSummary ? `${wk.anchorDayName}: ${wk.anchorSummary}` : null, loadScore: wk.totalLoad, workouts: (acts ?? []).map((a: any) => ({ date: String(a.scheduled_date_time).slice(0, 10), title: a.title, type: String(a.activity_type), minutes: a.duration_minutes ?? null, intensity: a.intensity_level ? String(a.intensity_level) : null })) },
+    week: { start: weekStart, periodDays: period.periodDays, character: wk.weekCharacter, anchor: wk.anchorSummary ? `${wk.anchorDayName}: ${wk.anchorSummary}` : null, loadScore: wk.totalLoad, workouts: (acts ?? []).map((a: any) => ({ date: String(a.scheduled_date_time).slice(0, 10), title: a.title, type: String(a.activity_type), minutes: a.duration_minutes ?? null, intensity: a.intensity_level ? String(a.intensity_level) : null })) },
     race,
     budget: { today: todayTarget, week, raceWeekCarbsG },
     weather: { today: wToday, raceDay: wRace },
