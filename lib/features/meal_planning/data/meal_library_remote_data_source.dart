@@ -128,6 +128,36 @@ class MealLibraryRemoteDataSource {
     return out;
   }
 
+  /// The current Dish photo of each of [libraryMealIds] that has one, keyed
+  /// by meal id — the join behind a plan row's picture (ADR 0003).
+  ///
+  /// A plan meal stores no picture, so the plan reads the library Meal's
+  /// photo by id and a photo added later reaches plans already made. Only the
+  /// three photo columns are selected: the frozen pipeline's image columns are
+  /// no longer read anywhere. Ids with no photo, and ids no longer in the
+  /// library, are simply absent from the map — the row then draws nothing.
+  Future<Map<String, MealPhoto>> photosForMeals(
+    Iterable<String> libraryMealIds,
+  ) async {
+    final ids = libraryMealIds.toSet().toList(growable: false);
+    if (ids.isEmpty) return const {};
+    final rows = await _supabase
+        .from('meal_library')
+        .select('id, photo_url, photo_credit, photo_credit_url')
+        .inFilter('id', ids);
+    final out = <String, MealPhoto>{};
+    for (final row in rows) {
+      final id = row['id']?.toString();
+      if (id == null) continue;
+      if (MealPhoto.fromRow(row) case final photo?) out[id] = photo;
+    }
+    _logger.debug(
+      'meal_library photos → ${out.length}/${ids.length}',
+      context: _context,
+    );
+    return out;
+  }
+
   /// `library_pair_support(components)` — pair counts for a set of
   /// components, ascending by support (weakest pair first).
   Future<List<LibraryPairSupport>> libraryPairSupport(

@@ -11,11 +11,13 @@ import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
+import '../../application/plan_meal_photos.dart';
 import '../../domain/cooking_session.dart';
 import '../../domain/meal_plan.dart';
 import '../../domain/meal_plan_status.dart';
 import '../../domain/plan_meal.dart';
 import 'dashed_box.dart';
+import 'meal_photo_view.dart';
 import 'session_chip.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
@@ -179,6 +181,11 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
       0,
       (sum, m) => sum + m.servings,
     );
+
+    // Each row's picture is its library Meal's current Dish photo, read by
+    // meal id — the same answer the plan tile and the plan bar get, so the
+    // grouping below cannot change what a row shows (ADR 0003).
+    final slots = ref.planPhotoSlots(widget.plan.meals);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -241,6 +248,12 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
                             padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                               children: [
+                                MealPhotoThumb(
+                                  photo: slots[meal.id]?.photo,
+                                  size: 36,
+                                  gap: 8,
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: () {

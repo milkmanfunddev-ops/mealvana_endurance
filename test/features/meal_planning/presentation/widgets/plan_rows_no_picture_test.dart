@@ -11,11 +11,14 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/r
 
 import '../helpers/test_content.dart';
 
-/// ADR 0003 — the plan tile, the plan bar tile and the review sheet row draw
-/// no picture at all: no placeholder box, no meal icon. A plan meal carries no
-/// photo of its own yet (the library join is ticket 03), so every row here
+/// ADR 0003 — where there is no photograph to show, the plan tile, the plan
+/// bar tile and the review sheet row draw no picture at all: no placeholder
+/// box, no meal icon. No row here has a library photo to look up, so every one
 /// starts at the meal's name. The stored icon key survives on the meal — it is
 /// kept for when it is wanted, just not drawn.
+///
+/// The join that gives a row its photograph is covered by
+/// `plan_rows_library_photo_test.dart`.
 void main() {
   PlanMeal meal(int i, {String? icon}) => PlanMeal.fromJson({
     'id': 'pm-$i',

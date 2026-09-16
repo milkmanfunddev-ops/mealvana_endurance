@@ -11,8 +11,11 @@ import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../application/plan_meal_photos.dart';
+import '../../domain/meal_photo.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/plan_meal.dart';
+import 'meal_photo_view.dart';
 import 'meal_sheet.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
@@ -75,6 +78,11 @@ class PlanBarState extends ConsumerState<PlanBar> {
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
 
     if (widget.meals.isEmpty) return const SizedBox.shrink();
+
+    // A tile's picture is its library Meal's current Dish photo, looked up by
+    // meal id — the same answer the plan tile and the review sheet get, so a
+    // meal looks the same on all three (ADR 0003).
+    final slots = ref.planPhotoSlots(widget.meals);
 
     final n = widget.meals.length;
     final count = n == 1
@@ -184,6 +192,7 @@ class PlanBarState extends ConsumerState<PlanBar> {
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
                 itemBuilder: (context, i) => _PlanBarTile(
                   meal: widget.meals[i],
+                  slot: slots[widget.meals[i].id],
                   showMacros: widget.showMacros,
                   onOpen: () => _openMealSheet(widget.meals[i]),
                   onRemove: () => widget.onRemove(widget.meals[i]),
@@ -230,19 +239,22 @@ class PlanBarState extends ConsumerState<PlanBar> {
   }
 }
 
-/// One tile in the expanded bar: a corner × to drop the meal, the icon and
-/// name (tap for the sheet), the compact macro strip when shown, then the
-/// slot chip beside its stepper.
+/// One tile in the expanded bar: a corner × to drop the meal, the Meal's Dish
+/// photo and name (tap for the sheet), the compact macro strip when shown,
+/// then the slot chip beside its stepper. A Meal with no photo shows none, and
+/// the tile starts at its name (ADR 0003).
 class _PlanBarTile extends StatelessWidget {
   const _PlanBarTile({
     required this.meal,
     required this.onOpen,
     required this.onRemove,
     required this.onServings,
+    this.slot,
     this.showMacros = true,
   });
 
   final PlanMeal meal;
+  final MealPhotoSlot? slot;
   final bool showMacros;
   final VoidCallback onOpen;
   final VoidCallback onRemove;
@@ -275,6 +287,12 @@ class _PlanBarTile extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        MealPhotoThumb(
+                          photo: slot?.photo,
+                          size: 32,
+                          gap: 8,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         Expanded(
                           child: Padding(
                             // Clear of the × in the corner.

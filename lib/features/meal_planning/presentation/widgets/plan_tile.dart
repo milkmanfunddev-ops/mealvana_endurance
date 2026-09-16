@@ -8,11 +8,13 @@ import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../domain/meal_photo.dart';
 import '../../domain/plan_meal.dart';
 import 'card_overflow_menu.dart';
+import 'meal_photo_view.dart';
 import 'slot_chip.dart';
 
-/// One planned meal row: placeholder, name (up to two lines), the slot chip and the
+/// One planned meal row: the picture, name (up to two lines), the slot chip and the
 /// servings-left note, then "×N" on the trailing edge — the prototype's
 /// `.v-tile`. Tap opens the meal's detail page; swipes and the `⋮` overflow
 /// are owned by [PlanList] / the tile (05 §4).
@@ -28,9 +30,16 @@ class PlanTile extends ConsumerWidget {
     this.onSwap,
     this.onRemove,
     this.showMacros = false,
+    this.slot,
   });
 
   final PlanMeal meal;
+
+  /// What this row draws where a picture goes — the library Meal's current
+  /// Dish photo, looked up by [PlanList] and never stored on the plan row
+  /// (ADR 0003). Omitted, or empty, the row draws no picture at all and
+  /// starts at the meal's name.
+  final MealPhotoSlot? slot;
   final VoidCallback onTap;
 
   /// Card-scoped Swap / Remove in a `⋮` overflow after the servings figure
@@ -78,9 +87,15 @@ class PlanTile extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
-              // A plan meal carries no picture of its own yet (the library
-              // join is ticket 03), and nothing stands in for one: the row
-              // starts at the meal's name (ADR 0003).
+              // The library Meal's Dish photo, or no picture slot at all: a
+              // row with nothing to show starts at the meal's name, and a
+              // plan mixing the two still lines up its names and macros
+              // (ADR 0003).
+              MealPhotoThumb(
+                photo: slot?.photo,
+                size: 36,
+                borderRadius: BorderRadius.circular(9),
+              ),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../../shared/widgets/swipe_action_background.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
+import '../../application/plan_meal_photos.dart';
 import '../../domain/plan_meal.dart';
 import 'plan_tile.dart';
 
@@ -14,7 +16,7 @@ import 'plan_tile.dart';
 /// Rows always snap back: the plan data is owned by the Drift watch, so the
 /// action fires in [Dismissible.confirmDismiss] and the dismiss itself is
 /// vetoed.
-class PlanList extends StatelessWidget {
+class PlanList extends ConsumerWidget {
   const PlanList({
     super.key,
     required this.meals,
@@ -35,8 +37,13 @@ class PlanList extends StatelessWidget {
   final bool showMacros;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final radius = BorderRadius.circular(AppSpacing.sm);
+
+    // Each row's picture is its library Meal's current Dish photo, looked up
+    // by meal id and never stored on the plan row — so a photo added to a
+    // Meal later reaches a plan already made (ADR 0003).
+    final slots = ref.planPhotoSlots(meals);
 
     return Column(
       children: [
@@ -84,6 +91,7 @@ class PlanList extends StatelessWidget {
             onDismissed: (_) {},
             child: PlanTile(
               meal: meal,
+              slot: slots[meal.id],
               onTap: () => onTapMeal(meal),
               onSwap: () => onSwap(meal),
               onRemove: () => onRemove(meal),
