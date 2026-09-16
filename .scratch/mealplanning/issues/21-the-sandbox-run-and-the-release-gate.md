@@ -1,6 +1,6 @@
 # 21: The sandbox run and the release gate
 
-**Status:** built (wave 3, 2026-09-15); waits on Lee's two sandbox runs. Not a wave ticket: an agent cannot subscribe with a sandbox account, so waves 3, 4 and 5 each failed it for that reason alone.
+**Status:** built (wave 3, 2026-09-15); the wizard exists, Lee has said (2026-09-16) he will not run it. The release gate it names (playbook P3c) stays on paper until he or Xuan rules otherwise.
 **Blocked by:** nothing an agent can do.
 **Next:** Lee, on physical phones with fresh sandbox accounts: `scripts/sandbox-trial-wizard.sh preflight`, then `scripts/sandbox-trial-wizard.sh` (see `docs/release/sandbox-trial-runs/README.md`). Tick the last box and set the status to done when both logs are green.
 
@@ -14,4 +14,4 @@
 - [x] The release checklist names the run as a gate for any meal-planning release.
 - [ ] One run on each store is logged green before the ticket closes.
 
-Next: Lee runs the wizard on both stores; not `/implement-lee`.
+Next: nothing scheduled; Lee declined the run on 2026-09-16.
