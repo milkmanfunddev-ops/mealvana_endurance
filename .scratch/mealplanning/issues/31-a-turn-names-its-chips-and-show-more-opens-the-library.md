@@ -1,6 +1,6 @@
 # 31: A turn names its chips, and Show more opens the library
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 6, 2026-09-16)
 **Blocked by:** 15 (touches supabase/functions/_shared/vana/persona.ts), 26 (touches supabase/functions/_shared/vana/tools.ts), 27 (touches supabase/functions/_shared/vana/contracts.ts), 30 (touches supabase/functions/_shared/vana/tools.ts).
 **Next:** `/implement-lee mealplanning`
 
