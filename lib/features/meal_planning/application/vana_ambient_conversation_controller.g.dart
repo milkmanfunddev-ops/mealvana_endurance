@@ -75,6 +75,12 @@ String _$vanaClockHash() => r'8ea0cfb6354214b8bafdc1215fba11ffead9b96f';
 /// different one). The server writes the conversation's episode once, so the
 /// next opener has it without waiting. Kept alive so the background signal
 /// fires with no sheet open.
+///
+/// Every entry point that continues the day (the launcher, its full-screen
+/// button, the Plan tab's note card, a moment tap) opens through [openToday]
+/// (mp-275 clause 1). Only the unnamed general conversation it arms can move
+/// the pointer; a conversation started new has its own key
+/// ([vanaNewConversationKey]) and never does.
 
 @ProviderFor(VanaAmbientConversation)
 const vanaAmbientConversationProvider = VanaAmbientConversationProvider._();
@@ -94,6 +100,12 @@ const vanaAmbientConversationProvider = VanaAmbientConversationProvider._();
 /// different one). The server writes the conversation's episode once, so the
 /// next opener has it without waiting. Kept alive so the background signal
 /// fires with no sheet open.
+///
+/// Every entry point that continues the day (the launcher, its full-screen
+/// button, the Plan tab's note card, a moment tap) opens through [openToday]
+/// (mp-275 clause 1). Only the unnamed general conversation it arms can move
+/// the pointer; a conversation started new has its own key
+/// ([vanaNewConversationKey]) and never does.
 final class VanaAmbientConversationProvider
     extends $AsyncNotifierProvider<VanaAmbientConversation, String?> {
   /// The ambient conversation behind the Vana sheet: one general conversation
@@ -111,6 +123,12 @@ final class VanaAmbientConversationProvider
   /// different one). The server writes the conversation's episode once, so the
   /// next opener has it without waiting. Kept alive so the background signal
   /// fires with no sheet open.
+  ///
+  /// Every entry point that continues the day (the launcher, its full-screen
+  /// button, the Plan tab's note card, a moment tap) opens through [openToday]
+  /// (mp-275 clause 1). Only the unnamed general conversation it arms can move
+  /// the pointer; a conversation started new has its own key
+  /// ([vanaNewConversationKey]) and never does.
   const VanaAmbientConversationProvider._()
     : super(
         from: null,
@@ -131,7 +149,7 @@ final class VanaAmbientConversationProvider
 }
 
 String _$vanaAmbientConversationHash() =>
-    r'7cb537e8c51dad527341d5da519c8a66511ce4fa';
+    r'7f860dd83da3533926ea888f36e7b5a551b3cedc';
 
 /// The ambient conversation behind the Vana sheet: one general conversation
 /// per person per day (vana-sheet spec VS-5).
@@ -148,6 +166,12 @@ String _$vanaAmbientConversationHash() =>
 /// different one). The server writes the conversation's episode once, so the
 /// next opener has it without waiting. Kept alive so the background signal
 /// fires with no sheet open.
+///
+/// Every entry point that continues the day (the launcher, its full-screen
+/// button, the Plan tab's note card, a moment tap) opens through [openToday]
+/// (mp-275 clause 1). Only the unnamed general conversation it arms can move
+/// the pointer; a conversation started new has its own key
+/// ([vanaNewConversationKey]) and never does.
 
 abstract class _$VanaAmbientConversation extends $AsyncNotifier<String?> {
   FutureOr<String?> build();
