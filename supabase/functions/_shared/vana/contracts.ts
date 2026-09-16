@@ -94,7 +94,11 @@ export type VanaPart =
   | { kind: 'brief'; text: string; chips: string[]; cites: string[] }                            // weeklyBrief
   | { kind: 'day_guidance'; date: string; label: string; workout: string | null; minCarbsG: number; note: string; suggestions: MealRef[] } // dayGuidance
   | { kind: 'staples'; meals: (MealRef & { timesLogged: number; ticked: boolean })[]; planCarbsPerDay?: number; targetCarbsPerDay?: number | null; covered?: number; of?: number }           // diagnoseStaples (suggest only — nothing is added until tapped)
-  | { kind: 'meal_picker'; title: string; mealType?: MealType; meals: MealRef[]; multi: boolean; defaultServings: number } // suggestMeals
+  // meal_picker — `chips` (additive 2026-09-16, mp-272/mp-230 clause 4, ticket 31): the labels this turn expects next,
+  // 2..4 plain strings the APP draws in its own chip widget; absent or empty and the app's own set applies. A longer
+  // list is clamped to four by the producer, a shorter one dropped — the schema only ever carries a legal one.
+  // `more` (same ticket, mp-230 clause 2): the tail of the SAME search behind "Show more", never the shown handful.
+  | { kind: 'meal_picker'; title: string; mealType?: MealType; meals: MealRef[]; multi: boolean; defaultServings: number; chips?: string[]; more?: MealRef[] } // suggestMeals
   | { kind: 'batch'; plan: MealPlan }                                                             // updateBatch / getBatch
   | { kind: 'rule'; rule: PlanRule; meal?: MealRef }                                              // proposeRule
   | { kind: 'shopping_list'; items: ShoppingItem[]; itemCount: number; skipped: string[] }       // shoppingList
