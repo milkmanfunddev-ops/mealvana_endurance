@@ -28,7 +28,6 @@ import '../../domain/vana_conversation_kind.dart';
 import '../../domain/vana_message.dart';
 import '../../domain/vana_part.dart';
 import '../widgets/meal_sheet.dart';
-import '../widgets/choice_chip_button.dart';
 import '../../application/vana_settings_controller.dart';
 import '../widgets/picker_chips.dart';
 import '../widgets/plan_bar.dart';
@@ -46,7 +45,8 @@ import '../widgets/vana_part_renderer.dart';
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
 /// carry the plan bar (minimized at start and on every new turn), the
 /// review/confirm sheet and the pick/swap remote-ack actions; general chats
-/// get the empty state with example chips. Errors map per the contract:
+/// get the empty state (no example chips: Vana opens on the screen underneath,
+/// mp-268). Errors map per the contract:
 /// offline bubble-copy, 429 "Give me N seconds", 402 top-up sheet (below),
 /// 403 a warning and a status refresh: the router alone moves the athlete
 /// onto the paywall when the SDK agrees (ticket 19, mp-284).
@@ -199,7 +199,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
                       (state.messages.isEmpty &&
                           !state.isStreaming &&
                           !isPlanning))
-                  ? _EmptyState(kind: widget.kind, onPick: _send)
+                  ? _EmptyState(kind: widget.kind)
                   : _buildMessageList(context, state, plan),
             ),
             // The bar slides in over the composer the first time the draft
@@ -1276,15 +1276,15 @@ class _OutOfCreditsStrip extends StatelessWidget {
   }
 }
 
-/// General chats' empty state: Vana's avatar over "Ask me anything", a line
-/// about what she can reach for, then the three example questions as choice
-/// chips (05 §4, prototype `ChatView`'s empty branch). Planning chats with
-/// `c=new` stream the opener instead (handled by the parent).
+/// General chats' empty state: Vana's avatar over "Ask me anything" and a
+/// line about what she can reach for (05 §4, prototype `ChatView`'s empty
+/// branch). No example chips (mp-268 clause 1): the conversation opens on the
+/// screen underneath, so a canned question has nothing to add. Planning chats
+/// with `c=new` stream the opener instead (handled by the parent).
 class _EmptyState extends ConsumerWidget {
-  const _EmptyState({required this.kind, required this.onPick});
+  const _EmptyState({required this.kind});
 
   final VanaConversationKind kind;
-  final ValueChanged<String> onPick;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1292,12 +1292,6 @@ class _EmptyState extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.cream : AppColors.blackberry;
     final muted = textColor.withValues(alpha: 0.6);
-
-    final examples = [
-      content.getValue(ContentKeys.mpGeneralExample1),
-      content.getValue(ContentKeys.mpGeneralExample2),
-      content.getValue(ContentKeys.mpGeneralExample3),
-    ];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
@@ -1328,20 +1322,6 @@ class _EmptyState extends ConsumerWidget {
                 height: 1.5,
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            alignment: WrapAlignment.center,
-            children: [
-              for (final example in examples)
-                ChoiceChipButton(
-                  key: ValueKey('meal_planning.general_example_$example'),
-                  label: example,
-                  onTap: () => onPick(example),
-                ),
-            ],
           ),
         ],
       ),

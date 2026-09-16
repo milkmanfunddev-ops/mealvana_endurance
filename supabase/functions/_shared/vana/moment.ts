@@ -8,6 +8,7 @@
  */
 import type { VanaCtx } from './env.ts';
 import { MAKE_IT_THEIRS, OPENERS } from './persona.ts';
+import { resolveSituation, screenFor, type EntityKind, type Situation } from './situation.ts';
 
 /**
  * What the client sends: which moment, which workout, and the window the device resolved — minutes before the start for
@@ -148,8 +149,38 @@ export function recoveryOpener(s: RecoverySession): string {
   return `${lead} ${relaxed} Aim for the day's carb total, and ~20–30 g of protein within a couple of hours. Write 1–2 sentences that name the finished session and say that. Do not give a deadline, a countdown or a time to eat by. Then call askChoice once, with the question "Want a recovery idea for your next meal?" and exactly two options: ["Give me an idea", "I'll eat normally"]. ${tail}`;
 }
 
-/** The opener for a general conversation: the moment's, when the body names one that resolves, else the general opener. */
-export async function generalOpener(v: VanaCtx, body: { moment?: unknown }): Promise<{ text: string; variant: 'plan' | 'moment' }> {
+/** What a screen can hold that a conversation opens on (mp-268): an event, a meal, a session. A day, a slot, a list or the
+ *  Plan tab's week say nothing the personal opener does not already say better from TARGETS and today's workout. */
+const OPENS_ON = new Set<EntityKind>(['event', 'meal', 'activity']);
+
+/**
+ * The resolved Situation sentence when the screen underneath names a thing of the athlete's own, else null. The resolver
+ * falls back to the bare screen when the id is not theirs or is gone, and that fallback is exactly what it says with no
+ * id at all: a sentence that differs from it is one that read their row.
+ */
+export async function screenUnderneath(v: VanaCtx, raw: unknown): Promise<string | null> {
+  if (!raw || typeof raw !== 'object') return null;
+  const s = raw as Situation;
+  const screen = typeof s.route === 'string' ? screenFor(s.route.trim()) : null;
+  if (!screen || !OPENS_ON.has(screen.entity) || typeof s.entityId !== 'string' || !s.entityId.trim()) return null;
+  const said = await resolveSituation(v, s);
+  const bare = await resolveSituation(v, { ...s, entityId: null });
+  return said && said !== bare ? said : null;
+}
+
+/** The first user message for a general conversation opened over a screen that names something (mp-268 clause 1). */
+export function situationOpener(said: string): string {
+  return `[New conversation, opened over the screen they are on: right now they are ${said}. Open on that: your first sentence is about it and what it means for how they fuel or eat, from the CONTEXT (an event: how far out it is and what the build toward it asks; a meal: how it fits today's targets or session; a session: how to fuel it). "I see you are…" is fine; a readout of the screen is not. If something in the CONTEXT outranks it right now (a race tomorrow, a session starting soon), say that in a second sentence, never instead. ${MAKE_IT_THEIRS} Then askChoice with exactly two things you can help with about it. No greeting.]`;
+}
+
+export type GeneralOpenerVariant = 'plan' | 'moment' | 'situation';
+
+/**
+ * The opener for a general conversation, in order: the moment's, when the body names one that resolves (a contract the
+ * device raised); else one on the screen underneath, when the Situation names an event, a meal or a session of theirs;
+ * else the personal general opener (mp-268 clause 2).
+ */
+export async function generalOpener(v: VanaCtx, body: { moment?: unknown; situation?: unknown }): Promise<{ text: string; variant: GeneralOpenerVariant }> {
   const ref = parseMoment(body.moment);
   let text: string | null = null;
   if (ref?.kind === 'pre_workout') {
@@ -159,5 +190,7 @@ export async function generalOpener(v: VanaCtx, body: { moment?: unknown }): Pro
     const session = await recoverySession(v, ref);
     if (session) text = recoveryOpener(session);
   }
-  return text ? { text, variant: 'moment' } : { text: OPENERS.general, variant: 'plan' };
+  if (text) return { text, variant: 'moment' };
+  const said = await screenUnderneath(v, body.situation);
+  return said ? { text: situationOpener(said), variant: 'situation' } : { text: OPENERS.general, variant: 'plan' };
 }
