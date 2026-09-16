@@ -40,6 +40,7 @@ import '../../domain/vana_message.dart';
 import '../../domain/vana_moment.dart';
 import 'part_entrance.dart';
 import 'streamed_text.dart';
+import 'vana_hand_off.dart';
 import 'vana_part_renderer.dart';
 
 /// Watches the root Navigator for a dialog or sheet on top of the page, so
@@ -368,7 +369,8 @@ String vanaMomentPillLine(ContentService content, VanaMoment moment) {
 /// cream-tinted bubble, the opening's offers as at most two quick replies,
 /// the typing indicator, and the composer. Planning actions a part offers
 /// (picking a meal, accepting a rule, the pantry) open the full-screen chat on
-/// the same conversation, where the plan bar lives.
+/// the same conversation, where the plan bar lives. A hand-off button closes
+/// the sheet and opens the app's own screen for it (mp-265 clause 4).
 ///
 /// Opened on a live [moment] (VM-1), the sheet writes the moment's opener
 /// into the conversation, even one with a thread, and reads the exchange from
@@ -412,12 +414,6 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
   /// Where the exchange on show starts: the moment's opening, or the
   /// conversation's first message.
   late int _exchangeStart = widget.momentStart ?? 0;
-
-  /// Whether the sheet rests at `auto`: it opened on one message and a
-  /// dismiss, and still is one. Decided by the first transcript the sheet
-  /// sees (it rests at 75 % until then); once false it stays false, so the
-  /// sheet grows when the thread starts and does not shrink after that.
-  bool? _restsAtAuto;
 
   VanaChatControllerProvider get _provider => vanaChatControllerProvider(
     kind: _kind,
@@ -495,12 +491,12 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     router.push(vanaAmbientChatLocation(id));
   }
 
-  void _leaveTo(String location, {bool replace = false}) {
+  void _leaveTo(String location, {bool replace = false, Object? extra}) {
     final router = GoRouter.of(context);
     final route = ModalRoute.of(context);
     _close();
     if (!replace) {
-      router.push(location);
+      router.push(location, extra: extra);
       return;
     }
     // Replacing the stack removes the page the sheet sits on, which would cut
@@ -527,14 +523,8 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
             repliesRetired: _repliesRetired,
             raisedFor: widget.moment?.kind.topic,
           );
-    if (exchange != null) {
-      _restsAtAuto = (_restsAtAuto ?? true) && exchange.oneMessage;
-    }
 
     return VanaSheet(
-      rest: _restsAtAuto ?? false
-          ? VanaSheetHeight.auto
-          : VanaSheetHeight.threeQuarters,
       closeLabel: content.getValue(ContentKeys.mpCompanionClose),
       fullScreenLabel: content.getValue(ContentKeys.mpCompanionFullScreen),
       onClose: _close,
@@ -571,6 +561,11 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
       onPlanWeekOpen: () => _leaveTo('/main?tab=food&food=plan', replace: true),
       onPantryUse: (_) => _fullScreen(),
       onSwapPicked: (_) => _fullScreen(),
+      // mp-265 clause 4: the sheet closes and the app's own screen opens.
+      onHandOff: (part) {
+        final to = vanaHandOffDestination(part);
+        _leaveTo(to.location, extra: to.extra);
+      },
     );
     final messages = state.messages;
     final rows = <Widget>[
@@ -594,8 +589,8 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     ];
     final status = exchange.status;
 
-    // As tall as what it holds: under the sheet's `auto` height the column is
-    // the sheet's height; at 75 % and 100 % the transcript sits under the chip.
+    // The sheet has one height (mp-265): the transcript sits under the chip
+    // and scrolls inside it.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,

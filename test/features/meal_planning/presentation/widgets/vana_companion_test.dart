@@ -227,6 +227,13 @@ Future<_Harness> _pump(
           path: path,
           builder: (_, _) => Scaffold(body: Center(child: Text('page $path'))),
         ),
+      // After the plain pages, so `/events/create` stays itself.
+      GoRoute(
+        path: '/events/:eventId',
+        builder: (_, state) => Scaffold(
+          body: Center(child: Text('event ${state.pathParameters['eventId']}')),
+        ),
+      ),
     ],
   );
   addTearDown(router.dispose);
@@ -458,7 +465,7 @@ void main() {
       expect(find.byKey(_launcher), findsNothing);
 
       final sheetTop = tester.getTopLeft(find.byType(VanaSheet)).dy;
-      expect(sheetTop, closeTo(844 * (1 - VanaSheet.restHeightFraction), 1));
+      expect(sheetTop, closeTo(844 * (1 - VanaSheet.heightFraction), 1));
 
       // Scrim tap: back to exactly where they were.
       await tester.tapAt(const Offset(195, 40));
@@ -520,18 +527,19 @@ void main() {
     });
   });
 
-  group('VS-7: the grabber and the three heights', () {
+  group('VS-7 and one height (mp-265)', () {
     Rect glass(WidgetTester tester) =>
         tester.getRect(find.byType(GlassSheetSurface));
 
-    testWidgets('the grabber dragged down closes to the same screen, '
-        'condensing', (tester) async {
+    testWidgets('a drag down closes to the same screen, condensing', (
+      tester,
+    ) async {
       final h = await _pump(tester, initial: '/food');
       await _open(tester);
       final open = glass(tester);
       await tester.drag(
         find.byKey(const ValueKey('vana_sheet.grabber')),
-        const Offset(0, 160),
+        Offset(0, open.height * 0.6),
       );
       await tester.pump();
       await tester.pump(
@@ -544,8 +552,8 @@ void main() {
       expect(find.byKey(_launcher), findsOneWidget);
     });
 
-    testWidgets('a conversation that is one message rests at auto; the '
-        'thread grows it to 75 %, and it stays there', (tester) async {
+    testWidgets('one message opens at the one height, and a send does not '
+        'grow it', (tester) async {
       final repo = _FakeChatRepo();
       final h = await _pump(tester, repo: repo);
       await _open(tester);
@@ -568,26 +576,73 @@ void main() {
       );
       await _open(tester);
       await tester.pumpAndSettle();
-      final auto = glass(tester);
-      expect(auto.height, lessThan(844 * VanaSheet.restHeightFraction - 100));
-      expect(auto.bottom, closeTo(844, 0.5));
+      final one = glass(tester);
+      expect(one.height, closeTo(844 * VanaSheet.heightFraction, 0.5));
+      expect(one.bottom, closeTo(844, 0.5));
 
       await _send(tester, 'what about lunch');
       await tester.pump(VanaSheet.settleDuration);
-      expect(
-        glass(tester).height,
-        closeTo(844 * VanaSheet.restHeightFraction, 0.5),
-      );
+      expect(glass(tester), one);
     });
 
-    testWidgets('an empty conversation rests at 75 % while the opener '
-        'streams in', (tester) async {
+    testWidgets('an empty conversation opens at the one height while the '
+        'opener streams in', (tester) async {
       await _pump(tester);
       await _open(tester);
       expect(
         glass(tester).height,
-        closeTo(844 * VanaSheet.restHeightFraction, 0.5),
+        closeTo(844 * VanaSheet.heightFraction, 0.5),
       );
+    });
+  });
+
+  group('hand-offs (mp-265 clause 4)', () {
+    const planHandOff = VanaHandOffPart(
+      target: VanaHandOffTarget.mealPlan,
+      label: 'Plan my meals',
+    );
+
+    testWidgets('asked for a plan, Vana answers with a button, not a picker; '
+        'a tap closes the sheet onto the meal-planning page', (tester) async {
+      final repo = _FakeChatRepo()..replyParts = const [planHandOff];
+      final h = await _pump(tester, repo: repo);
+      await _open(tester);
+      await _send(tester, 'make me a meal plan for the week');
+
+      expect(find.byType(MealPickerCarousel), findsNothing);
+      final button = find.byKey(const ValueKey('meal_planning.hand_off'));
+      expect(button, findsOneWidget);
+      expect(
+        find.ancestor(of: button, matching: find.byType(VanaSheetVanaTurn)),
+        findsOneWidget,
+      );
+
+      await tester.tap(button);
+      await _condensed(tester);
+      await tester.pumpAndSettle();
+      expect(find.byType(VanaSheet), findsNothing);
+      expect(h.location, '/food');
+      expect(find.byKey(const ValueKey('plan_tab.list')), findsOneWidget);
+    });
+
+    testWidgets('an event hand-off with an id lands on that event', (
+      tester,
+    ) async {
+      final repo = _FakeChatRepo()
+        ..replyParts = const [
+          VanaHandOffPart(
+            target: VanaHandOffTarget.carbLoading,
+            label: 'Set up carb loading',
+            entityId: 'ev-1',
+          ),
+        ];
+      final h = await _pump(tester, repo: repo);
+      await _open(tester);
+      await _send(tester, 'carb loading for my marathon');
+      await tester.tap(find.byKey(const ValueKey('meal_planning.hand_off')));
+      await _condensed(tester);
+      await tester.pumpAndSettle();
+      expect(h.location, '/events/ev-1');
     });
   });
 

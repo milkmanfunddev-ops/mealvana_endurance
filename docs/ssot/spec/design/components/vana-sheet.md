@@ -1,8 +1,11 @@
 # Design SSOT — Component: Vana Sheet
 
-**Status: PROPOSED v1 (Lee, 2026-09-11) — authored app-side, awaiting Xuan.** Drafted 2026-09-09
-and revised 2026-09-10 against the companion export. Q-VS1 and Q-VS2 were confirmed by Lee on
-2026-09-11, and the readings the app build settled were folded in the same day. This file lives in
+**Status: PROPOSED v2 (app-authored 2026-09-15, mealplanning ticket 27) — awaiting Xuan's
+ratification in the QA repo.** v2 replaces v1's three heights with one standard height, drops the
+grabber's expand and its custom thresholds, and makes full screen only the button's (decision
+mp-265; the ticket's card is mp-305). v1 (Lee, 2026-09-11) was drafted 2026-09-09 and revised
+2026-09-10 against the companion export; Q-VS2 was confirmed by Lee on 2026-09-11, and the readings
+the app build settled were folded in the same day. This file lives in
 the app repo until Xuan takes it into the QA repo; an older draft sits unpushed in a local QA
 checkout. Ships as part of `home-shell@v1`'s reserved utility slot.
 **Reference rendering:** `New Homepage with updated navbar calendar and chat.html` (Claude Design
@@ -46,11 +49,13 @@ understood as the launcher opened up, and the motion says so. "The launcher's ow
 launcher's **centre**, in its corner: the export's `transform-origin` is
 `calc(100% - 42px) calc(100% - 48px)`, the centre of its 52 px launcher at 16 px right, 22 px bottom.
 
-**Three heights, not one.** `auto` for a sheet that is one message and a dismiss; **75 %** at rest
-for a sheet with a card and replies; **100 %** expanded. The grabber drags between them. The page
-stays visible at rest, which is the contract; the numbers are the export's. **"A dismiss" is any
-single reply**, whatever it says; a receipt part (memory saved, logged) counts as a card. `auto` is
-as tall as what the sheet holds, up to 75 %. **100 %** stops under the status bar.
+**One height (v2, mp-265).** The sheet opens at one standard height, **75 %** of the screen, and
+its contents scroll within it. There is no `auto` height and no expanded state: nothing grows with
+what the sheet holds, nothing grows on send, and nothing resizes while Vana streams. Only the
+keyboard takes room from it. The page stays visible above it, which is the contract. The grabber
+stays as the drag handle; it no longer expands the sheet on a drag or a tap. **Full screen is only
+the full-screen button** (VS-3): a bigger view of the same conversation, nothing changes for Vana.
+The sheet keeps one widget tree shape, so nothing remounts the composer.
 
 **Inside the sheet**, top to bottom: a **status chip** naming what this exchange is about
 (`Fuel plan · to do` in `orange` when there is something to do, `Update` in `electrolyte` when there
@@ -61,7 +66,10 @@ cream-tinted bubble and Vana's stay flush left with no bubble; a typing indicato
 whose send control is inert grey until there is a draft and `orange` once there is.
 
 The generative-UI parts Vana already renders (pickers, plans, shopping lists) compose inside the
-message column unchanged. This spec does not re-contract them.
+message column unchanged. This spec does not re-contract them. One of them is the **hand-off
+button** (mp-265 clause 4): when the athlete is trying to do something the app already has a screen
+for, Vana answers with a button that closes the sheet and opens that screen instead of doing it in
+the sheet. Which asks get one is the persona's business.
 
 ## States
 
@@ -69,7 +77,7 @@ message column unchanged. This spec does not re-contract them.
 |---|---|
 | `CLOSED` | Launcher only. No scrim, no sheet, nothing dimmed. |
 | `OPEN` | Scrim + sheet at rest height. The page behind stays legible through the glass — a sheet that hides its page has failed the material. Composer focused is still `OPEN`, not a fifth state. |
-| `STREAMING` | `OPEN` plus the turn in flight: a typing indicator where the answer will land, and quick replies suppressed. The sheet does not resize while streaming. |
+| `STREAMING` | `OPEN` plus the turn in flight: a typing indicator where the answer will land, and quick replies suppressed. The sheet never resizes while streaming. |
 | `ERROR` | `OPEN` plus one plain line and a retry. Never a dialog, never a snackbar over the sheet — the sheet is already the surface in front of the athlete. |
 
 Exactly one at a time. There is no loading state: the sheet opens to whatever the conversation
@@ -96,19 +104,20 @@ report.
 | # | Gesture | Contract |
 |---|---|---|
 | VS-1 | Tap the launcher | `CLOSED` → `OPEN`. Summons over the current screen; the screen is not navigated away from and its scroll position is untouched |
-| VS-2 | Tap the scrim, swipe the grabber down, or system back | `OPEN` → `CLOSED`, returning to exactly the screen and position underneath |
-| VS-3 | Tap the full-screen affordance | Opens the existing Vana chat route **carrying the same conversation**; the sheet closes as it goes. Not a new conversation, not a second transcript |
-| VS-4 | Send while `OPEN` | → `STREAMING`; the stream never changes the sheet's height. The one exception is the athlete's own first send from `auto`, which grows the sheet to 75 % once, in that frame (holding `auto` would grow it with every streamed word) |
+| VS-2 | Tap the scrim, the dismiss button, a drag down, or system back | `OPEN` → `CLOSED`, returning to exactly the screen and position underneath. Dismissing drops the composer's focus, so the keyboard never outlives the sheet |
+| VS-3 | Tap the full-screen affordance | Opens the existing Vana chat route **carrying the same conversation**; the sheet closes as it goes. Not a new conversation, not a second transcript. The only way to full screen |
+| VS-4 | Send while `OPEN` | → `STREAMING`; neither the send nor the stream changes the sheet's height (v2: no exception) |
 | VS-5 | (continuity invariant) | Opening the sheet again later the same day continues the same ambient conversation; the next day opens a new one. Nothing about this is visible as chrome — it is what the athlete finds in the transcript |
 | VS-6 | (suppression invariant) | On an excluded route the launcher does not render. It is not disabled, not hidden behind an opacity — there is no node |
-| VS-7 | Drag the grabber | Between the three heights. Dragging down past the shortest dismisses, taking the VS-2 path. The export's thresholds: 24 px up expands; 90 px down collapses from 100 % or dismisses from rest; from 100 %, 90 px past the rest line dismisses; a tap on the grabber toggles 100 %; an upward pull at rest gives at 35 % |
+| VS-7 | Drag down | The sheet follows the finger down and dismisses by the platform bottom sheet's own rule, taking the VS-2 path: released past half its height, or flicked. Short of that it springs back. A drag up does nothing. No custom thresholds (v2) |
 | VS-8 | Tap a quick reply | Sends it as the athlete's turn. Quick replies vanish as soon as the thread has anything in it, and never come back in that exchange |
 | VS-9 | (dismiss invariant) | Every dismissal condenses into the launcher; none of them slides the sheet off-screen. Whatever the athlete was reading ends where the thing that will bring it back lives |
 
 ## Open questions for the ruling desk
 
-- **Q-VS1 — rest height. CLOSED (answered by the export 2026-09-10, confirmed by Lee 2026-09-11):**
-  three heights, `auto` / 75 % / 100 %, with the grabber dragging between them. Recorded above.
+- **Q-VS1 — rest height. CLOSED, then SUPERSEDED.** v1 recorded three heights, `auto` / 75 % /
+  100 % (the export, confirmed by Lee 2026-09-11). Lee rejected that on 2026-09-14 ("just one height
+  and make things standardized"); mp-265 rules one height, recorded above in v2.
 - **Q-VS2 — the launcher's mark. CLOSED (answered by the export 2026-09-10, confirmed by Lee
   2026-09-11):** a speech-bubble outline, drawn as a path rather than taken from Font Awesome — the
   first branded glyph on the shell, confirmed deliberately.

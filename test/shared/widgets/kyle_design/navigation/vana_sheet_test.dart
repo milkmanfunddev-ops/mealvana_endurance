@@ -1,10 +1,12 @@
-/// vana-sheet spec (PROPOSED), the gestures of ticket 08:
-///   Q-VS1  three heights — `auto`, 75 % at rest, 100 % expanded; the page
-///          stays visible at rest
-///   VS-7   the grabber drags between them; down past the shortest dismisses
-///   VS-2   scrim, grabber, system back (and the dismiss button) close it
+/// vana-sheet spec (PROPOSED v2, ticket 27 — mp-265):
+///   one height — the sheet opens at one standard height and its contents
+///          scroll; nothing grows with what it holds, nothing resizes on
+///          send or while Vana streams; no expanded state from a drag
+///   VS-7   a plain drag down dismisses: past half the sheet, or a flick,
+///          the platform bottom sheet's own rule — no custom thresholds
+///   VS-2   scrim, system back and the dismiss button close it
 ///   VS-9   every dismissal condenses into the launcher, none slides away
-///   and the composer lets go of focus when the sheet collapses or closes.
+///   and the composer lets go of focus when the sheet closes.
 library;
 
 import 'dart:async';
@@ -20,15 +22,17 @@ const _close = ValueKey('vana_sheet.close');
 const _composer = ValueKey('composer');
 
 class _Harness {
-  _Harness(this.navigator, this.rest, this.focus);
+  _Harness(this.navigator, this.rows, this.focus);
   final NavigatorState navigator;
-  final ValueNotifier<VanaSheetHeight> rest;
+
+  /// How many 60 px rows the body holds.
+  final ValueNotifier<int> rows;
   final FocusNode focus;
 }
 
 Future<_Harness> _pump(
   WidgetTester tester, {
-  VanaSheetHeight rest = VanaSheetHeight.threeQuarters,
+  int rows = 1,
   double topInset = 0,
 }) async {
   tester.view.physicalSize = _screen;
@@ -37,10 +41,10 @@ Future<_Harness> _pump(
   addTearDown(tester.view.reset);
 
   final navigatorKey = GlobalKey<NavigatorState>();
-  final restHeight = ValueNotifier(rest);
+  final rowCount = ValueNotifier(rows);
   final focus = FocusNode();
   final text = TextEditingController();
-  addTearDown(restHeight.dispose);
+  addTearDown(rowCount.dispose);
   addTearDown(focus.dispose);
   addTearDown(text.dispose);
 
@@ -55,151 +59,107 @@ Future<_Harness> _pump(
     navigator.push(
       VanaSheetRoute<void>(
         barrierLabel: 'Close',
-        builder: (context) => ValueListenableBuilder(
-          valueListenable: restHeight,
-          builder: (context, value, _) => VanaSheet(
-            rest: value,
-            closeLabel: 'Close',
-            fullScreenLabel: 'Full screen',
-            onClose: () => Navigator.of(context).pop(),
-            onFullScreen: () {},
-            body: ListView(
+        builder: (context) => VanaSheet(
+          closeLabel: 'Close',
+          fullScreenLabel: 'Full screen',
+          onClose: () => Navigator.of(context).pop(),
+          onFullScreen: () {},
+          body: ValueListenableBuilder(
+            valueListenable: rowCount,
+            builder: (context, n, _) => ListView(
+              key: const ValueKey('body'),
               shrinkWrap: true,
-              children: const [
-                SizedBox(height: 60, child: Text('Run fuelling is set.')),
+              children: [
+                for (var i = 0; i < n; i++)
+                  SizedBox(height: 60, child: Text('row $i')),
               ],
             ),
-            composer: TextField(
-              key: _composer,
-              controller: text,
-              focusNode: focus,
-            ),
+          ),
+          composer: TextField(
+            key: _composer,
+            controller: text,
+            focusNode: focus,
           ),
         ),
       ),
     ),
   );
   await tester.pumpAndSettle();
-  return _Harness(navigator, restHeight, focus);
+  return _Harness(navigator, rowCount, focus);
 }
 
 /// The glass as drawn: a drag moves it inside the sheet's own box.
 Rect _sheet(WidgetTester tester) =>
     tester.getRect(find.byType(GlassSheetSurface));
 
-double get _threeQuarters => _screen.height * VanaSheet.restHeightFraction;
-
-/// Drag the grabber by [dy] and let the sheet settle where it lands.
-Future<void> _dragGrabber(WidgetTester tester, double dy) async {
-  await tester.drag(find.byKey(_grabber), Offset(0, dy));
-  await tester.pumpAndSettle();
-}
+double get _height => _screen.height * VanaSheet.heightFraction;
 
 void main() {
-  group('Q-VS1: three heights', () {
-    testWidgets('75 % at rest, with the page visible above it', (tester) async {
+  group('one height (mp-265)', () {
+    testWidgets('one message opens at the standard height, the page visible '
+        'above it', (tester) async {
       await _pump(tester);
       final sheet = _sheet(tester);
-      expect(sheet.height, closeTo(_threeQuarters, 0.5));
+      expect(sheet.height, closeTo(_height, 0.5));
       expect(sheet.bottom, closeTo(_screen.height, 0.5));
       expect(sheet.top, greaterThan(0));
       expect(find.text('page'), findsOneWidget);
     });
 
-    testWidgets('auto is as tall as what it holds', (tester) async {
-      await _pump(tester, rest: VanaSheetHeight.auto);
-      final sheet = _sheet(tester);
-      expect(sheet.height, lessThan(_threeQuarters / 2));
-      expect(sheet.bottom, closeTo(_screen.height, 0.5));
-      // The chrome, the one message and the composer, nothing more.
-      expect(
-        tester.getRect(find.byKey(_composer)).bottom,
-        lessThanOrEqualTo(sheet.bottom),
-      );
-      expect(
-        tester.getRect(find.text('Run fuelling is set.')).top,
-        greaterThan(sheet.top),
-      );
-    });
-
-    testWidgets('100 % stops under the status bar', (tester) async {
-      await _pump(tester, topInset: 47);
-      await _dragGrabber(tester, -120);
-      expect(_sheet(tester).top, closeTo(47, 0.5));
-    });
-
-    testWidgets('an auto sheet grows to 75 % when it stops being one message', (
-      tester,
-    ) async {
-      final h = await _pump(tester, rest: VanaSheetHeight.auto);
-      h.rest.value = VanaSheetHeight.threeQuarters;
+    testWidgets('the height does not follow what the sheet holds: nothing '
+        'grows as the conversation does', (tester) async {
+      final h = await _pump(tester);
+      final before = _sheet(tester);
+      h.rows.value = 4;
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      final mid = _sheet(tester).height;
+      expect(_sheet(tester), before);
       await tester.pumpAndSettle();
-      expect(_sheet(tester).height, closeTo(_threeQuarters, 0.5));
-      // It grows rather than jumping.
-      expect(mid, lessThan(_threeQuarters));
+      expect(_sheet(tester), before);
+    });
+
+    testWidgets('contents taller than the sheet scroll inside it', (
+      tester,
+    ) async {
+      await _pump(tester, rows: 40);
+      expect(_sheet(tester).height, closeTo(_height, 0.5));
+      final composer = tester.getRect(find.byKey(_composer));
+      expect(composer.bottom, lessThanOrEqualTo(_screen.height));
+      await tester.drag(find.byKey(const ValueKey('body')), const Offset(0, -600));
+      await tester.pumpAndSettle();
+      expect(find.text('row 0'), findsNothing);
+      expect(_sheet(tester).height, closeTo(_height, 0.5));
+    });
+
+    testWidgets('a drag up does not expand it', (tester) async {
+      await _pump(tester, topInset: 47);
+      final rest = _sheet(tester);
+      await tester.drag(find.byKey(_grabber), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(_sheet(tester), rest);
+    });
+
+    testWidgets('a tap on the grabber does not expand it', (tester) async {
+      await _pump(tester);
+      final rest = _sheet(tester);
+      await tester.tap(find.byKey(_grabber));
+      await tester.pumpAndSettle();
+      expect(_sheet(tester), rest);
+    });
+
+    testWidgets('the composer keeps focus as the conversation grows', (
+      tester,
+    ) async {
+      final h = await _pump(tester);
+      await tester.tap(find.byKey(_composer));
+      await tester.pump();
+      h.rows.value = 20;
+      await tester.pumpAndSettle();
+      expect(h.focus.hasFocus, isTrue);
     });
   });
 
-  group('VS-7: the grabber drags between the heights', () {
-    testWidgets('up from 75 % expands to 100 %; down comes back to 75 %', (
-      tester,
-    ) async {
-      await _pump(tester);
-      await _dragGrabber(tester, -120);
-      expect(_sheet(tester).top, closeTo(0, 0.5));
-      expect(_sheet(tester).height, closeTo(_screen.height, 0.5));
-
-      await _dragGrabber(tester, 140);
-      expect(_sheet(tester).height, closeTo(_threeQuarters, 0.5));
-      expect(find.byType(VanaSheet), findsOneWidget);
-    });
-
-    testWidgets('up from auto expands to 100 %; down comes back to auto', (
-      tester,
-    ) async {
-      await _pump(tester, rest: VanaSheetHeight.auto);
-      final auto = _sheet(tester);
-      await _dragGrabber(tester, -120);
-      expect(_sheet(tester).height, closeTo(_screen.height, 0.5));
-      await _dragGrabber(tester, 140);
-      expect(_sheet(tester).top, closeTo(auto.top, 0.5));
-      expect(_sheet(tester).height, closeTo(auto.height, 0.5));
-    });
-
-    testWidgets('a tap on the grabber toggles 75 % and 100 %', (tester) async {
-      await _pump(tester);
-      await tester.tap(find.byKey(_grabber));
-      await tester.pumpAndSettle();
-      expect(_sheet(tester).height, closeTo(_screen.height, 0.5));
-      await tester.tap(find.byKey(_grabber));
-      await tester.pumpAndSettle();
-      expect(_sheet(tester).height, closeTo(_threeQuarters, 0.5));
-    });
-
-    testWidgets('a short drag either way springs back to where it was', (
-      tester,
-    ) async {
-      await _pump(tester);
-      final rest = _sheet(tester);
-      await tester.timedDrag(
-        find.byKey(_grabber),
-        const Offset(0, 60),
-        const Duration(seconds: 1),
-      );
-      await tester.pumpAndSettle();
-      expect(_sheet(tester), rest);
-      await tester.timedDrag(
-        find.byKey(_grabber),
-        const Offset(0, -20),
-        const Duration(seconds: 1),
-      );
-      await tester.pumpAndSettle();
-      expect(_sheet(tester), rest);
-    });
-
+  group('VS-7: a plain drag down dismisses', () {
     testWidgets('the sheet follows the finger down while it is held', (
       tester,
     ) async {
@@ -216,65 +176,46 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('a slow pull up from auto, frame by frame, expands', (
-      tester,
-    ) async {
-      await _pump(tester, rest: VanaSheetHeight.auto);
-      final gesture = await tester.startGesture(
-        tester.getCenter(find.byKey(_grabber)),
-      );
-      for (var i = 0; i < 8; i++) {
-        await gesture.moveBy(const Offset(0, -15));
-        await tester.pump(const Duration(milliseconds: 16));
-      }
-      await gesture.up();
-      await tester.pumpAndSettle();
-      expect(_sheet(tester).height, closeTo(_screen.height, 0.5));
-    });
-
-    testWidgets('the composer keeps focus as auto grows to 75 %', (
-      tester,
-    ) async {
-      final h = await _pump(tester, rest: VanaSheetHeight.auto);
-      await tester.tap(find.byKey(_composer));
-      await tester.pump();
-      h.rest.value = VanaSheetHeight.threeQuarters;
-      await tester.pumpAndSettle();
-      expect(h.focus.hasFocus, isTrue);
-    });
-
-    testWidgets('a long drag down from 100 %, past 75 %, dismisses', (
+    testWidgets('a slow drag short of half the sheet springs back', (
       tester,
     ) async {
       await _pump(tester);
-      await _dragGrabber(tester, -120);
-      // 25 % of the screen to the rest line, and the dismiss distance again.
-      await tester.drag(find.byKey(_grabber), const Offset(0, 420));
+      final rest = _sheet(tester);
+      await tester.timedDrag(
+        find.byKey(_grabber),
+        Offset(0, _height * VanaSheet.closeProgressThreshold - 40),
+        const Duration(seconds: 1),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(VanaSheet), findsOneWidget);
+      expect(_sheet(tester), rest);
+    });
+
+    testWidgets('a slow drag past half the sheet dismisses', (tester) async {
+      await _pump(tester);
+      await tester.timedDrag(
+        find.byKey(_grabber),
+        Offset(0, _height * VanaSheet.closeProgressThreshold + 40),
+        const Duration(seconds: 1),
+      );
       await tester.pumpAndSettle();
       expect(find.byType(VanaSheet), findsNothing);
     });
 
-    testWidgets('a tap beside the buttons does not expand the sheet', (
-      tester,
-    ) async {
+    testWidgets('a quick flick down dismisses', (tester) async {
+      await _pump(tester);
+      await tester.fling(find.byKey(_grabber), const Offset(0, 50), 1500);
+      await tester.pumpAndSettle();
+      expect(find.byType(VanaSheet), findsNothing);
+    });
+
+    testWidgets('a tap beside the buttons does nothing', (tester) async {
       await _pump(tester);
       final rest = _sheet(tester);
       final close = tester.getRect(find.byKey(_close));
       await tester.tapAt(Offset(close.left - 70, close.center.dy));
       await tester.pumpAndSettle();
       expect(_sheet(tester), rest);
-    });
-
-    testWidgets('collapsing from 100 % lets go of the composer', (
-      tester,
-    ) async {
-      final h = await _pump(tester);
-      await _dragGrabber(tester, -120);
-      await tester.tap(find.byKey(_composer));
-      await tester.pump();
-      expect(h.focus.hasFocus, isTrue);
-      await _dragGrabber(tester, 140);
-      expect(h.focus.hasFocus, isFalse);
     });
   });
 
@@ -285,8 +226,8 @@ void main() {
       'system back': (tester, _) async {
         await tester.binding.handlePopRoute();
       },
-      'the grabber, down past 75 %': (tester, _) =>
-          tester.drag(find.byKey(_grabber), const Offset(0, 160)),
+      'the grabber, dragged down': (tester, _) =>
+          tester.drag(find.byKey(_grabber), Offset(0, _height * 0.6)),
     };
 
     for (final MapEntry(key: name, value: dismiss) in paths.entries) {
@@ -321,30 +262,5 @@ void main() {
         expect(find.text('page'), findsOneWidget);
       });
     }
-
-    testWidgets('down past an auto sheet dismisses too', (tester) async {
-      await _pump(tester, rest: VanaSheetHeight.auto);
-      await tester.drag(find.byKey(_grabber), const Offset(0, 160));
-      await tester.pumpAndSettle();
-      expect(find.byType(VanaSheet), findsNothing);
-    });
-
-    testWidgets('a quick flick down dismisses from 75 %', (tester) async {
-      await _pump(tester);
-      await tester.fling(find.byKey(_grabber), const Offset(0, 50), 1500);
-      await tester.pumpAndSettle();
-      expect(find.byType(VanaSheet), findsNothing);
-    });
-
-    testWidgets('down from 100 % collapses rather than dismissing', (
-      tester,
-    ) async {
-      await _pump(tester);
-      await _dragGrabber(tester, -120);
-      await tester.drag(find.byKey(_grabber), const Offset(0, 200));
-      await tester.pumpAndSettle();
-      expect(find.byType(VanaSheet), findsOneWidget);
-      expect(_sheet(tester).height, closeTo(_threeQuarters, 0.5));
-    });
   });
 }
