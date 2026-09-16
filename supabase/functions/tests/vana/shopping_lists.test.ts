@@ -99,3 +99,27 @@ Deno.test('actions: deleting a plan-built row leaves a tombstone the merge keeps
   await assertRejects(() => extraAction(v, 'update_shopping_item', { id: 'i1', name: '  ' }), Error, 'name required');
   assertEquals(toItem(v.fake.rows('shopping_items')[0]).source, 'plan');
 });
+
+Deno.test('actions: delete_shopping_list takes the rows with it, empties a plan mirror, answers the most recent list left, then null', async () => {
+  const v = ctx({
+    shopping_lists: [
+      { id: 'a', user_id: U, name: 'a', created_at: '2026-09-01T00:00:00Z' },
+      { id: 'b', user_id: U, name: 'b', plan_id: 'p1', created_at: '2026-09-10T00:00:00Z' },
+      { id: 'x', user_id: 'someone-else', name: 'x', created_at: '2026-09-12T00:00:00Z' },
+    ],
+    shopping_items: [
+      { id: 'i1', list_id: 'b', user_id: U, name: 'Eggs', source: 'plan' },
+      { id: 'i2', list_id: 'a', user_id: U, name: 'Oats' },
+    ],
+    meal_plans: [{ id: 'p1', user_id: U, week_start: '2026-09-13', shopping: [plain('Eggs')] }],
+  });
+  const after = await extraAction(v, 'delete_shopping_list', { id: 'b' });
+  assert(after); ActionResultZ.parse(after);
+  assertEquals(ShoppingListDetailZ.parse(after.list).id, 'a');
+  assertEquals(v.fake.rows('shopping_items').map((r) => r.id), ['i2']);
+  assertEquals(v.fake.rows('meal_plans')[0].shopping, []);
+  // another athlete's list is not this athlete's to delete
+  await assertRejects(() => extraAction(v, 'delete_shopping_list', { id: 'x' }), Error, 'not found');
+  assertEquals((await extraAction(v, 'delete_shopping_list', { id: 'a' }))!.list, null);
+  assertEquals(v.fake.rows('shopping_lists').map((r) => r.id), ['x']);
+});

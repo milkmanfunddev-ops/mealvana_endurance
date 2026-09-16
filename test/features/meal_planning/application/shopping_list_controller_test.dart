@@ -94,6 +94,18 @@ class _ShoppingServer extends Fake implements VanaActionClient {
           parts: const [],
           extras: {'list': _detail(made)},
         );
+      case RenameShoppingListAction(:final id, :final name):
+        final l = _list(id);
+        l['name'] = name;
+        return VanaActionResult(parts: const [], extras: {'list': _detail(l)});
+      case DeleteShoppingListAction(:final id):
+        if (!lists.any((l) => l['id'] == id)) throw StateError('no list $id');
+        lists.removeWhere((l) => l['id'] == id);
+        final sorted = _sorted();
+        return VanaActionResult(
+          parts: const [],
+          extras: {'list': sorted.isEmpty ? null : _detail(sorted.first)},
+        );
       case AddShoppingItemAction(:final listId, :final name, :final qty):
         final l = _list(listId);
         _rows(l).add({
@@ -390,6 +402,164 @@ void main() {
       expect(state.isCurrent, isTrue);
     },
   );
+
+  // ── Rename and delete a list (Shopping tab redesign, 2026-09-16) ──────────
+
+  test('rename: the open list, by id, name settled from the answer', () async {
+    final c = makeContainer();
+    await c.read(shoppingListControllerProvider.future);
+    server.calls.clear();
+
+    await c
+        .read(shoppingListControllerProvider.notifier)
+        .renameList('  Big shop ');
+
+    final action = server.calls.single as RenameShoppingListAction;
+    expect(action.id, 'list-plan');
+    expect(action.name, 'Big shop');
+    final state = c.read(shoppingListControllerProvider).value!;
+    expect(state.listName, 'Big shop');
+    expect(state.listId, 'list-plan');
+    expect(state.itemCount, 3, reason: 'the rows are untouched');
+    expect(state.previous.map((l) => l.id), ['list-old']);
+  });
+
+  test(
+    'rename: a list in history changes name there, the open list does not',
+    () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .renameList('Last week', id: 'list-old');
+
+      expect((server.calls.single as RenameShoppingListAction).id, 'list-old');
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listId, 'list-plan');
+      expect(state.listName, 'Week of ${plan.weekStart}');
+      expect(state.previous.single.name, 'Last week');
+    },
+  );
+
+  test('rename: a blank name is refused before anything is sent', () async {
+    final c = makeContainer();
+    await c.read(shoppingListControllerProvider.future);
+    server.calls.clear();
+
+    await expectLater(
+      c.read(shoppingListControllerProvider.notifier).renameList('   '),
+      throwsStateError,
+    );
+    expect(server.calls, isEmpty);
+  });
+
+  test('rename: a failed write puts the old name back', () async {
+    final c = makeContainer();
+    final before = await c.read(shoppingListControllerProvider.future);
+    server.failWith = StateError('offline');
+
+    await expectLater(
+      c.read(shoppingListControllerProvider.notifier).renameList('Nope'),
+      throwsStateError,
+    );
+    expect(
+      c.read(shoppingListControllerProvider).value!.listName,
+      before.listName,
+    );
+  });
+
+  test(
+    'delete: the open list goes and the most recent one left takes its place',
+    () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .deleteList('list-plan');
+
+      expect(server.calls.map((a) => a.type), [
+        'delete_shopping_list',
+        'get_shopping_list',
+        'list_shopping_lists',
+      ]);
+      expect((server.calls.first as DeleteShoppingListAction).id, 'list-plan');
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listId, 'list-old');
+      expect(state.isCurrent, isTrue);
+      expect(state.previous, isEmpty);
+      expect(state.items.single.name, 'Oats');
+    },
+  );
+
+  test(
+    'delete: a list in history leaves history, the open list stays',
+    () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      server.calls.clear();
+
+      await c
+          .read(shoppingListControllerProvider.notifier)
+          .deleteList('list-old');
+
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listId, 'list-plan');
+      expect(state.previous, isEmpty);
+      expect(state.itemCount, 3);
+    },
+  );
+
+  test('delete: the last list leaves the empty state', () async {
+    final c = makeContainer();
+    await c.read(shoppingListControllerProvider.future);
+    final n = c.read(shoppingListControllerProvider.notifier);
+
+    await n.deleteList('list-old');
+    await n.deleteList('list-plan');
+
+    final state = c.read(shoppingListControllerProvider).value!;
+    expect(state.listId, isNull);
+    expect(state.hasAnyList, isFalse);
+    expect(state.isEmpty, isTrue);
+  });
+
+  test(
+    'delete: an earlier list opened from history falls back to the current one',
+    () async {
+      final c = makeContainer();
+      await c.read(shoppingListControllerProvider.future);
+      final n = c.read(shoppingListControllerProvider.notifier);
+      await n.openList('list-old');
+      expect(c.read(shoppingListControllerProvider).value!.isCurrent, isFalse);
+
+      await n.deleteList('list-old');
+
+      final state = c.read(shoppingListControllerProvider).value!;
+      expect(state.listId, 'list-plan');
+      expect(state.isCurrent, isTrue);
+      expect(state.previous, isEmpty);
+    },
+  );
+
+  test('delete: a failed write puts today\'s lists back', () async {
+    final c = makeContainer();
+    final before = await c.read(shoppingListControllerProvider.future);
+    server.failWith = StateError('offline');
+    final n = c.read(shoppingListControllerProvider.notifier);
+
+    await expectLater(n.deleteList('list-old'), throwsStateError);
+    var state = c.read(shoppingListControllerProvider).value!;
+    expect(state.previous.map((l) => l.id), ['list-old']);
+
+    await expectLater(n.deleteList('list-plan'), throwsStateError);
+    state = c.read(shoppingListControllerProvider).value!;
+    expect(state.listId, before.listId);
+    expect(state.items.map((i) => i.name), before.items.map((i) => i.name));
+  });
 
   test('a failed write puts the list back and surfaces the error', () async {
     final c = makeContainer();

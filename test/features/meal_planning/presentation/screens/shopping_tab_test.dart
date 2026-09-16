@@ -7,9 +7,11 @@ import 'package:mealvana_endurance/features/kroger/application/kroger_availabili
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_item.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/shopping_list.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/shopping_tab.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/shopping_list.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/shopping_share_button.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import 'package:mealvana_endurance/shared/providers/unit_system_provider.dart';
+import 'package:mealvana_endurance/theme/kyle_design/app_spacing.dart';
 
 import '../helpers/test_content.dart';
 
@@ -68,7 +70,7 @@ void main() {
     expect(find.text('Send to Reminders'), findsNothing);
   });
 
-  _severalListsTests();
+  _redesignTests();
 }
 
 class _FixedShoppingListController extends ShoppingListController {
@@ -80,14 +82,18 @@ class _FixedShoppingListController extends ShoppingListController {
   ShoppingListState build() => seed;
 }
 
-// ── Several lists (2026-09-16): the add row, the header, previous lists ──────
+// ── The redesigned tab (2026-09-16): header, menu, sheets, add row ──────────
 
 class _RecordingShoppingListController extends ShoppingListController {
   _RecordingShoppingListController(this.seed);
 
   final ShoppingListState seed;
   final List<String> opened = [];
+  final List<(String name, String? id)> renames = [];
+  final List<String> deleted = [];
+  final List<(String name, String qty)> added = [];
   int newLists = 0;
+  int backToCurrent = 0;
 
   @override
   ShoppingListState build() => seed;
@@ -96,13 +102,28 @@ class _RecordingShoppingListController extends ShoppingListController {
   Future<void> openList(String listId) async => opened.add(listId);
 
   @override
+  Future<void> openCurrent() async => backToCurrent++;
+
+  @override
   Future<void> newList({String? name}) async => newLists++;
+
+  @override
+  Future<void> renameList(String name, {String? id}) async =>
+      renames.add((name, id));
+
+  @override
+  Future<void> deleteList(String id) async => deleted.add(id);
+
+  @override
+  Future<void> addItem(String name, {String qty = ''}) async =>
+      added.add((name, qty));
 }
 
 Future<_RecordingShoppingListController> _pumpTab(
   WidgetTester tester,
-  ShoppingListState state,
-) async {
+  ShoppingListState state, {
+  bool krogerVisible = false,
+}) async {
   final controller = _RecordingShoppingListController(state);
   await tester.pumpWidget(
     ProviderScope(
@@ -110,7 +131,7 @@ Future<_RecordingShoppingListController> _pumpTab(
         contentServiceProvider.overrideWith(testContentService),
         shoppingListControllerProvider.overrideWith(() => controller),
         unitSystemProvider.overrideWith((ref) async => UnitSystem.imperial),
-        krogerEntryVisibleProvider.overrideWithValue(false),
+        krogerEntryVisibleProvider.overrideWithValue(krogerVisible),
       ],
       child: const MaterialApp(home: Scaffold(body: ShoppingTab())),
     ),
@@ -119,155 +140,399 @@ Future<_RecordingShoppingListController> _pumpTab(
   return controller;
 }
 
+const _broccoli = ShoppingListItem(
+  id: 'r1',
+  listId: 'list-1',
+  aisle: 'Produce',
+  name: 'Broccoli',
+  qty: '2',
+  source: ShoppingItemSource.plan,
+);
+
 ShoppingListState _listState({
   List<ShoppingListSummary> previous = const [],
   bool isCurrent = true,
-}) {
-  const broccoli = ShoppingListItem(
-    id: 'r1',
-    listId: 'list-1',
-    aisle: 'Produce',
-    name: 'Broccoli',
-    qty: '2',
-    source: ShoppingItemSource.plan,
-  );
-  return ShoppingListState(
-    listId: 'list-1',
-    listName: 'Week of 2026-09-13',
-    listDate: DateTime.utc(2026, 9, 14),
-    isCurrent: isCurrent,
-    planId: 'plan-1',
-    isConfirmed: true,
-    items: const [broccoli],
-    byAisle: const {
-      'Produce': [broccoli],
-    },
-    itemCount: 1,
-    previous: previous,
-  );
-}
+  bool empty = false,
+  String? planId = 'plan-1',
+}) => ShoppingListState(
+  listId: 'list-1',
+  listName: 'Week of 2026-09-13',
+  listDate: DateTime.utc(2026, 9, 14),
+  isCurrent: isCurrent,
+  planId: planId,
+  isConfirmed: planId != null,
+  items: empty ? const [] : const [_broccoli],
+  byAisle: empty
+      ? const {}
+      : const {
+          'Produce': [_broccoli],
+        },
+  itemCount: empty ? 0 : 1,
+  previous: previous,
+);
 
-ShoppingListSummary _summary(String id, String name) => ShoppingListSummary(
+ShoppingListSummary _summary(
+  String id,
+  String name, {
+  DateTime? on,
+  String? planId,
+}) => ShoppingListSummary(
   id: id,
-  planId: null,
+  planId: planId,
   name: name,
-  createdAt: DateTime.utc(2026, 9, 6),
-  updatedAt: DateTime.utc(2026, 9, 6),
+  createdAt: on ?? DateTime.utc(2026, 9, 6),
+  updatedAt: on ?? DateTime.utc(2026, 9, 6),
   confirmedAt: null,
   itemCount: 4,
 );
 
-void _severalListsTests() {
+Future<void> _openMenu(WidgetTester tester, String menuKey) async {
+  await tester.tap(find.byKey(ValueKey(menuKey)));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _choose(WidgetTester tester, String itemKey) async {
+  await tester.tap(find.byKey(ValueKey(itemKey)));
+  await tester.pumpAndSettle();
+}
+
+void _redesignTests() {
   final content = loadDefaultContent();
 
-  testWidgets(
-    'the current list shows its name, an add row, and a New list button',
-    (tester) async {
+  group('header', () {
+    testWidgets('shows the name and date, a menu, and no inline add fields', (
+      tester,
+    ) async {
       await _pumpTab(tester, _listState());
 
       expect(find.text('Week of 2026-09-13'), findsOneWidget);
       expect(
+        find.byKey(const ValueKey('meal_planning.shopping_list_date')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_menu')),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey('meal_planning.shopping_add_name')),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.byType(TextField), findsNothing);
       expect(
-        find.byKey(const ValueKey('meal_planning.shopping_add_qty')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('meal_planning.shopping_add_submit')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('meal_planning.shopping_new_list')),
+        find.byKey(const ValueKey('meal_planning.shopping_add_item')),
         findsOneWidget,
       );
       expect(
         find.byKey(const ValueKey('meal_planning.shopping_row_menu_Broccoli')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('the menu offers New list, Previous lists and Delete list', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, _listState());
+
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_new_list')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_previous')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_delete_list')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey('meal_planning.shopping_back_to_current')),
         findsNothing,
+        reason: 'the current list has nothing to go back to',
       );
-    },
-  );
 
-  testWidgets('the row menu offers Edit and Delete', (tester) async {
-    await _pumpTab(tester, _listState());
+      await _choose(tester, 'meal_planning.shopping_new_list');
+      expect(controller.newLists, 1);
+    });
 
-    await tester.tap(
-      find.byKey(const ValueKey('meal_planning.shopping_row_menu_Broccoli')),
-    );
-    await tester.pumpAndSettle();
+    testWidgets('tapping the name opens a prefilled rename sheet', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, _listState());
 
-    expect(
-      find.text(content['meal_planning.shopping_edit_action']!),
-      findsOneWidget,
-    );
-    expect(
-      find.text(content['meal_planning.shopping_delete_action']!),
-      findsOneWidget,
-    );
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_list_name')),
+      );
+      await tester.pumpAndSettle();
+
+      final field = find.byKey(
+        const ValueKey('meal_planning.shopping_rename_name'),
+      );
+      expect(field, findsOneWidget);
+      expect(find.text('Week of 2026-09-13'), findsWidgets);
+      await tester.enterText(field, 'Big shop');
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_rename_save')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.renames, [('Big shop', 'list-1')]);
+    });
+
+    testWidgets('Delete list asks first; Keep it sends nothing', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, _listState());
+
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_delete_list');
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_delete_confirm')),
+        findsOneWidget,
+      );
+      await _choose(tester, 'meal_planning.shopping_delete_cancel');
+      expect(controller.deleted, isEmpty);
+
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_delete_list');
+      await _choose(tester, 'meal_planning.shopping_delete_go');
+      expect(controller.deleted, ['list-1']);
+    });
+
+    testWidgets('an earlier list says so and the menu offers the way back', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, _listState(isCurrent: false));
+
+      expect(
+        find.textContaining(content['meal_planning.shopping_viewing_prior']!),
+        findsOneWidget,
+      );
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_back_to_current');
+      expect(controller.backToCurrent, 1);
+    });
   });
 
-  testWidgets(
-    'Previous lists starts collapsed and opens to the earlier lists, newest first',
-    (tester) async {
-      final controller = await _pumpTab(
-        tester,
-        _listState(
-          previous: [
-            _summary('list-a', 'Costco'),
-            _summary('list-b', 'Old week'),
-          ],
-        ),
-      );
+  group('lines', () {
+    testWidgets('the add row opens an empty sheet whose Add calls addItem', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, _listState());
 
-      expect(find.text('Costco'), findsNothing);
       await tester.tap(
-        find.byKey(const ValueKey('meal_planning.shopping_previous')),
+        find.byKey(const ValueKey('meal_planning.shopping_add_item')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_add_sheet')),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('meal_planning.shopping_add_name')),
+        'Milk',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('meal_planning.shopping_add_qty')),
+        '1 gal',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_add_submit')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(controller.added, [('Milk', '1 gal')]);
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_add_sheet')),
+        findsNothing,
+        reason: 'the sheet closes; the next add starts clean',
+      );
+    });
+
+    testWidgets('the add row is the last thing under the list', (tester) async {
+      await _pumpTab(tester, _listState());
+
+      final list = find.byType(ShoppingList);
+      final add = find.byKey(const ValueKey('meal_planning.shopping_add_item'));
+      expect(
+        tester.getTopLeft(add).dy,
+        greaterThanOrEqualTo(tester.getBottomLeft(list).dy),
+      );
+    });
+
+    testWidgets(
+      'an empty hand list says so quietly and never shows the no-list copy',
+      (tester) async {
+        await _pumpTab(tester, _listState(empty: true, planId: null));
+
+        expect(
+          find.byKey(const ValueKey('meal_planning.shopping_list_empty')),
+          findsOneWidget,
+        );
+        expect(
+          find.text(content['meal_planning.shopping_empty_title']!),
+          findsNothing,
+        );
+        expect(find.textContaining('Confirm a meal plan'), findsNothing);
+        expect(
+          find.byKey(const ValueKey('meal_planning.shopping_add_item')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('no list anywhere: the empty state still offers New list', (
+      tester,
+    ) async {
+      final controller = await _pumpTab(tester, const ShoppingListState());
+
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_empty')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_menu')),
+        findsNothing,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_new_list')),
       );
       await tester.pump();
+      expect(controller.newLists, 1);
+    });
+  });
+
+  group('Kroger', () {
+    testWidgets(
+      'a plan list features the hand-off full width under the header',
+      (tester) async {
+        await _pumpTab(tester, _listState(), krogerVisible: true);
+
+        final entry = find.byKey(const ValueKey('meal_planning.kroger'));
+        expect(entry, findsOneWidget);
+        final width = tester.getSize(find.byType(ShoppingTab)).width;
+        expect(tester.getSize(entry).width, width - 2 * AppSpacing.md);
+        expect(
+          tester.getBottomLeft(entry).dy,
+          lessThan(tester.getTopLeft(find.byType(ShoppingList)).dy),
+        );
+        expect(
+          tester.getTopLeft(entry).dy,
+          greaterThan(
+            tester
+                .getBottomLeft(
+                  find.byKey(
+                    const ValueKey('meal_planning.shopping_list_name'),
+                  ),
+                )
+                .dy,
+          ),
+        );
+      },
+    );
+
+    testWidgets('a hand list has no Kroger button', (tester) async {
+      await _pumpTab(tester, _listState(planId: null), krogerVisible: true);
+      expect(find.byKey(const ValueKey('meal_planning.kroger')), findsNothing);
+    });
+  });
+
+  group('previous lists sheet', () {
+    final previous = [
+      _summary('list-b', 'Old week', on: DateTime.utc(2026, 9, 6)),
+      _summary(
+        'list-a',
+        'Costco',
+        on: DateTime.utc(2026, 9, 8),
+        planId: 'plan-0',
+      ),
+    ];
+
+    Future<_RecordingShoppingListController> open(WidgetTester tester) async {
+      final controller = await _pumpTab(tester, _listState(previous: previous));
+      await _openMenu(tester, 'meal_planning.shopping_menu');
+      await _choose(tester, 'meal_planning.shopping_previous');
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_previous_sheet')),
+        findsOneWidget,
+      );
+      return controller;
+    }
+
+    testWidgets('lists every list newest first, marking plan lists', (
+      tester,
+    ) async {
+      await open(tester);
+
+      double top(String id) => tester
+          .getTopLeft(
+            find.byKey(ValueKey('meal_planning.shopping_previous_$id')),
+          )
+          .dy;
+      expect(top('list-1'), lessThan(top('list-a')));
+      expect(top('list-a'), lessThan(top('list-b')));
       expect(find.text('Costco'), findsOneWidget);
       expect(find.text('Old week'), findsOneWidget);
-
-      await tester.tap(
-        find.byKey(const ValueKey('meal_planning.shopping_previous_list-b')),
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_from_plan_list-a')),
+        findsOneWidget,
       );
-      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_from_plan_list-1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_from_plan_list-b')),
+        findsNothing,
+      );
+      expect(
+        find.textContaining(
+          content['meal_planning.shopping_previous_current']!,
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('tapping a row opens that list', (tester) async {
+      final controller = await open(tester);
+
+      await _choose(tester, 'meal_planning.shopping_previous_list-b');
       expect(controller.opened, ['list-b']);
-    },
-  );
+      expect(
+        find.byKey(const ValueKey('meal_planning.shopping_previous_sheet')),
+        findsNothing,
+      );
+    });
 
-  testWidgets('an earlier list says so and offers the way back', (
-    tester,
-  ) async {
-    await _pumpTab(tester, _listState(isCurrent: false));
+    testWidgets('a row\'s menu renames that list', (tester) async {
+      final controller = await open(tester);
 
-    expect(
-      find.text(content['meal_planning.shopping_viewing_prior']!),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('meal_planning.shopping_back_to_current')),
-      findsOneWidget,
-    );
-  });
+      await _openMenu(tester, 'meal_planning.shopping_previous_menu_list-a');
+      await _choose(tester, 'meal_planning.shopping_previous_rename_list-a');
+      final field = find.byKey(
+        const ValueKey('meal_planning.shopping_rename_name'),
+      );
+      expect(field, findsOneWidget);
+      await tester.enterText(field, 'Bulk run');
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.shopping_rename_save')),
+      );
+      await tester.pumpAndSettle();
 
-  testWidgets('no list anywhere: the empty state still offers New list', (
-    tester,
-  ) async {
-    final controller = await _pumpTab(tester, const ShoppingListState());
+      expect(controller.renames, [('Bulk run', 'list-a')]);
+    });
 
-    expect(
-      find.byKey(const ValueKey('meal_planning.shopping_empty')),
-      findsOneWidget,
-    );
-    await tester.tap(
-      find.byKey(const ValueKey('meal_planning.shopping_new_list')),
-    );
-    await tester.pump();
-    expect(controller.newLists, 1);
+    testWidgets('a row\'s menu deletes that list after asking', (tester) async {
+      final controller = await open(tester);
+
+      await _openMenu(tester, 'meal_planning.shopping_previous_menu_list-b');
+      await _choose(tester, 'meal_planning.shopping_previous_delete_list-b');
+      await _choose(tester, 'meal_planning.shopping_delete_go');
+
+      expect(controller.deleted, ['list-b']);
+    });
   });
 }
