@@ -2434,3 +2434,216 @@ Last extracted: 1dedc493
 **What it touches.** The fuelling window authority, the create-flow conformance test.
 
 > 2026-09-16 opened in wave 5 ticket 30
+
+## mp-406 · Named chips replace the replies, nothing else
+- category: The planning conversation
+- status: proposed
+- image: none
+- caption:
+- screen: vana-sheet
+- source: wave mealplanning 6 ticket 31
+- detail: yes
+- linked: mp-272
+
+**Context.** mp-272 lets a turn name the chips it expects next. The strip under a picker holds more than replies: two doors out ("Something else…", "Browse meals"), the propose-first door on the first picker ("Draft my whole week"), and the filters once the plan has a meal.
+
+**Question.** Which chips a named list stands in for.
+
+**Decision.** Only the two replies ("I like these" / "Next: …" and "Other options"). The doors and the filters stay whatever the turn named, and the persona is told not to re-say them.
+
+**Why.** Removing the doors strands the athlete with no way to the composer or the catalog; mp-230 clause 4 shows the filters once the plan has a meal without condition.
+
+**What else was considered.** Replacing the whole strip (the wave's first build did, and the review reversed it).
+
+**What it touches.** picker_chips.dart, persona.ts.
+
+> 2026-09-16 proposed in wave 6 ticket 31
+
+## mp-407 · Show more is the tail of the same search, carried on the part
+- category: The planning conversation
+- status: proposed
+- image: none
+- caption:
+- screen: vana-sheet
+- source: wave mealplanning 6 ticket 31
+- detail: yes
+- linked: mp-230
+
+**Context.** mp-230 clause 2 says Show more raises a sheet with many more options from the same search. The ticket named the catalog browser among its files, but the catalog runs its own query.
+
+**Question.** Where the meals behind Show more come from.
+
+**Decision.** The server sends the rest of the picker's own search as an optional list on the picker part, up to twenty-four past the tiles, and the sheet opens over it with no new query. The tiles and their ranking are unchanged. The catalog browser is untouched.
+
+**Why.** Re-querying would not be "the same search"; carrying the tail keeps the sheet honest and instant.
+
+**What else was considered.** Opening the catalog browser filtered by the picker's query.
+
+**What it touches.** contracts.ts, schemas.ts, tools.ts, picker_more_sheet.dart.
+
+> 2026-09-16 proposed in wave 6 ticket 31
+
+## mp-408 · Both sides clamp the chip list, and a broken list means the app's set
+- category: Data, sync and backend
+- status: proposed
+- image: none
+- caption:
+- screen: none (contract)
+- source: wave mealplanning 6 ticket 31
+- detail: yes
+- linked: mp-272
+
+**Context.** mp-272 clause 1 allows two to four plain strings. The model may name five, or one, or blanks.
+
+**Question.** Where a list outside the rule is fixed, and what the app does with one that still arrives broken.
+
+**Decision.** The producer trims, dedupes, caps at four and drops a list under two before it reaches the wire, and the wire schema refuses anything else. The app's parser applies the same rule again rather than trust the wire; a list that fails it is treated as absent, so the app's own set shows and the strip is never malformed.
+
+**Why.** A chip strip is user-facing; a defensive parser costs nothing and a broken strip costs trust. The model's tool input accepts up to eight so a five-label call is clamped, not rejected.
+
+**What else was considered.** Clamping on one side only.
+
+**What it touches.** schemas.ts, tools.ts, vana_part.dart, the frozen meal_picker fixture's contract tests.
+
+> 2026-09-16 proposed in wave 6 ticket 31
+
+## mp-409 · The named chips ride on the picker part, not on every turn
+- category: The planning conversation
+- status: proposed
+- image: none
+- caption:
+- screen: none (contract)
+- source: wave mealplanning 6 ticket 31
+- detail: yes
+- linked: mp-272
+
+**Context.** mp-272 clause 1 says "a Vana turn may carry" the list; clause 2 draws them "as the chips under the picker". A turn without a picker (a pantry question, a batch card, a rule) has no chip strip under it today.
+
+**Question.** Whether the list belongs to the turn or to the picker part.
+
+**Decision.** To the picker part. A turn without a picker cannot name chips in this build.
+
+**Why.** The only strip the app draws is the picker's; a turn-level list would need a strip under every part kind, which no decision asks for.
+
+**What else was considered.** A turn-level field the renderer attaches to whatever part is last.
+
+**What it touches.** contracts.ts, vana_part.dart, vana_part_renderer.dart.
+
+> 2026-09-16 proposed in wave 6 ticket 31
+
+## mp-410 · Do the meals behind Show more count as shown?
+- category: The planning conversation
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: none (contract)
+- source: wave mealplanning 6 ticket 31
+- linked: mp-230
+
+**Context.** mp-230 clause 5 says "Other options" never repeats a meal already shown in the conversation. The tail behind Show more is not marked shown, because the server cannot know whether the sheet was ever opened, and marking twenty-four meals per picker would starve later suggestions fast. An athlete who read the sheet may see one of its meals offered again.
+
+**Question.** Should the tail count as shown, only when the sheet is opened, or not at all?
+
+**Why.** It is a one-line change either way, and only a device pass will say which feels wrong.
+
+**What it touches.** tools.ts.
+
+> 2026-09-16 opened in wave 6 ticket 31
+
+## mp-411 · A fixed tail of twenty-four, and no chip when the tail is empty
+- category: The planning conversation
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: vana-sheet
+- source: wave mealplanning 6 ticket 31
+- linked: mp-230
+
+**Context.** mp-230 clause 2 reads Show more as always present and says the count is not fixed. The build carries at most twenty-four meals past the tiles, and when a filtered search leaves nothing past them the chip is not drawn at all.
+
+**Question.** Is a fixed cap acceptable, and should Show more appear over an empty tail (as a door that says so) or vanish?
+
+**Why.** The review read the clause as unconditional; the build read an empty sheet as not a door.
+
+**What it touches.** tools.ts, picker_chips.dart, vana_part_renderer.dart.
+
+> 2026-09-16 opened in wave 6 ticket 31
+
+## mp-412 · A tick in the More sheet does not reach the picker's swap circles
+- category: The planning conversation
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: vana-sheet
+- source: wave mealplanning 6 ticket 31
+- linked: mp-230
+
+**Context.** The sheet copies the set of picked ids when it opens. A meal ticked in the sheet is added to the draft, but the tiles behind it do not show the swap circle until the next part arrives, and a meal added on the tiles while the sheet is open shows unticked in the sheet.
+
+**Question.** Should the two surfaces share one live picked set, or is a refresh on the next part enough?
+
+**Why.** mp-230 clause 3 gives picked tiles a swap circle; across the two surfaces that is only half honoured.
+
+**What it touches.** picker_more_sheet.dart, vana_part_renderer.dart.
+
+> 2026-09-16 opened in wave 6 ticket 31
+
+## mp-413 · The persona text is edited here and not in the prototype
+- category: Process and scope
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: none (process)
+- source: wave mealplanning 6 ticket 31
+
+**Context.** persona.ts carries a note that its text is verbatim from the prototype repo and must be edited in both places. Wave 6 edited it here only; the prototype is outside the worktree.
+
+**Question.** Is the prototype's copy still a source of truth, or can the note go?
+
+**Why.** A note that says "edit both" and is obeyed by nobody is a trap.
+
+**What it touches.** persona.ts.
+
+> 2026-09-16 opened in wave 6 ticket 31
+
+## mp-414 · The More sheet is a plain modal, not a glass sheet
+- category: Design system
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: vana-sheet
+- source: wave mealplanning 6 ticket 31
+
+**Context.** The vana-sheet spec records that every future summoned glass surface inherits the glass-sheet material and its scrim. The More sheet composes MealCard and the browse Add button over the app's adaptive modal, with no material token cited.
+
+**Question.** Does the More sheet inherit the glass-sheet material, or is a summoned list sheet exempt?
+
+**Why.** The standards review flagged it as a check for design-sync, not a breach of the current text.
+
+**What it touches.** picker_more_sheet.dart, the vana-sheet spec.
+
+> 2026-09-16 opened in wave 6 ticket 31
+
+## mp-415 · A cloned wave simulator lands on the paywall
+- category: Process and scope
+- kind: question
+- status: open
+- image: none
+- caption:
+- screen: none (process)
+- source: wave mealplanning 6 ticket 31
+
+**Context.** The ticket's device check claimed a pool simulator, built and launched the branch on it, and sat on the Pro paywall: a freshly cloned simulator has no StoreKit receipt, Restore purchases finds nothing, and the debug wrench does not get past it. Meal-planning surfaces were unreachable, so the check was not run. Both halves of the ticket also arrive on the wire from vana-chat, which no wave deploys.
+
+**Question.** How a wave agent reaches a Pro surface on a pool device: copy the dev simulator's receipt state, a dev-only bypass, or accept that Pro surfaces are checked on the dev simulator after the wave.
+
+**Why.** Every remaining meal-planning ticket sits behind the paywall.
+
+**What it touches.** sync.mjs simulator claim, the dev paywall gate.
+
+> 2026-09-16 opened in wave 6 ticket 31
