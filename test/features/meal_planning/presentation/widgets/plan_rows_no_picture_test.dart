@@ -5,16 +5,17 @@ import 'package:mealvana_endurance/features/content/application/content_service.
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_icon.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/plan_meal.dart';
-import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picture_placeholder.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/plan_bar.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/plan_tile.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/review_sheet.dart';
 
 import '../helpers/test_content.dart';
 
-/// mp-145 — the plan tile, the plan bar tile and the review sheet row draw
-/// no meal icon. The stored icon key stays on the meal (it is still parsed
-/// and round-tripped) but the row's leading element is the plain placeholder.
+/// ADR 0003 — the plan tile, the plan bar tile and the review sheet row draw
+/// no picture at all: no placeholder box, no meal icon. A plan meal carries no
+/// photo of its own yet (the library join is ticket 03), so every row here
+/// starts at the meal's name. The stored icon key survives on the meal — it is
+/// kept for when it is wanted, just not drawn.
 void main() {
   PlanMeal meal(int i, {String? icon}) => PlanMeal.fromJson({
     'id': 'pm-$i',
@@ -35,16 +36,23 @@ void main() {
     child: MaterialApp(home: Scaffold(body: child)),
   );
 
-  /// The leading element of a row draws nothing: no glyph painter, no icon.
-  void expectPlain(Finder placeholder) {
-    expect(
-      find.descendant(of: placeholder, matching: find.byType(CustomPaint)),
-      findsNothing,
-    );
-    expect(
-      find.descendant(of: placeholder, matching: find.byType(Icon)),
-      findsNothing,
-    );
+  /// Nothing is drawn where a picture would go. The row's own controls — the
+  /// plan bar's ×, the tile's stepper — are not pictures and are left alone,
+  /// so this asks only that no image is fetched and no glyph stands in ahead
+  /// of the meal's name.
+  void expectNoPicture(WidgetTester tester_, Finder row, String name) {
+    expect(find.descendant(of: row, matching: find.byType(Image)), findsNothing);
+    final nameLeft = tester_.getTopLeft(find.text(name)).dx;
+    for (final icon in tester_.widgetList<Icon>(
+      find.descendant(of: row, matching: find.byType(Icon)),
+    )) {
+      final rect = tester_.getRect(find.byWidget(icon));
+      expect(
+        rect.left,
+        greaterThanOrEqualTo(nameLeft),
+        reason: 'nothing is drawn in the picture\'s place, ahead of the name',
+      );
+    }
   }
 
   test('the stored icon key survives on the plan meal', () {
@@ -53,7 +61,7 @@ void main() {
     expect(meals[0].toJson()['icon'], 'fish');
   });
 
-  testWidgets('plan tile: 36pt placeholder, no icon, with or without a key', (
+  testWidgets('plan tile: no picture, the row starts at the name', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -65,15 +73,17 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.byType(MealPicturePlaceholder), findsNWidgets(3));
     for (var i = 0; i < 3; i++) {
-      final p = find.byType(MealPicturePlaceholder).at(i);
-      expect(tester.getSize(p), const Size(36, 36));
-      expectPlain(p);
+      expectNoPicture(tester, find.byType(PlanTile).at(i), 'Meal $i');
     }
+    // Every name sits at the same inset, with or without a stored icon key.
+    final lefts = [
+      for (var i = 0; i < 3; i++) tester.getTopLeft(find.text('Meal $i')).dx,
+    ];
+    expect(lefts.toSet(), hasLength(1));
   });
 
-  testWidgets('plan bar tile: 30pt placeholder, no icon', (tester) async {
+  testWidgets('plan bar tile: no picture', (tester) async {
     await tester.pumpWidget(
       host(
         Column(
@@ -95,17 +105,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final tile = find.byKey(const ValueKey('meal_planning.plan_bar.tile_pm-0'));
-    final p = find.descendant(
-      of: tile,
-      matching: find.byType(MealPicturePlaceholder),
+    expectNoPicture(
+      tester,
+      find.byKey(const ValueKey('meal_planning.plan_bar.tile_pm-0')),
+      'Meal 0',
     );
-    expect(p, findsOneWidget);
-    expect(tester.getSize(p), const Size(30, 30));
-    expectPlain(p);
   });
 
-  testWidgets('review sheet row: 28pt placeholder, no icon', (tester) async {
+  testWidgets('review sheet row: no picture', (tester) async {
     final plan = MealPlan.fromJson({
       'id': 'plan-1',
       'weekStart': '2026-09-14',
@@ -135,9 +142,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(MealPicturePlaceholder), findsNWidgets(3));
-    final p = find.byType(MealPicturePlaceholder).first;
-    expect(tester.getSize(p), const Size(28, 28));
-    expectPlain(p);
+    expect(find.text('Meal 0'), findsOneWidget);
+    expect(find.byType(Image), findsNothing);
   });
 }

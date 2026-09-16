@@ -13,7 +13,6 @@ import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/plan_meal.dart';
-import 'meal_picture_placeholder.dart';
 import 'meal_sheet.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
@@ -276,8 +275,6 @@ class _PlanBarTile extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const MealPicturePlaceholder(size: 30),
-                        const SizedBox(width: 8),
                         Expanded(
                           child: Padding(
                             // Clear of the × in the corner.

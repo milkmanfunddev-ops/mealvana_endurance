@@ -19,6 +19,7 @@ export const MealRefZ = z.object({
   ingredients: z.string(), libraryMealId: z.string().nullable(), score: z.number(),
   kind: z.enum(['assembly', 'recipe']).optional(), pattern: z.string().nullable().optional(), frequency: z.string().nullable().optional(),
   icon: MealIconKeyZ.nullable().optional(), myVote: VoteZ.optional(),
+  photo: z.object({ url: z.string(), credit: z.string().nullable(), creditUrl: z.string().nullable() }).strict().nullable().optional(),
   imageMode: z.enum(['dish', 'mosaic', 'tile', 'none']).optional(),
   image: z.object({ url: z.string(), license: z.string().nullable(), creator: z.string().nullable(), credit: z.string().nullable(), sourceUrl: z.string().nullable() }).strict().nullable().optional(),
   imageTiles: z.array(z.object({ url: z.string(), name: z.string().nullable(), license: z.string().nullable(), creator: z.string().nullable(), sourceUrl: z.string().nullable(), provider: z.string().nullable() }).strict()).optional(),
@@ -49,9 +50,10 @@ export const MealDetailZ = z.object({
   ingredients: z.array(z.object({ name: z.string(), qty: z.string(), role: z.string().nullable().optional() }).passthrough()),
   methodSteps: z.array(z.string()),
   directions: z.object({ origin: z.enum(['source', 'alt_source', 'ai_generated', 'assembly_simple']).nullable(), sourceUrl: z.string().nullable(), sourceName: z.string().nullable(), verbatim: z.boolean() }).strict(),
-  image: z.object({ url: z.string(), license: z.string().nullable(), creator: z.string().nullable(), credit: z.string().nullable(), sourceUrl: z.string().nullable() }).strict().nullable(),
-  imageMode: z.enum(['dish', 'mosaic', 'tile', 'none']),
-  imageTiles: z.array(z.object({ url: z.string(), name: z.string().nullable(), license: z.string().nullable(), creator: z.string().nullable(), sourceUrl: z.string().nullable(), provider: z.string().nullable() }).strict()),
+  image: z.object({ url: z.string(), license: z.string().nullable(), creator: z.string().nullable(), credit: z.string().nullable(), sourceUrl: z.string().nullable() }).strict().nullable().optional(),
+  photo: z.object({ url: z.string(), credit: z.string().nullable(), creditUrl: z.string().nullable() }).strict().nullable(),
+  imageMode: z.enum(['dish', 'mosaic', 'tile', 'none']).optional(),
+  imageTiles: z.array(z.object({ url: z.string(), name: z.string().nullable(), license: z.string().nullable(), creator: z.string().nullable(), sourceUrl: z.string().nullable(), provider: z.string().nullable() }).strict()).optional(),
   sourceUrl: z.string().nullable(), source: z.string(), swaps: z.array(z.string()), prep: z.string().nullable(), servings: z.number(), notes: z.string().nullable(), vote: VoteZ,
 }).strict();
 

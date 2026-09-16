@@ -9,8 +9,6 @@ import '../../../../features/content/domain/content_keys.dart';
 import '../../../../shared/providers/is_admin_provider.dart';
 import '../../../../shared/widgets/kyle_design/buttons/primary_button.dart';
 import '../../../../shared/widgets/kyle_design/data/macro_pill_row.dart';
-import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
-    show MealImageCredits, MealImageMosaic;
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
@@ -22,12 +20,11 @@ import '../../domain/directions_origin.dart';
 import '../../domain/meal_detail.dart';
 import '../../domain/vana_situation.dart';
 import '../widgets/vana_situation_scope.dart';
-import '../../domain/meal_image.dart';
 import '../../domain/meal_source.dart';
 import '../../domain/ui_action.dart';
 import '../widgets/choice_chip_button.dart';
 import '../widgets/directions_origin_label.dart';
-import '../widgets/meal_picture_mapping.dart';
+import '../widgets/meal_photo_view.dart';
 import '../widgets/servings_sheet.dart';
 import '../widgets/dashed_box.dart';
 import '../widgets/vana_round_button.dart';
@@ -188,20 +185,16 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         ),
         const SizedBox(height: AppSpacing.sm),
 
-        if (detail.imageMode != MealImageMode.none) ...[
-          MealImageMosaic(
-            mode: kyleImageMode(detail.imageMode),
-            tiles: kyleImageTiles(detail.displayTiles),
-            aspectRatio: 16 / 10,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          // MIM-6 — every distinct photograph shown, photographer and platform
-          // named, each opening its source.
+        // The Dish photo, or nothing: a Meal without one opens at its name,
+        // with no empty space above it (ADR 0003).
+        if (detail.photo case final photo?) ...[
+          MealPhotoHero(photo: photo),
+          // One credit line, only when the photo carries one, opening the
+          // photograph's page when it has one.
           Padding(
             padding: const EdgeInsets.only(top: 4),
-            child: MealImageCredits(
-              mode: kyleImageMode(detail.imageMode),
-              tiles: kyleImageTiles(detail.displayTiles),
+            child: MealPhotoCreditLine(
+              photo: photo,
               onOpen: (uri) =>
                   launchUrl(uri, mode: LaunchMode.externalApplication),
             ),

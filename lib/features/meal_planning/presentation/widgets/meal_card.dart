@@ -6,12 +6,9 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../domain/meal_ref.dart';
 import '../../domain/meal_source.dart';
+import '../../domain/meal_photo.dart';
 import 'card_overflow_menu.dart';
-import '../../domain/meal_image.dart';
-import '../../../../shared/widgets/kyle_design/data/meal_image_mosaic.dart'
-    show MealImageMosaic;
-import 'meal_picture_mapping.dart';
-import 'meal_picture_placeholder.dart';
+import 'meal_photo_view.dart';
 import 'vana_tag.dart';
 
 /// A [MealRef] presented as a tappable row: picture, name, the why-line,
@@ -31,8 +28,9 @@ import 'vana_tag.dart';
 /// [trailing]; a card for a meal not in the plan passes neither and gets
 /// no menu.
 ///
-/// [picture] is what the card draws; a list passes the one `picturesForList`
-/// gave it so no photograph repeats. Null draws the meal's own.
+/// [slot] is what the card draws where a picture goes; a list passes the one
+/// `photosForList` gave it so no photograph repeats. Omitted, the card draws
+/// the Meal's own photo — or nothing at all, which takes no space (ADR 0003).
 class MealCard extends ConsumerWidget {
   const MealCard({
     super.key,
@@ -44,11 +42,11 @@ class MealCard extends ConsumerWidget {
     this.showMacros = false,
     this.excluded = false,
     this.compact = false,
-    this.picture,
+    this.slot,
   });
 
   final MealRef meal;
-  final MealPicture? picture;
+  final MealPhotoSlot? slot;
   final VoidCallback onTap;
 
   /// Optional right-aligned action (e.g. the picker's "Add").
@@ -68,7 +66,7 @@ class MealCard extends ConsumerWidget {
     final surface = isDark ? AppColors.blackberryLight : AppColors.surfaceLight;
     final secondary = textColor.withValues(alpha: 0.55);
     final thumb = compact ? 32.0 : 36.0;
-    final picture = this.picture ?? meal.picture;
+    final photo = slot == null ? meal.photo : slot!.photo;
 
     // kcal sits in the tag strip only when the pill row is not showing it
     // (never twice — macro-pill-row MP-L3).
@@ -104,32 +102,14 @@ class MealCard extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // The meal's picture, or the plain placeholder in its place:
-                // the same box and corners, so a list mixing the two stays
-                // aligned and a Meal with nothing honest to show reads as
-                // designed, not as failing to load. A photograph that fails
-                // to load lands on the placeholder too. No icon is drawn
-                // (mp-145); the stored icon key stays on the meal.
-                Semantics(
-                  // The licences want the photographer credited wherever the
-                  // photo appears, but a 36pt thumbnail in a dense list has
-                  // no room for a credit line. The visible credit lives on
-                  // the detail screen; this keeps it readable here.
-                  label: mealPictureCredit(picture.mode, picture.tiles),
-                  child: SizedBox.square(
-                    dimension: thumb,
-                    child: MealImageMosaic(
-                      mode: kyleImageMode(picture.mode),
-                      tiles: kyleImageTiles(picture.tiles),
-                      borderRadius: BorderRadius.circular(9),
-                      fallback: MealPicturePlaceholder(
-                        size: thumb,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                    ),
-                  ),
+                // The Meal's Dish photo, or no picture slot at all: a Meal
+                // without one starts at its name, and the names and macros of
+                // a list mixing the two still line up (ADR 0003).
+                MealPhotoThumb(
+                  photo: photo,
+                  size: thumb,
+                  borderRadius: BorderRadius.circular(9),
                 ),
-                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

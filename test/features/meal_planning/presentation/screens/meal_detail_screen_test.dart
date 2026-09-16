@@ -19,7 +19,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_type.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/screens/meal_detail_screen.dart';
 import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
-import 'package:mealvana_endurance/shared/widgets/kyle_design/data/meal_image_mosaic.dart';
+import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_photo_view.dart';
 
 import '../helpers/test_content.dart';
 
@@ -216,11 +216,12 @@ void main() {
     expect(find.text('Show carbs / protein'), findsNothing);
   });
 
-  /// The picture at size carries its credits (meal-image-mosaic.md MIM-6).
-  /// Details are the producer's `get_meal` payload (`_shared/vana/meals.ts`)
-  /// with the image fields a real row sends.
-  group('photo credits under the hero', () {
-    MealDetail fromProducer(Map<String, dynamic> image) {
+  /// The recipe screen shows one Dish photo or nothing, and one credit line
+  /// only when the photo carries one (ADR 0003). Details are the producer's
+  /// `get_meal` payload (`_shared/vana/meals.ts`) with the photo fields a real
+  /// row sends.
+  group('the photo and its credit', () {
+    MealDetail fromProducer(Map<String, dynamic> photo) {
       final json =
           jsonDecode(
                 File(
@@ -228,7 +229,7 @@ void main() {
                 ).readAsStringSync(),
               )['meal']
               as Map<String, dynamic>;
-      return MealDetail.fromJson({...json, ...image});
+      return MealDetail.fromJson({...json, ...photo});
     }
 
     Future<void> pumpDetail(WidgetTester tester, MealDetail d) async {
@@ -246,83 +247,104 @@ void main() {
       await tester.pump();
     }
 
-    testWidgets('a dish photo names the photographer and the platform', (
+    const creditLine = 'Photo by Alisha Mishra on Pexels';
+    final credited = {
+      'photo': {
+        'url': 'https://images.pexels.com/1346342.jpeg',
+        'credit': creditLine,
+        'creditUrl': 'https://www.pexels.com/photo/vegetable-shake-1346342/',
+      },
+    };
+
+    testWidgets('a Dish photo shows, with its one credit line under it', (
       tester,
     ) async {
+      await pumpDetail(tester, fromProducer(credited));
+
+      expect(find.byType(MealPhotoHero), findsOneWidget);
+      expect(find.text(creditLine), findsOneWidget);
+      // One line, not one per photograph as the Mosaic used to need.
+      expect(find.textContaining('Photo by'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('meal_planning.detail_photo_credit')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a photo of ours shows clean: no credit line', (tester) async {
       await pumpDetail(
         tester,
         fromProducer({
-          'imageMode': 'dish',
-          'image': {
-            'url': 'https://images.pexels.com/1346342.jpeg',
-            'license': 'Pexels',
-            'creator': 'Alisha Mishra',
-            'credit': 'Alisha Mishra / Pexels',
-            'sourceUrl':
-                'https://www.pexels.com/photo/vegetable-shake-1346342/',
+          'photo': {
+            'url': 'https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/'
+                'object/public/meal-images/photos/D-048.jpg',
+            'credit': null,
+            'creditUrl': null,
           },
-          'imageTiles': <dynamic>[],
         }),
       );
 
-      expect(find.byType(MealImageCredits), findsOneWidget);
+      expect(find.byType(MealPhotoHero), findsOneWidget);
+      expect(find.textContaining('Photo'), findsNothing);
       expect(
-        find.textContaining(
-          'Photo by Alisha Mishra on Pexels',
-          findRichText: true,
-        ),
-        findsOneWidget,
+        find.byKey(const ValueKey('meal_planning.detail_photo_credit')),
+        findsNothing,
       );
     });
 
-    testWidgets('a mosaic credits each distinct photograph once', (
+    testWidgets('a credit with no link is plain text, not a tap target', (
       tester,
     ) async {
-      final tile = {
-        'url': 'https://upload.wikimedia.org/avocado.jpg',
-        'name': 'avocado',
-        'license': 'cc-by-sa-4.0',
-        'creator': 'Jami430',
-        'sourceUrl': 'https://commons.wikimedia.org/wiki/File:Avocado.jpg',
-        'provider': 'wikimedia',
-      };
       await pumpDetail(
         tester,
         fromProducer({
-          'imageMode': 'mosaic',
-          'image': null,
-          'imageTiles': [
-            tile,
-            {
-              'url': 'https://images.unsplash.com/quinoa.jpg',
-              'name': 'quinoa',
-              'license': 'Unsplash',
-              'creator': 'Annie Spratt',
-              'sourceUrl': 'https://unsplash.com/photos/quinoa',
-              'provider': 'unsplash',
-            },
-            {...tile, 'name': 'avocado slices'},
-          ],
+          'photo': {
+            'url': 'https://images.pexels.com/1346342.jpeg',
+            'credit': creditLine,
+            'creditUrl': null,
+          },
         }),
       );
 
+      expect(find.text(creditLine), findsOneWidget);
       expect(
-        find.textContaining(
-          'Photo by Jami430 on Wikimedia Commons (CC BY-SA 4.0) · '
-          'Photo by Annie Spratt on Unsplash',
-          findRichText: true,
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('Jami430', findRichText: true),
-        findsOneWidget,
+        find.byKey(const ValueKey('meal_planning.detail_photo_credit')),
+        findsNothing,
       );
     });
 
-    testWidgets('no picture, no credit line', (tester) async {
+    testWidgets('no photo: the screen opens at the meal name', (tester) async {
       await pumpDetail(tester, fromProducer({}));
-      expect(find.byType(MealImageCredits), findsNothing);
+
+      expect(find.byType(MealPhotoHero), findsNothing);
+      expect(find.textContaining('Photo by'), findsNothing);
+      // Nothing is drawn above the title but the header row.
+      final title = tester.getTopLeft(
+        find.text('Marathon Bolognese over pasta'),
+      );
+      final backButton = tester.getBottomLeft(
+        find.byKey(const ValueKey('meal_planning.detail_save_to_mine')),
+      );
+      expect(title.dy, lessThan(backButton.dy + 40));
+    });
+
+    testWidgets('a photo that fails to load leaves no trace', (tester) async {
+      await pumpDetail(tester, fromProducer(credited));
+      // flutter_test answers every image request with HTTP 400.
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(Image), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(MealPhotoHero),
+          matching: find.byType(Icon),
+        ),
+        findsNothing,
+      );
     });
   });
 

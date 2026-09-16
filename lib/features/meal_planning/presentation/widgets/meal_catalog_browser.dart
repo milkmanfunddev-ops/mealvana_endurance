@@ -97,7 +97,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
     final secondary = textColor.withValues(alpha: 0.65);
 
     final filterActive = catalog.mealType != null || catalog.kind != null;
-    final pictures = picturesForList(catalog.results);
+    final photos = photosForList(catalog.results);
 
     MealRail rail(
       String title,
@@ -202,7 +202,7 @@ class _MealCatalogBrowserState extends ConsumerState<MealCatalogBrowser> {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: MealCard(
                               meal: catalog.results[i],
-                              picture: pictures[i],
+                              slot: photos[i],
                               onTap: () =>
                                   widget.onOpenMeal(catalog.results[i]),
                               trailing: _addButton(content, catalog.results[i]),

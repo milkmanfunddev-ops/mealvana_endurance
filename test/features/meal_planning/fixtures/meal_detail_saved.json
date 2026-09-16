@@ -49,7 +49,6 @@
     "servings": 1,
     "notes": "Low heat, butter, splash of cream. Two eggs per serving.",
     "vote": 0,
-    "imageMode": "none",
-    "imageTiles": []
+    "photo": null
   }
 }

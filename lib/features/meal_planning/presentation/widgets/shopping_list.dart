@@ -12,7 +12,6 @@ import '../../application/shopping_list_controller.dart';
 import '../../application/shopping_qty_formatter.dart';
 import '../../domain/plan_meal.dart';
 import '../../domain/shopping_item.dart';
-import 'meal_picture_placeholder.dart';
 import 'slot_chip.dart';
 import 'vana_avatar.dart';
 import 'vana_bubble.dart';
@@ -494,8 +493,6 @@ class _SourceRow extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const MealPicturePlaceholder(size: 32),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,

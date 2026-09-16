@@ -26,8 +26,13 @@ export interface MealRef {                 // one row from search_meals()
   frequency?: string | null;               // staple / common / occasional
   icon?: string | null;                    // MealIconKey (meal_library.icon / saved_meals.icon), classified when missing
   myVote?: -1 | 0 | 1;                     // this user's thumb: -1 down, 1 up, 0 none. A -1 is filtered out of suggestions by search_meals.
-  imageMode?: 'dish' | 'mosaic' | 'tile' | 'none';   // which rung of the image ladder — docs/meal-images/README.md
+  /** The Meal's current Dish photo, or null when it shows no picture at all (ADR 0003). */
+  photo?: { url: string; credit: string | null; creditUrl: string | null } | null;
+  /** @deprecated The frozen image pipeline's ladder. Still sent; the app ignores it. */
+  imageMode?: 'dish' | 'mosaic' | 'tile' | 'none';
+  /** @deprecated see photo */
   image?: { url: string; license: string | null; creator: string | null; credit: string | null; sourceUrl: string | null } | null;
+  /** @deprecated see photo */
   imageTiles?: { url: string; name: string | null; license: string | null; creator: string | null; sourceUrl: string | null; provider: string | null }[];
 }
 
@@ -65,11 +70,14 @@ export interface MealDetail {
   ingredients: MealIngredient[];             // library ingredients_json / saved items
   methodSteps: string[];                     // meal_library.method_steps (a saved meal inherits its linked recipe's)
   directions: { origin: DirectionsOrigin | null; sourceUrl: string | null; sourceName: string | null; verbatim: boolean };   // provenance of methodSteps
-  image: { url: string; license: string | null; creator: string | null; credit: string | null; sourceUrl: string | null } | null;
-  /** Which rung of the image fallback ladder this meal reached (docs/meal-images/README.md). */
-  imageMode: 'dish' | 'mosaic' | 'tile' | 'none';
-  /** Ingredient tiles when no real dish photo exists; empty for `dish`/`none`. */
-  imageTiles: { url: string; name: string | null; license: string | null; creator: string | null; sourceUrl: string | null; provider: string | null }[];
+  /** The Meal's current Dish photo, or null when the recipe screen starts at the title (ADR 0003). */
+  photo: { url: string; credit: string | null; creditUrl: string | null } | null;
+  /** @deprecated The frozen image pipeline's hero. Still sent; the app ignores it. */
+  image?: { url: string; license: string | null; creator: string | null; credit: string | null; sourceUrl: string | null } | null;
+  /** @deprecated see photo */
+  imageMode?: 'dish' | 'mosaic' | 'tile' | 'none';
+  /** @deprecated see photo */
+  imageTiles?: { url: string; name: string | null; license: string | null; creator: string | null; sourceUrl: string | null; provider: string | null }[];
   sourceUrl: string | null;                  // "see the original recipe"
   source: string;                            // full attribution line (library) — '' for saved
   swaps: string[];                           // "water→milk (+10g protein)" strings, one per swap

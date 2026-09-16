@@ -68,7 +68,7 @@ class _SwapPickerState extends ConsumerState<SwapPicker> {
           );
         }
         final meals = snapshot.data ?? const <MealRef>[];
-        final pictures = picturesForList(meals);
+        final photos = photosForList(meals);
 
         if (meals.isEmpty) {
           return Padding(
@@ -89,7 +89,7 @@ class _SwapPickerState extends ConsumerState<SwapPicker> {
                 padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                 child: MealCard(
                   meal: meal,
-                  picture: pictures[i],
+                  slot: photos[i],
                   compact: true,
                   onTap: () => widget.onPick(meal),
                 ),

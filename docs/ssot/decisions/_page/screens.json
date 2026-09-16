@@ -142,7 +142,7 @@
       "lib/features/meal_planning/presentation/screens/meal_detail_screen.dart",
       "lib/features/meal_planning/presentation/widgets/choice_chip_button.dart",
       "lib/features/meal_planning/presentation/widgets/dashed_box.dart",
-      "lib/features/meal_planning/presentation/widgets/meal_picture_mapping.dart",
+      "lib/features/meal_planning/presentation/widgets/meal_photo_view.dart",
       "lib/features/meal_planning/presentation/widgets/servings_sheet.dart",
       "lib/features/meal_planning/presentation/widgets/vana_round_button.dart",
       "lib/features/meal_planning/presentation/widgets/vana_situation_scope.dart",

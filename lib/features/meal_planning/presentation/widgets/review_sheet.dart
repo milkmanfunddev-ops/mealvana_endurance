@@ -16,7 +16,6 @@ import '../../domain/meal_plan.dart';
 import '../../domain/meal_plan_status.dart';
 import '../../domain/plan_meal.dart';
 import 'dashed_box.dart';
-import 'meal_picture_placeholder.dart';
 import 'session_chip.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
@@ -217,8 +216,6 @@ class _ReviewSheetState extends ConsumerState<_ReviewSheet> {
                             padding: const EdgeInsets.only(bottom: 6),
                             child: Row(
                               children: [
-                                const MealPicturePlaceholder(size: 28),
-                                const SizedBox(width: 10),
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: () {

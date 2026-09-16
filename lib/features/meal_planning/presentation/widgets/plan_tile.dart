@@ -10,7 +10,6 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../domain/plan_meal.dart';
 import 'card_overflow_menu.dart';
-import 'meal_picture_placeholder.dart';
 import 'slot_chip.dart';
 
 /// One planned meal row: placeholder, name (up to two lines), the slot chip and the
@@ -79,10 +78,9 @@ class PlanTile extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
-              // No icon on the tile (mp-145): the plain placeholder keeps the
-              // row's shape where a picture would sit.
-              const MealPicturePlaceholder(size: 36),
-              const SizedBox(width: 12),
+              // A plan meal carries no picture of its own yet (the library
+              // join is ticket 03), and nothing stands in for one: the row
+              // starts at the meal's name (ADR 0003).
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

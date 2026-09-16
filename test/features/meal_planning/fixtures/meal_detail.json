@@ -92,7 +92,6 @@
     "servings": 6,
     "notes": null,
     "vote": 0,
-    "imageMode": "none",
-    "imageTiles": []
+    "photo": null
   }
 }

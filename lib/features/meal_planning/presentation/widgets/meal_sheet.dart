@@ -15,7 +15,6 @@ import '../../domain/plan_meal.dart';
 import '../../../../shared/widgets/kyle_design/buttons/secondary_button.dart';
 import '../../application/meal_detail_controller.dart';
 import 'choice_chip_button.dart';
-import 'meal_picture_placeholder.dart';
 import 'slot_chip.dart';
 import 'stepper.dart';
 import 'swap_picker.dart';
@@ -117,8 +116,6 @@ class _MealSheetState extends ConsumerState<MealSheet> {
                 // Header: placeholder · name · slot, as on the plan tile.
                 Row(
                   children: [
-                    const MealPicturePlaceholder(size: 36),
-                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         widget.meal.name,

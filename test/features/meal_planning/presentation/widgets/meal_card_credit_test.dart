@@ -9,57 +9,28 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/m
 import '../helpers/test_content.dart';
 
 /// A card's thumbnail is too small for a credit line, so the credit rides on
-/// its semantics instead (meal-image-mosaic.md MIM-6). Meals are built from
-/// `search_meals`-shaped rows through the real mapping, because a dish photo on
-/// that path arrives with its credit line and nothing else.
+/// its semantics instead. The visible line lives on the recipe screen. A photo
+/// with no credit announces none — no empty label (ADR 0003, story 15).
 void main() {
-  MealRef meal(Map<String, dynamic> image, {String name = 'Avocado toast'}) =>
+  MealRef meal(Map<String, dynamic> photo, {String name = 'Avocado toast'}) =>
       MealLibraryRemoteDataSource.rowToMealRef({
         'source': 'library',
         'id': 'AB-001',
         'name': name,
         'meal_type': 'breakfast',
-        ...image,
+        ...photo,
       })!;
 
-  final dish = meal({
-    'image_mode': 'dish',
-    'image_url': 'https://upload.wikimedia.org/avocado.jpg',
-    'image_credit': 'Jami430 · CC-BY-SA-4.0 · Wikimedia Commons',
-    'image_tiles': <dynamic>[],
+  final credited = meal({
+    'photo_url': 'https://upload.wikimedia.org/avocado.jpg',
+    'photo_credit': 'Photo by Jami430 on Wikimedia Commons (CC BY-SA 4.0)',
+    'photo_credit_url': 'https://commons.wikimedia.org/wiki/File:Avocado.jpg',
   });
 
-  final mosaic = meal({
-    'image_mode': 'mosaic',
-    'image_url': null,
-    'image_tiles': [
-      {
-        'url': 'https://images.pexels.com/oats.jpeg',
-        'name': 'Rolled oats',
-        'creator': 'Ella Olsson',
-        'license': 'Pexels',
-        'sourceUrl': 'https://www.pexels.com/photo/1/',
-        'provider': 'pexels',
-      },
-      {
-        'url': 'https://images.unsplash.com/blueberries.jpg',
-        'name': 'Blueberries',
-        'creator': 'Annie Spratt',
-        'license': 'Unsplash',
-        'sourceUrl': 'https://unsplash.com/photos/blueberries',
-        'provider': 'unsplash',
-      },
-      {
-        // The same photograph again: credited once.
-        'url': 'https://images.pexels.com/oats.jpeg',
-        'name': 'Oats',
-        'creator': 'Ella Olsson',
-        'license': 'Pexels',
-        'sourceUrl': 'https://www.pexels.com/photo/1/',
-        'provider': 'pexels',
-      },
-    ],
-  }, name: 'Steel-cut oats with peanut butter, blueberries & toasted coconut');
+  final ours = meal({
+    'photo_url': 'https://vlmtsdzpnjnavdgytcmi.supabase.co/storage/v1/object/'
+        'public/meal-images/photos/AB-002.jpg',
+  }, name: 'Steel-cut oats with peanut butter');
 
   Future<void> pump(WidgetTester tester, List<MealRef> meals) async {
     tester.view.physicalSize = const Size(320, 568);
@@ -84,43 +55,37 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('a dish photo carries its credit line for screen readers', (
-    tester,
-  ) async {
+  testWidgets('a Dish photo carries its credit line for screen readers, and '
+      'shows none on the card', (tester) async {
     final semantics = tester.ensureSemantics();
-    await pump(tester, [dish]);
+    await pump(tester, [credited]);
 
     expect(
       find.bySemanticsLabel(
-        RegExp('Jami430 · CC-BY-SA-4.0 · Wikimedia Commons'),
+        RegExp('Photo by Jami430 on Wikimedia Commons'),
       ),
       findsOneWidget,
     );
+    expect(find.textContaining('Photo by'), findsNothing);
     semantics.dispose();
   });
 
-  testWidgets('a mosaic carries every photographer once, and no visible line', (
-    tester,
-  ) async {
+  testWidgets('a photo with no credit announces none', (tester) async {
     final semantics = tester.ensureSemantics();
-    await pump(tester, [mosaic]);
+    await pump(tester, [ours]);
 
-    // The card merges its children into one node; the credit is its first line.
+    expect(find.bySemanticsLabel(RegExp('Photo by')), findsNothing);
     final label = tester
-        .getSemantics(find.bySemanticsLabel(RegExp('Photo by')))
+        .getSemantics(find.text('Steel-cut oats with peanut butter'))
         .label;
-    expect(
-      label.split('\n').first,
-      'Photo by Ella Olsson on Pexels · Photo by Annie Spratt on Unsplash',
-    );
-    expect(find.textContaining('Photo by'), findsNothing);
+    expect(label, isNot(contains('Photo')));
     semantics.dispose();
   });
 
   testWidgets('the list lays out at the smallest supported width', (
     tester,
   ) async {
-    await pump(tester, [dish, mosaic, dish]);
+    await pump(tester, [credited, ours, credited]);
 
     expect(tester.takeException(), isNull);
     expect(find.byType(MealCard), findsNWidgets(3));

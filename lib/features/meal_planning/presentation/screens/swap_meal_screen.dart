@@ -15,7 +15,6 @@ import '../../domain/meal_ref.dart';
 import '../../domain/list_pictures.dart';
 import '../../domain/plan_meal.dart';
 import '../widgets/meal_card.dart';
-import '../widgets/meal_picture_placeholder.dart';
 import '../widgets/vana_round_button.dart';
 
 /// `/food/swap/:planMealId` (05 §4): the "Replacing X" header card plus the
@@ -141,8 +140,6 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                             ),
                             child: Row(
                               children: [
-                                const MealPicturePlaceholder(size: 36),
-                                const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -204,7 +201,7 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                                     }
                                     final meals =
                                         snapshot.data ?? const <MealRef>[];
-                                    final pictures = picturesForList(meals);
+                                    final photos = photosForList(meals);
                                     return ListView.builder(
                                       padding: const EdgeInsets.all(
                                         AppSpacing.md,
@@ -216,7 +213,7 @@ class _SwapMealScreenState extends ConsumerState<SwapMealScreen> {
                                         ),
                                         child: MealCard(
                                           meal: meals[i],
-                                          picture: pictures[i],
+                                          slot: photos[i],
                                           onTap: () =>
                                               _swap(context, meals[i], current),
                                         ),
