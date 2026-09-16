@@ -1,32 +1,164 @@
-Launching lib/main_dev.dart on iPhone 17 Pro in debug mode...
+Launching lib/main_dev.dart on Guy V.'s iPhone in debug mode...
 To ensure your app continues to launch on upcoming iOS versions, UIScene lifecycle support will soon be required. Please see https://flutter.dev/to/uiscene-migration for the migration guide.
 
 The following plugins do not support Swift Package Manager for ios:
-  - device_info_plus
   - flutter_secure_storage
-  - flutter_web_auth_2
-  - patrol
   - printing
-  - sign_in_with_apple
 This will become an error in a future version of Flutter. Please contact the plugin maintainers to request Swift Package Manager adoption.
-Xcode build done.                                           51.8s
-`UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
-Plugin AppLinksIosPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
-Plugin FlutterWebAuth2Plugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
-Plugin FLTGoogleSignInPlugin uses deprecated application lifecycle events. Please contact plugin maintainers and request UIScene lifecycle support. This will be required in a future version of Flutter. See https://docs.flutter.dev/release/breaking-changes/uiscenedelegate#migration-guide-for-flutter-plugins
-Connecting to VM Service at ws://127.0.0.1:61658/u927cOn0YQg=/ws
+Automatically signing iOS for device deployment using specified development team in Xcode project: 9Y99749RG3
+Xcode build done.                                           78.0s
+[UIKit App Config] `UIScene` lifecycle will soon be required. Failure to adopt will result in an assert in the future.
+Connecting to VM Service at ws://127.0.0.1:58527/39st3X2lSf8=/ws
 Connected to the VM Service.
 flutter: supabase.supabase_flutter: INFO: ***** Supabase init completed *****
-flutter: ✅ Schema validation passed (35 tables verified)
-flutter: 📊 [ANALYTICS] app_opened {device_id: 608A0694-92C4-4584-BAAA-0AE310790B91, session_id: c1dccedf-bae7-41de-8231-60137985b6b5, timestamp: 2026-08-05T12:22:06.475712}
-flutter: 🔄 Starting integration sync for runna...
-flutter: 🔑 ConnectTrainingController: Using real user ID: 823f71a4-771b-40b1-b988-99c248caa8a2
-flutter:    (user profile exists: true, onboardingCompleted: true)
-flutter:    (auth user: 823f71a4-771b-40b1-b988-99c248caa8a2, resolved user: 823f71a4-771b-40b1-b988-99c248caa8a2)
-flutter: 🔄 [runna] Starting sync for user 823f71a4-771b-40b1-b988-99c248caa8a2
-flutter: ❌ [runna] Sync failed (network): NetworkException[runna]: Could not reach the Runna calendar: Connection refused
+flutter: [RevenueCatService] logIn skipped: SDK not configured
+flutter: [RevenueCatService] logIn skipped: SDK not configured
+flutter: ✅ Schema validation passed (40 tables verified)
+The Test Store is for development only. Never use a Test Store API key in production. Test Store purchases are simulated, do not use StoreKit, and generate no revenue. Apps submitted with a Test Store API key will be rejected during App Review.
 flutter: [RevenueCatService] configured {store: test_store}
-flutter: ☁️  Integration sync uploaded 0 dirty records for runna
-flutter: ✅ Integration sync complete for runna
+flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+flutter: 📊 [ANALYTICS] app_opened {device_id: 35A68F75-EDBE-484D-A463-717F269BE4F8, session_id: 3211cae1-498e-49a2-b4d3-6d7e0c0dc582, timestamp: 2026-09-16T07:59:12.036157}
+ attributes: ["$attConsentStatus": [SubscriberAttribute] key: $attConsentStatus value: notDetermined setTime: 2026-09-16 12:59:12 +0000]
 flutter: [RevenueCatService] logged in
-flutter: 🔄 Integration sync skipped (runna) - data is fresh
+flutter: [SubscriptionService] customer info fetched {active: false, expires_at: null, is_trial: false}
+You can reference this package by its identifier ('$rc_custom_credits_50') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_250') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_test_1') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_50') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_250') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_test_1') directly.
+More information: https://rev.cat/displaying-products
+flutter: [RevenueCatService] offerings served {offerings: credits(3), default(2), current: default}
+flutter: 🔄 Starting integration sync for training_peaks...
+flutter: 🔄 Starting full TrainingPeaks sync...
+flutter: 🔑 ConnectTrainingController: Using real user ID: f9addfbe-4515-4ade-975d-3c6d8db3558e
+flutter:    (user profile exists: true, onboardingCompleted: true)
+flutter:    (auth user: f9addfbe-4515-4ade-975d-3c6d8db3558e, resolved user: f9addfbe-4515-4ade-975d-3c6d8db3558e)
+flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+flutter: 🔄 Refreshing TrainingPeaks token...
+flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+flutter:    Client ID: mealvana
+flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_request"}
+flutter: ⚠️ TrainingPeaks token expires soon, proactively refreshing...
+flutter: 🔄 Refreshing TrainingPeaks token...
+flutter: 🔑 Token refresh URL: https://oauth.sandbox.trainingpeaks.com/oauth/token
+flutter:    Client ID: mealvana
+flutter: ❌ Token refresh failed: TrainingPeaksApiException: Token refresh failed (status: 400)
+Body: {"error":"invalid_request"}
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ 07:59:15.242 (+0:00:08.570557)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for training_peaks
+flutter: │ ⚠️ Data: {userId: f9addfbe-4515-4ade-975d-3c6d8db3558e, provider: training_peaks, error: Token expired. Please reconnect.}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ❌ Integration sync failed for training_peaks: Token expired. Please reconnect.
+flutter: 📊 [ANALYTICS] settings_sign_out_tapped {}
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ Cannot use the Ref of settingsControllerProvider after it has been disposed. This typically happens if:
+flutter: │ - A provider rebuilt, but the previous "build" was still pending and is still performing operations.
+flutter: │   You should therefore either use `ref.onDispose` to cancel pending work, or
+flutter: │   check `ref.mounted` after async gaps or anything that could invalidate the provider.
+flutter: │ - You tried to use Ref inside `onDispose` or other life-cycles.
+flutter: │   This is not supported, as the provider is already being disposed.
+flutter: │ 
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)
+flutter: │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)
+flutter: │ #2   SettingsController.signOut (package:mealvana_endurance/features/settings/presentation/providers/settings_controller.dart:713:14)
+flutter: │ #3   <asynchronous suspension>
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 08:00:20.213 (+0:01:13.542126)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ ⛔ [SETTINGS] Pro entitlement clear failed
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: supabase.auth: INFO: Signing out user with scope: SignOutScope.local
+flutter: 📊 [ANALYTICS] user_signed_out {timestamp: 2026-09-16T08:00:20.218147, was_onboarding_signout: false}
+flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+flutter: 📊 [ANALYTICS] welcome_login_tapped {}
+flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Post-Onboarding Auth, mode: login}
+flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+flutter: [SubscriptionService] customer info updated {active: false, expires_at: null}
+flutter: [SubscriptionService] customer info updated {active: true, expires_at: 2027-09-15T19:39:14.000Z}
+flutter: [RevenueCatService] logged in
+flutter: [SubscriptionService] customer info fetched {active: true, expires_at: 2027-09-15T19:39:14.000Z, is_trial: false}
+You can reference this package by its identifier ('$rc_custom_credits_50') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_250') directly.
+More information: https://rev.cat/displaying-products
+You can reference this package by its identifier ('$rc_custom_credits_test_1') directly.
+More information: https://rev.cat/displaying-products
+flutter: 🔄 Starting integration sync for garmin...
+flutter: 🔄 Garmin is push-only - no sync needed
+flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+flutter:    (user profile exists: true, onboardingCompleted: true)
+flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+flutter: ✅ Integration sync complete for garmin
+flutter: 🔄 Starting integration sync for vdot...
+flutter: 🔑 [vdot] AppConfig creds at client build: client_id="mealvana" (len 8), client_secret len 64, authBase=https://app.vdoto2.com
+flutter: 🔑 ConnectTrainingController: Using real user ID: 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+flutter:    (user profile exists: true, onboardingCompleted: true)
+flutter:    (auth user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, resolved user: 607f9dd5-6fa7-48ee-a628-720d4a0506a1)
+flutter: 🔄 [vdot] Starting sync for user 607f9dd5-6fa7-48ee-a628-720d4a0506a1
+flutter: ⚠️ [vdot] Token expires soon, proactively refreshing…
+flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, migrated_data: false}
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - already in progress
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ 08:00:42.961 (+0:01:36.289882)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ ⚠️ [INTEGRATION_SYNC] Integration sync reported failure for vdot
+flutter: │ ⚠️ Data: {userId: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, provider: vdot, error: Please reconnect your V.O2 account}
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ❌ Integration sync failed for vdot: Please reconnect your V.O2 account
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+flutter: 📊 [ANALYTICS] screen_viewed {screen_name: Email Login}
+flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)
+flutter: │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)
+flutter: │ #2   EmailAuthService.signInWithEmail (package:mealvana_endurance/features/auth/application/email_auth_service.dart:753:15)
+flutter: │ #3   <asynchronous suspension>
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 08:00:57.773 (+0:01:51.101513)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ ⛔ [EMAIL_AUTH] Email sign in failed
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: │ AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ #0   PrettyAppLogger._logWithContext (package:mealvana_endurance/shared/services/logging_service.dart:342:15)
+flutter: │ #1   PrettyAppLogger.error (package:mealvana_endurance/shared/services/logging_service.dart:179:5)
+flutter: │ #2   PostOnboardingAuthController.signInWithEmail (package:mealvana_endurance/features/auth/presentation/providers/post_onboarding_auth_controller.dart:344:15)
+flutter: │ #3   <asynchronous suspension>
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ 08:00:57.775 (+0:01:51.103764)
+flutter: ├┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄
+flutter: │ ⛔ [AUTH] Post-onboarding auth: Email sign in failed
+flutter: └───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+flutter: 📊 [ANALYTICS] auth_flow_failed {provider: email, source: post_onboarding_login, error: AuthApiException(message: Invalid login credentials, statusCode: 400, code: invalid_credentials)}
+flutter: 📊 [ANALYTICS] auth_flow_started {provider: email, source: post_onboarding_login}
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+flutter: 📊 [ANALYTICS] email_sign_in_success {user_id: 607f9dd5-6fa7-48ee-a628-720d4a0506a1, migrated_data: false}
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+flutter: 📊 [ANALYTICS] auth_flow_completed {provider: email, source: post_onboarding_login}
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
+flutter: 🔄 Integration sync skipped (garmin) - data is fresh
+flutter: 🔄 Integration sync skipped (vdot) - in failure cooldown
