@@ -151,7 +151,9 @@ export interface UiAction {
     // recent by coalesce(confirmed_at, created_at)) · create_shopping_list{name?, fromPlan?} → {list} · rename_shopping_list{id, name} →
     // {list} · add_shopping_item{listId, name, qty?, aisle?} → {list} · update_shopping_item{id, name?, qty?, aisle?, checked?, have?} →
     // {list} (name/qty set edited=true) · delete_shopping_item{id} → {list}. All `parts: []`.
-    | 'list_shopping_lists' | 'get_shopping_list' | 'create_shopping_list' | 'rename_shopping_list' | 'add_shopping_item' | 'update_shopping_item' | 'delete_shopping_item'
+    // additive 2026-09-16 (Shopping tab redesign): delete_shopping_list{id} → {list|null} — the list and its rows go (a plan's list
+    // empties the plan's mirror too); the answer is the most recent list left, null when none remains. `parts: []`.
+    | 'list_shopping_lists' | 'get_shopping_list' | 'create_shopping_list' | 'rename_shopping_list' | 'delete_shopping_list' | 'add_shopping_item' | 'update_shopping_item' | 'delete_shopping_item'
     // additive 2026-09-16 (Vana writes, playtest §10): undo_receipt{...ReceiptUndo.params} — the Undo button on a receipt card. Answers
     // `{ parts: [receipt(action: 'undo')] }`; the device refetches the receipt's entity as for any receipt.
     | 'undo_receipt'

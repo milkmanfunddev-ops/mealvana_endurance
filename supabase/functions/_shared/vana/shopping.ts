@@ -132,6 +132,18 @@ export async function renameList(v: VanaCtx, id: string, name: string): Promise<
   await v.db.from('shopping_lists').update({ name: clean, updated_at: now() }).eq('id', id).eq('user_id', v.userId);
   return detail(v, await listRow(v, id));
 }
+/** Delete a list and every row on it (the rows also cascade in SQL; deleted here too so the fake db agrees). Owner-scoped
+ *  like the rest. A plan's list takes the plan's mirror with it, so Kroger and the offline stand-in stop showing lines the
+ *  athlete threw away; the next meal edit rebuilds both. Answers the most recent list left, or null when none remains. */
+export async function deleteList(v: VanaCtx, id: string): Promise<ShoppingListDetail | null> {
+  const row = await listRow(v, id);
+  const { error: e1 } = await v.db.from('shopping_items').delete().eq('list_id', id).eq('user_id', v.userId);
+  if (e1) throw new Error(e1.message);
+  const { error: e2 } = await v.db.from('shopping_lists').delete().eq('id', id).eq('user_id', v.userId);
+  if (e2) throw new Error(e2.message);
+  if (row.plan_id) await v.db.from('meal_plans').update({ shopping: [], updated_at: now() }).eq('id', row.plan_id).eq('user_id', v.userId);
+  return getList(v, null);
+}
 export async function addItem(v: VanaCtx, listId: string, name: string, qty: string, aisle?: string | null): Promise<ShoppingListDetail> {
   const clean = name.trim(); if (!clean) throw new Error('name required');
   const list = await listRow(v, listId);

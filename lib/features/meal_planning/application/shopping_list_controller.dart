@@ -82,11 +82,12 @@ class ShoppingListState {
   ];
 
   ShoppingListState copyWith({
+    String? listName,
     List<ShoppingItem>? items,
     List<ShoppingListSummary>? previous,
   }) => ShoppingListController._build(
     listId: listId,
-    listName: listName,
+    listName: listName ?? this.listName,
     listDate: listDate,
     isCurrent: isCurrent,
     planId: planId,
@@ -295,8 +296,9 @@ class ShoppingListController extends _$ShoppingListController {
     state = await AsyncValue.guard(() async {
       final made = await _client.run(CreateShoppingListAction(name: name));
       final list = made.shoppingList;
-      if (list == null)
+      if (list == null) {
         throw StateError('create_shopping_list returned no list');
+      }
       _openedListId = null; // the new list is the most recent, so no pin
       final lists = (await _client.run(
         const ListShoppingListsAction(),
@@ -314,6 +316,99 @@ class ShoppingListController extends _$ShoppingListController {
       Error.throwWithStackTrace(error, stack ?? StackTrace.current);
     }
   }
+
+  /// Rename the list on screen, or — from the previous-lists sheet — the
+  /// list [id] names. The new name shows at once; the server's answer
+  /// settles it, and a failure puts the old name back.
+  Future<void> renameList(String name, {String? id}) async {
+    final current = state.value;
+    final clean = name.trim();
+    final target = id ?? current?.listId;
+    if (current == null || target == null || clean.isEmpty) {
+      throw StateError('no shopping list to rename');
+    }
+    if (target == current.listId) {
+      state = AsyncData(current.copyWith(listName: clean));
+      await _settle(
+        current,
+        () => _client.run(RenameShoppingListAction(id: target, name: clean)),
+      );
+      return;
+    }
+    state = AsyncData(
+      current.copyWith(
+        previous: [
+          for (final l in current.previous)
+            if (l.id == target) _renamed(l, clean) else l,
+        ],
+      ),
+    );
+    final next = await AsyncValue.guard(() async {
+      final answer = await _client.run(
+        RenameShoppingListAction(id: target, name: clean),
+      );
+      final list = answer.shoppingList;
+      if (list == null) return state.value ?? current;
+      return current.copyWith(
+        previous: [
+          for (final l in current.previous)
+            if (l.id == target) list else l,
+        ],
+      );
+    });
+    if (next.hasError) {
+      state = AsyncData(current);
+      Error.throwWithStackTrace(next.error!, next.stackTrace!);
+    }
+    state = next;
+  }
+
+  /// Delete a list and every row on it. When it is the list on screen the
+  /// tab falls back to the most recent one left (or the empty state);
+  /// otherwise it just leaves history. Same shape as [newList]: the whole
+  /// state is re-read from the server, and a failure puts today's back.
+  Future<void> deleteList(String id) async {
+    final current = state.value ?? const ShoppingListState();
+    final pinned = _openedListId;
+    if (id != current.listId) {
+      // Optimistic: the row leaves history before the server answers.
+      state = AsyncData(
+        current.copyWith(
+          previous: [
+            for (final l in current.previous)
+              if (l.id != id) l,
+          ],
+        ),
+      );
+    } else if (_openedListId == id) {
+      _openedListId = null;
+    }
+    state = await AsyncValue.guard(() async {
+      await _client.run(DeleteShoppingListAction(id: id));
+      return _load(
+        ref.read(mealPlanControllerProvider).value,
+        listId: _openedListId,
+      );
+    });
+    if (state.hasError) {
+      final error = state.error!;
+      final stack = state.stackTrace;
+      _openedListId = pinned;
+      state = AsyncData(current);
+      Error.throwWithStackTrace(error, stack ?? StackTrace.current);
+    }
+  }
+
+  static ShoppingListSummary _renamed(ShoppingListSummary l, String name) =>
+      ShoppingListSummary(
+        id: l.id,
+        planId: l.planId,
+        name: name,
+        createdAt: l.createdAt,
+        updatedAt: l.updatedAt,
+        confirmedAt: l.confirmedAt,
+        itemCount: l.itemCount,
+      );
 
   /// Open a list from "Previous lists" (still checkable).
   Future<void> openList(String listId) => _switchTo(listId);

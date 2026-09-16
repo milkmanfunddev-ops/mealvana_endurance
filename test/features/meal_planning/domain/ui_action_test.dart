@@ -208,6 +208,17 @@ void main() {
       );
     });
 
+    test('shopping lists: rename and delete carry the list id', () {
+      check(
+        const RenameShoppingListAction(id: 'L', name: 'Costco'),
+        'rename_shopping_list',
+        {'id': 'L', 'name': 'Costco'},
+      );
+      check(const DeleteShoppingListAction(id: 'L'), 'delete_shopping_list', {
+        'id': 'L',
+      });
+    });
+
     test('log_from_plan', () {
       check(const LogFromPlanAction(planMealId: 'pm1'), 'log_from_plan', {
         'planMealId': 'pm1',

@@ -602,6 +602,34 @@ class ContentKeys {
   static const String mpShoppingConfirmedOn =
       'meal_planning.shopping_confirmed_on';
   static const String mpShoppingCreatedOn = 'meal_planning.shopping_created_on';
+  // Shopping tab redesign (2026-09-16): header menu, rename, delete list,
+  // the previous-lists sheet, the quiet add row.
+  static const String mpShoppingMenuMore = 'meal_planning.shopping_menu_more';
+  static const String mpShoppingDeleteList =
+      'meal_planning.shopping_delete_list';
+  static const String mpShoppingDeleteListTitle =
+      'meal_planning.shopping_delete_list_title';
+  static const String mpShoppingDeleteListBody =
+      'meal_planning.shopping_delete_list_body';
+  static const String mpShoppingDeleteListConfirm =
+      'meal_planning.shopping_delete_list_confirm';
+  static const String mpShoppingDeleteListCancel =
+      'meal_planning.shopping_delete_list_cancel';
+  static const String mpShoppingListDeleted =
+      'meal_planning.shopping_list_deleted';
+  static const String mpShoppingRenameAction =
+      'meal_planning.shopping_rename_action';
+  static const String mpShoppingRenameTitle =
+      'meal_planning.shopping_rename_title';
+  static const String mpShoppingRenameHint =
+      'meal_planning.shopping_rename_hint';
+  static const String mpShoppingListRenamed =
+      'meal_planning.shopping_list_renamed';
+  static const String mpShoppingListEmpty = 'meal_planning.shopping_list_empty';
+  static const String mpShoppingAddTitle = 'meal_planning.shopping_add_title';
+  static const String mpShoppingFromPlan = 'meal_planning.shopping_from_plan';
+  static const String mpShoppingPreviousCurrent =
+      'meal_planning.shopping_previous_current';
   static const String mpSettingsVanaTitle = 'meal_planning.settings_vana_title';
   static const String mpSettingsBatch = 'meal_planning.settings_batch';
   static const String mpSettingsBatchSub = 'meal_planning.settings_batch_sub';

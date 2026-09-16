@@ -744,6 +744,20 @@ class RenameShoppingListAction extends UiAction {
   Map<String, Object?> payloadFields() => {'id': id, 'name': name};
 }
 
+/// `{id}` — the list and every row on it go; answers the most recent list
+/// left (`list`), or null when none remains.
+class DeleteShoppingListAction extends UiAction {
+  const DeleteShoppingListAction({required this.id});
+
+  final String id;
+
+  @override
+  String get type => 'delete_shopping_list';
+
+  @override
+  Map<String, Object?> payloadFields() => {'id': id};
+}
+
 /// `{listId, name, qty?, aisle?}` — the server guesses the aisle when none
 /// is given.
 class AddShoppingItemAction extends UiAction {

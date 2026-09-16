@@ -108,6 +108,7 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
       return { parts: [], list: await shopping.createList(v, p.name == null ? null : String(p.name), seed) };
     }
     case 'rename_shopping_list': return { parts: [], list: await shopping.renameList(v, String(p.id), String(p.name ?? '')) };
+    case 'delete_shopping_list': return { parts: [], list: await shopping.deleteList(v, String(p.id)) };
     case 'add_shopping_item': return { parts: [], list: await shopping.addItem(v, String(pick(p, 'listId', 'list_id')), String(p.name ?? ''), String(p.qty ?? ''), p.aisle == null ? null : String(p.aisle)) };
     case 'update_shopping_item': {
       const patch: shopping.ItemPatch = {};
