@@ -13,6 +13,7 @@ import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../application/home_service.dart';
 import '../../application/meal_plan_controller.dart';
+import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_settings_controller.dart';
 import '../../data/vana_exceptions.dart';
 import '../../domain/meal_plan_status.dart';
@@ -187,7 +188,20 @@ class _DayNoteCard extends ConsumerWidget {
         side: BorderSide(color: AppColors.electrolyte.withValues(alpha: 0.3)),
       ),
       child: InkWell(
-        onTap: () => context.push('/vana?mode=general'),
+        // The day's ambient conversation, the one the launcher opens
+        // (mp-275 clause 1), never a conversation of its own.
+        onTap: () async {
+          final router = GoRouter.of(context);
+          String? id;
+          try {
+            id = await ref
+                .read(vanaAmbientConversationProvider.notifier)
+                .openToday();
+          } catch (_) {
+            id = null;
+          }
+          router.push(vanaAmbientChatLocation(id));
+        },
         borderRadius: BorderRadius.circular(15),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

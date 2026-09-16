@@ -1,14 +1,31 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/providers/user_id_provider.dart';
 import '../data/vana_ambient_store.dart';
 import '../data/vana_chat_repository.dart';
+import '../domain/vana_conversation_kind.dart';
 import '../domain/week_start.dart';
+import 'vana_chat_controller.dart';
 
 part 'vana_ambient_conversation_controller.g.dart';
+
+/// The chat controller key of a conversation started new: New meal plan, the
+/// chat's plus button, the conversations list (`c=new`). Never null, so it is
+/// never the day's unnamed conversation, and naming it never moves the day's
+/// pointer (mp-275 clause 3).
+const vanaNewConversationKey = '';
+
+/// The chat route for the day's ambient conversation: [conversationId] when
+/// the day holds one, else the unnamed general conversation the day's first
+/// entry point names.
+String vanaAmbientChatLocation(String? conversationId) =>
+    conversationId == null
+    ? '/vana?mode=general'
+    : '/vana?mode=general&c=$conversationId';
 
 /// The wall clock the ambient day is read from. Overridden in tests.
 @riverpod
@@ -29,6 +46,12 @@ DateTime Function() vanaClock(Ref ref) => DateTime.now;
 /// different one). The server writes the conversation's episode once, so the
 /// next opener has it without waiting. Kept alive so the background signal
 /// fires with no sheet open.
+///
+/// Every entry point that continues the day (the launcher, its full-screen
+/// button, the Plan tab's note card, a moment tap) opens through [openToday]
+/// (mp-275 clause 1). Only the unnamed general conversation it arms can move
+/// the pointer; a conversation started new has its own key
+/// ([vanaNewConversationKey]) and never does.
 @Riverpod(keepAlive: true)
 class VanaAmbientConversation extends _$VanaAmbientConversation {
   /// The conversation last held and whose it is. Survives the rebuild a
@@ -39,6 +62,9 @@ class VanaAmbientConversation extends _$VanaAmbientConversation {
 
   /// Conversations already signalled idle since the sheet last opened them.
   final Set<String> _signalled = {};
+
+  /// Watches the day's unnamed conversation until the server names it.
+  ProviderSubscription<AsyncValue<VanaChatState>>? _naming;
 
   @override
   Future<String?> build() async {
@@ -51,6 +77,35 @@ class VanaAmbientConversation extends _$VanaAmbientConversation {
         .read(userId: userId, day: _today());
     _hold(id, userId);
     return id;
+  }
+
+  /// Today's conversation for an entry point that continues the day, read at
+  /// open time so an entry after midnight starts anew. When the day holds none
+  /// yet, the entry opens the unnamed general conversation, and whatever id the
+  /// server gives it is held for the rest of the day, even if the sheet closes
+  /// or hands over before the first event arrives (mp-058).
+  Future<String?> openToday() async {
+    ref.invalidateSelf();
+    final id = await future;
+    if (id == null) _awaitNaming();
+    return id;
+  }
+
+  void _awaitNaming() {
+    final provider = vanaChatControllerProvider(
+      kind: VanaConversationKind.general,
+    );
+    _naming?.close();
+    // The unnamed conversation is shared by every entry that opens it; a
+    // previous day's must not be what today's opens to.
+    ref.invalidate(provider);
+    _naming = ref.listen(provider, (_, next) {
+      final id = next.value?.conversationId;
+      if (id == null || id.isEmpty) return;
+      _naming?.close();
+      _naming = null;
+      adopt(id);
+    });
   }
 
   /// Hold [conversationId] for the rest of today.
