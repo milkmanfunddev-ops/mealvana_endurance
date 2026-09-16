@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/kyle_design.dart';
 import 'package:mealvana_endurance/shared/widgets/custom_app_bar_back_button.dart';
 import 'package:mealvana_endurance/shared/widgets/adaptive/adaptive.dart';
-import 'package:mealvana_endurance/shared/services/app_config.dart';
 
+import '../../../meal_planning/domain/vana_situation.dart';
+import '../../../meal_planning/presentation/widgets/vana_situation_scope.dart';
 import '../../../nutrition_plan/domain/food_item_data.dart';
 import '../../../nutrition_plan/domain/solver_food.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart'
@@ -16,12 +17,10 @@ import '../../application/formula_editor_controller.dart';
 import '../../application/formula_pin_controller.dart';
 import '../../domain/after_filter_options.dart';
 import '../../domain/before_sub_phase.dart';
-import '../../domain/coach_insight.dart';
 import '../../domain/during_filter_options.dart';
 import '../../domain/formula_macros.dart';
 import '../../domain/formula_phase.dart';
 import '../../domain/formula_profile_conflict.dart';
-import '../widgets/coach_insight_panel.dart';
 import '../widgets/filter_chip_row.dart';
 import '../widgets/pin_conflict_warning.dart';
 import '../widgets/pin_toggle.dart';
@@ -114,9 +113,6 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
   Widget build(BuildContext context) {
     final asyncDraft = ref.watch(_provider);
     final scheme = Theme.of(context).colorScheme;
-    final coachInsightsEnabled = ref.watch(
-      appConfigProvider.select((config) => config.coachInsightsEnabled),
-    );
 
     return AdaptivePageScaffold(
       key: ValueKey('formula_kit.editor_screen.${widget.formulaId ?? 'new'}'),
@@ -183,172 +179,185 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
             _notesController.text = draft.notes ?? '';
           }
           final notifier = ref.read(_provider.notifier);
-          return Stack(
-            children: [
-              AdaptiveScrollableBody(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  120,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // FP-8 conflict disclosure — AMENDED (Xuan on-device,
-                    // 2026-09-03 evening): pinned at the TOP of the authoring
-                    // screen, matching the template detail's warning placement
-                    // (it previously floated above Save, where it overlapped
-                    // scroll content and read as detached). Save is never
-                    // disabled (§1a disclose-never-block).
-                    // FP-4a warning / diet note for a conflicted pin attempt
-                    // from the AppBar toggle — in the page, never a dialog.
-                    ...(() {
-                      final conflict = _draftConflict(draft);
-                      if (conflict == null) return const <Widget>[];
-                      return <Widget>[
-                        if (_showConflictWarning &&
-                            conflict.kind == FormulaConflictKind.allergy)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.md,
+          // While this screen is in view, Vana's next message carries the
+          // draft as it is here (mp-274) — including edits nothing has saved.
+          return VanaSituationScope(
+            situation: _situationFor(draft),
+            child: Stack(
+              children: [
+                AdaptiveScrollableBody(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    120,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // FP-8 conflict disclosure — AMENDED (Xuan on-device,
+                      // 2026-09-03 evening): pinned at the TOP of the authoring
+                      // screen, matching the template detail's warning placement
+                      // (it previously floated above Save, where it overlapped
+                      // scroll content and read as detached). Save is never
+                      // disabled (§1a disclose-never-block).
+                      // FP-4a warning / diet note for a conflicted pin attempt
+                      // from the AppBar toggle — in the page, never a dialog.
+                      ...(() {
+                        final conflict = _draftConflict(draft);
+                        if (conflict == null) return const <Widget>[];
+                        return <Widget>[
+                          if (_showConflictWarning &&
+                              conflict.kind == FormulaConflictKind.allergy)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.md,
+                              ),
+                              child: PinConflictWarning.allergy(
+                                allergenDisplay: conflict.allergenDisplay,
+                                onChooseAnother: () => setState(
+                                  () => _showConflictWarning = false,
+                                ),
+                                onPinAnyway: _completeConflictedPin,
+                              ),
                             ),
-                            child: PinConflictWarning.allergy(
-                              allergenDisplay: conflict.allergenDisplay,
-                              onChooseAnother: () =>
-                                  setState(() => _showConflictWarning = false),
-                              onPinAnyway: _completeConflictedPin,
+                          if (_showDietNote &&
+                              conflict.kind == FormulaConflictKind.diet)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: AppSpacing.md,
+                              ),
+                              child: PinConflictWarning.diet(
+                                dietDisplay: conflict.dietDisplay,
+                              ),
                             ),
-                          ),
-                        if (_showDietNote &&
-                            conflict.kind == FormulaConflictKind.diet)
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.md,
-                            ),
-                            child: PinConflictWarning.diet(
-                              dietDisplay: conflict.dietDisplay,
-                            ),
-                          ),
-                      ];
-                    })(),
-                    ..._saveConflictDisclosure(draft, atTop: true),
-                    _Label('Name'),
-                    const SizedBox(height: AppSpacing.xs),
-                    TextField(
-                      key: const ValueKey('formula_kit.editor_name'),
-                      controller: _nameController,
-                      onChanged: notifier.setName,
-                      decoration: const InputDecoration(
-                        hintText: 'e.g. Pre-long-run oatmeal',
-                        border: OutlineInputBorder(),
+                        ];
+                      })(),
+                      ..._saveConflictDisclosure(draft, atTop: true),
+                      _Label('Name'),
+                      const SizedBox(height: AppSpacing.xs),
+                      TextField(
+                        key: const ValueKey('formula_kit.editor_name'),
+                        controller: _nameController,
+                        onChanged: notifier.setName,
+                        decoration: const InputDecoration(
+                          hintText: 'e.g. Pre-long-run oatmeal',
+                          border: OutlineInputBorder(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    // Editable phase (above the timing/scope chips).
-                    _Label('Phase'),
-                    const SizedBox(height: AppSpacing.xs),
-                    FilterChipRow<FormulaPhase>(
-                      options: FormulaPhase.values,
-                      labelOf: (p) => p.displayLabel,
-                      isSelected: (p) => draft.phase == p,
-                      onToggled: notifier.setPhase,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    _ScopeSection(
-                      phase: draft.phase,
-                      draft: draft,
-                      notifier: notifier,
-                    ),
-                    // Formula total macros (no targets/ranges — formulas have
-                    // no per-plan targets).
-                    _MacroTotals(totals: draft.totals),
-                    const SizedBox(height: AppSpacing.md),
-                    // Food rows reusing the activity-details widgets: swipe
-                    // right → swap, swipe left → delete, tap → expand
-                    // (Nutrition Facts + Remove). Quantity semantics are
-                    // asymmetric by design: before/after formulas carry exact
-                    // quantities (the +/- stepper is shown), while during
-                    // formulas are quantity-less — the solver derives amounts.
-                    if (draft.components.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.md,
-                        ),
-                        child: Text(
-                          'No foods yet. Tap "Add Food" to build your formula.',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      )
-                    else
-                      for (var i = 0; i < draft.components.length; i++)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                          child: DismissibleFoodItem(
-                            key: ValueKey('formula_kit.editor_row_$i'),
-                            food: _foodItemFromComponent(
-                              draft.components[i],
-                              i,
-                            ),
-                            category: _categoryFor(draft.phase),
-                            showQuantity: draft.phase != FormulaPhase.during,
-                            onSwap: () =>
-                                _swapComponent(i, draft.components[i]),
-                            onDelete: () => notifier.removeComponent(i),
-                            onQuantityChange: (q) =>
-                                notifier.updateComponentQuantity(i, q),
-                          ),
-                        ),
-                    const SizedBox(height: AppSpacing.sm),
-                    KyleAddFoodButton(
-                      key: const ValueKey('formula_kit.editor_add_food'),
-                      onPressed: _addFood,
-                    ),
-                    // Coach insight — only meaningful once the formula has at
-                    // least one component (the edge function requires it).
-                    if (coachInsightsEnabled &&
-                        draft.components.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.lg),
-                      CoachInsightPanel(
-                        insightContext: _insightContextFor(draft),
-                        formulaId: widget.formulaId,
+                      // Editable phase (above the timing/scope chips).
+                      _Label('Phase'),
+                      const SizedBox(height: AppSpacing.xs),
+                      FilterChipRow<FormulaPhase>(
+                        options: FormulaPhase.values,
+                        labelOf: (p) => p.displayLabel,
+                        isSelected: (p) => draft.phase == p,
+                        onToggled: notifier.setPhase,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _ScopeSection(
+                        phase: draft.phase,
+                        draft: draft,
+                        notifier: notifier,
+                      ),
+                      // Formula total macros (no targets/ranges — formulas have
+                      // no per-plan targets).
+                      _MacroTotals(totals: draft.totals),
+                      const SizedBox(height: AppSpacing.md),
+                      // Food rows reusing the activity-details widgets: swipe
+                      // right → swap, swipe left → delete, tap → expand
+                      // (Nutrition Facts + Remove). Quantity semantics are
+                      // asymmetric by design: before/after formulas carry exact
+                      // quantities (the +/- stepper is shown), while during
+                      // formulas are quantity-less — the solver derives amounts.
+                      if (draft.components.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppSpacing.md,
+                          ),
+                          child: Text(
+                            'No foods yet. Tap "Add Food" to build your formula.',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        )
+                      else
+                        for (var i = 0; i < draft.components.length; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
+                            ),
+                            child: DismissibleFoodItem(
+                              key: ValueKey('formula_kit.editor_row_$i'),
+                              food: _foodItemFromComponent(
+                                draft.components[i],
+                                i,
+                              ),
+                              category: _categoryFor(draft.phase),
+                              showQuantity: draft.phase != FormulaPhase.during,
+                              onSwap: () =>
+                                  _swapComponent(i, draft.components[i]),
+                              onDelete: () => notifier.removeComponent(i),
+                              onQuantityChange: (q) =>
+                                  notifier.updateComponentQuantity(i, q),
+                            ),
+                          ),
+                      const SizedBox(height: AppSpacing.sm),
+                      KyleAddFoodButton(
+                        key: const ValueKey('formula_kit.editor_add_food'),
+                        onPressed: _addFood,
+                      ),
+                      // Ask Vana about the formula on screen (mp-295). A new
+                      // conversation (`c=new`) that sees this draft as it is
+                      // here, unsaved edits included — it never moves the
+                      // launcher's pointer (mp-275 clauses 2 and 3). It replaces
+                      // the one-shot coach insight, which is retired with the
+                      // rest of Jade (mp-209).
+                      const SizedBox(height: AppSpacing.lg),
+                      KyleSecondaryButton(
+                        key: const ValueKey('formula_kit.editor_ask_vana'),
+                        text: 'Ask Vana',
+                        icon: Icons.chat_bubble_outline,
+                        onPressed: () =>
+                            context.push('/vana?c=new&mode=general'),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _Label('Notes (optional)'),
+                      const SizedBox(height: AppSpacing.xs),
+                      TextField(
+                        controller: _notesController,
+                        onChanged: (v) =>
+                            notifier.setNotes(v.isEmpty ? null : v),
+                        maxLines: 3,
+                        decoration: const InputDecoration(
+                          hintText: 'When to use it, prep tips…',
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
-                    _Label('Notes (optional)'),
-                    const SizedBox(height: AppSpacing.xs),
-                    TextField(
-                      controller: _notesController,
-                      onChanged: (v) => notifier.setNotes(v.isEmpty ? null : v),
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        hintText: 'When to use it, prep tips…',
-                        border: OutlineInputBorder(),
+                  ),
+                ),
+                Positioned(
+                  left: AppSpacing.md,
+                  right: AppSpacing.md,
+                  bottom: AppSpacing.md,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      KylePrimaryButton(
+                        key: const ValueKey('formula_kit.editor_save'),
+                        text: 'Save formula',
+                        isLoading: _saving,
+                        onPressed: (draft.canSave && !_saving) ? _save : null,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              Positioned(
-                left: AppSpacing.md,
-                right: AppSpacing.md,
-                bottom: AppSpacing.md,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    KylePrimaryButton(
-                      key: const ValueKey('formula_kit.editor_save'),
-                      text: 'Save formula',
-                      isLoading: _saving,
-                      onPressed: (draft.canSave && !_saving) ? _save : null,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -423,16 +432,32 @@ class _FormulaEditorScreenState extends ConsumerState<FormulaEditorScreen> {
     context.pop();
   }
 
-  /// Build the live coach-insight context from the current [draft]. Only the
-  /// scope fields meaningful to the draft's phase are populated.
-  CoachInsightContext _insightContextFor(FormulaDraft draft) {
-    return CoachInsightContext(
-      phase: draft.phase,
-      components: draft.components,
-      name: draft.name,
-      subPhase: draft.phase == FormulaPhase.before ? draft.subPhase : null,
-      durations: draft.phase == FormulaPhase.during ? draft.durations : null,
-      activities: draft.phase == FormulaPhase.before ? null : draft.activities,
+  /// What Vana is told while this screen is in view: the draft as it is on
+  /// screen, unsaved edits included (mp-274). Structured fields only — food
+  /// ids with their quantities, the scope chips the app itself wrote, and the
+  /// name the athlete typed. The server resolves the names and refuses a draft
+  /// that arrives from any other route.
+  VanaSituation _situationFor(FormulaDraft draft) {
+    final duringFormula = draft.phase == FormulaPhase.during;
+    return VanaSituation.formulaEditor(
+      formulaId: widget.formulaId,
+      draft: VanaFormulaDraft(
+        name: draft.name,
+        phase: draft.phase.wireValue,
+        subPhase: draft.phase == FormulaPhase.before ? draft.subPhase : null,
+        durations: duringFormula ? draft.durations : null,
+        activities: draft.phase == FormulaPhase.before
+            ? null
+            : draft.activities,
+        components: [
+          for (final c in draft.components)
+            VanaFormulaDraftComponent(
+              id: '${c[FormulaMacros.kFoodId] ?? ''}',
+              // During formulas are quantity-less — the solver derives amounts.
+              qty: duringFormula ? null : FormulaMacros.quantityOf(c),
+            ),
+        ],
+      ),
     );
   }
 

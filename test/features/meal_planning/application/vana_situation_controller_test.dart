@@ -108,6 +108,75 @@ void main() {
       expect(n.current()!.toJson(), {'route': '/settings/allergies'});
     });
 
+    test('the formula editor carries the draft on screen, unsaved edits and '
+        'all (mp-274)', () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final n = c.read(vanaSituationControllerProvider.notifier);
+
+      n.report(
+        VanaSituation.formulaEditor(
+          formulaId: 'pf-1',
+          draft: const VanaFormulaDraft(
+            name: 'Long ride bottle',
+            phase: 'during',
+            durations: ['90-150 min'],
+            activities: ['cycling'],
+            components: [
+              VanaFormulaDraftComponent(id: 'tf-banana', qty: 1.5),
+              VanaFormulaDraftComponent(id: 'uf-mix'),
+            ],
+          ),
+        ),
+      );
+      expect(n.current()!.toJson(), {
+        'route': '/settings/food-preferences/formula-library/personal/:id',
+        'entityId': 'pf-1',
+        'draft': {
+          'name': 'Long ride bottle',
+          'phase': 'during',
+          'durations': ['90-150 min'],
+          'activities': ['cycling'],
+          'components': [
+            {'id': 'tf-banana', 'qty': 1.5},
+            {'id': 'uf-mix'},
+          ],
+        },
+      });
+
+      // Building one from scratch is the editor's other route, with no id.
+      expect(
+        VanaSituation.formulaEditor(
+          draft: const VanaFormulaDraft(components: []),
+        ).toJson(),
+        {
+          'route': '/settings/food-preferences/formula-library/personal/create',
+          'draft': {'components': <Map<String, dynamic>>[]},
+        },
+      );
+
+      // The name is the only free text that travels, and it is cut before it
+      // leaves the device.
+      final long = VanaSituation.formulaEditor(
+        draft: VanaFormulaDraft(name: 'x' * 60, components: const []),
+      );
+      expect(
+        (long.toJson()['draft'] as Map)['name'],
+        'x' * VanaFormulaDraft.nameCap,
+      );
+
+      // A changed quantity is a different Situation, so the scope reports the
+      // edit rather than sitting on the draft it first saw.
+      VanaSituation withQty(double qty) => VanaSituation.formulaEditor(
+        formulaId: 'pf-1',
+        draft: VanaFormulaDraft(
+          components: [VanaFormulaDraftComponent(id: 'tf-banana', qty: qty)],
+        ),
+      );
+      expect(withQty(1), withQty(1));
+      expect(withQty(1), isNot(withQty(2)));
+    });
+
     test('a report older than the ttl stops speaking for the athlete', () {
       final c = ProviderContainer();
       addTearDown(c.dispose);
@@ -167,7 +236,10 @@ void main() {
       n.routeOnTop('/settings');
       n.routeOnTop('/fuel-log');
       n.report(VanaSituation.screen(VanaScreen.fuelLog, entityId: 'act-1'));
-      expect(n.current()!.toJson(), {'route': '/fuel-log', 'entityId': 'act-1'});
+      expect(n.current()!.toJson(), {
+        'route': '/fuel-log',
+        'entityId': 'act-1',
+      });
     });
 
     test('coming back to a screen hands back what it reported', () {

@@ -9,7 +9,6 @@ import '../data/personal_formulas_repository.dart';
 import '../domain/formula_macros.dart';
 import '../domain/formula_phase.dart';
 import '../domain/personal_formula.dart';
-import 'coach_insight_controller.dart';
 import 'component_conflict_hydration.dart';
 import 'personal_formulas_controller.dart';
 
@@ -266,10 +265,6 @@ class FormulaEditorController extends _$FormulaEditorController {
     final now = DateTime.now();
     final original = draft.original;
 
-    final currentInsight = ref
-        .read(coachInsightControllerProvider(formulaId))
-        .value;
-
     final formula = PersonalFormula(
       id: original?.id ?? '',
       userId: userId,
@@ -286,9 +281,11 @@ class FormulaEditorController extends _$FormulaEditorController {
       travelFriendliness: draft.travelFriendliness,
       components: draft.components,
       notes: draft.notes,
-      coachInsightText: currentInsight?.insight ?? original?.coachInsightText,
-      coachInsightMarker:
-          currentInsight?.staleMarker ?? original?.coachInsightMarker,
+      // The one-shot coach insight is retired with the rest of Jade (mp-209):
+      // a formula keeps whatever was written on it before, and nothing new is
+      // written here.
+      coachInsightText: original?.coachInsightText,
+      coachInsightMarker: original?.coachInsightMarker,
       totalCarbsG: totals.carbsG,
       totalProteinG: totals.proteinG,
       totalFatG: totals.fatG,
