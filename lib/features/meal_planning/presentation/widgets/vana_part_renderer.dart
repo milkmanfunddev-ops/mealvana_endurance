@@ -17,6 +17,7 @@ import 'debrief_card.dart';
 import 'meal_picker_carousel.dart';
 import 'pantry_card.dart';
 import 'picker_chips.dart';
+import 'picker_more_sheet.dart';
 import 'rule_chip.dart';
 import 'staples_card.dart';
 import 'week_card.dart';
@@ -142,9 +143,25 @@ class VanaPartRenderer extends ConsumerWidget {
               nextType: callbacks.nextType,
               hasMeals: callbacks.planHasMeals,
               enabled: callbacks.chipsEnabled,
+              // mp-272: the labels this turn named, or none and the app's
+              // own set applies.
+              suggested: p.chips,
               onPick: callbacks.onChipPick,
               onSomethingElse: callbacks.onSomethingElse,
               onBrowse: callbacks.onBrowseMeals,
+              // "Show more" needs nothing from the host: the rest of the
+              // search came down with the part, and the sheet reports the
+              // same two intents the tiles do.
+              onShowMore: p.more.isEmpty
+                  ? null
+                  : () => showPickerMoreSheet(
+                      context: context,
+                      meals: p.more,
+                      pickedIds: callbacks.pickedIds,
+                      onPick: (meal) =>
+                          callbacks.onPickMeal(meal, p.defaultServings),
+                      onOpen: callbacks.onTapMeal,
+                    ),
             ),
           ],
         );

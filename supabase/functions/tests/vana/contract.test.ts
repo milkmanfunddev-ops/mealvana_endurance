@@ -3,7 +3,7 @@
  *  Dart `fromJson` tests make; if a fixture stops parsing here, the contract moved and three places need the change
  *  (prototype TS, _shared/vana/, lib/features/meal_planning/domain/). Regenerate fixtures in the prototype (`pnpm test`). */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import { ActionResultZ, BatchPartZ, ChoicesPartZ, DayGuidancePartZ, PantryPartZ, WeekPartZ, DebriefPartZ, FeedbackSavedPartZ, FeedbackPromptPartZ, HomePayloadZ, MealDetailZ, MealPickerPartZ, NdjsonExchangeZ, RecentMealZ, ShoppingListPartZ, StaplesPartZ, VanaPartZ } from '../../_shared/vana/schemas.ts';
+import { ActionResultZ, BatchPartZ, ChoicesPartZ, DayGuidancePartZ, PantryPartZ, WeekPartZ, DebriefPartZ, FeedbackSavedPartZ, FeedbackPromptPartZ, HomePayloadZ, MealDetailZ, MealPickerPartZ, NdjsonExchangeZ, RecentMealZ, ShoppingListPartZ, StaplesPartZ, VanaPartZ, clampChips } from '../../_shared/vana/schemas.ts';
 import { z } from 'npm:zod@3';
 
 const dir = new URL('./fixtures/', import.meta.url);
@@ -61,6 +61,43 @@ Deno.test('contract: single VanaPart fixtures', () => {
   assertEquals(parse(WeekPartZ, fixture('week'), 'week.json').days.length, 2);
   assertEquals(parse(DebriefPartZ, fixture('debrief'), 'debrief.json').memories[0].source, 'debrief');
   for (const f of ['meal_picker', 'choices', 'choices_details', 'day_guidance', 'staples', 'shopping_list', 'pantry', 'week', 'debrief']) parse(VanaPartZ, fixture(f), `${f}.json as VanaPart`);
+});
+
+/** mp-272 / mp-230 clause 4 (ticket 31) — a turn may name the chips it expects next, and the tail of the same
+ *  search rides behind "Show more". Built on the FROZEN meal_picker.json so the additive fields are the only variable. */
+Deno.test('contract: meal_picker chips are 2..4 strings, clamped or dropped before the wire', () => {
+  const base = fixture('meal_picker');
+  // The frozen fixture predates both fields and still parses; neither is invented on the way out.
+  const plain = parse(MealPickerPartZ, base, 'meal_picker.json');
+  assertEquals(plain.chips, undefined);
+  assertEquals(plain.more, undefined);
+
+  // A legal list rides through untouched.
+  const named = parse(MealPickerPartZ, { ...base, chips: ['These three', 'Lighter ones', 'Show me pasta'] }, 'meal_picker + chips');
+  assertEquals(named.chips, ['These three', 'Lighter ones', 'Show me pasta']);
+
+  // The contract itself carries only a legal list: too few, too many, or blank never parses.
+  for (const chips of [[], ['Only one'], ['a', 'b', 'c', 'd', 'e'], ['ok', '']]) {
+    assert(!MealPickerPartZ.safeParse({ ...base, chips }).success, `chips ${JSON.stringify(chips)} is not a legal list`);
+  }
+
+  // …because the producer clamps first: >4 keeps the first four, <2 (after trimming, blanks and duplicates) is dropped.
+  assertEquals(clampChips(['a', 'b', 'c', 'd', 'e']), ['a', 'b', 'c', 'd']);
+  assertEquals(clampChips([' These three ', 'Lighter ones']), ['These three', 'Lighter ones']);
+  assertEquals(clampChips(['Same', 'Same']), undefined);
+  assertEquals(clampChips(['Only one']), undefined);
+  assertEquals(clampChips([]), undefined);
+  assertEquals(clampChips(undefined), undefined);
+  assertEquals(clampChips('Not a list'), undefined);
+  assertEquals(clampChips([1, 'a', null, 'b']), ['a', 'b']);
+  assertEquals(clampChips(['x'.repeat(60), 'b'])?.[0].length, 40);
+  // Whatever it returns parses as the contract's list.
+  assert(MealPickerPartZ.safeParse({ ...base, chips: clampChips(['a', 'b', 'c', 'd', 'e']) }).success);
+
+  // "Show more" carries the tail of the same search — MealRefs, same shape as the shown handful.
+  const withMore = parse(MealPickerPartZ, { ...base, more: base.meals }, 'meal_picker + more');
+  assertEquals(withMore.more?.length, 3);
+  parse(VanaPartZ, { ...base, chips: ['One', 'Two'], more: base.meals }, 'meal_picker + chips + more as VanaPart');
 });
 
 Deno.test('contract: action results — batch, confirm_plan, home, meal_detail, recent_meals', () => {

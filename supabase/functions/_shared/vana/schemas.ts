@@ -63,7 +63,26 @@ export const ChoicesPartZ = z.object({ kind: z.literal('choices'), question: z.s
 export const BriefPartZ = z.object({ kind: z.literal('brief'), text: z.string(), chips: z.array(z.string()), cites: z.array(z.string()) }).strict();
 export const DayGuidancePartZ = z.object({ kind: z.literal('day_guidance'), date: z.string(), label: z.string(), workout: z.string().nullable(), minCarbsG: z.number(), note: z.string(), suggestions: z.array(MealRefZ) }).strict();
 export const StaplesPartZ = z.object({ kind: z.literal('staples'), meals: z.array(MealRefZ.extend({ timesLogged: z.number(), ticked: z.boolean() }).strict()), planCarbsPerDay: z.number().optional(), targetCarbsPerDay: z.number().nullable().optional(), covered: z.number().optional(), of: z.number().optional() }).strict();
-export const MealPickerPartZ = z.object({ kind: z.literal('meal_picker'), title: z.string(), mealType: MealTypeZ.optional(), meals: z.array(MealRefZ), multi: z.boolean(), defaultServings: z.number() }).strict();
+/** The chip labels a turn may name (mp-272): 2..4 non-empty strings, 40 chars each. The contract carries only a legal
+ *  list — a producer runs [clampChips] first, so an over-long or too-short list never reaches the wire. */
+export const PickerChipsZ = z.array(z.string().min(1).max(40)).min(2).max(4);
+/** Producer-side normalisation for mp-272 clause 1: trim, drop blanks and duplicates, keep the first four; fewer than
+ *  two left and the list is dropped (undefined) so the app's own set applies (clause 3). */
+export function clampChips(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const label = item.trim().slice(0, 40);
+    if (!label || seen.has(label)) continue;
+    seen.add(label);
+    out.push(label);
+    if (out.length === 4) break;
+  }
+  return out.length >= 2 ? out : undefined;
+}
+export const MealPickerPartZ = z.object({ kind: z.literal('meal_picker'), title: z.string(), mealType: MealTypeZ.optional(), meals: z.array(MealRefZ), multi: z.boolean(), defaultServings: z.number(), chips: PickerChipsZ.optional(), more: z.array(MealRefZ).optional() }).strict();
 export const BatchPartZ = z.object({ kind: z.literal('batch'), plan: MealPlanZ }).strict();
 export const RulePartZ = z.object({ kind: z.literal('rule'), rule: PlanRuleZ, meal: MealRefZ.optional() }).strict();
 export const ShoppingListPartZ = z.object({ kind: z.literal('shopping_list'), items: z.array(ShoppingItemZ), itemCount: z.number(), skipped: z.array(z.string()) }).strict();

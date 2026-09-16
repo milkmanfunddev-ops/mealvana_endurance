@@ -153,6 +153,8 @@ class VanaMealPickerPart extends VanaPart {
     required this.meals,
     this.multi = false,
     this.defaultServings = 4,
+    this.chips = const [],
+    this.more = const [],
   });
 
   final String title;
@@ -160,6 +162,40 @@ class VanaMealPickerPart extends VanaPart {
   final List<MealRef> meals;
   final bool multi;
   final int defaultServings;
+
+  /// The chip labels this turn named (mp-272): two to four short strings the
+  /// app draws in its own chip widget, in place of its own set. Empty — the
+  /// common case — means the app's set applies (mp-230 clause 4).
+  final List<String> chips;
+
+  /// The tail of the same search, behind "Show more" (mp-230 clause 2).
+  /// Empty when the search had nothing past the tiles.
+  final List<MealRef> more;
+
+  /// Longest chip label the strip will draw; matches `PickerChipsZ`.
+  static const chipLabelMax = 40;
+
+  /// The producer clamps (`clampChips` in `schemas.ts`) and the contract
+  /// rejects anything else, so this should be a no-op — but the app never
+  /// draws a malformed strip on a producer's word. Trim, drop blanks and
+  /// repeats, keep the first four; below two, drop the lot so the app's own
+  /// set stands (mp-272 clauses 1 and 3).
+  static List<String> clampChips(Object? raw) {
+    if (raw is! List) return const [];
+    final out = <String>[];
+    for (final item in raw) {
+      if (item is! String) continue;
+      final label = item.trim();
+      if (label.isEmpty) continue;
+      final capped = label.length > chipLabelMax
+          ? label.substring(0, chipLabelMax)
+          : label;
+      if (out.contains(capped)) continue;
+      out.add(capped);
+      if (out.length == 4) break;
+    }
+    return out.length >= 2 ? List.unmodifiable(out) : const [];
+  }
 
   @override
   String get kind => 'meal_picker';
@@ -171,6 +207,8 @@ class VanaMealPickerPart extends VanaPart {
         meals: readRecordList(json, 'meals', MealRef.fromJson),
         multi: readBool(json, 'multi') ?? false,
         defaultServings: readInt(json, 'defaultServings') ?? 4,
+        chips: clampChips(json['chips']),
+        more: readRecordList(json, 'more', MealRef.fromJson),
       );
 
   @override
@@ -181,6 +219,8 @@ class VanaMealPickerPart extends VanaPart {
     'meals': meals.map((m) => m.toJson()).toList(),
     'multi': multi,
     'defaultServings': defaultServings,
+    if (chips.isNotEmpty) 'chips': chips.toList(),
+    if (more.isNotEmpty) 'more': more.map((m) => m.toJson()).toList(),
   };
 
   VanaMealPickerPart copyWith({
@@ -189,12 +229,16 @@ class VanaMealPickerPart extends VanaPart {
     List<MealRef>? meals,
     bool? multi,
     int? defaultServings,
+    List<String>? chips,
+    List<MealRef>? more,
   }) => VanaMealPickerPart(
     title: title ?? this.title,
     mealType: mealType ?? this.mealType,
     meals: meals ?? this.meals,
     multi: multi ?? this.multi,
     defaultServings: defaultServings ?? this.defaultServings,
+    chips: chips ?? this.chips,
+    more: more ?? this.more,
   );
 }
 
