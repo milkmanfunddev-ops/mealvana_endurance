@@ -63,8 +63,8 @@ const _skipButton = ValueKey('macro_dashboard.skip_button');
 const _unskipButton = ValueKey('macro_dashboard.unskip_button');
 
 void main() {
-  patrolTest('macro dashboard — G1/G2 swipes, two-time writes, S-4, pager, '
-      'skip / unskip', ($) async {
+  patrolTest('macro dashboard — G1 and G2 swipes, two-time writes, S-4, pager, '
+      'skip and unskip', ($) async {
     await launchApp();
     await $.pump(const Duration(milliseconds: 500));
 

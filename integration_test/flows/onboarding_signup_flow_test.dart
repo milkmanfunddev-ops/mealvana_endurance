@@ -56,7 +56,7 @@ import '../helpers/supabase_probe.dart';
 
 void main() {
   patrolTest(
-    'skip-everything onboarding lands on /main as an anonymous user',
+    'skip-everything onboarding lands on main as an anonymous user',
     ($) async {
       await launchApp();
       await _settleFirstFrame($);

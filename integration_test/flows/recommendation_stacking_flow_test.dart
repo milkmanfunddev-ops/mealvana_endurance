@@ -109,7 +109,7 @@ void main() {
   );
 
   patrolTest(
-    'recommendation H5: a <=30 min fueling window yields Top-Off only (no Meal / Snack)',
+    'recommendation H5: a <=30 min fueling window yields Top-Off only (no Meal or Snack)',
     ($) async {
       // 1 × 15-min step up from the floor = 15 min → the t < 30 band.
       final ready = await _generateRunPlanWithWindow(

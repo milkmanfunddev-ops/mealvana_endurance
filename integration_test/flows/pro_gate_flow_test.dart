@@ -83,7 +83,7 @@ Future<void> _popRoute(PatrolIntegrationTester $) async {
 
 void main() {
   patrolTest(
-    'App gate — the shell, the paywall and the /food and /vana routes agree',
+    'App gate — the shell, the paywall and the food and vana routes agree',
     ($) async {
       await launchApp();
       await $.pump(const Duration(milliseconds: 500));
