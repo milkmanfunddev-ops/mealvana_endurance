@@ -10,8 +10,8 @@
 
 **Touches:** supabase/functions/_shared/vana/contracts.ts, supabase/functions/_shared/vana/tools.ts, supabase/functions/_shared/vana/persona.ts, lib/features/meal_planning/presentation/widgets/picker_chips.dart, lib/features/meal_planning/presentation/widgets/meal_picker_carousel.dart, lib/features/meal_planning/presentation/widgets/vana_part_renderer.dart, lib/features/meal_planning/presentation/widgets/meal_catalog_browser.dart
 
-- [ ] The picker part carries an optional chips list of two to four strings; more or fewer is clamped or dropped (contract test with the frozen fixtures).
-- [ ] Named chips replace the app set; absent or empty falls back to it; a tap sends the label (widget test).
-- [ ] Show more raises a sheet over the same search with many more meals; the tick adds, the tile opens detail.
+- [x] The picker part carries an optional chips list of two to four strings; more or fewer is clamped or dropped (contract test with the frozen fixtures).
+- [x] Named chips replace the app set; absent or empty falls back to it; a tap sends the label (widget test).
+- [x] Show more raises a sheet over the same search with many more meals; the tick adds, the tile opens detail.
 
 Next: /implement-lee mealplanning
