@@ -34,6 +34,15 @@ class _DeferredStatus extends SubscriptionStatusController {
   Future<SubscriptionStatus> build() => completer.future;
 }
 
+/// A status controller that re-reads its answer on every build, the way the
+/// real one answers for whoever is signed in at the time.
+class _MutableStatus extends SubscriptionStatusController {
+  _MutableStatus(this.read);
+  final SubscriptionStatus Function() read;
+  @override
+  Future<SubscriptionStatus> build() async => read();
+}
+
 void main() {
   group('computeUnlocked', () {
     test('active → unlocked', () {
@@ -125,6 +134,47 @@ void main() {
         expect(await c.read(appGateProvider.future), isTrue);
       },
     );
+  });
+
+  group('settle (the sign-in hand-off to the router)', () {
+    test('rebuilds for the user now signed in and answers the new value',
+        () async {
+      // Before sign-in the status answers for nobody: locked.
+      var status = SubscriptionStatus.none;
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionStatusProvider.overrideWith(
+            () => _MutableStatus(() => status),
+          ),
+          isAdminProvider.overrideWith((_) async => false),
+        ],
+      );
+      addTearDown(c.dispose);
+      expect(await c.read(appGateProvider.future), isFalse);
+
+      // The credentials land; the status now answers for the athlete.
+      status = _active;
+      expect(await c.read(appGateProvider.notifier).settle(), isTrue);
+      // The router's synchronous read sees the same settled answer.
+      final gate = c.read(appGateProvider);
+      expect(gate.hasValue && !gate.isLoading, isTrue);
+      expect(gate.value, isTrue);
+    });
+
+    test('a status that never answers settles locked within the bound',
+        () async {
+      final c = ProviderContainer(
+        overrides: [
+          subscriptionStatusProvider.overrideWith(_DeferredStatus.new),
+          isAdminProvider.overrideWith((_) async => false),
+          entitlementAnswerTimeoutProvider.overrideWithValue(
+            const Duration(milliseconds: 20),
+          ),
+        ],
+      );
+      addTearDown(c.dispose);
+      expect(await c.read(appGateProvider.notifier).settle(), isFalse);
+    });
   });
 
   group('readAppGate (the router redirect)', () {

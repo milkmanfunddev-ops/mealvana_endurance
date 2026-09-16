@@ -18,6 +18,8 @@ import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../../onboarding/presentation/theme/onboarding_design_tokens.dart';
 import '../../../onboarding/presentation/widgets/onboarding_step_scaffold.dart';
 import '../../../content/domain/content_keys.dart';
+import '../../application/email_auth_handoff.dart';
+import '../../../subscription/application/pro_gate.dart';
 import '../../../subscription/application/pro_paywall_controller.dart';
 import '../../../subscription/presentation/pro_gate_redirect.dart';
 import '../../application/auth_service.dart';
@@ -349,52 +351,57 @@ class _PostOnboardingAuthScreenState
     await _navigateToMain();
   }
 
-  Future<void> _handleEmailSignUp() async {
+  /// The email screens report success through [emailAuthHandoffProvider],
+  /// never through the future `push` returns (see that provider for why).
+  /// Wired from [build] with `ref.listen`.
+  Future<void> _onEmailAuthSucceeded(EmailAuthHandoffEvent event) async {
     final logger = ref.read(appExternalDepsProvider).logger;
-
-    // Navigate to email signup screen
-    logger.info('Navigating to email signup screen', context: 'NAV');
-    final result = await context.push('/auth/email-signup');
-
     logger.info(
-      'Email signup returned',
+      'Email auth finished',
       context: 'NAV',
-      data: {'result': result, 'mounted': mounted},
+      data: {'kind': event.kind.name, 'seq': event.seq, 'mounted': mounted},
     );
-
-    // If email signup successful, save onboarding data and navigate to main app
-    if (result == true && mounted) {
-      logger.info(
-        'Email signup successful, saving onboarding data',
-        context: 'NAV',
-      );
-      await _saveOnboardingDataAndNavigate(
-        authProvider: 'email',
-        isAnonymous: false,
-      );
-    } else {
-      logger.info(
-        'Email signup did not return true or widget unmounted',
-        context: 'NAV',
-        data: {'result': result, 'mounted': mounted},
-      );
+    if (!mounted) return;
+    switch (event.kind) {
+      case EmailAuthKind.login:
+        // Finish without discarding any onboarding draft still in memory.
+        await _finishLoginPreservingDraft(authProvider: 'email');
+      case EmailAuthKind.signup:
+        await _saveOnboardingDataAndNavigate(
+          authProvider: 'email',
+          isAnonymous: false,
+        );
     }
   }
 
-  Future<void> _handleEmailLogin() async {
-    // Navigate to email login screen
-    final result = await context.push('/auth/email-login');
+  void _handleEmailSignUp() {
+    ref
+        .read(appExternalDepsProvider)
+        .logger
+        .info('Navigating to email signup screen', context: 'NAV');
+    // The result is reported through emailAuthHandoffProvider; the future
+    // this returns is not awaited on purpose.
+    unawaited(context.push('/auth/email-signup'));
+  }
 
-    // If email login successful, finish without discarding any onboarding
-    // draft still in memory (see _finishLoginPreservingDraft).
-    if (result == true && mounted) {
-      await _finishLoginPreservingDraft(authProvider: 'email');
-    }
+  void _handleEmailLogin() {
+    unawaited(context.push('/auth/email-login'));
   }
 
   /// Navigate directly to main app (for login mode - no onboarding data to save)
   /// On web, coaches are redirected to the coach portal instead.
   Future<void> _navigateToMain() async {
+    if (!mounted) return;
+    // The gate must be settled for this user before the router is asked
+    // (see settleAppGate); otherwise the navigation is dropped mid-redirect.
+    final logger = ref.read(appExternalDepsProvider).logger;
+    logger.info('Settling the app gate before /main', context: 'NAV');
+    final unlocked = await ref.read(appGateProvider.notifier).settle();
+    logger.info(
+      'App gate settled',
+      context: 'NAV',
+      data: {'unlocked': unlocked, 'mounted': mounted},
+    );
     if (!mounted) return;
 
     // On web, check if user is a coach and redirect to coach portal
@@ -463,6 +470,8 @@ class _PostOnboardingAuthScreenState
 
         // The identity fields were already flipped (locally and in Supabase)
         // by AuthMigrationService.completeAuthentication during the link.
+        await ref.read(appGateProvider.notifier).settle();
+        if (!mounted) return;
         context.go('/main');
 
         unawaited(
@@ -522,6 +531,8 @@ class _PostOnboardingAuthScreenState
       // moves an already-unlocked account (admin, restored) on to /main. The
       // upload below still runs if this screen was disposed during the
       // lookup above — the data is saved either way and must reach Supabase.
+      if (!mounted) return;
+      await ref.read(appGateProvider.notifier).settle();
       if (mounted) context.go(kOnboardingPaywallLocation);
 
       // Push the onboarding data to Supabase in the background.
@@ -642,6 +653,12 @@ class _PostOnboardingAuthScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<EmailAuthHandoffEvent?>(emailAuthHandoffProvider, (
+      previous,
+      next,
+    ) {
+      if (next != null && next != previous) _onEmailAuthSucceeded(next);
+    });
     final asyncState = ref.watch(postOnboardingAuthControllerProvider);
     final contentService = ref.watch(contentServiceProvider);
     final isLogin = widget.mode == 'login';

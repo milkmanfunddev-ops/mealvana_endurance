@@ -12,6 +12,7 @@ import '../../../content/application/content_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
 import '../../domain/auth_exceptions.dart';
+import '../../application/email_auth_handoff.dart';
 import 'verify_email_screen.dart';
 
 /// Email Signup Screen
@@ -157,7 +158,12 @@ class _EmailSignupScreenState extends ConsumerState<EmailSignupScreen> {
         ),
       );
 
-      // Return to post-onboarding auth screen which will navigate to main
+      // The post-onboarding auth screen beneath listens for this and
+      // navigates to main; the pop result is not reliable (see
+      // emailAuthHandoffProvider).
+      ref
+          .read(emailAuthHandoffProvider.notifier)
+          .succeeded(EmailAuthKind.signup);
       context.pop(true);
     } else if (!success && mounted) {
       // Check if the error is because the account already exists

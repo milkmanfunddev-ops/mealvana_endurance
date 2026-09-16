@@ -11,6 +11,8 @@ import '../../../content/application/content_service.dart';
 import '../../../coach_mode/application/coach_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../application/email_auth_service.dart';
+import '../../../subscription/application/pro_gate.dart';
+import '../../application/email_auth_handoff.dart';
 
 /// Email Login Screen
 /// Allows users to sign in with email and password
@@ -62,6 +64,9 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
       // If we can pop, return result to the parent (e.g. post-onboarding auth screen)
       // If we can't pop (e.g. arrived via context.go() from password reset), go to main directly
       if (context.canPop()) {
+        // The Log In screen beneath listens for this; the pop result is not
+        // reliable (see emailAuthHandoffProvider).
+        ref.read(emailAuthHandoffProvider.notifier).succeeded(EmailAuthKind.login);
         context.pop(true);
       } else {
         // On web, check if user is a coach and redirect to coach portal
@@ -79,6 +84,8 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
             // Fall through to /main
           }
         }
+        if (!mounted) return;
+        await ref.read(appGateProvider.notifier).settle();
         if (!mounted) return;
         context.go('/main');
       }

@@ -36,6 +36,36 @@ class AppGate extends _$AppGate {
         .timeout(timeout, onTimeout: () => false);
     return computeUnlocked(status, isAdmin: isAdmin);
   }
+
+  /// Sign-in's hand-off to the router (2026-09-16: the first login came back
+  /// to the Log In screen; the second went through).
+  ///
+  /// Signing in changes the user the status and admin reads answer for, so
+  /// the gate rebuilds a moment after the credentials land. A `go('/main')`
+  /// sent while it is loading awaits the gate inside its async redirect; the
+  /// gate's settling then rebuilds the root widget (which watches it) and
+  /// fires the router's refresh. Flutter's Router keeps only its newest route
+  /// parse, and that refresh re-parses the location last reported — the
+  /// login screen — so the trip to main is discarded. The second login finds
+  /// the gate settled and its redirect answers synchronously, which is why it
+  /// works.
+  ///
+  /// Rebuilding the gate for the signed-in user here and waiting for its
+  /// answer before navigating leaves the redirect nothing to await: it
+  /// resolves in the same parse, and a later refresh with the same value
+  /// never fires. Bounded by twice the entitlement timeout; no answer means
+  /// locked, which the paywall then resolves the usual way.
+  Future<bool> settle() async {
+    ref.invalidate(subscriptionStatusProvider);
+    ref.invalidate(isAdminProvider);
+    ref.invalidateSelf();
+    final timeout = ref.read(entitlementAnswerTimeoutProvider) * 2;
+    try {
+      return await future.timeout(timeout);
+    } catch (_) {
+      return false;
+    }
+  }
 }
 
 /// Whether the app is unlocked, for a non-widget caller (the GoRouter
