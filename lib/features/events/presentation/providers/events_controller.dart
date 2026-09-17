@@ -159,6 +159,17 @@ class EventsController extends _$EventsController {
       ref.invalidateSelf();
       ref.invalidate(nextUpcomingEventProvider);
       ref.invalidate(allEventsProvider);
+
+      // The update can MOVE the event's linked activity (EventsService
+      // ._moveLinkedActivityToEventDate), and the events list renders
+      // `activity.scheduledDateTime` in preference to the event's own date —
+      // so without this the row keeps painting the pre-move date from the
+      // cached activity list while the database is already correct. Same
+      // reasoning as deleteEvent's cascade invalidation below.
+      // Bug 2026-09-16-event-date-edit-leaves-linked-activity-behind (layer 3:
+      // verified in prod that the rows moved while the screen did not).
+      ref.invalidate(activitiesControllerProvider);
+      ref.invalidate(allActivitiesProvider);
     } catch (e) {
       logger.error('Error updating event', error: e);
       rethrow;
