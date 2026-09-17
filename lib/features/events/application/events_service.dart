@@ -326,9 +326,103 @@ class EventsService {
         requireRemoteAck:
             resolvedConsistency == WriteConsistency.remoteAckRequired,
       );
+
+      await _moveLinkedActivityToEventDate(
+        deviceId: deviceId,
+        event: updatedEvent,
+        currentUserId: currentUserId,
+        consistency: resolvedConsistency,
+      );
     } catch (e, stackTrace) {
       _logger.error('Error updating event', error: e, stackTrace: stackTrace);
       rethrow;
+    }
+  }
+
+  /// Moves an event's linked activity to the event's (possibly edited) date.
+  ///
+  /// The events list renders `activity.scheduledDateTime` in preference to the
+  /// event's own date (`events_list_screen.dart`), and the linked activity is
+  /// the FUELING unit — so an event that moves without its activity shows the
+  /// old date on screen AND leaves race-day fuel a day behind the race
+  /// (bug 2026-09-16-event-date-edit-leaves-linked-activity-behind; the
+  /// second half of Claudia's 2026-09-10 report, whose first half is e8ccda76).
+  ///
+  /// Deliberately narrow — two rows are left alone:
+  /// - **provider-synced** (`syncedFromProvider != null`): a local move could be
+  ///   reverted or duplicated by the next sync. D-2c (RATIFIED 2026-09-11) gives
+  ///   the local-edit-wins rule for provider-origin EVENTS; the activity-side
+  ///   analogue is NOT ruled, so we log and skip rather than decide it here.
+  /// - **already happened** (`actualTime != null`): rescheduling a session that
+  ///   was actually performed would falsify a measurement.
+  ///
+  /// `plannedTime` moves with `scheduledDateTime` when it is set, because
+  /// `Activity.displayTime` prefers it — moving only the scheduled time would
+  /// leave every display surface on the old day.
+  Future<void> _moveLinkedActivityToEventDate({
+    required String deviceId,
+    required domain.Event event,
+    String? currentUserId,
+    required WriteConsistency consistency,
+  }) async {
+    final activityId = event.activityId;
+    final newStart = event.startTime == null
+        ? null
+        : DateTime.tryParse(event.startTime!);
+    if (activityId == null || newStart == null) return;
+
+    try {
+      final activity = await _activitiesService.getActivityById(
+        event.userId,
+        activityId,
+      );
+      if (activity == null) return;
+
+      if (activity.syncedFromProvider != null) {
+        _logger.info(
+          'Linked activity left in place: provider-synced (unruled)',
+          context: 'EVENTS_SERVICE',
+          data: {
+            'eventId': event.id,
+            'activityId': activityId,
+            'provider': activity.syncedFromProvider,
+          },
+        );
+        return;
+      }
+      if (activity.actualTime != null) {
+        _logger.info(
+          'Linked activity left in place: already performed',
+          context: 'EVENTS_SERVICE',
+          data: {'eventId': event.id, 'activityId': activityId},
+        );
+        return;
+      }
+      if (activity.scheduledDateTime == newStart &&
+          (activity.plannedTime == null || activity.plannedTime == newStart)) {
+        return; // nothing moved
+      }
+
+      await _activitiesService.updateActivity(
+        deviceId: deviceId,
+        activity: activity.copyWith(
+          scheduledDateTime: newStart,
+          plannedTime: activity.plannedTime == null ? null : newStart,
+        ),
+        currentUserId: currentUserId,
+        consistency: consistency,
+      );
+    } catch (e, stackTrace) {
+      // The event's own move already succeeded and is the athlete's edit;
+      // failing the whole save because its activity could not follow would
+      // lose that edit. Log loudly instead — the split is visible in the list.
+      _logger.error(
+        'Event moved but linked activity did not follow',
+        error: e,
+        stackTrace: stackTrace,
+        context: 'EVENTS_SERVICE',
+        data: {'eventId': event.id, 'activityId': activityId},
+      );
     }
   }
 
