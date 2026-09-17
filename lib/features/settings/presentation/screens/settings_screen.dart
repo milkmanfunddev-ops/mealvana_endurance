@@ -15,6 +15,7 @@ import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/app_config.dart';
 import '../providers/dev_tools_switch_controller.dart';
 import '../providers/settings_controller.dart';
+import '../providers/tester_mode_controller.dart';
 import 'debug_screen.dart';
 
 /// Settings Screen - Kyle's Design System + Database Integration RESTORED
@@ -108,7 +109,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         "belongs to the team.";
   }
 
-  /// Persists the internal flag for this device.
+  /// Persists the internal flag for this device, and marks the signed-in
+  /// account as a Tester (`users.is_internal`) so the server lets it change
+  /// Meal photos.
   ///
   /// On iOS this is written to the Keychain, which survives app uninstall — so
   /// this only needs to be done once per phone, not once per reinstall. On
@@ -125,8 +128,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ref.read(analyticsTrackerProvider).markInternal();
     }
 
-    await ref.read(internalDeviceFlagProvider.notifier).setInternal(value);
+    final account = await ref
+        .read(testerModeControllerProvider.notifier)
+        .setTester(value);
     if (!mounted) return;
+
+    // The device flag always applies; only the account can fail. Say so
+    // rather than let a Tester find out from a refused photo save.
+    if (account == TesterAccountSync.failed) {
+      MealvanaSnackbar.showWarning(
+        context,
+        'Device switched, but this account could not be updated, so photo '
+        'changes will be refused. Flip the switch again with a connection.',
+      );
+      return;
+    }
 
     if (value) {
       MealvanaSnackbar.showSuccess(

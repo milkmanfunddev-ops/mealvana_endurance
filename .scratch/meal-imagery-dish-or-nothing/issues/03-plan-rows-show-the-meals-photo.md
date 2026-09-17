@@ -8,7 +8,7 @@ the page for Lee to close.
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-16) — simulator check owed
 
 - [x] The plan read returns each plan meal's library Meal's current photo (address, credit,
       credit link), joined by meal id. No picture fields are added to plan meal rows, and add and
@@ -109,3 +109,12 @@ watch it (that cost this session a blind build).
 Row `657c0888-100d-446d-bf2c-cb8200e44ca7` was inserted by hand for this check. Undo with
 `delete from plan_meals where id = '657c0888-100d-446d-bf2c-cb8200e44ca7';` — it is left in place
 so the check is ready to run.
+
+**2026-09-17 — Lee's rulings.**
+
+- **Offline, plan rows show no photos — accepted.**
+- **No golden for a photo-bearing plan row — accepted.** The widget test pinning the layout is
+  enough; the frozen `contract-v1` fixtures stay frozen.
+- **mp-324 closed.** Lee asked for it to be closed: new card **mp-418** "Plan rows show the library
+  Meal's photo" was added and approved in his name through `sync.mjs apply`, and `sync.mjs answers
+  mp-324 mp-418` marked the question answered.

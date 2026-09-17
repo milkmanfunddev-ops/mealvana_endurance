@@ -8,7 +8,7 @@ recorded with the account and time, so vandalism can be found and undone.
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-16) — simulator check owed
 
 - [x] The edge function gains `remove`, `restore` and `delete`, each with the Tester check and
       one transaction that updates the current-photo fields and writes an event:
@@ -129,3 +129,10 @@ photograph (`6df796ea`) behind it in History, so Remove, Restore and Delete all 
 to act on. `607f9dd5` (test@test.com) is the Tester. What is left to see on a device is a removal
 taking the picture off the Meals tab and recipe screen, a restore putting it back, and a delete
 asking first and then taking an uploaded photo's file with it.
+
+**2026-09-17 — Lee's rulings.**
+
+- **No Restore on the worn row, no event for a remove that removes nothing, 400 for a malformed
+  photo id — all accepted as built.**
+- **`AsyncValue.guard()` — ruled: keep as built.** Photo writes rethrow to the screen and leave the
+  shown state intact. CLAUDE.md now carries this as a named exception to the controller rule.

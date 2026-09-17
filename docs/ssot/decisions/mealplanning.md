@@ -4188,3 +4188,28 @@ Feature name: Meal planning and Vana
 > 2026-09-15 proposed from wave 1 ticket 22
 > 2026-09-15 picture captured at 1.26.0+1, f30e3897
 > 2026-09-15 rejected by Lee: No placeholder at all. mp-145 re-ruled on 2026-09-15: a meal with no photo shows nothing (ADR 0003).
+
+## mp-418 · Plan rows show the library Meal's photo
+- category: Plan tab
+- status: approved
+- image: none
+- caption:
+- screen: Plan tab
+- source: Lee, from the category discussion on 2026-09-17
+- linked: mp-324
+
+**Context.** A plan meal stores its name, slot and icon key, no picture. The plan tiles, the plan bar and the review sheet therefore had no photo to show, while the Meals tab and recipe screen show a Meal's Dish photo (ADR 0003). mp-324 asked whether plan rows should ever show photos.
+
+**Decision.** 1. Plan tiles, the plan bar and the review sheet show the same Dish photo the Meal shows on the Meals tab, or nothing, with the same collapse-on-failure rule.
+2. The photo is looked up from the library Meal by meal id every time the plan is shown. It is never copied onto the plan row, and the add and swap paths are unchanged, so a photo a Tester adds, removes or restores later reaches plans already made.
+3. A Meal that appears twice in a plan shows its photo on both rows. The one-photo-per-list rule does not apply to plans.
+4. Offline, plan rows show no photos: nothing is mirrored to the phone.
+
+**Why.** Lee's ruling that a Meal looks the same wherever it is met (spec story 10). Looking the photo up rather than copying it means a plan never shows a stale or removed photograph. Built in meal-imagery ticket 03 (c714dae7). Lee on 2026-09-17: accepted offline showing no photos, and closed mp-324 with this card.
+
+**What else was considered.** Copying the picture fields onto the plan meal row on add and swap, which lost because a later photo change would never reach plans already made. Keeping plan rows picture-less, which contradicts the everywhere ruling.
+
+**What it touches.** lib/features/meal_planning/application/plan_meal_photos.dart, lib/features/meal_planning/presentation/widgets/plan_tile.dart, lib/features/meal_planning/presentation/widgets/plan_bar.dart, lib/features/meal_planning/presentation/widgets/review_sheet.dart
+
+> 2026-09-17 added from the category discussion on 2026-09-17 by Lee
+> 2026-09-17 approved by Lee

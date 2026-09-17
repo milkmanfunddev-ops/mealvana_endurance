@@ -8,7 +8,7 @@ The salmon, quinoa, asparagus and spinach salad shows nothing. Spec:
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-16)
 
 - [x] `meal_library` carries the current Dish photo as its own fields (address, credit, credit link).
       The pipeline's image columns are untouched.
@@ -102,3 +102,20 @@ find by deep link than by searching.
 
 **Still owed:** nothing in this ticket. `docs/meal-images/README.md` still names `picturesForList`
 and describes the ladder's fallback; left alone because ticket 02 owns that rewrite.
+
+**2026-09-17 — Lee's rulings.**
+
+- **Where the photo widgets live — resolved, and my reason was wrong.** I said a spec could not be
+  written because `docs/ssot/` is the QA mirror. Lee ruled on 2026-09-11 that app-authored design
+  specs *do* live there, marked "PROPOSED … awaiting Xuan" (precedents: `vana-sheet.md`,
+  `vana-moment.md`, `meal-image-mosaic.md`); CLAUDE.md never said so, and now does. So the widgets
+  moved into the library: spec `docs/ssot/spec/design/components/dish-photo.md` (PROPOSED v1,
+  contracts DP-1..7) and `lib/shared/widgets/kyle_design/data/dish_photo.dart` (`DishPhotoThumb`,
+  `DishPhotoHero`, `DishPhotoCreditLine`). The library takes plain fields, so it depends on no
+  feature; `meal_photo_view.dart` keeps the `MealPhoto*` names as thin adapters, so no call site or
+  test changed. Meal-planning presentation tests 296/296.
+- Xuan's liquid-glass work is in the same library (`kyle_design/materials/glass.dart`,
+  `theme/kyle_design/app_materials.dart`): `kyle_design` is the one component library, whatever
+  the name suggests. No separate aggregation to reconcile.
+- **Owed:** `/design-sync` — CLAUDE.md asks for it after `kyle_design/` changes, but no such skill
+  is installed (it sits in `.claude/archive/`).

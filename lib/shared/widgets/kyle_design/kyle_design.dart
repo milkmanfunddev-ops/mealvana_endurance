@@ -23,6 +23,7 @@ export 'cards/nutrition_section_card.dart';
 export 'cards/macro_targets_table.dart';
 // export 'cards/food_item_card.dart';
 export 'data/large_stat.dart';
+export 'data/dish_photo.dart';
 export 'data/macro_pill_row.dart';
 export 'data/meal_image_mosaic.dart';
 export 'fueling/fuel_stat.dart';

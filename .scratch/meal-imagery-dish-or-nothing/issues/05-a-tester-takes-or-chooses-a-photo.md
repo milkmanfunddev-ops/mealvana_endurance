@@ -7,7 +7,7 @@ before anything leaves the phone. The photo is stored in our storage and shown t
 
 **Blocked by:** 04
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-16) — simulator check owed
 
 - [x] A migration creates the public image bucket that photos are stored in, so prod can be built
       from migrations (it exists only in dev today, with no migration). It is idempotent against
@@ -115,3 +115,9 @@ is the Tester and `37129f7e` is the ready-made non-Tester. What is left to see o
 gallery pick (the simulator has no camera) going crop → preview → confirm, the photo appearing for
 the second account, and the stored file carrying no GPS. The tests prove the bytes are clean when
 they *leave the phone*; only a device proves the whole path.
+
+**2026-09-17 — Lee's rulings.**
+
+- **`too_large` and one add at a time — accepted as built.**
+- **`AsyncValue.guard()` — ruled: keep as built.** Photo writes rethrow to the screen and leave the
+  shown state intact. CLAUDE.md now carries this as a named exception to the controller rule.

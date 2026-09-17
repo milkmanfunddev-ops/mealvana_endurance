@@ -10,7 +10,7 @@ function, History, controller, page).
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** done (2026-09-16) — simulator check owed
 
 - [x] Migration: a History table (one row per photo a Meal has had: Meal id, address, credit,
       credit link, storage path or null, who added it, when) and an event table (action, photo,
@@ -123,3 +123,17 @@ ADR names, which showed nothing) now carries a Pexels photograph added through t
 is the ready-made non-Tester. What is left to see on a device: the Tester's camera icon and Add
 photo line, a paste-preview-confirm round trip, and that second account seeing the photo on the
 Meals tab and recipe screen without the entry points.
+
+**2026-09-17 — Lee's rulings.**
+
+- **`users.is_internal` is now written by the 7-tap switch.** Flipping "Mark this device as
+  internal" sets the device flag and then the signed-in account's column
+  (`TesterAccountStore` → `TesterModeController`, used by the Settings switch). Only an explicit
+  flip writes it: a debug build is Tester by default and must not mark every account it signs
+  into. A failed account write still switches the device and the screen says photo changes will
+  be refused. Checked before building: `users_update_own` already let an account set this column
+  on dev and prod, and no entitlement reads it any more (`has_entitlement` is gone from both), so
+  this grants nothing new. Verified against dev RLS: own row updates, another account's row
+  matches nothing. Controller test 4/4.
+- **`AsyncValue.guard()` — ruled: keep as built.** Photo writes rethrow to the screen and leave the
+  shown state intact. CLAUDE.md now carries this as a named exception to the controller rule.

@@ -11,11 +11,15 @@ Routing guide for agents in this repo. Keep it short; detail lives in `/docs`.
   Exception: `docs/ssot/decisions/` is app-owned and outside the mirror. Its decision records
   (`<feature>.md`) are written only by a skill applying a ratifier's verdict (`_page/sync.mjs
   apply`) or attaching a picture (`attach-svg`, `attach-image`, `pictures`, `refresh`), never by hand; the README, page template and images there are ordinary files.
+  Exception: a design component spec written app-side goes in `docs/ssot/spec/design/components/`
+  with status "PROPOSED … authored app-side, awaiting Xuan" (Lee, 2026-09-11); a QA sync must keep it.
 
 ## Non-negotiable rules
 - FOA layers: `presentation -> application -> domain <- data`. Screens are UI-only; business
   logic lives in controllers and services. Controllers are `@riverpod` + `AsyncNotifier` +
-  `AsyncValue.guard()`. Run codegen after Riverpod or Drift annotation/schema changes.
+  `AsyncValue.guard()`. Exception: a remote-ack write that must leave the shown state intact
+  on failure (Meal photos) rethrows to the screen instead of guarding. Run codegen after
+  Riverpod or Drift annotation/schema changes.
 - No hardcoded user-facing strings where the content system exists. Use `MealvanaSnackbar`, never
   raw `SnackBar`.
 - Offline-first: local write first with upload-state tracking; repository-level `ensureSynced`,

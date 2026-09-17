@@ -7,7 +7,7 @@ against prod.
 
 **Blocked by:** 05
 
-**Status:** ready-for-agent
+**Status:** ready-for-agent — not now (Lee, 2026-09-17: no prod work at the moment)
 
 - [ ] The meal-planning cutover runbook gains ordered steps:
       1. Apply the bucket migration to prod.
@@ -23,3 +23,5 @@ against prod.
 - [ ] The existing image gate and verify steps in the cutover folder are updated to check the new
       fields, not the pipeline's image columns.
 - [ ] The prod `app_config` is untouched, and the deploy playbook's ordering is respected.
+
+**2026-09-17 —** Lee: no prod work right now. Left unbuilt until the cutover is scheduled.

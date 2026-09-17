@@ -574,7 +574,7 @@ Last extracted: 1dedc493
 ## mp-324 · Whether plan rows should ever show photos
 - category: Plan tab
 - kind: question
-- status: open
+- status: answered
 - linked: mp-323
 - image: none
 - caption:
@@ -590,6 +590,7 @@ Last extracted: 1dedc493
 **What it touches.** Plan tab tiles, the plan bar, the review sheet, the plan meal row.
 
 > 2026-09-15 opened in wave 1 ticket 22
+> 2026-09-17 answered by mp-418
 
 ## mp-325 · Which specs the wave left describing the old behaviour
 - category: Design system
