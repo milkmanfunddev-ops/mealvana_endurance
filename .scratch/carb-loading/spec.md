@@ -109,6 +109,26 @@ Then: **2 → 3 → 4 → 5**, with the reminder (6) slotted wherever it fits.
 
 ## Open decisions
 
+### RULED — 2026-09-19 (Xuan)
+
+**The load face's precondition is data, not a setting.** It shows when the day falls
+inside a carb-loading plan the athlete has already created for an event. There is no
+user-facing switch for it anywhere in the product — an affordance in the All / Workout
+/ Meals control row was proposed and rejected. A prototype needs a way to compare the
+two days; that control lives outside the device frame, labelled as a prototype control.
+
+**The load face is collapsed-only.** No expansion, no chevron; `Full Breakdown` moves
+onto the face itself. Everything that would have lived in an expansion — protein, fat,
+kcal, the meal-by-meal split — belongs on the breakdown page.
+
+**LOAD replaces the All-lens face.** `DAILY BUDGET` (Meals) and `ACTIVE ENERGY`
+(Workout) are untouched and stay one tap away.
+
+**Prototyped:** Claude Design project `1844f744-5700-4662-a9d4-fa71a29af87d`
+("New Activity page v13 - carb loading enabled"), in `Fuel Timeline.dc.html` and
+`Fuel Timeline -standalone source-.html`. `Fuel Timeline (standalone).html` and
+`Fuel Timeline.html` are built exports and are now stale.
+
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
   carb-loading day, regenerating a protocol rewrites targets without touching
@@ -121,6 +141,12 @@ Then: **2 → 3 → 4 → 5**, with the reminder (6) slotted wherever it fits.
 - **D4 — Does carb-loading food count toward Net Balance / daily macros?**
   Follows D1. Note 544–680 g is also ~2,200–2,700 kcal.
 - **D5 — Shopping list: lift or duplicate?** See below.
+- **D6 — Is the breakdown page the loading page, or a fourth sheet?** If the
+  breakdown *is* the logging screen, the feature collapses to two surfaces: a face
+  on the dashboard and one loading page. Shapes the next design.
+- **D7 — Carbs are two colours.** The prototype paints the carb *macro bar*
+  `electrolyte` as a per-macro accent; the load face's headline is `orange` per
+  Q-D3 (daily intake). Both are defensible; they collide on one screen. Look on Rad.
 
 ---
 
