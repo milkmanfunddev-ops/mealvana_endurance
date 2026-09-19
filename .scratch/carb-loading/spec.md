@@ -173,6 +173,31 @@ Timeline.dc.html` and the standalone source): ramp pace on the face, six
 roll-up slot cards, sparkle auto-on with explicit-off respected, ride
 preserved, regular day byte-identical.
 
+### RULED — 2026-09-19, night (Xuan) — slot-card density
+
+**Asymmetric density, time-aware expansion.** Logged food and recommendations
+have different jobs: a logged item is a receipt (its job ended when counted), a
+recommendation is an instruction (the name IS the content). So:
+- **Filled slot, closed:** one summary line — `Bagel  +2 more` — full receipt
+  behind the chevron.
+- **The next actionable slot** (first unfilled slot not yet superseded by the
+  following slot's time) **auto-opens**: named idea rows inline, one-tap
+  accept, capped at 2 + `+N more ideas`.
+- **Later unfilled slots:** header + `N ideas ›` hint.
+- **Past unfilled slots:** the miss alone (`0 / 54 g` · Tap to add) — no menu;
+  the ramp already carries the debt.
+- Chevron on every card with content; time-awareness is only the default, and
+  a manual open/close overrides it.
+The principle: **the dashboard answers "now"; the breakdown page answers the
+whole day.** Corollary: recommendation display names must be written short
+(`Penne + chicken`, `Garlic bread ×2`) — ellipsis is the safety net, not the
+plan. Every slot needs recommendation content, not just some.
+
+**Prototyped through v7** in the Claude Design project. Verified: 3:30pm
+default opens Dinner; an empty day opens the current slot; accepting collapses
+the slot to a summary and advances the open card; manual overrides stick;
+regular day untouched.
+
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
   carb-loading day, regenerating a protocol rewrites targets without touching
