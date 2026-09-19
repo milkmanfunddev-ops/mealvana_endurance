@@ -129,6 +129,30 @@ kcal, the meal-by-meal split — belongs on the breakdown page.
 `Fuel Timeline -standalone source-.html`. `Fuel Timeline (standalone).html` and
 `Fuel Timeline.html` are built exports and are now stale.
 
+### RULED — 2026-09-19, evening (Xuan)
+
+**The breakdown page is READ-ONLY; logging lives on the timeline.** (Resolves D6.)
+
+**Logging shape — the sparkle carries the load.** On a loading day the suggest
+mode is on and the timeline's meal groups ARE the six carb slots — breakfast,
+morning snack, lunch, afternoon snack, dinner, evening snack. No Recovery group
+on loading days (Recovery is a post-long-workout concept, not a meal title).
+Each slot card carries its carb target from the plan's split (25/10/25/15/20/5);
+dashed until the first log into it, then solid, per the existing card language.
+Food logged outside a slot still counts toward the day total — slots are
+scaffolding, the day number is the contract. Convergence worth noting: the
+`MealType` enum already holds exactly these six, so the loading-day taxonomy is
+the old page's taxonomy with no enum work — this is D1 resolving toward
+"integrate" (ordinary food-log entries, grouped), which dissolves lane 3.
+
+**Colour: orange, as the existing suggestion treatment.** Yolk stays deferred
+until its meaning contract is ruled; may revisit.
+
+**Dashboard pace signal — directionally agreed.** The LOAD face shows
+ahead/behind against a prorated carb target across a 6am–10pm feeding window
+(v1: fixed window), mirroring the prorated-RMR pattern in
+`intraday-display.md`. Basis is D8 below.
+
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
   carb-loading day, regenerating a protocol rewrites targets without touching
@@ -141,9 +165,16 @@ kcal, the meal-by-meal split — belongs on the breakdown page.
 - **D4 — Does carb-loading food count toward Net Balance / daily macros?**
   Follows D1. Note 544–680 g is also ~2,200–2,700 kcal.
 - **D5 — Shopping list: lift or duplicate?** See below.
-- **D6 — Is the breakdown page the loading page, or a fourth sheet?** If the
-  breakdown *is* the logging screen, the feature collapses to two surfaces: a face
-  on the dashboard and one loading page. Shapes the next design.
+- **D6 — RESOLVED (2026-09-19): read-only breakdown; logging is the timeline.**
+  The breakdown screen itself still needs designing and is a known gap — today
+  the load face's Full Breakdown lands on the Breakdown Pager's net-balance page,
+  a stub.
+- **D8 — Pace basis: linear or slot-anchored?** Linear (544 g flat across the
+  window) mirrors RMR exactly but oscillates around discrete meals — a full
+  breakfast reads "ahead", coasting follows, behind by lunch — and it can
+  contradict the slot cards. Slot-anchored (owe the cumulative split as each
+  slot passes) makes the headline and the cards one arithmetic, at the cost of
+  slots needing clock times. Recommendation: slot-anchored.
 - **D7 — Carbs are two colours.** The prototype paints the carb *macro bar*
   `electrolyte` as a per-macro accent; the load face's headline is `orange` per
   Q-D3 (daily intake). Both are defensible; they collide on one screen. Look on Rad.
