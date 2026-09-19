@@ -153,6 +153,26 @@ ahead/behind against a prorated carb target across a 6am–10pm feeding window
 (v1: fixed window), mirroring the prorated-RMR pattern in
 `intraday-display.md`. Basis is D8 below.
 
+### RULED — 2026-09-19, late (Xuan) — resolves D8 and shapes the slot cards
+
+**Pace basis: the ramp.** Prorated carb target interpolates linearly through the
+slot-schedule checkpoints (cumulative 25/10/25/15/20/5 at each slot's clock
+time, 0 at 6am) — never a step, never a flat rate. Collapsed LOAD face shows
+**the delta alone** ("305 g behind pace" / "N g ahead" / "On pace"); consumed /
+planned, the bar and the pace tick live in the expanded face.
+
+**Slots are roll-up containers, not headers over item cards.** Everything logged
+into a slot records *inside* its card (compact rows); one card per slot, always.
+Dashed until the first log, solid after. Recommendations render as accept-rows
+inside the card. Items logged outside the six slots may still sit on the
+timeline as ordinary entries and always count toward the day total. Section
+interiors (the recommendation experience) are deliberately not yet designed.
+
+**Prototyped through v6** in the Claude Design project (both `Fuel
+Timeline.dc.html` and the standalone source): ramp pace on the face, six
+roll-up slot cards, sparkle auto-on with explicit-off respected, ride
+preserved, regular day byte-identical.
+
 - **D1 — Is a carb-loading day its own log, or food-log entries tagged to a day?**
   Hinge for lanes 2 and 3. If entries are ordinary food logs tagged to a
   carb-loading day, regenerating a protocol rewrites targets without touching
@@ -169,7 +189,7 @@ ahead/behind against a prorated carb target across a 6am–10pm feeding window
   The breakdown screen itself still needs designing and is a known gap — today
   the load face's Full Breakdown lands on the Breakdown Pager's net-balance page,
   a stub.
-- **D8 — Pace basis: linear or slot-anchored?** Linear (544 g flat across the
+- **D8 — RESOLVED (2026-09-19): the ramp** (see the late ruling block). Original framing: Linear (544 g flat across the
   window) mirrors RMR exactly but oscillates around discrete meals — a full
   breakfast reads "ahead", coasting follows, behind by lunch — and it can
   contradict the slot cards. Slot-anchored (owe the cumulative split as each
