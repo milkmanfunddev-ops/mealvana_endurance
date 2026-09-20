@@ -331,6 +331,13 @@ verify_jwt = false
 [functions.revenuecat-webhook]
 verify_jwt = false
 
+# Called by the database itself (pg_net from the raw-retention sweep wrapper);
+# pg_net cannot mint JWTs, so gateway verification is off and the function
+# validates the x-alert-token shared secret internally (same pattern as
+# revenuecat-webhook). real-payload-corpus@v1.
+[functions.raw-retention-alert]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
