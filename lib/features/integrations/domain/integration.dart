@@ -53,8 +53,13 @@ class IntegrationModel {
   /// Serialized athlete zone data (HR, Speed, Power zones from Training Peaks)
   final String? athleteZonesJson;
 
-  /// TrainingPeaks IsPremium (data-integrations@v1 capture): predicts null
-  /// completed-workout fields for basic athletes and write-back 403s.
+  /// TrainingPeaks IsPremium — CONNECT-TIME SNAPSHOT, capture only.
+  ///
+  /// A1 (ruled 2026-09-20): NEVER a behavioral predicate. The flag is
+  /// false-negative on premium-featured trial accounts (proven 2026-09-18),
+  /// so nothing gates on it: the metrics fetch attempts and observes, and
+  /// write-back eligibility keys on TP's actual responses. Retained as an
+  /// analytics/forensics snapshot of what the profile reported at connect.
   final bool? providerIsPremium;
 
   /// Latest TrainingPeaks /v2/metrics body-metrics fetch (weight, HRV, steps,
