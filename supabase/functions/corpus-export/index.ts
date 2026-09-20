@@ -18,11 +18,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { selectNovelExemplars } from "../_shared/corpus/sampler.ts";
 import {
+  FS_KEEP_ENUM,
   FS_SCRUB_CENSUS,
+  GARMIN_KEEP_ENUM,
   GARMIN_SCRUB_CENSUS,
+  type KeepEnum,
   newScrubContext,
   scrub,
   type ScrubCensus,
+  TP_KEEP_ENUM,
   TP_SCRUB_CENSUS,
 } from "../_shared/corpus/scrub.ts";
 import type { Json } from "../_shared/corpus/fingerprint.ts";
@@ -35,6 +39,12 @@ function censusFor(provider: string): ScrubCensus {
   return GARMIN_SCRUB_CENSUS;
 }
 
+function keepEnumFor(provider: string): KeepEnum {
+  if (provider === "training_peaks") return TP_KEEP_ENUM;
+  if (provider === "final_surge") return FS_KEEP_ENUM;
+  return GARMIN_KEEP_ENUM;
+}
+
 initSentry();
 
 serve(withSentry(async (req) => {
@@ -45,7 +55,12 @@ serve(withSentry(async (req) => {
     return new Response("unauthorized", { status: 401 });
   }
 
-  const { known = [] } = await req.json().catch(() => ({}));
+  // `rescrubIds` is the sanctioned frozen-exemplar correction path (the
+  // intake allows touching an exemplar only "to correct it … or fix a
+  // discovered leak"): it re-emits EXACTLY those fingerprints, ignoring the
+  // novelty gate, so a caller can overwrite known-bad files in place.
+  const { known = [], rescrubIds = [] } = await req.json().catch(() => ({}));
+  const rescrub: string[] = rescrubIds;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -66,7 +81,11 @@ serve(withSentry(async (req) => {
     provider: r.provider as string,
     payload: r.data as Json,
   }));
-  const novel = await selectNovelExemplars(rows, known);
+  const novel = rescrub.length > 0
+    ? (await selectNovelExemplars(rows, [])).filter((n) =>
+      rescrub.includes(n.fingerprintId)
+    )
+    : await selectNovelExemplars(rows, known);
 
   // Scrub server-side; one context per exemplar file — ids stay referentially
   // consistent WITHIN an exemplar (parent/child), while separate exemplars
@@ -76,7 +95,12 @@ serve(withSentry(async (req) => {
     provider: n.provider,
     stratum: n.stratum,
     optionalKeysInStratum: n.optionalKeysInStratum,
-    exemplar: scrub(n.exemplar, censusFor(n.provider), newScrubContext()),
+    exemplar: scrub(
+      n.exemplar,
+      censusFor(n.provider),
+      newScrubContext(),
+      keepEnumFor(n.provider),
+    ),
   }));
 
   return new Response(
