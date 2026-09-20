@@ -798,6 +798,27 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       }
     }
 
+    if (providerId == 'final_surge' || providerId == 'training_peaks') {
+      // Raw payload retention (real-payload-corpus@v1, W3): the hard purge
+      // covers provider_raw_payloads too — an application of ruled Q-INT2
+      // ("removes what the provider gave us"). Best effort, same contract
+      // as the garmin wellness block above. The soft-hide path deliberately
+      // leaves these rows: they surface nowhere and age out via the 90-day
+      // TTL regardless.
+      try {
+        final supabaseClient = ref
+            .read(appExternalDepsProvider)
+            .supabaseClient;
+        await supabaseClient
+            .from('provider_raw_payloads')
+            .delete()
+            .eq('user_id', userId)
+            .eq('provider', providerId);
+      } catch (e, stackTrace) {
+        _reportFailureToSentry(providerId, 'purge_raw_payloads', e, stackTrace);
+      }
+    }
+
     await _invalidateMacroWindows(userId, providerId);
 
     // Onboarding-only: drop the personal details this provider pre-filled.
