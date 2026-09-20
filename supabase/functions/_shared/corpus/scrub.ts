@@ -82,8 +82,15 @@ export const FS_KEEP_ENUM: KeepEnum = new Set([
   "WorkoutCompleted", // boolean — drives completion handling
   "WorkoutRace", // boolean — drives race-flag prefill
   "WorkoutIcon", // NUMERIC enum (icon code, not a measurement)
-  // DELIBERATELY ABSENT — WorkoutSubTypeName: the "subtype-is-title" erratum
-  // says FS puts title-like free text in this field, so it is content.
+  // DELIBERATELY ABSENT — WorkoutSubTypeName, on THIN-EVIDENCE prudence, not
+  // on the "subtype-is-title" erratum: that erratum governs the TP
+  // transformer and in fact legitimizes this FS field (qa-70, @v1.1 land).
+  // The census over 21 real FS payloads actually leans enum — valued on 3,
+  // 2 distinct values, 8-9 chars, never equal to or contained in the title,
+  // and set exactly where the title is null. Three valued rows is too thin
+  // to admit a field to an allowlist whose failure mode is free text in a
+  // permanent corpus, and the cost of excluding it is only shape fidelity
+  // on 3 of 21 rows. REVISIT at census >= 10 valued rows.
 ]);
 
 /** Garmin: seeded when Garmin promotion starts; empty is the safe default. */
