@@ -25,6 +25,7 @@ import '../../application/vdot_sync_service.dart';
 import '../../application/vdot_transformer.dart';
 import '../../data/final_surge_api_client.dart';
 import '../../data/integrations_repository.dart';
+import '../../data/provider_raw_payloads_repository.dart';
 import '../../data/runna_ics_client.dart';
 import '../../data/training_peaks_api_client.dart';
 import '../../data/vdot_api_client.dart';
@@ -192,6 +193,15 @@ FinalSurgeTransformer finalSurgeTransformer(Ref ref) {
   return const FinalSurgeTransformer();
 }
 
+/// Repository for the raw FS/TP payload capture side-channel
+/// (real-payload-corpus@v1, lifecycle.md L-7).
+@Riverpod(keepAlive: true)
+ProviderRawPayloadsRepository providerRawPayloadsRepository(Ref ref) {
+  return ProviderRawPayloadsRepository(
+    supabase: ref.read(appExternalDepsProvider).supabaseClient,
+  );
+}
+
 /// Provider for Final Surge sync service
 @Riverpod(keepAlive: true)
 FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
@@ -208,6 +218,7 @@ FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
     transformer: transformer,
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
+    rawPayloadsRepository: ref.watch(providerRawPayloadsRepositoryProvider),
   );
 }
 
@@ -293,6 +304,7 @@ Future<TrainingPeaksSyncService> trainingPeaksSyncService(Ref ref) async {
     transformer: transformer,
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
+    rawPayloadsRepository: ref.watch(providerRawPayloadsRepositoryProvider),
   );
 }
 

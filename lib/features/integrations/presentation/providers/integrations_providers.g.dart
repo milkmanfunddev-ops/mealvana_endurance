@@ -264,6 +264,65 @@ final class FinalSurgeTransformerProvider
 String _$finalSurgeTransformerHash() =>
     r'a4b7b7b85ef111098bae59045c76fc70a96a57da';
 
+/// Repository for the raw FS/TP payload capture side-channel
+/// (real-payload-corpus@v1, lifecycle.md L-7).
+
+@ProviderFor(providerRawPayloadsRepository)
+const providerRawPayloadsRepositoryProvider =
+    ProviderRawPayloadsRepositoryProvider._();
+
+/// Repository for the raw FS/TP payload capture side-channel
+/// (real-payload-corpus@v1, lifecycle.md L-7).
+
+final class ProviderRawPayloadsRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ProviderRawPayloadsRepository,
+          ProviderRawPayloadsRepository,
+          ProviderRawPayloadsRepository
+        >
+    with $Provider<ProviderRawPayloadsRepository> {
+  /// Repository for the raw FS/TP payload capture side-channel
+  /// (real-payload-corpus@v1, lifecycle.md L-7).
+  const ProviderRawPayloadsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'providerRawPayloadsRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$providerRawPayloadsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ProviderRawPayloadsRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ProviderRawPayloadsRepository create(Ref ref) {
+    return providerRawPayloadsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ProviderRawPayloadsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ProviderRawPayloadsRepository>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$providerRawPayloadsRepositoryHash() =>
+    r'96ed403d1e0bdee04a36bc156c745951f284c1b3';
+
 /// Provider for Final Surge sync service
 
 @ProviderFor(finalSurgeSyncService)
@@ -315,7 +374,7 @@ final class FinalSurgeSyncServiceProvider
 }
 
 String _$finalSurgeSyncServiceHash() =>
-    r'dcafcd6ae9db3b39f76580800e84cb78c9c4b4fb';
+    r'959a5b1f477e10f6aa2713e01158271a8d62719d';
 
 /// Provider to get Final Surge integration for a user
 
@@ -761,7 +820,7 @@ final class TrainingPeaksSyncServiceProvider
 }
 
 String _$trainingPeaksSyncServiceHash() =>
-    r'4bd76ececa514f245d6075c4fbc317bbd5d16bea';
+    r'c9acf0e9267a4244c23c9c016b83b9a33ac549b1';
 
 /// Provider to get TrainingPeaks integration for a user
 

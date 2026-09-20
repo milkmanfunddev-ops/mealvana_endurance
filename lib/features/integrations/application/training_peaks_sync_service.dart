@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'synced_workout_analytics.dart';
 import '../../activities/data/activities_repository.dart';
 import '../../activities/domain/activity.dart';
 import '../data/integrations_repository.dart';
+import '../data/provider_raw_payloads_repository.dart';
 import '../data/training_peaks_api_client.dart';
 import '../domain/athlete_zones.dart';
 import '../domain/integration.dart';
@@ -39,12 +41,14 @@ class TrainingPeaksSyncService {
     required TrainingPeaksTransformer transformer,
     required ChangeDetectionService changeDetectionService,
     AnalyticsTracker? analytics,
+    ProviderRawPayloadsRepository? rawPayloadsRepository,
   }) : _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
        _changeDetectionService = changeDetectionService,
-       _analytics = analytics;
+       _analytics = analytics,
+       _rawPayloadsRepository = rawPayloadsRepository;
 
   final TrainingPeaksApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
@@ -52,6 +56,27 @@ class TrainingPeaksSyncService {
   final TrainingPeaksTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
+  final ProviderRawPayloadsRepository? _rawPayloadsRepository;
+
+  /// Raw-payload capture (real-payload-corpus@v1, lifecycle.md L-7): offers
+  /// the whole fetched list to `provider_raw_payloads`, non-blocking — the
+  /// repository dedups by (Id, LastModifiedDate) and never throws.
+  void _captureRawPayloads(
+    String userId,
+    List<Map<String, dynamic>> workoutsJson,
+  ) {
+    final repo = _rawPayloadsRepository;
+    if (repo == null || workoutsJson.isEmpty) return;
+    unawaited(
+      repo.uploadRawPayloads(
+        userId: userId,
+        provider: 'training_peaks',
+        payloads: workoutsJson,
+        idOf: (w) => w['Id']?.toString(),
+        lastModifiedOf: (w) => w['LastModifiedDate']?.toString(),
+      ),
+    );
+  }
 
   void _trackSyncedWorkoutPlanned(Activity activity) =>
       trackSyncedWorkoutPlanned(
@@ -145,6 +170,8 @@ class TrainingPeaksSyncService {
       if (kDebugMode) {
         print('   Fetched ${workoutsJson.length} workouts from TrainingPeaks');
       }
+
+      _captureRawPayloads(userId, workoutsJson);
 
       // 3. Transform remote workouts to Activity objects
       final remoteActivities = <Activity>[];
@@ -396,6 +423,8 @@ class TrainingPeaksSyncService {
         endDate: endDate,
         includeDescription: true,
       );
+
+      _captureRawPayloads(userId, workoutsJson);
 
       // Transform remote workouts to Activity objects
       final remoteActivities = <Activity>[];

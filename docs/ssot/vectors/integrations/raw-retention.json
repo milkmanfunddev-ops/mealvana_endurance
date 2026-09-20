@@ -1,0 +1,220 @@
+{
+ "section": "raw-retention",
+ "engine": "provider_raw_payloads repository + pg_cron TTL sweep (server-side, to be built)",
+ "specVersion": "lifecycle.md L-7 — RULED (Xuan, 2026-09-20; versioning amendment same day)",
+ "note": "EXPECTED-RED: nothing implements provider_raw_payloads or the TTL sweep yet (handback intake/2026-09-20-handback-corpus-rulings.md; hard date ~2026-10-02 for the first trial sync). Contract: one row per (provider workout id, LastModifiedDate); unchanged lm on re-fetch writes NOTHING (never a row per sync pass); a changed lm INSERTS a new versioned row; TTL purges rows STRICTLY older than 90 days by fetched_at, per row. CONVENTION the spec does not state: a row exactly 90.0 days old is RETAINED ('past 90 days' read as strictly-older); challengeable. Days are used as the unit in vectors; the sweep's real unit is the timestamp. Harness co-evolution: needs a repository-level arm (SQL or Dart repo test), not the transformer arm.",
+ "vectors": [
+  {
+   "id": "refetch-unchanged-lm-writes-nothing",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 3
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 7
+     }
+    ],
+    "nowDay": 10
+   },
+   "expected": {
+    "survivingRows": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     }
+    ]
+   },
+   "why": "L-7 item 2: unchanged LastModifiedDate on re-fetch writes nothing — three fetches, one row"
+  },
+  {
+   "id": "edit-inserts-versioned-row",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T2",
+      "fetchedDay": 5
+     }
+    ],
+    "nowDay": 10
+   },
+   "expected": {
+    "survivingRows": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T2",
+      "fetchedDay": 5
+     }
+    ]
+   },
+   "why": "versioning amendment (51c4258): changed lm INSERTS a new row; both versions survive inside TTL"
+  },
+  {
+   "id": "edit-does-not-replace-history",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T2",
+      "fetchedDay": 1
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T3",
+      "fetchedDay": 2
+     }
+    ],
+    "nowDay": 10
+   },
+   "expected": {
+    "survivingRows": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T2",
+      "fetchedDay": 1
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T3",
+      "fetchedDay": 2
+     }
+    ]
+   },
+   "why": "three edits -> three rows; history kept for corpus + forensics (qa-33 catch, ruled A)"
+  },
+  {
+   "id": "ttl-purges-strictly-older",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     }
+    ],
+    "nowDay": 91
+   },
+   "expected": {
+    "survivingRows": []
+   },
+   "why": "fetched day 0, now day 91 -> 91d old, strictly past 90 -> purged; empty survivor set"
+  },
+  {
+   "id": "ttl-boundary-exactly-90-retained",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     }
+    ],
+    "nowDay": 90
+   },
+   "expected": {
+    "survivingRows": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     }
+    ]
+   },
+   "why": "CONVENTION: exactly 90.0d is retained ('past 90 days' = strictly older). Boundary pin"
+  },
+  {
+   "id": "ttl-per-row-not-per-workout",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "A",
+      "lastModified": "T2",
+      "fetchedDay": 60
+     }
+    ],
+    "nowDay": 100
+   },
+   "expected": {
+    "survivingRows": [
+     {
+      "workoutId": "A",
+      "lastModified": "T2",
+      "fetchedDay": 60
+     }
+    ]
+   },
+   "why": "amendment: TTL applies PER ROW — v1 fetched day 0 is 100d old (purged), v2 fetched day 60 is 40d old (kept)"
+  },
+  {
+   "id": "two-workouts-independent",
+   "status": "ratified",
+   "inputs": {
+    "syncEvents": [
+     {
+      "workoutId": "A",
+      "lastModified": "T1",
+      "fetchedDay": 0
+     },
+     {
+      "workoutId": "B",
+      "lastModified": "T1",
+      "fetchedDay": 89
+     }
+    ],
+    "nowDay": 95
+   },
+   "expected": {
+    "survivingRows": [
+     {
+      "workoutId": "B",
+      "lastModified": "T1",
+      "fetchedDay": 89
+     }
+    ]
+   },
+   "why": "independence: A is 95d old (purged), B is 6d old (kept); lm values may coincide across workouts"
+  }
+ ]
+}
