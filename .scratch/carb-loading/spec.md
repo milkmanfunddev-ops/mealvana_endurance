@@ -156,8 +156,13 @@ ahead/behind against a prorated carb target across a 6am–10pm feeding window
 ### RULED — 2026-09-19, late (Xuan) — resolves D8 and shapes the slot cards
 
 **Pace basis: the ramp.** Prorated carb target interpolates linearly through the
-slot-schedule checkpoints (cumulative 25/10/25/15/20/5 at each slot's clock
-time, 0 at 6am) — never a step, never a flat rate. Collapsed LOAD face shows
+slot-schedule checkpoints — never a step, never a flat rate.
+**Refined 2026-09-19 (designing the 7am view):** a slot's grams accrue across
+its *eating window* — from its own clock time until the next slot arrives (the
+same "superseded" clock the slot cards use) — with the last window closing at
+10pm. Nothing is owed before breakfast, so 7am reads "On pace", not "91 g
+behind". Checkpoints: 0 at 7:30 · 136 at 10:00 · 190 at 12:30 · 326 at 3:00 ·
+408 at 7:00 · 517 at 9:00 · 544 at 10pm. Collapsed LOAD face shows
 **the delta alone** ("305 g behind pace" / "N g ahead" / "On pace"); consumed /
 planned, the bar and the pace tick live in the expanded face.
 
