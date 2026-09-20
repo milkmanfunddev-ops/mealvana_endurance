@@ -1,8 +1,8 @@
 {
  "section": "corpus-deid",
  "engine": "corpus scrubber (server-side, to be built)",
- "specVersion": "corpus intake de-id standard + Q8 additions — RULED as written, timestamps shifted (Xuan, 2026-09-20)",
- "note": "EXPECTED-RED: no scrubber exists. Property vectors (fuzz is random, so expected values are CONSTRAINTS, not literals): droppedKeys absent from output; keptKeySetVerbatim equals the output key set; nullStaysNull keys are null in output (never invented values); scalarsMustDiffer keys carry a value of the SAME TYPE that differs from input; textPlaceholder keys are neutral placeholders; idsReplacedLinksPreserved keys carry synthetic ids with referential equality preserved (parentSummaryId of a child == summaryId of its scrubbed parent); timestampPairOffsetsSeconds hold exactly after the epoch shift; arrayCardinalityVerbatim lengths hold with fuzzed element values. Key-classification lists (DROP/FUZZ/SHIFT/LINK/TEXT) transcribed from the ruled table by CATEGORY — the implementation's per-provider key census extends the categories, never re-classifies these exemplar keys. Harness: property-assert arm over the scrubber.",
+ "specVersion": "de-id standard + Q8 + DEFAULT-DENY amendment w/ KEEP-ENUM allowlist (Xuan, 2026-09-20, samples-leak arbitration)",
+ "note": "EXPECTED-RED: no scrubber exists. Property vectors (fuzz is random, so expected values are CONSTRAINTS, not literals): droppedKeys absent from output; keptKeySetVerbatim equals the output key set; nullStaysNull keys are null in output (never invented values); scalarsMustDiffer keys carry a value of the SAME TYPE that differs from input; textPlaceholder keys are neutral placeholders; idsReplacedLinksPreserved keys carry synthetic ids with referential equality preserved (parentSummaryId of a child == summaryId of its scrubbed parent); timestampPairOffsetsSeconds hold exactly after the epoch shift; arrayCardinalityVerbatim lengths hold with fuzzed element values. AMENDED (ruled A): the scrubber is DEFAULT-DENY on content — `unclassifiedNotVerbatim` keys must not survive verbatim (numbers differ, strings/booleans/other placeholdered; an unclassified boolean's placeholder is the fixed constant false, type preserved); `allowlistVerbatim` (the ruled KEEP-ENUM list, by name) survives verbatim; `mustNotContainAnywhere` strings must be absent from the entire serialized output. AthleteId is census-DROP (identifier row), never fuzz. Harness: property-assert arm over the scrubber.",
  "vectors": [
   {
    "id": "garmin-activity-full-scrub",
@@ -64,6 +64,10 @@
      "summaryId"
     ],
     "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "samples"
+    ],
     "timestampPairOffsetsSeconds": [
      {
       "between": [
@@ -122,6 +126,10 @@
      "Id"
     ],
     "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "TotalTimePlanned"
+    ],
     "timestampPairOffsetsSeconds": [
      {
       "between": [
@@ -133,6 +141,73 @@
     ]
    },
    "why": "populated load values fuzz (differ, stay float); Description null STAYS null (null-pattern verbatim); WorkoutDay/LastModifiedDate shift preserving the 600s offset; Id replaced synthetically"
+  },
+  {
+   "id": "leaked-shape-default-deny-regression",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "Id": 3951921247,
+     "AthleteId": 6626647,
+     "Title": "Corpus Tempo Run",
+     "WorkoutType": "Run",
+     "Completed": false,
+     "TssCalculationMethod": "TrainingPeaks",
+     "Url": "https://bnc.lt/x?user=6626647&athlete=6626647&workout=3951921247&env=uat",
+     "DistancePlanned": 8046.7,
+     "VelocityPlanned": 2.98,
+     "IFPlanned": 0.8,
+     "TssPlanned": 55.0
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [
+     "AthleteId"
+    ],
+    "keptKeySetVerbatim": [
+     "Completed",
+     "DistancePlanned",
+     "IFPlanned",
+     "Id",
+     "Title",
+     "TssCalculationMethod",
+     "TssPlanned",
+     "Url",
+     "VelocityPlanned",
+     "WorkoutType"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [
+     "IFPlanned",
+     "TssPlanned"
+    ],
+    "textPlaceholder": [
+     "Title"
+    ],
+    "idsReplacedLinksPreserved": [
+     "Id"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [
+     "Completed",
+     "TssCalculationMethod",
+     "WorkoutType"
+    ],
+    "unclassifiedNotVerbatim": [
+     "DistancePlanned",
+     "Url",
+     "VelocityPlanned"
+    ],
+    "mustNotContainAnywhere": [
+     "6626647",
+     "3951921247",
+     "bnc.lt",
+     "user=",
+     "athlete="
+    ]
+   },
+   "why": "the 2026-09-20 leak, as a permanent vector: AthleteId is identifier-shaped -> dropped; Url is an unclassified string -> placeholdered (no account params survive); DistancePlanned/VelocityPlanned unclassified numerics -> must differ; WorkoutType/Completed/TssCalculationMethod on the ruled KEEP-ENUM allowlist -> verbatim"
   },
   {
    "id": "tp-basic-nulls-never-invented",
@@ -165,7 +240,9 @@
     "idsReplacedLinksPreserved": [
      "Id"
     ],
-    "timestampOffsetsPreserved": true
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": []
    },
    "why": "the DI-13 twin inside de-id: a basic payload's null load keys stay null — a scrubber that fuzzes a null INVENTS data and breaks the shape (null-pattern is structure)"
   }

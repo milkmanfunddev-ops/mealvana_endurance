@@ -18,11 +18,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { selectNovelExemplars } from "../_shared/corpus/sampler.ts";
 import {
+  FS_KEEP_ENUM,
   FS_SCRUB_CENSUS,
+  GARMIN_KEEP_ENUM,
   GARMIN_SCRUB_CENSUS,
+  type KeepEnum,
   newScrubContext,
   scrub,
   type ScrubCensus,
+  TP_KEEP_ENUM,
   TP_SCRUB_CENSUS,
 } from "../_shared/corpus/scrub.ts";
 import type { Json } from "../_shared/corpus/fingerprint.ts";
@@ -35,6 +39,44 @@ function censusFor(provider: string): ScrubCensus {
   return GARMIN_SCRUB_CENSUS;
 }
 
+/**
+ * Provenance is keyed on SOURCE MATERIAL — the environment a payload came
+ * from and how its values arose — resolved per raw row from the account whose
+ * integration produced it. NOT on provider: the moment TrainingPeaks gains
+ * real-account material (the next thing this corpus ingests), a
+ * provider-keyed stamp would label it "sandbox, hand-typed" and be silently
+ * wrong. Unknown source material returns null and the caller refuses to
+ * write — an exemplar with an inaccurate stamp is worse than no exemplar.
+ *
+ * Account ids stay SERVER-SIDE: this maps them to a label, and only the
+ * label crosses the wire.
+ */
+const SOURCE_MATERIAL: Record<string, string> = {
+  // The seed four: hand-built in the TP SANDBOX, so no real athlete's data
+  // was ever involved — only its shape.
+  "c2c7e005|training_peaks":
+    "TP sandbox host, specimens hand-typed for the corpus (2026-09-20)",
+  // The FS wing: the corpus's first NON-SANDBOX material, promoted by Xuan's
+  // ruling 2026-09-20, de-identified under the default-deny standard.
+  "607f9dd5|final_surge":
+    "real account (owner's own, promoted by ruling 2026-09-20), " +
+    "fail-safe scrub under the default-deny standard (@v1.1)",
+};
+
+function sourceMaterialFor(
+  userId: string | undefined,
+  provider: string,
+): string | null {
+  if (!userId) return null;
+  return SOURCE_MATERIAL[`${userId.slice(0, 8)}|${provider}`] ?? null;
+}
+
+function keepEnumFor(provider: string): KeepEnum {
+  if (provider === "training_peaks") return TP_KEEP_ENUM;
+  if (provider === "final_surge") return FS_KEEP_ENUM;
+  return GARMIN_KEEP_ENUM;
+}
+
 initSentry();
 
 serve(withSentry(async (req) => {
@@ -45,7 +87,12 @@ serve(withSentry(async (req) => {
     return new Response("unauthorized", { status: 401 });
   }
 
-  const { known = [] } = await req.json().catch(() => ({}));
+  // `rescrubIds` is the sanctioned frozen-exemplar correction path (the
+  // intake allows touching an exemplar only "to correct it … or fix a
+  // discovered leak"): it re-emits EXACTLY those fingerprints, ignoring the
+  // novelty gate, so a caller can overwrite known-bad files in place.
+  const { known = [], rescrubIds = [] } = await req.json().catch(() => ({}));
+  const rescrub: string[] = rescrubIds;
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -53,7 +100,7 @@ serve(withSentry(async (req) => {
   );
   const { data, error } = await supabase
     .from("provider_raw_payloads")
-    .select("provider, data")
+    .select("user_id, provider, data")
     .order("fetched_at", { ascending: true });
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -64,9 +111,14 @@ serve(withSentry(async (req) => {
 
   const rows = (data ?? []).map((r) => ({
     provider: r.provider as string,
+    userId: r.user_id as string,
     payload: r.data as Json,
   }));
-  const novel = await selectNovelExemplars(rows, known);
+  const novel = rescrub.length > 0
+    ? (await selectNovelExemplars(rows, [])).filter((n) =>
+      rescrub.includes(n.fingerprintId)
+    )
+    : await selectNovelExemplars(rows, known);
 
   // Scrub server-side; one context per exemplar file — ids stay referentially
   // consistent WITHIN an exemplar (parent/child), while separate exemplars
@@ -74,9 +126,15 @@ serve(withSentry(async (req) => {
   const exemplars = novel.map((n) => ({
     fingerprintId: n.fingerprintId,
     provider: n.provider,
+    sourceMaterial: sourceMaterialFor(n.userId, n.provider),
     stratum: n.stratum,
     optionalKeysInStratum: n.optionalKeysInStratum,
-    exemplar: scrub(n.exemplar, censusFor(n.provider), newScrubContext()),
+    exemplar: scrub(
+      n.exemplar,
+      censusFor(n.provider),
+      newScrubContext(),
+      keepEnumFor(n.provider),
+    ),
   }));
 
   return new Response(
