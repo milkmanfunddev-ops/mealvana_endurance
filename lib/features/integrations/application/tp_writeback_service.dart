@@ -252,11 +252,7 @@ class TpWritebackService {
       );
       await _closeLedgerRow(ledgerId, success: true);
 
-      // A1: a successful push IS the eligibility evidence — clear any block
-      // a past 403 armed (the response, never the profile flag, decides).
-      if (_preferencesService.tpWritebackPremiumBlocked) {
-        await _preferencesService.setTpWritebackPremiumBlocked(false);
-      }
+      await onPushSucceeded();
 
       if (kDebugMode) {
         print('✅ TP Write-back: pushed plan to workout $workoutIdStr');
@@ -302,7 +298,7 @@ class TpWritebackService {
         success: false,
         error: 'api_${e.statusCode}',
       );
-      await _handleApiException(e, userId, workoutIdStr);
+      await handleApiException(e, userId, workoutIdStr);
     }
   }
 
@@ -416,7 +412,7 @@ class TpWritebackService {
         success: false,
         error: 'api_${e.statusCode}',
       );
-      await _handleApiException(e, userId, workoutIdStr);
+      await handleApiException(e, userId, workoutIdStr);
     }
   }
 
@@ -494,7 +490,7 @@ class TpWritebackService {
         await _deleteWritebackEntry(userId, workoutIdStr);
       }
     } on IntegrationApiException catch (e) {
-      await _handleApiException(e, userId, activity.providerWorkoutId);
+      await handleApiException(e, userId, activity.providerWorkoutId);
     } catch (e, st) {
       _logError('removePlanFromWorkout', e, st);
     }
@@ -566,9 +562,19 @@ class TpWritebackService {
     }
   }
 
+  /// A1: a successful push IS the eligibility evidence — clear any block a
+  /// past 403 armed (the response, never the profile flag, decides).
+  @visibleForTesting
+  Future<void> onPushSucceeded() async {
+    if (_preferencesService.tpWritebackPremiumBlocked) {
+      await _preferencesService.setTpWritebackPremiumBlocked(false);
+    }
+  }
+
   // ─── Error handling ───
 
-  Future<void> _handleApiException(
+  @visibleForTesting
+  Future<void> handleApiException(
     IntegrationApiException e,
     String userId,
     String? workoutId,
