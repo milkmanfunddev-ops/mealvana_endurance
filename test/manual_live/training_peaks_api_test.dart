@@ -776,7 +776,10 @@ void main() {
         'Premium Detection': {
           'Final Surge': 'NOT available',
           'TrainingPeaks': 'IsPremium field in profile',
-          'Impact': 'Some endpoints require premium',
+          // A1 (2026-09-20): the flag is a connect-time snapshot,
+          // false-negative on premium-featured trials — never a
+          // behavioral predicate. Endpoint gating is attempt-and-observe.
+          'Impact': 'Snapshot only, unreliable (A1) — attempt and observe',
         },
         'Webhooks': {
           'Final Surge': 'NOT available',

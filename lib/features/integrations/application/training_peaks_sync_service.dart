@@ -145,8 +145,8 @@ class TrainingPeaksSyncService {
       }
     }
 
-    // 3b. Fetch body metrics if stale (non-blocking; premium-gated —
-    // data-integrations@v1 capture, the TP weight-staleness fix)
+    // 3b. Fetch body metrics if stale (non-blocking; A1: attempt-and-observe,
+    // never gated on the IsPremium snapshot — a 401/403 lands here harmlessly)
     try {
       await _fetchMetricsIfStale(integration);
     } catch (e) {
@@ -775,16 +775,18 @@ class TrainingPeaksSyncService {
 
   /// Fetch TP body metrics if stale (data-integrations@v1, Q-INT26 item 4).
   ///
-  /// Range reads of `/v2/metrics` are PREMIUM ONLY, so this is gated on the
-  /// stored IsPremium flag (captured at connect). The cache carries its own
+  /// A1 (ruled 2026-09-20): NOT gated on the stored IsPremium flag — the
+  /// flag is a connect-time snapshot proven false-negative on
+  /// premium-featured trials, so with the old gate this fetch had never run
+  /// for any athlete. The fetch simply attempts; a 401/403 (range reads are
+  /// premium/scope-gated at TP's end) lands in the caller's non-blocking
+  /// catch, which is the graceful handling. The cache carries its own
   /// `fetchedAt` marker inside `athlete_metrics_json` because
   /// `integration.updatedAt` is shared with the zones write and would read
   /// as always-fresh right after a zones fetch. The newest metric carrying
   /// `WeightInKilograms` also refreshes `provider_athlete_weight_kg` —
   /// ongoing TP weight without Garmin.
   Future<void> _fetchMetricsIfStale(IntegrationModel integration) async {
-    if (integration.providerIsPremium != true) return;
-
     final cached = integration.athleteMetricsJson;
     if (cached != null && cached.isNotEmpty) {
       try {
