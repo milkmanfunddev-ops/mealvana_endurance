@@ -80,6 +80,20 @@ export const GARMIN_SCRUB_CENSUS: ScrubCensus = {
   endTimeInSeconds: "shift",
 };
 
+/** Final Surge raw-payload census — ruled-table categories over the FS wire
+ * keys observed in docs/integration/api-exploration/final-surge. */
+export const FS_SCRUB_CENSUS: ScrubCensus = {
+  WorkoutKey: "link",
+  WorkoutTitle: "text",
+  WorkoutDescription: "text",
+  Firstname: "drop",
+  Lastname: "drop",
+  PlannedDistance: "fuzz",
+  PlannedDuration: "fuzz",
+  PlannedTime: "fuzz",
+  WorkoutDate: "shift",
+};
+
 /** TrainingPeaks raw-payload census — exemplar keys from the ruled table. */
 export const TP_SCRUB_CENSUS: ScrubCensus = {
   Id: "link",

@@ -338,6 +338,11 @@ verify_jwt = false
 [functions.raw-retention-alert]
 verify_jwt = false
 
+# Called by qa/scripts/corpus-export.sh (a repo script, not an app session);
+# validates the x-export-token shared secret internally. real-payload-corpus@v1.
+[functions.corpus-export]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
 # Supported request policies: `oneshot`, `per_worker`.
