@@ -1,0 +1,173 @@
+{
+ "section": "corpus-deid",
+ "engine": "corpus scrubber (server-side, to be built)",
+ "specVersion": "corpus intake de-id standard + Q8 additions — RULED as written, timestamps shifted (Xuan, 2026-09-20)",
+ "note": "EXPECTED-RED: no scrubber exists. Property vectors (fuzz is random, so expected values are CONSTRAINTS, not literals): droppedKeys absent from output; keptKeySetVerbatim equals the output key set; nullStaysNull keys are null in output (never invented values); scalarsMustDiffer keys carry a value of the SAME TYPE that differs from input; textPlaceholder keys are neutral placeholders; idsReplacedLinksPreserved keys carry synthetic ids with referential equality preserved (parentSummaryId of a child == summaryId of its scrubbed parent); timestampPairOffsetsSeconds hold exactly after the epoch shift; arrayCardinalityVerbatim lengths hold with fuzzed element values. Key-classification lists (DROP/FUZZ/SHIFT/LINK/TEXT) transcribed from the ruled table by CATEGORY — the implementation's per-provider key census extends the categories, never re-classifies these exemplar keys. Harness: property-assert arm over the scrubber.",
+ "vectors": [
+  {
+   "id": "garmin-activity-full-scrub",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "summaryId": "g-123",
+     "parentSummaryId": "g-100",
+     "userId": "u-9",
+     "deviceName": "Forerunner",
+     "activityName": "Morning Run",
+     "startLatitude": 33.51,
+     "startLongitude": -86.8,
+     "startTimeInSeconds": 1789000000,
+     "endTimeInSeconds": 1789003600,
+     "averageHeartRateInBeatsPerMinute": 152,
+     "activeKilocalories": 435,
+     "samples": [
+      {
+       "hr": 150
+      },
+      {
+       "hr": 151
+      },
+      {
+       "hr": 149
+      }
+     ]
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [
+     "deviceName",
+     "startLatitude",
+     "startLongitude",
+     "userId"
+    ],
+    "keptKeySetVerbatim": [
+     "activeKilocalories",
+     "activityName",
+     "averageHeartRateInBeatsPerMinute",
+     "endTimeInSeconds",
+     "parentSummaryId",
+     "samples",
+     "startTimeInSeconds",
+     "summaryId"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [
+     "activeKilocalories",
+     "averageHeartRateInBeatsPerMinute"
+    ],
+    "textPlaceholder": [
+     "activityName"
+    ],
+    "idsReplacedLinksPreserved": [
+     "parentSummaryId",
+     "summaryId"
+    ],
+    "timestampOffsetsPreserved": true,
+    "timestampPairOffsetsSeconds": [
+     {
+      "between": [
+       "endTimeInSeconds",
+       "startTimeInSeconds"
+      ],
+      "offsetSeconds": -3600
+     }
+    ],
+    "arrayCardinalityVerbatim": {
+     "samples": 3
+    }
+   },
+   "why": "the ruled table end-to-end: GPS+user/device DROPPED; HR/kcal FUZZED (type kept); name PLACEHOLDER; ids REPLACED with parent-child link preserved; start/end offset 3600s preserved post-shift; samples length 3 kept, values fuzzed"
+  },
+  {
+   "id": "tp-planned-premium-scrub",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "Id": 3959342191,
+     "Title": "QA zone probe",
+     "Description": null,
+     "IFPlanned": 0.85,
+     "TssPlanned": 67.7,
+     "TotalTimePlanned": 0.8563,
+     "WorkoutDay": 1789000000,
+     "LastModifiedDate": 1789000600
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [],
+    "keptKeySetVerbatim": [
+     "Description",
+     "IFPlanned",
+     "Id",
+     "LastModifiedDate",
+     "Title",
+     "TotalTimePlanned",
+     "TssPlanned",
+     "WorkoutDay"
+    ],
+    "nullStaysNull": [
+     "Description"
+    ],
+    "scalarsMustDiffer": [
+     "IFPlanned",
+     "TssPlanned"
+    ],
+    "textPlaceholder": [
+     "Description",
+     "Title"
+    ],
+    "idsReplacedLinksPreserved": [
+     "Id"
+    ],
+    "timestampOffsetsPreserved": true,
+    "timestampPairOffsetsSeconds": [
+     {
+      "between": [
+       "LastModifiedDate",
+       "WorkoutDay"
+      ],
+      "offsetSeconds": -600
+     }
+    ]
+   },
+   "why": "populated load values fuzz (differ, stay float); Description null STAYS null (null-pattern verbatim); WorkoutDay/LastModifiedDate shift preserving the 600s offset; Id replaced synthetically"
+  },
+  {
+   "id": "tp-basic-nulls-never-invented",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "Id": 1,
+     "Title": "t",
+     "IFPlanned": null,
+     "TssPlanned": null
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [],
+    "keptKeySetVerbatim": [
+     "IFPlanned",
+     "Id",
+     "Title",
+     "TssPlanned"
+    ],
+    "nullStaysNull": [
+     "IFPlanned",
+     "TssPlanned"
+    ],
+    "scalarsMustDiffer": [],
+    "textPlaceholder": [
+     "Title"
+    ],
+    "idsReplacedLinksPreserved": [
+     "Id"
+    ],
+    "timestampOffsetsPreserved": true
+   },
+   "why": "the DI-13 twin inside de-id: a basic payload's null load keys stay null — a scrubber that fuzzes a null INVENTS data and breaks the shape (null-pattern is structure)"
+  }
+ ]
+}

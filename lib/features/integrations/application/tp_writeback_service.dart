@@ -96,20 +96,18 @@ class TpWritebackService {
   /// Tracks workout IDs currently being written to prevent duplicate calls.
   final Set<String> _inFlightWorkouts = {};
 
-  /// Re-check TP premium eligibility and reconcile local block state.
+  /// Report TP's profile premium status — INFORMATIONAL ONLY.
   ///
-  /// Returns:
-  /// - `true` when profile confirms premium (write-back unblocked)
-  /// - `false` when profile confirms non-premium (write-back blocked)
-  /// - `null` when eligibility could not be verified
+  /// A1 (ruled 2026-09-20): no behavior keys on the IsPremium flag. The flag
+  /// is a connect-time snapshot, proven false-negative on premium-featured
+  /// trials — so this method no longer touches the block state. Eligibility
+  /// is decided by TP's ACTUAL write-back responses alone: a 403 on a push
+  /// blocks (see _handleApiException), a successful push unblocks.
+  ///
+  /// Returns the profile's reported status for display, or `null` when it
+  /// could not be read.
   Future<bool?> refreshPremiumEligibility({required String userId}) async {
-    final premiumStatus = await _getPremiumStatus(userId);
-    if (premiumStatus == true) {
-      await _preferencesService.setTpWritebackPremiumBlocked(false);
-    } else if (premiumStatus == false) {
-      await _preferencesService.setTpWritebackPremiumBlocked(true);
-    }
-    return premiumStatus;
+    return _getPremiumStatus(userId);
   }
 
   /// Push the nutrition plan summary to the TP workout description.
@@ -254,6 +252,8 @@ class TpWritebackService {
       );
       await _closeLedgerRow(ledgerId, success: true);
 
+      await onPushSucceeded();
+
       if (kDebugMode) {
         print('✅ TP Write-back: pushed plan to workout $workoutIdStr');
       }
@@ -298,7 +298,7 @@ class TpWritebackService {
         success: false,
         error: 'api_${e.statusCode}',
       );
-      await _handleApiException(e, userId, workoutIdStr);
+      await handleApiException(e, userId, workoutIdStr);
     }
   }
 
@@ -412,7 +412,7 @@ class TpWritebackService {
         success: false,
         error: 'api_${e.statusCode}',
       );
-      await _handleApiException(e, userId, workoutIdStr);
+      await handleApiException(e, userId, workoutIdStr);
     }
   }
 
@@ -490,7 +490,7 @@ class TpWritebackService {
         await _deleteWritebackEntry(userId, workoutIdStr);
       }
     } on IntegrationApiException catch (e) {
-      await _handleApiException(e, userId, activity.providerWorkoutId);
+      await handleApiException(e, userId, activity.providerWorkoutId);
     } catch (e, st) {
       _logError('removePlanFromWorkout', e, st);
     }
@@ -562,9 +562,19 @@ class TpWritebackService {
     }
   }
 
+  /// A1: a successful push IS the eligibility evidence — clear any block a
+  /// past 403 armed (the response, never the profile flag, decides).
+  @visibleForTesting
+  Future<void> onPushSucceeded() async {
+    if (_preferencesService.tpWritebackPremiumBlocked) {
+      await _preferencesService.setTpWritebackPremiumBlocked(false);
+    }
+  }
+
   // ─── Error handling ───
 
-  Future<void> _handleApiException(
+  @visibleForTesting
+  Future<void> handleApiException(
     IntegrationApiException e,
     String userId,
     String? workoutId,
@@ -572,28 +582,16 @@ class TpWritebackService {
     final status = e.statusCode;
 
     if (status == 403) {
-      final premiumStatus = await _getPremiumStatus(userId);
-
-      if (premiumStatus == false) {
-        // Confirmed basic account — block future attempts.
-        await _preferencesService.setTpWritebackPremiumBlocked(true);
-        if (kDebugMode) {
-          print(
-            '⚠️ TP Write-back: 403 — premium required, blocking future attempts',
-          );
-        }
-      } else {
-        // Not a premium restriction (or we couldn't verify). Do not hard-block.
-        // Also clear stale block if profile confirms premium.
-        if (premiumStatus == true &&
-            _preferencesService.tpWritebackPremiumBlocked) {
-          await _preferencesService.setTpWritebackPremiumBlocked(false);
-        }
-        if (kDebugMode) {
-          print(
-            '⚠️ TP Write-back: 403 — not confirmed as premium restriction; leaving toggle enabled',
-          );
-        }
+      // A1 (ruled 2026-09-20): the write-back RESPONSE is the evidence — a
+      // 403 on an actual push attempt means TP refused this account's
+      // write-back, full stop. The IsPremium profile flag is never
+      // consulted (connect-time snapshot, false-negative on trials). The
+      // block clears the same way it was set: by a later successful push.
+      await _preferencesService.setTpWritebackPremiumBlocked(true);
+      if (kDebugMode) {
+        print(
+          '⚠️ TP Write-back: 403 — TP refused the push, blocking future attempts',
+        );
       }
     } else if (status == 404) {
       // Workout deleted from TP — clean up tracking

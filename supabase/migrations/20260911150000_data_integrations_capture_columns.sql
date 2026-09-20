@@ -21,11 +21,13 @@
 --                                parsed since forever, never persisted;
 --                                unblocks brick verification B-2/B-5
 -- integrations:
---   provider_is_premium          TP IsPremium — predicts null completed
---                                fields and write-back 403s
+--   provider_is_premium          TP IsPremium — connect-time SNAPSHOT only;
+--                                false-negative on premium-featured trials;
+--                                NEVER a behavioral predicate (A1, 2026-09-20)
 --   athlete_metrics_json         latest TP /v2/metrics fetch (weight, HRV,
 --                                steps, stress, sleep quality) on the 24 h
---                                zones staleness clock, premium-gated
+--                                zones staleness clock; attempt-and-observe
+--                                (A1) — not gated on provider_is_premium
 --
 -- The existing never-written activities.tss column retires with the Q-INT25
 -- hygiene batch (separate migration, after these land).

@@ -1,0 +1,195 @@
+{
+ "section": "corpus-fingerprint",
+ "engine": "corpus sampler fingerprint fn (server-side, to be built)",
+ "specVersion": "corpus intake Addendum 2 — RATIFIED with the corpus (Xuan, 2026-09-20)",
+ "note": "EXPECTED-RED: no fingerprint implementation exists. Identity = (endpoint x WorkoutType stratum, per-key three-state map ABSENT/NULL/VALUE:type over NON-OPTIONAL keys only, top-level JSON type). Optional-key rule RULED A (Xuan, 2026-09-20, stage-4 ambiguity): stratum-classed optional keys drop out of identity ENTIRELY (supersedes the narrower ABSENT≡NULL collapse wording); load keys are unaffected (never absent, never optional-classed). Consequence noted as convention: an optional key's value TYPE is also outside identity. Harness: pure-function arm over the sampler once built.",
+ "vectors": [
+  {
+   "id": "loadstate-null-vs-value-differs",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": {
+     "Title": "a",
+     "IFPlanned": null,
+     "TssPlanned": null
+    },
+    "payloadB": {
+     "Title": "b",
+     "IFPlanned": 0.85,
+     "TssPlanned": 67.7
+    },
+    "stratumA": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "stratumB": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "optionalKeysInStratum": []
+   },
+   "expected": {
+    "sameFingerprint": false
+   },
+   "why": "basic vs premium exposure IS a shape difference: NULL vs VALUE never collapses (Addendum 2; probe 2026-09-18)"
+  },
+  {
+   "id": "value-of-same-type-same-shape",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": {
+     "IFPlanned": 0.63,
+     "TssPlanned": 21.1
+    },
+    "payloadB": {
+     "IFPlanned": 0.98,
+     "TssPlanned": 123.6
+    },
+    "stratumA": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "stratumB": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "optionalKeysInStratum": []
+   },
+   "expected": {
+    "sameFingerprint": true
+   },
+   "why": "identity is per-key STATE (VALUE:float), never the value itself — two populated premium workouts share a shape"
+  },
+  {
+   "id": "stratum-workouttype-differs",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": {
+     "IFPlanned": 0.85
+    },
+    "payloadB": {
+     "IFPlanned": 0.85
+    },
+    "stratumA": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "stratumB": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Bike"
+    },
+    "optionalKeysInStratum": []
+   },
+   "expected": {
+    "sameFingerprint": false
+   },
+   "why": "stratum = endpoint x WorkoutType is part of identity (Addendum 2 fragmentation guard)"
+  },
+  {
+   "id": "optional-absent-vs-null-same",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": {
+     "Title": "a",
+     "Description": null
+    },
+    "payloadB": {
+     "Title": "a"
+    },
+    "stratumA": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "stratumB": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "optionalKeysInStratum": [
+     "Description"
+    ]
+   },
+   "expected": {
+    "sameFingerprint": true
+   },
+   "why": "the ruled collapse: for a stratum-classed optional key, ABSENT ≡ NULL"
+  },
+  {
+   "id": "unclassed-absent-vs-null-differs",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": {
+     "Title": "a",
+     "Description": null
+    },
+    "payloadB": {
+     "Title": "a"
+    },
+    "stratumA": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "stratumB": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "optionalKeysInStratum": []
+   },
+   "expected": {
+    "sameFingerprint": false
+   },
+   "why": "collapse applies ONLY to keys observed both ways in the stratum; before that observation, ABSENT vs NULL is a real (three-state) difference"
+  },
+  {
+   "id": "optional-value-vs-absent-same",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": {
+     "Title": "a",
+     "Description": "some text"
+    },
+    "payloadB": {
+     "Title": "a"
+    },
+    "stratumA": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "stratumB": {
+     "endpoint": "v2/workouts",
+     "workoutType": "Run"
+    },
+    "optionalKeysInStratum": [
+     "Description"
+    ]
+   },
+   "expected": {
+    "sameFingerprint": true
+   },
+   "why": "RULED A (2026-09-20): optional-classed keys drop out of identity ENTIRELY — a described and an undescribed workout are one shape (was the withheld ambiguity)"
+  },
+  {
+   "id": "toplevel-type-differs",
+   "status": "ratified",
+   "inputs": {
+    "payloadA": "no upcoming events",
+    "payloadB": {
+     "Id": 1,
+     "EventDate": "x"
+    },
+    "stratumA": {
+     "endpoint": "v2/events/next",
+     "workoutType": "-"
+    },
+    "stratumB": {
+     "endpoint": "v2/events/next",
+     "workoutType": "-"
+    },
+    "optionalKeysInStratum": []
+   },
+   "expected": {
+    "sameFingerprint": false
+   },
+   "why": "events/next returns a bare string OR an object by state (probe 2026-09-18) — top-level JSON type is part of identity"
+  }
+ ]
+}
