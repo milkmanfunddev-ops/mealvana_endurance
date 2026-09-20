@@ -21,10 +21,13 @@ import {
 } from "https://deno.land/std@0.177.1/testing/asserts.ts";
 import { fingerprint, type Json, type Stratum } from "../_shared/corpus/fingerprint.ts";
 import {
+  GARMIN_KEEP_ENUM,
   GARMIN_SCRUB_CENSUS,
+  type KeepEnum,
   newScrubContext,
   scrub,
   type ScrubCensus,
+  TP_KEEP_ENUM,
   TP_SCRUB_CENSUS,
 } from "../_shared/corpus/scrub.ts";
 
@@ -55,6 +58,11 @@ function seededRng(seed: number): () => number {
 function censusFor(vectorId: string): ScrubCensus {
   if (vectorId.startsWith("garmin-")) return GARMIN_SCRUB_CENSUS;
   return TP_SCRUB_CENSUS;
+}
+
+function keepEnumFor(vectorId: string): KeepEnum {
+  if (vectorId.startsWith("garmin-")) return GARMIN_KEEP_ENUM;
+  return TP_KEEP_ENUM;
 }
 
 Deno.test({
@@ -91,7 +99,9 @@ Deno.test({
       const input = v.inputs.rawPayload as { [k: string]: Json };
       const census = censusFor(v.id);
       const ctx = newScrubContext(seededRng(0xc0ffee));
-      const out = scrub(input, census, ctx) as { [k: string]: Json };
+      const out = scrub(input, census, ctx, keepEnumFor(v.id)) as {
+        [k: string]: Json;
+      };
       const e = v.expected;
 
       for (const k of e.droppedKeys ?? []) {
@@ -152,6 +162,30 @@ Deno.test({
           (out[k] as Json[]).length,
           len as number,
           `${v.id}: array '${k}' cardinality`,
+        );
+      }
+
+      // Default-deny amendment (ruled 2026-09-20, @v1.1).
+      for (const k of e.allowlistVerbatim ?? []) {
+        assertEquals(
+          out[k],
+          input[k],
+          `${v.id}: KEEP-ENUM '${k}' must survive verbatim`,
+        );
+      }
+      for (const k of e.unclassifiedNotVerbatim ?? []) {
+        // A dropped key is trivially not verbatim; a present one must differ.
+        if (!(k in out)) continue;
+        assert(
+          out[k] !== input[k],
+          `${v.id}: unclassified '${k}' survived verbatim — default-deny breached`,
+        );
+      }
+      const serialized = JSON.stringify(out);
+      for (const needle of e.mustNotContainAnywhere ?? []) {
+        assert(
+          !serialized.includes(needle),
+          `${v.id}: '${needle}' survived somewhere in the scrubbed output`,
         );
       }
     }
