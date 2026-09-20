@@ -25,11 +25,23 @@
  *
  * The census maps key → category and applies AT ANY DEPTH (Q8: sample
  * streams fuzz their physiological scalars while array cardinality and
- * time cadence stay verbatim). Keys not in the census are kept as-is
- * (structure), recursing into objects/arrays. The vector-pinned exemplar
- * keys below are RATIFIED classifications: the per-provider census may be
- * EXTENDED by category as the key inventory grows, but these entries are
- * never re-classified (vector-file note).
+ * time cadence stay verbatim). The vector-pinned exemplar keys below are
+ * RATIFIED classifications: the per-provider census may be EXTENDED by
+ * category as the key inventory grows, but these entries are never
+ * re-classified (vector-file note).
+ *
+ * DEFAULT-DENY ON CONTENT (ruled Xuan 2026-09-20, samples de-id erratum —
+ * fix shape A). An unclassified key keeps its KEY, its TYPE and its
+ * null-pattern — the structure that is the whole test value — but its
+ * VALUE is destroyed: numbers fuzzed, strings and booleans replaced.
+ * Verbatim values survive ONLY via the deliberate KEEP-ENUM allowlist
+ * below, added by name. This replaces the original permissive default
+ * ("unknown key → keep as-is"), which leaked `AthleteId` and an
+ * identifier-bearing `Url` into a promoted exemplar: real payloads carry
+ * far more keys than any census (TP 48, FS 21), so a blocklist with a
+ * permissive default cannot hold the ruled line "destroy the CONTENT,
+ * keep the STRUCTURE". Identifier-bearing composites like a deep-link URL
+ * are values like any other — placeholdered by the default.
  *
  * Deterministic when given a seeded rng — the harness uses that; production
  * callers may pass Math.random.
@@ -39,6 +51,43 @@ import type { Json } from "./fingerprint.ts";
 
 export type KeyCategory = "drop" | "fuzz" | "text" | "link" | "shift";
 export type ScrubCensus = Readonly<Record<string, KeyCategory>>;
+
+/**
+ * KEEP-ENUM allowlist: the only way an unclassified value survives verbatim.
+ *
+ * Membership is by NAME and by judgement — never by a cardinality heuristic.
+ * This census run proves why: across the same five TP payloads, `WorkoutType`
+ * (3 distinct) and `Url` (4 distinct) are equally "low-cardinality", but one
+ * is an enum and the other is a deep link carrying the athlete id twice.
+ *
+ * Admission test: the field names a CLOSED SET the provider chose from, it
+ * drives a parser branch we want exercised, and it can never carry athlete
+ * text. Anything else is content.
+ */
+export type KeepEnum = ReadonlySet<string>;
+
+/** TrainingPeaks enum-class fields (48-key inventory, 2026-09-20). */
+export const TP_KEEP_ENUM: KeepEnum = new Set([
+  "WorkoutType", // "Run" | "Bike" | "Strength" — drives sport mapping
+  "TssCalculationMethod", // "Undefined" | … — drives the TSS/hr rung
+  "Completed", // boolean state flag — drives the planned/actual split
+]);
+
+/** Final Surge enum-class fields (21-key inventory, 2026-09-20). */
+export const FS_KEEP_ENUM: KeepEnum = new Set([
+  "WorkoutTypeName", // "Run" | "Bike" | "Swim" | … — sport mapping
+  "PlannedDistanceType", // unit enum — drives distance conversion
+  "PlannedPaceType", // unit enum — drives pace conversion
+  "HasStructuredWorkout", // boolean — drives the structured-detail fetch
+  "WorkoutCompleted", // boolean — drives completion handling
+  "WorkoutRace", // boolean — drives race-flag prefill
+  "WorkoutIcon", // NUMERIC enum (icon code, not a measurement)
+  // DELIBERATELY ABSENT — WorkoutSubTypeName: the "subtype-is-title" erratum
+  // says FS puts title-like free text in this field, so it is content.
+]);
+
+/** Garmin: seeded when Garmin promotion starts; empty is the safe default. */
+export const GARMIN_KEEP_ENUM: KeepEnum = new Set<string>();
 
 export const TEXT_PLACEHOLDER = "corpus placeholder";
 
@@ -96,6 +145,10 @@ export const FS_SCRUB_CENSUS: ScrubCensus = {
 
 /** TrainingPeaks raw-payload census — exemplar keys from the ruled table. */
 export const TP_SCRUB_CENSUS: ScrubCensus = {
+  // The ruled DROP row names "user_id, athlete id, …" — an athlete id is
+  // removed, not merely fuzzed. (Leaked verbatim before the 2026-09-20
+  // erratum; default-deny would now fuzz it, but DROP is the ruling.)
+  AthleteId: "drop",
   Id: "link",
   Title: "text",
   Description: "text",
@@ -165,15 +218,21 @@ export function scrub(
   payload: Json,
   census: ScrubCensus,
   ctx: ScrubContext,
+  keepEnum: KeepEnum = new Set<string>(),
 ): Json {
-  return walk(payload, census, ctx);
+  return walk(payload, census, ctx, keepEnum);
 }
 
-function walk(v: Json, census: ScrubCensus, ctx: ScrubContext): Json {
+function walk(
+  v: Json,
+  census: ScrubCensus,
+  ctx: ScrubContext,
+  keepEnum: KeepEnum,
+): Json {
   if (v === null || typeof v !== "object") return v;
   if (Array.isArray(v)) {
     // Cardinality is structure: same length, elements walked.
-    return v.map((e) => walk(e, census, ctx));
+    return v.map((e) => walk(e, census, ctx, keepEnum));
   }
   const out: { [key: string]: Json } = {};
   for (const [key, value] of Object.entries(v)) {
@@ -185,24 +244,44 @@ function walk(v: Json, census: ScrubCensus, ctx: ScrubContext): Json {
         if (value === null) out[key] = null; // NEVER fuzz a null
         else if (typeof value === "number") {
           out[key] = fuzzNumber(value, ctx.rng);
-        } else out[key] = walk(value, census, ctx);
+        } else out[key] = walk(value, census, ctx, keepEnum);
         break;
       case "text":
         if (value === null) out[key] = null;
         else if (typeof value === "string") out[key] = TEXT_PLACEHOLDER;
-        else out[key] = walk(value, census, ctx);
+        else out[key] = walk(value, census, ctx, keepEnum);
         break;
       case "link":
         if (value === null) out[key] = null;
         else if (typeof value === "string" || typeof value === "number") {
           out[key] = syntheticId(value, ctx);
-        } else out[key] = walk(value, census, ctx);
+        } else out[key] = walk(value, census, ctx, keepEnum);
         break;
       case "shift":
         out[key] = value === null ? null : shiftTimestamp(value, ctx);
         break;
-      default:
-        out[key] = walk(value, census, ctx); // structure kept verbatim
+      default: {
+        // DEFAULT-DENY on content (ruled 2026-09-20). Key, type and
+        // null-pattern survive — the structure. The value does not,
+        // unless the key is a deliberate KEEP-ENUM member.
+        if (value === null) {
+          out[key] = null; // null-pattern IS structure
+        } else if (typeof value === "object") {
+          out[key] = walk(value, census, ctx, keepEnum); // recurse
+        } else if (keepEnum.has(key)) {
+          out[key] = value; // closed-set enum, allowlisted by name
+        } else if (typeof value === "number") {
+          out[key] = fuzzNumber(value, ctx.rng);
+        } else if (typeof value === "boolean") {
+          // No "plausible synthetic" exists for one bit; a fixed constant
+          // destroys the value while keeping key + type. Flags worth
+          // exercising belong on the allowlist by name.
+          out[key] = false;
+        } else {
+          out[key] = TEXT_PLACEHOLDER;
+        }
+        break;
+      }
     }
   }
   return out;
