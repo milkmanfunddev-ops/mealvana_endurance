@@ -173,15 +173,41 @@ function fuzzNumber(v: number, rng: () => number): number {
   return out;
 }
 
+/** FNV-1a — a small deterministic hash. Not cryptographic and not meant to
+ * be: the original id is destroyed by replacement, and all this needs to
+ * provide is a STABLE, DISTINCT synthetic per distinct source id. */
+function fnv1a(input: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h >>> 0;
+}
+
+/**
+ * Synthetic id, DERIVED FROM the source id rather than from a counter.
+ *
+ * The ruled table replaces ids "preserving referential links between parent
+ * and children". A per-context counter satisfied that only WITHIN one
+ * exemplar: with a fresh context per file, every exemplar's first id became
+ * `syn-1`, collapsing all future cross-references into one value (qa-70,
+ * @v1.1 sweep). Deriving the synthetic from the source makes the mapping
+ * stable and distinct — the same source id yields the same synthetic id in
+ * any export, in any order, so links survive ACROSS exemplars and a later
+ * export cannot silently renumber a frozen one.
+ */
 function syntheticId(
   original: string | number,
   ctx: ScrubContext,
 ): string | number {
   const existing = ctx.idMap.get(original);
   if (existing !== undefined) return existing;
-  const n = ctx.nextSyntheticId++;
+  const h = fnv1a(String(original));
   // Type-preserving: numeric ids stay numeric, string ids stay strings.
-  const synth = typeof original === "number" ? 900000000 + n : `syn-${n}`;
+  const synth = typeof original === "number"
+    ? 900000000 + (h % 100000000)
+    : `syn-${h.toString(16).padStart(8, "0")}`;
   ctx.idMap.set(original, synth);
   return synth;
 }
