@@ -10,10 +10,12 @@ import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/change_detection_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/sentry/sentry_reporter.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
 import '../../application/garmin_oauth_service.dart';
+import '../../application/raw_retention_dead_man_check.dart';
 import '../../application/runna_ics_parser.dart';
 import '../../application/runna_sync_service.dart';
 import '../../application/runna_transformer.dart';
@@ -199,6 +201,16 @@ FinalSurgeTransformer finalSurgeTransformer(Ref ref) {
 ProviderRawPayloadsRepository providerRawPayloadsRepository(Ref ref) {
   return ProviderRawPayloadsRepository(
     supabase: ref.read(appExternalDepsProvider).supabaseClient,
+  );
+}
+
+/// Dead-man watch on the raw-retention sweep's audit freshness (L-7 item 4).
+/// keepAlive so its once-per-interval throttle survives across syncs.
+@Riverpod(keepAlive: true)
+RawRetentionDeadManCheck rawRetentionDeadManCheck(Ref ref) {
+  return RawRetentionDeadManCheck(
+    supabase: ref.read(appExternalDepsProvider).supabaseClient,
+    sentry: ref.read(sentryReporterProvider),
   );
 }
 

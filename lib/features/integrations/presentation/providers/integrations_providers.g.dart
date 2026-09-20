@@ -323,6 +323,62 @@ final class ProviderRawPayloadsRepositoryProvider
 String _$providerRawPayloadsRepositoryHash() =>
     r'96ed403d1e0bdee04a36bc156c745951f284c1b3';
 
+/// Dead-man watch on the raw-retention sweep's audit freshness (L-7 item 4).
+/// keepAlive so its once-per-interval throttle survives across syncs.
+
+@ProviderFor(rawRetentionDeadManCheck)
+const rawRetentionDeadManCheckProvider = RawRetentionDeadManCheckProvider._();
+
+/// Dead-man watch on the raw-retention sweep's audit freshness (L-7 item 4).
+/// keepAlive so its once-per-interval throttle survives across syncs.
+
+final class RawRetentionDeadManCheckProvider
+    extends
+        $FunctionalProvider<
+          RawRetentionDeadManCheck,
+          RawRetentionDeadManCheck,
+          RawRetentionDeadManCheck
+        >
+    with $Provider<RawRetentionDeadManCheck> {
+  /// Dead-man watch on the raw-retention sweep's audit freshness (L-7 item 4).
+  /// keepAlive so its once-per-interval throttle survives across syncs.
+  const RawRetentionDeadManCheckProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'rawRetentionDeadManCheckProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$rawRetentionDeadManCheckHash();
+
+  @$internal
+  @override
+  $ProviderElement<RawRetentionDeadManCheck> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  RawRetentionDeadManCheck create(Ref ref) {
+    return rawRetentionDeadManCheck(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RawRetentionDeadManCheck value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RawRetentionDeadManCheck>(value),
+    );
+  }
+}
+
+String _$rawRetentionDeadManCheckHash() =>
+    r'ddf46fadf3ac99b4ffa1704e90da68afe5f02655';
+
 /// Provider for Final Surge sync service
 
 @ProviderFor(finalSurgeSyncService)
