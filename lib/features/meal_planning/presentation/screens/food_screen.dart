@@ -7,6 +7,7 @@ import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../shared/widgets/kyle_design/navigation/kyle_tab_pill.dart';
+import '../../../../shared/widgets/lazy_indexed_stack.dart';
 import '../../application/meal_plan_controller.dart';
 import '../../domain/vana_situation.dart';
 import '../widgets/vana_situation_scope.dart';
@@ -110,9 +111,17 @@ class _FoodScreenState extends ConsumerState<FoodScreen> {
                 ),
               ),
               Expanded(
-                child: IndexedStack(
+                // A segment is built the first time it is selected and kept
+                // alive after, so opening Food does not fire all three
+                // segments' server calls at once (mp-432 / mp-468).
+                child: LazyIndexedStack(
                   index: FoodTab.values.indexOf(_tab),
-                  children: const [PlanTab(), MealsTab(), ShoppingTab()],
+                  itemCount: FoodTab.values.length,
+                  itemBuilder: (_, i) => switch (FoodTab.values[i]) {
+                    FoodTab.plan => const PlanTab(),
+                    FoodTab.meals => const MealsTab(),
+                    FoodTab.shopping => const ShoppingTab(),
+                  },
                 ),
               ),
             ],
