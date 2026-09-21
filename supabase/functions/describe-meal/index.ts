@@ -16,12 +16,15 @@
  * Error responses:
  *   400 — missing/invalid body or description too long
  *   401 — missing or invalid JWT
+ *   503 — {error:'ai_unavailable'}: the AI Gateway refused US (key budget hard-stopped, key
+ *         missing/revoked). Never a 402: the athlete's wallet is fine, so the top-up sheet
+ *         would be a lie (mp-437). The app shows "Vana is unavailable right now".
  *   500 — missing AI_GATEWAY_API_KEY secret or unexpected server error
  */
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { generateObject } from "npm:ai@6";
+import { generateObject } from "npm:ai@6.0.277";
 import { handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -31,6 +34,7 @@ import {
 } from "../_shared/responses.ts";
 import { DESCRIBE_MEAL_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
+import { gatewayRefusalResponse } from "../_shared/ai/gateway_error.ts";
 import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import {
@@ -255,6 +259,11 @@ Return your answer as structured JSON matching the requested schema.`,
       },
     });
   } catch (error) {
+    // The gateway refusing US (budget hard-stop, dead key) is not the athlete's problem and not their
+    // wallet: a distinct code, never a 402 (mp-437). Nothing was debited — `debitForUsage` only runs
+    // after a successful generation.
+    const refused = gatewayRefusalResponse(error, "describe-meal");
+    if (refused) return refused;
     console.error("[describe-meal] Fatal error:", error);
     return serverError(error);
   }

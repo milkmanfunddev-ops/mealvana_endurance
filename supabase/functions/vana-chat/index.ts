@@ -9,7 +9,8 @@
  * Response: application/x-ndjson — see _shared/vana/stream.ts for the line protocol. Headers `x-conversation-id`,
  *   `x-vana-kind` are set before the first byte.
  * Pre-stream errors: 401 {error:'unauthenticated'} · 400 {error:'message_required'|'invalid_body'} ·
- *   403 {error:'pro_required'} · 402 {error:'insufficient_credits', …} · 429 {error:'rate_limited', retry_after_seconds}.
+ *   403 {error:'pro_required'} · 402 {error:'insufficient_credits', …} · 429 {error:'rate_limited', retry_after_seconds} ·
+ *   503 {error:'ai_unavailable'} (the AI Gateway refused our key; mid-stream it is the error line's `code`).
  * Persistence: vana_conversations / vana_messages (content + parts + metadata), vana_calls + ai_usage per model call —
  *   all from onFinish under EdgeRuntime.waitUntil.
  * Credits (mp-281 §1, ticket 20): a message turn costs one credit — ensureAndCheckCredits before the call (402 when the
@@ -25,6 +26,7 @@ import { authenticate } from '../_shared/vana/auth.ts';
 import { requirePro } from '../_shared/vana/entitlement.ts';
 import { runChat, type ChatBody } from '../_shared/vana/chat.ts';
 import { RateLimitedError } from '../_shared/vana/rate-limit.ts';
+import { gatewayRefusalResponse } from '../_shared/ai/gateway_error.ts';
 import { debitForUsage, ensureAndCheckCredits, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 
 /** Maximum user-message length to prevent token abuse (same as jade-chat). */
@@ -65,6 +67,9 @@ serve(withSentry(async (req: Request) => {
     return run.response;
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);
+    // A refusal before the first byte (an embedding while the context is built): 503 ai_unavailable, never a 402 (mp-437).
+    const refused = gatewayRefusalResponse(e, 'vana-chat');
+    if (refused) return refused;
     console.error('[vana-chat] Fatal error:', e);
     return serverError(e);
   }
