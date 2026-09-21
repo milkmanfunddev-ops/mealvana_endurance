@@ -4,9 +4,12 @@
  * fake database. index.ts wires it to Deno.env and the service-role client.
  *
  * Two paths:
- *   1. Pro subscription events → `public.user_entitlements`, the two-field
- *      cache of RevenueCat (mp-285): `active_until` + `period_type`, written
- *      only here, ordered by `event_at`; a TRANSFER moves the row. The same
+ *   1. Every `pro` event, bought or granted (mp-454) → `public.user_entitlements`,
+ *      the two-field cache of RevenueCat (mp-285): `active_until` + `period_type`,
+ *      written only here, ordered by `event_at`. `active_until` is RevenueCat's
+ *      answer for the customer's current `pro` expiry, asked over REST on each
+ *      event (_shared/revenuecat), so a grant and a subscription never shorten
+ *      each other. A TRANSFER moves the row. The same
  *      delivery then moves the monthly Allowance (mp-281): INITIAL_PURCHASE
  *      and RENEWAL grant it into the wallet (`grant_allowance`, idempotent on
  *      the event id), EXPIRATION forfeits what is left (`forfeit_allowance`),
@@ -19,14 +22,14 @@ import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3
 import {
   type EntitlementRow,
   entitlementRowFor,
-  isProEvent,
   isStaleEvent,
   msToIso,
   type RcEvent,
-  SUBSCRIPTION_EVENT_TYPES,
+  takesProPath,
   TRANSFER_EVENT_TYPE,
   transferParties,
 } from './entitlements.ts';
+import type { RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import {
   ALLOWANCE_FORFEIT_EVENT_TYPES,
   ALLOWANCE_GRANT_EVENT_TYPES,
@@ -40,6 +43,8 @@ export interface WebhookDeps {
   env: (key: string) => string | undefined;
   /** A service-role client — the only writer of user_entitlements. */
   db: () => WebhookDb;
+  /** RevenueCat's REST API; throws when the secret key is not configured. */
+  revenueCat: () => RevenueCatClient;
   now?: () => number;
 }
 
@@ -103,11 +108,13 @@ async function applyAllowance(
   eventId: string,
   appUserId: string,
   row: EntitlementRow,
+  /** RevenueCat reported a live `pro` for this event. */
+  active: boolean,
 ): Promise<AllowanceOutcome> {
   if (ALLOWANCE_GRANT_EVENT_TYPES.has(type)) {
-    if (!row.active_until) {
-      console.log(`[rc-webhook] ${type} ${eventId} has no expiry: no allowance window to open`);
-      return { ok: true, body: { skipped: 'no_active_until' } };
+    if (!active) {
+      console.log(`[rc-webhook] ${type} ${eventId}: RevenueCat reports no live pro, no allowance window to open`);
+      return { ok: true, body: { skipped: 'not_active' } };
     }
     const amount = monthlyAllowance(deps.env);
     const { data, error } = await client.rpc('grant_allowance', {
@@ -128,6 +135,8 @@ async function applyAllowance(
     return { ok: true, body: (data ?? { granted: true }) as Record<string, unknown> };
   }
   if (ALLOWANCE_FORFEIT_EVENT_TYPES.has(type)) {
+    // A lapsed trial under a live grant: access goes on, so does the allowance.
+    if (active) return { ok: true, body: { untouched: 'still_active' } };
     const { data, error } = await client.rpc('forfeit_allowance', { p_user_id: appUserId, p_ref: eventId });
     if (error) {
       console.error('[rc-webhook] forfeit_allowance error:', error.message);
@@ -140,7 +149,8 @@ async function applyAllowance(
 }
 
 /**
- * Upsert the row for [appUserId] from a subscription event. Reads the existing
+ * Upsert the row for [appUserId] from a `pro` event, with `active_until` taken
+ * from RevenueCat's REST answer. Reads the existing
  * row first so a delayed re-delivery older than what is stored is dropped
  * instead of rolling the state back, and so a payload silent on period_type
  * keeps the stored one.
@@ -175,7 +185,16 @@ async function handleProSubscription(
       return json({ ok: true, ignored: 'stale_event' });
     }
 
-    const row = entitlementRowFor(event, (deps.now ?? Date.now)(), stored);
+    let currentExpiry: string | null;
+    try {
+      currentExpiry = await deps.revenueCat().currentProExpiry(appUserId);
+    } catch (e) {
+      // Unconfigured key or RevenueCat down: 500 so RevenueCat redelivers.
+      console.error(`[rc-webhook] RevenueCat pro expiry for ${appUserId} failed:`, (e as Error).message);
+      return json({ error: 'revenuecat lookup failed' }, 500);
+    }
+
+    const row = entitlementRowFor(event, (deps.now ?? Date.now)(), currentExpiry, stored);
     // user_id is the primary key — not a partial unique index — so naming it
     // in onConflict is safe (no 42P10).
     const { error } = await client
@@ -194,7 +213,8 @@ async function handleProSubscription(
     console.log(
       `[rc-webhook] ${type}: active_until=${row.active_until} period=${row.period_type} for ${appUserId}`,
     );
-    const allowance = await applyAllowance(deps, client, type, eventId, appUserId, row);
+    const active = currentExpiry !== null && Date.parse(currentExpiry) > (deps.now ?? Date.now)();
+    const allowance = await applyAllowance(deps, client, type, eventId, appUserId, row, active);
     if (!allowance.ok) return json(allowance.body, allowance.status);
     return json({
       ok: true,
@@ -311,7 +331,7 @@ export function makeWebhookHandler(deps: WebhookDeps): (req: Request) => Promise
     if (type === TRANSFER_EVENT_TYPE) {
       return await handleTransfer(deps, event, eventId);
     }
-    if (SUBSCRIPTION_EVENT_TYPES.has(type) && isProEvent(event)) {
+    if (takesProPath(event)) {
       return await handleProSubscription(deps, event, type, eventId, appUserId);
     }
 

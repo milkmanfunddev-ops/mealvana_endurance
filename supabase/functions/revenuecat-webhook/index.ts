@@ -2,8 +2,9 @@
  * revenuecat-webhook Edge Function
  *
  * Receives RevenueCat webhook events. Two paths (handler.ts):
- *   • Pro subscription events maintain `public.user_entitlements`, the
- *     two-field cache of RevenueCat the server gate reads (mp-285):
+ *   • Every `pro` event, bought or granted (a promotional grant arrives as a
+ *     NON_RENEWING_PURCHASE), maintains `public.user_entitlements`, the
+ *     two-field cache of RevenueCat the server gate reads (mp-285, mp-454):
  *     `active_until` + `period_type`, written only here, ordered by the RC
  *     event time so a delayed delivery cannot roll the row back; a TRANSFER
  *     moves the row to the new owner.
@@ -27,6 +28,11 @@
  *   supabase functions deploy revenuecat-webhook --no-verify-jwt --project-ref <ref>
  * Secrets:
  *   REVENUECAT_WEBHOOK_SECRET  — shared secret matched against the Authorization header
+ *   REVENUECAT_SECRET_KEY      — RevenueCat v2 secret API key (mp-454 §4). Every `pro`
+ *                                event asks RevenueCat for the customer's current `pro`
+ *                                expiry; without it those events answer 500 and
+ *                                RevenueCat redelivers. Credit packs do not need it.
+ *   REVENUECAT_PROJECT_ID      — optional, defaults to proj77b3c48f
  *   RC_PRODUCT_CREDITS         — optional JSON map of store product id → credit amount,
  *                                e.g. {"mealvana_credits_50":50,"mealvana_credits_250":250}
  *                                NOTE: when set, this REPLACES the defaults in handler.ts — a
@@ -39,11 +45,22 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { makeWebhookHandler } from './handler.ts';
+import { makeRevenueCatClient, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+/** One RevenueCat project serves dev and prod. */
+const DEFAULT_REVENUECAT_PROJECT_ID = 'proj77b3c48f';
+
+// Kept across requests so the `pro` entitlement id is looked up once per instance.
+let revenueCat: RevenueCatClient | null = null;
 
 serve(makeWebhookHandler({
   env: (key) => Deno.env.get(key),
   db: () => createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY),
+  revenueCat: () =>
+    revenueCat ??= makeRevenueCatClient({
+      secretKey: Deno.env.get('REVENUECAT_SECRET_KEY') ?? '',
+      projectId: Deno.env.get('REVENUECAT_PROJECT_ID') || DEFAULT_REVENUECAT_PROJECT_ID,
+    }),
 }));
