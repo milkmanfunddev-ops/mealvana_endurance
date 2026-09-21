@@ -653,7 +653,9 @@ extension _$FluidExt on MacroExplanationService {
               fOp('< 30 '),
               fOp('→ '),
               fAccent('gate fires'),
-            ], stepNumber: '①'),
+              // CP-3: the gate turns on the temperature, so the temperature
+              // shows where it came from here too.
+            ], stepNumber: '①', sourceChip: during.conditionsSource?.displayLabel),
             FormulaLine([
               fOp('→ '),
               fDim('drink to thirst; conservative cap = 30% of sweat rate'),

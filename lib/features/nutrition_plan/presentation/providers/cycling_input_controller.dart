@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/conditions_source.dart';
 import '../../domain/fueling_window_limits.dart';
 import '../../domain/run_parameters.dart';
 import '../../domain/intensity_distribution.dart';
@@ -20,6 +21,11 @@ part 'cycling_input_controller.g.dart';
 /// Placeholders shown for temperature / humidity until a forecast lands (indoor
 /// rides never get one). Named so the schedule-change path and the
 /// per-activity reset (Q-CA2) cannot drift apart.
+///
+/// CP-1 (RULED Xuan, 2026-09-21 — `docs/ssot/spec/fueling/during-workout-hydration.md`):
+/// these are now ruled SPEC values. Indoor humidity's 45 % is the same class of
+/// auto source per CP-6 — an ASSUMPTION about the room, not a measurement of
+/// it, so every path that seeds any of these marks the value `assumed` (CP-5).
 const double _kDefaultTemperatureC = 20.0;
 const double _kDefaultHumidityPct = 60.0;
 const double _kIndoorHumidityPct = 45.0;
@@ -55,10 +61,22 @@ class CyclingFormState {
   // Unit system preference (imperial = °F, metric = °C)
   final UnitSystem unitSystem;
 
+  // CP-2/CP-5 (RULED Xuan, 2026-09-21): provenance is a property of WHERE THE
+  // VALUE CAME FROM, so it is stored beside the value and set by every path
+  // that writes one — never derived from whether a fetch failed.
+  final ConditionsSource temperatureSource;
+  final ConditionsSource humiditySource;
+
   // CF-7 (RULED 2026-09-03): a manual step on a forecast-filled value makes
   // it the athlete's — the AUTO badge drops until the next forecast refresh.
-  final bool temperatureManuallySet;
-  final bool humidityManuallySet;
+  // Now a VIEW of the provenance field rather than a second stored bit.
+  bool get temperatureManuallySet =>
+      temperatureSource == ConditionsSource.manual;
+  bool get humidityManuallySet => humiditySource == ConditionsSource.manual;
+
+  /// The plan-level CP-2 flag this form would generate with.
+  ConditionsSource get conditionsSource =>
+      ConditionsSource.resolve(temperatureSource, humiditySource);
 
   // Weather integration fields
   final weather_domain.Location? location;
@@ -95,8 +113,10 @@ class CyclingFormState {
     this.estimatedDuration,
     this.preRideMinutesManuallySet = false,
     this.unitSystem = UnitSystem.imperial,
-    this.temperatureManuallySet = false,
-    this.humidityManuallySet = false,
+    // CP-1/CP-5: the constructor defaults ARE the ruled placeholders, so a
+    // freshly built form is `assumed` before any fetch has been attempted.
+    this.temperatureSource = ConditionsSource.assumed,
+    this.humiditySource = ConditionsSource.assumed,
     this.location,
     this.weatherForecast,
     this.isLoadingLocation = false,
@@ -134,8 +154,8 @@ class CyclingFormState {
     Duration? estimatedDuration,
     bool? preRideMinutesManuallySet,
     UnitSystem? unitSystem,
-    bool? temperatureManuallySet,
-    bool? humidityManuallySet,
+    ConditionsSource? temperatureSource,
+    ConditionsSource? humiditySource,
     weather_domain.Location? location,
     WeatherForecast? weatherForecast,
     bool? isLoadingLocation,
@@ -168,9 +188,8 @@ class CyclingFormState {
       preRideMinutesManuallySet:
           preRideMinutesManuallySet ?? this.preRideMinutesManuallySet,
       unitSystem: unitSystem ?? this.unitSystem,
-      temperatureManuallySet:
-          temperatureManuallySet ?? this.temperatureManuallySet,
-      humidityManuallySet: humidityManuallySet ?? this.humidityManuallySet,
+      temperatureSource: temperatureSource ?? this.temperatureSource,
+      humiditySource: humiditySource ?? this.humiditySource,
       location: location ?? this.location,
       weatherForecast: weatherForecast ?? this.weatherForecast,
       isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
@@ -409,14 +428,22 @@ class CyclingInputController extends _$CyclingInputController {
       // CF-7: the AUTO badge returns, and the value returns with it — to the
       // forecast when one is loaded, otherwise to the same placeholders the
       // schedule-change path shows while a refreshed forecast loads.
-      temperatureManuallySet: false,
-      humidityManuallySet: false,
+      //
+      // CP-6: the reset restores the AUTO SOURCE, not a flat constant — so the
+      // provenance follows the value it restored. This is the second path that
+      // seeds the CP-1 placeholders with no fetch failure anywhere (CP-5).
       temperatureC: hasForecast
           ? forecast.temperatureC
           : _kDefaultTemperatureC,
       humidityPct: hasForecast
           ? forecast.humidityPct.toDouble()
           : (isIndoor ? _kIndoorHumidityPct : _kDefaultHumidityPct),
+      temperatureSource: hasForecast
+          ? ConditionsSource.measured
+          : ConditionsSource.assumed,
+      humiditySource: hasForecast
+          ? ConditionsSource.measured
+          : ConditionsSource.assumed,
     );
     _autoUpdateFuelingWindow();
   }
@@ -520,11 +547,15 @@ class CyclingInputController extends _$CyclingInputController {
     if (isIndoor) {
       // Default to flat_indoor if switching to indoor
       newTerrain = 'flat_indoor';
-      // Also reset temp/humidity to room defaults
+      // Also reset temp/humidity to room defaults.
+      // CP-5: a FOURTH path onto the ruled placeholders, with no fetch
+      // involved at all — nothing measured this room, so both are assumed.
       state = state.copyWith(
         terrain: newTerrain,
-        temperatureC: 20.0, // Room temp
-        humidityPct: 45.0, // Comfortable room humidity
+        temperatureC: _kDefaultTemperatureC, // Room temp
+        humidityPct: _kIndoorHumidityPct, // Comfortable room humidity
+        temperatureSource: ConditionsSource.assumed,
+        humiditySource: ConditionsSource.assumed,
         windCondition: 'still',
         sunExposure: 'shade',
       );
@@ -549,14 +580,19 @@ class CyclingInputController extends _$CyclingInputController {
 
   void updateTemperature(double temperatureC) {
     // CF-7: a manual step makes the value the athlete's — AUTO badge drops.
+    // CP-2: an override typed AFTER a failed fetch is `manual`, never
+    // `assumed` — the athlete's input outranks the fallback.
     state = state.copyWith(
       temperatureC: temperatureC,
-      temperatureManuallySet: true,
+      temperatureSource: ConditionsSource.manual,
     );
   }
 
   void updateHumidity(double humidityPct) {
-    state = state.copyWith(humidityPct: humidityPct, humidityManuallySet: true);
+    state = state.copyWith(
+      humidityPct: humidityPct,
+      humiditySource: ConditionsSource.manual,
+    );
   }
 
   void updateWindCondition(String windCondition) {
@@ -608,8 +644,13 @@ class CyclingInputController extends _$CyclingInputController {
       selectedDate: date,
       selectedTime: time,
       // Reset to environment defaults immediately while refreshed forecast loads.
+      // CP-5: a third path onto the ruled placeholders — the forecast still on
+      // state describes the OLD date/time, so these are assumed until the
+      // refetch lands and re-marks them measured.
       temperatureC: _kDefaultTemperatureC,
       humidityPct: isIndoor ? _kIndoorHumidityPct : _kDefaultHumidityPct,
+      temperatureSource: ConditionsSource.assumed,
+      humiditySource: ConditionsSource.assumed,
     );
 
     // §3a: the default window depends on start time (early-start overlay +
@@ -739,8 +780,9 @@ class CyclingInputController extends _$CyclingInputController {
           temperatureC: forecast.temperatureC,
           humidityPct: forecast.humidityPct.toDouble(),
           // CF-7: a refresh restores the AUTO badge on both values.
-          temperatureManuallySet: false,
-          humidityManuallySet: false,
+          // CP-2: the only values here a measurement actually produced.
+          temperatureSource: ConditionsSource.measured,
+          humiditySource: ConditionsSource.measured,
           isLoadingWeather: false,
           locationFailureReason: null,
         );
@@ -850,6 +892,9 @@ class CyclingInputController extends _$CyclingInputController {
           scheduledTime: currentState.selectedTime,
           temperatureC: currentState.temperatureC,
           humidityPct: currentState.humidityPct,
+          // CP-2: the flag travels WITH the plan, resolved from where each
+          // value came from — not from whether the fetch succeeded.
+          conditionsSource: currentState.conditionsSource,
           intensity: currentState.intensity,
           activityTitle: currentState.activityTitleManuallySet
               ? currentState.activityTitle

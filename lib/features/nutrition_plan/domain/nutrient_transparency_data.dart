@@ -79,9 +79,17 @@ class FormulaLine {
     this.stepNumber,
     this.isResultLine = false,
     this.showDividerBefore = false,
+    this.sourceChip,
   });
 
   final List<FormulaSegment> segments;
+
+  /// D-2 source chip rendered WITH this line's value (`Measured` · `Assumed` ·
+  /// `Manual`). Spec: `docs/ssot/spec/design/surfaces/integrations-data-display.md`
+  /// D-2/D-2b, applied to conditions provenance by CP-3
+  /// (`docs/ssot/spec/fueling/during-workout-hydration.md`). Null = the line
+  /// states no source, which is not the same as claiming a measured one.
+  final String? sourceChip;
 
   /// Circled step number (e.g. '①'). Null = no step number.
   final String? stepNumber;
