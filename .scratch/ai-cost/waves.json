@@ -1,0 +1,42 @@
+[
+  {
+    "number": 1,
+    "tickets": [
+      "01",
+      "02",
+      "03"
+    ],
+    "base": "7d08cbd2a816c8d7f732718be487cbc305c81f58",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-21T13:46:47.002Z",
+    "closedAt": "2026-09-21T15:52:55.843Z",
+    "merged": [
+      "01",
+      "02",
+      "03"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "2h 6m"
+  },
+  {
+    "number": 2,
+    "tickets": [
+      "04",
+      "13",
+      "14"
+    ],
+    "base": "64442d970c3dd3446701f1627e9a1e526838b047",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-21T20:24:33.520Z",
+    "closedAt": "2026-09-21T21:18:46.700Z",
+    "merged": [
+      "04",
+      "13",
+      "14"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "54m"
+  }
+]

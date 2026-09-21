@@ -1,6 +1,6 @@
 # 14: Three background jobs on the cheapest model, and the unused coach insight removed
 
-**Status:** in-progress (wave 2, 2026-09-21)
+**Status:** done (wave 2, 2026-09-21)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/extract.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
@@ -14,7 +14,7 @@
 - [x] The three jobs read their model from one new setting, apart from the chat model.
 - [x] On 20 stored dev conversations the candidate's answers are compared by hand with Haiku's; the comparison and the model chosen are recorded in this ticket. If none matches, the setting stays on Haiku. **No candidate matched; the setting stays on Haiku 4.5.**
 - [x] The existing extract and saved-ingredients tests stay green.
-- [x] The coach insight route, its dead shared tools and the app's unused client are removed — **undeploy of `ai-coach` from dev is owed by the wave lead**; the code removal is what is ticked here.
+- [x] The coach insight route, its dead shared tools and the app's unused client are removed — `ai-coach` was undeployed from dev by the wave lead on 2026-09-21 (the route answers 404).
 - [ ] No helper model is called from inside a Vana turn. **NOT met, and not made worse: `addMeal` already awaits the saved-meal ingredient job inside a turn. See Comments.**
 
 Next: /implement-lee ai-cost
@@ -128,3 +128,8 @@ Kept on purpose: `_shared/ai_coach/persona.ts` (Jade's prompt; `jade-chat/index.
 it), `AI_COACH_MODEL` (now importerless but Jade-named, so deleting it is a separate call — noted in
 `model.ts`), the `CoachInsight` domain types and the `personal_formulas.coach_insight_*` columns, and
 every other AI surface: Describe, Photo capture, Jade, Vana.
+
+## Wave 2 close (2026-09-21)
+
+- `ai-coach` is undeployed from dev. Paywall ticket 02 had gated it in the same hour; the merge kept the removal and dropped `ai-coach` from the paywall gate test and the function audit.
+- `VANA_BACKGROUND_MODEL` is left unset on dev, so the three jobs stay on Haiku 4.5, the comparison's verdict.

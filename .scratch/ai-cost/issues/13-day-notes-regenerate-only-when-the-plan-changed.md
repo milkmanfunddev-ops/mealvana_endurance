@@ -1,6 +1,6 @@
 # 13: Day notes regenerate only when the plan changed
 
-**Status:** in-progress (wave 2, 2026-09-21)
+**Status:** done (wave 2, 2026-09-21)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/daynotes.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
@@ -40,5 +40,10 @@ Last 14 days: 14 generations over 5 athlete-days, peak 8 (09-16).
 `vana-day-notes` and the migration are on DEV, over a day of plan editing. What should move: a
 plan edit costs one call for the days it touched instead of one for all seven, and a second
 request while one is running costs none.
+
+## Wave 2 review and deploy (2026-09-21)
+
+- Review fixes: the stale flag comes down before the model runs, so an edit made during a generation raises it again and is picked up on the next open; a claim is released by its own timestamp, so a generation that outlived its claim cannot release the claim of whoever took it over; a claim that failed open releases nothing.
+- The migration is applied to dev and `vana-day-notes`, `vana-chat` and `vana-action` are deployed (2026-09-21 21:05 UTC). The "after" number needs a day of plan editing on dev: run the query above with `created_at >= '2026-09-21 21:05+00'`.
 
 Next: /implement-lee ai-cost
