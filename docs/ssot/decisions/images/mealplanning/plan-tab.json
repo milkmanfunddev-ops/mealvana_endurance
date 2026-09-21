@@ -1,9 +1,9 @@
 {
   "screen": "Plan tab",
   "key": "plan-tab",
-  "capturedAt": "2026-09-16T10:57:12.197Z",
-  "commit": "308d2c0f",
-  "appVersion": "1.26.0+1",
+  "capturedAt": "2026-09-21T21:05:25.646Z",
+  "commit": "18e21789",
+  "appVersion": "1.27.0+3",
   "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }

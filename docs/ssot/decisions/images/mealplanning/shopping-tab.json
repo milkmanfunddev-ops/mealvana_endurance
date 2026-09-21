@@ -1,9 +1,9 @@
 {
   "screen": "Shopping tab",
   "key": "shopping-tab",
-  "capturedAt": "2026-09-16T01:59:13.175Z",
-  "commit": "c4f78733",
-  "appVersion": "1.26.0+1",
+  "capturedAt": "2026-09-21T21:06:36.803Z",
+  "commit": "18e21789",
+  "appVersion": "1.27.0+3",
   "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }

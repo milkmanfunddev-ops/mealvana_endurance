@@ -1,0 +1,1 @@
+{"kind":"flow","title":"Ticket 11: open, lapsed or never","rows":[[{"id":"o","label":"Active:\nthe app","tone":"ok"},{"id":"l","label":"Lapsed: read-only\n+ Subscribe bar","tone":"amend"},{"id":"n","label":"Never:\nthe paywall","tone":"no"}]],"edges":[],"example":["Lapsed: Vana and every AI entry open the paywall"]}

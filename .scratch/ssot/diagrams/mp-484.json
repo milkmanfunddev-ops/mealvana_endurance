@@ -1,0 +1,1 @@
+{"kind":"flow","title":"Ticket 05: production products","rows":[[{"id":"a","label":"App Store:\n4 x _prod","tone":"ink"},{"id":"p","label":"Play:\n4 x _prod","tone":"ink"}],[{"id":"rc","label":"RevenueCat: pro,\ndefault + founding","tone":"ok"}]],"edges":[{"from":"a","to":"rc"},{"from":"p","to":"rc"}],"example":["Waits for Lee's go; nothing submitted for review"]}

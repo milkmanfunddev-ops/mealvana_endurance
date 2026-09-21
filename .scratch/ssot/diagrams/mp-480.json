@@ -1,0 +1,1 @@
+{"kind":"flow","title":"Ticket 01: grants reach the server","rows":[[{"id":"g","label":"Hand grant in\nRevenueCat","tone":"accent"}],[{"id":"w","label":"Webhook asks\nRevenueCat's expiry","tone":"pending"}],[{"id":"r","label":"Row open to\nthe grant's end","tone":"ok"}]],"edges":[{"from":"g","to":"w"},{"from":"w","to":"r"}],"example":["Grant to 23 Sep: row active until 23 Sep"]}

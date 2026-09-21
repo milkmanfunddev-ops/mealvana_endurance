@@ -1,0 +1,1 @@
+{"kind":"flow","title":"Ticket 12: no writes when lapsed","rows":[[{"id":"e","label":"Lapsed athlete\nedits something","tone":"ink"}],[{"id":"w","label":"Write-access\nprovider: no","tone":"no"}],[{"id":"p","label":"Paywall opens;\nnothing queued","tone":"pending"}]],"edges":[{"from":"e","to":"w"},{"from":"w","to":"p"}],"example":["Logging a meal while lapsed writes nothing"]}

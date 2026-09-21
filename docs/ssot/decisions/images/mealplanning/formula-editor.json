@@ -1,9 +1,9 @@
 {
   "screen": "Formula editor",
   "key": "formula-editor",
-  "capturedAt": "2026-09-16T10:56:46.647Z",
-  "commit": "308d2c0f",
-  "appVersion": "1.26.0+1",
+  "capturedAt": "2026-09-21T21:05:17.626Z",
+  "commit": "18e21789",
+  "appVersion": "1.27.0+3",
   "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }

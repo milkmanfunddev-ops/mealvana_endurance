@@ -1,9 +1,9 @@
 {
   "screen": "Settings",
   "key": "settings",
-  "capturedAt": "2026-09-16T01:58:10.240Z",
-  "commit": "c4f78733",
-  "appVersion": "1.26.0+1",
+  "capturedAt": "2026-09-21T21:05:33.587Z",
+  "commit": "18e21789",
+  "appVersion": "1.27.0+3",
   "device": "iPhone 17 Pro",
   "runtime": "iOS 26.2"
 }
