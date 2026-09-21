@@ -7,7 +7,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
@@ -62,16 +61,15 @@ class _PostOnboardingAuthScreenState
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final authListenerService = ref.read(authListenerServiceProvider);
 
     if (!isLogin) {
-      // For signup mode, we LINK to the existing anonymous session to preserve onboarding data.
-      // If we don't have an anonymous session (unexpected), create one to link against.
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null || !currentUser.isAnonymous) {
-        // Preserve cached onboarding data while resetting the auth session.
-        authListenerService.markOnboardingSignOut();
-        await supabase.auth.signOut();
+      // Signup mode LINKS onto the current anonymous session so the uid (and
+      // everything keyed to it) survives account creation. Mint an anonymous
+      // session ONLY when there is none at all; a live session — anonymous or
+      // authenticated — is never signed out here (Critical bug 2026-09-17:
+      // the old signOut()+signInAnonymously() reset forked signed-in users
+      // onto a throwaway uid, orphaning their data).
+      if (supabase.auth.currentUser == null) {
         final response = await supabase.auth.signInAnonymously();
         if (response.user == null) {
           if (mounted) {
@@ -82,9 +80,13 @@ class _PostOnboardingAuthScreenState
       }
     }
 
-    // Signup mode: link to anonymous user (throws AccountAlreadyExistsException if provider exists)
+    // Signup mode + anonymous session: link (throws AccountAlreadyExistsException if provider exists)
+    // Signup mode + authenticated session: the athlete already holds a real
+    // account — go through provider sign-in instead of destroying the session
+    // to mint a linkable anonymous one; onboarding data still saves below.
     // Login mode: sign in to existing account (or create if none exists)
-    final bool success = isLogin
+    final isAnonymousSession = supabase.auth.currentUser?.isAnonymous ?? false;
+    final bool success = isLogin || !isAnonymousSession
         ? await controller.signInWithApple()
         : await controller.linkAppleAccount();
 
@@ -114,16 +116,15 @@ class _PostOnboardingAuthScreenState
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
     final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final authListenerService = ref.read(authListenerServiceProvider);
 
     if (!isLogin) {
-      // For signup mode, we LINK to the existing anonymous session to preserve onboarding data.
-      // If we don't have an anonymous session (unexpected), create one to link against.
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null || !currentUser.isAnonymous) {
-        // Preserve cached onboarding data while resetting the auth session.
-        authListenerService.markOnboardingSignOut();
-        await supabase.auth.signOut();
+      // Signup mode LINKS onto the current anonymous session so the uid (and
+      // everything keyed to it) survives account creation. Mint an anonymous
+      // session ONLY when there is none at all; a live session — anonymous or
+      // authenticated — is never signed out here (Critical bug 2026-09-17:
+      // the old signOut()+signInAnonymously() reset forked signed-in users
+      // onto a throwaway uid, orphaning their data).
+      if (supabase.auth.currentUser == null) {
         final response = await supabase.auth.signInAnonymously();
         if (response.user == null) {
           if (mounted) {
@@ -134,9 +135,13 @@ class _PostOnboardingAuthScreenState
       }
     }
 
-    // Signup mode: link to anonymous user (throws AccountAlreadyExistsException if provider exists)
+    // Signup mode + anonymous session: link (throws AccountAlreadyExistsException if provider exists)
+    // Signup mode + authenticated session: the athlete already holds a real
+    // account — go through provider sign-in instead of destroying the session
+    // to mint a linkable anonymous one; onboarding data still saves below.
     // Login mode: sign in to existing account (or create if none exists)
-    final bool success = isLogin
+    final isAnonymousSession = supabase.auth.currentUser?.isAnonymous ?? false;
+    final bool success = isLogin || !isAnonymousSession
         ? await controller.signInWithGoogle()
         : await controller.linkGoogleAccount();
 

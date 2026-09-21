@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/services/privacy/analytics_consent.dart';
 import '../providers/onboarding_analytics.dart';
+import '../providers/onboarding_session_controller.dart';
 import '../theme/onboarding_design_tokens.dart';
 
 /// Welcome Screen (splash) — pixel port of the onboarding HTML spec
 /// (../prototypes/onboarding/index.html). Every value below is the
 /// prototype's own CSS value; do not harmonize with the app theme.
-/// Controller wiring (fresh anonymous session, consent routing, funnel
-/// start mark) is unchanged from the pre-redesign screen.
+/// Controller wiring: session establishment (reuse-or-mint, see
+/// OnboardingSessionController), consent routing, funnel start mark.
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key, this.onContinue});
 
@@ -224,26 +224,17 @@ class WelcomeScreen extends ConsumerWidget {
     final callback = onContinue;
     final navigator = GoRouter.of(context);
 
-    // CRITICAL: Create a fresh start for onboarding
-    // 1. Sign out any existing session to ensure we start fresh
-    // 2. Create new anonymous session for this onboarding flow
-    // 3. Clear any temp user ID from previous attempts
-    final supabase = externalDeps.supabaseClient;
-
-    try {
-      // Sign out existing session (if any) to start completely fresh
-      await supabase.auth.signOut();
-
-      // Create new anonymous session for onboarding
-      await supabase.auth.signInAnonymously();
-
-      // Clear temp user ID from any previous onboarding attempts
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('onboarding_temp_user_id');
-    } catch (e) {
-      // Log but continue - onboarding flow will handle auth if needed
-      debugPrint('[WELCOME] Error creating fresh session: $e');
-    }
+    // CRITICAL: Ensure an auth session exists for onboarding — reusing any
+    // existing session (anonymous or signed-in). This handler used to
+    // signOut() + signInAnonymously() unconditionally, which minted a new
+    // anonymous uid on every visit and orphaned all data keyed to the old
+    // one (Critical bug 2026-09-17). A new uid is minted ONLY when no
+    // session exists at all. Errors are swallowed inside the controller's
+    // AsyncValue.guard — onboarding continues either way, which the router's
+    // /privacy-consent anti-loop guard relies on.
+    await ref
+        .read(onboardingSessionControllerProvider.notifier)
+        .ensureOnboardingSession();
 
     // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
     if (shouldUseCallback && callback != null) {
@@ -256,7 +247,7 @@ class WelcomeScreen extends ConsumerWidget {
     // and never sees it — they get disclosure plus the Settings → Privacy
     // opt-out instead. `needsPrompt` already encodes that regional rule.
     //
-    // The anonymous session created above is deliberately NOT gated on this:
+    // The auth session ensured above is deliberately NOT gated on this:
     // it is how the app functions at all (contract performance), not analytics.
     final consent = ref.read(analyticsConsentProvider);
     navigator.push(
