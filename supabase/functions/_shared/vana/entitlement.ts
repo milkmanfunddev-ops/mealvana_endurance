@@ -8,6 +8,7 @@
  * grant, which arrives through the webhook like any other event.
  */
 import type { Db } from './env.ts';
+import { jsonResponse } from '../responses.ts';
 
 export type ProCheck = { ok: true } | { ok: false; reason: 'pro_required' };
 
@@ -36,4 +37,14 @@ export async function requirePro(admin: Db, userId: string, nowMs: number = Date
     console.warn('[vana] user_entitlements read threw (treating as not entitled):', (e as Error).message);
   }
   return { ok: false, reason: 'pro_required' };
+}
+
+/**
+ * The check every AI function makes at the top of its handler (mp-429 clause 11): null when the caller
+ * is entitled, otherwise the refusal to return as is, 403 `{error:'pro_required'}`, the same answer
+ * vana-chat gives. Bought credits do not open it; only the RevenueCat cache does.
+ */
+export async function refuseUnlessPro(admin: Db, userId: string, nowMs: number = Date.now()): Promise<Response | null> {
+  const pro = await requirePro(admin, userId, nowMs);
+  return pro.ok ? null : jsonResponse({ error: pro.reason }, 403);
 }

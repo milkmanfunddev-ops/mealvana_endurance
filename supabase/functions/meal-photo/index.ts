@@ -10,7 +10,8 @@
  *   delete       { photo_id }                           → { photo | null }
  *   history      { }                                    → { photo, history: [...] }
  *
- * Errors: 401 {error:'unauthenticated'} · 403 {error:'not_tester'} ·
+ * Errors: 401 {error:'unauthenticated'} · 403 {error:'pro_required'} (no active
+ *         subscription, checked first) · 403 {error:'not_tester'} ·
  *         400 {error:'invalid_input'|'not_an_image'|'too_large'} ·
  *         404 {error:'meal_not_found'|'photo_not_found'} ·
  *         500 {error:'server_error'}.
@@ -29,6 +30,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { jsonResponse } from '../_shared/responses.ts';
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
+import { refuseUnlessPro } from '../_shared/vana/entitlement.ts';
 import { bucketStorage, handleMealPhoto, probeImageOverNetwork } from './handler.ts';
 import { SUPABASE_URL } from '../_shared/vana/env.ts';
 
@@ -40,6 +42,10 @@ serve(withSentry(async (req: Request) => {
 
   const auth = await authenticate(req);
   if (!auth.ok) return jsonResponse({ error: auth.error }, auth.status);
+
+  // Subscription gate (mp-429 clause 11, mp-481), before the Tester check: a Tester subscribes like anyone (mp-318).
+  const refusal = await refuseUnlessPro(auth.v.admin, auth.v.userId);
+  if (refusal) return refusal;
 
   let body: Record<string, unknown>;
   try {

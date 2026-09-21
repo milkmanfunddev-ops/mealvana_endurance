@@ -20,7 +20,8 @@
  *   - Opener: still ephemeral (no conversation row, nothing persisted, x-conversation-id empty).
  *   - Credits: UNCHANGED — ensureAndCheckCredits before the call (402 when out), debitForUsage after. Pro users are
  *     free via the credit module's own rules; the Vana paths (`vana-chat`) never debit.
- *   - No Pro gate here: this route serves free-tier clients (03-backend.md §3).
+ *   - Pro gate (paywall ticket 02, mp-429 clause 11): 403 {error:'pro_required'} for a caller without an active
+ *     subscription, the same refusal as vana-chat, before the credit check. Bought credits alone do not open it.
  *   - `location` is accepted and ignored (the Vana tools take a place name via getWeather).
  */
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
@@ -29,6 +30,7 @@ import { errorResponse, jsonResponse, validationError, serverError } from '../_s
 import { initSentry, withSentry } from '../_shared/sentry.ts';
 import { ensureAndCheckCredits, debitForUsage, insufficientCreditsBody } from '../_shared/ai/credits.ts';
 import { authenticate } from '../_shared/vana/auth.ts';
+import { refuseUnlessPro } from '../_shared/vana/entitlement.ts';
 import { runChat } from '../_shared/vana/chat.ts';
 import { RateLimitedError } from '../_shared/vana/rate-limit.ts';
 
@@ -49,6 +51,10 @@ serve(withSentry(async (req: Request) => {
     const auth = await authenticate(req);
     if (!auth.ok) return errorResponse('Missing or invalid authentication token', 401);
     const v = auth.v;
+
+    // Subscription gate (mp-429 clause 11): bought credits alone never open the old chat.
+    const refusal = await refuseUnlessPro(v.admin, v.userId);
+    if (refusal) return refusal;
 
     // ── Parse body ──────────────────────────────────────────────────────────
     let body: { message?: unknown; conversation_id?: unknown; timezone?: unknown; opener?: unknown };
