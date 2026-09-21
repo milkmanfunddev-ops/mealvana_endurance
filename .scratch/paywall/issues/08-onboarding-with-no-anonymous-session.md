@@ -1,6 +1,6 @@
 # 08: Onboarding with no anonymous session
 
-**Status:** in-progress (wave 1, 2026-09-21)
+**Status:** done (wave 1, 2026-09-21)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee paywall`
 **Model:** fable

@@ -1,6 +1,6 @@
 # 02: Every AI function checks the subscription on the server
 
-**Status:** in-progress (wave 1, 2026-09-21)
+**Status:** done (wave 1, 2026-09-21)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee paywall`
 **Model:** opus

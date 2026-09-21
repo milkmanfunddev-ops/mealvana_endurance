@@ -1,0 +1,24 @@
+[
+  {
+    "number": 1,
+    "tickets": [
+      "01",
+      "02",
+      "03",
+      "08"
+    ],
+    "base": "a2d41a901e2107177c7609839f4172f923cb2296",
+    "branch": "mealplanning",
+    "startedAt": "2026-09-21T20:24:25.755Z",
+    "closedAt": "2026-09-21T20:59:03.766Z",
+    "merged": [
+      "01",
+      "02",
+      "03",
+      "08"
+    ],
+    "failed": [],
+    "suite": "green",
+    "elapsed": "34m"
+  }
+]
