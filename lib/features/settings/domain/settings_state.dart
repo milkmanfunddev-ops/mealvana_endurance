@@ -96,6 +96,12 @@ class SettingsState {
   final String accountStatusAnonymous;
   final String accountStatusAuthenticated;
   final String createAccountButton;
+
+  /// Label for the anonymous-session "log into an existing account" action.
+  /// Anonymous sessions get this instead of a sign-out: signing an anonymous
+  /// user out discards the refresh token and orphans their data
+  /// (ruling, Xuan 2026-09-21).
+  final String logInButton;
   final String signOutButton;
 
   const SettingsState({
@@ -150,7 +156,8 @@ class SettingsState {
     this.accountSectionTitle = 'Account',
     this.accountStatusAnonymous = 'Not signed in',
     this.accountStatusAuthenticated = 'Signed in',
-    this.createAccountButton = 'Create Account',
+    this.createAccountButton = 'Create an account to save your data',
+    this.logInButton = 'Log into an existing account',
     this.signOutButton = 'Sign Out',
   });
 
@@ -207,6 +214,7 @@ class SettingsState {
     String? accountStatusAnonymous,
     String? accountStatusAuthenticated,
     String? createAccountButton,
+    String? logInButton,
     String? signOutButton,
   }) {
     return SettingsState(
@@ -268,6 +276,7 @@ class SettingsState {
       accountStatusAuthenticated:
           accountStatusAuthenticated ?? this.accountStatusAuthenticated,
       createAccountButton: createAccountButton ?? this.createAccountButton,
+      logInButton: logInButton ?? this.logInButton,
       signOutButton: signOutButton ?? this.signOutButton,
     );
   }

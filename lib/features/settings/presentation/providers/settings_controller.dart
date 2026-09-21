@@ -83,9 +83,17 @@ class SettingsController extends _$SettingsController {
       ContentKeys.settingsAccountStatusAuthenticated,
       defaultValue: 'Signed in',
     );
+    // Anonymous sessions never get a plain sign-out: dropping an anonymous
+    // session discards its refresh token, which makes the identity — and the
+    // athlete's data behind it — permanently unrecoverable (ruling, Xuan
+    // 2026-09-21). Both anonymous actions preserve the session instead.
     final createAccountButton = _contentService.getValue(
       ContentKeys.settingsCreateAccountButton,
-      defaultValue: 'Create Account',
+      defaultValue: 'Create an account to save your data',
+    );
+    final logInButton = _contentService.getValue(
+      ContentKeys.settingsLogInButton,
+      defaultValue: 'Log into an existing account',
     );
     final signOutButton = _contentService.getValue(
       ContentKeys.settingsSignOutButton,
@@ -200,7 +208,8 @@ class SettingsController extends _$SettingsController {
       final tpCss = zones?.cssSecondsPer100m;
       final ftpEmpty =
           displayProfile.ftpWatts == null || displayProfile.ftpWatts == 0;
-      final cssEmpty = displayProfile.cssPacePer100mSeconds == null ||
+      final cssEmpty =
+          displayProfile.cssPacePer100mSeconds == null ||
           displayProfile.cssPacePer100mSeconds == 0;
       if ((ftpEmpty && tpFtp != null) || (cssEmpty && tpCss != null)) {
         Future.microtask(() async {
@@ -226,6 +235,7 @@ class SettingsController extends _$SettingsController {
       accountStatusAnonymous: accountStatusAnonymous,
       accountStatusAuthenticated: accountStatusAuthenticated,
       createAccountButton: createAccountButton,
+      logInButton: logInButton,
       signOutButton: signOutButton,
       profileSectionTitle: profileSectionTitle,
       preferenceSectionTitle: preferenceSectionTitle,

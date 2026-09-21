@@ -483,7 +483,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               width: double.infinity,
               child: KylePrimaryButton(
                 key: const ValueKey('settings.create_account_button'),
-                text: state.createAccountButton ?? 'Create Account',
+                text:
+                    state.createAccountButton ??
+                    'Create an account to save your data',
                 onPressed: () {
                   final analytics = ref.read(appExternalDepsProvider);
                   analytics.analytics.track('settings_create_account_tapped');
@@ -495,91 +497,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: AppSpacing.md),
 
             // Log In button
+            //
+            // Together with Create Account above, this replaces the sign-out
+            // row for anonymous sessions (ruling, Xuan 2026-09-21). There is
+            // deliberately no sign-out here: signing an anonymous user out
+            // discards the refresh token, so the identity — and every athlete
+            // record behind it — can never be reached again.
             SizedBox(
               width: double.infinity,
               child: KyleSecondaryButton(
                 key: const ValueKey('settings.log_in_button'),
-                text: 'Log In',
+                text: state.logInButton ?? 'Log into an existing account',
                 onPressed: () {
                   final analytics = ref.read(appExternalDepsProvider);
                   analytics.analytics.track('settings_login_tapped');
                   context.push('/auth/post-onboarding?mode=login');
                 },
-              ),
-            ),
-
-            const SizedBox(height: AppSpacing.md),
-
-            // Sign Out button for anonymous users
-            SizedBox(
-              width: double.infinity,
-              child: TextButton(
-                key: const ValueKey('settings.sign_out_button'),
-                onPressed: () async {
-                  // Show warning dialog
-                  final confirmed = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Sign Out?'),
-                      content: const Text(
-                        'Your data is only saved on this device. '
-                        'Create an account first to back up your data and sync across devices.\n\n'
-                        'If you sign out without an account, you can still sign back in later to access your data on this device.',
-                      ),
-                      actions: [
-                        TextButton(
-                          key: const ValueKey('signout_dialog.cancel_button'),
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          key: const ValueKey(
-                            'signout_dialog.create_account_button',
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context, false);
-                            // Take them to create account instead
-                            context.push('/auth/post-onboarding');
-                          },
-                          child: const Text('Create Account'),
-                        ),
-                        TextButton(
-                          key: const ValueKey(
-                            'signout_dialog.sign_out_anyway_button',
-                          ),
-                          onPressed: () => Navigator.pop(context, true),
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.dragonfruit,
-                          ),
-                          child: const Text('Sign Out Anyway'),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (confirmed == true && context.mounted) {
-                    final analytics = ref.read(appExternalDepsProvider);
-                    analytics.analytics.track(
-                      'settings_anonymous_sign_out_tapped',
-                    );
-
-                    // Sign out of Supabase (clears anonymous session)
-                    // Local data is preserved - user can sign back in later
-                    await ref
-                        .read(settingsControllerProvider.notifier)
-                        .signOut();
-
-                    if (context.mounted) {
-                      context.go('/welcome');
-                    }
-                  }
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant,
-                ),
-                child: const Text('Sign Out'),
               ),
             ),
           ] else ...[
