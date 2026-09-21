@@ -44,6 +44,10 @@ import {
   ensureAndCheckCredits,
   insufficientCreditsBody,
 } from "../_shared/ai/credits.ts";
+import {
+  completeCall,
+  reserveCall,
+} from "../_shared/vana/rate-limit.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -160,6 +164,23 @@ serve(withSentry(async (req: Request) => {
       return jsonResponse(insufficientCreditsBody(credit), 402);
     }
 
+    // ── Rate limit ───────────────────────────────────────────────────────────
+    // The same shared Vana limiter as chat, on the server (mp-469 criterion 3): the row is written before the
+    // model runs, so descriptions fired in parallel cannot race past the window. The refusal carries a code,
+    // never prose — the app's line comes from the content system.
+    const reserved = await reserveCall(
+      serviceClient,
+      user.id,
+      "vana.describe_meal",
+      { model: DESCRIBE_MEAL_MODEL },
+    );
+    if (!reserved.allowed) {
+      return jsonResponse(
+        { error: "rate_limited", retry_after_seconds: reserved.retryAfterSeconds },
+        429,
+      );
+    }
+
     // Call Claude via Vercel AI Gateway
     const result = await generateObject({
       model: DESCRIBE_MEAL_MODEL as Parameters<typeof generateObject>[0]["model"],
@@ -234,6 +255,14 @@ Return your answer as structured JSON matching the requested schema.`,
             console.error("[describe-meal] Failed to log ai usage:", logError);
           }
         }),
+    );
+    // The reservation IS this call's row in the Vana call log: its tokens land on it.
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      completeCall(serviceClient, reserved.callId, {
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+      }),
     );
     // Also record in the canonical, prod-safe ai_usage ledger (used for
     // per-user token visibility + future throttling).

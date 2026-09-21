@@ -32,7 +32,9 @@ export async function suggestedPantry(v: VanaCtx, title = "What's in the house?"
 const PantryVisionZ = z.object({ isFoodStorage: z.boolean().describe('true when the photo shows a fridge, pantry, shelf or counter with food'), items: z.array(z.string().max(40)).max(30).describe('plain ingredient names, singular, no brands, no quantities') });
 
 /** Fridge / pantry photo → ingredient names. `photoPath` is a `meal-photos` object the caller owns ({userId}/…). */
-export async function detectPantryFromPhoto(v: VanaCtx, photoPath: string): Promise<PantryPart> {
+/** `onUsage` reports what the vision call cost, so the caller can finish the `vana_calls` row that reserved its
+ *  place in the limiter (mp-469). */
+export async function detectPantryFromPhoto(v: VanaCtx, photoPath: string, onUsage?: (t: { inputTokens: number; outputTokens: number }) => Promise<void>): Promise<PantryPart> {
   if (!photoPath.startsWith(`${v.userId}/`)) throw new Error('photo does not belong to this user');
   const { data: blob, error } = await v.admin.storage.from('meal-photos').download(photoPath);
   if (error || !blob) throw new Error(`could not read photo: ${error?.message ?? 'unknown'}`);
@@ -44,6 +46,7 @@ export async function detectPantryFromPhoto(v: VanaCtx, photoPath: string): Prom
   });
   const u = r.usage; const costUsd = gatewayCostUsd(r.providerMetadata);
   await logAiUsage(v.admin, { userId: v.userId, functionName: 'vana-pantry-photo', model: TOOL_MODEL, inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0, costUsd });
+  await onUsage?.({ inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0 });
   const seen = new Set<string>(); const items = r.object.isFoodStorage ? r.object.items.map((x) => x.trim()).filter((x) => { const k = norm(x); if (!k || seen.has(k)) return false; seen.add(k); return true; }).map((name) => ({ name, selected: true })) : [];
   return { kind: 'pantry', title: items.length ? 'Here is what I could see' : 'I could not spot food in that photo — add what you have', items, allowCustom: true, origin: 'photo' };
 }

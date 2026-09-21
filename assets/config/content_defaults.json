@@ -431,6 +431,7 @@
     "vana_note_empty": "Build a plan and I'll tell you how to use it each day.",
     "pro_required": "Mealvana Pro required",
     "rate_limited": "Give me {n} seconds",
+    "analysis_rate_limited": "Too many at once — try again in {n} seconds.",
     "server_error": "Something went wrong. Try again.",
     "ai_unavailable": "Vana is unavailable right now",
     "confirmed_toast": "Plan confirmed — shopping list ready",

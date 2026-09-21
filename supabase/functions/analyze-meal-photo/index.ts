@@ -49,6 +49,10 @@ import {
   ensureAndCheckCredits,
   insufficientCreditsBody,
 } from "../_shared/ai/credits.ts";
+import {
+  completeCall,
+  reserveCall,
+} from "../_shared/vana/rate-limit.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -166,6 +170,23 @@ serve(withSentry(async (req: Request) => {
     );
     if (!credit.allowed) {
       return jsonResponse(insufficientCreditsBody(credit), 402);
+    }
+
+    // ── Rate limit ───────────────────────────────────────────────────────────
+    // The same shared Vana limiter as chat, on the server (mp-469 criterion 3): the row is written before the
+    // model runs, so photos fired in parallel cannot race past the window. The refusal carries a code, never
+    // prose — the app's line comes from the content system.
+    const reserved = await reserveCall(
+      serviceClient,
+      user.id,
+      "vana.meal_photo",
+      { model: ANALYZE_MEAL_PHOTO_MODEL },
+    );
+    if (!reserved.allowed) {
+      return jsonResponse(
+        { error: "rate_limited", retry_after_seconds: reserved.retryAfterSeconds },
+        429,
+      );
     }
 
     const { data: imageData, error: storageError } = await serviceClient.storage
@@ -322,6 +343,14 @@ Return your answer as structured JSON matching the requested schema.`,
             );
           }
         }),
+    );
+    // The reservation IS this call's row in the Vana call log: its tokens land on it.
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime?.waitUntil?.(
+      completeCall(serviceClient, reserved.callId, {
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+      }),
     );
     // Also record in the canonical, prod-safe ai_usage ledger (used for
     // per-user token visibility + future throttling).

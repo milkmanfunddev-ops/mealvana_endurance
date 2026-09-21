@@ -14,7 +14,7 @@ import { buildAthleteContext, contextBlock } from './context.ts';
 import { cachedContext } from './context-cache.ts';
 import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STANDING, checkinOpener, debriefOpener } from './persona.ts';
-import { checkRateLimit } from './rate-limit.ts';
+import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, type Situation } from './situation.ts';
 import { logCall } from './log.ts';
@@ -34,6 +34,18 @@ import { ndjsonFromFullStream, ndjsonHeaders, cacheReadTokens } from './stream.t
 export const CACHE_PROVIDER_OPTIONS = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
 
 const MAX_OUTPUT_TOKENS = 900;
+/** The most a single turn may spend, input and output across every step, before the loop is stopped (mp-469 criterion 4).
+ *  The step limit alone bounds the number of model calls, not their size: six steps that each replay a long history are
+ *  six long calls. A well-behaved planning turn is a few thousand tokens; this is a runaway guard, not a budget. */
+export const TURN_TOKEN_CEILING = 60_000;
+const stepTokens = (u?: { inputTokens?: number; outputTokens?: number; totalTokens?: number }) =>
+  u?.totalTokens ?? (u?.inputTokens ?? 0) + (u?.outputTokens ?? 0);
+/** A stop condition on spend: the turn ends once the steps so far have cost `ceiling` tokens. A usage the provider did
+ *  not report reads as zero — an unknown cost never stops a turn that has not run. */
+export const tokenBudgetIs = (ceiling: number) => ({ steps }: { steps: Array<{ usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> }) =>
+  steps.reduce((s, x) => s + stepTokens(x.usage), 0) >= ceiling;
+/** What stops a turn: its step limit AND its token ceiling (either one ends the loop). */
+export const chatStopWhen = (general: boolean) => [stepCountIs(general ? 8 : 6), tokenBudgetIs(TURN_TOKEN_CEILING)];
 /** Runaway guard, not a style rule: a well-behaved planning turn never comes near it (PRESENTING is ≤4 sentences). */
 export const RUNAWAY_SENTENCES = 8;
 const textOf = (m: UIMessage) => m.parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text').map((p) => p.text).join('\n');
@@ -286,11 +298,20 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     if (message) messages.push({ id: `u-${Date.now()}`, role: 'user', parts: [{ type: 'text', text: message }] });
   }
   if (!messages.length && kind === 'general' && !body.opener) return { ok: false, status: 400, body: { error: 'message_required' } };
-
-  const rl = await checkRateLimit(v.admin, v.userId, 'vana.chat');
-  if (!rl.allowed) return { ok: false, status: 429, body: { error: 'rate_limited', retry_after_seconds: rl.retryAfterSeconds ?? 10, retryAfterSeconds: rl.retryAfterSeconds ?? 10 } };
+  // No free turn (mp-469 criterion 1). An empty message on a conversation that already holds turns used to replay the
+  // whole history and store an answer: a full-price turn for a request that said nothing. Only `opener: true` — the
+  // scripted first turn, including a moment's opener into an existing thread — may arrive without a message.
+  if (!body.opener && !message && messages.length) return { ok: false, status: 400, body: { error: 'message_required' } };
 
   const opener = messages.length === 0;
+  // The bucket is the row, and the row goes in before the model (mp-430 clause 9): the reservation is this call's
+  // `vana_calls` row, and `completeCall` writes its tokens when the turn finishes. An opener counts in its own bucket,
+  // which is the one its row was always logged under.
+  const bucket = opener ? 'vana.opener' : 'vana.chat';
+  const loggedName = `${bucket}.${kind}`;
+  const reserved = await reserveCall(v.admin, v.userId, bucket, { functionName: loggedName, conversationId: body.conversation_id ?? null, model: CHAT_MODEL });
+  if (!reserved.allowed) return { ok: false, status: 429, body: { error: 'rate_limited', retry_after_seconds: reserved.retryAfterSeconds, retryAfterSeconds: reserved.retryAfterSeconds } };
+  const callId = reserved.callId;
   const last = [...messages].reverse().find((m) => m.role === 'user');
   const lastText = last ? textOf(last) : '';
   const conv = persist ? await ensureConversation(v, body.conversation_id ?? null, kind) : { id: '', kind };
@@ -353,7 +374,8 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     messages: modelMessages,
     tools,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
-    stopWhen: stepCountIs(general ? 8 : 6),
+    // deno-lint-ignore no-explicit-any
+    stopWhen: chatStopWhen(general) as any,
     providerOptions: CACHE_PROVIDER_OPTIONS,
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
@@ -371,7 +393,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }
-          await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName: opener ? `vana.opener.${convKind}` : `vana.chat.${convKind}`, model: CHAT_MODEL, inputTokens, outputTokens, cacheReadTokens: cacheRead });
+          // The reservation IS this call's row; its tokens land on it. Only a reservation the log could not write
+          // (the limiter failed open) needs a row of its own.
+          const functionName = `${bucket}.${convKind}`;
+          if (callId) await completeCall(v.admin, callId, { inputTokens, outputTokens, cacheReadTokens: cacheRead, functionName, conversationId: convId || null });
+          else await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName, model: CHAT_MODEL, inputTokens, outputTokens, cacheReadTokens: cacheRead });
           await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens });
           await opts.afterFinish?.({ inputTokens, outputTokens });
           console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} cache_read=${cacheRead} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);

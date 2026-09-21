@@ -113,6 +113,23 @@ class MealAiService {
   String get _aiUnavailableMessage =>
       _content?.getValue(ContentKeys.mpAiUnavailable) ??
       'Vana is unavailable right now';
+
+  /// 429 from `describe-meal` / `analyze-meal-photo`: the shared server-side
+  /// limiter turned this call away (mp-469). The server sends a code and the
+  /// seconds to wait, never prose; the line comes from the content system.
+  String _rateLimitedMessage(dynamic data) {
+    final seconds = data is Map && data['retry_after_seconds'] is num
+        ? (data['retry_after_seconds'] as num).toInt()
+        : 60;
+    final template = _content?.getValue(ContentKeys.mpAnalysisRateLimited);
+    return template == null
+        ? 'Too many at once — try again in $seconds seconds.'
+        : ContentKeys.format(template, {'n': seconds});
+  }
+
+  /// Whether an edge-function error body is the limiter's refusal.
+  bool _isRateLimited(dynamic data) =>
+      data is Map && data['error'] == 'rate_limited';
   static const _uuid = Uuid();
 
   // -------------------------------------------------------------------------
@@ -331,6 +348,16 @@ class MealAiService {
       throw _insufficientCreditsFrom(response.data);
     }
 
+    // 429 → the shared server-side limiter (mp-469). One content-managed line,
+    // with the wait the server named; nothing was spent and nothing to top up.
+    if (response.status == 429 || _isRateLimited(response.data)) {
+      throw MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: _rateLimitedMessage(response.data),
+        debugMessage: '$functionName returned rate_limited',
+      );
+    }
+
     if (response.status != 200) {
       final message = _extractErrorMessage(response.data);
       if (kDebugMode) {
@@ -382,6 +409,14 @@ class MealAiService {
     // `throw` its result, so throwing here propagates identically).
     if (e.status == 402) {
       throw _insufficientCreditsFrom(e.details);
+    }
+
+    if (e.status == 429 || _isRateLimited(e.details)) {
+      return MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: _rateLimitedMessage(e.details),
+        debugMessage: 'FunctionException 429 from $functionName',
+      );
     }
 
     // FunctionException.status is non-nullable (int).
