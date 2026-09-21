@@ -1,12 +1,14 @@
-/// Widget tests and goldens for [PaywallScreen] with a fake `default`
-/// offering.
+/// Widget tests and goldens for [PaywallScreen] with the SDK-decoded
+/// `default` and `founding` offerings of `offerings_fixtures.dart`.
 ///
 /// Covers: the two plans render from the store's own prices with the free
 /// introductory week when eligible and without it when the store says the
 /// offer is spent; the four actions (Restore, Manage subscription, Sign out,
 /// Delete account) are present and each drives the right controller; the
-/// unavailable state; and light/dark goldens of the paywall with its four
-/// actions (mp-263).
+/// unavailable state; founding prices beside the struck-through normal ones
+/// (mp-453 §2); the trial terms, price after the trial and the terms and
+/// privacy links (mp-453 §4); and light/dark goldens of the paywall with its
+/// four actions (mp-263), plus the founding shape.
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -29,56 +31,33 @@ import 'package:mealvana_endurance/features/subscription/application/pro_paywall
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
+import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 
 import '../../../helpers/widget_test_harness.dart';
 import '../../meal_planning/presentation/helpers/test_content.dart';
+import '../offerings_fixtures.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes
 // ---------------------------------------------------------------------------
 
-const _freeWeek = IntroductoryPrice(0, r'$0.00', 'P1W', 1, PeriodUnit.week, 1);
+final _default = offeringFixture('default');
+final _founding = offeringFixture('founding');
+final _monthly = _default.monthly!;
+final _annual = _default.annual!;
 
-class _FakeStoreProduct extends Fake implements StoreProduct {
-  _FakeStoreProduct(
-    this.identifier,
-    this.priceString, {
-    this.introductoryPrice,
-  });
-  @override
-  final String identifier;
-  @override
-  final String priceString;
-  @override
-  final IntroductoryPrice? introductoryPrice;
-}
-
-class _FakePackage extends Fake implements Package {
-  _FakePackage(
-    this.identifier,
-    String sku,
-    String price, {
-    IntroductoryPrice? intro,
-  }) : storeProduct = _FakeStoreProduct(sku, price, introductoryPrice: intro);
-  @override
-  final String identifier;
-  @override
-  final StoreProduct storeProduct;
-}
-
-final _monthly = _FakePackage(
-  r'$rc_monthly',
-  'mealvana_pro_monthly',
-  r'$9.99',
-  intro: _freeWeek,
-);
-final _annual = _FakePackage(
-  r'$rc_annual',
-  'mealvana_pro_annual',
-  r'$69.99',
-  intro: _freeWeek,
-);
+/// The plans while `founding` is current: founding packages sold, `default`
+/// packages in the same slots for the struck-through prices.
+PaywallPlans _foundingPlans({Set<String> introIneligible = const {}}) =>
+    PaywallPlans(
+      monthly: _founding.monthly,
+      annual: _founding.annual,
+      isFounding: true,
+      regularMonthly: _monthly,
+      regularAnnual: _annual,
+      introIneligible: introIneligible,
+    );
 
 class _FixedStatus extends SubscriptionStatusController {
   _FixedStatus(this.status);
@@ -177,8 +156,13 @@ void main() {
 
     expect(find.byKey(const ValueKey('paywall.plan.monthly')), findsOneWidget);
     expect(find.byKey(const ValueKey('paywall.plan.annual')), findsOneWidget);
-    expect(find.text(r'7 days free, then $9.99 / month'), findsOneWidget);
-    expect(find.text(r'7 days free, then $69.99 / year'), findsOneWidget);
+    expect(find.text(r'7 days free, then $24.99 / month'), findsOneWidget);
+    expect(find.text(r'7 days free, then $199.99 / year'), findsOneWidget);
+    expect(find.byKey(const ValueKey('paywall.founding_line')), findsNothing);
+    expect(
+      find.byKey(const ValueKey('paywall.plan.monthly.regular_price')),
+      findsNothing,
+    );
     expect(find.text('Start trial'), findsNWidgets(2));
   });
 
@@ -192,16 +176,13 @@ void main() {
         plans: PaywallPlans(
           monthly: _monthly,
           annual: _annual,
-          introIneligible: const {
-            'mealvana_pro_monthly',
-            'mealvana_pro_annual',
-          },
+          introIneligible: const {'me_pro_monthly', 'me_pro_annual'},
         ),
       ),
     );
 
-    expect(find.text(r'$9.99 / month'), findsOneWidget);
-    expect(find.text(r'$69.99 / year'), findsOneWidget);
+    expect(find.text(r'$24.99 / month'), findsOneWidget);
+    expect(find.text(r'$199.99 / year'), findsOneWidget);
     expect(find.textContaining('days free'), findsNothing);
     expect(find.text('Subscribe'), findsNWidgets(2));
   });
@@ -232,7 +213,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('paywall.subscribe_annual')));
     await tester.pumpAndSettle();
 
-    expect(paywall.bought, ['mealvana_pro_annual']);
+    expect(paywall.bought, ['me_pro_annual']);
     expect(find.text('Welcome to Mealvana Endurance!'), findsOneWidget);
   });
 
@@ -381,6 +362,176 @@ void main() {
     expect(settings.signOuts, 0);
   });
 
+  group('founding prices (mp-453 §2)', () {
+    testWidgets('each plan shows the founding price with the normal one '
+        'struck through, under a Founding member line', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(plans: _foundingPlans()),
+      );
+
+      expect(find.text('Founding member'), findsOneWidget);
+      expect(find.text(r'7 days free, then $12.49 / month'), findsOneWidget);
+      expect(find.text(r'7 days free, then $99.99 / year'), findsOneWidget);
+
+      final monthlyRegular = tester.widget<Text>(
+        find.byKey(const ValueKey('paywall.plan.monthly.regular_price')),
+      );
+      final annualRegular = tester.widget<Text>(
+        find.byKey(const ValueKey('paywall.plan.annual.regular_price')),
+      );
+      expect(monthlyRegular.data, r'$24.99 / month');
+      expect(annualRegular.data, r'$199.99 / year');
+      expect(monthlyRegular.style?.decoration, TextDecoration.lineThrough);
+      expect(annualRegular.style?.decoration, TextDecoration.lineThrough);
+    });
+
+    testWidgets('buying while founding is current buys the founding product', (
+      tester,
+    ) async {
+      final paywall = _RecordingPaywall();
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(plans: _foundingPlans(), paywall: () => paywall),
+      );
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('paywall.subscribe_monthly')),
+      );
+      await tester.tap(find.byKey(const ValueKey('paywall.subscribe_monthly')));
+      await tester.pumpAndSettle();
+
+      expect(paywall.bought, ['me_pro_monthly_founding']);
+    });
+  });
+
+  group('terms (mp-453 §4)', () {
+    testWidgets('the trial terms carry the free week and the price after it', (
+      tester,
+    ) async {
+      await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+
+      expect(
+        find.text(
+          r'7 days free, then $24.99 a month or $199.99 a year. Nothing is '
+          'charged during the free week. Cancel before it ends and you pay '
+          'nothing.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('paywall.renewal_terms')),
+        findsOneWidget,
+      );
+      expect(find.text('Terms of Use'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
+    });
+
+    testWidgets('while founding is current, the price after the trial is '
+        'the founding price', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(plans: _foundingPlans()),
+      );
+
+      expect(
+        find.textContaining(r'then $12.49 a month or $99.99 a year'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('a spent free week leaves the plain prices in the terms', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(
+          plans: PaywallPlans(
+            monthly: _monthly,
+            annual: _annual,
+            introIneligible: const {'me_pro_monthly', 'me_pro_annual'},
+          ),
+        ),
+      );
+
+      expect(find.text(r'$24.99 a month or $199.99 a year.'), findsOneWidget);
+    });
+
+    testWidgets('no offering: renewal terms and links stay, no price line', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(plans: const PaywallPlans()),
+      );
+
+      expect(find.byKey(const ValueKey('paywall.trial_terms')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('paywall.renewal_terms')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('paywall.terms_link')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('paywall.privacy_link')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('the links open the terms of use and the privacy policy', (
+      tester,
+    ) async {
+      final launched = <Uri>[];
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(
+          launcher: (u) async {
+            launched.add(u);
+            return true;
+          },
+        ),
+      );
+
+      for (final key in const [
+        ValueKey('paywall.terms_link'),
+        ValueKey('paywall.privacy_link'),
+      ]) {
+        await tester.ensureVisible(find.byKey(key));
+        await tester.tap(find.byKey(key));
+        await tester.pumpAndSettle();
+      }
+
+      expect(launched, [
+        Uri.parse(kTermsOfServiceUrl),
+        Uri.parse(kPrivacyPolicyUrl),
+      ]);
+    });
+
+    testWidgets('a link that does not open says so', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(launcher: (_) async => false),
+      );
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('paywall.privacy_link')),
+      );
+      await tester.tap(find.byKey(const ValueKey('paywall.privacy_link')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Couldn't open that page. Please try again."),
+        findsOneWidget,
+      );
+    });
+  });
+
   testWidgets('onboarding mode: plans and Restore, no account actions', (
     tester,
   ) async {
@@ -404,6 +555,7 @@ void main() {
       WidgetTester tester,
       Brightness brightness, {
       bool onboarding = false,
+      bool founding = false,
     }) async {
       tester.view.physicalSize = const Size(393, 1320);
       tester.view.devicePixelRatio = 1;
@@ -411,7 +563,10 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [mockAppExternalDeps(), ..._overrides()],
+          overrides: [
+            mockAppExternalDeps(),
+            ..._overrides(plans: founding ? _foundingPlans() : null),
+          ],
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
@@ -431,7 +586,11 @@ void main() {
       expect(tester.takeException(), isNull);
 
       final name = brightness == Brightness.dark ? 'dark' : 'light';
-      final shape = onboarding ? 'onboarding_' : '';
+      final shape = onboarding
+          ? 'onboarding_'
+          : founding
+          ? 'founding_'
+          : '';
       await expectLater(
         find.byKey(const Key('golden')),
         matchesGoldenFile('goldens/paywall_$shape$name.png'),
@@ -440,6 +599,14 @@ void main() {
 
     testWidgets('light', (tester) => golden(tester, Brightness.light));
     testWidgets('dark', (tester) => golden(tester, Brightness.dark));
+    testWidgets(
+      'founding light',
+      (tester) => golden(tester, Brightness.light, founding: true),
+    );
+    testWidgets(
+      'founding dark',
+      (tester) => golden(tester, Brightness.dark, founding: true),
+    );
     testWidgets(
       'onboarding dark',
       (tester) => golden(tester, Brightness.dark, onboarding: true),

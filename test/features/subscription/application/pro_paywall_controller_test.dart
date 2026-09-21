@@ -137,30 +137,36 @@ void main() {
       expect(plans.introOfferFor(plans.monthly!)?.freeDays, 7);
     });
 
-    test('with `founding` current, each plan is the founding package and '
-        'carries the `default` price of the same slot to strike through', () async {
-      when(
-        () => service.fetchOfferings(),
-      ).thenAnswer((_) async => offeringsFixture(current: 'founding'));
-      final plans = await container().read(paywallPlansProvider.future);
+    test(
+      'with `founding` current, each plan is the founding package and '
+      'carries the `default` price of the same slot to strike through',
+      () async {
+        when(
+          () => service.fetchOfferings(),
+        ).thenAnswer((_) async => offeringsFixture(current: 'founding'));
+        final plans = await container().read(paywallPlansProvider.future);
 
-      expect(plans.isFounding, isTrue);
-      expect(plans.monthly!.storeProduct.identifier, 'me_pro_monthly_founding');
-      expect(plans.annual!.storeProduct.identifier, 'me_pro_annual_founding');
-      expect(plans.monthly!.storeProduct.priceString, r'$12.49');
-      expect(plans.annual!.storeProduct.priceString, r'$99.99');
-      expect(plans.regularPriceFor(plans.monthly!), r'$24.99');
-      expect(plans.regularPriceFor(plans.annual!), r'$199.99');
-      expect(plans.introOfferFor(plans.annual!)?.freeDays, 7);
-    });
+        expect(plans.isFounding, isTrue);
+        expect(
+          plans.monthly!.storeProduct.identifier,
+          'me_pro_monthly_founding',
+        );
+        expect(plans.annual!.storeProduct.identifier, 'me_pro_annual_founding');
+        expect(plans.monthly!.storeProduct.priceString, r'$12.49');
+        expect(plans.annual!.storeProduct.priceString, r'$99.99');
+        expect(plans.regularPriceFor(plans.monthly!), r'$24.99');
+        expect(plans.regularPriceFor(plans.annual!), r'$199.99');
+        expect(plans.introOfferFor(plans.annual!)?.freeDays, 7);
+      },
+    );
 
     test('intro eligibility is asked for the packages actually sold', () async {
       when(
         () => service.fetchOfferings(),
       ).thenAnswer((_) async => offeringsFixture(current: 'founding'));
-      when(() => service.introIneligibleProductIds(any())).thenAnswer(
-        (_) async => const {'me_pro_monthly_founding'},
-      );
+      when(
+        () => service.introIneligibleProductIds(any()),
+      ).thenAnswer((_) async => const {'me_pro_monthly_founding'});
       final plans = await container().read(paywallPlansProvider.future);
 
       verify(

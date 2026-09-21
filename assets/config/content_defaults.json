@@ -102,7 +102,14 @@
     "delete_confirm_title": "Delete account?",
     "delete_confirm_body": "This permanently deletes your account and all of its data. This cannot be undone.",
     "delete_confirm_action": "Delete",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "founding_line": "Founding member",
+    "trial_terms": "{days} days free, then {monthly} a month or {annual} a year. Nothing is charged during the free week. Cancel before it ends and you pay nothing.",
+    "plans_terms": "{monthly} a month or {annual} a year.",
+    "renewal_terms": "Your subscription renews automatically at the same price until you cancel. Cancel at least 24 hours before it renews in your App Store or Google Play account settings.",
+    "terms_link": "Terms of Use",
+    "privacy_link": "Privacy Policy",
+    "link_failed": "Couldn't open that page. Please try again."
   },
   "main_screen": {
     "title": "Mealvana Endurance",
