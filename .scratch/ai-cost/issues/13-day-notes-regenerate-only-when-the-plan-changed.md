@@ -1,6 +1,6 @@
 # 13: Day notes regenerate only when the plan changed
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 2, 2026-09-21)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/daynotes.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus

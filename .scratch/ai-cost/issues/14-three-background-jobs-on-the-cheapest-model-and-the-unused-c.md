@@ -1,6 +1,6 @@
 # 14: Three background jobs on the cheapest model, and the unused coach insight removed
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 2, 2026-09-21)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/extract.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus

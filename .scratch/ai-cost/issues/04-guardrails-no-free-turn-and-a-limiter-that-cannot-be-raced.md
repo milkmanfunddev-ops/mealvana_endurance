@@ -1,6 +1,6 @@
 # 04: Guardrails: no free turn, and a limiter that cannot be raced
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 2, 2026-09-21)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/chat.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
