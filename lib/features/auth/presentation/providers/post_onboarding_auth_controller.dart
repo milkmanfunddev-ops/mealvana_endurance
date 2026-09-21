@@ -161,11 +161,20 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
-      _logger.error(
-        'Post-onboarding auth: Apple Sign-In failed',
-        context: 'AUTH',
-        error: state.error,
-      );
+      // Expected control-flow signal: this Apple identity has no account.
+      // The screen turns it into "try the provider you signed up with".
+      if (state.error is OAuthAccountNotFoundException) {
+        _logger.info(
+          'Post-onboarding auth: no existing account for this Apple identity',
+          context: 'AUTH',
+        );
+      } else {
+        _logger.error(
+          'Post-onboarding auth: Apple Sign-In failed',
+          context: 'AUTH',
+          error: state.error,
+        );
+      }
     }
 
     return !state.hasError;
@@ -184,11 +193,20 @@ class PostOnboardingAuthController extends _$PostOnboardingAuthController {
     });
 
     if (state.hasError) {
-      _logger.error(
-        'Post-onboarding auth: Google Sign-In failed',
-        context: 'AUTH',
-        error: state.error,
-      );
+      // Expected control-flow signal: this Google identity has no account.
+      // The screen turns it into "try the provider you signed up with".
+      if (state.error is OAuthAccountNotFoundException) {
+        _logger.info(
+          'Post-onboarding auth: no existing account for this Google identity',
+          context: 'AUTH',
+        );
+      } else {
+        _logger.error(
+          'Post-onboarding auth: Google Sign-In failed',
+          context: 'AUTH',
+          error: state.error,
+        );
+      }
     }
 
     return !state.hasError;
