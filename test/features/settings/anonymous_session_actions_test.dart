@@ -262,6 +262,14 @@ void main() {
             userRepositoryProvider.overrideWith((_) async => userRepository),
             currentUserProvider.overrideWith((_) async => null),
             coachRepositoryProvider.overrideWithValue(_MockCoachRepository()),
+            // develop's SettingsController reaches further than the release
+            // branch's — meal-planning repositories and the Pro-entitlement
+            // clear pull in the analytics tracker and the prefs store. Real
+            // runs get both from main.dart after loading .env; a bare
+            // container has to supply them, as the widget cases above do.
+            mockAppExternalDeps(),
+            appConfigProvider.overrideWithValue(AppConfig.forTesting()),
+            mockSharedPreferences(),
           ],
         );
         addTearDown(container.dispose);
