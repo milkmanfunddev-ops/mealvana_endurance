@@ -210,6 +210,11 @@ class ContentKeys {
   static const String mpVanaNoteEmpty = 'meal_planning.vana_note_empty';
   static const String mpProRequired = 'meal_planning.pro_required';
   static const String mpRateLimited = 'meal_planning.rate_limited';
+  /// The shared server-side limiter turned a meal analysis away (429,
+  /// `describe-meal` / `analyze-meal-photo`, mp-469). `{n}` is the wait the
+  /// server named. Vana chat has its own, shorter line (`mpRateLimited`).
+  static const String mpAnalysisRateLimited =
+      'meal_planning.analysis_rate_limited';
   static const String mpServerError = 'meal_planning.server_error';
   /// The AI Gateway refused US — our key's monthly budget hard-stopped, or
   /// the key is gone (mp-437). Never the top-up sheet: the athlete's own
