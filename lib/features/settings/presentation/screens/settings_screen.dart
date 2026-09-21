@@ -584,7 +584,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   builder: (context) => AlertDialog(
                     title: const Text('Sign Out?'),
                     content: const Text(
-                      'You\'ll continue using the app as a guest. Your preferences will be saved on this device. Sign in again to sync across devices.',
+                      'You\'ll need to sign in again to use the app.',
                     ),
                     actions: [
                       TextButton(
