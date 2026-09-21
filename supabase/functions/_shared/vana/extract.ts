@@ -3,8 +3,8 @@
  *
  * There is no scheduler and nothing runs when a conversation opens. The client says when a conversation
  * is idle (the sheet closes, the app goes to the background, a new conversation starts: mp-288), and
- * that conversation is fed to ONE Haiku call with the margin-note rule and a strict schema: zero to
- * three sentences, plus one episode sentence. The sentences go through the deduped writer; the episode
+ * that conversation is fed to ONE background-model call (`VANA_BACKGROUND_MODEL`, mp-465 clause 3) with the
+ * margin-note rule and a strict schema: zero to three sentences, plus one episode sentence. The sentences go through the deduped writer; the episode
  * is a keyed Memory. `read_back_at` is stamped so a conversation is never extracted twice: a second
  * signal writes nothing. A signal that never arrives (offline) is dropped; the remember tool already
  * wrote that conversation's margin notes in the hot path (mp-277 clause 2).
@@ -20,7 +20,7 @@
  */
 import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
-import { TOOL_MODEL } from './env.ts';
+import { backgroundModel } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { listMemories, rememberFact } from './memory.ts';
 import { logCall } from './log.ts';
@@ -55,7 +55,7 @@ export interface ExtractDeps {
 }
 export const defaultExtractDeps: ExtractDeps = {
   generate: async ({ system, prompt }) => {
-    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: ExtractionZ, maxOutputTokens: 400, system, prompt });
+    const { object, usage } = await generateObject({ model: backgroundModel(), schema: ExtractionZ, maxOutputTokens: 400, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
   },
 };
@@ -117,7 +117,7 @@ export async function extractConversation(v: VanaCtx, conversationId: string, de
     }
     const episode = object.episode.trim() || null;
     if (episode) await writeEpisode(v, conversationId, episode);
-    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.extract', model: TOOL_MODEL, inputTokens, outputTokens });
+    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.extract', model: backgroundModel(), inputTokens, outputTokens });
     console.log(`[vana] read back ${conversationId}: ${written} memory(ies) in ${Date.now() - started}ms`);
     return { conversationId, memories: written, episode };
   } catch (e) {
@@ -157,7 +157,7 @@ export interface SummaryDeps {
 }
 export const defaultSummaryDeps: SummaryDeps = {
   generate: async ({ system, prompt }) => {
-    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: SummaryZ, maxOutputTokens: 400, system, prompt });
+    const { object, usage } = await generateObject({ model: backgroundModel(), schema: SummaryZ, maxOutputTokens: 400, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
   },
 };
@@ -230,7 +230,7 @@ export async function writeSummary(v: VanaCtx, conversationId: string, target: n
     const lines = transcriptFromMessages(messages.slice(from, target));
     if (!lines.length) return null;
     const { object, inputTokens, outputTokens } = await deps.generate({ system: SUMMARY_SYSTEM, prompt: summaryPrompt(previous, lines, from, target) });
-    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.summary', model: TOOL_MODEL, inputTokens, outputTokens });
+    await logCall(v.admin, { userId: v.userId, conversationId, functionName: 'vana.summary', model: backgroundModel(), inputTokens, outputTokens });
     const text = object.summary.replace(/\s+/g, ' ').trim();
     if (!text) return null;
     // Whatever landed while the model was thinking wins if it is newer: never roll the row back.

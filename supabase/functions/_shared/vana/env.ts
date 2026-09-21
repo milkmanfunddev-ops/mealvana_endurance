@@ -36,6 +36,21 @@ export const CHAT_MODEL: string = Deno.env.get('VANA_CHAT_MODEL') ?? 'anthropic/
 export const TOOL_MODEL: string = Deno.env.get('VANA_TOOL_MODEL') ?? 'anthropic/claude-haiku-4.5';
 export const EMBED_MODEL: string = Deno.env.get('VANA_EMBED_MODEL') ?? 'openai/text-embedding-3-small';
 
+/**
+ * The three background jobs' model, apart from the chat model (mp-465 clause 3, ai-cost ticket 14).
+ *
+ * These three write nothing the athlete reads — the memory extraction when a conversation goes idle
+ * (`extract.ts`), the rolling summary of an open conversation (`extract.ts`) and the ingredient list
+ * for a saved meal (`saved-ingredients.ts`) — so their model is chosen on price against "does it
+ * return the same structured answer". They must not follow `VANA_CHAT_MODEL` (Vana's conversation,
+ * clause 1) or `VANA_TOOL_MODEL` (still the day notes, clause 5, and the pantry photo).
+ *
+ * Read at CALL time, not at import time, so a changed function secret takes effect on the next
+ * invocation without the module graph being re-imported. Absent, the three stay where they were.
+ */
+export const BACKGROUND_MODEL_ENV = 'VANA_BACKGROUND_MODEL';
+export const backgroundModel = (): string => Deno.env.get(BACKGROUND_MODEL_ENV) ?? 'anthropic/claude-haiku-4.5';
+
 export const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 export const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 

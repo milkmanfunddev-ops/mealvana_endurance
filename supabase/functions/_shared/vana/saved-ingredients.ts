@@ -18,7 +18,7 @@
  */
 import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
-import { TOOL_MODEL } from './env.ts';
+import { backgroundModel } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
@@ -93,7 +93,7 @@ export interface IngredientDeps {
 /** Mutable on purpose: plan.ts calls the hook without a deps argument, so a test swaps `generate` here. */
 export const ingredientDeps: IngredientDeps = {
   generate: async ({ system, prompt }) => {
-    const { object, usage } = await generateObject({ model: TOOL_MODEL, schema: IngredientsZ, maxOutputTokens: 500, system, prompt });
+    const { object, usage } = await generateObject({ model: backgroundModel(), schema: IngredientsZ, maxOutputTokens: 500, system, prompt });
     return { object, inputTokens: usage?.inputTokens, outputTokens: usage?.outputTokens };
   },
 };
@@ -109,7 +109,7 @@ export async function extractIngredients(v: VanaCtx, saved: SavedRow, deps: Ingr
   if (!rows.length) return null;
   const { data, error } = await v.db.from('saved_meals').update({ ingredients_json: rows, updated_at: new Date().toISOString() }).eq('id', saved.id).eq('user_id', v.userId).is('ingredients_json', null).select('id');
   if (error) throw new Error(error.message);
-  await logCall(v.admin, { userId: v.userId, functionName: 'vana.ingredients', model: TOOL_MODEL, inputTokens, outputTokens });
+  await logCall(v.admin, { userId: v.userId, functionName: 'vana.ingredients', model: backgroundModel(), inputTokens, outputTokens });
   console.log(`[vana] ingredients for ${saved.id}: ${rows.length} line(s) in ${Date.now() - started}ms`);
   return (data ?? []).length ? rows : null;
 }
