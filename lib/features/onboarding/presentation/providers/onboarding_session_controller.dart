@@ -54,9 +54,22 @@ class OnboardingSessionController extends _$OnboardingSessionController {
   /// via [state]), or null when session establishment failed — callers let
   /// onboarding proceed regardless, matching the pre-fix swallow behavior the
   /// router's /privacy-consent anti-loop guard relies on (see app_router).
+  /// Publishing state is BEST-EFFORT. This provider is auto-dispose and the
+  /// Welcome screen reaches it with a bare `ref.read(...notifier)` — nothing
+  /// listens, so it is disposed while the `signInAnonymously()` round-trip is
+  /// still in flight. A bare `state =` then throws "Cannot use the Ref ...
+  /// after it has been disposed", and because that assignment sits OUTSIDE
+  /// AsyncValue.guard it escapes the method, past the caller, and the
+  /// navigation line after the await never runs: the athlete taps
+  /// "Build My Plan" and nothing happens, while the anonymous user IS created
+  /// server-side. Reported from device 2026-09-21, after sign-out.
+  void _publish(AsyncValue<OnboardingSession?> value) {
+    if (ref.mounted) state = value;
+  }
+
   Future<OnboardingSession?> ensureOnboardingSession() async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    _publish(const AsyncLoading());
+    final result = await AsyncValue.guard(() async {
       final deps = ref.read(appExternalDepsProvider);
       final supabase = deps.supabaseClient;
 
@@ -95,6 +108,9 @@ class OnboardingSessionController extends _$OnboardingSessionController {
         outcome: OnboardingSessionOutcome.mintedAnonymous,
       );
     });
-    return state.value;
+    _publish(result);
+    // Returned from the local result, never from `state` — after disposal
+    // `state` is unreadable, and the caller still needs the answer.
+    return result.value;
   }
 }

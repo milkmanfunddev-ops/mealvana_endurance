@@ -232,9 +232,24 @@ class WelcomeScreen extends ConsumerWidget {
     // session exists at all. Errors are swallowed inside the controller's
     // AsyncValue.guard — onboarding continues either way, which the router's
     // /privacy-consent anti-loop guard relies on.
-    await ref
-        .read(onboardingSessionControllerProvider.notifier)
-        .ensureOnboardingSession();
+    //
+    // Wrapped here as well as inside the controller: onboarding must be
+    // reachable even if session establishment fails outright. The pre-fix
+    // screen had a try/catch around the whole block and navigated
+    // unconditionally; losing that guarantee is what made this tap a dead
+    // end on device (2026-09-21).
+    try {
+      await ref
+          .read(onboardingSessionControllerProvider.notifier)
+          .ensureOnboardingSession();
+    } catch (e) {
+      externalDeps.logger.error(
+        'Onboarding session establishment failed — continuing into '
+        'onboarding regardless',
+        context: 'AUTH',
+        error: e,
+      );
+    }
 
     // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
     if (shouldUseCallback && callback != null) {
