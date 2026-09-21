@@ -7,7 +7,7 @@
  *
  *  Edge-function shape: the eager/background regenerations are not in-process promises (an isolate may be torn down
  *  after the response) — they are a `vana-day-notes` invocation handed to EdgeRuntime.waitUntil with the caller's JWT. */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import { TOOL_MODEL, SUPABASE_URL, addDays, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';

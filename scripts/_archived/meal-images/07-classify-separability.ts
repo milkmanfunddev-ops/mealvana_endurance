@@ -33,7 +33,7 @@
  * sample, RECLASSIFY=1 to redo the whole library, DRY=1 to print without
  * writing.
  */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import { selectAll, updateMany } from './lib/db.mjs';
 

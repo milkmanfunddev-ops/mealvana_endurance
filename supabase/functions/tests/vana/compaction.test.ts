@@ -10,7 +10,7 @@
  * shape, when the summary is written, which row and key it lands on, and that the reply never waits.
  */
 import { assert, assertEquals } from 'https://deno.land/std@0.177.1/testing/asserts.ts';
-import type { UIMessage } from 'npm:ai@6';
+import type { UIMessage } from 'npm:ai@6.0.277';
 import { compactHistory, conversationMessages, replayHistory, summaryDueAt, summaryIndexAt, SUMMARY_CHUNK, SUMMARY_LEAD, VERBATIM_CAP } from '../../_shared/vana/chat.ts';
 import type { ReplayDeps } from '../../_shared/vana/chat.ts';
 import { parseSummaries, renderSummaries } from '../../_shared/vana/extract.ts';

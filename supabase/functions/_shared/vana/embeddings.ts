@@ -1,6 +1,6 @@
 /** Embeddings via the AI Gateway. Every per-user path passes the ctx so the call is rate-limited (vana.embed) and logged to
  *  vana_calls; the content-pipeline scripts embed with their own REST calls and never come through here. */
-import { embed, embedMany, gateway } from 'npm:ai@6';
+import { embed, embedMany, gateway } from 'npm:ai@6.0.277';
 import { EMBED_MODEL } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { assertRateLimit } from './rate-limit.ts';

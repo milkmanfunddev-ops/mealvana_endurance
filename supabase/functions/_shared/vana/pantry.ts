@@ -1,7 +1,7 @@
 /** Ingredients on hand (plan Phase 7): a suggested pantry seeded from what the athlete actually logs, saves and buys — never a
  *  generic list — and fridge-photo detection through the same vision path the meal-logging photo surface uses.
  *  Photo detection is an AI surface: metered in ai_usage, never disabled to save cost (standing AI-surfaces rule). */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import type { VanaCtx } from './env.ts';
 import { TOOL_MODEL } from './env.ts';

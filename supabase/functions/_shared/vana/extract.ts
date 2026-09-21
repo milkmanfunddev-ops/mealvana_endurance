@@ -18,7 +18,7 @@
  * A conversation still in progress is not read back; its history is chunked and the oldest chunk
  * summarised onto the conversation row instead (mp-277 clause 1): see `writeSummary`.
  */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import { TOOL_MODEL } from './env.ts';
 import type { VanaCtx } from './env.ts';

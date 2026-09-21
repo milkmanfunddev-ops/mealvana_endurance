@@ -4,7 +4,7 @@
  * All tools are scoped to the authenticated user's id. Descriptions are kept
  * concise so the model picks the right tool without ambiguity.
  *
- * AI SDK v6 API (npm:ai@6): tool({ description, inputSchema, execute })
+ * AI SDK v6 API (npm:ai@6.0.277): tool({ description, inputSchema, execute })
  * Parameters use Zod schemas.
  *
  * Factory: makeAiCoachTools(ctx) closes over the service-role client, userId,
@@ -12,7 +12,7 @@
  * passing arguments through the AI SDK call.
  */
 
-import { tool } from 'npm:ai@6';
+import { tool } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { getInSeasonProduce } from './in_season.ts';
