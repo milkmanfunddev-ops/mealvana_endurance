@@ -20,6 +20,7 @@ import '../../theme/kyle_design/app_colors.dart';
 import '../core/guarded_navigation.dart';
 import '../utils/responsive_breakpoints.dart';
 import 'kyle_design/navigation/kyle_tab_bar.dart';
+import 'lazy_indexed_stack.dart';
 import 'sync_status_indicator.dart';
 import '../providers/user_id_provider.dart';
 import '../services/preferences_service.dart';
@@ -230,23 +231,28 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     // the header clearance so the dissolve spans from the surface top
     // (ruling #4). The Food tab (meal planning, Pro) sits right after it
     // while unlocked; every index after it shifts.
-    final screens = [
-      Container(
+    //
+    // Each tab is built the first time it is selected and kept alive after
+    // (LazyIndexedStack). Building all of them up front meant every launch
+    // fired the Food tabs' `vana-action` calls, including launches that never
+    // left the Timeline (mp-432, approved as mp-468).
+    final screenBuilders = <Widget Function()>[
+      () => Container(
         color: isDark ? AppColors.blackberry : AppColors.cream,
         child: const MacroDashboardBody(
           topInset: HomeShellChrome.headerClearancePx,
           bottomInset: HomeShellChrome.bottomChromeClearancePx,
         ),
       ),
-      FoodScreen(initialTab: widget.initialFoodTab), // 1: Food
+      () => FoodScreen(initialTab: widget.initialFoodTab), // 1: Food
       if (showCoachTab)
-        const SizedBox.shrink(), // placeholder (coach portal rendered above)
-      const EventsListScreen(),
-      const EducationScreen(),
+        () => const SizedBox.shrink(), // coach portal is rendered above
+      () => const EventsListScreen(),
+      () => const EducationScreen(),
     ];
 
     // Adjust current index if it's out of bounds (safety check)
-    if (_currentIndex >= screens.length) {
+    if (_currentIndex >= screenBuilders.length) {
       _currentIndex = 0;
     }
 
@@ -261,17 +267,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         const SyncStatusIndicator(),
         Expanded(
           child: HomeShellChrome(
-            body: IndexedStack(
+            body: LazyIndexedStack(
               index: _currentIndex,
-              // Every tab is built; only one is on screen. Without this each
-              // offscreen tab reports its Situation too, and the last one wins.
-              children: [
-                for (final (i, screen) in screens.indexed)
-                  VanaSituationVisibility(
-                    visible: i == _currentIndex,
-                    child: screen,
-                  ),
-              ],
+              itemCount: screenBuilders.length,
+              // A visited tab stays built; only one is on screen. Without the
+              // visibility wrapper each offscreen tab reports its Situation
+              // too, and the last one wins.
+              itemBuilder: (_, i) => VanaSituationVisibility(
+                visible: i == _currentIndex,
+                child: screenBuilders[i](),
+              ),
             ),
             destinations: _destinations,
             activeTabId: _activeTabId,
