@@ -14,10 +14,10 @@
 ///   2. **Happy path** — Running + a goal, "I don't use training plan apps"
 ///      tile, personal info, one plan-reveal edit, a daily-preview tab
 ///      switch, "Save My Plan", then email signup → lands on the tabs shell.
-///      When flow 1 just ran, this flow recovers to the welcome screen by
-///      signing the anonymous user out via the keyed Settings path
-///      (`settings.sign_out_button` → `signout_dialog.sign_out_anyway_button`,
-///      which routes to /welcome); otherwise it self-skips.
+///      When flow 1 just ran, this flow self-skips: an anonymous session can
+///      no longer be signed out from Settings (ruling, Xuan 2026-09-21 — that
+///      sign-out orphaned the athlete's data), so flow 2 needs a fresh
+///      install rather than in-app recovery.
 ///
 /// The connect-FAILURE path (error snackbar → card back in Connect state →
 /// retry / Skip still advances) is deliberately NOT scripted here: Patrol
@@ -352,47 +352,19 @@ Future<bool> _onWelcomeScreen(PatrolIntegrationTester $) async {
   return $(welcomeKey).exists;
 }
 
-/// Best-effort recovery from an ANONYMOUS session (left behind by the
-/// skip-everything flow) back to /welcome, using the keyed Settings sign-out
-/// path that only anonymous users get. Returns true when the welcome screen
-/// is reached. Never throws — a failed recovery becomes a test skip.
+/// Recovery from an ANONYMOUS session (left behind by the skip-everything
+/// flow) back to /welcome. Returns true when the welcome screen is reached.
+/// Never throws — a failed recovery becomes a test skip.
+///
+/// This used to drive the keyed Settings sign-out path that only anonymous
+/// users got. That path is GONE (ruling, Xuan 2026-09-21): signing an
+/// anonymous user out discards the refresh token and orphans their data, so
+/// Settings now offers an anonymous session only session-PRESERVING actions.
+/// There is deliberately no in-app way to drop an anonymous session, which
+/// means flow 2 needs a fresh install rather than in-app recovery — it
+/// self-skips when a session is already present.
 Future<bool> _recoverToWelcome(PatrolIntegrationTester $) async {
-  try {
-    if (!$(const ValueKey('kyle_tab_bar.item.timeline')).exists) return false;
-
-    await $(
-      const ValueKey('kyle_date_header.settings'),
-    ).waitUntilVisible(timeout: const Duration(seconds: 20));
-    await $(
-      const ValueKey('kyle_date_header.settings'),
-    ).tap(settlePolicy: SettlePolicy.noSettle);
-    await $.pump(const Duration(milliseconds: 600));
-
-    // The anonymous sign-out button sits below the account section.
-    if (!await _scrollIntoView($, const ValueKey('settings.sign_out_button'))) {
-      return false;
-    }
-    await $(
-      const ValueKey('settings.sign_out_button'),
-    ).tap(settlePolicy: SettlePolicy.noSettle);
-    await $.pump(const Duration(milliseconds: 400));
-
-    await $(
-      const ValueKey('signout_dialog.sign_out_anyway_button'),
-    ).waitUntilVisible(timeout: const Duration(seconds: 10));
-    await $(
-      const ValueKey('signout_dialog.sign_out_anyway_button'),
-    ).tap(settlePolicy: SettlePolicy.noSettle);
-
-    // signOut + context.go('/welcome') round-trip.
-    await $(
-      const ValueKey('welcome.get_started_button'),
-    ).waitUntilVisible(timeout: const Duration(seconds: 20));
-    return true;
-  } on Exception catch (e) {
-    debugPrint('[onboarding_signup] recovery to welcome failed: $e');
-    return $(const ValueKey('welcome.get_started_button')).exists;
-  }
+  return $(const ValueKey('welcome.get_started_button')).exists;
 }
 
 /// Taps "Build My Plan" and lands on the sports step, answering the regional

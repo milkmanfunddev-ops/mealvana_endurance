@@ -126,6 +126,7 @@ class ContentKeys {
       'settings.account_status_authenticated';
   static const String settingsCreateAccountButton =
       'settings.create_account_button';
+  static const String settingsLogInButton = 'settings.log_in_button';
   static const String settingsSignOutButton = 'settings.sign_out_button';
   static const String settingsProfileSection = 'settings.profile_section';
   static const String settingsPreferencesSection =
