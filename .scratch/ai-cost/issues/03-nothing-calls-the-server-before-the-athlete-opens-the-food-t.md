@@ -11,8 +11,8 @@
 
 **Touches:** lib/shared/widgets/tabs_screen.dart, lib/features/meal_planning/presentation/screens/food_screen.dart
 
-- [ ] No Vana request fires between launch and the first visit to the Food tab (widget test over a transport that counts calls).
-- [ ] A visited tab keeps its scroll position and state when the athlete leaves and returns.
-- [ ] Checked on a pool simulator: cold launch to Home shows no Vana call in the log.
+- [x] No Vana request fires between launch and the first visit to the Food tab (widget test over a transport that counts calls).
+- [x] A visited tab keeps its scroll position and state when the athlete leaves and returns.
+- [ ] Checked on a pool simulator: cold launch to Home shows no Vana call in the log. — NOT RUN: `simulator claim` failed, "no booted simulator to copy from" (the pool is empty and nothing is booted to clone).
 
 Next: /implement-lee ai-cost
