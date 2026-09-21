@@ -63,6 +63,7 @@ function activeEntitlements(items: { entitlement_id: string; expires_at: number 
 
 function fakeFetch(routes: Record<string, { status?: number; body: unknown }>) {
   const calls: Call[] = [];
+  // deno-lint-ignore require-await
   const fetch = async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
     const url = String(input);
     const method = init?.method ?? 'GET';

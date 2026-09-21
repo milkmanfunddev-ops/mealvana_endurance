@@ -11,11 +11,11 @@
 
 **Touches:** supabase/functions/revenuecat-webhook/handler.ts, supabase/functions/revenuecat-webhook/entitlements.ts, supabase/functions/revenuecat-webhook/index.test.ts, supabase/functions/_shared/revenuecat
 
-- [ ] A promotional grant event opens the row to the grant's end (handler test with a fake REST client).
-- [ ] A trial started during a live grant leaves the row at the later end; a lapsed trial leaves a live grant open.
-- [ ] The eight `me_pro_*` ids are in the fallback list.
+- [x] A promotional grant event opens the row to the grant's end (handler test with a fake REST client).
+- [x] A trial started during a live grant leaves the row at the later end; a lapsed trial leaves a live grant open.
+- [x] The eight `me_pro_*` ids are in the fallback list.
 - [ ] `REVENUECAT_SECRET_KEY` is set on the dev project and the function is deployed to dev.
 - [ ] A hand grant on a dev account in RevenueCat shows up in its row.
-- [ ] `_shared/revenuecat` holds the one REST client: current `pro` expiry, grant `pro` for N days, set subscriber attributes (tested with a fake fetch).
+- [x] `_shared/revenuecat` holds the one REST client: current `pro` expiry, grant `pro` for N days, set subscriber attributes (tested with a fake fetch).
 
 Next: /implement-lee paywall

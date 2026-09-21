@@ -14,6 +14,13 @@
  *   - an event older than the row's event time is ignored;
  *   - a TRANSFER moves the row to the new owner and closes it on the old one;
  *   - nothing else in the payload reaches the table.
+ * What granted access must do (mp-454, paywall ticket 01):
+ *   - every `pro` event, a promotional NON_RENEWING_PURCHASE included, asks
+ *     RevenueCat (a fake REST client) for the current `pro` expiry and writes
+ *     that as active_until;
+ *   - a trial started during a live grant keeps the grant's end; a lapsed
+ *     trial leaves a live grant open;
+ *   - RevenueCat reporting no `pro` closes the row at the event time.
  * What the allowance path must do (mp-281, ticket 20):
  *   - INITIAL_PURCHASE and RENEWAL grant the monthly Allowance into the wallet;
  *   - EXPIRATION forfeits what is left; CANCELLATION leaves the wallet alone.
@@ -33,8 +40,9 @@ import {
   isStaleEvent,
   PRO_PRODUCT_IDS,
   type RcEvent,
-  SUBSCRIPTION_EVENT_TYPES,
+  takesProPath,
 } from './entitlements.ts';
+import type { RevenueCatClient } from '../_shared/revenuecat/client.ts';
 
 // ---------------------------------------------------------------------------
 // Fake database: one table (user_entitlements) keyed by user_id, plus rpc().
@@ -149,6 +157,72 @@ class FakeQuery {
 }
 
 // ---------------------------------------------------------------------------
+// Fake RevenueCat REST client. It models what RevenueCat itself knows about a
+// customer: the store subscription's end and a promotional grant's end, each
+// moved by the events RevenueCat sends (never by what the webhook wrote), and
+// answers `currentProExpiry` the way RevenueCat does: the later of the two
+// still-live ends. A test can also pin the answer outright.
+// ---------------------------------------------------------------------------
+
+class FakeRevenueCat implements RevenueCatClient {
+  subscriptionEnds = new Map<string, number | null>();
+  grantEnds = new Map<string, number>();
+  private lastEventAt = new Map<string, number>();
+  expiryCalls: string[] = [];
+  /** When set, the answer for every customer (null = no `pro`). */
+  pinned: { expiry: string | null } | null = null;
+  failNext: Error | null = null;
+
+  constructor(private now: () => number) {}
+
+  /** RevenueCat's own state moves with each event it sends. */
+  observe(event: RcEvent | null | undefined) {
+    if (!event) return;
+    const user = String(event.app_user_id ?? '');
+    const type = String(event.type ?? '');
+    if (!user || type === 'TEST' || type === 'TRANSFER') return;
+    const ids = event.entitlement_ids;
+    const pro = (Array.isArray(ids) && ids.includes('pro')) || String(event.product_id ?? '').includes('_pro_');
+    if (!pro) return;
+    const at = Number(event.event_timestamp_ms ?? 0);
+    if (at < (this.lastEventAt.get(user) ?? -Infinity)) return;
+    this.lastEventAt.set(user, at);
+    // After an EXPIRATION RevenueCat no longer counts that grant or subscription.
+    if (event.store === 'PROMOTIONAL') {
+      if (type === 'EXPIRATION') this.grantEnds.delete(user);
+      else this.grantEnds.set(user, Number(event.expiration_at_ms));
+      return;
+    }
+    const expiry = event.expiration_at_ms == null ? null : Number(event.expiration_at_ms);
+    this.subscriptionEnds.set(user, type === 'EXPIRATION' ? null : expiry);
+  }
+
+  // deno-lint-ignore require-await
+  async currentProExpiry(appUserId: string): Promise<string | null> {
+    this.expiryCalls.push(appUserId);
+    if (this.failNext) {
+      const e = this.failNext;
+      this.failNext = null;
+      throw e;
+    }
+    if (this.pinned) return this.pinned.expiry;
+    const live = [this.subscriptionEnds.get(appUserId), this.grantEnds.get(appUserId)]
+      .filter((v): v is number => typeof v === 'number' && v > this.now());
+    return live.length === 0 ? null : new Date(Math.max(...live)).toISOString();
+  }
+
+  // deno-lint-ignore require-await
+  async grantPro(): Promise<void> {
+    throw new Error('the webhook never grants');
+  }
+
+  // deno-lint-ignore require-await
+  async setAttributes(): Promise<void> {
+    throw new Error('the webhook never sets attributes');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Fixtures: RevenueCat-shaped events (webhook v1, `event` object)
 // ---------------------------------------------------------------------------
 
@@ -244,6 +318,45 @@ function creditPack(overrides: Record<string, unknown> = {}): RcEvent {
   };
 }
 
+/**
+ * A hand grant of `pro` in the RevenueCat dashboard, as RevenueCat delivers
+ * it: a NON_RENEWING_PURCHASE on the PROMOTIONAL store, period PROMOTIONAL,
+ * environment PRODUCTION even for a sandbox user (mp-454).
+ */
+function promotionalGrant(overrides: Record<string, unknown> = {}): RcEvent {
+  return {
+    aliases: [USER_ID],
+    app_id: 'app2a6d45e56e',
+    app_user_id: USER_ID,
+    commission_percentage: null,
+    country_code: null,
+    currency: null,
+    entitlement_id: 'pro',
+    entitlement_ids: ['pro'],
+    environment: 'PRODUCTION',
+    event_timestamp_ms: T0,
+    expiration_at_ms: T0 + 30 * DAY,
+    id: 'A1B2C3D4-0000-4000-8000-0000000000C1',
+    is_family_share: false,
+    offer_code: null,
+    original_app_user_id: USER_ID,
+    original_transaction_id: 'rc_promo_pro_custom_' + T0,
+    period_type: 'PROMOTIONAL',
+    presented_offering_id: null,
+    price: 0,
+    price_in_purchased_currency: 0,
+    product_id: 'rc_promo_pro_custom',
+    purchased_at_ms: T0,
+    store: 'PROMOTIONAL',
+    subscriber_attributes: {},
+    takehome_percentage: null,
+    tax_percentage: null,
+    transaction_id: 'rc_promo_pro_custom_' + T0,
+    type: 'NON_RENEWING_PURCHASE',
+    ...overrides,
+  };
+}
+
 function body(event: RcEvent) {
   return { api_version: '1.0', event };
 }
@@ -252,14 +365,38 @@ function iso(ms: number) {
   return new Date(ms).toISOString();
 }
 
-function setup(now = T0 + 60_000) {
-  const db = new FakeDb();
-  const handle = makeWebhookHandler({
-    env: envWith(),
+/** For paths that must never reach RevenueCat's REST API. */
+const noRevenueCat = (): RevenueCatClient => {
+  throw new Error('this path never asks RevenueCat');
+};
+
+/**
+ * The handler under test, with RevenueCat's view moved by each delivered
+ * event before the handler sees it (RevenueCat updates itself, then sends).
+ */
+function withRevenueCat(
+  env: (key: string) => string | undefined,
+  db: FakeDb,
+  now: number,
+  rc = new FakeRevenueCat(() => now),
+) {
+  const inner = makeWebhookHandler({
+    env,
     db: () => db as unknown as WebhookDb,
+    revenueCat: () => rc,
     now: () => now,
   });
-  return { db, handle };
+  const handle = async (req: Request) => {
+    if (req.method === 'POST') rc.observe((await req.clone().json().catch(() => null))?.event);
+    return await inner(req);
+  };
+  return { rc, handle };
+}
+
+function setup(now = T0 + 60_000) {
+  const db = new FakeDb();
+  const { rc, handle } = withRevenueCat(envWith(), db, now);
+  return { db, rc, handle };
 }
 
 // ---------------------------------------------------------------------------
@@ -279,6 +416,7 @@ describe('A. auth / shared secret', () => {
     const handle = makeWebhookHandler({
       env: envWith({ REVENUECAT_WEBHOOK_SECRET: undefined }),
       db: () => db as unknown as WebhookDb,
+      revenueCat: noRevenueCat,
     });
     const res = await handle(rcRequest(body(trialStart())));
     assertEquals(res.status, 500);
@@ -367,9 +505,9 @@ describe('B. first event → two-field row', () => {
     assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 7 * DAY));
   });
 
-  it('an event without expiration_at_ms leaves active_until null (never open-ended access)', async () => {
+  it('RevenueCat reporting no `pro` closes the row at the event time (never open-ended access)', async () => {
     await handle(rcRequest(body(trialStart({ expiration_at_ms: null }))));
-    assertEquals(db.rows.get(USER_ID)!.active_until, null);
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0));
   });
 
   it('a payload without period_type keeps the stored one', async () => {
@@ -543,12 +681,14 @@ describe('E. credit-pack grant path', () => {
     const withMap = makeWebhookHandler({
       env: envWith({ RC_PRODUCT_CREDITS: '{"mealvana_credits_50": 75}' }),
       db: () => db as unknown as WebhookDb,
+      revenueCat: noRevenueCat,
     });
     await withMap(rcRequest(body(creditPack())));
     assertEquals(db.rpcCalls[0].args.p_amount, 75);
     const bad = makeWebhookHandler({
       env: envWith({ RC_PRODUCT_CREDITS: '{nope' }),
       db: () => db as unknown as WebhookDb,
+      revenueCat: noRevenueCat,
     });
     await bad(rcRequest(body(creditPack())));
     assertEquals(db.rpcCalls[1].args.p_amount, 50);
@@ -625,20 +765,17 @@ describe('G. allowance grants', () => {
     assertEquals(db.rpcCalls.length, 1);
   });
 
-  it('an event without an expiry writes the row but cannot open an allowance window', async () => {
+  it('an event RevenueCat reports no `pro` for writes the row but cannot open an allowance window', async () => {
     const res = await handle(rcRequest(body(trialStart({ expiration_at_ms: null }))));
     assertEquals(res.status, 200);
     assertEquals(db.rpcCalls.length, 0);
-    assertEquals((await res.json()).allowance, { skipped: 'no_active_until' });
+    assertEquals((await res.json()).allowance, { skipped: 'not_active' });
   });
 
   it('AI_MONTHLY_ALLOWANCE overrides the number per project', async () => {
     const own = new FakeDb();
     own.rpcResult = { data: { granted: true } };
-    const withEnv = makeWebhookHandler({
-      env: envWith({ AI_MONTHLY_ALLOWANCE: '120' }),
-      db: () => own as unknown as WebhookDb,
-    });
+    const { handle: withEnv } = withRevenueCat(envWith({ AI_MONTHLY_ALLOWANCE: '120' }), own, T0 + 60_000);
     await withEnv(rcRequest(body(trialStart())));
     assertEquals(own.rpcCalls[0].args.p_amount, 120);
   });
@@ -660,6 +797,119 @@ describe('G. allowance grants', () => {
 });
 
 // ---------------------------------------------------------------------------
+// H. Granted access (mp-454, paywall ticket 01)
+// ---------------------------------------------------------------------------
+
+describe('H. granted access reaches the row', () => {
+  it('a promotional grant (NON_RENEWING_PURCHASE, PROMOTIONAL) opens the row to the grant’s end', async () => {
+    const { db, rc, handle } = setup();
+    const res = await handle(rcRequest(body(promotionalGrant())));
+    assertEquals(res.status, 200);
+    assertEquals(db.rows.get(USER_ID), {
+      user_id: USER_ID,
+      active_until: iso(T0 + 30 * DAY),
+      period_type: 'PROMOTIONAL',
+      event_at: iso(T0),
+    });
+    assertEquals(rc.expiryCalls, [USER_ID], 'the expiry comes from RevenueCat, asked once');
+    assertEquals(db.rpcCalls.filter((c) => c.fn === 'grant_credits').length, 0, 'a grant is not a credit pack');
+  });
+
+  it('the row takes RevenueCat’s answer, not the payload’s expiry', async () => {
+    const { db, rc, handle } = setup();
+    rc.pinned = { expiry: iso(T0 + 45 * DAY) };
+    await handle(rcRequest(body(promotionalGrant())));
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 45 * DAY));
+  });
+
+  it('a trial started during a live grant leaves the row at the grant’s later end', async () => {
+    const { db, handle } = setup();
+    await handle(rcRequest(body(promotionalGrant())));
+    await handle(rcRequest(body(trialStart({ event_timestamp_ms: T0 + 2 * DAY, expiration_at_ms: T0 + 9 * DAY }))));
+    const row = db.rows.get(USER_ID)!;
+    assertEquals(row.active_until, iso(T0 + 30 * DAY));
+    assertEquals(row.period_type, 'PROMOTIONAL');
+    assertEquals(row.event_at, iso(T0 + 2 * DAY));
+  });
+
+  it('a trial that outlasts the grant moves the row to the trial’s end', async () => {
+    const { db, handle } = setup();
+    await handle(rcRequest(body(promotionalGrant({ expiration_at_ms: T0 + 3 * DAY }))));
+    await handle(rcRequest(body(trialStart({ event_timestamp_ms: T0 + DAY, expiration_at_ms: T0 + 8 * DAY }))));
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 8 * DAY));
+    assertEquals(db.rows.get(USER_ID)!.period_type, 'TRIAL');
+  });
+
+  it('a lapsed trial leaves a live grant open, and its allowance in place', async () => {
+    const { db, handle } = setup(T0 + 9 * DAY + 60_000);
+    db.rpcResult = { data: { granted: true } };
+    await handle(rcRequest(body(promotionalGrant())));
+    await handle(rcRequest(body(trialStart({ event_timestamp_ms: T0 + 2 * DAY, expiration_at_ms: T0 + 9 * DAY }))));
+    const res = await handle(rcRequest(body(trialStart({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000C4',
+      type: 'EXPIRATION',
+      expiration_reason: 'UNSUBSCRIBE',
+      event_timestamp_ms: T0 + 9 * DAY,
+      expiration_at_ms: T0 + 9 * DAY,
+    }))));
+    assertEquals(res.status, 200);
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 30 * DAY));
+    assertEquals(db.rows.get(USER_ID)!.event_at, iso(T0 + 9 * DAY));
+    assertEquals(db.rpcCalls.filter((c) => c.fn === 'forfeit_allowance').length, 0, 'access is still live');
+  });
+
+  it('the grant’s own EXPIRATION, with nothing else live, closes the row at the event time', async () => {
+    const { db, handle } = setup(T0 + 31 * DAY);
+    await handle(rcRequest(body(promotionalGrant())));
+    await handle(rcRequest(body(promotionalGrant({
+      id: 'A1B2C3D4-0000-4000-8000-0000000000C5',
+      type: 'EXPIRATION',
+      event_timestamp_ms: T0 + 30 * DAY,
+      expiration_at_ms: T0 + 30 * DAY,
+    }))));
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 30 * DAY));
+  });
+
+  it('a RevenueCat REST failure is a 500 so RevenueCat retries, and nothing is written', async () => {
+    const { db, rc, handle } = setup();
+    rc.failNext = new Error('RevenueCat 503');
+    const res = await handle(rcRequest(body(promotionalGrant())));
+    assertEquals(res.status, 500);
+    assertEquals(db.writes.length, 0);
+  });
+
+  it('no RevenueCat secret key → 500 on a `pro` event; a credit pack still grants', async () => {
+    const db = new FakeDb();
+    const handle = makeWebhookHandler({
+      env: envWith(),
+      db: () => db as unknown as WebhookDb,
+      revenueCat: () => {
+        throw new Error('RevenueCat secret key not set');
+      },
+    });
+    assertEquals((await handle(rcRequest(body(promotionalGrant())))).status, 500);
+    assertEquals(db.writes.length, 0);
+    assertEquals((await handle(rcRequest(body(creditPack())))).status, 200);
+    assertEquals(db.rpcCalls.map((c) => c.fn), ['grant_credits']);
+  });
+
+  it('a stale event does not ask RevenueCat', async () => {
+    const { rc, handle } = setup();
+    await handle(rcRequest(body(paidRenewal())));
+    await handle(rcRequest(body(trialStart({ type: 'CANCELLATION', event_timestamp_ms: T0 + DAY }))));
+    assertEquals(rc.expiryCalls.length, 1);
+  });
+
+  it('the environment is never filtered: a PRODUCTION grant and a SANDBOX trial both write', async () => {
+    const { db, handle } = setup();
+    await handle(rcRequest(body(promotionalGrant({ environment: 'PRODUCTION' }))));
+    assert(db.rows.has(USER_ID));
+    await handle(rcRequest(body(trialStart({ app_user_id: OTHER_USER, environment: 'SANDBOX' }))));
+    assert(db.rows.has(OTHER_USER));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // F. Pure mapping
 // ---------------------------------------------------------------------------
 
@@ -672,22 +922,42 @@ describe('F. entitlements.ts', () => {
     assert(!isProEvent({}));
   });
 
-  it('SUBSCRIPTION_EVENT_TYPES is the lifecycle, not TEST and not consumables', () => {
-    for (const t of ['INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'UNCANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_EXTENDED']) {
-      assert(SUBSCRIPTION_EVENT_TYPES.has(t), t);
+  it('the eight new `me_pro_*` ids are in the fallback list', () => {
+    for (const base of ['me_pro_monthly', 'me_pro_annual', 'me_pro_monthly_founding', 'me_pro_annual_founding']) {
+      assert(PRO_PRODUCT_IDS.has(base), base);
+      assert(PRO_PRODUCT_IDS.has(`${base}_prod`), `${base}_prod`);
+      assert(isProEvent({ product_id: base, entitlement_ids: null }), base);
     }
-    assert(!SUBSCRIPTION_EVENT_TYPES.has('TEST'));
-    assert(!SUBSCRIPTION_EVENT_TYPES.has('NON_RENEWING_PURCHASE'));
+  });
+
+  it('takesProPath: every `pro` event but TEST and TRANSFER, whatever its type; packs never', () => {
+    for (const t of ['INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'UNCANCELLATION', 'EXPIRATION', 'BILLING_ISSUE', 'PRODUCT_CHANGE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIPTION_EXTENDED', 'NON_RENEWING_PURCHASE', 'TEMPORARY_ENTITLEMENT_GRANT']) {
+      assert(takesProPath(trialStart({ type: t })), t);
+    }
+    assert(takesProPath(promotionalGrant()));
+    assert(!takesProPath(trialStart({ type: 'TEST' })));
+    assert(!takesProPath(trialStart({ type: 'TRANSFER' })));
+    assert(!takesProPath(creditPack()));
   });
 
   it('entitlementRowFor yields exactly the two fields plus the event time', () => {
-    const row = entitlementRowFor(trialStart(), T0);
+    const row = entitlementRowFor(trialStart(), T0, iso(T0 + 7 * DAY));
     assertEquals(row, { active_until: iso(T0 + 7 * DAY), period_type: 'TRIAL', event_at: iso(T0) });
   });
 
   it('entitlementRowFor without event_timestamp_ms stamps the current time', () => {
-    const row = entitlementRowFor(trialStart({ event_timestamp_ms: undefined }), T0 + 5);
+    const row = entitlementRowFor(trialStart({ event_timestamp_ms: undefined }), T0 + 5, null);
     assertEquals(row.event_at, iso(T0 + 5));
+    assertEquals(row.active_until, iso(T0 + 5), 'no `pro` closes at the event time');
+  });
+
+  it('entitlementRowFor: the payload period type holds only when RevenueCat’s end is the payload’s own', () => {
+    // A trial during a grant: RevenueCat's end is the grant's, so the stored PROMOTIONAL stays.
+    const during = entitlementRowFor(trialStart(), T0, iso(T0 + 30 * DAY), { period_type: 'PROMOTIONAL' });
+    assertEquals(during, { active_until: iso(T0 + 30 * DAY), period_type: 'PROMOTIONAL', event_at: iso(T0) });
+    // RevenueCat rounds to the second; within a minute is the same end.
+    const same = entitlementRowFor(trialStart(), T0, iso(T0 + 7 * DAY + 900), { period_type: 'PROMOTIONAL' });
+    assertEquals(same.period_type, 'TRIAL');
   });
 });
 
@@ -696,4 +966,6 @@ Deno.test('wiring fidelity — index.ts serves the injected handler with the rea
   assert(src.includes('makeWebhookHandler('), 'index.ts must build the handler from handler.ts');
   assert(src.includes("Deno.env.get('REVENUECAT_WEBHOOK_SECRET')") || src.includes('Deno.env.get(key)') || src.includes('(key) => Deno.env.get(key)'), 'env must come from Deno.env');
   assert(src.includes('createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)'), 'the writer is the service-role client');
+  assert(src.includes("Deno.env.get('REVENUECAT_SECRET_KEY')"), 'the REST client holds the RevenueCat secret key');
+  assert(src.includes('makeRevenueCatClient('), 'the REST client is the shared one');
 });
