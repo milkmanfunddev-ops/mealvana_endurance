@@ -847,11 +847,15 @@ class TrainingPeaksTransformer {
       final dynamic decoded = json.decode(structureJson);
       if (decoded is! List) return null;
 
+      // DI-26 (qa-33's DI-16 wording, RULED): an unparseable step makes the
+      // WHOLE structure unparseable — NULL, never a guessed bucket. The old
+      // behaviour silently SKIPPED such a step, which is worse than refusing:
+      // it produced a confident-looking distribution computed from only the
+      // steps we happened to understand.
       final segments = <WorkoutSegment>[];
       for (final step in decoded) {
-        if (step is Map<String, dynamic>) {
-          _parseStep(step, segments, zones: zones);
-        }
+        if (step is! Map<String, dynamic>) return null;
+        if (!_parseStep(step, segments, zones: zones)) return null;
       }
 
       if (segments.isEmpty) return null;
@@ -870,14 +874,17 @@ class TrainingPeaksTransformer {
   /// When [zones] is available, uses actual athlete zone boundaries for
   /// more precise intensity classification. Maximum depth of 10 to prevent
   /// infinite recursion on malformed data.
-  void _parseStep(
+  /// Returns true when the step (and every step nested inside it) was fully
+  /// understood. False means UNPARSEABLE, and the caller must discard the
+  /// whole structure rather than keep a partial distribution (DI-26).
+  bool _parseStep(
     Map<String, dynamic> step,
     List<WorkoutSegment> segments, {
     AthleteZones? zones,
     int depth = 0,
   }) {
-    // Prevent infinite recursion
-    if (depth > 10) return;
+    // Malformed beyond our depth budget — refuse rather than truncate.
+    if (depth > 10) return false;
 
     final type = step['Type'] as String?;
 
@@ -886,13 +893,17 @@ class TrainingPeaksTransformer {
       final length = step['Length'] as Map<String, dynamic>?;
       final intensityTarget = step['IntensityTarget'] as Map<String, dynamic>?;
 
-      if (length == null) return;
+      if (length == null) return false;
 
       // Parse duration
       final lengthUnit = length['Unit'] as String?;
       final lengthValue = (length['Value'] as num?)?.toDouble() ?? 0;
 
-      int durationSeconds;
+      // DI-26 family (b): ONLY true time units convert. The deleted default
+      // arm assumed seconds for anything else, so a distance-based step
+      // ("1.00 km") was weighed as 1 second of training — a fabricated
+      // duration that silently skewed every split it touched.
+      final int durationSeconds;
       switch (lengthUnit?.toLowerCase()) {
         case 'second':
         case 'seconds':
@@ -904,25 +915,27 @@ class TrainingPeaksTransformer {
         case 'hours':
           durationSeconds = (lengthValue * 3600).round();
         default:
-          // Assume seconds if not specified
-          durationSeconds = lengthValue.round();
+          // Distance units, unknown units, absent units: NOT a duration.
+          return false;
       }
 
-      if (durationSeconds <= 0) return;
+      if (durationSeconds <= 0) return false;
 
-      // Parse intensity - use actual zones when available
-      IntensityZone zone = IntensityZone.conversational; // Default
-      if (intensityTarget != null) {
-        final intensityUnit = intensityTarget['Unit'] as String?;
-        final intensityValue =
-            (intensityTarget['Value'] as num?)?.toDouble() ?? 0;
+      // DI-26 family (a): a step with no intensity target cannot be
+      // classified. The deleted default parked it in `conversational`, which
+      // is a guessed bucket wearing the costume of a measurement.
+      if (intensityTarget == null) return false;
 
-        zone = _classifyIntensity(
-          unit: intensityUnit,
-          value: intensityValue,
-          zones: zones,
-        );
-      }
+      final intensityUnit = intensityTarget['Unit'] as String?;
+      final intensityValue = (intensityTarget['Value'] as num?)?.toDouble();
+      if (intensityValue == null) return false;
+
+      final zone = _classifyIntensity(
+        unit: intensityUnit,
+        value: intensityValue,
+        zones: zones,
+      );
+      if (zone == null) return false; // unknown unit — refuse, never infer
 
       segments.add(
         WorkoutSegment(durationSeconds: durationSeconds, zone: zone),
@@ -932,17 +945,23 @@ class TrainingPeaksTransformer {
       final repeatCount = (step['RepeatCount'] as num?)?.toInt() ?? 1;
       final steps = step['Steps'] as List?;
 
-      if (steps == null || steps.isEmpty) return;
+      if (steps == null || steps.isEmpty) return false;
 
-      // Parse inner steps repeatCount times
+      // Parse inner steps repeatCount times; any failure condemns the whole
+      // structure, exactly as at the top level.
       for (var i = 0; i < repeatCount; i++) {
         for (final innerStep in steps) {
-          if (innerStep is Map<String, dynamic>) {
-            _parseStep(innerStep, segments, zones: zones, depth: depth + 1);
+          if (innerStep is! Map<String, dynamic>) return false;
+          if (!_parseStep(innerStep, segments, zones: zones, depth: depth + 1)) {
+            return false;
           }
         }
       }
+    } else {
+      // An unrecognised step Type is not something we can weigh.
+      return false;
     }
+    return true;
   }
 
   /// Classify workout step intensity into our 3-zone model
@@ -950,7 +969,11 @@ class TrainingPeaksTransformer {
   /// When [zones] is available, uses the athlete's actual FTP and maxHR
   /// thresholds for zone classification. Otherwise falls back to standard
   /// percentage-based thresholds.
-  IntensityZone _classifyIntensity({
+  /// Returns null when the unit is one we do not understand. DI-26 deleted
+  /// the old default arm, which treated any value <= 1.5 as a %FTP fraction
+  /// — a misread that manufactured an FTP-derived zone out of, for example,
+  /// a threshold-pace target, and then reported it as if measured.
+  IntensityZone? _classifyIntensity({
     required String? unit,
     required double value,
     AthleteZones? zones,
@@ -973,11 +996,8 @@ class TrainingPeaksTransformer {
         return IntensityDistributionMapper.rpeToZone(value.round());
 
       default:
-        // If value looks like a percentage (0-1 range), treat as FTP
-        if (value > 0 && value <= 1.5) {
-          return IntensityDistributionMapper.ftpToZone(value);
-        }
-        return IntensityZone.conversational;
+        // Unknown unit: refuse. Guessing here is what DI-26 deletes.
+        return null;
     }
   }
 }

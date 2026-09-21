@@ -48,6 +48,7 @@
  */
 
 import type { Json } from "./fingerprint.ts";
+import { isGpsKey } from "../garmin/sample_capture.ts";
 
 export type KeyCategory = "drop" | "fuzz" | "text" | "link" | "shift";
 export type ScrubCensus = Readonly<Record<string, KeyCategory>>;
@@ -93,8 +94,16 @@ export const FS_KEEP_ENUM: KeepEnum = new Set([
   // on 3 of 21 rows. REVISIT at census >= 10 valued rows.
 ]);
 
-/** Garmin: seeded when Garmin promotion starts; empty is the safe default. */
-export const GARMIN_KEEP_ENUM: KeepEnum = new Set<string>();
+/** Garmin enum-class fields (promotion opened 2026-09-20, DI-28). */
+export const GARMIN_KEEP_ENUM: KeepEnum = new Set([
+  // Closed-set branch flags. isParent is load-bearing for brick work
+  // (B-2/B-5): default-deny turns an unclassified boolean into `false`,
+  // which silently DESTROYED the multisport parent marker — the exact
+  // structure DI-28b promotes these exemplars to preserve.
+  "isParent",
+  "activityType", // RUNNING | MULTI_SPORT | LAP_SWIMMING … — sport mapping
+  "isWebUpload", // closed-set provenance flag, drives no athlete content
+]);
 
 export const TEXT_PLACEHOLDER = "corpus placeholder";
 
@@ -269,6 +278,14 @@ function walk(
   }
   const out: { [key: string]: Json } = {};
   for (const [key, value] of Object.entries(v)) {
+    // GPS is DROPPED, never fuzzed — the ruled table is explicit ("DROP
+    // entirely (not fuzzed — removed)"), and default-deny would otherwise
+    // FUZZ a coordinate, which is not de-identification: a latitude jittered
+    // by a few percent still points at a region. Detection is by WORD
+    // (shared with the ingest strip) rather than by census name, because the
+    // census listed `startLatitude` while Garmin actually sends
+    // `startingLatitudeInDegree` — the name-list failure, hit twice now.
+    if (isGpsKey(key)) continue;
     const category = census[key];
     switch (category) {
       case "drop":

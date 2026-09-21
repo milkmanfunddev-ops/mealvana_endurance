@@ -17,16 +17,26 @@ import '../../../shared/services/sentry/sentry_reporter.dart';
 /// does not carry the audit table yet (or where RLS denies the read) gets a
 /// query error — swallowed silently, never a false alarm and never a failed
 /// sync. Throttled to once per [recheckInterval] per app process.
+/// Returns the newest sweep timestamp, or null when no sweep has ever run.
+typedef NewestSweepFetcher = Future<DateTime?> Function();
+
 class RawRetentionDeadManCheck {
   RawRetentionDeadManCheck({
     required SupabaseClient supabase,
     required SentryReporter sentry,
     AppLogger? logger,
+    NewestSweepFetcher? fetchNewestSweep,
   }) : _supabase = supabase,
        _sentry = sentry,
-       _logger = logger ?? const NoopAppLogger();
+       _logger = logger ?? const NoopAppLogger(),
+       _fetchNewestSweep = fetchNewestSweep;
 
   final SupabaseClient _supabase;
+
+  /// Seam for DI-27: the audit read, injectable so the behaviour can be
+  /// driven in both directions without standing up a PostgREST chain.
+  /// Null means "use the real Supabase read" (production path).
+  final NewestSweepFetcher? _fetchNewestSweep;
   final SentryReporter _sentry;
   final AppLogger _logger;
 
@@ -34,6 +44,17 @@ class RawRetentionDeadManCheck {
   static const recheckInterval = Duration(hours: 12);
 
   DateTime? _lastCheckedAt;
+
+  /// Reads the newest audit row's timestamp from Supabase (production path).
+  Future<DateTime?> _readNewestSweepFromSupabase() async {
+    final rows = await _supabase
+        .from('raw_retention_audit')
+        .select('swept_at')
+        .order('swept_at', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return DateTime.tryParse(rows.first['swept_at'] as String? ?? '');
+  }
 
   /// Best-effort; never throws.
   Future<void> checkDuringSync() async {
@@ -43,16 +64,7 @@ class RawRetentionDeadManCheck {
     _lastCheckedAt = now;
 
     try {
-      final rows = await _supabase
-          .from('raw_retention_audit')
-          .select('swept_at')
-          .order('swept_at', ascending: false)
-          .limit(1);
-
-      DateTime? newest;
-      if (rows.isNotEmpty) {
-        newest = DateTime.tryParse(rows.first['swept_at'] as String? ?? '');
-      }
+      final newest = await (_fetchNewestSweep ?? _readNewestSweepFromSupabase)();
       final age = newest == null ? null : now.difference(newest.toUtc());
       final stale = age == null || age > staleThreshold;
       if (!stale) return;

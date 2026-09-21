@@ -210,6 +210,65 @@
    "why": "the 2026-09-20 leak, as a permanent vector: AthleteId is identifier-shaped -> dropped; Url is an unclassified string -> placeholdered (no account params survive); DistancePlanned/VelocityPlanned unclassified numerics -> must differ; WorkoutType/Completed/TssCalculationMethod on the ruled KEEP-ENUM allowlist -> verbatim"
   },
   {
+   "id": "garmin-real-gps-keynames-dropped-at-depth",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "summaryId": "g-9",
+     "startingLatitudeInDegree": 33.51,
+     "startingLongitudeInDegree": -86.8,
+     "startTimeInSeconds": 1789000000,
+     "averageHeartRateInBeatsPerMinute": 150,
+     "samples": [
+      {
+       "heartRate": 150,
+       "latitudeInDegree": 33.511,
+       "longitudeInDegree": -86.801
+      },
+      {
+       "heartRate": 151,
+       "latitudeInDegree": 33.512,
+       "longitudeInDegree": -86.802
+      }
+     ]
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [
+     "startingLatitudeInDegree",
+     "startingLongitudeInDegree"
+    ],
+    "keptKeySetVerbatim": [
+     "averageHeartRateInBeatsPerMinute",
+     "samples",
+     "startTimeInSeconds",
+     "summaryId"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [
+     "averageHeartRateInBeatsPerMinute"
+    ],
+    "textPlaceholder": [],
+    "idsReplacedLinksPreserved": [
+     "summaryId"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "samples"
+    ],
+    "arrayCardinalityVerbatim": {
+     "samples": 2
+    },
+    "gpsDroppedAtAnyDepth": [
+     "samples[].latitudeInDegree",
+     "samples[].longitudeInDegree"
+    ]
+   },
+   "why": "the 2026-09-20 GPS-names defect as a permanent vector: Garmin's REAL key names (startingLatitudeInDegree, nested latitudeInDegree) are GPS by WORD-SHAPE and DROP ENTIRELY at any depth — never fuzzed (a jittered coordinate still points at a region; the ruled row says removed, not fuzzed); array cardinality of samples survives with GPS members gone"
+  },
+  {
    "id": "tp-basic-nulls-never-invented",
    "status": "ratified",
    "inputs": {
