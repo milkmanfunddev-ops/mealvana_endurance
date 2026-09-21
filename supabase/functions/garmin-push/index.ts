@@ -763,7 +763,7 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
           // 90-day TTL. GPS is stripped at ingest and the byte cap enforced
           // BEFORE the write (Xuan ruling B + recon W7) — route-level
           // location never rests here, not even transiently-committed.
-          {
+          try {
             const prepared = prepareDetailForCapture(detail);
             if (prepared.samplesDropped) {
               console.warn(
@@ -781,6 +781,16 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
                 ? String(detail.summary.summaryId)
                 : null,
               prepared.payload,
+            );
+          } catch (capErr) {
+            // Capture is a diagnostic side-channel on the path whose
+            // documented failure mode is losing activities silently. It must
+            // never be the reason an activity does not land, so its failure
+            // is logged and swallowed here rather than left to the enclosing
+            // per-detail catch, which would skip the rest of this detail.
+            console.warn(
+              "[garmin-push] full-detail capture failed (non-fatal):",
+              capErr,
             );
           }
 
