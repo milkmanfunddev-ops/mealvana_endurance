@@ -1,8 +1,9 @@
 /**
  * Every AI function checks the subscription on the server (paywall ticket 02; mp-429 clause 11, mp-481).
  *
- * A lapsed account holding bought credits is refused by describe-meal, analyze-meal-photo, meal-photo,
- * ai-coach and jade-chat exactly as vana-chat refuses it, and an active account still gets through.
+ * A lapsed account holding bought credits is refused by describe-meal, analyze-meal-photo, meal-photo
+ * and jade-chat exactly as vana-chat refuses it, and an active account still gets through.
+ * (ai-coach was gated here too until ai-cost ticket 14 removed the route, mp-465 clause 4.)
  *
  * Each function's real `index.ts` runs in-process (support/serve_harness.ts): its own auth, body parsing,
  * gate and credit check, with Supabase and the AI Gateway behind a stubbed `fetch`. The entitlement rows
@@ -47,15 +48,6 @@ const post = (fn: string, body: unknown) =>
 const REQUESTS: Record<string, unknown> = {
   'describe-meal': { description: 'two eggs on toast with butter and OJ' },
   'analyze-meal-photo': { photo_path: `${USER}/lunch.jpg` },
-  'ai-coach': {
-    mode: 'insight',
-    context: {
-      phase: 'during',
-      durations: ['90 min'],
-      activities: ['run'],
-      components: [{ food_name: 'Water', quantity: 1, fluid_ml_per_serving: 500 }],
-    },
-  },
   'jade-chat': { message: 'What should I eat before my long run?' },
   'meal-photo': { action: 'history', meal_id: 'AD-001' },
 };
@@ -64,8 +56,6 @@ const REQUESTS: Record<string, unknown> = {
 const PAST_THE_GATE: Record<string, (hits: string[]) => boolean> = {
   'describe-meal': (h) => h.includes('POST /rest/v1/rpc/ensure_allowance'),
   'analyze-meal-photo': (h) => h.includes('POST /rest/v1/rpc/ensure_allowance'),
-  // The coach insight either answers from its rules or reaches the credit check; both are past the gate.
-  'ai-coach': () => true,
   'jade-chat': (h) => h.includes('POST /rest/v1/rpc/ensure_allowance'),
   'meal-photo': (h) => h.includes('GET /rest/v1/users'),
 };

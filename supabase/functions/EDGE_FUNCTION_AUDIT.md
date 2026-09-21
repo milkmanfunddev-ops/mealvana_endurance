@@ -31,9 +31,9 @@ Two traps worth naming, both hit during this audit:
 
 ---
 
-## Client-invoked (19)
+## Client-invoked (18)
 
-`ai-coach` · `analyze-meal-photo` · `calculate-daily-macros` · `create-user` · `delete-user` ·
+`analyze-meal-photo` · `calculate-daily-macros` · `create-user` · `delete-user` ·
 `describe-meal` · `garmin-backfill` · `garmin-user-mapping` · `generate-macros-v4` ·
 `generate-nutrition-plan-v3` · `get-foods` · `get-weather-forecast` · `jade-chat` · `lookup-product` ·
 `search-catalog` · `search-nutrition-products` · `search-public-events` · `send-nutrition-plan-email` ·
@@ -93,7 +93,7 @@ Phase 2 of `docs/implement_mealplanning/` (spec: `03-backend.md`). Deployed to *
 with `--no-verify-jwt`; **not on prod** until the Phase 5/6 runbook (prod has none of the meal-planning tables yet).
 Shared code: `supabase/functions/_shared/vana/` (also imported by `jade-chat` — redeploy all four on any change there).
 
-Subscription gate (paywall ticket 02, mp-429 clause 11): `describe-meal`, `analyze-meal-photo`, `meal-photo`, `ai-coach` and `jade-chat` call `refuseUnlessPro` (`_shared/vana/entitlement.ts`) right after auth and answer 403 `pro_required` like `vana-chat`; all five import `_shared/vana/`, so redeploy them with it.
+Subscription gate (paywall ticket 02, mp-429 clause 11): `describe-meal`, `analyze-meal-photo`, `meal-photo` and `jade-chat` call `refuseUnlessPro` (`_shared/vana/entitlement.ts`) right after auth and answer 403 `pro_required` like `vana-chat` (`ai-coach` was the fifth until ai-cost ticket 14 removed the route); all four import `_shared/vana/`, so redeploy them with it.
 
 | Function | Caller | Notes |
 |---|---|---|
@@ -103,4 +103,4 @@ Subscription gate (paywall ticket 02, mp-429 clause 11): `describe-meal`, `analy
 | `jade-chat` | ≤1.23.x client | Now a thin alias of the Vana **general** chat (same route, envelope and credit debit); writes `vana_*` tables directly. Retire once `min_app_version` passes 1.24. |
 
 Secrets: `AI_GATEWAY_API_KEY` (existing), `PRO_GATE_ENABLED`, optional `VANA_CHAT_MODEL` / `VANA_TOOL_MODEL` /
-`VANA_EMBED_MODEL`. Telemetry: one `vana_calls` row per model call + `ai_usage`.
+`VANA_EMBED_MODEL` / `VANA_BACKGROUND_MODEL`. Telemetry: one `vana_calls` row per model call + `ai_usage`.
