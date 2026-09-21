@@ -329,6 +329,17 @@ verify_jwt = false
 [functions.kroger]
 verify_jwt = false
 
+# Both of these also check the caller in their own code (ai-cost ticket 01, mp-466).
+# The gateway flag alone is not enough: `verify_jwt` accepts the anon key as a valid
+# JWT, so an unsigned caller passes it. The in-code check resolves a real user from
+# the token and 401s otherwise. Listed explicitly so a redeploy re-arms the gateway
+# check on functions that were previously deployed with --no-verify-jwt.
+[functions.send-nutrition-plan-email]
+verify_jwt = true
+
+[functions.upload-all-data]
+verify_jwt = true
+
 # RevenueCat posts webhooks with a shared secret in the Authorization header
 # (not a Supabase JWT); disable gateway JWT verification and validate the
 # secret inside the function.
