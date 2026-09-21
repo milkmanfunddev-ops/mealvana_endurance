@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/services/analytics/analytics_tracker.dart';
+import '../../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../../../../../theme/kyle_design/app_colors.dart';
 import '../../../domain/nutrient_transparency_data.dart';
 import 'transparency_accordion.dart';
@@ -222,8 +223,20 @@ class NutrientCalculationSection extends ConsumerWidget {
             )
           else
             const SizedBox(width: 20),
+          // CP-3: the chip sits WITH the value it describes, per D-2's own
+          // rule. `Wrap` keeps it on the line at phone width and lets it drop
+          // under a long formula rather than squeezing the numbers.
           Expanded(
-            child: RichText(text: TextSpan(children: spans)),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                RichText(text: TextSpan(children: spans)),
+                if (line.sourceChip != null)
+                  KyleSourceChip(source: line.sourceChip!),
+              ],
+            ),
           ),
         ],
       ),

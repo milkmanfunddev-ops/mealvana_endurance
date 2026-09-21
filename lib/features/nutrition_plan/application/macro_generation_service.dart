@@ -70,6 +70,7 @@ class MacroGenerationService {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    ConditionsSource? conditionsSource,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
     // Optional treadmill/indoor-run flag. Default 'outdoor' preserves existing
@@ -91,11 +92,12 @@ class MacroGenerationService {
     // (Formula Kit PR 2 substep 5b-followup, 2026-05-22).
     requestData['device_id'] = deviceId;
 
-    final macroTargets = await _callGenerateMacrosEdgeFunction(
+    final rawTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.running,
       overrides: overrides,
     );
+    final macroTargets = _stampConditionsSource(rawTargets, conditionsSource);
 
     await _cacheMacroTargets(macroTargets, activityId: activityId);
 
@@ -126,6 +128,7 @@ class MacroGenerationService {
     String? sessionGoal,
     double? temperatureC,
     double? humidityPct,
+    ConditionsSource? conditionsSource,
     IntensityDistribution? intensity,
     NutritionTargetOverrides? overrides,
   }) async {
@@ -154,11 +157,12 @@ class MacroGenerationService {
       '🚴 MACRO SERVICE: Request data built, calling edge function...',
     );
 
-    final macroTargets = await _callGenerateMacrosEdgeFunction(
+    final rawTargets = await _callGenerateMacrosEdgeFunction(
       requestData: requestData,
       expectedActivityType: ActivityType.cycling,
       overrides: overrides,
     );
+    final macroTargets = _stampConditionsSource(rawTargets, conditionsSource);
     DebugLogger.info(
       '🚴 MACRO SERVICE: Edge function returned, caching targets...',
     );
@@ -1084,6 +1088,20 @@ class MacroGenerationService {
     if (value is! List) return const [];
     return value.map((e) => e.toString()).toList();
   }
+
+  /// CP-2/CP-4 (RULED Xuan, 2026-09-21): attach the conditions provenance the
+  /// CALLER resolved to the generated plan, **before** it is cached.
+  ///
+  /// The edge function computes the numbers from `temp_c` / `humidity_pct`;
+  /// it has no idea whether those arrived from a forecast, the CP-1 fallback,
+  /// or the athlete's thumb — provenance is knowledge the client holds, so the
+  /// client stamps it. This touches nothing but the flag: CP-4 forbids
+  /// provenance from moving any ratified fluid or sodium value, and `copyWith`
+  /// on the environment-echo field is the narrowest way to honour that.
+  MacroTargets _stampConditionsSource(
+    MacroTargets targets,
+    ConditionsSource? conditionsSource,
+  ) => targets.withConditionsSource(conditionsSource);
 
   Future<void> _cacheMacroTargets(
     MacroTargets macroTargets, {

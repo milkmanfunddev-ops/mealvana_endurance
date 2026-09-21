@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
 import '../../../../../../shared/widgets/kyle_design/inputs/kyle_dropdown.dart';
+import '../../../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../../theme/kyle_design/app_text_styles.dart';
 import '../../../../../../theme/kyle_design/app_colors.dart';
@@ -38,6 +39,8 @@ class EnvironmentSection extends StatelessWidget {
     this.onOpenSettings,
     this.onOpenAppSettings,
     this.valuesManuallyAdjusted = false,
+    this.temperatureSourceLabel,
+    this.humiditySourceLabel,
   });
 
   final bool isExpanded;
@@ -63,6 +66,15 @@ class EnvironmentSection extends StatelessWidget {
   /// CF-7 (RULED 2026-09-03): true once the athlete manually stepped a
   /// forecast-filled value — the AUTO badge drops until the next refresh.
   final bool valuesManuallyAdjusted;
+
+  /// CP-3 (RULED Xuan, 2026-09-21 —
+  /// `docs/ssot/spec/fueling/during-workout-hydration.md`): the D-2 source-chip
+  /// label for each conditions value (`Measured` / `Assumed` / `Manual`). Null
+  /// on callers that carry no provenance yet — no chip, and therefore no claim
+  /// that the value was measured.
+  final String? temperatureSourceLabel;
+  final String? humiditySourceLabel;
+
   final LocationFailureReason? locationFailureReason;
   final VoidCallback? onRequestPermission;
   final VoidCallback? onOpenSettings;
@@ -185,6 +197,14 @@ class EnvironmentSection extends StatelessWidget {
                 unit: useImperial ? '°F' : '°C',
                 enabled: isIndoor || !isLoadingWeather,
               ),
+              // CP-3: the chip sits WITH the value it describes.
+              if (temperatureSourceLabel != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                KyleSourceChip(
+                  key: const ValueKey('activity_create.temp_source_chip'),
+                  source: temperatureSourceLabel!,
+                ),
+              ],
               if (_hasWeatherIntegration && !isIndoor) ...[
                 const SizedBox(height: AppSpacing.sm),
                 GestureDetector(
@@ -241,6 +261,14 @@ class EnvironmentSection extends StatelessWidget {
             decimalPlaces: 0,
             unit: '%',
           ),
+          // CP-3: same chip, with the humidity value it describes.
+          if (humiditySourceLabel != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            KyleSourceChip(
+              key: const ValueKey('activity_create.humidity_source_chip'),
+              source: humiditySourceLabel!,
+            ),
+          ],
 
           if (!isIndoor && showWindAndSun) ...[
             const SizedBox(height: AppSpacing.lg),

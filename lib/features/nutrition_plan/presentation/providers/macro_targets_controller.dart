@@ -515,6 +515,9 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    // CP-2: where those two came from. Travels with the plan; never inferred
+    // from the fetch outcome.
+    ConditionsSource? conditionsSource,
     IntensityDistribution? intensity,
     String? activityTitle,
     String? activityId, // Link to calendar activity/event
@@ -544,6 +547,7 @@ class MacroTargetsController extends _$MacroTargetsController {
         sweatRateCat: sweatRateCat,
         temperatureC: temperatureC,
         humidityPct: humidityPct,
+        conditionsSource: conditionsSource,
           intensity: intensity,
         activityTitle: activityTitle,
         activityId: activityId,
@@ -698,6 +702,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           sweatRateCat: sweatRateCat,
           temperatureC: temperatureC,
           humidityPct: humidityPct,
+          conditionsSource: conditionsSource,
           intensity: intensity,
           overrides: overrides,
         );
@@ -771,6 +776,8 @@ class MacroTargetsController extends _$MacroTargetsController {
     required TimeOfDay scheduledTime,
     required double temperatureC,
     required double humidityPct,
+    // CP-2: where those two came from. Travels with the plan.
+    ConditionsSource? conditionsSource,
     IntensityDistribution? intensity,
     String? activityTitle,
     String? activityId,
@@ -938,6 +945,7 @@ class MacroTargetsController extends _$MacroTargetsController {
           sessionGoal: sessionGoal,
           temperatureC: temperatureC,
           humidityPct: humidityPct,
+          conditionsSource: conditionsSource,
           intensity: intensity,
           overrides: overrides,
         );
@@ -1011,6 +1019,7 @@ class MacroTargetsController extends _$MacroTargetsController {
     SweatRateCat? sweatRateCat,
     double? temperatureC,
     double? humidityPct,
+    ConditionsSource? conditionsSource,
     IntensityDistribution? intensity,
     String? activityTitle,
     String? activityId,
@@ -1031,6 +1040,7 @@ class MacroTargetsController extends _$MacroTargetsController {
       sweatRateCat: sweatRateCat,
       temperatureC: temperatureC,
       humidityPct: humidityPct,
+      conditionsSource: conditionsSource,
       intensity: intensity,
       activityTitle: activityTitle,
       activityId: activityId,

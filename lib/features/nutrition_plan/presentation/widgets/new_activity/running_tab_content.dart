@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mealvana_endurance/features/nutrition_plan/domain/run_parameters.dart';
 import '../../../../../shared/widgets/kyle_design/fueling/fueling_window_control.dart';
 import '../../../../../shared/widgets/kyle_design/inputs/plus_minus_control.dart';
+import '../../../../../shared/widgets/kyle_design/data/kyle_source_chip.dart';
 import '../../providers/running_input_controller.dart';
 import '../../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../../theme/kyle_design/app_text_styles.dart';
@@ -477,6 +478,18 @@ class RunningTabContent extends ConsumerWidget {
                 );
               },
             ),
+            // CP-3 (RULED Xuan, 2026-09-21): the D-2 source chip sits WITH the
+            // value it describes. `Assumed` is the CP-1 fallback — 20 C / 60 %
+            // with nothing measured — and it must be legible BEFORE the plan
+            // is generated, not only in the transient fetch-failure copy.
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.center,
+              child: KyleSourceChip(
+                key: const ValueKey('activity_create.temp_source_chip'),
+                source: formState.temperatureSource.displayLabel,
+              ),
+            ),
           ],
         ),
 
@@ -512,6 +525,15 @@ class RunningTabContent extends ConsumerWidget {
               step: 5.0,
               decimalPlaces: 0,
               unit: '% humidity', // Will be displayed as "% HUMIDITY"
+            ),
+            // CP-3: same chip, with the humidity value it describes.
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.center,
+              child: KyleSourceChip(
+                key: const ValueKey('activity_create.humidity_source_chip'),
+                source: formState.humiditySource.displayLabel,
+              ),
             ),
           ],
         ),

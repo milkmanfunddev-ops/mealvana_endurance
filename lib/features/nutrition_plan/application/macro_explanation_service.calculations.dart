@@ -68,6 +68,12 @@ extension _$CalculationsExt on MacroExplanationService {
             fOp(_sweaterPercentile(baseRate)),
           ], stepNumber: '①');
 
+    // CP-3 (RULED Xuan, 2026-09-21): the conditions the plan was built on
+    // display with their source chip, on the PERSISTED plan — the transient
+    // "Couldn't fetch weather" copy is gone by the time this sheet opens, and
+    // the plan outlives it. Null on legacy plans: no chip, and no claim.
+    final conditionsChip = during.conditionsSource?.displayLabel;
+
     // Step 2: temp mult
     double running = baseRate;
     running *= tempMult;
@@ -77,7 +83,7 @@ extension _$CalculationsExt on MacroExplanationService {
       fDim('${tempMult.toStringAsFixed(2)} '),
       fOp('= '),
       fDim('${running.toStringAsFixed(2)} L/hr'),
-    ], stepNumber: '②');
+    ], stepNumber: '②', sourceChip: conditionsChip);
 
     // Step 3: humidity mult
     running *= humidityMult;
@@ -87,7 +93,7 @@ extension _$CalculationsExt on MacroExplanationService {
       fDim('${humidityMult.toStringAsFixed(2)} '),
       fOp('= '),
       fDim('${running.toStringAsFixed(2)} L/hr'),
-    ], stepNumber: '③');
+    ], stepNumber: '③', sourceChip: conditionsChip);
 
     // Step 4: indoor/outdoor mult
     running *= indoorMult;
