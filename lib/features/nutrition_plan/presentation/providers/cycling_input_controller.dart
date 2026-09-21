@@ -17,6 +17,13 @@ import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart'
 
 part 'cycling_input_controller.g.dart';
 
+/// Placeholders shown for temperature / humidity until a forecast lands (indoor
+/// rides never get one). Named so the schedule-change path and the
+/// per-activity reset (Q-CA2) cannot drift apart.
+const double _kDefaultTemperatureC = 20.0;
+const double _kDefaultHumidityPct = 60.0;
+const double _kIndoorHumidityPct = 45.0;
+
 /// Cycling-specific form state that persists during tab switches
 class CyclingFormState {
   final String activityTitle;
@@ -74,8 +81,8 @@ class CyclingFormState {
     this.terrain = 'flat_outdoor',
     this.elevationGainFt = 0,
     this.showEnvironment = false,
-    this.temperatureC = 20.0,
-    this.humidityPct = 60.0,
+    this.temperatureC = _kDefaultTemperatureC,
+    this.humidityPct = _kDefaultHumidityPct,
     this.windCondition = 'breezy',
     this.sunExposure = 'mixed',
     required this.selectedDate,
@@ -281,6 +288,18 @@ class CyclingInputController extends _$CyclingInputController {
             '🚴 CYCLING CONTROLLER: Loaded user preferences - distance unit: ${userProfile.preferredDistanceUnit.name}, unitSystem: ${userProfile.unitSystem.name}',
           );
         }
+
+        // The derived title is expressed in miles, so a preferred-unit change
+        // changes it. Keep it in step unless the athlete pinned one — this is
+        // what lets the per-activity reset (Q-CA2) run at screen entry without
+        // having to wait for preferences to land first.
+        if (!state.activityTitleManuallySet) {
+          state = state.copyWith(
+            activityTitle: ActivityTitleFormatter.formatCyclingTitle(
+              _distanceToMilesForTitle(state.distance),
+            ),
+          );
+        }
       }
     } catch (e) {
       DebugLogger.error(
@@ -357,21 +376,48 @@ class CyclingInputController extends _$CyclingInputController {
     _autoUpdateFuelingWindow();
   }
 
-    /// Reset the fueling window to its ratified default for a NEW activity.
+  /// Reset the create-flow form state to its derived defaults for a NEW
+  /// activity.
   ///
   /// The sport input controllers are `keepAlive` singletons, so without this a
-  /// window the athlete stepped on one activity — and the `preRideMinutesManuallySet`
-  /// flag that step latched — rode into every later activity and permanently
-  /// suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h, could never
-  /// fire again). CF-1's "a manual change persists" means *within the activity
-  /// being edited*. Xuan, on-device 2026-09-03;
+  /// value the athlete set by hand on one activity — and the `*ManuallySet`
+  /// flag that latched with it — rode into every later activity and
+  /// permanently suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h,
+  /// could never fire again; the title stayed the old event's name; a manual
+  /// 33 °C outlived the day it was typed on). Xuan, on-device 2026-09-03;
   /// ops/data/bug-reports/2026-09-03-fueling-window-sticks-across-activities.md
   ///
-  /// Deliberately narrow: only the fueling window is reset here. The lifetime of
-  /// the other form state (title / temperature / humidity flags) is the deferred
-  /// ruling qa/intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
-  void resetFuelingWindowForNewActivity() {
-    state = state.copyWith(preRideMinutesManuallySet: false);
+  /// Q-CA2 (RULED Xuan, 2026-09-21 — option (a), PER-ACTIVITY): ONE lifetime for
+  /// ALL form state. Opening the create flow for a NEW activity resets the
+  /// values *and* the flags; CF-1/CF-7's "a manual change persists" means
+  /// *within the activity being edited*; editing an EXISTING activity
+  /// re-hydrates from that activity (the screen's seeds run after this reset
+  /// and still win).
+  void resetFormStateForNewActivity() {
+    final isIndoor = state.terrain.contains('indoor');
+    final forecast = state.weatherForecast;
+    final hasForecast =
+        !isIndoor && forecast != null && forecast.forecastAvailable;
+    state = state.copyWith(
+      // Window (shipped first in 7418566f) — re-derived below.
+      preRideMinutesManuallySet: false,
+      // Title: back to the distance-derived default.
+      activityTitleManuallySet: false,
+      activityTitle: ActivityTitleFormatter.formatCyclingTitle(
+        _distanceToMilesForTitle(state.distance),
+      ),
+      // CF-7: the AUTO badge returns, and the value returns with it — to the
+      // forecast when one is loaded, otherwise to the same placeholders the
+      // schedule-change path shows while a refreshed forecast loads.
+      temperatureManuallySet: false,
+      humidityManuallySet: false,
+      temperatureC: hasForecast
+          ? forecast.temperatureC
+          : _kDefaultTemperatureC,
+      humidityPct: hasForecast
+          ? forecast.humidityPct.toDouble()
+          : (isIndoor ? _kIndoorHumidityPct : _kDefaultHumidityPct),
+    );
     _autoUpdateFuelingWindow();
   }
 
@@ -562,8 +608,8 @@ class CyclingInputController extends _$CyclingInputController {
       selectedDate: date,
       selectedTime: time,
       // Reset to environment defaults immediately while refreshed forecast loads.
-      temperatureC: 20.0,
-      humidityPct: isIndoor ? 45.0 : 60.0,
+      temperatureC: _kDefaultTemperatureC,
+      humidityPct: isIndoor ? _kIndoorHumidityPct : _kDefaultHumidityPct,
     );
 
     // §3a: the default window depends on start time (early-start overlay +
