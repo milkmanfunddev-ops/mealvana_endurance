@@ -59,7 +59,12 @@ async function main() {
 
   const cases: Cases = JSON.parse(await Deno.readTextFile(casesPath));
   const work = jobs(cases);
-  const models = [BASELINE, ...candidates];
+  // SKIP_BASELINE=1 leaves Haiku out when its answers are already on disk — Haiku is the dearest
+  // model here, so re-running it to re-test a candidate is the one avoidable cost.
+  const models = Deno.env.get('SKIP_BASELINE') === '1' ? candidates : [BASELINE, ...candidates];
+  // A model that thinks past this is disqualified anyway: these three jobs run in the background of a
+  // request and the shipped call has no retry. Without it, one stalled call hangs the whole comparison.
+  const perCallMs = Number(Deno.env.get('CALL_TIMEOUT_MS') ?? 90_000);
   // deno-lint-ignore no-explicit-any
   const out: Record<string, Record<string, any>> = {};
 
@@ -69,7 +74,7 @@ async function main() {
     for (const w of work) {
       const k = `${w.job}:${w.id}`;
       try {
-        const { object, usage } = await generateObject({ model, schema: w.schema, maxOutputTokens: w.max, system: w.system, prompt: w.prompt });
+        const { object, usage } = await generateObject({ model, schema: w.schema, maxOutputTokens: w.max, system: w.system, prompt: w.prompt, abortSignal: AbortSignal.timeout(perCallMs) });
         out[model][k] = { ok: true, object };
         inTok += usage?.inputTokens ?? 0; outTok += usage?.outputTokens ?? 0; ok++;
       } catch (e) {
@@ -79,6 +84,7 @@ async function main() {
     }
     out[model].__totals = { ok, bad, inputTokens: inTok, outputTokens: outTok };
     console.error(`${model}: ${ok} ok, ${bad} failed, ${inTok} in / ${outTok} out tokens`);
+    await Deno.writeTextFile(outPath, JSON.stringify(out, null, 1));   // after each model, so a stall loses nothing
   }
 
   await Deno.writeTextFile(outPath, JSON.stringify(out, null, 1));
