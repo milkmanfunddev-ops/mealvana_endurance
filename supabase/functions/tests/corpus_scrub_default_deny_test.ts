@@ -17,6 +17,7 @@ import {
   assertEquals,
 } from "https://deno.land/std@0.177.1/testing/asserts.ts";
 import {
+  GARMIN_SCRUB_CENSUS,
   newScrubContext,
   scrub,
   TEXT_PLACEHOLDER,
@@ -102,4 +103,30 @@ Deno.test("an unclassified string with no allowlist entry is placeholdered", () 
   ) as Record<string, Json>;
   // The point of default-deny: a field nobody has classified yet is content.
   assertEquals(out.SomeFutureProviderField, TEXT_PLACEHOLDER);
+});
+
+Deno.test("GPS is DROPPED, never fuzzed — including names no census lists", () => {
+  // The real Garmin field names. The census lists `startLatitude`, which is
+  // NOT what Garmin sends; under default-deny these would have been fuzzed
+  // into plausible-looking coordinates instead of removed.
+  const out = scrub(
+    {
+      startingLatitudeInDegree: 33.5186,
+      startingLongitudeInDegree: -86.8104,
+      samples: [{ latitudeInDegree: 33.52, longitudeInDegree: -86.81, hr: 150 }],
+      averageHeartRateInBeatsPerMinute: 148,
+      activityType: "RUNNING",
+    } as unknown as Json,
+    GARMIN_SCRUB_CENSUS,
+    newScrubContext(() => 0.5),
+  ) as Record<string, Json>;
+
+  const blob = JSON.stringify(out).toLowerCase();
+  assert(!blob.includes("latitude"), "a latitude key survived");
+  assert(!blob.includes("longitude"), "a longitude key survived");
+  assert(!blob.includes("33.5"), "a coordinate value survived (fuzzed counts)");
+  assert(!blob.includes("86.8"), "a coordinate value survived (fuzzed counts)");
+  // Everything else still behaves: structure kept, physiology fuzzed.
+  assert("samples" in out, "sample array must survive as structure");
+  assertEquals((out.samples as Json[]).length, 1);
 });

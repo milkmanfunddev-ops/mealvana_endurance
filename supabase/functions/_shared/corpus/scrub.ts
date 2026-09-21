@@ -48,6 +48,7 @@
  */
 
 import type { Json } from "./fingerprint.ts";
+import { isGpsKey } from "../garmin/sample_capture.ts";
 
 export type KeyCategory = "drop" | "fuzz" | "text" | "link" | "shift";
 export type ScrubCensus = Readonly<Record<string, KeyCategory>>;
@@ -269,6 +270,14 @@ function walk(
   }
   const out: { [key: string]: Json } = {};
   for (const [key, value] of Object.entries(v)) {
+    // GPS is DROPPED, never fuzzed — the ruled table is explicit ("DROP
+    // entirely (not fuzzed — removed)"), and default-deny would otherwise
+    // FUZZ a coordinate, which is not de-identification: a latitude jittered
+    // by a few percent still points at a region. Detection is by WORD
+    // (shared with the ingest strip) rather than by census name, because the
+    // census listed `startLatitude` while Garmin actually sends
+    // `startingLatitudeInDegree` — the name-list failure, hit twice now.
+    if (isGpsKey(key)) continue;
     const category = census[key];
     switch (category) {
       case "drop":
