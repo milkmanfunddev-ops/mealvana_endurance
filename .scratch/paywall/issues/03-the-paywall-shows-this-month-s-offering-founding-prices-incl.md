@@ -11,9 +11,9 @@
 
 **Touches:** lib/features/subscription/application/pro_paywall_controller.dart, lib/features/subscription/data/subscription_service.dart, lib/features/subscription/presentation/screens/paywall_screen.dart, lib/features/content/domain/content_keys.dart, test/features/subscription/application/pro_paywall_controller_test.dart, test/features/subscription/presentation/paywall_screen_test.dart
 
-- [ ] The paywall reads the Current Offering (controller test with fake offerings).
-- [ ] With `founding` current, each plan shows the founding price and the `default` price struck through (controller test and a golden).
-- [ ] Trial terms, price after, terms and privacy links are on screen from the content system.
+- [x] The paywall reads the Current Offering (controller test with fake offerings).
+- [x] With `founding` current, each plan shows the founding price and the `default` price struck through (controller test and a golden).
+- [x] Trial terms, price after, terms and privacy links are on screen from the content system.
 - [ ] On the dev simulator the paywall shows the new store prices.
 
 Next: /implement-lee paywall
