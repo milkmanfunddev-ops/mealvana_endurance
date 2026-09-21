@@ -17,7 +17,10 @@ import type { Db } from './env.ts';
 
 const WINDOWS = {
   'vana.chat': { seconds: 10, max: 4 },      // 4 turns / 10s
-  'vana.opener': { seconds: 60, max: 3 },    // new conversations
+  // New conversations. Reached for the first time by the reservation in chat.ts: the check used to look at the
+  // `vana.chat` bucket, which an opener's row never joins, so openers were effectively unlimited — the costliest call
+  // there is (mp-430). Six a minute leaves room for a screen that opens a moment and a chat at once.
+  'vana.opener': { seconds: 60, max: 6 },
   'vana.brief': { seconds: 60, max: 2 },
   'vana.daynotes': { seconds: 60, max: 4 },  // one call writes all seven days
   'vana.embed': { seconds: 60, max: 30 },
