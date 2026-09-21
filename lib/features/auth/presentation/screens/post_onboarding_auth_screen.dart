@@ -171,6 +171,25 @@ class _PostOnboardingAuthScreenState
       return;
     }
 
+    // LOGIN mode reached no existing account for this provider identity (the
+    // sign-in that would have minted an empty account was refused). Say which
+    // way is home instead of a generic failure — the athlete's data lives
+    // under the provider or email they originally signed up with.
+    if (state.hasError && state.error is OAuthAccountNotFoundException) {
+      final contentService = ref.read(contentServiceProvider);
+      MealvanaSnackbar.showError(
+        context,
+        contentService.getValue(
+          'auth.error.no_account_for_provider',
+          defaultValue:
+              'No account was found for this $providerName account. '
+              'Try logging in with the provider or email you originally '
+              'signed up with.',
+        ),
+      );
+      return;
+    }
+
     // Show generic error message
     final contentService = ref.read(contentServiceProvider);
     MealvanaSnackbar.showError(
