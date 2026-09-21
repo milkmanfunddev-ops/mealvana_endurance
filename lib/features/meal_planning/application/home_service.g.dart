@@ -57,6 +57,13 @@ String _$homeServiceHash() => r'5e08d9b46b901b6879e42b0add0a9fc917201f00';
 /// regenerating notes after an edit) the controller re-polls once after
 /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
 /// client-side.
+///
+/// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+/// Every `get_home` on a stale note asks the server to regenerate, so two
+/// things are bounded here: one `get_home` is in flight at a time — a refresh
+/// that lands while the server is still writing joins the load already
+/// running — and the [maxStalePolls] budget is spent once and only refilled
+/// when fresh notes come back, so pulling to refresh does not buy more polls.
 
 @ProviderFor(HomeController)
 const homeControllerProvider = HomeControllerFamily._();
@@ -68,6 +75,13 @@ const homeControllerProvider = HomeControllerFamily._();
 /// regenerating notes after an edit) the controller re-polls once after
 /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
 /// client-side.
+///
+/// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+/// Every `get_home` on a stale note asks the server to regenerate, so two
+/// things are bounded here: one `get_home` is in flight at a time — a refresh
+/// that lands while the server is still writing joins the load already
+/// running — and the [maxStalePolls] budget is spent once and only refilled
+/// when fresh notes come back, so pulling to refresh does not buy more polls.
 final class HomeControllerProvider
     extends $AsyncNotifierProvider<HomeController, HomePayload?> {
   /// The Plan tab's header data for [date] (`YYYY-MM-DD`; today by default).
@@ -77,6 +91,13 @@ final class HomeControllerProvider
   /// regenerating notes after an edit) the controller re-polls once after
   /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
   /// client-side.
+  ///
+  /// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+  /// Every `get_home` on a stale note asks the server to regenerate, so two
+  /// things are bounded here: one `get_home` is in flight at a time — a refresh
+  /// that lands while the server is still writing joins the load already
+  /// running — and the [maxStalePolls] budget is spent once and only refilled
+  /// when fresh notes come back, so pulling to refresh does not buy more polls.
   const HomeControllerProvider._({
     required HomeControllerFamily super.from,
     required String? super.argument,
@@ -113,7 +134,7 @@ final class HomeControllerProvider
   }
 }
 
-String _$homeControllerHash() => r'a95a0e3065d6be7bb7ba4c912e7007e6e753965e';
+String _$homeControllerHash() => r'b6c9d7fcfb628d6ed5cdcc1d0514c174fdff5744';
 
 /// The Plan tab's header data for [date] (`YYYY-MM-DD`; today by default).
 ///
@@ -122,6 +143,13 @@ String _$homeControllerHash() => r'a95a0e3065d6be7bb7ba4c912e7007e6e753965e';
 /// regenerating notes after an edit) the controller re-polls once after
 /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
 /// client-side.
+///
+/// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+/// Every `get_home` on a stale note asks the server to regenerate, so two
+/// things are bounded here: one `get_home` is in flight at a time — a refresh
+/// that lands while the server is still writing joins the load already
+/// running — and the [maxStalePolls] budget is spent once and only refilled
+/// when fresh notes come back, so pulling to refresh does not buy more polls.
 
 final class HomeControllerFamily extends $Family
     with
@@ -148,6 +176,13 @@ final class HomeControllerFamily extends $Family
   /// regenerating notes after an edit) the controller re-polls once after
   /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
   /// client-side.
+  ///
+  /// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+  /// Every `get_home` on a stale note asks the server to regenerate, so two
+  /// things are bounded here: one `get_home` is in flight at a time — a refresh
+  /// that lands while the server is still writing joins the load already
+  /// running — and the [maxStalePolls] budget is spent once and only refilled
+  /// when fresh notes come back, so pulling to refresh does not buy more polls.
 
   HomeControllerProvider call([String? date]) =>
       HomeControllerProvider._(argument: date, from: this);
@@ -163,6 +198,13 @@ final class HomeControllerFamily extends $Family
 /// regenerating notes after an edit) the controller re-polls once after
 /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
 /// client-side.
+///
+/// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+/// Every `get_home` on a stale note asks the server to regenerate, so two
+/// things are bounded here: one `get_home` is in flight at a time — a refresh
+/// that lands while the server is still writing joins the load already
+/// running — and the [maxStalePolls] budget is spent once and only refilled
+/// when fresh notes come back, so pulling to refresh does not buy more polls.
 
 abstract class _$HomeController extends $AsyncNotifier<HomePayload?> {
   late final _$args = ref.$arg as String?;
