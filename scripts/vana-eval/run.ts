@@ -21,6 +21,10 @@
  *   deno run -A scripts/vana-eval/run.ts --verbose          # print every turn's text
  *   deno run -A scripts/vana-eval/run.ts --out transcript.json
  *
+ * Gateway key (mp-467): this script holds none. It calls the DEV `vana-chat` / `vana-action` functions, so its spend
+ * lands on the dev key (the DEV secret `AI_GATEWAY_API_KEY`); a function must never take a key from its caller. Eval
+ * scripts that call the gateway directly get the evals key from `gateway-key.ts`.
+ *
  * Credentials (env vars win; else read from the files): SUPABASE_URL + SUPABASE_ANON_KEY from `.env.dev.local`,
  * VANA_EVAL_EMAIL + VANA_EVAL_PASSWORD, falling back to INTEGRATION_TEST_EMAIL/PASSWORD from `secrets/integration_test.env`.
  * The eval user must be Pro (vana-chat is gated) — a 403 pro_required says so and exits 2.

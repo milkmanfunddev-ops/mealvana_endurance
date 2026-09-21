@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../ai_credits/domain/insufficient_credits_exception.dart';
+import '../../content/application/content_service.dart';
+import '../../content/domain/content_keys.dart';
 import '../../../shared/services/supabase/supabase_client_provider.dart';
 import '../domain/meal_analysis_result.dart';
 
@@ -27,6 +29,14 @@ enum MealAiFailureKind {
   /// The edge function or AI Gateway returned an unexpected error.
   serverError,
 }
+
+/// The server's code for "the AI Gateway refused US" — our key's monthly
+/// budget hard-stopped, or the key is gone (mp-437,
+/// `supabase/functions/_shared/ai/gateway_error.ts`). The athlete's own
+/// budget is fine, so this is never an [InsufficientCreditsException] and
+/// never the top-up sheet; it reports as [MealAiFailureKind.serverError]
+/// carrying the content system's "Vana is unavailable right now".
+const String kAiUnavailableCode = 'ai_unavailable';
 
 /// Thrown by [MealAiService] when an AI call cannot be completed.
 ///
@@ -71,7 +81,10 @@ class MealPhotoAnalysis {
 
 @riverpod
 MealAiService mealAiService(Ref ref) {
-  return MealAiService(supabase: ref.watch(supabaseClientProvider));
+  return MealAiService(
+    supabase: ref.watch(supabaseClientProvider),
+    content: ref.watch(contentServiceProvider),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -84,9 +97,22 @@ MealAiService mealAiService(Ref ref) {
 /// [MealAiException.userMessage] and a discriminated [MealAiFailureKind] so
 /// the presentation layer can branch on the error type without string-matching.
 class MealAiService {
-  MealAiService({required SupabaseClient supabase}) : _supabase = supabase;
+  MealAiService({required SupabaseClient supabase, ContentService? content})
+    : _supabase = supabase,
+      _content = content;
 
   final SupabaseClient _supabase;
+
+  /// Reads the one user-facing string this service does not hardcode: the
+  /// gateway-refusal line (mp-437). Null in the older unit tests, which
+  /// construct the service directly; the literal below is then the fallback
+  /// and matches `assets/config/content_defaults.json`.
+  final ContentService? _content;
+
+  /// "Vana is unavailable right now" — the gateway refused us.
+  String get _aiUnavailableMessage =>
+      _content?.getValue(ContentKeys.mpAiUnavailable) ??
+      'Vana is unavailable right now';
   static const _uuid = Uuid();
 
   // -------------------------------------------------------------------------
@@ -288,6 +314,17 @@ class MealAiService {
       );
     }
 
+    // The gateway refusing US (503 ai_unavailable) is not the athlete's wallet
+    // and never the top-up sheet (mp-437): one line, from the content system.
+    // Checked before the 402 arm for the same reason.
+    if (_isAiUnavailable(response.data)) {
+      throw MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: _aiUnavailableMessage,
+        debugMessage: '$functionName returned $kAiUnavailableCode',
+      );
+    }
+
     // 402 → out of AI credits. Throw the typed exception so the presentation
     // layer can route the user to the buy-credits paywall.
     if (response.status == 402) {
@@ -331,6 +368,16 @@ class MealAiService {
     if (kDebugMode)
       debugPrint('[MealAiService] FunctionException from $functionName: $e');
 
+    // Checked before the 402 arm, as the Vana transport does: the gateway
+    // refusing US must never reach the top-up sheet (mp-437).
+    if (_isAiUnavailable(e.details)) {
+      return MealAiException(
+        kind: MealAiFailureKind.serverError,
+        userMessage: _aiUnavailableMessage,
+        debugMessage: '$functionName returned $kAiUnavailableCode',
+      );
+    }
+
     // 402 → out of AI credits. Throw the typed exception (this method's callers
     // `throw` its result, so throwing here propagates identically).
     if (e.status == 402) {
@@ -359,6 +406,10 @@ class MealAiService {
     final map = body is Map<String, dynamic> ? body : <String, dynamic>{};
     return InsufficientCreditsException.fromMap(map);
   }
+
+  /// Whether an edge-function error body carries the gateway-refusal code.
+  bool _isAiUnavailable(dynamic data) =>
+      data is Map && data['error'] == kAiUnavailableCode;
 
   /// Extract the `error` field from an edge function error JSON body.
   String? _extractErrorMessage(dynamic data) {

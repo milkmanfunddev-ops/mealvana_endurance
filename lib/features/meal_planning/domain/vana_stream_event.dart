@@ -10,7 +10,7 @@ import 'wire_record.dart';
 /// {"type":"ui","part":VanaPart}
 /// {"type":"status","tool":"suggestMeals"}
 /// {"type":"done","usage":{"input_tokens":N,"output_tokens":N}}
-/// {"type":"error","message":"…"}
+/// {"type":"error","message":"…","code":"ai_unavailable"}   code only when the fault is ours
 /// ```
 sealed class VanaStreamEvent extends WireRecord {
   const VanaStreamEvent();
@@ -52,7 +52,10 @@ sealed class VanaStreamEvent extends WireRecord {
           outputTokens: readInt(usage, 'output_tokens'),
         );
       case 'error':
-        return VanaErrorEvent(readString(json, 'message') ?? '');
+        return VanaErrorEvent(
+          readString(json, 'message') ?? '',
+          code: readString(json, 'code'),
+        );
       default:
         return null;
     }
@@ -120,13 +123,23 @@ class VanaDoneEvent extends VanaStreamEvent {
 
 /// A mid-stream error (pre-stream errors arrive as HTTP status codes).
 class VanaErrorEvent extends VanaStreamEvent {
-  const VanaErrorEvent(this.message);
+  const VanaErrorEvent(this.message, {this.code});
 
   final String message;
+
+  /// The server's machine code when it had one. `ai_unavailable` means the AI
+  /// Gateway refused US — our key's budget, not the athlete's (mp-437); the
+  /// UI says "Vana is unavailable right now" and never the top-up sheet.
+  /// Null on an ordinary stream error, and from a server older than mp-467.
+  final String? code;
 
   @override
   String get type => 'error';
 
   @override
-  Map<String, dynamic> toJson() => {'type': type, 'message': message};
+  Map<String, dynamic> toJson() => {
+    'type': type,
+    'message': message,
+    if (code != null) 'code': code,
+  };
 }

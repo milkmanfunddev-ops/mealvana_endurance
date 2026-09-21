@@ -1028,6 +1028,13 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
               ..selection = TextSelection.collapsed(offset: lost.length);
           }
           setState(() => _outOfCredits = true);
+        case VanaChatErrorKind.aiUnavailable:
+          // The gateway refused US — our key's budget, not the athlete's
+          // wallet (mp-437). One line, and never the top-up sheet.
+          MealvanaSnackbar.showWarning(
+            context,
+            content.getValue(ContentKeys.mpAiUnavailable),
+          );
         case VanaChatErrorKind.rateLimited:
           MealvanaSnackbar.showWarning(
             context,

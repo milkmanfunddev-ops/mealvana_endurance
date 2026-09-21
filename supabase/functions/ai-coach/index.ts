@@ -43,7 +43,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { generateText } from "npm:ai@6";
+import { generateText } from "npm:ai@6.0.277";
 import { handleCors } from "../_shared/cors.ts";
 import {
   errorResponse,
@@ -54,6 +54,7 @@ import {
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { COACH_INSIGHT_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
+import { gatewayRefusalResponse } from "../_shared/ai/gateway_error.ts";
 import {
   buildDeterministicInsight,
   buildInsightUserMessage,
@@ -345,6 +346,9 @@ serve(withSentry(async (req: Request) => {
       },
     });
   } catch (error) {
+    // The gateway refusing us is our key, not the athlete's wallet (mp-437).
+    const refused = gatewayRefusalResponse(error, "ai-coach");
+    if (refused) return refused;
     console.error("[ai-coach] Fatal error:", error);
     return serverError(error);
   }

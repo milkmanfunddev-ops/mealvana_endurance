@@ -251,6 +251,53 @@ void main() {
       );
     });
 
+    // The gateway refusing OUR key (mp-437). Bodies are what
+    // `_shared/ai/gateway_error.ts` sends: `aiUnavailableBody()` with 503
+    // before the stream, `errorLine()` once it has started.
+    test('503 ai_unavailable → VanaUnavailableException', () async {
+      final h = TransportHarness(
+        status: 503,
+        body: '{"success":false,"error":"ai_unavailable"}',
+      );
+      await expectLater(
+        () => _repo(
+          h,
+        ).streamChat(message: 'hi', kind: VanaConversationKind.general),
+        throwsA(isA<VanaUnavailableException>()),
+      );
+    });
+
+    test(
+      'a 402 carrying ai_unavailable is still never InsufficientCreditsException',
+      () async {
+        final h = TransportHarness(
+          status: 402,
+          body: '{"success":false,"error":"ai_unavailable"}',
+        );
+        await expectLater(
+          () => _repo(
+            h,
+          ).streamChat(message: 'hi', kind: VanaConversationKind.general),
+          throwsA(isA<VanaUnavailableException>()),
+        );
+      },
+    );
+
+    test('a mid-stream refusal keeps its code on the error event', () async {
+      final h = TransportHarness(
+        status: 200,
+        body:
+            '{"type":"error","message":"Budget exceeded","code":"ai_unavailable"}\n'
+            '{"type":"done"}\n',
+      );
+      final response = await _repo(
+        h,
+      ).streamChat(message: 'hi', kind: VanaConversationKind.general);
+      final events = await response.events.toList();
+      final error = events.whereType<VanaErrorEvent>().single;
+      expect(error.code, VanaUnavailableException.code);
+    });
+
     test(
       '500 → VanaServerException; socket failure → VanaOfflineException',
       () async {

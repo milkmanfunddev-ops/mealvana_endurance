@@ -7,19 +7,21 @@
  *   {"type":"ui","part":{"kind":...}}             — a VanaPart (every tool result that carries `kind`)
  *   {"type":"status","tool":"suggestMeals"}       — emitted when the model starts a tool call; drives "Finding options…"
  *   {"type":"done","usage":{"input_tokens":n,"output_tokens":n,"cache_read_tokens":n}}  — cache_read_tokens: the prompt-cache read (mp-276)
- *   {"type":"error","message":"..."}
+ *   {"type":"error","message":"...","code":"ai_unavailable"}   — `code` only when the fault is ours (mp-437)
  *
  * The Dart parser (`ai_coach_chat_repository._parseLine`) ignores unknown `type`s and ignores extra keys on `done`, so
- * the two additions over the original jade-chat envelope (`status`, `done.usage`) are backward compatible.
+ * the two additions over the original jade-chat envelope (`status`, `done.usage`) are backward compatible. `code` is
+ * likewise additive: a client that does not read it falls back to the generic server-error copy.
  */
 import { corsHeaders } from '../cors.ts';
+import { AI_UNAVAILABLE, isGatewayRefusal } from '../ai/gateway_error.ts';
 
 export type NdjsonLine =
   | { type: 'text'; delta: string }
   | { type: 'ui'; part: unknown }
   | { type: 'status'; tool: string }
   | { type: 'done'; usage?: { input_tokens: number | null; output_tokens: number | null; cache_read_tokens: number | null } }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string; code?: string };
 
 const enc = new TextEncoder();
 export const ndjsonLine = (l: NdjsonLine): Uint8Array => enc.encode(JSON.stringify(l) + '\n');
@@ -30,6 +32,13 @@ export const ndjsonLine = (l: NdjsonLine): Uint8Array => enc.encode(JSON.stringi
 export const cacheReadTokens = (usage: any): number | null => usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens ?? null;
 
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : 'Vana hit an error');
+
+/** The `error` line for [e]: the gateway refusing us carries `code: 'ai_unavailable'` so the client can tell
+ *  "our key ran out" from "the athlete's wallet ran out" and never raise the top-up sheet (mp-437). */
+export const errorLine = (e: unknown): NdjsonLine =>
+  isGatewayRefusal(e)
+    ? { type: 'error', message: errorMessage(e), code: AI_UNAVAILABLE }
+    : { type: 'error', message: errorMessage(e) };
 
 /** Headers every NDJSON chat response carries. `extra` = per-function headers (x-conversation-id, x-vana-kind). */
 export function ndjsonHeaders(extra: Record<string, string> = {}): Headers {
@@ -75,13 +84,13 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
           else if (part.type === 'text-delta') { if (!silenced) push({ type: 'text', delta: part.text ?? part.textDelta ?? '' }); }
           else if (part.type === 'tool-input-start') push({ type: 'status', tool: part.toolName });
           else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { if ((out as { kind?: string }).kind === 'feedback_saved') filed = true; opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
-          else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push({ type: 'error', message: errorMessage(part.error) }); }
+          else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push(errorLine(part.error)); }
           else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null, cache_read_tokens: cacheReadTokens(part.totalUsage) } }); done = true; }
           // step-start / step-finish / tool-call / tool-input-delta carry nothing user-visible.
         }
       } catch (e) {
         console.error(`${tag} stream consumer error:`, errorMessage(e));
-        push({ type: 'error', message: errorMessage(e) });
+        push(errorLine(e));
       }
       if (!done) push({ type: 'done' });
       try { controller.close(); } catch { /* already closed */ }

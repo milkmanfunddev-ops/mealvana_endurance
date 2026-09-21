@@ -425,6 +425,7 @@
     "pro_required": "Mealvana Pro required",
     "rate_limited": "Give me {n} seconds",
     "server_error": "Something went wrong. Try again.",
+    "ai_unavailable": "Vana is unavailable right now",
     "confirmed_toast": "Plan confirmed — shopping list ready",
     "shopping_share_title": "Mealvana shopping list",
     "shopping_share_action": "Share shopping list",

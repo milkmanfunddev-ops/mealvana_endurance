@@ -28,8 +28,12 @@ export interface VanaCtx {
   token: string;
 }
 
-export const CHAT_MODEL: string = Deno.env.get('VANA_CHAT_MODEL') ?? 'anthropic/claude-haiku-4-5';
-export const TOOL_MODEL: string = Deno.env.get('VANA_TOOL_MODEL') ?? 'anthropic/claude-haiku-4-5';
+// Model ids are spelled the way the gateway catalogue spells them (https://ai-gateway.vercel.sh/v1/models,
+// read 2026-09-21): `anthropic/claude-haiku-4.5`, a dot, not a dash. The dashed form these defaults carried
+// until now is not an id in the catalogue; whatever the gateway resolved it to, it was not spelled by us,
+// and the billed model and price were a guess (mp-467, criterion 5).
+export const CHAT_MODEL: string = Deno.env.get('VANA_CHAT_MODEL') ?? 'anthropic/claude-haiku-4.5';
+export const TOOL_MODEL: string = Deno.env.get('VANA_TOOL_MODEL') ?? 'anthropic/claude-haiku-4.5';
 export const EMBED_MODEL: string = Deno.env.get('VANA_EMBED_MODEL') ?? 'openai/text-embedding-3-small';
 
 export const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';

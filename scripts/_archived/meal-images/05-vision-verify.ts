@@ -21,7 +21,7 @@
  * Idempotent: only tiles with status='ok' and no verdict yet are examined.
  * LIMIT=n to sample, RECHECK=1 to re-examine tiles already verified.
  */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import { selectAll, rest } from './lib/db.mjs';
 

@@ -1,6 +1,6 @@
 /** Vana tools — AI SDK v6. UI-rendering tools return a VanaPart (with `kind`); data tools return plain data.
  *  All 24 tools of the prototype, same two tool sets per conversation kind. */
-import { tool } from 'npm:ai@6';
+import { tool } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import type { VanaPart, MealRef, MealContext, MealType, PlanRule, ConversationKind, AthleteContext } from './contracts.ts';
 import { today, addDays, dayKey, dayName, weekStartFor } from './env.ts';

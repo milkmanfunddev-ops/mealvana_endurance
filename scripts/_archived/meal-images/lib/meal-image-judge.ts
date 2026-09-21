@@ -17,7 +17,7 @@
  * parts of the pipeline (the ladder, the geometry, the scoring) stay in .mjs so
  * node can test them.
  */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 
 export const DEFAULT_JUDGE_MODEL = Deno.env.get('MEAL_IMAGE_JUDGE_MODEL') ??

@@ -7,7 +7,7 @@
  *  (context-cache.ts), and the cache-read token count is logged per call so a zero is visible.
  *  Brevity is a prompt rule (persona.ts VOICE registers), not a server trim: a clamp only cuts text after it was paid for.
  *  The only server cut is a generous runaway guard so a looping turn never floods the transcript (Lee, 2026-09-03). */
-import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6';
+import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6.0.277';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';

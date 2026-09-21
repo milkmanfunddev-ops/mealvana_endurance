@@ -56,7 +56,7 @@ final class AppGateProvider extends $AsyncNotifierProvider<AppGate, bool> {
   AppGate create() => AppGate();
 }
 
-String _$appGateHash() => r'758e37f4397588f1f102e164e4a138e613e06c19';
+String _$appGateHash() => r'b4a0827e028428d63791b95cd5bdb6c9e16bf212';
 
 /// The app gate, as the router reads it (mp-280: everything is behind it).
 ///

@@ -16,7 +16,7 @@
  * `ensureSavedMealIngredients` is the hook plan.ts calls when a saved meal joins a plan. It never
  * throws: a model failure leaves the column NULL and the list falls back to the dish line.
  */
-import { generateObject } from 'npm:ai@6';
+import { generateObject } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
 import { TOOL_MODEL } from './env.ts';
 import type { VanaCtx } from './env.ts';

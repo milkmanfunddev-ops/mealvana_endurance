@@ -36,6 +36,11 @@ enum VanaChatErrorKind {
   rateLimited,
   insufficientCredits,
   proRequired,
+
+  /// The AI Gateway refused US — our key's monthly budget hard-stopped, or the
+  /// key is gone (mp-437). Distinct from [insufficientCredits] on purpose: the
+  /// athlete's own budget is fine, so the top-up sheet must never appear.
+  aiUnavailable,
   server,
   unknown,
 }
@@ -523,8 +528,11 @@ class VanaChatController extends _$VanaChatController {
       if (!ref.mounted) return;
       final finished = state.value ?? before;
       final last = finished.messages.isEmpty ? null : finished.messages.last;
-      final emptyOpener =
-          opener &&
+      // An empty reply is dropped after an opener, and after a stream that
+      // ended on an error line (a gateway refusal, mp-437): otherwise the
+      // empty bubble would sit in the thread under the error's snackbar.
+      final emptyReply =
+          (opener || finished.error != null) &&
           last != null &&
           !last.isUser &&
           last.content.isEmpty &&
@@ -532,7 +540,7 @@ class VanaChatController extends _$VanaChatController {
       state = AsyncData(
         finished.copyWith(
           conversationId: resolvedId,
-          messages: emptyOpener
+          messages: emptyReply
               ? finished.messages.sublist(0, finished.messages.length - 1)
               : finished.messages,
           isStreaming: false,
@@ -611,11 +619,18 @@ class VanaChatController extends _$VanaChatController {
           conversationId: conversationId,
           statusTool: tool,
         );
-      case VanaErrorEvent(:final message):
-        _logger.error('Vana stream error: $message', context: _context);
+      case VanaErrorEvent(:final message, :final code):
+        _logger.error(
+          'Vana stream error: $message${code == null ? '' : ' ($code)'}',
+          context: _context,
+        );
+        // The gateway refusing us mid-stream is our fault, not the athlete's
+        // wallet: its own kind, so the screen never raises the top-up sheet.
         return current.copyWith(
           conversationId: conversationId,
-          error: VanaChatErrorKind.server,
+          error: code == VanaUnavailableException.code
+              ? VanaChatErrorKind.aiUnavailable
+              : VanaChatErrorKind.server,
           clearStatus: true,
         );
       case VanaDoneEvent():
@@ -741,6 +756,7 @@ class VanaChatController extends _$VanaChatController {
     VanaUnauthenticatedException() => VanaChatErrorKind.unauthenticated,
     VanaRateLimitedException() => VanaChatErrorKind.rateLimited,
     ProRequiredException() => VanaChatErrorKind.proRequired,
+    VanaUnavailableException() => VanaChatErrorKind.aiUnavailable,
     InsufficientCreditsException() => VanaChatErrorKind.insufficientCredits,
     VanaServerException() => VanaChatErrorKind.server,
     // The fridge-photo upload reports through the meal-logging exception.

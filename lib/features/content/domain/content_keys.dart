@@ -211,6 +211,10 @@ class ContentKeys {
   static const String mpProRequired = 'meal_planning.pro_required';
   static const String mpRateLimited = 'meal_planning.rate_limited';
   static const String mpServerError = 'meal_planning.server_error';
+  /// The AI Gateway refused US — our key's monthly budget hard-stopped, or
+  /// the key is gone (mp-437). Never the top-up sheet: the athlete's own
+  /// budget is fine. Covers Vana chat, meal logging and the coach insight.
+  static const String mpAiUnavailable = 'meal_planning.ai_unavailable';
   static const String mpConfirmedToast = 'meal_planning.confirmed_toast';
   static const String mpShoppingShareTitle =
       'meal_planning.shopping_share_title';
