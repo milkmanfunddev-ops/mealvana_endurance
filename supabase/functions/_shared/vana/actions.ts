@@ -90,8 +90,8 @@ export async function extraAction(v: VanaCtx, type: string, p: Record<string, an
     case 'pantry_photo': { const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); if (!conversationId) throw new Error('conversationId required');
       // A fridge photo is a vision call, limited by the same shared module as chat and counted when it starts
       // (mp-469 criterion 3). A refusal throws; vana-action answers 429 rate_limited.
-      const callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { conversationId, model: TOOL_MODEL });
-      const part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), (t) => completeCall(v.admin, callId, t)); const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
+      const callId = await reserveCallOrThrow(v.admin, v.userId, 'vana.pantry_photo', { model: TOOL_MODEL });
+      const part = await detectPantryFromPhoto(v, String(pick(p, 'photoPath', 'photo_path')), (t) => completeCall(v.admin, callId, { ...t, conversationId })); const messageId = await persistAssistantPart(v, conversationId, part, part.items.length ? 'Here is what I could see — untick anything that is wrong, add what I missed, then tap Use these.' : 'I could not spot food in that photo. Add what you have and tap Use these.'); return { parts: [part], messageId }; }
     case 'rewind': {
       // Drop the edited user turn and everything after it, then put the draft back to the snapshot the previous assistant turn stored.
       const conversationId = String(pick(p, 'conversationId', 'conversation_id') ?? ''); const messageId = String(pick(p, 'messageId', 'message_id') ?? '');

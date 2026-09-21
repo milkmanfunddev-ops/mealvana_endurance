@@ -53,18 +53,25 @@ export type Reservation = { allowed: true; callId: string | null } | { allowed: 
 /**
  * Take a place in the bucket, before the model runs.
  *
- * Insert the call row, then read the first `max` rows of the window in the database's own order
- * (created_at, then id, so rows written in the same millisecond still have one order every caller agrees on). The call
- * is allowed exactly when its own row is among them; the loser's row is deleted again, so a refusal neither runs a
- * model nor holds a slot for the rest of the window.
+ * The database decides, in one step: `vana_reserve_call` locks (user, bucket), counts the window and writes the call row
+ * only when there is room, so requests for one athlete and one bucket are counted one after the other and five at once
+ * against a limit of four let four through. A refusal writes nothing.
  *
- * Race-free without a lock: whoever reads, reads the same rows, and at most `max` rows can be the first `max`.
+ * The row is reserved WITHOUT a conversation id: the caller's id is unchecked input at this point (a malformed one would
+ * fail the insert), and `completeCall` settles it once the conversation is resolved.
+ *
+ * Where the function is not there yet (a project the migration has not reached) the fallback is insert-then-rank: write
+ * the row, read the window's first `max` rows in (created_at, id) order, stay only if ours is among them. That one can
+ * be beaten by an insert that commits late, by a few milliseconds; it is still a limit, which failing open is not.
  */
-export async function reserveCall(admin: Db, userId: string, fn: RateLimitedFn, row: { functionName?: string; conversationId?: string | null; model: string }): Promise<Reservation> {
+export async function reserveCall(admin: Db, userId: string, fn: RateLimitedFn, row: { functionName?: string; model: string }): Promise<Reservation> {
   const w = WINDOWS[fn];
   try {
+    const { data: id, error: rpcError } = await admin.rpc('vana_reserve_call', { p_user_id: userId, p_bucket: fn, p_function_name: row.functionName ?? fn, p_model: row.model, p_window_seconds: w.seconds, p_max: w.max });
+    if (!rpcError) return typeof id === 'string' && id ? { allowed: true, callId: id } : { allowed: false, retryAfterSeconds: w.seconds };
+    console.warn('[vana] vana_reserve_call unavailable, ranking instead:', rpcError.message);
     const { data: mine, error } = await admin.from('vana_calls')
-      .insert({ user_id: userId, conversation_id: row.conversationId ?? null, function_name: row.functionName ?? fn, model: row.model })
+      .insert({ user_id: userId, function_name: row.functionName ?? fn, model: row.model })
       .select('id, created_at').single();
     if (error || !mine?.id) { console.error('[vana] reserveCall insert failed, failing open:', error?.message); return { allowed: true, callId: null }; }
     const { data: first, error: readError } = await admin.from('vana_calls')
@@ -72,7 +79,8 @@ export async function reserveCall(admin: Db, userId: string, fn: RateLimitedFn, 
       .order('created_at', { ascending: true }).order('id', { ascending: true }).limit(w.max);
     if (readError || !Array.isArray(first)) return { allowed: true, callId: mine.id as string };
     if (first.some((r: { id: string }) => r.id === mine.id)) return { allowed: true, callId: mine.id as string };
-    await admin.from('vana_calls').delete().eq('id', mine.id);
+    const { error: withdrawError } = await admin.from('vana_calls').delete().eq('id', mine.id);
+    if (withdrawError) console.error('[vana] reserveCall could not withdraw a refused row:', withdrawError.message);
     return { allowed: false, retryAfterSeconds: w.seconds };
   } catch (e) { console.error('[vana] reserveCall threw, failing open:', (e as Error).message); return { allowed: true, callId: null }; }
 }
@@ -99,7 +107,7 @@ export async function assertRateLimit(admin: Db, userId: string, fn: RateLimited
   if (!r.allowed) throw new RateLimitedError(fn, r.retryAfterSeconds ?? WINDOWS[fn].seconds);
 }
 /** `reserveCall` for a path whose only way to refuse is to throw (a Vana action). Returns the reservation id. */
-export async function reserveCallOrThrow(admin: Db, userId: string, fn: RateLimitedFn, row: { functionName?: string; conversationId?: string | null; model: string }): Promise<string | null> {
+export async function reserveCallOrThrow(admin: Db, userId: string, fn: RateLimitedFn, row: { functionName?: string; model: string }): Promise<string | null> {
   const r = await reserveCall(admin, userId, fn, row);
   if (!r.allowed) throw new RateLimitedError(fn, r.retryAfterSeconds);
   return r.callId;

@@ -66,7 +66,9 @@ const baseTables = (over: Partial<Tables> = {}): Tables => ({
 // ---------------------------------------------------------------- the claim row, as the migration defines it
 interface Claim { plan_id: string; claimed_at: number }
 interface ClaimArgs { p_plan_id: string; p_ttl_seconds: number }
-type Rpc = { vana_claim_day_notes: (a: ClaimArgs) => boolean; vana_release_day_notes: (a: ClaimArgs) => null };
+interface ReleaseArgs { p_plan_id: string; p_claimed_at: string }
+/** The claim answers its `claimed_at` (the token a release must carry), or null when someone else holds it. */
+type Rpc = { vana_claim_day_notes: (a: ClaimArgs) => string | null; vana_release_day_notes: (a: ReleaseArgs) => null };
 function claimHandlers(now = () => Date.now()): { held: Map<string, Claim>; rpc: Rpc } {
   const held = new Map<string, Claim>();
   return {
@@ -74,11 +76,14 @@ function claimHandlers(now = () => Date.now()): { held: Map<string, Claim>; rpc:
     rpc: {
       vana_claim_day_notes: ({ p_plan_id, p_ttl_seconds }: ClaimArgs) => {
         const row = held.get(p_plan_id);
-        if (row && row.claimed_at >= now() - (p_ttl_seconds ?? CLAIM_TTL_SECONDS) * 1000) return false;
+        if (row && row.claimed_at >= now() - (p_ttl_seconds ?? CLAIM_TTL_SECONDS) * 1000) return null;
         held.set(p_plan_id, { plan_id: p_plan_id, claimed_at: now() });
-        return true;
+        return String(now());
       },
-      vana_release_day_notes: ({ p_plan_id }: ClaimArgs) => { held.delete(p_plan_id); return null; },
+      vana_release_day_notes: ({ p_plan_id, p_claimed_at }: ReleaseArgs) => {
+        if (String(held.get(p_plan_id)?.claimed_at) === p_claimed_at) held.delete(p_plan_id);
+        return null;
+      },
     },
   };
 }
@@ -156,7 +161,9 @@ Deno.test('a plan edit regenerates only the days it touched', async () => {
   for (const d of DATES.filter((x) => x !== DATES[2])) assertEquals(notes[d], stored[d], `${d} kept its stored note`);
 
   const write = v.fake.writesTo('meal_plans', 'update').at(-1)!.values;
-  assertEquals(write.day_notes_stale, false);
+  // The flag came down before the model ran (so an edit mid-generation can raise it again), not in the notes' write.
+  assertEquals('day_notes_stale' in write, false);
+  assertEquals((await getPlanById(v, PLAN))!.dayNotesStale, false);
   assertEquals(Object.keys(write.day_notes).sort(), DATES.slice().sort(), 'all seven notes are still on the plan');
 });
 
@@ -229,8 +236,8 @@ Deno.test('a claim row makes two simultaneous requests share one model call', as
   let release!: () => void;
   const gate = new Promise<void>((r) => { release = r; });
   const slow = deps(rec, {
-    claim: (_v, id) => Promise.resolve(rpc.vana_claim_day_notes({ p_plan_id: id, p_ttl_seconds: CLAIM_TTL_SECONDS })),
-    release: (_v, id) => { rpc.vana_release_day_notes({ p_plan_id: id, p_ttl_seconds: CLAIM_TTL_SECONDS }); return Promise.resolve(); },
+    claim: (_v, id) => Promise.resolve(rpc.vana_claim_day_notes({ p_plan_id: id, p_ttl_seconds: CLAIM_TTL_SECONDS }) ?? false),
+    release: (_v, id, token) => { rpc.vana_release_day_notes({ p_plan_id: id, p_claimed_at: token }); return Promise.resolve(); },
     generate: async ({ dates }) => { rec.calls.push({ dates, prompt: '' }); await gate; return { notes: dates.map((d) => ({ date: d, text: `shared note for ${d}` })), inputTokens: 1200, outputTokens: 240 }; },
   });
 
@@ -250,8 +257,47 @@ Deno.test('a claim left behind by a dead isolate expires, it never blocks the pl
   let clock = 1_000_000;
   const { rpc } = claimHandlers(() => clock);
   const args = { p_plan_id: PLAN, p_ttl_seconds: CLAIM_TTL_SECONDS };
-  assertEquals(rpc.vana_claim_day_notes(args), true);
-  assertEquals(rpc.vana_claim_day_notes(args), false, 'a fresh claim is refused');
+  const first = rpc.vana_claim_day_notes(args);
+  assertEquals(typeof first, 'string');
+  assertEquals(rpc.vana_claim_day_notes(args), null, 'a fresh claim is refused');
   clock += (CLAIM_TTL_SECONDS + 1) * 1000;
-  assertEquals(rpc.vana_claim_day_notes(args), true, 'past the TTL the next request takes it over');
+  assertEquals(typeof rpc.vana_claim_day_notes(args), 'string', 'past the TTL the next request takes it over');
+});
+
+Deno.test('a generation that outlived its claim cannot release the claim of whoever took it over', () => {
+  let clock = 1_000_000;
+  const { rpc, held } = claimHandlers(() => clock);
+  const args = { p_plan_id: PLAN, p_ttl_seconds: CLAIM_TTL_SECONDS };
+  const slow = rpc.vana_claim_day_notes(args)!;
+  clock += (CLAIM_TTL_SECONDS + 1) * 1000;
+  const taker = rpc.vana_claim_day_notes(args)!;
+  rpc.vana_release_day_notes({ p_plan_id: PLAN, p_claimed_at: slow });
+  assertEquals(held.size, 1, "the slow winner's release leaves the taker's claim alone");
+  rpc.vana_release_day_notes({ p_plan_id: PLAN, p_claimed_at: taker });
+  assertEquals(held.size, 0);
+});
+
+Deno.test('a claim that failed open releases nothing: it never held a row', async () => {
+  const [a] = twoCtx(baseTables(), claimHandlers().rpc);
+  const plan = (await getPlanById(a, PLAN))!;
+  let released = 0;
+  await generateDayNotes(a, plan, ANCHOR, deps({ calls: [] }, { claim: () => Promise.resolve(true), release: () => { released++; return Promise.resolve(); } }));
+  assertEquals(released, 0);
+});
+
+Deno.test('an edit that lands while the notes are being written keeps the plan marked stale', async () => {
+  const { rpc } = claimHandlers();
+  const [a, , fake] = twoCtx(baseTables(), rpc);
+  const plan = (await getPlanById(a, PLAN))!;
+  const rec: Recorder = { calls: [] };
+  await generateDayNotes(a, plan, ANCHOR, deps(rec, {
+    generate: async ({ dates }) => {
+      // The athlete edits the plan mid-generation: every plan mutation raises the flag.
+      // deno-lint-ignore no-explicit-any
+      await (fake as any).from('meal_plans').update({ day_notes_stale: true }).eq('id', PLAN);
+      return { notes: dates.map((d) => ({ date: d, text: `note for ${d}` })), inputTokens: 1, outputTokens: 1 };
+    },
+  }));
+  const after = (await getPlanById(a, PLAN))!;
+  assertEquals(after.dayNotesStale, true, "the winner's write did not lower the flag over the edit");
 });

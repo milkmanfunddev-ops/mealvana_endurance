@@ -36,8 +36,9 @@ export const CACHE_PROVIDER_OPTIONS = { anthropic: { cacheControl: { type: 'ephe
 const MAX_OUTPUT_TOKENS = 900;
 /** The most a single turn may spend, input and output across every step, before the loop is stopped (mp-469 criterion 4).
  *  The step limit alone bounds the number of model calls, not their size: six steps that each replay a long history are
- *  six long calls. A well-behaved planning turn is a few thousand tokens; this is a runaway guard, not a budget. */
-export const TURN_TOKEN_CEILING = 60_000;
+ *  six long calls. This is a runaway guard, not a budget: the count includes cached input, and on dev (14 days to
+ *  2026-09-21) a planning turn ran 22k at the median and 85k at most, so the ceiling sits well clear of a real turn. */
+export const TURN_TOKEN_CEILING = 150_000;
 const stepTokens = (u?: { inputTokens?: number; outputTokens?: number; totalTokens?: number }) =>
   u?.totalTokens ?? (u?.inputTokens ?? 0) + (u?.outputTokens ?? 0);
 /** A stop condition on spend: the turn ends once the steps so far have cost `ceiling` tokens. A usage the provider did
@@ -309,7 +310,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // which is the one its row was always logged under.
   const bucket = opener ? 'vana.opener' : 'vana.chat';
   const loggedName = `${bucket}.${kind}`;
-  const reserved = await reserveCall(v.admin, v.userId, bucket, { functionName: loggedName, conversationId: body.conversation_id ?? null, model: CHAT_MODEL });
+  const reserved = await reserveCall(v.admin, v.userId, bucket, { functionName: loggedName, model: CHAT_MODEL });
   if (!reserved.allowed) return { ok: false, status: 429, body: { error: 'rate_limited', retry_after_seconds: reserved.retryAfterSeconds, retryAfterSeconds: reserved.retryAfterSeconds } };
   const callId = reserved.callId;
   const last = [...messages].reverse().find((m) => m.role === 'user');

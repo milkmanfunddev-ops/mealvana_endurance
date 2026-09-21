@@ -43,9 +43,10 @@ export interface DayNotesDeps {
   generate: (input: { system: string; prompt: string; dates: string[] }) => Promise<{ notes: { date: string; text: string }[]; inputTokens?: number; outputTokens?: number }>;
   /** The athlete context the notes and the fingerprints are both read from. */
   buildContext: (v: VanaCtx, anchorDate: string) => Promise<AthleteContext>;
-  /** True → this request owns the plan's generation and must release it. False → someone else is generating. */
-  claim: (v: VanaCtx, planId: string) => Promise<boolean>;
-  release: (v: VanaCtx, planId: string) => Promise<void>;
+  /** A token → this request owns the plan's generation and releases it with that token. `true` → the claim could not
+   *  be asked for (fail open): generate, but there is nothing of ours to release. False → someone else is generating. */
+  claim: (v: VanaCtx, planId: string) => Promise<string | boolean>;
+  release: (v: VanaCtx, planId: string, token: string) => Promise<void>;
   /** How a request that lost the claim waits for the winner's notes. */
   waitMs: number;
   pollMs: number;
@@ -62,10 +63,10 @@ export const defaultDayNotesDeps: DayNotesDeps = {
     const { data, error } = await v.db.rpc('vana_claim_day_notes', { p_plan_id: planId, p_ttl_seconds: CLAIM_TTL_SECONDS });
     // Fail open on a database error: a missed claim costs one duplicate call, a wrongly refused one costs the notes.
     if (error) { console.error(`[vana] day notes claim failed: ${error.message}`); return true; }
-    return data === true;
+    return typeof data === 'string' && data ? data : false;
   },
-  release: async (v, planId) => {
-    const { error } = await v.db.rpc('vana_release_day_notes', { p_plan_id: planId });
+  release: async (v, planId, token) => {
+    const { error } = await v.db.rpc('vana_release_day_notes', { p_plan_id: planId, p_claimed_at: token });
     if (error) console.error(`[vana] day notes release failed: ${error.message}`);
   },
   waitMs: 25_000,
@@ -160,10 +161,14 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
   if (!rl.allowed) { console.warn(`[vana] day notes rate-limited for ${v.userId}`); return stored.notes; }
 
   // Someone else is already writing these days. Wait for their notes rather than paying for a second call.
-  if (!(await deps.claim(v, plan.id))) return await awaitNotes(v, plan, dates, want, stored, deps);
+  const claimed = await deps.claim(v, plan.id);
+  if (!claimed) return await awaitNotes(v, plan, dates, want, stored, deps);
 
   const started = Date.now();
   try {
+    // The flag comes down BEFORE the model runs, never after: an edit that lands while we generate raises it again,
+    // and our write below must not lower it over that edit (its days would stay wrong until the next plan change).
+    if (plan.dayNotesStale !== false) await v.db.from('meal_plans').update({ day_notes_stale: false }).eq('id', plan.id);
     const { notes: written, inputTokens, outputTokens } = await deps.generate({ system: DAY_NOTE_SYSTEM, prompt: notesPrompt(plan, ctx, dirty), dates: dirty });
     const fresh: Record<string, string> = {};
     const keys: Record<string, string> = {};
@@ -172,14 +177,17 @@ export async function generateDayNotes(v: VanaCtx, plan: MealPlan, anchorDate: s
     await v.db.from('meal_plans').update({
       day_notes: notes,
       day_notes_keys: { ...stored.keys, ...keys },
-      day_notes_stale: false,
       day_notes_at: new Date().toISOString(),
     }).eq('id', plan.id);
     await logCall(v.admin, { userId: v.userId, functionName: 'vana.daynotes', model: TOOL_MODEL, inputTokens, outputTokens });
     console.log(`[vana] day notes for ${plan.id}: ${dirty.length} of ${dates.length} days in ${Date.now() - started}ms`);
     return notes;
+  } catch (e) {
+    // Nothing was written: the days are still wrong, so the next open must try again.
+    await v.db.from('meal_plans').update({ day_notes_stale: true }).eq('id', plan.id);
+    throw e;
   } finally {
-    await deps.release(v, plan.id);
+    if (typeof claimed === 'string') await deps.release(v, plan.id, claimed);
   }
 }
 

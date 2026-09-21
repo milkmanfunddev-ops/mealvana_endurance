@@ -75,7 +75,7 @@ Deno.test('five calls fired at once against a limit of four let four through', a
 
 Deno.test('the row is written before the decision, so a call is counted when it starts', async () => {
   const v = testCtx(world());
-  const r = await reserveCall(v.admin, U, 'vana.chat', { functionName: 'vana.chat.general', conversationId: CONV, model: 'anthropic/claude-haiku-4.5' });
+  const r = await reserveCall(v.admin, U, 'vana.chat', { functionName: 'vana.chat.general', model: 'anthropic/claude-haiku-4.5' });
   assert(r.allowed);
   const [write] = v.fake.writesTo('vana_calls', 'insert');
   assertEquals(write.values.function_name, 'vana.chat.general');
@@ -85,6 +85,27 @@ Deno.test('the row is written before the decision, so a call is counted when it 
   await completeCall(v.admin, r.callId, { inputTokens: 1200, outputTokens: 90, cacheReadTokens: 1000 });
   const row = v.fake.rows('vana_calls')[0];
   assertEquals([row.input_tokens, row.output_tokens, row.cache_read_tokens], [1200, 90, 1000]);
+});
+
+Deno.test('where the database has vana_reserve_call, it decides: its id is the reservation, its null is the refusal', async () => {
+  // deno-lint-ignore no-explicit-any
+  const seen: any[] = [];
+  const room = testCtx(world(), { rpc: { vana_reserve_call: (a: unknown) => { seen.push(a); return 'call-from-db'; } } });
+  assertEquals(await reserveCall(room.admin, U, 'vana.chat', { functionName: 'vana.chat.general', model: 'm' }), { allowed: true, callId: 'call-from-db' });
+  assertEquals(seen[0], { p_user_id: U, p_bucket: 'vana.chat', p_function_name: 'vana.chat.general', p_model: 'm', p_window_seconds: RATE_LIMIT_WINDOWS['vana.chat'].seconds, p_max: RATE_LIMIT_WINDOWS['vana.chat'].max });
+  assertEquals(room.fake.writes, [], 'the function wrote the row; the module writes nothing beside it');
+
+  const full = testCtx(world(), { rpc: { vana_reserve_call: () => null } });
+  assertEquals(await reserveCall(full.admin, U, 'vana.chat', { model: 'm' }), { allowed: false, retryAfterSeconds: RATE_LIMIT_WINDOWS['vana.chat'].seconds });
+  assertEquals(full.fake.writes, []);
+});
+
+Deno.test("the caller's conversation id never reaches the reservation: a malformed one cannot fail it open", async () => {
+  const v = testCtx(world(), { errors: { vana_conversations: 'stop here' } });
+  await runChat(v, { kind: 'general', conversation_id: 'not-a-uuid', message: 'hello' }, { functionName: 'vana-chat' }).catch(() => null);
+  const [reserved] = v.fake.writesTo('vana_calls', 'insert');
+  assert(reserved, 'the call was counted');
+  assertEquals('conversation_id' in reserved.values, false);
 });
 
 Deno.test('a full bucket refuses, and rows outside the window do not count', async () => {

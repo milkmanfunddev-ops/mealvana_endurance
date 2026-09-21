@@ -55,31 +55,33 @@ end $$;
 grant select, insert, update, delete on public.vana_day_note_claims to authenticated, service_role;
 
 -- ------------------------------------------------------------ claim / release
--- True → the caller owns the generation and must release it. False → someone else is generating; wait
--- for their notes rather than calling the model again. `on conflict … where` is the whole lock: a
+-- A timestamp → the caller owns the generation and must release it with that same timestamp. Null →
+-- someone else is generating; wait for their notes rather than calling the model again. The timestamp
+-- is the claim's identity: a generation that outlived its TTL must not release the claim of whoever
+-- took it over. `on conflict … where` is the whole lock: a
 -- concurrent insert blocks on the primary key, then takes the update branch and finds the claim still
 -- fresh, so it returns nothing.
 create or replace function public.vana_claim_day_notes(p_plan_id uuid, p_ttl_seconds int default 120)
-returns boolean
+returns timestamptz
 language plpgsql volatile security invoker set search_path = public as $$
 declare
-  v_got uuid;
+  v_got timestamptz;
 begin
   insert into public.vana_day_note_claims as c (plan_id, user_id, claimed_at)
   values (p_plan_id, auth.uid(), now())
   on conflict (plan_id) do update
      set claimed_at = now(), user_id = auth.uid()
    where c.claimed_at < now() - make_interval(secs => p_ttl_seconds)
-  returning c.plan_id into v_got;
-  return v_got is not null;
+  returning c.claimed_at into v_got;
+  return v_got;
 end $$;
 revoke all on function public.vana_claim_day_notes(uuid, int) from public;
 grant execute on function public.vana_claim_day_notes(uuid, int) to authenticated, service_role;
 
-create or replace function public.vana_release_day_notes(p_plan_id uuid)
+create or replace function public.vana_release_day_notes(p_plan_id uuid, p_claimed_at timestamptz)
 returns void
 language sql volatile security invoker set search_path = public as $$
-  delete from public.vana_day_note_claims where plan_id = p_plan_id;
+  delete from public.vana_day_note_claims where plan_id = p_plan_id and claimed_at = p_claimed_at;
 $$;
-revoke all on function public.vana_release_day_notes(uuid) from public;
-grant execute on function public.vana_release_day_notes(uuid) to authenticated, service_role;
+revoke all on function public.vana_release_day_notes(uuid, timestamptz) from public;
+grant execute on function public.vana_release_day_notes(uuid, timestamptz) to authenticated, service_role;
