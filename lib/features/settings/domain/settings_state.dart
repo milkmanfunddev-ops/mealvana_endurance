@@ -93,9 +93,7 @@ class SettingsState {
 
   // Account section labels
   final String accountSectionTitle;
-  final String accountStatusAnonymous;
   final String accountStatusAuthenticated;
-  final String createAccountButton;
   final String signOutButton;
 
   const SettingsState({
@@ -148,9 +146,7 @@ class SettingsState {
     this.lastName,
     this.nutritionTargetOverrides,
     this.accountSectionTitle = 'Account',
-    this.accountStatusAnonymous = 'Not signed in',
     this.accountStatusAuthenticated = 'Signed in',
-    this.createAccountButton = 'Create Account',
     this.signOutButton = 'Sign Out',
   });
 
@@ -204,9 +200,7 @@ class SettingsState {
     String? lastName,
     NutritionTargetOverrides? nutritionTargetOverrides,
     String? accountSectionTitle,
-    String? accountStatusAnonymous,
     String? accountStatusAuthenticated,
-    String? createAccountButton,
     String? signOutButton,
   }) {
     return SettingsState(
@@ -263,11 +257,8 @@ class SettingsState {
       nutritionTargetOverrides:
           nutritionTargetOverrides ?? this.nutritionTargetOverrides,
       accountSectionTitle: accountSectionTitle ?? this.accountSectionTitle,
-      accountStatusAnonymous:
-          accountStatusAnonymous ?? this.accountStatusAnonymous,
       accountStatusAuthenticated:
           accountStatusAuthenticated ?? this.accountStatusAuthenticated,
-      createAccountButton: createAccountButton ?? this.createAccountButton,
       signOutButton: signOutButton ?? this.signOutButton,
     );
   }
