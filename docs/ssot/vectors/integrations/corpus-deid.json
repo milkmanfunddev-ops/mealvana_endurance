@@ -1,0 +1,309 @@
+{
+ "section": "corpus-deid",
+ "engine": "corpus scrubber (server-side, to be built)",
+ "specVersion": "de-id standard + Q8 + DEFAULT-DENY amendment w/ KEEP-ENUM allowlist (Xuan, 2026-09-20, samples-leak arbitration)",
+ "note": "EXPECTED-RED: no scrubber exists. Property vectors (fuzz is random, so expected values are CONSTRAINTS, not literals): droppedKeys absent from output; keptKeySetVerbatim equals the output key set; nullStaysNull keys are null in output (never invented values); scalarsMustDiffer keys carry a value of the SAME TYPE that differs from input; textPlaceholder keys are neutral placeholders; idsReplacedLinksPreserved keys carry synthetic ids with referential equality preserved (parentSummaryId of a child == summaryId of its scrubbed parent); timestampPairOffsetsSeconds hold exactly after the epoch shift; arrayCardinalityVerbatim lengths hold with fuzzed element values. AMENDED (ruled A): the scrubber is DEFAULT-DENY on content — `unclassifiedNotVerbatim` keys must not survive verbatim (numbers differ, strings/booleans/other placeholdered; an unclassified boolean's placeholder is the fixed constant false, type preserved); `allowlistVerbatim` (the ruled KEEP-ENUM list, by name) survives verbatim; `mustNotContainAnywhere` strings must be absent from the entire serialized output. AthleteId is census-DROP (identifier row), never fuzz. Harness: property-assert arm over the scrubber.",
+ "vectors": [
+  {
+   "id": "garmin-activity-full-scrub",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "summaryId": "g-123",
+     "parentSummaryId": "g-100",
+     "userId": "u-9",
+     "deviceName": "Forerunner",
+     "activityName": "Morning Run",
+     "startLatitude": 33.51,
+     "startLongitude": -86.8,
+     "startTimeInSeconds": 1789000000,
+     "endTimeInSeconds": 1789003600,
+     "averageHeartRateInBeatsPerMinute": 152,
+     "activeKilocalories": 435,
+     "samples": [
+      {
+       "hr": 150
+      },
+      {
+       "hr": 151
+      },
+      {
+       "hr": 149
+      }
+     ]
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [
+     "deviceName",
+     "startLatitude",
+     "startLongitude",
+     "userId"
+    ],
+    "keptKeySetVerbatim": [
+     "activeKilocalories",
+     "activityName",
+     "averageHeartRateInBeatsPerMinute",
+     "endTimeInSeconds",
+     "parentSummaryId",
+     "samples",
+     "startTimeInSeconds",
+     "summaryId"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [
+     "activeKilocalories",
+     "averageHeartRateInBeatsPerMinute"
+    ],
+    "textPlaceholder": [
+     "activityName"
+    ],
+    "idsReplacedLinksPreserved": [
+     "parentSummaryId",
+     "summaryId"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "samples"
+    ],
+    "timestampPairOffsetsSeconds": [
+     {
+      "between": [
+       "endTimeInSeconds",
+       "startTimeInSeconds"
+      ],
+      "offsetSeconds": -3600
+     }
+    ],
+    "arrayCardinalityVerbatim": {
+     "samples": 3
+    }
+   },
+   "why": "the ruled table end-to-end: GPS+user/device DROPPED; HR/kcal FUZZED (type kept); name PLACEHOLDER; ids REPLACED with parent-child link preserved; start/end offset 3600s preserved post-shift; samples length 3 kept, values fuzzed"
+  },
+  {
+   "id": "tp-planned-premium-scrub",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "Id": 3959342191,
+     "Title": "QA zone probe",
+     "Description": null,
+     "IFPlanned": 0.85,
+     "TssPlanned": 67.7,
+     "TotalTimePlanned": 0.8563,
+     "WorkoutDay": 1789000000,
+     "LastModifiedDate": 1789000600
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [],
+    "keptKeySetVerbatim": [
+     "Description",
+     "IFPlanned",
+     "Id",
+     "LastModifiedDate",
+     "Title",
+     "TotalTimePlanned",
+     "TssPlanned",
+     "WorkoutDay"
+    ],
+    "nullStaysNull": [
+     "Description"
+    ],
+    "scalarsMustDiffer": [
+     "IFPlanned",
+     "TssPlanned"
+    ],
+    "textPlaceholder": [
+     "Description",
+     "Title"
+    ],
+    "idsReplacedLinksPreserved": [
+     "Id"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "TotalTimePlanned"
+    ],
+    "timestampPairOffsetsSeconds": [
+     {
+      "between": [
+       "LastModifiedDate",
+       "WorkoutDay"
+      ],
+      "offsetSeconds": -600
+     }
+    ]
+   },
+   "why": "populated load values fuzz (differ, stay float); Description null STAYS null (null-pattern verbatim); WorkoutDay/LastModifiedDate shift preserving the 600s offset; Id replaced synthetically"
+  },
+  {
+   "id": "leaked-shape-default-deny-regression",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "Id": 3951921247,
+     "AthleteId": 6626647,
+     "Title": "Corpus Tempo Run",
+     "WorkoutType": "Run",
+     "Completed": false,
+     "TssCalculationMethod": "TrainingPeaks",
+     "Url": "https://bnc.lt/x?user=6626647&athlete=6626647&workout=3951921247&env=uat",
+     "DistancePlanned": 8046.7,
+     "VelocityPlanned": 2.98,
+     "IFPlanned": 0.8,
+     "TssPlanned": 55.0
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [
+     "AthleteId"
+    ],
+    "keptKeySetVerbatim": [
+     "Completed",
+     "DistancePlanned",
+     "IFPlanned",
+     "Id",
+     "Title",
+     "TssCalculationMethod",
+     "TssPlanned",
+     "Url",
+     "VelocityPlanned",
+     "WorkoutType"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [
+     "IFPlanned",
+     "TssPlanned"
+    ],
+    "textPlaceholder": [
+     "Title"
+    ],
+    "idsReplacedLinksPreserved": [
+     "Id"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [
+     "Completed",
+     "TssCalculationMethod",
+     "WorkoutType"
+    ],
+    "unclassifiedNotVerbatim": [
+     "DistancePlanned",
+     "Url",
+     "VelocityPlanned"
+    ],
+    "mustNotContainAnywhere": [
+     "6626647",
+     "3951921247",
+     "bnc.lt",
+     "user=",
+     "athlete="
+    ]
+   },
+   "why": "the 2026-09-20 leak, as a permanent vector: AthleteId is identifier-shaped -> dropped; Url is an unclassified string -> placeholdered (no account params survive); DistancePlanned/VelocityPlanned unclassified numerics -> must differ; WorkoutType/Completed/TssCalculationMethod on the ruled KEEP-ENUM allowlist -> verbatim"
+  },
+  {
+   "id": "garmin-real-gps-keynames-dropped-at-depth",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "summaryId": "g-9",
+     "startingLatitudeInDegree": 33.51,
+     "startingLongitudeInDegree": -86.8,
+     "startTimeInSeconds": 1789000000,
+     "averageHeartRateInBeatsPerMinute": 150,
+     "samples": [
+      {
+       "heartRate": 150,
+       "latitudeInDegree": 33.511,
+       "longitudeInDegree": -86.801
+      },
+      {
+       "heartRate": 151,
+       "latitudeInDegree": 33.512,
+       "longitudeInDegree": -86.802
+      }
+     ]
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [
+     "startingLatitudeInDegree",
+     "startingLongitudeInDegree"
+    ],
+    "keptKeySetVerbatim": [
+     "averageHeartRateInBeatsPerMinute",
+     "samples",
+     "startTimeInSeconds",
+     "summaryId"
+    ],
+    "nullStaysNull": [],
+    "scalarsMustDiffer": [
+     "averageHeartRateInBeatsPerMinute"
+    ],
+    "textPlaceholder": [],
+    "idsReplacedLinksPreserved": [
+     "summaryId"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": [
+     "samples"
+    ],
+    "arrayCardinalityVerbatim": {
+     "samples": 2
+    },
+    "gpsDroppedAtAnyDepth": [
+     "samples[].latitudeInDegree",
+     "samples[].longitudeInDegree"
+    ]
+   },
+   "why": "the 2026-09-20 GPS-names defect as a permanent vector: Garmin's REAL key names (startingLatitudeInDegree, nested latitudeInDegree) are GPS by WORD-SHAPE and DROP ENTIRELY at any depth — never fuzzed (a jittered coordinate still points at a region; the ruled row says removed, not fuzzed); array cardinality of samples survives with GPS members gone"
+  },
+  {
+   "id": "tp-basic-nulls-never-invented",
+   "status": "ratified",
+   "inputs": {
+    "rawPayload": {
+     "Id": 1,
+     "Title": "t",
+     "IFPlanned": null,
+     "TssPlanned": null
+    },
+    "provenance": "hand-authored, spec-realistic (property-check input, not a shape claim — DI-13c)"
+   },
+   "expected": {
+    "droppedKeys": [],
+    "keptKeySetVerbatim": [
+     "IFPlanned",
+     "Id",
+     "Title",
+     "TssPlanned"
+    ],
+    "nullStaysNull": [
+     "IFPlanned",
+     "TssPlanned"
+    ],
+    "scalarsMustDiffer": [],
+    "textPlaceholder": [
+     "Title"
+    ],
+    "idsReplacedLinksPreserved": [
+     "Id"
+    ],
+    "timestampOffsetsPreserved": true,
+    "allowlistVerbatim": [],
+    "unclassifiedNotVerbatim": []
+   },
+   "why": "the DI-13 twin inside de-id: a basic payload's null load keys stay null — a scrubber that fuzzes a null INVENTS data and breaks the shape (null-pattern is structure)"
+  }
+ ]
+}

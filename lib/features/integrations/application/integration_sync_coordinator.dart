@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +14,7 @@ import '../../events/presentation/providers/events_controller.dart'
 import '../presentation/providers/connect_training_controller.dart';
 import 'final_surge_sync_service.dart';
 import 'provider_event_import_service.dart';
+import 'raw_retention_dead_man_check.dart';
 import 'training_peaks_transformer.dart';
 import '../presentation/providers/integrations_providers.dart';
 
@@ -77,6 +80,19 @@ class IntegrationSyncCoordinator extends _$IntegrationSyncCoordinator {
       final didSync = await _syncProviderIfStale(userId, provider);
       if (didSync) anySynced = true;
     }
+
+    // Dead-man clause (real-payload-corpus@v1, L-7 item 4): the sweep's own
+    // alerting dies with its scheduler, so sweep freshness is watched from
+    // here — the one place guaranteed to run while any athlete still syncs.
+    // Fire-and-forget and best-effort END TO END: even failing to wire the
+    // check (a container without app config, e.g. tests) must never fail a
+    // sync.
+    try {
+      unawaited(ref.read(rawRetentionDeadManCheckProvider).checkDuringSync());
+    } catch (_) {
+      // best-effort by contract
+    }
+
     return anySynced;
   }
 

@@ -42,6 +42,9 @@ import type {
   GarminGenericWellnessSummary,
   GarminPushNotification,
 } from "../_shared/garmin/types.ts";
+import {
+  prepareDetailForCapture,
+} from "../_shared/garmin/sample_capture.ts";
 
 const GARMIN_CLIENT_ID = Deno.env.get("GARMIN_CLIENT_ID") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
@@ -271,14 +274,18 @@ async function mirrorGarminBodyCompToUser(
 async function logInboundGarminPayload(
   // deno-lint-ignore no-explicit-any
   supabase: any,
-  kind: "activity" | "activity_detail",
+  kind: "activity" | "activity_detail" | "activity_detail_full",
   garminUserId: string | null | undefined,
   userId: string | null,
   summaryId: string | null | undefined,
   payload: unknown,
 ): Promise<void> {
   try {
-    const prefix = kind === "activity" ? "act" : "actdet";
+    const prefix = kind === "activity"
+      ? "act"
+      : kind === "activity_detail"
+      ? "actdet"
+      : "actdetfull";
     const key = summaryId
       ? `${prefix}:${summaryId}`
       : `${prefix}:nosummary:${garminUserId ?? "unknown"}:${
@@ -291,7 +298,11 @@ async function logInboundGarminPayload(
         user_id: userId,
         garmin_user_id: garminUserId ?? null,
         summary_id: key,
-        data_type: kind === "activity" ? "activity_raw" : "activity_detail_raw",
+        data_type: kind === "activity"
+          ? "activity_raw"
+          : kind === "activity_detail"
+          ? "activity_detail_raw"
+          : "activity_detail_full",
         calendar_date: new Date().toISOString().slice(0, 10),
         data: payload,
       }, { onConflict: "summary_id", ignoreDuplicates: true });
@@ -747,6 +758,41 @@ async function processPushBody(body: GarminPushNotification): Promise<void> {
               : null,
             detail.summary,
           );
+
+          // DI-25 (L-7 item 3): the FULL detail, samples included, under the
+          // 90-day TTL. GPS is stripped at ingest and the byte cap enforced
+          // BEFORE the write (Xuan ruling B + recon W7) — route-level
+          // location never rests here, not even transiently-committed.
+          try {
+            const prepared = prepareDetailForCapture(detail);
+            if (prepared.samplesDropped) {
+              console.warn(
+                `[garmin-push] sample stream elided (over cap): ` +
+                  `summaryId=${detail.summary?.summaryId ?? "none"} ` +
+                  `samples=${prepared.sampleCount} bytes=${prepared.bytes}`,
+              );
+            }
+            await logInboundGarminPayload(
+              supabase,
+              "activity_detail_full",
+              detail.userId,
+              mapping?.user_id ?? null,
+              detail.summary?.summaryId != null
+                ? String(detail.summary.summaryId)
+                : null,
+              prepared.payload,
+            );
+          } catch (capErr) {
+            // Capture is a diagnostic side-channel on the path whose
+            // documented failure mode is losing activities silently. It must
+            // never be the reason an activity does not land, so its failure
+            // is logged and swallowed here rather than left to the enclosing
+            // per-detail catch, which would skip the rest of this detail.
+            console.warn(
+              "[garmin-push] full-detail capture failed (non-fatal):",
+              capErr,
+            );
+          }
 
           if (!mapping) {
             console.warn(

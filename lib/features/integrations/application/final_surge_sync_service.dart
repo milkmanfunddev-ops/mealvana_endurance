@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:mealvana_endurance/features/integrations/domain/integration_exceptions.dart';
 
@@ -8,6 +10,7 @@ import '../../../shared/services/analytics/analytics_tracker.dart';
 import 'synced_workout_analytics.dart';
 import '../data/final_surge_api_client.dart';
 import '../data/integrations_repository.dart';
+import '../data/provider_raw_payloads_repository.dart';
 import '../domain/integration.dart';
 import '../domain/sync_change_result.dart';
 import 'change_detection_service.dart';
@@ -39,12 +42,14 @@ class FinalSurgeSyncService {
     required FinalSurgeTransformer transformer,
     required ChangeDetectionService changeDetectionService,
     AnalyticsTracker? analytics,
+    ProviderRawPayloadsRepository? rawPayloadsRepository,
   }) : _analytics = analytics,
        _apiClient = apiClient,
        _integrationsRepository = integrationsRepository,
        _activitiesRepository = activitiesRepository,
        _transformer = transformer,
-       _changeDetectionService = changeDetectionService;
+       _changeDetectionService = changeDetectionService,
+       _rawPayloadsRepository = rawPayloadsRepository;
 
   final FinalSurgeApiClient _apiClient;
   final IntegrationsRepository _integrationsRepository;
@@ -52,6 +57,27 @@ class FinalSurgeSyncService {
   final FinalSurgeTransformer _transformer;
   final ChangeDetectionService _changeDetectionService;
   final AnalyticsTracker? _analytics;
+  final ProviderRawPayloadsRepository? _rawPayloadsRepository;
+
+  /// Raw-payload capture (real-payload-corpus@v1, lifecycle.md L-7):
+  /// non-blocking offer of the fetched list to `provider_raw_payloads`.
+  /// FS objects carry no last-modified concept on the wire we have observed,
+  /// so identity is (WorkoutKey, '') — one stored version per workout.
+  void _captureRawPayloads(
+    String userId,
+    List<Map<String, dynamic>> workoutsJson,
+  ) {
+    final repo = _rawPayloadsRepository;
+    if (repo == null || workoutsJson.isEmpty) return;
+    unawaited(
+      repo.uploadRawPayloads(
+        userId: userId,
+        provider: 'final_surge',
+        payloads: workoutsJson,
+        idOf: (w) => w['WorkoutKey']?.toString(),
+      ),
+    );
+  }
 
   void _trackSyncedWorkoutPlanned(Activity activity) =>
       trackSyncedWorkoutPlanned(_analytics, activity, provider: 'final_surge');
@@ -201,6 +227,8 @@ class FinalSurgeSyncService {
       if (kDebugMode) {
         print('   Fetched ${dedupedWorkouts.length} workouts from Final Surge');
       }
+
+      _captureRawPayloads(userId, dedupedWorkouts);
 
       // 4. Transform workouts to Activity objects
       // For workouts with structured data, fetch and pass it to the transformer
@@ -535,6 +563,8 @@ class FinalSurgeSyncService {
           response.errorMessage ?? 'Failed to fetch workouts',
         );
       }
+
+      _captureRawPayloads(userId, response.workouts);
 
       // Transform workouts to Activity objects (with structured data if available)
       final remoteActivities = <Activity>[];

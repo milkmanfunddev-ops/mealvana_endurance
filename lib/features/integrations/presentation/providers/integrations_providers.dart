@@ -10,10 +10,12 @@ import '../../../../shared/services/app_config.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../application/change_detection_service.dart';
 import '../../../../shared/services/app_external_deps.dart';
+import '../../../../shared/services/sentry/sentry_reporter.dart';
 import '../../application/final_surge_oauth_service.dart';
 import '../../application/final_surge_sync_service.dart';
 import '../../application/final_surge_transformer.dart';
 import '../../application/garmin_oauth_service.dart';
+import '../../application/raw_retention_dead_man_check.dart';
 import '../../application/runna_ics_parser.dart';
 import '../../application/runna_sync_service.dart';
 import '../../application/runna_transformer.dart';
@@ -25,6 +27,7 @@ import '../../application/vdot_sync_service.dart';
 import '../../application/vdot_transformer.dart';
 import '../../data/final_surge_api_client.dart';
 import '../../data/integrations_repository.dart';
+import '../../data/provider_raw_payloads_repository.dart';
 import '../../data/runna_ics_client.dart';
 import '../../data/training_peaks_api_client.dart';
 import '../../data/vdot_api_client.dart';
@@ -192,6 +195,25 @@ FinalSurgeTransformer finalSurgeTransformer(Ref ref) {
   return const FinalSurgeTransformer();
 }
 
+/// Repository for the raw FS/TP payload capture side-channel
+/// (real-payload-corpus@v1, lifecycle.md L-7).
+@Riverpod(keepAlive: true)
+ProviderRawPayloadsRepository providerRawPayloadsRepository(Ref ref) {
+  return ProviderRawPayloadsRepository(
+    supabase: ref.read(appExternalDepsProvider).supabaseClient,
+  );
+}
+
+/// Dead-man watch on the raw-retention sweep's audit freshness (L-7 item 4).
+/// keepAlive so its once-per-interval throttle survives across syncs.
+@Riverpod(keepAlive: true)
+RawRetentionDeadManCheck rawRetentionDeadManCheck(Ref ref) {
+  return RawRetentionDeadManCheck(
+    supabase: ref.read(appExternalDepsProvider).supabaseClient,
+    sentry: ref.read(sentryReporterProvider),
+  );
+}
+
 /// Provider for Final Surge sync service
 @Riverpod(keepAlive: true)
 FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
@@ -208,6 +230,7 @@ FinalSurgeSyncService finalSurgeSyncService(Ref ref) {
     transformer: transformer,
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
+    rawPayloadsRepository: ref.watch(providerRawPayloadsRepositoryProvider),
   );
 }
 
@@ -293,6 +316,7 @@ Future<TrainingPeaksSyncService> trainingPeaksSyncService(Ref ref) async {
     transformer: transformer,
     changeDetectionService: changeDetectionService,
     analytics: ref.watch(analyticsTrackerProvider),
+    rawPayloadsRepository: ref.watch(providerRawPayloadsRepositoryProvider),
   );
 }
 
