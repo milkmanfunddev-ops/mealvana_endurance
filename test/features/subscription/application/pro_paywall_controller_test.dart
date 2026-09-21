@@ -1,6 +1,9 @@
 /// Seam tests for [ProPaywallController] through the real notifier
 /// (docs/test/README.md: every controller write path gets one).
 ///
+/// `paywallPlans` reads RevenueCat's Current Offering (mp-453), fed the
+/// SDK-decoded offerings of `offerings_fixtures.dart`.
+///
 /// `buy` and `restore` are the two writes the paywall makes (ticket 19,
 /// mp-279/mp-280): both re-assert the RevenueCat identity, call the store,
 /// and refresh the one status provider the router reads.
@@ -19,6 +22,8 @@ import 'package:mealvana_endurance/features/subscription/data/subscription_servi
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
+
+import '../offerings_fixtures.dart';
 
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
@@ -107,6 +112,90 @@ void main() {
     addTearDown(c.dispose);
     return c;
   }
+
+  group('paywallPlans — the Current Offering (mp-453)', () {
+    setUp(() {
+      when(
+        () => service.introIneligibleProductIds(any()),
+      ).thenAnswer((_) async => const {});
+    });
+
+    test('with `default` current, the plans are the default packages at '
+        'their plain prices, nothing struck through', () async {
+      when(
+        () => service.fetchOfferings(),
+      ).thenAnswer((_) async => offeringsFixture(current: 'default'));
+      final plans = await container().read(paywallPlansProvider.future);
+
+      expect(plans.isFounding, isFalse);
+      expect(plans.monthly!.storeProduct.identifier, 'me_pro_monthly');
+      expect(plans.annual!.storeProduct.identifier, 'me_pro_annual');
+      expect(plans.monthly!.storeProduct.priceString, r'$24.99');
+      expect(plans.annual!.storeProduct.priceString, r'$199.99');
+      expect(plans.regularPriceFor(plans.monthly!), isNull);
+      expect(plans.regularPriceFor(plans.annual!), isNull);
+      expect(plans.introOfferFor(plans.monthly!)?.freeDays, 7);
+    });
+
+    test(
+      'with `founding` current, each plan is the founding package and '
+      'carries the `default` price of the same slot to strike through',
+      () async {
+        when(
+          () => service.fetchOfferings(),
+        ).thenAnswer((_) async => offeringsFixture(current: 'founding'));
+        final plans = await container().read(paywallPlansProvider.future);
+
+        expect(plans.isFounding, isTrue);
+        expect(
+          plans.monthly!.storeProduct.identifier,
+          'me_pro_monthly_founding',
+        );
+        expect(plans.annual!.storeProduct.identifier, 'me_pro_annual_founding');
+        expect(plans.monthly!.storeProduct.priceString, r'$12.49');
+        expect(plans.annual!.storeProduct.priceString, r'$99.99');
+        expect(plans.regularPriceFor(plans.monthly!), r'$24.99');
+        expect(plans.regularPriceFor(plans.annual!), r'$199.99');
+        expect(plans.introOfferFor(plans.annual!)?.freeDays, 7);
+      },
+    );
+
+    test('intro eligibility is asked for the packages actually sold', () async {
+      when(
+        () => service.fetchOfferings(),
+      ).thenAnswer((_) async => offeringsFixture(current: 'founding'));
+      when(
+        () => service.introIneligibleProductIds(any()),
+      ).thenAnswer((_) async => const {'me_pro_monthly_founding'});
+      final plans = await container().read(paywallPlansProvider.future);
+
+      verify(
+        () => service.introIneligibleProductIds([
+          'me_pro_monthly_founding',
+          'me_pro_annual_founding',
+        ]),
+      ).called(1);
+      expect(plans.introOfferFor(plans.monthly!), isNull);
+      expect(plans.introOfferFor(plans.annual!)?.freeDays, 7);
+    });
+
+    test('no offering marked current falls back to `default`', () async {
+      when(
+        () => service.fetchOfferings(),
+      ).thenAnswer((_) async => offeringsFixture(current: null));
+      final plans = await container().read(paywallPlansProvider.future);
+
+      expect(plans.isFounding, isFalse);
+      expect(plans.monthly!.storeProduct.identifier, 'me_pro_monthly');
+    });
+
+    test('no offerings at all is the empty plans', () async {
+      when(() => service.fetchOfferings()).thenAnswer((_) async => null);
+      final plans = await container().read(paywallPlansProvider.future);
+      expect(plans.isEmpty, isTrue);
+      expect(plans.isFounding, isFalse);
+    });
+  });
 
   group('buy', () {
     test('a confirmed purchase re-asserts the identity, refreshes the status '

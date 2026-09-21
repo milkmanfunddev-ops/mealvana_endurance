@@ -33,6 +33,14 @@ class ContentKeys {
   static const String paywallDeleteConfirmAction =
       'paywall.delete_confirm_action';
   static const String paywallCancel = 'paywall.cancel';
+  // Founding prices and the terms under the plans (mp-453 §2, §4).
+  static const String paywallFoundingLine = 'paywall.founding_line';
+  static const String paywallTrialTerms = 'paywall.trial_terms';
+  static const String paywallPlansTerms = 'paywall.plans_terms';
+  static const String paywallRenewalTerms = 'paywall.renewal_terms';
+  static const String paywallTermsLink = 'paywall.terms_link';
+  static const String paywallPrivacyLink = 'paywall.privacy_link';
+  static const String paywallLinkFailed = 'paywall.link_failed';
 
   // Post-onboarding account screen: the trial line (mp-279 terms).
   static const String postOnboardingTrialLine =

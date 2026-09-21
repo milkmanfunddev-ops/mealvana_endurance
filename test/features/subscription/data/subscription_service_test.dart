@@ -231,34 +231,26 @@ void main() {
     });
   });
 
-  group('fetchProOffering', () {
+  group('fetchOfferings', () {
     test('null offerings → null', () async {
       when(() => rc.getOfferings()).thenAnswer((_) async => null);
-      expect(await service.fetchProOffering(), isNull);
+      expect(await service.fetchOfferings(), isNull);
     });
 
-    test('prefers the `default` offering', () async {
+    test('hands back every offering with the current one marked', () async {
       final def = _FakeOffering('default');
-      final other = _FakeOffering('other');
-      when(() => rc.getOfferings()).thenAnswer(
-        (_) async => _FakeOfferings(
-          byId: {'default': def, 'other': other},
-          current: other,
-        ),
+      final founding = _FakeOffering('founding');
+      final offerings = _FakeOfferings(
+        byId: {'default': def, 'founding': founding},
+        current: founding,
       );
-      expect(await service.fetchProOffering(), same(def));
+      when(() => rc.getOfferings()).thenAnswer((_) async => offerings);
+      expect(await service.fetchOfferings(), same(offerings));
     });
 
-    test('falls back to `current` when `default` is missing', () async {
-      final cur = _FakeOffering('renamed');
-      when(() => rc.getOfferings()).thenAnswer(
-        (_) async => _FakeOfferings(byId: {'renamed': cur}, current: cur),
-      );
-      expect(await service.fetchProOffering(), same(cur));
-    });
-
-    test('kProOfferingId is `default` (matches the RevenueCat dashboard)', () {
+    test('offering ids match the RevenueCat dashboard', () {
       expect(kProOfferingId, 'default');
+      expect(kFoundingOfferingId, 'founding');
     });
   });
 }

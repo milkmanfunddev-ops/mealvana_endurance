@@ -38,21 +38,39 @@ enum ProPurchaseOutcome {
   failed,
 }
 
-/// The two plans the paywall offers, with the store's word on who still
-/// qualifies for the free week. Either package may be missing when the store
-/// served nothing; the screen renders its "plans unavailable" state then.
+/// The two plans the paywall offers, from RevenueCat's Current Offering
+/// (mp-453), with the store's word on who still qualifies for the free week.
+/// Either package may be missing when the store served nothing; the screen
+/// renders its "plans unavailable" state then.
+///
+/// While the `founding` offering is current, [regularMonthly] and
+/// [regularAnnual] carry the `default` offering's package in the same slot
+/// (`$rc_monthly` / `$rc_annual`), whose price the screen strikes through
+/// beside the founding one.
 class PaywallPlans {
   const PaywallPlans({
     this.monthly,
     this.annual,
     this.introIneligible = const {},
+    this.isFounding = false,
+    this.regularMonthly,
+    this.regularAnnual,
   });
 
+  /// The packages sold: the Current Offering's.
   final Package? monthly;
   final Package? annual;
 
   /// Product ids whose introductory offer this customer may not use again.
   final Set<String> introIneligible;
+
+  /// Whether the Current Offering is `founding`.
+  final bool isFounding;
+
+  /// The `default` offering's packages in the same slots, set only while
+  /// [isFounding].
+  final Package? regularMonthly;
+  final Package? regularAnnual;
 
   bool get isEmpty => monthly == null && annual == null;
 
@@ -62,17 +80,46 @@ class PaywallPlans {
     if (introIneligible.contains(pkg.storeProduct.identifier)) return null;
     return SubscriptionService.introOfferOf(pkg.storeProduct);
   }
+
+  /// The normal price to strike through beside [pkg]'s founding price, or
+  /// null when founding prices are not on, the `default` offering has no
+  /// package in that slot, or its price is not higher.
+  String? regularPriceFor(Package pkg) {
+    if (!isFounding) return null;
+    final regular = identical(pkg, monthly)
+        ? regularMonthly
+        : identical(pkg, annual)
+        ? regularAnnual
+        : null;
+    if (regular == null) return null;
+    if (regular.storeProduct.price <= pkg.storeProduct.price) return null;
+    return regular.storeProduct.priceString;
+  }
 }
 
-/// The `default` offering's monthly and annual packages plus intro
-/// eligibility, read once per paywall visit.
+Package? _monthlyOf(Offering? o) =>
+    o == null ? null : o.monthly ?? o.getPackage(r'$rc_monthly');
+
+Package? _annualOf(Offering? o) =>
+    o == null ? null : o.annual ?? o.getPackage(r'$rc_annual');
+
+/// The Current Offering's monthly and annual packages plus intro
+/// eligibility, read once per paywall visit. Falls back to `default` when no
+/// offering is marked current. Which offering is current is RevenueCat's
+/// call alone: 1 October to 30 November it is `founding`, with no release
+/// (mp-453).
 @riverpod
 Future<PaywallPlans> paywallPlans(Ref ref) async {
   final service = ref.read(subscriptionServiceProvider);
-  final offering = await service.fetchProOffering();
+  final offerings = await service.fetchOfferings();
+  if (offerings == null) return const PaywallPlans();
+  final regularOffering = offerings.getOffering(kProOfferingId);
+  final offering = offerings.current ?? regularOffering;
   if (offering == null) return const PaywallPlans();
-  final monthly = offering.monthly ?? offering.getPackage(r'$rc_monthly');
-  final annual = offering.annual ?? offering.getPackage(r'$rc_annual');
+
+  final monthly = _monthlyOf(offering);
+  final annual = _annualOf(offering);
+  final isFounding = offering.identifier == kFoundingOfferingId;
   final ids = [
     if (monthly != null) monthly.storeProduct.identifier,
     if (annual != null) annual.storeProduct.identifier,
@@ -82,6 +129,9 @@ Future<PaywallPlans> paywallPlans(Ref ref) async {
     monthly: monthly,
     annual: annual,
     introIneligible: ineligible,
+    isFounding: isFounding,
+    regularMonthly: isFounding ? _monthlyOf(regularOffering) : null,
+    regularAnnual: isFounding ? _annualOf(regularOffering) : null,
   );
 }
 
