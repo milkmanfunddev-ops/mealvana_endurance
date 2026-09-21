@@ -31,9 +31,9 @@ Two traps worth naming, both hit during this audit:
 
 ---
 
-## Client-invoked (19)
+## Client-invoked (18)
 
-`ai-coach` · `analyze-meal-photo` · `calculate-daily-macros` · `create-user` · `delete-user` ·
+`analyze-meal-photo` · `calculate-daily-macros` · `create-user` · `delete-user` ·
 `describe-meal` · `garmin-backfill` · `garmin-user-mapping` · `generate-macros-v4` ·
 `generate-nutrition-plan-v3` · `get-foods` · `get-weather-forecast` · `jade-chat` · `lookup-product` ·
 `search-catalog` · `search-nutrition-products` · `search-public-events` · `send-nutrition-plan-email` ·
@@ -101,4 +101,4 @@ Shared code: `supabase/functions/_shared/vana/` (also imported by `jade-chat` �
 | `jade-chat` | ≤1.23.x client | Now a thin alias of the Vana **general** chat (same route, envelope and credit debit); writes `vana_*` tables directly. Retire once `min_app_version` passes 1.24. |
 
 Secrets: `AI_GATEWAY_API_KEY` (existing), `PRO_GATE_ENABLED`, optional `VANA_CHAT_MODEL` / `VANA_TOOL_MODEL` /
-`VANA_EMBED_MODEL`. Telemetry: one `vana_calls` row per model call + `ai_usage`.
+`VANA_EMBED_MODEL` / `VANA_BACKGROUND_MODEL`. Telemetry: one `vana_calls` row per model call + `ai_usage`.

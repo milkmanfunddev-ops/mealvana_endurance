@@ -33,14 +33,6 @@ export const DESCRIBE_MEAL_MODEL: string =
 export const ANALYZE_MEAL_PHOTO_MODEL: string =
   Deno.env.get('ANALYZE_MEAL_PHOTO_MODEL') ?? 'anthropic/claude-sonnet-4.6';
 
-/**
- * Model for short, latency-sensitive copy — currently the Formula Kit
- * coach-insight one-liner (`ai-coach`). Also reverted from Haiku 4.5 to Sonnet
- * on 2026-07-30: the output is only ~15-28 words, but it is athlete-facing
- * coaching language where phrasing quality is the whole product.
- *
- * Override at deploy time with the COACH_INSIGHT_MODEL secret:
- *   supabase secrets set COACH_INSIGHT_MODEL=anthropic/claude-haiku-4.5 ...
- */
-export const COACH_INSIGHT_MODEL: string =
-  Deno.env.get('COACH_INSIGHT_MODEL') ?? 'anthropic/claude-sonnet-4.6';
+// `COACH_INSIGHT_MODEL` stood here for the Formula Kit coach-insight one-liner. The app stopped
+// calling it and the `ai-coach` route is gone with it (mp-465 clause 4), so the setting is gone too.
+// The `COACH_INSIGHT_MODEL` secret, if a project still has one, is now read by nothing.

@@ -21,7 +21,7 @@
 #     export SUPABASE_ANON_KEY=<anon-key>
 #   Everything else runs locally in Section 1.
 #   (Note: a bare grep for 'functions/v1' is NOT the rule — local fetch-stub
-#   tests like ai-coach/index.test.ts mention that path in comments.)
+#   tests like describe-meal/index.test.ts mention that path in comments.)
 #
 # Permissions: local tests all run with one safe superset —
 #   --allow-read --allow-write --allow-env --allow-sys --node-modules-dir=none

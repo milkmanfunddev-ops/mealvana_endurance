@@ -49,7 +49,6 @@ export const MONTHLY_ALLOWANCE = monthlyAllowance((key) => Deno.env.get(key));
 /** Per-action credit cost. User-facing credits, NOT raw LLM tokens — the real
  *  token cost is tracked separately in ai_usage. Tune freely. */
 const DEFAULT_COSTS: Record<string, number> = {
-  'ai-coach': 1,
   'describe-meal': 1,
   // 1, not 2. The token sheet tells the user "Each analysis costs 1 token",
   // and the pack economics are derived from one analysis per token — a photo
