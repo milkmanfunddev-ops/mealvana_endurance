@@ -668,6 +668,10 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
       VanaChatErrorKind.proRequired => content.getValue(
         ContentKeys.mpProRequired,
       ),
+      // Our gateway key, not the athlete's budget (mp-437).
+      VanaChatErrorKind.aiUnavailable => content.getValue(
+        ContentKeys.mpAiUnavailable,
+      ),
       _ => content.getValue(ContentKeys.mpServerError),
     };
     return Padding(

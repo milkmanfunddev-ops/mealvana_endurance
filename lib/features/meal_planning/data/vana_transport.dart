@@ -74,7 +74,8 @@ class VanaTransport {
   /// POST [body] to [functionName] and return the streamed NDJSON lines.
   ///
   /// Throws the `vana_exceptions.dart` types (and
-  /// [InsufficientCreditsException] on 402) before any line is emitted.
+  /// [InsufficientCreditsException] on 402, [VanaUnavailableException] when
+  /// the gateway refused us) before any line is emitted.
   Future<NdjsonResponse> streamNdjson(
     String functionName,
     Map<String, dynamic> body,
@@ -153,6 +154,13 @@ class VanaTransport {
     final map = json is Map<String, dynamic> ? json : const <String, dynamic>{};
     final error = map['error'];
     final errorCode = error is String ? error : null;
+
+    // The gateway refusing US is checked BEFORE the status, so it can never
+    // fall into the 402 arm and raise the top-up sheet: the athlete's wallet
+    // is not what ran out (mp-437).
+    if (errorCode == VanaUnavailableException.code) {
+      return const VanaUnavailableException();
+    }
 
     switch (statusCode) {
       case 401:

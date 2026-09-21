@@ -7,6 +7,7 @@
 ///          feature owns that type)
 ///   403 `pro_required` → [ProRequiredException]
 ///   429 `rate_limited` → [VanaRateLimitedException]
+///   any status with `{error:'ai_unavailable'}` → [VanaUnavailableException]
 ///   anything else non-2xx → [VanaServerException]
 ///   socket / DNS failure → [VanaOfflineException]
 ///
@@ -62,6 +63,27 @@ class VanaOfflineException extends VanaException {
 
   @override
   String toString() => 'VanaOfflineException: $cause';
+}
+
+/// The AI Gateway refused US, not the athlete: our key's monthly budget
+/// hard-stopped, or the key is missing / revoked / forbidden (mp-437).
+///
+/// The server sends `{error:'ai_unavailable'}` (503 on a unary call, `code`
+/// on the NDJSON error line). It is deliberately NOT a 402: the athlete's own
+/// budget is fine, so the top-up sheet would be a lie. The UI says "Vana is
+/// unavailable right now" (`ContentKeys.mpAiUnavailable`) and nothing else.
+///
+/// Recognised by its wire code rather than its status, so a gateway 402 that
+/// ever leaked through as our status could still never reach the top-up sheet.
+class VanaUnavailableException extends VanaException {
+  const VanaUnavailableException();
+
+  /// The wire code, one string shared with the server
+  /// (`supabase/functions/_shared/ai/gateway_error.ts`).
+  static const String code = 'ai_unavailable';
+
+  @override
+  String toString() => 'VanaUnavailableException($code)';
 }
 
 /// Any other non-2xx response (400 invalid_body, 500, …).
