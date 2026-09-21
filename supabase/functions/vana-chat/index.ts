@@ -9,6 +9,8 @@
  * Response: application/x-ndjson — see _shared/vana/stream.ts for the line protocol. Headers `x-conversation-id`,
  *   `x-vana-kind` are set before the first byte.
  * Pre-stream errors: 401 {error:'unauthenticated'} · 400 {error:'message_required'|'invalid_body'} ·
+ *   An empty message on a named conversation is `message_required` and nothing else happens: no model, no row
+ *   (mp-469). Only `opener: true` and `idle: true` may arrive without one.
  *   403 {error:'pro_required'} · 402 {error:'insufficient_credits', …} · 429 {error:'rate_limited', retry_after_seconds} ·
  *   503 {error:'ai_unavailable'} (the AI Gateway refused our key; mid-stream it is the error line's `code`).
  * Persistence: vana_conversations / vana_messages (content + parts + metadata), vana_calls + ai_usage per model call —
@@ -47,6 +49,11 @@ serve(withSentry(async (req: Request) => {
   try { body = (await req.json()) as ChatBody; } catch { return jsonResponse({ error: 'invalid_body' }, 400); }
   if (body.message != null && (typeof body.message !== 'string' || body.message.length > MAX_MESSAGE_LENGTH)) return jsonResponse({ error: 'invalid_body', details: `message must be a string of at most ${MAX_MESSAGE_LENGTH} characters` }, 400);
   if (body.kind != null && body.kind !== 'meal_planning' && body.kind !== 'general') return jsonResponse({ error: 'invalid_body', details: "kind must be 'meal_planning' or 'general'" }, 400);
+  // No free turn (mp-469 criterion 1). A request that names a conversation but says nothing is not a turn: only
+  // `opener: true` (the scripted first turn, a moment's included) and `idle: true` arrive without a message. Refused
+  // here, before the entitlement read, the credit check and any row; runChat guards the same case for jade-chat.
+  if (body.opener !== true && body.idle !== true && typeof body.conversation_id === 'string' && body.conversation_id.trim().length > 0
+      && (typeof body.message !== 'string' || body.message.trim().length === 0)) return jsonResponse({ error: 'message_required' }, 400);
 
   const pro = await requirePro(v.admin, v.userId);
   if (!pro.ok) return jsonResponse({ error: pro.reason }, 403);
