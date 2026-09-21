@@ -191,12 +191,21 @@ serve(withSentry(async (req) => {
     ),
     stratum: n.stratum,
     optionalKeysInStratum: n.optionalKeysInStratum,
-    exemplar: scrub(
-      n.exemplar,
-      censusFor(n.provider),
-      newScrubContext(),
-      keepEnumFor(n.provider),
-    ),
+    ...(() => {
+      // ONE context for the exemplar and its companions, so the synthetic
+      // ids resolve WITHIN the file — that is what makes the embedded set
+      // coherent rather than merely co-located.
+      const ctx = newScrubContext();
+      const census = censusFor(n.provider);
+      const keep = keepEnumFor(n.provider);
+      const exemplar = scrub(n.exemplar, census, ctx, keep);
+      const linkedCompanions = n.companions.map((c) =>
+        scrub(c, census, ctx, keep)
+      );
+      return linkedCompanions.length > 0
+        ? { exemplar, linkedCompanions }
+        : { exemplar };
+    })(),
   }));
 
   return new Response(
