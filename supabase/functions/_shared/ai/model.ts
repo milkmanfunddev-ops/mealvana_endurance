@@ -12,6 +12,12 @@
  *
  * `JADE_MODEL` is the old name for the same secret and is still honoured, so
  * a project that already has it set keeps working. Prefer AI_COACH_MODEL.
+ *
+ * NOTE (ai-cost ticket 14, 2026-09-21): nothing imports `AI_COACH_MODEL` any
+ * more. Jade's chat goes through `_shared/vana/chat.ts`, which reads
+ * `VANA_CHAT_MODEL`. It is left here rather than deleted because it is
+ * Jade-facing and mp-465 only approved removing the coach insight; deleting it
+ * is a separate call.
  */
 export const AI_COACH_MODEL: string =
   Deno.env.get('AI_COACH_MODEL') ??
