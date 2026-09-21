@@ -8,14 +8,20 @@ part of 'pro_paywall_controller.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// The `default` offering's monthly and annual packages plus intro
-/// eligibility, read once per paywall visit.
+/// The Current Offering's monthly and annual packages plus intro
+/// eligibility, read once per paywall visit. Falls back to `default` when no
+/// offering is marked current. Which offering is current is RevenueCat's
+/// call alone: 1 October to 30 November it is `founding`, with no release
+/// (mp-453).
 
 @ProviderFor(paywallPlans)
 const paywallPlansProvider = PaywallPlansProvider._();
 
-/// The `default` offering's monthly and annual packages plus intro
-/// eligibility, read once per paywall visit.
+/// The Current Offering's monthly and annual packages plus intro
+/// eligibility, read once per paywall visit. Falls back to `default` when no
+/// offering is marked current. Which offering is current is RevenueCat's
+/// call alone: 1 October to 30 November it is `founding`, with no release
+/// (mp-453).
 
 final class PaywallPlansProvider
     extends
@@ -25,8 +31,11 @@ final class PaywallPlansProvider
           FutureOr<PaywallPlans>
         >
     with $FutureModifier<PaywallPlans>, $FutureProvider<PaywallPlans> {
-  /// The `default` offering's monthly and annual packages plus intro
-  /// eligibility, read once per paywall visit.
+  /// The Current Offering's monthly and annual packages plus intro
+  /// eligibility, read once per paywall visit. Falls back to `default` when no
+  /// offering is marked current. Which offering is current is RevenueCat's
+  /// call alone: 1 October to 30 November it is `founding`, with no release
+  /// (mp-453).
   const PaywallPlansProvider._()
     : super(
         from: null,
@@ -53,7 +62,7 @@ final class PaywallPlansProvider
   }
 }
 
-String _$paywallPlansHash() => r'31a85e1e38d3abe4311c6dca793898d736801ff5';
+String _$paywallPlansHash() => r'08216f2ec4e7357081fcac58680f8d2805f2b2e3';
 
 /// Drives purchase, restore and "manage subscription" for the paywall.
 ///

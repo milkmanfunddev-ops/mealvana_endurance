@@ -8,10 +8,16 @@ import '../domain/entitlement.dart';
 
 part 'subscription_service.g.dart';
 
-/// The RevenueCat offering that carries the subscription packages
-/// (`$rc_monthly`, `$rc_annual`). Falls back to `Offerings.current` when the
-/// id is renamed.
+/// The RevenueCat offering that carries the normal prices (`$rc_monthly`,
+/// `$rc_annual`). The paywall sells whatever offering is current (mp-453);
+/// this one is the fallback when none is marked current and the source of
+/// the struck-through price while another offering is current.
 const String kProOfferingId = 'default';
+
+/// The offering made current from 1 October to 30 November: the founding
+/// prices, sold under the same package slots as [kProOfferingId] (mp-452,
+/// mp-453). Switching to it and back is a dashboard change, never a release.
+const String kFoundingOfferingId = 'founding';
 
 /// Where a subscriber manages the subscription when RevenueCat has no
 /// `managementURL` for them (no purchase on record yet, or the SDK is not
@@ -147,18 +153,16 @@ class SubscriptionService {
     Purchases.addCustomerInfoUpdateListener(listener);
   }
 
-  /// The offering that carries the subscription packages, or null when the
-  /// SDK is unavailable / the store served nothing.
-  Future<Offering?> fetchProOffering() async {
+  /// Every offering RevenueCat serves this customer, including which one is
+  /// current, or null when the SDK is unavailable / the fetch failed.
+  Future<Offerings?> fetchOfferings() async {
     final offerings = await _revenueCat.getOfferings();
     if (offerings == null) return null;
-    final offering = offerings.getOffering(kProOfferingId) ?? offerings.current;
-    if (offering == null) {
-      _crumb('pro offering missing', {
-        'available': offerings.all.keys.join(','),
-      });
-    }
-    return offering;
+    _crumb('offerings fetched', {
+      'current': offerings.current?.identifier,
+      'available': offerings.all.keys.join(','),
+    });
+    return offerings;
   }
 
   /// Product ids among [productIds] the store says are NOT eligible for
