@@ -534,8 +534,10 @@ class OAuthService extends _$OAuthService {
           data: {'data_migrated': dataMigrated},
         );
 
-        // Clear temp user ID after successful migration
-        if (tempUserId != null) {
+        // Clear the temp id only once its rows have moved. When nothing was
+        // migrated (a sessionless onboarding id, mp-459), the id stays for
+        // saveAllOnboardingData to re-key those rows onto the account.
+        if (tempUserId != null && dataMigrated) {
           await prefs.remove('onboarding_temp_user_id');
           _logger.info(
             'Cleared onboarding temp user ID after Apple sign-in',
@@ -720,8 +722,10 @@ class OAuthService extends _$OAuthService {
           data: {'data_migrated': dataMigrated},
         );
 
-        // Clear temp user ID after successful migration
-        if (tempUserId != null) {
+        // Clear the temp id only once its rows have moved. When nothing was
+        // migrated (a sessionless onboarding id, mp-459), the id stays for
+        // saveAllOnboardingData to re-key those rows onto the account.
+        if (tempUserId != null && dataMigrated) {
           await prefs.remove('onboarding_temp_user_id');
           _logger.info(
             'Cleared onboarding temp user ID after Google sign-in',

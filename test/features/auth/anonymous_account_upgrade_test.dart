@@ -219,10 +219,7 @@ class _NoCacheOnboardingController extends OnboardingController {
   Map<String, dynamic>? get cachedUserProfileData => null;
 
   @override
-  Future<bool> saveAllOnboardingData({
-    String authProvider = 'anonymous',
-    bool isAnonymous = true,
-  }) async {
+  Future<bool> saveAllOnboardingData({required String authProvider}) async {
     saveCalls++;
     return false; // what the real controller does with a null cache
   }

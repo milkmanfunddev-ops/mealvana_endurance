@@ -11,9 +11,9 @@
 
 **Touches:** lib/features/onboarding/presentation/screens/welcome_screen.dart, lib/features/onboarding/application/onboarding_service.dart, lib/features/onboarding/presentation/providers/onboarding_controller.dart, lib/features/auth/application, lib/features/auth/presentation/screens/post_onboarding_auth_screen.dart, lib/features/settings/presentation/providers/settings_controller.dart, test/features/onboarding
 
-- [ ] A fresh install starts no anonymous session (test through the real onboarding controller).
-- [ ] Answers given before sign-up are on the account after it (seam test).
-- [ ] The removed anonymous paths are moved to an archive, not deleted.
-- [ ] Walked on the dev simulator from a fresh install to the paywall.
+- [x] A fresh install starts no anonymous session (test through the real onboarding controller).
+- [x] Answers given before sign-up are on the account after it (seam test).
+- [x] The removed anonymous paths are moved to an archive, not deleted.
+- [x] Walked on the dev simulator from a fresh install to the paywall.
 
 Next: /implement-lee paywall

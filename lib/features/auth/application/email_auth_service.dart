@@ -690,8 +690,10 @@ class EmailAuthService extends _$EmailAuthService {
         preservedUserId: false, // ID changed during sign-in
       );
 
-      // Clear temp user ID after successful migration
-      if (tempUserId != null) {
+      // Clear the temp id only once its rows have moved. When nothing was
+      // migrated (a sessionless onboarding id, mp-459), the id stays for
+      // saveAllOnboardingData to re-key those rows onto the account.
+      if (tempUserId != null && dataMigrated) {
         await prefs.remove('onboarding_temp_user_id');
         _logger.info(
           'Cleared onboarding temp user ID after sign-in migration',

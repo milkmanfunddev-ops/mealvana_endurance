@@ -10,8 +10,8 @@ import '../theme/onboarding_design_tokens.dart';
 /// Welcome Screen (splash) — pixel port of the onboarding HTML spec
 /// (../prototypes/onboarding/index.html). Every value below is the
 /// prototype's own CSS value; do not harmonize with the app theme.
-/// Controller wiring (fresh anonymous session, consent routing, funnel
-/// start mark) is unchanged from the pre-redesign screen.
+/// Get Started marks the funnel start and routes into onboarding (through
+/// the consent step in strict regions); it starts no session (mp-459).
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key, this.onContinue});
 
@@ -224,25 +224,17 @@ class WelcomeScreen extends ConsumerWidget {
     final callback = onContinue;
     final navigator = GoRouter.of(context);
 
-    // CRITICAL: Create a fresh start for onboarding
-    // 1. Sign out any existing session to ensure we start fresh
-    // 2. Create new anonymous session for this onboarding flow
-    // 3. Clear any temp user ID from previous attempts
-    final supabase = externalDeps.supabaseClient;
-
+    // No session is started here (mp-459): the answers wait on the phone in
+    // the onboarding draft and are written once the account exists. The only
+    // reset is the connect step's temp id from an earlier abandoned attempt,
+    // so a fresh run cannot inherit that attempt's integration rows. The
+    // pre-paywall version signed out and opened an anonymous session at this
+    // point; see lib/features/_archived/anonymous_session/.
     try {
-      // Sign out existing session (if any) to start completely fresh
-      await supabase.auth.signOut();
-
-      // Create new anonymous session for onboarding
-      await supabase.auth.signInAnonymously();
-
-      // Clear temp user ID from any previous onboarding attempts
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('onboarding_temp_user_id');
     } catch (e) {
-      // Log but continue - onboarding flow will handle auth if needed
-      debugPrint('[WELCOME] Error creating fresh session: $e');
+      debugPrint('[WELCOME] Could not clear the temp onboarding id: $e');
     }
 
     // Use callback if provided (PageView mode), otherwise navigate (standalone mode)
@@ -255,9 +247,6 @@ class WelcomeScreen extends ConsumerWidget {
     // first, as the opening step of onboarding. Everyone else goes straight in
     // and never sees it — they get disclosure plus the Settings → Privacy
     // opt-out instead. `needsPrompt` already encodes that regional rule.
-    //
-    // The anonymous session created above is deliberately NOT gated on this:
-    // it is how the app functions at all (contract performance), not analytics.
     final consent = ref.read(analyticsConsentProvider);
     navigator.push(
       consent.needsPrompt ? '/privacy-consent?next=/onboarding' : '/onboarding',

@@ -7,7 +7,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../../../shared/services/app_external_deps.dart';
-import '../../../../shared/services/auth/auth_listener_service.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../../../shared/services/sync/sync_coordinator.dart';
 import '../../../content/application/content_service.dart';
@@ -35,9 +34,15 @@ import '../../../coach_mode/application/coach_service.dart';
 /// Email/Password; the one line under the title states the trial terms so
 /// the plan screen that follows is expected, not a surprise.
 /// Visual language matches the redesigned onboarding steps (dark blackberry
-/// scaffold, Sansita/orange title); controller wiring (credential linking,
-/// saveAllOnboardingData, background upload, Settings anon→upgrade branch)
-/// is unchanged from the pre-redesign screen.
+/// scaffold, Sansita/orange title).
+///
+/// Sign-up creates the account first and writes the waiting onboarding
+/// draft to it (mp-459); the screen never starts a session. The one place
+/// it still meets an anonymous user is an install left anonymous from
+/// before the paywall (mp-455): that user is linked onto, never replaced,
+/// so its data survives. The pre-paywall wiring that opened an anonymous
+/// session to link against is kept in
+/// lib/features/_archived/anonymous_session/.
 class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
   const PostOnboardingAuthScreen({super.key, this.mode = 'signup'});
 
@@ -66,35 +71,29 @@ class _PostOnboardingAuthScreenState
         );
   }
 
+  /// Whether sign-up must link onto an anonymous user already on this
+  /// install (mp-455: an install left anonymous from before the paywall).
+  /// Linking keeps the uid, so everything synced under it survives. A fresh
+  /// install has no session at all and signs in outright.
+  bool get _linksOldAnonymousInstall {
+    final currentUser = ref
+        .read(appExternalDepsProvider)
+        .supabaseClient
+        .auth
+        .currentUser;
+    return currentUser != null && currentUser.isAnonymous;
+  }
+
   Future<void> _handleAppleSignIn() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
-    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final authListenerService = ref.read(authListenerServiceProvider);
+    final linksOldInstall = !isLogin && _linksOldAnonymousInstall;
 
-    if (!isLogin) {
-      // For signup mode, we LINK to the existing anonymous session to preserve onboarding data.
-      // If we don't have an anonymous session (unexpected), create one to link against.
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null || !currentUser.isAnonymous) {
-        // Preserve cached onboarding data while resetting the auth session.
-        authListenerService.markOnboardingSignOut();
-        await supabase.auth.signOut();
-        final response = await supabase.auth.signInAnonymously();
-        if (response.user == null) {
-          if (mounted) {
-            _handleError(context, 'Apple');
-          }
-          return;
-        }
-      }
-    }
-
-    // Signup mode: link to anonymous user (throws AccountAlreadyExistsException if provider exists)
-    // Login mode: sign in to existing account (or create if none exists)
-    final bool success = isLogin
-        ? await controller.signInWithApple()
-        : await controller.linkAppleAccount();
+    // Link (throws AccountAlreadyExistsException if the provider is taken)
+    // or sign in: the sign-in creates the account when none exists.
+    final bool success = linksOldInstall
+        ? await controller.linkAppleAccount()
+        : await controller.signInWithApple();
 
     if (!mounted) return;
 
@@ -103,15 +102,14 @@ class _PostOnboardingAuthScreenState
       // The browser will reload the app after the user authenticates.
       if (kIsWeb) return;
 
-      // Login mode: Navigate directly (no onboarding data to save)
-      // Signup mode: Save cached onboarding data before navigating
       if (isLogin) {
         await _navigateToMain();
+      } else if (linksOldInstall) {
+        await _saveOnboardingDataAndNavigate(authProvider: 'apple');
       } else {
-        await _saveOnboardingDataAndNavigate(
-          authProvider: 'apple',
-          isAnonymous: false,
-        );
+        // A new account takes the waiting draft; an existing, set-up account
+        // keeps its own settings.
+        await _finishLoginPreservingDraft(authProvider: 'apple');
       }
     } else {
       _handleError(context, 'Apple');
@@ -121,32 +119,13 @@ class _PostOnboardingAuthScreenState
   Future<void> _handleGoogleSignIn() async {
     final controller = ref.read(postOnboardingAuthControllerProvider.notifier);
     final isLogin = widget.mode == 'login';
-    final supabase = ref.read(appExternalDepsProvider).supabaseClient;
-    final authListenerService = ref.read(authListenerServiceProvider);
+    final linksOldInstall = !isLogin && _linksOldAnonymousInstall;
 
-    if (!isLogin) {
-      // For signup mode, we LINK to the existing anonymous session to preserve onboarding data.
-      // If we don't have an anonymous session (unexpected), create one to link against.
-      final currentUser = supabase.auth.currentUser;
-      if (currentUser == null || !currentUser.isAnonymous) {
-        // Preserve cached onboarding data while resetting the auth session.
-        authListenerService.markOnboardingSignOut();
-        await supabase.auth.signOut();
-        final response = await supabase.auth.signInAnonymously();
-        if (response.user == null) {
-          if (mounted) {
-            _handleError(context, 'Google');
-          }
-          return;
-        }
-      }
-    }
-
-    // Signup mode: link to anonymous user (throws AccountAlreadyExistsException if provider exists)
-    // Login mode: sign in to existing account (or create if none exists)
-    final bool success = isLogin
-        ? await controller.signInWithGoogle()
-        : await controller.linkGoogleAccount();
+    // Link (throws AccountAlreadyExistsException if the provider is taken)
+    // or sign in: the sign-in creates the account when none exists.
+    final bool success = linksOldInstall
+        ? await controller.linkGoogleAccount()
+        : await controller.signInWithGoogle();
 
     if (!mounted) return;
 
@@ -155,15 +134,14 @@ class _PostOnboardingAuthScreenState
       // The browser will reload the app after the user authenticates.
       if (kIsWeb) return;
 
-      // Login mode: Navigate directly (no onboarding data to save)
-      // Signup mode: Save cached onboarding data before navigating
       if (isLogin) {
         await _navigateToMain();
+      } else if (linksOldInstall) {
+        await _saveOnboardingDataAndNavigate(authProvider: 'google');
       } else {
-        await _saveOnboardingDataAndNavigate(
-          authProvider: 'google',
-          isAnonymous: false,
-        );
+        // A new account takes the waiting draft; an existing, set-up account
+        // keeps its own settings.
+        await _finishLoginPreservingDraft(authProvider: 'google');
       }
     } else {
       _handleError(context, 'Google');
@@ -327,10 +305,7 @@ class _PostOnboardingAuthScreenState
       if (existingUser == null || !existingUser.onboardingCompleted) {
         // Fresh or stub account: the just-completed onboarding is the best
         // data we have — persist it under the signed-in uid.
-        await _saveOnboardingDataAndNavigate(
-          authProvider: authProvider,
-          isAnonymous: false,
-        );
+        await _saveOnboardingDataAndNavigate(authProvider: authProvider);
         return;
       }
 
@@ -367,10 +342,7 @@ class _PostOnboardingAuthScreenState
         // Finish without discarding any onboarding draft still in memory.
         await _finishLoginPreservingDraft(authProvider: 'email');
       case EmailAuthKind.signup:
-        await _saveOnboardingDataAndNavigate(
-          authProvider: 'email',
-          isAnonymous: false,
-        );
+        await _saveOnboardingDataAndNavigate(authProvider: 'email');
     }
   }
 
@@ -423,13 +395,11 @@ class _PostOnboardingAuthScreenState
     context.go('/main');
   }
 
-  /// Save all cached onboarding data and navigate to main app
-  /// IMPORTANT: This now saves locally only and triggers background sync for Supabase upload
-  /// [authProvider] - 'anonymous', 'email', 'google', 'apple'
-  /// [isAnonymous] - false when user signs up with email/OAuth
+  /// Write the waiting onboarding draft to the signed-in account and move
+  /// on to the paywall. Saves locally, then uploads in the background.
+  /// [authProvider] - 'email', 'google', 'apple'
   Future<void> _saveOnboardingDataAndNavigate({
-    String authProvider = 'anonymous',
-    bool isAnonymous = true,
+    required String authProvider,
   }) async {
     final logger = ref.read(appExternalDepsProvider).logger;
     final onboardingController = ref.read(
@@ -492,13 +462,12 @@ class _PostOnboardingAuthScreenState
     logger.info(
       'Starting saveAllOnboardingData',
       context: 'NAV',
-      data: {'authProvider': authProvider, 'isAnonymous': isAnonymous},
+      data: {'authProvider': authProvider},
     );
 
     // Save all cached onboarding data (saves to Drift only, marks for background upload)
     final success = await onboardingController.saveAllOnboardingData(
       authProvider: authProvider,
-      isAnonymous: isAnonymous,
     );
 
     logger.info(
@@ -535,12 +504,9 @@ class _PostOnboardingAuthScreenState
       await ref.read(appGateProvider.notifier).settle();
       if (mounted) context.go(kOnboardingPaywallLocation);
 
-      // Push the onboarding data to Supabase in the background.
-      //
-      // This runs for EVERY user, including anonymous ones who skipped account
-      // creation (authProvider == 'anonymous') — as of the 2026-07-29 policy
-      // there is no local-only tier. Non-blocking so an offline or slow
-      // network never holds up the app; the rows stay dirty and retry.
+      // Push the onboarding data to Supabase in the background. Non-blocking
+      // so an offline or slow network never holds up the app; the rows stay
+      // dirty and retry.
       if (currentUser != null) {
         unawaited(
           _uploadOnboardingDataInBackground(

@@ -29,9 +29,7 @@ class OnboardingService {
     required bool runsWithWaterBottle,
     GutTraining? gutTraining,
     SweatRateCat? sweatRate,
-    String authProvider =
-        'anonymous', // 'anonymous', 'email', 'google', 'apple'
-    bool isAnonymous = true, // false when user signs up with email/OAuth
+    required String authProvider, // 'email', 'google', 'apple'
     String? firstName,
     String? lastName,
     String? email,
@@ -47,7 +45,6 @@ class OnboardingService {
       gutTraining: gutTraining,
       sweatRate: sweatRate,
       authProvider: authProvider,
-      isAnonymous: isAnonymous,
       firstName: firstName,
       lastName: lastName,
       email: email,

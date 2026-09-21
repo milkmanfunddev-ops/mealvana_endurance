@@ -32,8 +32,14 @@ class AuthService {
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
 
-  /// Create a new user profile during onboarding using Supabase Auth
-  /// Uses anonymous auth session created during app startup
+  /// Create a new user profile from the onboarding answers, under the
+  /// signed-in account's uid.
+  ///
+  /// The account must already exist (mp-459): onboarding answers wait on the
+  /// phone until sign-up and are written to the account then. There is no
+  /// anonymous fallback; with no session this throws and the caller keeps
+  /// the draft. The pre-paywall fallback that opened an anonymous session
+  /// here is kept in lib/features/_archived/anonymous_session/.
   ///
   /// IMPORTANT: Each new registration creates a completely fresh user profile.
   /// Multiple users can share the same device_id (family members, account switching).
@@ -49,27 +55,18 @@ class AuthService {
     SweatRateCat? sweatRate,
     UnitSystem unitSystem = UnitSystem.imperial,
     Map<String, FoodPreference>? foodPreferences,
-    String authProvider =
-        'anonymous', // 'anonymous', 'email', 'google', 'apple'
-    bool isAnonymous = true, // false when user signs up with email/OAuth
+    required String authProvider, // 'email', 'google', 'apple'
     String? firstName,
     String? lastName,
     String? email,
   }) async {
     try {
-      // Get or create Supabase auth session
-      // Session may not exist if user logged out and is starting fresh
-      var authUser = _supabase.auth.currentUser;
+      final authUser = _supabase.auth.currentUser;
       if (authUser == null) {
-        _logger.info(
-          'No auth session found, creating anonymous session for new user',
-          context: 'AUTH',
+        throw StateError(
+          'No signed-in account: onboarding answers are written only after '
+          'sign-up (mp-459)',
         );
-        final response = await _supabase.auth.signInAnonymously();
-        authUser = response.user;
-        if (authUser == null) {
-          throw Exception('Failed to create anonymous session');
-        }
       }
 
       // Get device ID for analytics and backwards compatibility
@@ -96,8 +93,10 @@ class AuthService {
         id: effectiveUserId, // Always use auth user ID for new registrations
         deviceId: deviceId, // Keep for analytics and backwards compatibility
         authUserId: authUser.id, // Supabase auth user ID
-        authProvider: authProvider, // 'anonymous', 'email', 'google', 'apple'
-        isAnonymous: isAnonymous, // false when user signs up with email/OAuth
+        authProvider: authProvider, // 'email', 'google', 'apple'
+        // An old install that links onto its anonymous user (mp-455) does so
+        // before this runs, so the row is never anonymous.
+        isAnonymous: false,
         gender: gender,
         birthday: birthday,
         heightFeet: heightFeet,

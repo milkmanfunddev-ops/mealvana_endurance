@@ -584,6 +584,29 @@ class AuthMigrationService {
           wasAnonymous &&
           !preservedUserId;
 
+      // A previous id with no profile row is not a user to merge: it is the
+      // sessionless temp id the connect step writes under before sign-up
+      // (mp-459, onboarding runs with no session). Its rows are re-keyed
+      // onto the account by saveAllOnboardingData, which needs the temp id
+      // left in prefs — so this reports nothing migrated and the callers
+      // keep the pref. Merging here used to return early on the missing
+      // profile while the caller cleared the pref, orphaning the rows.
+      if (needsMigration &&
+          await userRepository.getUserProfileById(previousUserId) == null) {
+        sentry.addBreadcrumb(
+          message: 'Auth complete - previous id has no profile, fresh login',
+          category: 'auth',
+          data: {
+            'scenario': 'temp_onboarding_id',
+            'from_user_id': previousUserId,
+            'to_user_id': newUserId,
+            'auth_provider': authProvider,
+          },
+        );
+        await _handleFreshLogin(newUserId, authProvider);
+        return false;
+      }
+
       if (needsMigration) {
         // SCENARIO 1: Sign-In with Migration (user ID changed)
         sentry.addBreadcrumb(

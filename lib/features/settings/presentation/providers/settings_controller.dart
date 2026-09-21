@@ -79,17 +79,9 @@ class SettingsController extends _$SettingsController {
       ContentKeys.settingsAccountSection,
       defaultValue: 'Account',
     );
-    final accountStatusAnonymous = _contentService.getValue(
-      ContentKeys.settingsAccountStatusAnonymous,
-      defaultValue: 'Not signed in',
-    );
     final accountStatusAuthenticated = _contentService.getValue(
       ContentKeys.settingsAccountStatusAuthenticated,
       defaultValue: 'Signed in',
-    );
-    final createAccountButton = _contentService.getValue(
-      ContentKeys.settingsCreateAccountButton,
-      defaultValue: 'Create Account',
     );
     final signOutButton = _contentService.getValue(
       ContentKeys.settingsSignOutButton,
@@ -204,7 +196,8 @@ class SettingsController extends _$SettingsController {
       final tpCss = zones?.cssSecondsPer100m;
       final ftpEmpty =
           displayProfile.ftpWatts == null || displayProfile.ftpWatts == 0;
-      final cssEmpty = displayProfile.cssPacePer100mSeconds == null ||
+      final cssEmpty =
+          displayProfile.cssPacePer100mSeconds == null ||
           displayProfile.cssPacePer100mSeconds == 0;
       if ((ftpEmpty && tpFtp != null) || (cssEmpty && tpCss != null)) {
         Future.microtask(() async {
@@ -227,9 +220,7 @@ class SettingsController extends _$SettingsController {
     return SettingsState(
       title: title,
       accountSectionTitle: accountSectionTitle,
-      accountStatusAnonymous: accountStatusAnonymous,
       accountStatusAuthenticated: accountStatusAuthenticated,
-      createAccountButton: createAccountButton,
       signOutButton: signOutButton,
       profileSectionTitle: profileSectionTitle,
       preferenceSectionTitle: preferenceSectionTitle,
@@ -875,7 +866,7 @@ class SettingsController extends _$SettingsController {
       // restored under the device's next user.
       await prefs.remove(OnboardingSnapshotService.prefsKey);
 
-      // Sign out to trigger auth state listener to create a new anonymous user
+      // Sign out so the auth listener rebuilds the UI signed out
       try {
         await supabaseClient.auth.signOut();
       } catch (e) {
