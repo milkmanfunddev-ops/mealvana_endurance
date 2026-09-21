@@ -20,6 +20,12 @@ import '../../../../shared/widgets/kyle_design/inputs/duration_pace_toggle.dart'
 
 part 'running_input_controller.g.dart';
 
+/// Placeholders shown for temperature / humidity until a forecast lands.
+/// Named so the schedule-change path and the per-activity reset (Q-CA2) cannot
+/// drift apart.
+const double _kDefaultTemperatureC = 20.0;
+const double _kDefaultHumidityPct = 60.0;
+
 /// Running-specific form state that persists during tab switches
 class RunningFormState {
   final String activityTitle;
@@ -77,8 +83,8 @@ class RunningFormState {
         150, // V3: default from recommendedHoursBefore (2.5h for moderate running)
     this.gutTraining = GutTraining.moderate,
     this.sweatRate = SweatRateCat.medium,
-    this.temperatureC = 20.0,
-    this.humidityPct = 60.0,
+    this.temperatureC = _kDefaultTemperatureC,
+    this.humidityPct = _kDefaultHumidityPct,
     required this.selectedDate,
     required this.selectedTime,
     this.distanceUnit = DistanceUnit.miles,
@@ -422,21 +428,44 @@ class RunningInputController extends _$RunningInputController {
     return totalMinutes / currentDistance;
   }
 
-  /// Reset the fueling window to its ratified default for a NEW activity.
+  /// Reset the create-flow form state to its derived defaults for a NEW
+  /// activity.
   ///
   /// The sport input controllers are `keepAlive` singletons, so without this a
-  /// window the athlete stepped on one activity — and the `preRunMinutesManuallySet`
-  /// flag that step latched — rode into every later activity and permanently
-  /// suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h, could never
-  /// fire again). CF-1's "a manual change persists" means *within the activity
-  /// being edited*. Xuan, on-device 2026-09-03;
+  /// value the athlete set by hand on one activity — and the `*ManuallySet`
+  /// flag that latched with it — rode into every later activity and
+  /// permanently suppressed re-derivation (§3a defaults, incl. Race Pace ⇒ 3 h,
+  /// could never fire again; the title stayed the old event's name; a manual
+  /// 31 °C outlived the day it was typed on). Xuan, on-device 2026-09-03;
   /// ops/data/bug-reports/2026-09-03-fueling-window-sticks-across-activities.md
   ///
-  /// Deliberately narrow: only the fueling window is reset here. The lifetime of
-  /// the other form state (title / temperature / humidity flags) is the deferred
-  /// ruling qa/intake/2026-09-03-form-state-reset-semantics.md (Q-CA2).
-  void resetFuelingWindowForNewActivity() {
-    state = state.copyWith(preRunMinutesManuallySet: false);
+  /// Q-CA2 (RULED Xuan, 2026-09-21 — option (a), PER-ACTIVITY): ONE lifetime for
+  /// ALL form state. Opening the create flow for a NEW activity resets the
+  /// values *and* the flags; CF-1/CF-7's "a manual change persists" means
+  /// *within the activity being edited*; editing an EXISTING activity
+  /// re-hydrates from that activity (the screen's seeds run after this reset
+  /// and still win).
+  void resetFormStateForNewActivity() {
+    final forecast = state.weatherForecast;
+    final hasForecast = forecast != null && forecast.forecastAvailable;
+    state = state.copyWith(
+      // Window (shipped first in 7418566f) — re-derived below.
+      preRunMinutesManuallySet: false,
+      // Title: back to the distance-derived default.
+      activityTitleManuallySet: false,
+      activityTitle: ActivityTitleFormatter.formatRunningTitle(state.distance),
+      // CF-7: the AUTO badge returns, and the value returns with it — to the
+      // forecast when one is loaded, otherwise to the same placeholders
+      // updateDateTime shows while a refreshed forecast loads.
+      temperatureManuallySet: false,
+      humidityManuallySet: false,
+      temperatureC: hasForecast
+          ? forecast.temperatureC.clamp(-5.0, 40.0)
+          : _kDefaultTemperatureC,
+      humidityPct: hasForecast
+          ? forecast.humidityPct.toDouble().clamp(20.0, 95.0)
+          : _kDefaultHumidityPct,
+    );
     _autoUpdateFuelingWindow();
   }
 
@@ -573,8 +602,8 @@ class RunningInputController extends _$RunningInputController {
       selectedDate: date,
       selectedTime: time,
       // Reset to defaults immediately while refreshed forecast loads.
-      temperatureC: 20.0,
-      humidityPct: 60.0,
+      temperatureC: _kDefaultTemperatureC,
+      humidityPct: _kDefaultHumidityPct,
     );
 
     // §3a: the default window depends on start time (early-start overlay +

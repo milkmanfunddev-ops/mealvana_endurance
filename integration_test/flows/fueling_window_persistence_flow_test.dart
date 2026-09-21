@@ -2,7 +2,7 @@
 /// ACTIVITY BEING CREATED, not to the app session.
 ///
 /// Why this flow exists (the gap it closes):
-///   The unit suite calls `resetFuelingWindowForNewActivity()` DIRECTLY
+///   The unit suite calls `resetFormStateForNewActivity()` DIRECTLY
 ///   (test/features/nutrition_plan/create_flow_fueling_controls_conformance_test.dart).
 ///   Nothing there proves the create SCREEN calls it. Delete the call from
 ///   `_NewActivityScreenState._initializeFromEventData` and every unit test
@@ -126,7 +126,7 @@ void main() {
         reason:
             'D-018: the window belongs to the activity being created. A value '
             'stepped on the previous activity must not seed this one — if this '
-            'fails, resetFuelingWindowForNewActivity() is no longer called from '
+            'fails, resetFormStateForNewActivity() is no longer called from '
             'the create screen and the unit suite cannot see it.',
       );
 

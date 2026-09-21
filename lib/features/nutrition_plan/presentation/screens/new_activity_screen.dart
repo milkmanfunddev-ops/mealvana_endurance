@@ -7,8 +7,6 @@ import '../providers/cycling_input_controller.dart';
 import '../providers/swimming_input_controller.dart';
 import '../providers/brick_input_controller.dart';
 import '../../../activities/data/activities_repository.dart';
-import '../../../activities/domain/activity_title_formatter.dart';
-import '../../domain/run_parameters.dart' show DistanceUnit;
 import '../../../../shared/providers/user_id_provider.dart';
 import '../../../../shared/core/guarded_navigation.dart';
 import '../widgets/new_activity/shared/sport_selector.dart';
@@ -158,28 +156,31 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
     final coordinator = ref.read(newActivityCoordinatorProvider.notifier);
     final coordinatorState = ref.read(newActivityCoordinatorProvider);
 
-    // Fueling window belongs to the activity being created, not to the app
-    // session. The sport controllers are keepAlive singletons, so a window the
-    // athlete stepped on a previous activity — and the *ManuallySet flag that
-    // step latched — otherwise rides into this one and permanently suppresses
-    // the ratified §3a re-derivation (Race Pace ⇒ 3 h could never fire again).
-    // Same shape, and same remedy, as the stale-title reset further down.
-    // Xuan, on-device 2026-09-03; ops bug
+    // Form state belongs to the activity being created, not to the app session.
+    // The sport controllers are keepAlive singletons, so a window/title/
+    // temperature/humidity the athlete set on a previous activity — and the
+    // *ManuallySet flag that latched with it — otherwise rides into this one
+    // and permanently suppresses the derived defaults (the ratified §3a
+    // re-derivation, so Race Pace ⇒ 3 h could never fire again; the old event's
+    // name as this activity's title; yesterday's typed-in 31 °C).
+    // Q-CA2 RULED Xuan, 2026-09-21 — option (a), PER-ACTIVITY: one lifetime for
+    // all form state. Ops bug
     // 2026-09-03-fueling-window-sticks-across-activities.md.
-    // An explicit widget.timeBeforeMinutes seed still wins: it is applied after
-    // this reset and marks the window manually-set, which is correct.
+    // The explicit seeds below still win: widget.timeBeforeMinutes and
+    // widget.initialTitle are applied AFTER this reset and mark their field
+    // manually-set, which is how editing an existing activity re-hydrates.
     ref
         .read(runningInputControllerProvider.notifier)
-        .resetFuelingWindowForNewActivity();
+        .resetFormStateForNewActivity();
     ref
         .read(cyclingInputControllerProvider.notifier)
-        .resetFuelingWindowForNewActivity();
+        .resetFormStateForNewActivity();
     ref
         .read(swimmingInputControllerProvider.notifier)
-        .resetFuelingWindowForNewActivity();
+        .resetFormStateForNewActivity();
     ref
         .read(brickInputControllerProvider.notifier)
-        .resetFuelingWindowForNewActivity();
+        .resetFormStateForNewActivity();
 
     // Select the appropriate sport tab based on activity type
     if (widget.activityType != null) {
@@ -328,18 +329,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updatePreRunMinutes(widget.timeBeforeMinutes!);
     }
 
+    // Q-CA2: the stale-title reset now lives in resetFormStateForNewActivity()
+    // above — it fires for EVERY entry, not only the plain "new activity" flow.
     if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
       controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
-    } else if (widget.activityId == null && widget.eventId == null) {
-      // Plain "new activity" flow (no event/synced source): reset any stale
-      // manually-set title left over from a previous keepAlive session (e.g.
-      // after creating a plan from an event) so distance edits recompute the
-      // "N mi Run" default again instead of showing the old event name.
-      final currentDistance = ref.read(runningInputControllerProvider).distance;
-      controller.seedActivityTitle(
-        ActivityTitleFormatter.formatRunningTitle(currentDistance),
-        markManuallySet: false,
-      );
     }
   }
 
@@ -407,21 +400,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updatePreRideMinutes(widget.timeBeforeMinutes!);
     }
 
+    // Q-CA2: the stale-title reset now lives in resetFormStateForNewActivity()
+    // above — it fires for EVERY entry, not only the plain "new activity" flow.
     if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
       controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
-    } else if (widget.activityId == null && widget.eventId == null) {
-      // Plain "new activity" flow: reset any stale manually-set title left
-      // over from a previous keepAlive session so distance edits recompute
-      // the "N mi Ride" default again. Mirrors the unit conversion the
-      // controller itself applies internally (see _distanceToMilesForTitle).
-      final currentState = ref.read(cyclingInputControllerProvider);
-      final milesForTitle = currentState.distanceUnit == DistanceUnit.kilometers
-          ? currentState.distance * 0.621371
-          : currentState.distance;
-      controller.seedActivityTitle(
-        ActivityTitleFormatter.formatCyclingTitle(milesForTitle),
-        markManuallySet: false,
-      );
     }
   }
 
@@ -459,19 +441,10 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
       controller.updatePreSwimMinutes(widget.timeBeforeMinutes!);
     }
 
+    // Q-CA2: the stale-title reset now lives in resetFormStateForNewActivity()
+    // above — it fires for EVERY entry, not only the plain "new activity" flow.
     if (widget.initialTitle != null && widget.initialTitle!.trim().isNotEmpty) {
       controller.seedActivityTitle(widget.initialTitle!, markManuallySet: true);
-    } else if (widget.activityId == null && widget.eventId == null) {
-      // Plain "new activity" flow: reset any stale manually-set title left
-      // over from a previous keepAlive session so distance edits recompute
-      // the "N m Swim" default again instead of showing the old event name.
-      final currentDistanceMeters = ref
-          .read(swimmingInputControllerProvider)
-          .distanceMeters;
-      controller.seedActivityTitle(
-        ActivityTitleFormatter.formatSwimmingTitle(currentDistanceMeters),
-        markManuallySet: false,
-      );
     }
   }
 
@@ -520,20 +493,12 @@ class _NewActivityScreenState extends ConsumerState<NewActivityScreen> {
 
     // Event-linked brick flows may not have subtype distances; still seed title
     // so generated activity names use the event label instead of fallback caps.
+    // Q-CA2: the stale-title reset now lives in resetFormStateForNewActivity()
+    // above — it fires for EVERY entry, not only the plain new-brick flow.
     if (initialTitle != null && initialTitle.trim().isNotEmpty) {
       ref
           .read(brickInputControllerProvider.notifier)
           .seedActivityTitle(initialTitle, markManuallySet: true);
-    } else if (widget.eventId == null) {
-      // Plain new brick (no activityId, no event context): reset any stale
-      // manually-set title left over from a previous keepAlive session so
-      // sport selection changes recompute the default "SWIM/RUN BRICK"-style
-      // title again instead of showing an old event name.
-      final brickController = ref.read(brickInputControllerProvider.notifier);
-      brickController.seedActivityTitle(
-        brickController.getBrickType(),
-        markManuallySet: false,
-      );
     }
   }
 
