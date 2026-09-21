@@ -1,11 +1,15 @@
 /**
- * vana-day-notes Edge Function — regenerate a plan's per-day Vana notes (one Haiku call for the week).
+ * vana-day-notes Edge Function — bring a plan's per-day Vana notes up to date.
  *
  * POST /functions/v1/vana-day-notes   Auth: Supabase user JWT (the plan owner's — `vana-action` / `vana-chat` forward it)
  * Body: { plan_id: uuid, anchor_date?: 'YYYY-MM-DD' }
  * Response 200: { plan_id, notes: {date → text}, stale: boolean }
  * Clients never await this: it is invoked under EdgeRuntime.waitUntil after confirm / edits, and by `get_home` when a
  * stale note is being shown. Rate-limited (vana.daynotes) — over the bucket it returns the existing notes unchanged.
+ *
+ * Cheap to over-call (ai-cost ticket 13, mp-432 / mp-478). Only the days whose inputs moved are written again, so an
+ * unchanged plan calls no model and returns the stored notes; and a `vana_day_note_claims` row keeps two simultaneous
+ * requests to one model call, the second waiting for the first's notes. See _shared/vana/daynotes.ts.
  */
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';

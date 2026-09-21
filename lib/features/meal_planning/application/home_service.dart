@@ -48,6 +48,13 @@ class HomeService {
 /// regenerating notes after an edit) the controller re-polls once after
 /// [stalePollDelay], up to [maxStalePolls] times; it never generates a note
 /// client-side.
+///
+/// A refresh cannot start a second generation (ai-cost ticket 13, mp-478).
+/// Every `get_home` on a stale note asks the server to regenerate, so two
+/// things are bounded here: one `get_home` is in flight at a time — a refresh
+/// that lands while the server is still writing joins the load already
+/// running — and the [maxStalePolls] budget is spent once and only refilled
+/// when fresh notes come back, so pulling to refresh does not buy more polls.
 @riverpod
 class HomeController extends _$HomeController {
   static const stalePollDelay = Duration(seconds: 7);
@@ -55,6 +62,7 @@ class HomeController extends _$HomeController {
 
   Timer? _stalePoll;
   int _stalePolls = 0;
+  Future<HomePayload>? _inflight;
 
   @override
   FutureOr<HomePayload?> build([String? date]) async {
@@ -64,7 +72,21 @@ class HomeController extends _$HomeController {
     return home;
   }
 
+  /// One `get_home` at a time. Nothing between entering here and storing
+  /// [_inflight] awaits, so two callers in the same turn cannot both start one.
   Future<HomePayload> _load(String date) async {
+    final inflight = _inflight;
+    if (inflight != null) return inflight;
+    final future = _loadOnce(date);
+    _inflight = future;
+    try {
+      return await future;
+    } finally {
+      _inflight = null;
+    }
+  }
+
+  Future<HomePayload> _loadOnce(String date) async {
     final home = await ref.read(homeServiceProvider).fetch(date: date);
     final batch = home.batch;
     if (batch != null) {
@@ -78,10 +100,14 @@ class HomeController extends _$HomeController {
 
   void _scheduleStalePoll(HomePayload home, String date) {
     _stalePoll?.cancel();
-    if (!home.vana.stale || _stalePolls >= maxStalePolls) {
+    // Fresh notes: the next edit gets a full budget of polls.
+    if (!home.vana.stale) {
       _stalePolls = 0;
       return;
     }
+    // Still stale after the budget: stop asking. The budget stays spent, so a
+    // refresh re-reads the payload without asking for another generation.
+    if (_stalePolls >= maxStalePolls) return;
     _stalePolls++;
     _stalePoll = Timer(stalePollDelay, () async {
       if (!ref.mounted) return;
@@ -93,7 +119,6 @@ class HomeController extends _$HomeController {
   }
 
   Future<void> refresh() async {
-    _stalePolls = 0;
     final previous = state.value;
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
