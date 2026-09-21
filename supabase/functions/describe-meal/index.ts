@@ -16,6 +16,7 @@
  * Error responses:
  *   400 — missing/invalid body or description too long
  *   401 — missing or invalid JWT
+ *   403 — {error:'pro_required'}: no active subscription (checked right after auth, same refusal as vana-chat)
  *   503 — {error:'ai_unavailable'}: the AI Gateway refused US (key budget hard-stopped, key
  *         missing/revoked). Never a 402: the athlete's wallet is fine, so the top-up sheet
  *         would be a lie (mp-437). The app shows "Vana is unavailable right now".
@@ -37,6 +38,7 @@ import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
 import { gatewayRefusalResponse } from "../_shared/ai/gateway_error.ts";
 import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
+import { refuseUnlessPro } from "../_shared/vana/entitlement.ts";
 import {
   debitForUsage,
   ensureAndCheckCredits,
@@ -111,6 +113,13 @@ serve(withSentry(async (req: Request) => {
     const { user, response: authResponse } = await requireUser(req);
     if (authResponse) return authResponse;
     if (!user) return errorResponse("Invalid authentication state", 401);
+
+    // Subscription gate (mp-429 clause 11): bought credits alone never open an AI function.
+    const refusal = await refuseUnlessPro(
+      createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY),
+      user.id,
+    );
+    if (refusal) return refusal;
 
     // Parse body
     let body: { description?: unknown };

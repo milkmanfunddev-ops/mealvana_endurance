@@ -93,6 +93,8 @@ Phase 2 of `docs/implement_mealplanning/` (spec: `03-backend.md`). Deployed to *
 with `--no-verify-jwt`; **not on prod** until the Phase 5/6 runbook (prod has none of the meal-planning tables yet).
 Shared code: `supabase/functions/_shared/vana/` (also imported by `jade-chat` — redeploy all four on any change there).
 
+Subscription gate (paywall ticket 02, mp-429 clause 11): `describe-meal`, `analyze-meal-photo`, `meal-photo`, `ai-coach` and `jade-chat` call `refuseUnlessPro` (`_shared/vana/entitlement.ts`) right after auth and answer 403 `pro_required` like `vana-chat`; all five import `_shared/vana/`, so redeploy them with it.
+
 | Function | Caller | Notes |
 |---|---|---|
 | `vana-chat` | 1.24 client (`lib/features/meal_planning`, replaces `jade-chat` for `ai_coach`) | NDJSON chat, Pro-gated (403 `pro_required`; dev secret `PRO_GATE_ENABLED=false`), rate-limited via `vana_calls`, **no credit debit**. |

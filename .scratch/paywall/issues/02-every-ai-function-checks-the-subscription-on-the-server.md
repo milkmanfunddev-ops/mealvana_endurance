@@ -11,8 +11,8 @@
 
 **Touches:** supabase/functions/_shared/vana/entitlement.ts, supabase/functions/describe-meal, supabase/functions/analyze-meal-photo, supabase/functions/meal-photo, supabase/functions/ai-coach, supabase/functions/jade-chat
 
-- [ ] Each of the five functions returns the same refusal as vana-chat for an account with no active row (function tests).
-- [ ] An active account still gets through.
+- [x] Each of the five functions returns the same refusal as vana-chat for an account with no active row (function tests).
+- [x] An active account still gets through.
 - [ ] Deployed to dev.
 
 Next: /implement-lee paywall
