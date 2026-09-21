@@ -50,7 +50,14 @@
 import type { Json } from "./fingerprint.ts";
 import { isGpsKey } from "../garmin/sample_capture.ts";
 
-export type KeyCategory = "drop" | "fuzz" | "text" | "link" | "shift";
+export type KeyCategory =
+  | "drop"
+  | "fuzz"
+  | "text"
+  | "link"
+  | "shift"
+  | "time-structure"
+  | "cumulative";
 export type ScrubCensus = Readonly<Record<string, KeyCategory>>;
 
 /**
@@ -116,11 +123,22 @@ export interface ScrubContext {
   /** seconds added to every shifted timestamp; anchored by the first one. */
   timeDeltaSeconds: number | null;
   nextSyntheticId: number;
+  /** per-key running state for cumulative counters (see fuzzCumulative). */
+  cumulative: Map<string, { lastIn: number; lastOut: number }>;
+  /** one magnitude scale for every cumulative counter in this context. */
+  cumulativeScale: number | null;
   rng: () => number;
 }
 
 export function newScrubContext(rng: () => number = Math.random): ScrubContext {
-  return { idMap: new Map(), timeDeltaSeconds: null, nextSyntheticId: 1, rng };
+  return {
+    idMap: new Map(),
+    timeDeltaSeconds: null,
+    nextSyntheticId: 1,
+    cumulative: new Map(),
+    cumulativeScale: null,
+    rng,
+  };
 }
 
 /** Garmin raw-payload census — exemplar keys from the ruled table. */
@@ -131,10 +149,34 @@ export const GARMIN_SCRUB_CENSUS: ScrubCensus = {
   deviceName: "drop",
   startLatitude: "drop",
   startLongitude: "drop",
-  // physiology scalars — FUZZ (incl. per-sample stream scalars, Q8)
+  // physiology scalars — FUZZ (incl. per-sample stream scalars, Q8).
+  // INSTANTANEOUS readings only: heartRate, powerInWatts, speedMetersPerSecond,
+  // stepsPerMinute and elevationInMeters reach this by default-deny, which is
+  // the same treatment. A cumulative counter does NOT belong here — see below.
   averageHeartRateInBeatsPerMinute: "fuzz",
   activeKilocalories: "fuzz",
   hr: "fuzz",
+  // TIME-STRUCTURE — kept verbatim (qa-70, Q8 ruling 2026-09-21).
+  // These are offsets from activity start, not absolute instants: there is no
+  // delta to apply and no disclosure to prevent, because Q8 already preserves
+  // array cardinality verbatim and cardinality x cadence already reveals the
+  // activity's duration. The re-identification risk lives in the absolute
+  // anchor (startTimeInSeconds), which stays shifted.
+  //
+  // Default-deny fuzzed these independently per sample, so at realistic
+  // magnitudes the elapsed clocks ran BACKWARDS by minutes while the absolute
+  // clock advanced 1s per sample — an exemplar whose own two time columns
+  // contradicted each other. Kept as STRUCTURE, not as enum values, which is
+  // why they are labelled here rather than added to GARMIN_KEEP_ENUM.
+  clockDurationInSeconds: "time-structure",
+  movingDurationInSeconds: "time-structure",
+  timerDurationInSeconds: "time-structure",
+  // CUMULATIVE counter — monotone fuzz (qa-70, Q8 refinement 2026-09-21).
+  // Magnitude is real disclosure (route length) and stays destroyed, but a
+  // counter's monotonicity IS its type: a backwards odometer is internally
+  // inconsistent the same way the backwards clocks were, and ladder/bucketing
+  // logic reading this stream has to still be exercised.
+  totalDistanceInMeters: "cumulative",
   // free text — TEXT
   activityName: "text",
   // ids — LINK
@@ -187,6 +229,37 @@ function fuzzNumber(v: number, rng: () => number): number {
     out = v + Math.max(Math.abs(v) * 1e-3, 1e-3);
   }
   return out;
+}
+
+/**
+ * Monotone fuzz for a CUMULATIVE counter (odometer-shaped: non-decreasing
+ * across a sample stream).
+ *
+ * Destroys magnitude like ordinary fuzz, but can never run backwards, because
+ * the jitter is applied to the INCREMENT rather than to the value: every step
+ * added is non-negative, so the output ladder preserves the input's ordering.
+ * Jittering the increment (rather than scaling the whole series by one factor)
+ * also means the curve's own shape — where the athlete sped up or slowed —
+ * does not survive intact.
+ *
+ * State is per key and per context. A value that goes backwards starts a new
+ * run: that is a new array, or a counter that genuinely reset, and forcing a
+ * false ordering across it would invent structure that was not there.
+ */
+function fuzzCumulative(key: string, v: number, ctx: ScrubContext): number {
+  if (ctx.cumulativeScale === null) {
+    ctx.cumulativeScale = 0.8 + ctx.rng() * 0.4; // ±20%, drawn once
+  }
+  const isInt = Number.isInteger(v);
+  const prev = ctx.cumulative.get(key);
+  const raw = prev === undefined || v < prev.lastIn
+    ? v * ctx.cumulativeScale
+    : prev.lastOut +
+      (v - prev.lastIn) * ctx.cumulativeScale * (0.8 + ctx.rng() * 0.4);
+  ctx.cumulative.set(key, { lastIn: v, lastOut: raw });
+  // Type-preserving. Rounding can flatten a step to zero, which stays
+  // non-decreasing — a stalled odometer is a real thing a stream contains.
+  return isInt ? Math.round(raw) : raw;
 }
 
 /** FNV-1a — a small deterministic hash. Not cryptographic and not meant to
@@ -309,6 +382,18 @@ function walk(
         break;
       case "shift":
         out[key] = value === null ? null : shiftTimestamp(value, ctx);
+        break;
+      case "time-structure":
+        // Verbatim: this key carries cadence, which is shape, not content.
+        out[key] = typeof value === "object" && value !== null
+          ? walk(value, census, ctx, keepEnum)
+          : value;
+        break;
+      case "cumulative":
+        if (value === null) out[key] = null; // NEVER fuzz a null
+        else if (typeof value === "number") {
+          out[key] = fuzzCumulative(key, value, ctx);
+        } else out[key] = walk(value, census, ctx, keepEnum);
         break;
       default: {
         // DEFAULT-DENY on content (ruled 2026-09-20). Key, type and
