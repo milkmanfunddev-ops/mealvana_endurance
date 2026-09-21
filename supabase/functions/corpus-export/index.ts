@@ -51,24 +51,46 @@ function censusFor(provider: string): ScrubCensus {
  * Account ids stay SERVER-SIDE: this maps them to a label, and only the
  * label crosses the wire.
  */
+const DEV_REF = "vlmtsdzpnjnavdgytcmi";
+
+/**
+ * Source-material stamps, resolved SERVER-SIDE so account ids never cross
+ * the wire. Lookup is specific-then-class, and unknown material returns null
+ * so the caller refuses to write — an exemplar with an inaccurate stamp is
+ * worse than no exemplar.
+ */
 const SOURCE_MATERIAL: Record<string, string> = {
-  // The seed four: hand-built in the TP SANDBOX, so no real athlete's data
-  // was ever involved — only its shape.
-  "c2c7e005|training_peaks":
+  // Specific (dev provider_raw_payloads): the two known accounts.
+  "dev|provider_raw_payloads|c2c7e005|training_peaks":
     "TP sandbox host, specimens hand-typed for the corpus (2026-09-20)",
-  // The FS wing: the corpus's first NON-SANDBOX material, promoted by Xuan's
-  // ruling 2026-09-20, de-identified under the default-deny standard.
-  "607f9dd5|final_surge":
+  "dev|provider_raw_payloads|607f9dd5|final_surge":
     "real account (owner's own, promoted by ruling 2026-09-20), " +
     "fail-safe scrub under the default-deny standard (@v1.1)",
+  // Class (dev Garmin wing): several athletes, so the stamp describes the
+  // CLASS of material rather than enumerating accounts — enumerating them
+  // would drag identity into the very files that exist to avoid it.
+  "dev|garmin_health_data|*|*":
+    "real-account (dev Garmin athletes), promoted by ruling 2026-09-20",
+  // Class (prod): every prod athlete is the same class of material.
+  "prod|provider_raw_payloads|*|*":
+    "real-account (prod), promoted by ruling 2026-09-20",
+  "prod|garmin_health_data|*|*":
+    "real-account (prod), promoted by ruling 2026-09-20",
 };
 
+function envName(): string {
+  return (Deno.env.get("SUPABASE_URL") ?? "").includes(DEV_REF) ? "dev" : "prod";
+}
+
 function sourceMaterialFor(
+  table: string,
   userId: string | undefined,
   provider: string,
 ): string | null {
-  if (!userId) return null;
-  return SOURCE_MATERIAL[`${userId.slice(0, 8)}|${provider}`] ?? null;
+  const env = envName();
+  const u = userId ? userId.slice(0, 8) : "";
+  return SOURCE_MATERIAL[`${env}|${table}|${u}|${provider}`] ??
+    SOURCE_MATERIAL[`${env}|${table}|*|*`] ?? null;
 }
 
 function keepEnumFor(provider: string): KeepEnum {
@@ -109,11 +131,47 @@ serve(withSentry(async (req) => {
     });
   }
 
-  const rows = (data ?? []).map((r) => ({
+  const rows: {
+    provider: string;
+    userId: string;
+    payload: Json;
+    channel?: string;
+    table: string;
+  }[] = (data ?? []).map((r) => ({
     provider: r.provider as string,
     userId: r.user_id as string,
     payload: r.data as Json,
+    table: "provider_raw_payloads",
   }));
+
+  // DI-28: the Garmin wing. Garmin raw lives in garmin_health_data's generic
+  // (data_type, data jsonb) store rather than provider_raw_payloads, so it is
+  // scanned separately and each data_type is its own capture channel.
+  const GARMIN_TYPES = [
+    "activity_raw",
+    "activity_detail_raw",
+    "activity_detail_full",
+  ];
+  const { data: gData, error: gError } = await supabase
+    .from("garmin_health_data")
+    .select("user_id, data_type, data")
+    .in("data_type", GARMIN_TYPES)
+    .order("created_at", { ascending: true });
+  if (gError) {
+    return new Response(JSON.stringify({ error: gError.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  for (const r of gData ?? []) {
+    rows.push({
+      provider: "garmin",
+      userId: r.user_id as string,
+      payload: r.data as Json,
+      channel: `garmin/${r.data_type}`,
+      table: "garmin_health_data",
+    });
+  }
   const novel = rescrub.length > 0
     ? (await selectNovelExemplars(rows, [])).filter((n) =>
       rescrub.includes(n.fingerprintId)
@@ -126,7 +184,11 @@ serve(withSentry(async (req) => {
   const exemplars = novel.map((n) => ({
     fingerprintId: n.fingerprintId,
     provider: n.provider,
-    sourceMaterial: sourceMaterialFor(n.userId, n.provider),
+    sourceMaterial: sourceMaterialFor(
+      n.table ?? "provider_raw_payloads",
+      n.userId,
+      n.provider,
+    ),
     stratum: n.stratum,
     optionalKeysInStratum: n.optionalKeysInStratum,
     exemplar: scrub(
