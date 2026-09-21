@@ -71,6 +71,30 @@ Deno.test('the memory extraction, the rolling summary and the ingredient list al
   assert(/functionName: 'vana\.ingredients', model: backgroundModel\(\)/.test(read('../../_shared/vana/saved-ingredients.ts')));
 });
 
+/**
+ * mp-465 clause 6, "no helper model is called from inside a Vana turn". Two of the three already hold:
+ * the idle extraction and the rolling summary are handed to `background` and the turn returns without
+ * them (compaction.test.ts and personal_openers.test.ts drive both through the real code).
+ *
+ * The third does not, and this pins that rather than hiding it: `addMeal` AWAITS
+ * `ensureSavedMealIngredients`, because the shopping list it returns in the same turn is built from
+ * those ingredients (playtest 2026-09-16 §5). Moving it off the turn would change what the athlete
+ * gets back, which clause 6 does not ask for ("for now"), so it stays and is written down here.
+ */
+Deno.test('the two conversation jobs are scheduled in the background; the ingredient job is the one in-turn call', () => {
+  const chat = read('../../_shared/vana/chat.ts');
+  assert(/background\(writeOnIdle\(/.test(chat), 'the idle extraction should be handed to background');
+  assert(/background\(writeSummary\(/.test(chat), 'the rolling summary should be handed to background');
+  assert(!/await writeOnIdle\(|await writeSummary\(/.test(chat), 'neither may be awaited inside a turn');
+
+  const plan = read('../../_shared/vana/plan.ts');
+  assertEquals(
+    plan.match(/await ensureSavedMealIngredients\(/g)?.length,
+    2,
+    'addMeal and its sibling await the ingredient job on purpose; if that changes, revisit mp-465 clause 6',
+  );
+});
+
 Deno.test('the day notes keep their own setting (clause 5) — the background setting does not reach them', () => {
   const daynotes = read('../../_shared/vana/daynotes.ts');
   assert(/\bTOOL_MODEL\b/.test(daynotes), 'daynotes.ts should still read TOOL_MODEL');
