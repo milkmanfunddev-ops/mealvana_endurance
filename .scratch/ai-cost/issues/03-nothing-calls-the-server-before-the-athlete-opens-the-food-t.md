@@ -1,6 +1,6 @@
 # 03: Nothing calls the server before the athlete opens the Food tab
 
-**Status:** in-progress (wave 1, 2026-09-21)
+**Status:** done (wave 1, 2026-09-21)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
@@ -13,6 +13,6 @@
 
 - [x] No Vana request fires between launch and the first visit to the Food tab (widget test over a transport that counts calls).
 - [x] A visited tab keeps its scroll position and state when the athlete leaves and returns.
-- [ ] Checked on a pool simulator: cold launch to Home shows no Vana call in the log. — NOT RUN: `simulator claim` failed, "no booted simulator to copy from" (the pool is empty and nothing is booted to clone).
+- [x] Checked on a pool simulator: cold launch to Home shows no Vana call in the log. — 2026-09-21 on wave-pool-1: cold launch to Home logged only `calculate-daily-macros-v6` (×2) on dev; the first `vana-action` came 4 s after opening Food.
 
 Next: /implement-lee ai-cost

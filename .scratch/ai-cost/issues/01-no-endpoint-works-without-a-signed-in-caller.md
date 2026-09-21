@@ -1,6 +1,6 @@
 # 01: No endpoint works without a signed-in caller
 
-**Status:** in-progress (wave 1, 2026-09-21)
+**Status:** done (wave 1, 2026-09-21)
 **Blocked by:** None (can start immediately).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
@@ -13,9 +13,9 @@
 
 - [x] An unsigned request to the plan-email function gets 401 and sends nothing (test through the handler); a signed-in request still sends.
 - [x] The bulk upload takes the user id from the token and ignores any user id in the body (handler test with a body naming another user).
-- [ ] `parse-meal-plan` is undeployed from dev. — wave lead; nothing in the repo refers to it (no source, no `config.toml` entry).
+- [x] `parse-meal-plan` is undeployed from dev (deleted 2026-09-21); nothing in the repo refers to it (no source, no `config.toml` entry).
 - [x] The ticket lists every function under `supabase/functions/` that calls a model, sends mail or writes with the service role, with its auth check.
-- [ ] Deployed to dev. Nothing is deployed to production. — wave lead.
+- [x] Deployed to dev 2026-09-21 (both answer 401 to no token and to the anon key). Nothing is deployed to production.
 
 ## Function audit
 
