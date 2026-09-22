@@ -442,6 +442,16 @@ class ActivitiesRepository with SyncableRepository {
             'code': _postgrestErrorCode(recordError),
           },
         );
+        // The logger is console/file only, so without this the root cause
+        // never reaches Sentry — only the retry-count StateError does
+        // (MEALVANA-ENDURANCE-BR family), and the stuck-dirty rows are
+        // undiagnosable remotely.
+        _sentry.reportNetworkError(
+          recordError,
+          url: 'supabase:activities:upsert',
+          method: 'UPSERT',
+          stackTrace: recordStackTrace,
+        );
       }
     }
 

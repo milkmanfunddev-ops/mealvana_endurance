@@ -536,6 +536,21 @@ class IntegrationsRepository with SyncableRepository {
   /// `uploadDirtyRecords` pass picks it up — they are not surfaced to callers.
   Future<void> _pushToSupabase(IntegrationModel model) async {
     if (model.id == null) return;
+
+    // Same parent-row guard as uploadDirtyRecords: during onboarding the row
+    // is written before the remote `users` row exists, and the eager upsert
+    // would violate integrations_user_id_fkey (Sentry MEALVANA-ENDURANCE-3W,
+    // still live via this path). Skip quietly — the row is already dirty and
+    // the guarded bulk upload retries once the profile lands.
+    if (!await _remoteUserExists(model.userId)) {
+      _logger.info(
+        'Deferring eager integration push: user row not yet remote',
+        context: 'INTEGRATIONS_REPOSITORY',
+        data: {'userId': model.userId, 'provider': model.provider},
+      );
+      return;
+    }
+
     try {
       await _supabase
           .from('integrations')

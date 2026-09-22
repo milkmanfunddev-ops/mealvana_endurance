@@ -534,8 +534,21 @@ class TpWritebackService {
               );
             }
           } catch (e, st) {
-            // Per-workout best effort — keep stripping the rest.
-            _logError('handleDisconnect.strip', e, st);
+            // Per-workout best effort — keep stripping the rest. A workout
+            // the athlete already deleted or edited on TrainingPeaks answers
+            // 400 here by routine, so this is a warning, not an error
+            // (Sentry MEALVANA-ENDURANCE-C7 was this path at error level).
+            if (kDebugMode) {
+              print('⚠️ TP Write-back (handleDisconnect.strip): $e');
+            }
+            await Sentry.captureException(
+              e,
+              stackTrace: st,
+              withScope: (scope) {
+                scope.level = SentryLevel.warning;
+                scope.setTag('method', 'TpWritebackService.handleDisconnect');
+              },
+            );
           }
         }
       }
