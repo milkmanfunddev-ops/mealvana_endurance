@@ -45,6 +45,8 @@ Stream<String?> subscriptionAuthUserId(Ref ref) {
 /// Every answer it takes also settles the day-five reminder (mp-456 §4): an
 /// active trial that will not renew cancels it. That covers the app open
 /// (build) and the background refresh that follows a stale cache (the push).
+/// Sign-out and account deletion cancel it too, so it never reaches the next
+/// account on the phone.
 ///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
@@ -71,6 +73,11 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     final service = _service;
     service.setStatusListener(_onRevenueCatUpdate);
     ref.onDispose(() => service.setStatusListener(null));
+
+    // Nobody signed in (sign-out, account deletion): the outgoing account's
+    // reminder must not reach whoever signs in next on this phone.
+    final userId = _repo.currentUserId;
+    if (userId == null || userId.isEmpty) _cancelTrialReminder();
 
     try {
       final status = await _resolve();
@@ -99,6 +106,7 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   Future<void> clear() async {
     _lastPush = null;
     state = const AsyncData(SubscriptionStatus.none);
+    _cancelTrialReminder();
   }
 
   /// RevenueCat pushed new CustomerInfo (purchase, renewal, expiry, restore,
@@ -116,6 +124,10 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   /// reminder. Fire-and-forget: it never delays or fails the gate.
   void _settleTrialReminder(SubscriptionStatus status) {
     if (!status.active || !status.isTrial || status.willRenew) return;
+    _cancelTrialReminder();
+  }
+
+  void _cancelTrialReminder() {
     final scheduler = ref.read(localNotificationSchedulerProvider);
     unawaited(
       scheduler.cancel(TrialReminder.notificationId).catchError((Object e) {

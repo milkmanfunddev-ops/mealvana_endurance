@@ -344,6 +344,27 @@ void main() {
       expect(scheduler.cancelled, [TrialReminder.notificationId]);
     });
 
+    test('sign-out cancels it, so the next account never gets it', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => _trialFromRevenueCat(willRenew: true));
+      final c = container();
+      await resolve(c);
+      expect(scheduler.cancelled, isEmpty);
+
+      await c.read(subscriptionStatusProvider.notifier).clear();
+      await pumpEventQueue();
+      expect(scheduler.cancelled, [TrialReminder.notificationId]);
+    });
+
+    test('an open with nobody signed in (deleted account) cancels it',
+        () async {
+      when(() => repo.currentUserId).thenReturn(null);
+      await resolve(container());
+      await pumpEventQueue();
+      expect(scheduler.cancelled, [TrialReminder.notificationId]);
+    });
+
     test('no answer from RevenueCat cancels nothing', () async {
       when(
         () => service.fetchStatus(),
