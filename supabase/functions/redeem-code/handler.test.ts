@@ -130,6 +130,18 @@ function fakeRc(): FakeRc {
       if (rc.failAttributes) throw rc.failAttributes;
       rc.attributes.push({ user, attributes });
     },
+    // deno-lint-ignore require-await
+    async getAttributes() {
+      throw new Error('redeem-code never reads attributes');
+    },
+    // deno-lint-ignore require-await
+    async promotionalProEnd() {
+      throw new Error('redeem-code never reads grants');
+    },
+    // deno-lint-ignore require-await
+    async createCustomer() {
+      throw new Error('redeem-code never creates customers');
+    },
   };
   return rc;
 }
