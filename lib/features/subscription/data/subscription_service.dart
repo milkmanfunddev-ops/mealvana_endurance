@@ -259,6 +259,7 @@ class SubscriptionService {
           info.periodType == PeriodType.trial ||
           info.periodType == PeriodType.intro,
       productId: info.productIdentifier,
+      willRenew: info.willRenew,
     );
   }
 

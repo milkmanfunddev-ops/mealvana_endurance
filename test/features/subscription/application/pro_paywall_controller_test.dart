@@ -16,13 +16,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import 'package:mealvana_endurance/features/content/application/content_service.dart';
+import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/subscription/application/pro_paywall_controller.dart';
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
+import 'package:mealvana_endurance/features/subscription/application/trial_reminder_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/features/subscription/domain/trial_reminder.dart';
+import 'package:mealvana_endurance/shared/services/notification_service.dart';
 import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 
+import '../../meal_planning/presentation/helpers/test_content.dart';
 import '../offerings_fixtures.dart';
 
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
@@ -43,6 +49,65 @@ class _FakePackage extends Fake implements Package {
   StoreProduct get storeProduct => _FakeStoreProduct();
 }
 
+/// Records what would reach the platform plugin.
+class _FakeScheduler implements LocalNotificationScheduler {
+  final scheduled =
+      <({int id, DateTime when, String title, String body, String? payload})>[];
+  final cancelled = <int>[];
+  bool permitted = true;
+  Object? failWith;
+
+  @override
+  Future<bool> scheduleOnce({
+    required int id,
+    required DateTime when,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    if (failWith != null) throw failWith!;
+    if (!permitted) return false;
+    scheduled.add((
+      id: id,
+      when: when,
+      title: title,
+      body: body,
+      payload: payload,
+    ));
+    return true;
+  }
+
+  @override
+  Future<void> cancel(int id) async => cancelled.add(id);
+}
+
+/// RevenueCat's `pro` entitlement as its native bridge hands it to
+/// `EntitlementInfo.fromJson`, mapped by the service's own mapping — the
+/// producer side of the status the controller reads after a purchase.
+SubscriptionStatus _statusFromRevenueCat({
+  required String periodType,
+  required DateTime expiresAt,
+  String productId = 'me_pro_monthly',
+  bool willRenew = true,
+}) => SubscriptionService.statusFromEntitlement(
+  EntitlementInfo.fromJson({
+    'identifier': 'pro',
+    'isActive': true,
+    'willRenew': willRenew,
+    'latestPurchaseDate': '2026-09-22T14:30:00Z',
+    'originalPurchaseDate': '2026-09-22T14:30:00Z',
+    'productIdentifier': productId,
+    'isSandbox': true,
+    'ownershipType': 'PURCHASED',
+    'store': 'APP_STORE',
+    'periodType': periodType,
+    'expirationDate': expiresAt.toUtc().toIso8601String(),
+    'unsubscribeDetectedAt': null,
+    'billingIssueDetectedAt': null,
+    'verification': 'NOT_REQUESTED',
+  }),
+);
+
 const _userId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
 
 final _rcActive = SubscriptionStatus(
@@ -56,7 +121,11 @@ void main() {
   late _MockSubscriptionService service;
   late _MockRepository repo;
   late _MockSentry sentry;
+  late _FakeScheduler scheduler;
   final pkg = _FakePackage();
+  final content = loadDefaultContent();
+  // The purchase moment: Tuesday 22 September 2026, 15:30 local.
+  final purchasedAt = DateTime(2026, 9, 22, 15, 30);
 
   setUpAll(() {
     registerFallbackValue(StackTrace.empty);
@@ -67,6 +136,7 @@ void main() {
     service = _MockSubscriptionService();
     repo = _MockRepository();
     sentry = _MockSentry();
+    scheduler = _FakeScheduler();
 
     when(() => repo.currentUserId).thenReturn(_userId);
     when(() => repo.isAnonymousUser).thenReturn(false);
@@ -107,6 +177,11 @@ void main() {
         entitlementAnswerTimeoutProvider.overrideWithValue(
           const Duration(milliseconds: 60),
         ),
+        localNotificationSchedulerProvider.overrideWithValue(scheduler),
+        contentServiceProvider.overrideWith(
+          (ref) => TestContentService(ref, content),
+        ),
+        trialReminderClockProvider.overrideWithValue(() => purchasedAt),
       ],
     );
     addTearDown(c.dispose);
@@ -300,6 +375,131 @@ void main() {
       expect(outcome, ProPurchaseOutcome.requiresAccount);
       verifyNever(() => service.purchase(any()));
     });
+  });
+
+  group('the day-five reminder (mp-456)', () {
+    final plans = offeringFixture('default');
+    final monthly = plans.monthly!;
+    final annual = plans.annual!;
+    // A seven-day trial from the purchase moment ends Tuesday 29th at 15:30.
+    final trialEnds = DateTime(2026, 9, 29, 15, 30);
+
+    /// Locked before the purchase, [after] on the refresh after it.
+    void statusAfterPurchase(SubscriptionStatus after) {
+      var calls = 0;
+      when(() => service.fetchStatus()).thenAnswer((_) async {
+        calls += 1;
+        return calls == 1 ? SubscriptionStatus.none : after;
+      });
+    }
+
+    test('a purchase that starts a trial schedules one notification at '
+        '10:00 local two days before it ends, with the price after', () async {
+      statusAfterPurchase(
+        _statusFromRevenueCat(periodType: 'TRIAL', expiresAt: trialEnds),
+      );
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+
+      final outcome = await c
+          .read(proPaywallControllerProvider.notifier)
+          .buy(monthly);
+
+      expect(outcome, ProPurchaseOutcome.activated);
+      expect(scheduler.scheduled, hasLength(1));
+      final n = scheduler.scheduled.single;
+      expect(n.id, TrialReminder.notificationId);
+      expect(n.when, DateTime(2026, 9, 27, 10));
+      expect(n.payload, TrialReminder.payload);
+      // The text is the content system's, with the store's price in it.
+      expect(n.title, content[ContentKeys.paywallTrialReminderTitle]);
+      expect(
+        n.body,
+        ContentKeys.format(
+          content[ContentKeys.paywallTrialReminderBodyMonthly]!,
+          {'price': r'$24.99'},
+        ),
+      );
+      expect(n.body, contains(r'$24.99 a month'));
+    });
+
+    test('the annual plan says the annual price after', () async {
+      statusAfterPurchase(
+        _statusFromRevenueCat(
+          periodType: 'TRIAL',
+          expiresAt: trialEnds,
+          productId: 'me_pro_annual',
+        ),
+      );
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      await c.read(proPaywallControllerProvider.notifier).buy(annual);
+
+      expect(
+        scheduler.scheduled.single.body,
+        ContentKeys.format(
+          content[ContentKeys.paywallTrialReminderBodyAnnual]!,
+          {'price': r'$199.99'},
+        ),
+      );
+    });
+
+    test('a purchase with no trial schedules nothing', () async {
+      statusAfterPurchase(
+        _statusFromRevenueCat(
+          periodType: 'NORMAL',
+          expiresAt: DateTime(2026, 10, 22, 15, 30),
+        ),
+      );
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      final outcome = await c
+          .read(proPaywallControllerProvider.notifier)
+          .buy(monthly);
+
+      expect(outcome, ProPurchaseOutcome.activated);
+      expect(scheduler.scheduled, isEmpty);
+    });
+
+    test('a dismissed store sheet schedules nothing', () async {
+      when(() => service.purchase(any())).thenAnswer((_) async => false);
+      await container()
+          .read(proPaywallControllerProvider.notifier)
+          .buy(monthly);
+      expect(scheduler.scheduled, isEmpty);
+    });
+
+    test('a trial too short to remind about schedules nothing', () async {
+      // Ends tomorrow: 10:00 two days before is already past.
+      statusAfterPurchase(
+        _statusFromRevenueCat(
+          periodType: 'TRIAL',
+          expiresAt: DateTime(2026, 9, 23, 15, 30),
+        ),
+      );
+      final c = container();
+      await c.read(subscriptionStatusProvider.future);
+      await c.read(proPaywallControllerProvider.notifier).buy(monthly);
+      expect(scheduler.scheduled, isEmpty);
+    });
+
+    test(
+      'a reminder that cannot be scheduled never fails the purchase',
+      () async {
+        statusAfterPurchase(
+          _statusFromRevenueCat(periodType: 'TRIAL', expiresAt: trialEnds),
+        );
+        scheduler.failWith = StateError('plugin missing');
+        final c = container();
+        await c.read(subscriptionStatusProvider.future);
+        final outcome = await c
+            .read(proPaywallControllerProvider.notifier)
+            .buy(monthly);
+
+        expect(outcome, ProPurchaseOutcome.activated);
+        expect(c.read(proPaywallControllerProvider), isA<AsyncData<void>>());
+      },
+    );
   });
 
   group('restore', () {

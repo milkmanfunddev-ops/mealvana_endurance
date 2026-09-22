@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:accessibility_tools/accessibility_tools.dart';
 // The testing-tools panel is not exported from the package barrel, but it is
 // the only half of the package that survives a release build: the issue
@@ -15,6 +17,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wiredash/wiredash.dart';
 import '../../theme/kyle_design/app_theme.dart';
 import '../../theme/kyle_design/theme_provider.dart';
@@ -28,6 +31,8 @@ import '../services/auth/auth_listener_service.dart';
 import '../services/notification_service.dart';
 import '../../features/daily_macros/data/daily_macro_targets_repository.dart';
 import '../../features/auth/application/auth_service.dart';
+import '../../features/subscription/application/pro_paywall_controller.dart';
+import '../../features/subscription/domain/trial_reminder.dart';
 import '../services/support/support_identity.dart';
 import '../../main.dart' show sentryNavigatorKey;
 import 'shake_to_report.dart';
@@ -91,6 +96,13 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
   void _handleNotificationNavigation(String activityId, String? type) {
     if (!mounted || activityId.isEmpty) return;
 
+    // The day-five reminder (mp-456 §3): the tap opens the store's
+    // subscription page, where the athlete can cancel, not a screen here.
+    if (type == TrialReminder.payloadType) {
+      unawaited(_openStoreSubscriptions());
+      return;
+    }
+
     final router = ref.read(AppRouter.routerProvider);
 
     // Both activity-upload and reminder notifications now route to the
@@ -99,6 +111,20 @@ class _RootAppWidgetState extends ConsumerState<RootAppWidget> {
     // + not yet logged), which avoids the "no plan" empty-state flash that
     // happened when we unconditionally pushed /fuel-log on top from here.
     router.go('/plan', extra: {'activityId': activityId});
+  }
+
+  /// RevenueCat's management URL for this customer, else the platform
+  /// store's subscriptions page (the paywall's "Manage subscription" path).
+  Future<void> _openStoreSubscriptions() async {
+    try {
+      final uri = await ref
+          .read(proPaywallControllerProvider.notifier)
+          .managementUrl();
+      if (uri == null) return;
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      debugPrint('[RootApp] store subscriptions page not opened: $e');
+    }
   }
 
   @override

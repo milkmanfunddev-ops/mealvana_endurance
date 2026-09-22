@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../../shared/services/notification_service.dart';
 import '../data/subscription_service.dart';
 import '../data/user_entitlements_repository.dart';
 import '../domain/entitlement.dart';
+import '../domain/trial_reminder.dart';
 
 part 'subscription_status_provider.g.dart';
 
@@ -40,6 +42,10 @@ Stream<String?> subscriptionAuthUserId(Ref ref) {
 /// 4. A cache that belongs to another RevenueCat identity than the signed-in
 ///    user is not an answer: locked until `logIn` has moved the identity.
 ///
+/// Every answer it takes also settles the day-five reminder (mp-456 §4): an
+/// active trial that will not renew cancels it. That covers the app open
+/// (build) and the background refresh that follows a stale cache (the push).
+///
 /// **[build] never throws.** A keepAlive provider whose first build errors
 /// would leave `.future` uncompleted for anyone awaiting it (the router
 /// redirect, the paywall after a purchase); anything unexpected degrades to
@@ -67,7 +73,9 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     ref.onDispose(() => service.setStatusListener(null));
 
     try {
-      return await _resolve();
+      final status = await _resolve();
+      _settleTrialReminder(status);
+      return status;
     } catch (e) {
       debugPrint('[SubscriptionStatus] build failed, locking: $e');
       return SubscriptionStatus.none;
@@ -82,6 +90,8 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
     // value that decides whether the app renders at all.
     if (next.hasError && state.hasValue) return;
     state = next;
+    final status = next.value;
+    if (status != null) _settleTrialReminder(status);
   }
 
   /// Forget everything for the outgoing user. The provider rebuilds on the
@@ -96,6 +106,22 @@ class SubscriptionStatusController extends _$SubscriptionStatusController {
   void _onRevenueCatUpdate(SubscriptionStatus rc) {
     _lastPush = rc;
     state = AsyncData(rc);
+    _settleTrialReminder(rc);
+  }
+
+  /// Cancel the day-five reminder once RevenueCat says the trial will not
+  /// renew: the athlete cancelled, and a "your trial ends, then it's $X"
+  /// notification would be wrong. Only an active trial counts — a locked
+  /// status may just mean no answer yet, which says nothing about the
+  /// reminder. Fire-and-forget: it never delays or fails the gate.
+  void _settleTrialReminder(SubscriptionStatus status) {
+    if (!status.active || !status.isTrial || status.willRenew) return;
+    final scheduler = ref.read(localNotificationSchedulerProvider);
+    unawaited(
+      scheduler.cancel(TrialReminder.notificationId).catchError((Object e) {
+        debugPrint('[SubscriptionStatus] trial reminder not cancelled: $e');
+      }),
+    );
   }
 
   Future<SubscriptionStatus> _resolve() async {

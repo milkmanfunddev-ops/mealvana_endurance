@@ -28,6 +28,7 @@ class SubscriptionStatus {
     this.source = SubscriptionSource.none,
     this.isTrial = false,
     this.productId,
+    this.willRenew = true,
   });
 
   /// Nobody is subscribed (also the safe fallback whenever a lookup fails
@@ -51,6 +52,12 @@ class SubscriptionStatus {
   /// The store SKU that granted the entitlement, when known.
   final String? productId;
 
+  /// Whether the store will renew (or, in a trial, start charging) at
+  /// [expiresAt]. False once the athlete has cancelled: the entitlement
+  /// stays active to the end of the period, then lapses. The day-five
+  /// reminder is cancelled on an active trial that will not renew (mp-456).
+  final bool willRenew;
+
   /// Whether [expiresAt] has passed as of [now]. False when there is no expiry.
   bool isExpiredAt(DateTime now) {
     final e = expiresAt;
@@ -63,6 +70,7 @@ class SubscriptionStatus {
     SubscriptionSource? source,
     bool? isTrial,
     String? productId,
+    bool? willRenew,
   }) {
     return SubscriptionStatus(
       active: active ?? this.active,
@@ -70,6 +78,7 @@ class SubscriptionStatus {
       source: source ?? this.source,
       isTrial: isTrial ?? this.isTrial,
       productId: productId ?? this.productId,
+      willRenew: willRenew ?? this.willRenew,
     );
   }
 
@@ -80,16 +89,18 @@ class SubscriptionStatus {
       other.expiresAt == expiresAt &&
       other.source == source &&
       other.isTrial == isTrial &&
-      other.productId == productId;
+      other.productId == productId &&
+      other.willRenew == willRenew;
 
   @override
   int get hashCode =>
-      Object.hash(active, expiresAt, source, isTrial, productId);
+      Object.hash(active, expiresAt, source, isTrial, productId, willRenew);
 
   @override
   String toString() =>
       'SubscriptionStatus(active: $active, source: ${source.name}, '
-      'expiresAt: $expiresAt, isTrial: $isTrial, productId: $productId)';
+      'expiresAt: $expiresAt, isTrial: $isTrial, productId: $productId, '
+      'willRenew: $willRenew)';
 }
 
 /// A free introductory period the store attaches to a subscription product
