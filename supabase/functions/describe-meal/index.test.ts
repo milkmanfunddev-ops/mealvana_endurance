@@ -35,7 +35,13 @@ import {
 import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 import { z } from 'npm:zod@3';
 
-import { MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
+import { MealAnalysisRequestSchema, MealAnalysisSchema } from '../_shared/meal_analysis/schema.ts';
+import { finalizeAnalysis, NOT_FOOD_BODY, NOT_FOOD_STATUS, sumTotals } from '../_shared/meal_analysis/finalize.ts';
+import {
+  DESCRIBE_MEAL_INSTRUCTIONS,
+  describeMealPrompt,
+  MEAL_ANALYSIS_CACHE_OPTIONS,
+} from '../_shared/meal_analysis/prompt.ts';
 import { creditCost } from '../_shared/ai/credits.ts';
 import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
 
@@ -210,75 +216,132 @@ describe('D. Credit cost', () => {
 });
 
 // ---------------------------------------------------------------------------
-// E. Prompt embedding — the description is quoted in the prompt
+// E. Prompt shape (ai-cost ticket 08, mp-473)
+//
+// The fixed instructions go first, in their own message, with a one-hour cache
+// marker; the athlete's words go last, alone. The old version of this section
+// re-typed the prompt inline and tested its own copy, so it could not notice
+// the athlete's description sitting in the middle of the instructions.
 // ---------------------------------------------------------------------------
 
-describe('E. Prompt embedding', () => {
-  /** Mirrors the prompt construction logic in describe-meal/index.ts */
-  function buildDescribeMealPrompt(description: string): string {
-    return `You are a sports nutrition assistant helping an endurance athlete log their meals accurately.
+describe('E. Prompt shape', () => {
+  // Not "two eggs": the instructions quote that themselves as a quantity example.
+  const prompt = describeMealPrompt('  a bowl of ramen with chashu  ');
 
-The athlete described this meal: "${description.trim()}"
-
-INSTRUCTIONS:
-- Group food into items the way a person logging their own meal would think
-  about it — one item per DISH or line, not one item per raw ingredient.
-  For example: "spaghetti and meatballs" is ONE item (its sauce, pasta, and
-  meatballs are summed into one entry), while a side of "broccoli" is a
-  SEPARATE item because it's a distinct component of the plate. Similarly,
-  "a turkey sandwich with lettuce and mayo" is ONE item, not three. Only
-  split into multiple items when the foods are genuinely separate parts of
-  the meal (a side dish, a drink, a dessert) — never split a single dish's
-  own ingredients apart.
-- Each item's macros must be the SUM across everything that makes up that
-  dish (e.g. the meatballs' and sauce's calories/carbs/protein/fat/sodium
-  are combined into the "spaghetti and meatballs" item, not reported
-  separately).
-- If a quantity is mentioned (e.g. "two eggs", "large OJ"), use it; otherwise assume a single, realistic serving for an adult endurance athlete.
-- Do NOT underestimate portions — athletes eat meaningfully sized meals.
-- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg). These must be non-null for every item.
-- Compute accurate totals across all items.
-- Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods described.
-- Set confidence to "high" if the description is precise (weights, brand names, counts); "medium" if typical portions can be inferred; "low" if too vague to estimate reliably.
-- If the description clearly does not describe food (e.g. a movie title, a random sentence), set confidence to "low", return a single placeholder item, and set notes to explain.
-
-Return your answer as structured JSON matching the requested schema.`;
-  }
-
-  it('description is embedded verbatim in the prompt', () => {
-    const desc = 'two eggs on toast with butter';
-    const prompt = buildDescribeMealPrompt(desc);
-    assert(prompt.includes(`"${desc}"`), 'description should be quoted in the prompt');
+  it('the instructions come first, in a system message, and hold no athlete text', () => {
+    assertEquals(prompt.system.role, 'system');
+    assertEquals(prompt.system.content, DESCRIBE_MEAL_INSTRUCTIONS);
+    assert(!DESCRIBE_MEAL_INSTRUCTIONS.includes('ramen'));
   });
 
-  it('prompt instructs not to underestimate portions', () => {
-    const prompt = buildDescribeMealPrompt('test meal');
-    assert(prompt.includes('Do NOT underestimate portions'));
+  it('the system message carries a one-hour cache marker', () => {
+    assertEquals(prompt.system.providerOptions, MEAL_ANALYSIS_CACHE_OPTIONS);
+    assertEquals(MEAL_ANALYSIS_CACHE_OPTIONS, {
+      anthropic: { cacheControl: { type: 'ephemeral', ttl: '1h' } },
+    });
   });
 
-  it('prompt instructs endurance athlete context', () => {
-    const prompt = buildDescribeMealPrompt('test meal');
-    assert(prompt.includes('endurance athlete'));
+  it("the athlete's words are last and are the whole of that message", () => {
+    assertEquals(prompt.messages.length, 1, "the athlete's input is the only message");
+    assertEquals(prompt.messages[0].role, 'user');
+    assertEquals(prompt.messages[0].content, [{ type: 'text', text: 'a bowl of ramen with chashu' }]);
   });
 
-  it('prompt mentions the four confidence levels (high/medium/low) context', () => {
-    const prompt = buildDescribeMealPrompt('test meal');
-    assert(prompt.includes('"high"'));
-    assert(prompt.includes('"medium"'));
-    assert(prompt.includes('"low"'));
+  it('two different descriptions send byte-identical instructions', () => {
+    const a = describeMealPrompt('pasta');
+    const b = describeMealPrompt('a bagel and cream cheese');
+    assertEquals(a.system, b.system);
   });
 
-  it('prompt handles non-food input: instructs low confidence + placeholder', () => {
-    const prompt = buildDescribeMealPrompt('test meal');
-    assert(prompt.includes('does not describe food'));
-    assert(prompt.includes('placeholder item'));
+  it('the instructions still carry the wording the estimates depend on', () => {
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('Do NOT underestimate portions'));
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('endurance athlete'));
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('"high"'));
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('"medium"'));
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('"low"'));
   });
 
-  it('description is trimmed before embedding', () => {
-    const desc = '  pasta with meatballs  ';
-    const prompt = buildDescribeMealPrompt(desc);
-    // Should use the trimmed version
-    assert(prompt.includes('"pasta with meatballs"'));
+  it('the model is told not to compute totals and not to invent a placeholder', () => {
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('Do NOT compute totals'));
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('not_food'));
+    assert(!DESCRIBE_MEAL_INSTRUCTIONS.includes('placeholder item with guessed macros.\n- '));
+    assert(DESCRIBE_MEAL_INSTRUCTIONS.includes('Never return a placeholder item'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// E2. The function adds up the totals; the model's are ignored (mp-473)
+// ---------------------------------------------------------------------------
+
+describe('E2. Totals are ours', () => {
+  const items = [
+    { name: 'Spaghetti and meatballs', portion: '1 plate', calories: 720, carb_g: 88.4, protein_g: 34, fat_g: 24.5, sodium_mg: 980 },
+    { name: 'Broccoli', portion: '1 cup', calories: 55, carb_g: 11.2, protein_g: 3.7, fat_g: 0.6, sodium_mg: 33 },
+  ];
+
+  it("a mismatched model answer is thrown away and the items are summed", () => {
+    const requested = MealAnalysisRequestSchema.parse({
+      name: 'Spaghetti night',
+      suggested_slot: 'dinner',
+      confidence: 'medium',
+      items,
+      // What the model said. Nonsense on purpose.
+      totals: { calories: 100, carb_g: 1, protein_g: 1, fat_g: 1, sodium_mg: 1 },
+    });
+    const final = finalizeAnalysis(requested);
+    assert(!final.notFood);
+    if (final.notFood) return;
+    assertEquals(final.analysis.totals, {
+      calories: 775,
+      carb_g: 99.6,
+      protein_g: 37.7,
+      fat_g: 25.1,
+      sodium_mg: 1013,
+    });
+    // And the answer the app receives is still the app's own shape.
+    assert(MealAnalysisSchema.safeParse(final.analysis).success);
+  });
+
+  it('a model answer with no totals at all is fine', () => {
+    const requested = MealAnalysisRequestSchema.parse({ name: 'Broccoli', items: [items[1]] });
+    const final = finalizeAnalysis(requested);
+    assert(!final.notFood);
+    if (final.notFood) return;
+    assertEquals(final.analysis.totals, sumTotals([items[1]]));
+    assertEquals(final.analysis.suggested_slot, 'snack');
+    assertEquals(final.analysis.confidence, 'medium');
+  });
+
+  it('float macros sum to one decimal, calories and sodium to a whole number', () => {
+    assertEquals(sumTotals([
+      { name: 'a', portion: '1', calories: 1, carb_g: 0.1, protein_g: 0.2, fat_g: 0.3, sodium_mg: 0.4 },
+      { name: 'b', portion: '1', calories: 2, carb_g: 0.2, protein_g: 0.1, fat_g: 0.3, sodium_mg: 0.7 },
+    ]), { calories: 3, carb_g: 0.3, protein_g: 0.3, fat_g: 0.6, sodium_mg: 1 });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// E3. "Not food" is an answer, not a guess (mp-473)
+// ---------------------------------------------------------------------------
+
+describe('E3. Not food', () => {
+  it('the flag returns the not-food answer and no macros', () => {
+    const final = finalizeAnalysis(
+      MealAnalysisRequestSchema.parse({ name: 'A car park', not_food: true, items: [] }),
+    );
+    assertEquals(final, { notFood: true });
+  });
+
+  it('an empty items array is the same answer, whatever the model flagged', () => {
+    assertEquals(
+      finalizeAnalysis(MealAnalysisRequestSchema.parse({ name: 'Nothing', items: [] })),
+      { notFood: true },
+    );
+  });
+
+  it('the body is a code and a 422, never prose', () => {
+    assertEquals(NOT_FOOD_BODY, { error: 'not_food' });
+    assertEquals(NOT_FOOD_STATUS, 422);
   });
 });
 
