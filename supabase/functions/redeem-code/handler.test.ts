@@ -11,8 +11,10 @@
  *
  * What it must do:
  *   - a coach entering their own code is marked coach and gets 30 days of `pro`;
- *   - an athlete entering a coach or influencer code gets the attribute set and
- *     a pending pairing with the code's owner;
+ *   - an athlete entering a coach or influencer code gets the attribute set;
+ *     a coach code also opens a pending pairing with the coach, an influencer
+ *     code never pairs;
+ *   - an account RevenueCat has never seen is created there first;
  *   - a giveaway code grants 365 days, once;
  *   - a wrong, not-yet-valid, expired or used code gets a plain reason, and
  *     nothing is written or granted;
@@ -110,12 +112,17 @@ interface FakeRc extends RevenueCatClient {
   attributes: { user: string; attributes: Record<string, string> }[];
   failGrant?: RevenueCatError;
   failAttributes?: RevenueCatError;
+  /** Customers RevenueCat has never seen: a write for one answers 404 until it is created. */
+  unknown: Set<string>;
+  created: string[];
 }
 
 function fakeRc(): FakeRc {
   const rc: FakeRc = {
     grants: [],
     attributes: [],
+    unknown: new Set(),
+    created: [],
     // deno-lint-ignore require-await
     async currentProExpiry() {
       return null;
@@ -123,11 +130,13 @@ function fakeRc(): FakeRc {
     // deno-lint-ignore require-await
     async grantPro(user, days) {
       if (rc.failGrant) throw rc.failGrant;
+      if (rc.unknown.has(user)) throw new RevenueCatError(`RevenueCat has no customer ${user}`, 404);
       rc.grants.push({ user, days });
     },
     // deno-lint-ignore require-await
     async setAttributes(user, attributes) {
       if (rc.failAttributes) throw rc.failAttributes;
+      if (rc.unknown.has(user)) throw new RevenueCatError(`RevenueCat has no customer ${user}`, 404);
       rc.attributes.push({ user, attributes });
     },
     // deno-lint-ignore require-await
@@ -139,8 +148,9 @@ function fakeRc(): FakeRc {
       throw new Error('redeem-code never reads grants');
     },
     // deno-lint-ignore require-await
-    async createCustomer() {
-      throw new Error('redeem-code never creates customers');
+    async createCustomer(user) {
+      rc.unknown.delete(user);
+      rc.created.push(user);
     },
   };
   return rc;
@@ -238,6 +248,16 @@ describe('a coach entering their own code', () => {
     const rc = fakeRc();
     const res = await redeem(db, rc, signedIn(COACH), { code: '  kyle 30 ' });
     assertEquals(res.body.ok, true);
+    assertEquals(rc.grants, [{ user: COACH, days: 30 }]);
+  });
+
+  it('a coach RevenueCat has never seen (a web sign-up) is created there, then granted', async () => {
+    const db = world([code({})]);
+    const rc = fakeRc();
+    rc.unknown.add(COACH);
+    const res = await redeem(db, rc, signedIn(COACH), { code: 'KYLE30' });
+    assertEquals(res.body.ok, true);
+    assertEquals(rc.created, [COACH]);
     assertEquals(rc.grants, [{ user: COACH, days: 30 }]);
   });
 
@@ -342,19 +362,26 @@ describe('an athlete entering a coach code', () => {
 });
 
 describe('an athlete entering an influencer code', () => {
-  it('gets influencer_code set and a pending pairing with the code owner', async () => {
+  it('gets influencer_code set and no pairing: an influencer is not a coach', async () => {
     const db = world([code({ code: 'IVYRUNS', type: 'influencer', owner_user_id: INFLUENCER, perk_days: 0 })]);
     const rc = fakeRc();
     const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'ivyruns' });
 
     assertEquals(res.body.ok, true);
-    assertEquals(res.body.kind, 'paired');
+    assertEquals(res.body.kind, 'attributed');
     assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { influencer_code: 'IVYRUNS' } }]);
     assertEquals(rc.grants.length, 0);
-    const pairs = db.rows('coach_athlete_relationships');
-    assertEquals(pairs.length, 1);
-    assertEquals(pairs[0].coach_user_id, INFLUENCER);
-    assertEquals(pairs[0].status, 'pending');
+    assertEquals(db.rows('coach_athlete_relationships').length, 0);
+  });
+
+  it('an athlete RevenueCat has never seen is created there, then attributed', async () => {
+    const db = world([code({ code: 'PODCAST', type: 'influencer', owner_user_id: null, perk_days: 0 })]);
+    const rc = fakeRc();
+    rc.unknown.add(ATHLETE);
+    const res = await redeem(db, rc, signedIn(ATHLETE), { code: 'PODCAST' });
+    assertEquals(res.body.ok, true);
+    assertEquals(rc.created, [ATHLETE]);
+    assertEquals(rc.attributes, [{ user: ATHLETE, attributes: { influencer_code: 'PODCAST' } }]);
   });
 
   it('with no owner sets the attribute and pairs with no one', async () => {

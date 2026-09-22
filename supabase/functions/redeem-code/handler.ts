@@ -38,7 +38,7 @@
  * reason and the caller tries another code.
  */
 import { corsHeaders } from '../_shared/cors.ts';
-import type { RevenueCatClient } from '../_shared/revenuecat/client.ts';
+import { RevenueCatError, type RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import type { Db } from '../_shared/vana/env.ts';
 
 export interface Caller {
@@ -196,23 +196,46 @@ async function apply(
     return { kind: 'coach', pro_days: row.perk_days };
   }
 
-  // An athlete entering a coach's or an influencer's code.
-  if (row.owner_user_id) await openPendingPairing(db, row.owner_user_id, caller.userId);
+  // An athlete entering a coach's or an influencer's code. Only a coach code
+  // pairs (mp-458 §4: "a pending pairing with the coach"); an influencer is
+  // not a coach and never sees the athlete's data.
+  const pairsWith = row.type === 'coach' ? row.owner_user_id : null;
+  if (pairsWith) await openPendingPairing(db, pairsWith, caller.userId);
   const attribute = row.type === 'coach' ? 'coach_code' : 'influencer_code';
   try {
-    await deps.revenueCat().setAttributes(caller.userId, { [attribute]: row.code });
+    await withCustomer(deps.revenueCat(), caller.userId, (rc) =>
+      rc.setAttributes(caller.userId, { [attribute]: row.code }));
   } catch (e) {
     throw new AfterClaimError(502, 'store_unavailable', `setAttributes failed: ${(e as Error).message}`);
   }
-  return row.owner_user_id ? { kind: 'paired', coach_user_id: row.owner_user_id } : { kind: 'attributed' };
+  return pairsWith ? { kind: 'paired', coach_user_id: pairsWith } : { kind: 'attributed' };
 }
 
 async function grant(deps: RedeemDeps, userId: string, days: number): Promise<void> {
   if (!(days > 0)) return;
   try {
-    await deps.revenueCat().grantPro(userId, days);
+    await withCustomer(deps.revenueCat(), userId, (rc) => rc.grantPro(userId, days));
   } catch (e) {
     throw new AfterClaimError(502, 'store_unavailable', `grantPro failed: ${(e as Error).message}`);
+  }
+}
+
+/**
+ * Run a RevenueCat write, creating the customer first when RevenueCat has
+ * never seen it (404): an account that only ever used the web build has no
+ * RevenueCat customer, and a grant or an attribute needs one.
+ */
+async function withCustomer(
+  rc: RevenueCatClient,
+  userId: string,
+  write: (rc: RevenueCatClient) => Promise<void>,
+): Promise<void> {
+  try {
+    await write(rc);
+  } catch (e) {
+    if (!(e instanceof RevenueCatError) || e.status !== 404) throw e;
+    await rc.createCustomer(userId);
+    await write(rc);
   }
 }
 
