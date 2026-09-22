@@ -1,189 +1,195 @@
 /**
- * AI credit enforcement for the AI edge functions.
+ * The monthly budget, metered in real cost, for the AI edge functions
+ * (mp-430, mp-436; ai-cost ticket 09).
  *
- * Users hold a balance of app-defined "AI credits" (see the token_wallets /
- * token_ledger schema + grant_credits/debit_credits/ensure_free_credits RPCs).
- * Each AI action costs a fixed number of credits. This module:
- *   1. lazily provisions a wallet and rolls the subscription's monthly
- *      Allowance (mp-281: `ensure_allowance` forfeits an expired allowance
- *      and grants the current window when the entitlement is active — the
- *      monthly grant an annual plan gets between the webhook's yearly events),
- *   2. checks the user can afford the action BEFORE the model call,
- *   3. debits the cost AFTER a successful call (failed calls aren't charged);
- *      the debit spends the allowance first, then pack credits (SQL rule).
+ * Every account has the same monthly budget of model cost, held in the
+ * `token_wallets` row in whole micro-dollars beside any bought budget (the
+ * SQL: 20260916130000_monthly_allowance.sql, 20260922120000_ai_budget_micro_dollars.sql).
+ * Every debiting call — a message to Vana, an opener, the described meal,
+ * the meal photo, the pantry photo — goes through this module:
  *
- * Enforcement is OFF by default and gated by the AI_CREDITS_ENFORCED secret, so
- * deploying this is a no-op until you flip the flag per project:
- *   supabase secrets set AI_CREDITS_ENFORCED=true   (when the paywall is ready)
+ *   1. `reserveBudget` BEFORE the model: one RPC, `ai_budget_reserve`, that
+ *      rolls the allowance, checks the balance against the call's kind's
+ *      ESTIMATE and debits it, under the wallet's row lock. A burst of
+ *      requests is counted one after the other (mp-430 clause 9). The
+ *      refusal is a 402 the client's one handler turns into the top-up sheet
+ *      (mp-282); the body is a share, a refill date and bought extra, never
+ *      a dollar figure (mp-436 clause 3).
+ *   2. `hold.settle(cost)` AFTER the model: `ai_budget_settle` with the real
+ *      cost (usage.ts: the gateway's charge, else tokens priced from the one
+ *      table). A call that started inside the budget finishes even if it
+ *      ends over; the wallet floors at zero and the next call is refused.
+ *   3. `hold.refund()` when the call failed: settles at zero, the estimate
+ *      comes back. A reservation nobody settled is released by the database
+ *      after two hours.
  *
- * Tunables (all env-overridable, sensible defaults):
- *   AI_FREE_MONTHLY_CREDITS   — free credits granted once per calendar month
- *   AI_COST_<FN>              — per-action cost override (e.g. AI_COST_JADE_CHAT)
+ * Fail-CLOSED on the reservation: a database error refuses the call as OURS
+ * (503 `ai_unavailable`, the "Vana is unavailable right now" line), never as
+ * the athlete's wallet. The old credit path failed open; a budget that can be
+ * bypassed by an outage is not a ceiling.
  *
- * Fail-open: any wallet/db error returns allowed (never block AI on infra
- * hiccups). Flip to fail-closed later if abuse appears.
+ * Enforcement stays behind the AI_CREDITS_ENFORCED secret (on for dev, off
+ * on prod until the paywall): off, nothing is reserved and every call runs.
+ *
+ * Tunables: AI_MONTHLY_BUDGET, AI_TRIAL_BUDGET (allowance.ts) and
+ * AI_ESTIMATE_<KIND> (micro-dollars; e.g. AI_ESTIMATE_VANA_CHAT).
  */
 
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { monthlyAllowance } from './allowance.ts';
+import { budgetStatus, monthlyBudget, trialBudget, type BudgetStatus, type WalletBudgetRow } from './allowance.ts';
+import { realCostMicro, type RealCostInput } from './usage.ts';
+import { AI_UNAVAILABLE } from './gateway_error.ts';
 
 export const CREDITS_ENFORCED = Deno.env.get('AI_CREDITS_ENFORCED') === 'true';
 
+const env = (key: string) => Deno.env.get(key);
+
+/** The monthly budget for this project, in micro-dollars. */
+export const MONTHLY_BUDGET = monthlyBudget(env);
+/** The trial week's budget for this project, in micro-dollars. */
+export const TRIAL_BUDGET = trialBudget(env);
+
+/** The kinds of call that draw the budget. Openers are one of them (mp-430 clause 1). */
+export type BudgetKind = 'vana-chat' | 'vana-opener' | 'jade-chat' | 'describe-meal' | 'analyze-meal-photo' | 'vana-pantry-photo';
+
 /**
- * Free credits granted once per calendar month.
- *
- * 20 is the figure the pricing model is built on ("AI Features — Cost
- * Accounting & Token Pricing" §5): at Sonnet 4.6's worst case of ~$0.013 per
- * analysis it costs ≤ $0.26 per user per month, and it sits below the ~30
- * analyses/month a daily meal-logger runs, so the packs have a reason to exist.
- *
- * Scale this with the model, not with generosity. Dev ran at 500 for a while,
- * which is $6.50/user/month at Sonnet rates — more than the $4.99 pack itself,
- * and enough that no user would ever need to buy one.
+ * What a call of each kind is expected to cost, in micro-dollars: the
+ * reservation taken when it starts. Set from the per-call cost log on dev
+ * (ai_usage / vana_calls, 2026-09-15 and the 09-20 audit): a planning turn on
+ * Haiku 4.5 with the cache warm is about a cent, an opener a little less, a
+ * described meal on Sonnet 4.6 under a cent, a photo a little over. An
+ * estimate is only what is held until the real cost is known; it decides
+ * nothing but whether an almost-empty wallet may start one more call.
  */
-export const FREE_MONTHLY_CREDITS = intEnv('AI_FREE_MONTHLY_CREDITS', 20);
-
-/** The subscription's monthly Allowance for this project (mp-281; _shared/ai/allowance.ts). */
-export const MONTHLY_ALLOWANCE = monthlyAllowance((key) => Deno.env.get(key));
-
-/** Per-action credit cost. User-facing credits, NOT raw LLM tokens — the real
- *  token cost is tracked separately in ai_usage. Tune freely. */
-const DEFAULT_COSTS: Record<string, number> = {
-  'describe-meal': 1,
-  // 1, not 2. The token sheet tells the user "Each analysis costs 1 token",
-  // and the pack economics are derived from one analysis per token — a photo
-  // costs ~$0.011 vs ~$0.009 for text, nowhere near double. Charging 2 made the
-  // UI a lie and the pricing model wrong in the same stroke.
-  'analyze-meal-photo': 1,
-  'jade-chat': 1,
+const DEFAULT_ESTIMATES: Record<BudgetKind, number> = {
+  'vana-chat': 15_000,
+  'vana-opener': 10_000,
+  'jade-chat': 15_000,
+  'describe-meal': 8_000,
+  'analyze-meal-photo': 13_000,
+  'vana-pantry-photo': 13_000,
 };
 
-export function creditCost(fn: string): number {
-  const envKey = `AI_COST_${fn.toUpperCase().replace(/-/g, '_')}`;
-  return intEnv(envKey, DEFAULT_COSTS[fn] ?? 1);
+export function budgetEstimate(kind: BudgetKind): number {
+  const raw = env(`AI_ESTIMATE_${kind.toUpperCase().replace(/-/g, '_')}`);
+  const fallback = DEFAULT_ESTIMATES[kind];
+  if (raw == null || raw.trim() === '') return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? Math.trunc(n) : fallback;
 }
 
-export interface CreditCheck {
-  /** true if the call may proceed (always true when enforcement is off). */
-  allowed: boolean;
-  /** current balance, or -1 when unknown (enforcement off / fail-open). */
-  balance: number;
-  /** credit cost of this action. */
-  cost: number;
-  /** What is left of this period's Allowance (part of `balance`); null when unknown. */
-  allowance?: number | null;
-  /** The size of the monthly Allowance the subscription carries; 0 until first granted. */
-  allowanceMonthly?: number | null;
-  /** ISO end of the current Allowance window — when it renews; null when none is open. */
-  allowanceExpiresAt?: string | null;
+/** A reservation held for one call: settle it to the real cost, or give it back. Each does something once. */
+export interface BudgetHold {
+  /** The `token_reservations` id; null when enforcement is off. */
+  reservationId: string | null;
+  kind: BudgetKind;
+  /** Micro-dollars reserved. */
+  estimate: number;
+  /** The reservation becomes the real cost. Unpriceable input settles at the estimate. Never throws. */
+  settle(cost: RealCostInput): Promise<void>;
+  /** The call failed: the whole reservation comes back. Never throws. */
+  refund(): Promise<void>;
 }
 
-/** The `ensure_allowance` RPC's row (SQL: 20260916130000_monthly_allowance.sql). */
-interface EnsureAllowanceRow {
-  balance?: number;
-  allowance?: number;
-  allowance_monthly?: number;
-  allowance_expires_at?: string | null;
-  granted?: boolean;
+export type BudgetReservation =
+  | { allowed: true; hold: BudgetHold; status: BudgetStatus }
+  | { allowed: false; status: 402 | 503; body: Record<string, unknown> };
+
+/** The `ai_budget_reserve` RPC's row. */
+interface ReserveRow extends WalletBudgetRow {
+  allowed?: boolean;
+  reservation_id?: string;
+}
+
+// deno-lint-ignore no-explicit-any
+type Client = SupabaseClient<any, any, any>;
+
+function makeHold(client: Client, kind: BudgetKind, estimate: number, reservationId: string | null): BudgetHold {
+  let done = false;
+  const settleTo = async (real: number, what: string) => {
+    if (done) return;
+    done = true;
+    if (!reservationId) return;
+    try {
+      const { error } = await client.rpc('ai_budget_settle', { p_id: reservationId, p_real_cost: real });
+      if (error) console.error(`[budget] ${what} ${kind} ${reservationId} failed:`, error.message);
+    } catch (e) {
+      console.error(`[budget] ${what} ${kind} ${reservationId} threw:`, (e as Error).message);
+    }
+  };
+  return {
+    reservationId, kind, estimate,
+    settle: (cost) => settleTo(realCostMicro(cost) ?? estimate, 'settle'),
+    refund: () => settleTo(0, 'refund'),
+  };
 }
 
 /**
- * Ensure the wallet exists and the monthly Allowance is current (`ensure_allowance`:
- * forfeits an expired allowance, grants the current window when the
- * entitlement is active and none is open), then check (WITHOUT debiting)
- * whether the user can afford `fn`. Fail-open on error.
+ * Take this call's place in the budget before the model runs. The database
+ * decides in one statement; this only shapes the answer.
  */
-export async function ensureAndCheckCredits(
-  // deno-lint-ignore no-explicit-any
-  client: SupabaseClient<any, any, any>,
-  userId: string,
-  fn: string,
-): Promise<CreditCheck> {
-  const cost = creditCost(fn);
-  if (!CREDITS_ENFORCED) return { allowed: true, balance: -1, cost };
-  try {
-    const { data, error } = await client.rpc('ensure_allowance', {
-      p_user_id: userId,
-      p_amount: MONTHLY_ALLOWANCE,
-    });
-    if (error) {
-      console.error('[credits] ensure_allowance error (fail-open):', error.message);
-      return { allowed: true, balance: -1, cost };
-    }
-    const row = (data ?? {}) as EnsureAllowanceRow;
-    const balance = typeof row.balance === 'number' ? row.balance : 0;
-    return {
-      allowed: balance >= cost,
-      balance,
-      cost,
-      allowance: typeof row.allowance === 'number' ? row.allowance : null,
-      allowanceMonthly: typeof row.allowance_monthly === 'number' ? row.allowance_monthly : null,
-      allowanceExpiresAt: row.allowance_expires_at ?? null,
-    };
-  } catch (e) {
-    console.error('[credits] ensureAndCheckCredits exception (fail-open):', e);
-    return { allowed: true, balance: -1, cost };
+export async function reserveBudget(client: Client, userId: string, kind: BudgetKind, ref: string = kind): Promise<BudgetReservation> {
+  const estimate = budgetEstimate(kind);
+  if (!CREDITS_ENFORCED) {
+    return { allowed: true, hold: makeHold(client, kind, estimate, null), status: { share_used: null, refill_at: null, bought_extra_share: 0 } };
   }
-}
-
-/**
- * Debit `fn`'s cost after a successful AI call. Never throws. No-op when
- * enforcement is off. Atomic + balance-guarded server-side (debit_credits RPC).
- */
-export async function debitForUsage(
-  // deno-lint-ignore no-explicit-any
-  client: SupabaseClient<any, any, any>,
-  userId: string,
-  fn: string,
-): Promise<void> {
-  if (!CREDITS_ENFORCED) return;
-  const cost = creditCost(fn);
   try {
-    const { data, error } = await client.rpc('debit_credits', {
-      p_user_id: userId,
-      p_amount: cost,
-      p_reason: 'debit_usage',
-      p_ref: fn,
+    const { data, error } = await client.rpc('ai_budget_reserve', {
+      p_user_id: userId, p_kind: kind, p_estimate: estimate, p_monthly: MONTHLY_BUDGET, p_trial: TRIAL_BUDGET, p_ref: ref,
     });
     if (error) {
-      console.error('[credits] debit_credits error:', error.message);
-      return;
+      console.error(`[budget] ai_budget_reserve error for ${kind} (refusing):`, error.message);
+      return { allowed: false, status: 503, body: budgetUnavailableBody() };
     }
-    // debit_credits returns { success, balance }. success:false (no error)
-    // means the balance was drained between the pre-call check and this debit
-    // (check-then-debit race). The action was already served, so we can't
-    // reclaim it — but log it instead of silently swallowing the shortfall.
-    const result = data as { success?: boolean; balance?: number } | null;
-    if (result && result.success === false) {
-      console.warn(
-        `[credits] debit declined for ${fn} (user ${userId}): balance ` +
-          `${result.balance ?? '?'} < cost ${cost} — served without charge`,
-      );
+    const row = (data ?? {}) as ReserveRow;
+    const status = budgetStatus(row, MONTHLY_BUDGET);
+    if (row.allowed !== true || typeof row.reservation_id !== 'string') {
+      return { allowed: false, status: 402, body: insufficientCreditsBody(status) };
     }
+    return { allowed: true, hold: makeHold(client, kind, estimate, row.reservation_id), status };
   } catch (e) {
-    console.error('[credits] debit exception:', e);
+    console.error(`[budget] reserveBudget threw for ${kind} (refusing):`, e);
+    return { allowed: false, status: 503, body: budgetUnavailableBody() };
   }
 }
 
 /**
  * Structured 402 body the client's one handler turns into the top-up sheet
- * (mp-282). Carries the Allowance so the sheet can say what it is and when
- * it renews without another read.
+ * (mp-282). What the sheet shows and nothing more: the share of the month
+ * used, when it refills, any bought extra (mp-436 clause 3). The error code
+ * is the one the client already keys on. `allowance_expires_at` repeats
+ * `refill_at` under the name today's sheet reads for its renewal line.
  */
-export function insufficientCreditsBody(check: CreditCheck) {
+export function insufficientCreditsBody(status: BudgetStatus) {
   return {
     error: 'insufficient_credits',
-    message: 'You are out of AI credits. Purchase more to continue.',
-    balance: check.balance,
-    cost: check.cost,
-    allowance_monthly: check.allowanceMonthly ?? null,
-    allowance_expires_at: check.allowanceExpiresAt ?? null,
+    message: "You have used this month's Vana. Top up to continue.",
+    share_used: status.share_used,
+    refill_at: status.refill_at,
+    allowance_expires_at: status.refill_at,
+    bought_extra_share: status.bought_extra_share,
   };
 }
 
-function intEnv(name: string, fallback: number): number {
-  const raw = Deno.env.get(name);
-  if (raw == null || raw.trim() === '') return fallback;
-  const n = Number(raw);
-  return Number.isFinite(n) ? Math.trunc(n) : fallback;
+/** The database could not answer for the wallet: the fault is ours (mp-437's posture), not the athlete's budget. */
+export function budgetUnavailableBody() {
+  return { success: false as const, error: AI_UNAVAILABLE, reason: 'budget_unavailable' };
+}
+
+/**
+ * Thrown by paths that have no HTTP response of their own (a Vana action);
+ * the function maps it to the reservation's status and body.
+ */
+export class BudgetRefusedError extends Error {
+  constructor(public status: 402 | 503, public body: Record<string, unknown>) {
+    super(`budget_refused: ${String(body.error)}`);
+    this.name = 'BudgetRefusedError';
+  }
+}
+
+/** `reserveBudget` for a path whose only way to refuse is to throw. */
+export async function reserveBudgetOrThrow(client: Client, userId: string, kind: BudgetKind, ref?: string): Promise<BudgetHold> {
+  const r = await reserveBudget(client, userId, kind, ref);
+  if (!r.allowed) throw new BudgetRefusedError(r.status, r.body);
+  return r.hold;
 }

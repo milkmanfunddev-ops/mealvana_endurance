@@ -51,16 +51,13 @@ import {
 import { mealPhotoPrompt } from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { refuseUnlessPro } from "../_shared/vana/entitlement.ts";
-import {
-  debitForUsage,
-  ensureAndCheckCredits,
-  insufficientCreditsBody,
-} from "../_shared/ai/credits.ts";
+import { type BudgetHold, reserveBudget } from "../_shared/ai/credits.ts";
 import {
   completeCall,
   reserveCall,
 } from "../_shared/vana/rate-limit.ts";
 import { callMetrics } from "../_shared/vana/log.ts";
+import { cacheReadTokens, cacheWriteTokens } from "../_shared/vana/stream.ts";
 import { subscriberState } from "../_shared/vana/subscriber.ts";
 
 // ---------------------------------------------------------------------------
@@ -123,6 +120,8 @@ serve(withSentry(async (req: Request) => {
     );
   }
 
+  // The budget reservation for this call, once taken; refunded on any failure below.
+  let hold: BudgetHold | undefined;
   try {
     // Authenticate caller
     const { user, response: authResponse } = await requireUser(req);
@@ -171,15 +170,15 @@ serve(withSentry(async (req: Request) => {
     // Download image from private storage using service-role client
     const serviceClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // ── Credit check ─────────────────────────────────────────────────────────
-    const credit = await ensureAndCheckCredits(
-      serviceClient,
-      user.id,
-      "analyze-meal-photo",
-    );
-    if (!credit.allowed) {
-      return jsonResponse(insufficientCreditsBody(credit), 402);
+    // ── Budget (mp-430, mp-436; ai-cost ticket 09) ───────────────────────────
+    // The call's estimate is reserved before the model, in one statement that also
+    // checks the balance; settled to the real cost after; refunded if it fails.
+    // 402 = the month is used up (the top-up sheet); 503 = the wallet could not be read (ours).
+    const budget = await reserveBudget(serviceClient, user.id, "analyze-meal-photo");
+    if (!budget.allowed) {
+      return jsonResponse(budget.body, budget.status);
     }
+    hold = budget.hold;
 
     // ── Rate limit ───────────────────────────────────────────────────────────
     // The same shared Vana limiter as chat, on the server (mp-469 criterion 3): the row is written before the
@@ -192,6 +191,7 @@ serve(withSentry(async (req: Request) => {
       { model: ANALYZE_MEAL_PHOTO_MODEL },
     );
     if (!reserved.allowed) {
+      await hold.refund();
       return jsonResponse(
         { error: "rate_limited", retry_after_seconds: reserved.retryAfterSeconds },
         429,
@@ -268,6 +268,8 @@ serve(withSentry(async (req: Request) => {
       if (
         errStr.includes("not_food") || errStr.toLowerCase().includes("not food")
       ) {
+        // The model ran and reported nothing usable about its cost: the reservation stands as the charge.
+        await hold.settle({ model: ANALYZE_MEAL_PHOTO_MODEL });
         return jsonResponse(NOT_FOOD_BODY, NOT_FOOD_STATUS);
       }
       throw aiError;
@@ -334,9 +336,18 @@ serve(withSentry(async (req: Request) => {
         costUsd,
       }),
     );
+    // The reservation becomes the real cost: the gateway's charge, else the logged
+    // tokens priced from the one table (mp-436).
     // deno-lint-ignore no-explicit-any
     (globalThis as any).EdgeRuntime?.waitUntil?.(
-      debitForUsage(serviceClient, user.id, "analyze-meal-photo"),
+      hold.settle({
+        gatewayCostUsd: costUsd,
+        model: ANALYZE_MEAL_PHOTO_MODEL,
+        inputTokens: usage?.inputTokens ?? 0,
+        outputTokens: usage?.outputTokens ?? 0,
+        cacheReadTokens: cacheReadTokens(usage),
+        cacheWriteTokens: cacheWriteTokens(usage),
+      }),
     );
 
     // A photo that is not food: one answer, no invented macros. The call still cost us a
@@ -362,9 +373,10 @@ serve(withSentry(async (req: Request) => {
       },
     });
   } catch (error) {
+    // A call that failed gets its reservation back (mp-436); a settled hold ignores this.
+    await hold?.refund();
     // The gateway refusing US (budget hard-stop, dead key) is not the athlete's problem and not their
-    // wallet: a distinct code, never a 402 (mp-437). Nothing was debited — `debitForUsage` only runs
-    // after a successful generation.
+    // wallet: a distinct code, never a 402 (mp-437).
     const refused = gatewayRefusalResponse(error, "analyze-meal-photo");
     if (refused) return refused;
     console.error("[analyze-meal-photo] Fatal error:", error);

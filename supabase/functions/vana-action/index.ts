@@ -8,6 +8,7 @@
  *   (`confirm_meal_plan`) confirms the plan and archives the week's other plans; day notes regenerate afterwards
  *   through `vana-day-notes` under EdgeRuntime.waitUntil (never awaited by the client).
  * Errors: 401 {error:'unauthenticated'} · 403 {error:'pro_required'} · 400 {error:<message>} · 429 {error:'rate_limited'} ·
+ *   402 {error:'insufficient_credits', …} (the pantry photo drew an empty budget, mp-282) ·
  *   503 {error:'ai_unavailable'} (the AI Gateway refused our key, mp-437).
  */
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
@@ -18,6 +19,7 @@ import { authenticate } from '../_shared/vana/auth.ts';
 import { requirePro } from '../_shared/vana/entitlement.ts';
 import { runAction, extraAction } from '../_shared/vana/actions.ts';
 import { RateLimitedError } from '../_shared/vana/rate-limit.ts';
+import { BudgetRefusedError } from '../_shared/ai/credits.ts';
 import { gatewayRefusalResponse } from '../_shared/ai/gateway_error.ts';
 import type { UiAction } from '../_shared/vana/contracts.ts';
 
@@ -46,6 +48,8 @@ serve(withSentry(async (req: Request) => {
     return jsonResponse(result);
   } catch (e) {
     if (e instanceof RateLimitedError) return jsonResponse({ error: 'rate_limited', retry_after_seconds: e.retryAfterSeconds }, 429);
+    // The pantry photo draws the budget (ticket 09): 402 is the top-up sheet, 503 is the wallet we could not read.
+    if (e instanceof BudgetRefusedError) return jsonResponse(e.body, e.status);
     const refused = gatewayRefusalResponse(e, `vana-action ${body.type}`);
     if (refused) return refused;
     console.error(`[vana-action] ${body.type} failed:`, (e as Error).message);

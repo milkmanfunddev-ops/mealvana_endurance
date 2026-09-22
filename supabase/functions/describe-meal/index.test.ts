@@ -42,7 +42,7 @@ import {
   describeMealPrompt,
   MEAL_ANALYSIS_CACHE_OPTIONS,
 } from '../_shared/meal_analysis/prompt.ts';
-import { creditCost } from '../_shared/ai/credits.ts';
+import { budgetEstimate } from '../_shared/ai/credits.ts';
 import { DESCRIBE_MEAL_MODEL } from '../_shared/ai/model.ts';
 
 // ---------------------------------------------------------------------------
@@ -189,29 +189,18 @@ describe('C. MealAnalysisSchema shared between describe-meal and analyze-meal-ph
 });
 
 // ---------------------------------------------------------------------------
-// D. Credit cost for describe-meal
+// D. The budget reservation for describe-meal (ai-cost ticket 09)
 // ---------------------------------------------------------------------------
 
-describe('D. Credit cost', () => {
-  it('describe-meal costs 1 credit (default)', () => {
-    // When AI_COST_DESCRIBE_MEAL is not set, default is 1
-    const saved = Deno.env.get('AI_COST_DESCRIBE_MEAL');
-    Deno.env.delete('AI_COST_DESCRIBE_MEAL');
-    const cost = creditCost('describe-meal');
-    assertEquals(cost, 1);
-    if (saved !== undefined) Deno.env.set('AI_COST_DESCRIBE_MEAL', saved);
-  });
-
-  it('credit cost respects env override AI_COST_DESCRIBE_MEAL', () => {
-    const saved = Deno.env.get('AI_COST_DESCRIBE_MEAL');
-    Deno.env.set('AI_COST_DESCRIBE_MEAL', '3');
-    const cost = creditCost('describe-meal');
-    assertEquals(cost, 3);
-    if (saved !== undefined) {
-      Deno.env.set('AI_COST_DESCRIBE_MEAL', saved);
-    } else {
-      Deno.env.delete('AI_COST_DESCRIBE_MEAL');
-    }
+describe('D. Budget estimate', () => {
+  it('describe-meal has an estimate to reserve, and AI_ESTIMATE_DESCRIBE_MEAL overrides it per project', () => {
+    const saved = Deno.env.get('AI_ESTIMATE_DESCRIBE_MEAL');
+    Deno.env.delete('AI_ESTIMATE_DESCRIBE_MEAL');
+    assert(budgetEstimate('describe-meal') > 0);
+    Deno.env.set('AI_ESTIMATE_DESCRIBE_MEAL', '12345');
+    assertEquals(budgetEstimate('describe-meal'), 12345);
+    if (saved !== undefined) Deno.env.set('AI_ESTIMATE_DESCRIBE_MEAL', saved);
+    else Deno.env.delete('AI_ESTIMATE_DESCRIBE_MEAL');
   });
 });
 

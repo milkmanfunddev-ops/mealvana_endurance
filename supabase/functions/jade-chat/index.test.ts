@@ -43,7 +43,7 @@ import {
 import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 
 import { buildSystemPrompt } from '../_shared/ai_coach/persona.ts';
-import { creditCost } from '../_shared/ai/credits.ts';
+import { budgetEstimate } from '../_shared/ai/credits.ts';
 
 // ---------------------------------------------------------------------------
 // A. NDJSON envelope shape
@@ -410,28 +410,18 @@ describe('F. buildSystemPrompt', () => {
 });
 
 // ---------------------------------------------------------------------------
-// G. Credit cost for jade-chat
+// G. The budget reservation for jade-chat (ai-cost ticket 09)
 // ---------------------------------------------------------------------------
 
-describe('G. Credit cost', () => {
-  it('jade-chat costs 1 credit (default)', () => {
-    const saved = Deno.env.get('AI_COST_JADE_CHAT');
-    Deno.env.delete('AI_COST_JADE_CHAT');
-    const cost = creditCost('jade-chat');
-    assertEquals(cost, 1);
-    if (saved !== undefined) Deno.env.set('AI_COST_JADE_CHAT', saved);
-  });
-
-  it('credit cost respects env override AI_COST_JADE_CHAT', () => {
-    const saved = Deno.env.get('AI_COST_JADE_CHAT');
-    Deno.env.set('AI_COST_JADE_CHAT', '5');
-    const cost = creditCost('jade-chat');
-    assertEquals(cost, 5);
-    if (saved !== undefined) {
-      Deno.env.set('AI_COST_JADE_CHAT', saved);
-    } else {
-      Deno.env.delete('AI_COST_JADE_CHAT');
-    }
+describe('G. Budget estimate', () => {
+  it('jade-chat has an estimate to reserve, and AI_ESTIMATE_JADE_CHAT overrides it per project', () => {
+    const saved = Deno.env.get('AI_ESTIMATE_JADE_CHAT');
+    Deno.env.delete('AI_ESTIMATE_JADE_CHAT');
+    assert(budgetEstimate('jade-chat') > 0);
+    Deno.env.set('AI_ESTIMATE_JADE_CHAT', '12345');
+    assertEquals(budgetEstimate('jade-chat'), 12345);
+    if (saved !== undefined) Deno.env.set('AI_ESTIMATE_JADE_CHAT', saved);
+    else Deno.env.delete('AI_ESTIMATE_JADE_CHAT');
   });
 });
 

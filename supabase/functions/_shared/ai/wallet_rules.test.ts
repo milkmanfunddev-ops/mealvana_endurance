@@ -1,8 +1,11 @@
 /**
- * Wallet rules for the monthly Allowance (mp-281, ticket 20), proved against
- * the real SQL functions on the DEV project — the rules live in Postgres
- * (supabase/migrations/20260916130000_monthly_allowance.sql), so a fake
- * would only test the fake.
+ * Wallet rules for the monthly Allowance (mp-281, ticket 20) and the monthly
+ * budget metered in real cost (mp-430, mp-436, ai-cost ticket 09), proved
+ * against the real SQL functions on the DEV project — the rules live in
+ * Postgres (supabase/migrations/20260916130000_monthly_allowance.sql and
+ * 20260922120000_ai_budget_micro_dollars.sql), so a fake would only test the
+ * fake. Since ticket 09 the wallet holds whole micro-dollars; the amounts in
+ * these scenarios are wallet arithmetic, never a model's price.
  *
  * Every scenario runs inside one transaction that is ROLLED BACK: a throwaway
  * auth.users row, its wallet, ledger and entitlement row never persist. The
@@ -50,7 +53,7 @@ insert into auth.users (id, instance_id, aud, role, email, encrypted_password, e
 -- user_entitlements references public.users, not auth.users.
 insert into public.users (id, device_id) values ('00000000-0000-4000-8000-00000000c020', 'wallet-rules-ticket-20');
 do $body$
-declare u uuid := '00000000-0000-4000-8000-00000000c020'; j jsonb;
+declare u uuid := '00000000-0000-4000-8000-00000000c020'; j jsonb; rid uuid;
 begin
 ${body}
 end $body$;
@@ -215,5 +218,189 @@ Deno.test({
     const lapsed = out.ensure_lapsed as Record<string, unknown>;
     assertEquals(lapsed, { balance: 0, allowance: 0, allowance_monthly: ALLOWANCE, allowance_expires_at: null, granted: false });
     assertEquals(out.monthly_window, true);
+  },
+});
+
+// ---------------------------------------------------------------------------
+// The monthly budget (ai-cost ticket 09): reserve, settle, refund, floor,
+// allowance before packs, and the one-time credit conversion.
+// ---------------------------------------------------------------------------
+
+const MONTH = 4_000_000;   // a month of budget, in micro-dollars: the SQL takes it as a parameter
+const ESTIMATE = 15_000;   // a reservation for one call
+
+const reservation = (k: string) =>
+  `insert into r values ('${k}', (select jsonb_build_object('estimate', estimate, 'from_allowance', from_allowance, 'real_cost', real_cost, 'charged', charged, 'settled', settled_at is not null) from public.token_reservations where id = rid));`;
+
+Deno.test({
+  name: 'budget — a reservation takes the estimate, settle takes the real cost: under gives back, over takes more',
+  ignore: !live,
+  async fn() {
+    const out = await runScenario(scenario(`
+      perform public.grant_allowance(u, ${MONTH}, now() + interval '30 days', 'evt-1');
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'vana-chat');
+      ${recordJson('reserve', 'j')}
+      rid := (j->>'reservation_id')::uuid;
+      ${wallet('after_reserve')}
+      j := public.ai_budget_settle(rid, 9000);
+      ${recordJson('settle_under', 'j')}
+      ${wallet('after_under')}
+      ${reservation('row_under')}
+      j := public.ai_budget_settle(rid, 9000);
+      ${recordJson('settle_twice', 'j')}
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'vana-chat');
+      rid := (j->>'reservation_id')::uuid;
+      j := public.ai_budget_settle(rid, 21000);
+      ${recordJson('settle_over', 'j')}
+      ${wallet('after_over')}
+      -- One transaction shares one now(), so the ledger is read sorted, not in insert order.
+      ${record('ledger', `(select jsonb_agg(jsonb_build_object('reason', reason, 'delta', delta) order by reason, delta) from public.token_ledger where user_id = u and reason <> 'grant_allowance')`)}
+    `));
+    const reserve = out.reserve as Record<string, unknown>;
+    assertEquals(reserve.allowed, true);
+    assertEquals((out.after_reserve as Record<string, unknown>).balance, MONTH - ESTIMATE);
+    assertEquals((out.after_reserve as Record<string, unknown>).allowance, MONTH - ESTIMATE);
+    const under = out.settle_under as Record<string, unknown>;
+    assertEquals(under.settled, true);
+    assertEquals(under.charged, 9000);
+    assertEquals((out.after_under as Record<string, unknown>).balance, MONTH - 9000);
+    assertEquals(out.row_under, { estimate: ESTIMATE, from_allowance: ESTIMATE, real_cost: 9000, charged: 9000, settled: true });
+    assertEquals((out.settle_twice as Record<string, unknown>).settled, false, 'a settle is idempotent');
+    assertEquals((out.settle_over as Record<string, unknown>).charged, 21000);
+    assertEquals((out.after_over as Record<string, unknown>).balance, MONTH - 9000 - 21000);
+    assertEquals(out.ledger, [
+      { reason: 'reserve_usage', delta: -ESTIMATE }, { reason: 'reserve_usage', delta: -ESTIMATE },
+      { reason: 'settle_usage', delta: -6000 }, { reason: 'settle_usage', delta: 6000 },
+    ]);
+  },
+});
+
+Deno.test({
+  name: 'budget — two reservations where one fits: the second sees the first (row lock), and a refusal writes nothing',
+  ignore: !live,
+  async fn() {
+    const out = await runScenario(scenario(`
+      perform public.grant_allowance(u, ${ESTIMATE + 5000}, now() + interval '30 days', 'evt-1');
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'a');
+      ${recordJson('first', 'j')}
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'b');
+      ${recordJson('second', 'j')}
+      ${record('reservations', '(select count(*) from public.token_reservations where user_id = u)')}
+      ${record('ledger_rows', `(select count(*) from public.token_ledger where user_id = u and reason = 'reserve_usage')`)}
+    `));
+    assertEquals((out.first as Record<string, unknown>).allowed, true);
+    const second = out.second as Record<string, unknown>;
+    assertEquals(second.allowed, false);
+    assertEquals(second.balance, 5000, 'the refusal reports the wallet as the first reservation left it');
+    assertEquals(out.reservations, 1);
+    assertEquals(out.ledger_rows, 1);
+  },
+});
+
+Deno.test({
+  name: 'budget — a failed call settles at zero and gets its whole reservation back',
+  ignore: !live,
+  async fn() {
+    const out = await runScenario(scenario(`
+      perform public.grant_allowance(u, ${MONTH}, now() + interval '30 days', 'evt-1');
+      j := public.ai_budget_reserve(u, 'describe-meal', ${ESTIMATE}, ${MONTH}, null, 'describe-meal');
+      rid := (j->>'reservation_id')::uuid;
+      j := public.ai_budget_settle(rid, 0);
+      ${recordJson('refund', 'j')}
+      ${wallet('after')}
+      ${reservation('row')}
+      ${record('refund_rows', `(select jsonb_agg(delta) from public.token_ledger where user_id = u and reason = 'refund_usage')`)}
+    `));
+    assertEquals((out.refund as Record<string, unknown>).charged, 0);
+    assertEquals((out.after as Record<string, unknown>).balance, MONTH);
+    assertEquals((out.after as Record<string, unknown>).allowance, MONTH);
+    assertEquals(out.row, { estimate: ESTIMATE, from_allowance: ESTIMATE, real_cost: 0, charged: 0, settled: true });
+    assertEquals(out.refund_rows, [ESTIMATE]);
+  },
+});
+
+Deno.test({
+  name: 'budget — a call that started inside the budget finishes over it; the wallet floors at zero and the next is refused',
+  ignore: !live,
+  async fn() {
+    const out = await runScenario(scenario(`
+      perform public.grant_allowance(u, ${ESTIMATE}, now() + interval '30 days', 'evt-1');
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'vana-chat');
+      ${recordJson('reserve', 'j')}
+      rid := (j->>'reservation_id')::uuid;
+      j := public.ai_budget_settle(rid, ${ESTIMATE + 10_000});
+      ${recordJson('settle', 'j')}
+      ${wallet('after')}
+      j := public.ai_budget_reserve(u, 'vana-chat', ${ESTIMATE}, ${MONTH}, null, 'vana-chat');
+      ${recordJson('next', 'j')}
+    `));
+    assertEquals((out.reserve as Record<string, unknown>).allowed, true);
+    const settle = out.settle as Record<string, unknown>;
+    assertEquals(settle.settled, true);
+    assertEquals(settle.real_cost, ESTIMATE + 10_000);
+    assertEquals(settle.charged, ESTIMATE, 'the wallet had nothing more to give');
+    assertEquals((out.after as Record<string, unknown>).balance, 0);
+    assertEquals((out.next as Record<string, unknown>).allowed, false);
+  },
+});
+
+Deno.test({
+  name: 'budget — the monthly budget is spent before bought budget, and a refund goes back to the bought part first',
+  ignore: !live,
+  async fn() {
+    const out = await runScenario(scenario(`
+      perform public.grant_allowance(u, 100000, now() + interval '30 days', 'evt-1');
+      perform public.grant_credits(u, 50000, 'grant_purchase', 'pack-1');
+      j := public.ai_budget_reserve(u, 'vana-chat', 120000, ${MONTH}, null, 'vana-chat');
+      rid := (j->>'reservation_id')::uuid;
+      ${wallet('after_reserve')}
+      ${reservation('row')}
+      -- Real cost 110,000: the 10,000 back is bought budget, since the allowance is what got spent.
+      j := public.ai_budget_settle(rid, 110000);
+      ${wallet('after_settle')}
+      -- A second call costs less than its allowance share: that part comes back to the allowance while the window stands.
+      perform public.grant_allowance(u, 100000, now() + interval '30 days', 'evt-2');
+      j := public.ai_budget_reserve(u, 'vana-chat', 30000, ${MONTH}, null, 'vana-chat');
+      rid := (j->>'reservation_id')::uuid;
+      j := public.ai_budget_settle(rid, 10000);
+      ${wallet('after_second')}
+    `));
+    const afterReserve = out.after_reserve as Record<string, unknown>;
+    assertEquals(afterReserve.balance, 30000);
+    assertEquals(afterReserve.allowance, 0, 'the allowance went first');
+    assertEquals((out.row as Record<string, unknown>).from_allowance, 100000);
+    const afterSettle = out.after_settle as Record<string, unknown>;
+    assertEquals(afterSettle.balance, 40000);
+    assertEquals(afterSettle.allowance, 0);
+    const afterSecond = out.after_second as Record<string, unknown>;
+    assertEquals(afterSecond.allowance, 90000, 'the 20,000 unspent returned to the allowance');
+    assertEquals(afterSecond.balance, 130000);
+  },
+});
+
+Deno.test({
+  name: 'budget — 50 old credits become $1.00, once; a wallet already in micro-dollars is left alone',
+  ignore: !live,
+  async fn() {
+    const out = await runScenario(scenario(`
+      insert into public.token_wallets (user_id, balance, allowance, allowance_monthly, unit) values (u, 50, 20, 300, 'credit');
+      j := to_jsonb(public.ai_budget_convert_credits());
+      ${recordJson('converted', 'j')}
+      ${wallet('after')}
+      ${record('unit', `(select unit from public.token_wallets where user_id = u)`)}
+      ${record('ledger', `(select jsonb_agg(jsonb_build_object('reason', reason, 'delta', delta, 'unit', unit, 'after', balance_after)) from public.token_ledger where user_id = u)`)}
+      j := to_jsonb(public.ai_budget_convert_credits());
+      ${recordJson('again', 'j')}
+      ${wallet('after_again')}
+    `));
+    assertEquals(out.converted, 1);
+    const w = out.after as Record<string, unknown>;
+    assertEquals(w.balance, 1_000_000, '50 credits at 2 cents is $1.00');
+    assertEquals(w.allowance, 400_000);
+    assertEquals(w.monthly, 6_000_000);
+    assertEquals(out.unit, 'usd_micro');
+    assertEquals(out.ledger, [{ reason: 'convert_credits', delta: 1_000_000 - 50, unit: 'usd_micro', after: 1_000_000 }]);
+    assertEquals(out.again, 0);
+    assertEquals(out.after_again, out.after);
   },
 });

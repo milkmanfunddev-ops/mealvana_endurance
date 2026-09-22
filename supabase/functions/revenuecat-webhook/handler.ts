@@ -16,7 +16,11 @@
  *      CANCELLATION leaves the wallet alone — access and the allowance run
  *      to the period end. Annual plans get the grant monthly through
  *      `ensure_allowance` on the AI functions' side (_shared/ai/credits.ts).
- *   2. Credit-pack purchases → `grant_credits` RPC (unchanged).
+ *      Since ai-cost ticket 09 the grant is a budget in micro-dollars: the
+ *      month for a paid period, a quarter of it for the trial week (mp-430).
+ *      A TRANSFER moves the entitlement row only; the allowance stays where
+ *      it was granted (mp-430 clause 11).
+ *   2. Pack purchases → `grant_credits` RPC, in micro-dollars (mp-430 clause 7).
  */
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import {
@@ -33,7 +37,8 @@ import type { RevenueCatClient } from '../_shared/revenuecat/client.ts';
 import {
   ALLOWANCE_FORFEIT_EVENT_TYPES,
   ALLOWANCE_GRANT_EVENT_TYPES,
-  monthlyAllowance,
+  grantFor,
+  productBudget,
 } from '../_shared/ai/allowance.ts';
 
 // deno-lint-ignore no-explicit-any
@@ -51,35 +56,8 @@ export interface WebhookDeps {
 const TABLE = 'user_entitlements';
 const ROW_COLUMNS = 'user_id, active_until, period_type, event_at';
 
-/** RC store product id → credits granted. Override via RC_PRODUCT_CREDITS JSON. */
-export const DEFAULT_PRODUCT_CREDITS: Record<string, number> = {
-  mealvana_credits_50: 50,
-  mealvana_credits_250: 250,
-  // Prod App Store `_prod` variants of the packs above — same Apple
-  // product-id-uniqueness constraint as the test pack below.
-  mealvana_credits_50_prod: 50,
-  mealvana_credits_250_prod: 250,
-  // $0.99 pipeline-test pack, shown only to dev builds / tester devices.
-  // The prod App Store carries a `_prod` variant because Apple rejects a
-  // product id already claimed by any app in the team (the dev app owns it).
-  mealvana_credits_test_1: 1,
-  mealvana_credits_test_1_prod: 1,
-};
-
-/** Event types that represent a one-time credit-pack purchase. */
+/** Event types that represent a one-time pack purchase. */
 export const GRANTING_EVENT_TYPES = new Set(['NON_RENEWING_PURCHASE', 'INITIAL_PURCHASE', 'RENEWAL']);
-
-function productCredits(env: WebhookDeps['env']): Record<string, number> {
-  const raw = env('RC_PRODUCT_CREDITS');
-  if (!raw) return DEFAULT_PRODUCT_CREDITS;
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') return parsed as Record<string, number>;
-  } catch (e) {
-    console.error('[rc-webhook] bad RC_PRODUCT_CREDITS JSON, using defaults:', e);
-  }
-  return DEFAULT_PRODUCT_CREDITS;
-}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -116,7 +94,8 @@ async function applyAllowance(
       console.log(`[rc-webhook] ${type} ${eventId}: RevenueCat reports no live pro, no allowance window to open`);
       return { ok: true, body: { skipped: 'not_active' } };
     }
-    const amount = monthlyAllowance(deps.env);
+    // The month for a paid period, the trial week's quarter for a TRIAL (mp-430 clauses 2, 3).
+    const amount = grantFor(deps.env, row.period_type);
     const { data, error } = await client.rpc('grant_allowance', {
       p_user_id: appUserId,
       p_amount: amount,
@@ -342,9 +321,10 @@ export function makeWebhookHandler(deps: WebhookDeps): (req: Request) => Promise
       return json({ ok: true, ignored: type });
     }
 
-    const credits = productCredits(deps.env)[productId];
+    // The packs add budget, not credits (mp-430 clause 7): micro-dollars from the one map in allowance.ts.
+    const credits = productBudget(deps.env)[productId];
     if (!credits || credits <= 0) {
-      console.log(`[rc-webhook] no credit mapping for product=${productId} (type=${type})`);
+      console.log(`[rc-webhook] no budget mapping for product=${productId} (type=${type})`);
       return json({ ok: true, ignored: 'unmapped_product', product_id: productId });
     }
 

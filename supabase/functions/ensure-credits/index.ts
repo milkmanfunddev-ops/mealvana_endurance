@@ -7,8 +7,11 @@
  * POST /functions/v1/ensure-credits
  * Auth: Supabase user JWT (Authorization: Bearer ...)
  *
- * Response (200): { balance: number, free_monthly: number, enforced: boolean,
- *                   allowance: number, allowance_monthly: number, allowance_expires_at: string|null }
+ * Response (200): { share_used: number|null, refill_at: string|null, bought_extra_share: number,
+ *                   allowance_expires_at: string|null, enforced: boolean }
+ *   — the budget as the app may see it (mp-436 clause 3): the share of the month used, when it refills,
+ *   any bought extra as a share of a month. Never a balance or a dollar figure. `allowance_expires_at`
+ *   repeats `refill_at` under the name the shipped client reads.
  * Errors: 401 missing/invalid JWT · 500 unexpected
  *
  * WHY THIS EXISTS
@@ -25,7 +28,9 @@
  *
  * Idempotent: `ensure_free_credits` grants at most once per calendar month
  * (guarded by `token_wallets.free_period`), so callers may invoke this on every
- * app start.
+ * app start. The free grant ends the day the paywall opens (mp-430 clause 10,
+ * `freeMonthlyBudget`); from then on this only rolls the subscription's
+ * monthly budget.
  *
  * Deploy:
  *   supabase functions deploy ensure-credits --project-ref <ref>
@@ -35,7 +40,8 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { handleCors } from '../_shared/cors.ts';
 import { errorResponse, jsonResponse, serverError } from '../_shared/responses.ts';
-import { CREDITS_ENFORCED, FREE_MONTHLY_CREDITS, MONTHLY_ALLOWANCE } from '../_shared/ai/credits.ts';
+import { CREDITS_ENFORCED, MONTHLY_BUDGET, TRIAL_BUDGET } from '../_shared/ai/credits.ts';
+import { budgetStatus, freeMonthlyBudget } from '../_shared/ai/allowance.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -55,9 +61,10 @@ serve(async (req) => {
       return errorResponse('Invalid or expired token', 401);
     }
 
-    const { data, error } = await admin.rpc('ensure_free_credits', {
+    // The old free grant, until the paywall opens; 0 from that day (the RPC grants nothing for 0).
+    const { error } = await admin.rpc('ensure_free_credits', {
       p_user_id: user.id,
-      p_amount: FREE_MONTHLY_CREDITS,
+      p_amount: freeMonthlyBudget((k) => Deno.env.get(k)),
     });
 
     if (error) {
@@ -65,27 +72,23 @@ serve(async (req) => {
       return serverError('Could not provision wallet');
     }
 
-    // The subscription's monthly Allowance (mp-281): forfeit an expired one,
-    // grant the current window when the entitlement is active — so the
-    // balance the app shows at launch is already rolled, not a call late.
+    // The subscription's monthly budget (mp-281, mp-430): forfeit an expired
+    // window, grant the current one when the entitlement is active — so what
+    // the app shows at launch is already rolled, not a call late.
     const { data: allowance, error: allowanceError } = await admin.rpc('ensure_allowance', {
       p_user_id: user.id,
-      p_amount: MONTHLY_ALLOWANCE,
+      p_amount: MONTHLY_BUDGET,
+      p_trial_amount: TRIAL_BUDGET,
     });
     if (allowanceError) {
       console.error('[ensure-credits] ensure_allowance error:', allowanceError.message);
     }
-    const row = (allowance ?? {}) as {
-      balance?: number; allowance?: number; allowance_monthly?: number; allowance_expires_at?: string | null;
-    };
+    const status = budgetStatus((allowance ?? {}) as Record<string, never>, MONTHLY_BUDGET);
 
     return jsonResponse({
-      balance: typeof row.balance === 'number' ? row.balance : (typeof data === 'number' ? data : 0),
-      free_monthly: FREE_MONTHLY_CREDITS,
+      ...status,
+      allowance_expires_at: status.refill_at,
       enforced: CREDITS_ENFORCED,
-      allowance: row.allowance ?? 0,
-      allowance_monthly: row.allowance_monthly ?? 0,
-      allowance_expires_at: row.allowance_expires_at ?? null,
     });
   } catch (e) {
     console.error('[ensure-credits] unexpected error:', e);
