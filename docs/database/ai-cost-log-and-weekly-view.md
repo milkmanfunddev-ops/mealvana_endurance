@@ -108,9 +108,11 @@ With them absent the check still runs and raises a NOTICE instead of a Sentry ev
 `cron.job 'ai-log-retention-sweep'`, 03:41 UTC (after the raw-retention sweep at 03:17), runs
 `public.ai_log_retention_sweep(now())`:
 
-1. `vana_roll_up_weeks(now())` freezes every complete week of `vana_weekly_cost` into
-   `public.vana_weekly_rollup` (`on conflict (week_start, plan) do update`, so a re-roll is the same
-   answer).
+1. `vana_roll_up_weeks(now(), now() - 90 days)` freezes every complete week of `vana_weekly_cost`
+   into `public.vana_weekly_rollup`. A missing week is always inserted; a week already frozen is
+   overwritten only while `week_start` is on or after the cutoff, so every raw row of it is still
+   there. The week straddling the cutoff keeps the figure it was frozen with the night before the
+   first of its rows was deleted, instead of shrinking night by night.
 2. Rows **strictly** older than 90 days are deleted from all three log tables. A row exactly 90.0
    days old is retained — the same boundary convention as `raw_retention_sweep`.
 

@@ -56,6 +56,8 @@ import {
   completeCall,
   reserveCall,
 } from "../_shared/vana/rate-limit.ts";
+import { callMetrics } from "../_shared/vana/log.ts";
+import { subscriberState } from "../_shared/vana/subscriber.ts";
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -238,17 +240,22 @@ serve(withSentry(async (req: Request) => {
         }),
     );
     // The reservation IS this call's row in the Vana call log: its tokens land on it.
+    // The same shape as a chat turn (ai-cost ticket 05): the gateway's charge, cached tokens,
+    // one step, the fact that this call drew the athlete's budget, and the subscriber's plan
+    // state, read on the background task so "cost per athlete by plan" counts logged meals too.
     // deno-lint-ignore no-explicit-any
     (globalThis as any).EdgeRuntime?.waitUntil?.(
-      completeCall(serviceClient, reserved.callId, {
-        inputTokens: usage?.inputTokens ?? 0,
-        outputTokens: usage?.outputTokens ?? 0,
-        // The gateway's own charge and the fact that this call drew the athlete's budget
-        // (ai-cost ticket 05): "cost per athlete" has to include logging a meal, not only chat.
-        steps: 1,
-        gatewayCostUsd: costUsd,
-        debited: true,
-      }),
+      (async () => {
+        const sub = await subscriberState(serviceClient, user.id);
+        await completeCall(serviceClient, reserved.callId, {
+          inputTokens: usage?.inputTokens ?? 0,
+          outputTokens: usage?.outputTokens ?? 0,
+          ...callMetrics([{ usage, providerMetadata: result.providerMetadata }], usage),
+          debited: true,
+          subscriberPeriodType: sub.periodType,
+          subscriberActiveUntil: sub.activeUntil,
+        });
+      })(),
     );
     // Also record in the canonical, prod-safe ai_usage ledger (used for
     // per-user token visibility + future throttling).

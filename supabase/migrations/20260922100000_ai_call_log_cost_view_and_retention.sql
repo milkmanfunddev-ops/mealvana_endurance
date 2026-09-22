@@ -290,10 +290,14 @@ create policy "vana_weekly_rollup_service_all" on public.vana_weekly_rollup for 
 revoke all on public.vana_weekly_rollup from anon, authenticated, public;
 grant all on public.vana_weekly_rollup to service_role;
 
--- Re-roll every week that still has raw rows, up to (not including) the week
--- `p_now` falls in: the current week is still moving. Idempotent — a week
--- rolled up twice is overwritten with the same answer.
-create or replace function public.vana_roll_up_weeks(p_now timestamptz)
+-- Roll up every complete week (up to, not including, the week `p_now` falls
+-- in: the current week is still moving). A week is INSERTED whenever it is
+-- missing, and OVERWRITTEN only while every one of its raw rows is still
+-- there (`week_start >= p_intact_from`, the sweep's cutoff). Without that
+-- guard the week straddling the cutoff would be re-rolled each night from
+-- one day fewer, and the frozen figure would shrink until the week emptied.
+drop function if exists public.vana_roll_up_weeks(timestamptz);
+create or replace function public.vana_roll_up_weeks(p_now timestamptz, p_intact_from timestamptz)
 returns integer
 language plpgsql
 set search_path = public
@@ -329,12 +333,13 @@ begin
     output_tokens = excluded.output_tokens, cache_write_tokens = excluded.cache_write_tokens,
     first_step_cache_read_tokens = excluded.first_step_cache_read_tokens,
     first_step_input_tokens = excluded.first_step_input_tokens,
-    rolled_up_at = p_now;
+    rolled_up_at = p_now
+  where r.week_start >= p_intact_from;
   get diagnostics v_rows = row_count;
   return v_rows;
 end $$;
 
-revoke execute on function public.vana_roll_up_weeks(timestamptz) from public, anon, authenticated;
+revoke execute on function public.vana_roll_up_weeks(timestamptz, timestamptz) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- 6 · The 90-day sweep over the three AI log tables
@@ -357,7 +362,7 @@ declare
   v_usage bigint;
   v_plan_log bigint;
 begin
-  v_rolled := public.vana_roll_up_weeks(p_now);
+  v_rolled := public.vana_roll_up_weeks(p_now, v_cutoff);
 
   delete from public.vana_calls where created_at < v_cutoff;
   get diagnostics v_calls = row_count;
