@@ -73,7 +73,7 @@ final class VanaChatControllerProvider
 }
 
 String _$vanaChatControllerHash() =>
-    r'67a06e049e9eb350a3fe8a9b08617776afd92927';
+    r'fe0c825677a9602eb6ed5f548c1212604bb859a9';
 
 /// One Vana conversation (planning or general), keyed by kind + id.
 ///

@@ -70,7 +70,7 @@ final class FormulaEditorControllerProvider
 }
 
 String _$formulaEditorControllerHash() =>
-    r'edf67a639f34afcaa0f38f958cd37773a3d16013';
+    r'422c0e968314d2e7e0d3b91cb1ded95926b573c1';
 
 /// Drives the create/edit screen for a single personal formula.
 ///

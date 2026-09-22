@@ -57,7 +57,7 @@ final class CarbLoadingDayDetailControllerProvider
 }
 
 String _$carbLoadingDayDetailControllerHash() =>
-    r'c89e4d4da0838ab390ba38f83963a3c9bda83327';
+    r'08ddb59584a62beb6b886ea83e60a4db0d20dcc7';
 
 final class CarbLoadingDayDetailControllerFamily extends $Family
     with

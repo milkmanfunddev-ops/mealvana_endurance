@@ -60,7 +60,7 @@ final class CoachActivityDetailControllerProvider
 }
 
 String _$coachActivityDetailControllerHash() =>
-    r'af42114bc6a94f845ca20b2cd0fbac5490476196';
+    r'fcba3e71414b6e34eb914b3ac17fe847aa89f6f3';
 
 /// Controller for the coach view of an activity
 
