@@ -153,14 +153,22 @@ Deno.test('a chat turn over the limit is a 429 from runChat, with no model call'
 // ---------------------------------------------------------------- the shared module is the only limiter
 
 Deno.test('the pantry photo goes through the same module', async () => {
-  const v = testCtx(world({ vana_calls: [0, 1, 2].map((i) => callRow('vana.pantry_photo', 5, i)) }));
+  // The budget (ticket 09) is reserved ahead of the limiter; a wallet with room lets the limiter be the one that refuses.
+  const settled: unknown[] = [];
+  const v = testCtx(world({ vana_calls: [0, 1, 2].map((i) => callRow('vana.pantry_photo', 5, i)) }), {
+    rpc: {
+      ai_budget_reserve: () => ({ allowed: true, reservation_id: 'hold-1', share_used: 0, refill_at: null, bought_extra_share: 0 }),
+      ai_budget_settle: (a: unknown) => { settled.push(a); return null; },
+    },
+  });
   await assertRejects(
     () => extraAction(v, 'pantry_photo', { conversationId: CONV, photoPath: `${U}/fridge.jpg` }),
     RateLimitedError,
   );
-  // Refused before the download and before the model: no assistant row, no reservation left behind.
+  // Refused before the download and before the model: no assistant row, no reservation left behind, the budget hold refunded.
   assertEquals(v.fake.rows('vana_messages').length, 2);
   assertEquals(v.fake.rows('vana_calls').length, 3);
+  assertEquals(settled, [{ p_id: 'hold-1', p_real_cost: 0 }]);
 });
 
 Deno.test('the described meal and the meal photo call the shared module, on the server', async () => {
