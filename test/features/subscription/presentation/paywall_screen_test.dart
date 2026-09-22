@@ -1,14 +1,17 @@
 /// Widget tests and goldens for [PaywallScreen] with the SDK-decoded
 /// `default` and `founding` offerings of `offerings_fixtures.dart`.
 ///
-/// Covers: the two plans render from the store's own prices with the free
-/// introductory week when eligible and without it when the store says the
-/// offer is spent; the four actions (Restore, Manage subscription, Sign out,
-/// Delete account) are present and each drives the right controller; the
+/// Covers: the two plan cards pinned above one Continue button through the
+/// whole scroll, annual selected with its saving and per-month price from
+/// the store prices (mp-493 §3); the free week when eligible and not when
+/// the store says it is spent; the ⋯ menu listing exactly Restore, Manage
+/// (only with a subscription), Sign out and Delete account, and no Redeem
+/// code yet (mp-494, mp-496 §3); no close button on the full-screen paywall
+/// (mp-493 §5); each menu entry driving the right controller; the
 /// unavailable state; founding prices beside the struck-through normal ones
 /// (mp-453 §2); the trial terms, price after the trial and the terms and
-/// privacy links (mp-453 §4); and light/dark goldens of the paywall with its
-/// four actions (mp-263), plus the founding shape.
+/// privacy links (mp-453 §4); the opening clip (mp-493 §1); and light/dark
+/// goldens of the full-screen paywall at phone size, plus the founding shape.
 ///
 /// Fonts: widget tests render with the test font, so the goldens pin LAYOUT,
 /// COLOUR and STRUCTURE, not glyph shapes.
@@ -32,7 +35,9 @@ import 'package:mealvana_endurance/features/subscription/application/subscriptio
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/overflow_menu_button.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/feature_list.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/plan_card.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/data/phone_clip_frame.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
@@ -131,6 +136,7 @@ List<Override> _overrides({
   SettingsController Function()? settings,
   Future<bool> Function(Uri)? launcher,
   PhoneClipPlayer Function()? clip,
+  bool hasSubscription = false,
 }) {
   final resolved = plans ?? PaywallPlans(monthly: _monthly, annual: _annual);
   return [
@@ -143,6 +149,7 @@ List<Override> _overrides({
       () => _FixedStatus(SubscriptionStatus.none),
     ),
     paywallPlansProvider.overrideWith((ref) async => resolved),
+    paywallHasSubscriptionProvider.overrideWith((ref) async => hasSubscription),
     if (paywall != null) proPaywallControllerProvider.overrideWith(paywall),
     if (settings != null) settingsControllerProvider.overrideWith(settings),
     if (launcher != null)
@@ -155,27 +162,87 @@ const _manage = ValueKey('paywall.manage_button');
 const _signOut = ValueKey('paywall.sign_out_button');
 const _delete = ValueKey('paywall.delete_account_button');
 const _confirm = ValueKey('paywall.confirm.action');
+const _more = ValueKey('paywall.more_button');
+const _close = ValueKey('paywall.close_button');
+const _continue = ValueKey('paywall.continue_button');
+const _tray = ValueKey('paywall.plans');
+const _annualCard = ValueKey('paywall.plan.annual');
+const _monthlyCard = ValueKey('paywall.plan.monthly');
+
+/// Opens the ⋯ menu.
+Future<void> _openMenu(WidgetTester tester) async {
+  await tester.tap(find.byKey(_more));
+  await tester.pumpAndSettle();
+}
+
+/// The menu's words, top to bottom.
+List<String?> _menuLabels(WidgetTester tester) => tester
+    .widgetList<Text>(
+      find.descendant(
+        of: find.byKey(OverflowMenuButton.menuKey),
+        matching: find.byType(Text),
+      ),
+    )
+    .map((t) => t.data)
+    .toList();
+
+/// The text of [key] inside the plan card [card].
+String? _onCard(WidgetTester tester, Key card, Key key) {
+  final f = find.descendant(of: find.byKey(card), matching: find.byKey(key));
+  if (f.evaluate().isEmpty) return null;
+  return tester.widget<Text>(f).data;
+}
 
 void main() {
   testWidgets('renders without overflow (smoke)', (tester) async {
     await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
   });
 
-  testWidgets('the two plans show the store prices and the free week', (
-    tester,
-  ) async {
+  testWidgets('the two plan cards show the store prices and the free week, '
+      'above one Continue', (tester) async {
     await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
 
-    expect(find.byKey(const ValueKey('paywall.plan.monthly')), findsOneWidget);
-    expect(find.byKey(const ValueKey('paywall.plan.annual')), findsOneWidget);
-    expect(find.text(r'7 days free, then $24.99 / month'), findsOneWidget);
-    expect(find.text(r'7 days free, then $199.99 / year'), findsOneWidget);
+    expect(find.byKey(_monthlyCard), findsOneWidget);
+    expect(find.byKey(_annualCard), findsOneWidget);
+    expect(_onCard(tester, _monthlyCard, PlanCard.priceKey), r'$24.99 / month');
+    expect(_onCard(tester, _annualCard, PlanCard.priceKey), r'$199.99 / year');
+    expect(_onCard(tester, _monthlyCard, PlanCard.noteKey), '7 days free');
+    expect(_onCard(tester, _annualCard, PlanCard.noteKey), '7 days free');
     expect(find.byKey(const ValueKey('paywall.founding_line')), findsNothing);
+    expect(_onCard(tester, _annualCard, PlanCard.regularPriceKey), isNull);
+    expect(find.byKey(_continue), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
+    // The plans sit above the one button.
     expect(
-      find.byKey(const ValueKey('paywall.plan.monthly.regular_price')),
+      tester.getTopLeft(find.byKey(_monthlyCard)).dy,
+      lessThan(tester.getTopLeft(find.byKey(_continue)).dy),
+    );
+  });
+
+  testWidgets('annual is selected, with save 33% and \$16.67 a month from '
+      'the store prices', (tester) async {
+    await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+
+    PlanCard card(Key key) => tester.widget<PlanCard>(find.byKey(key));
+    expect(card(_annualCard).selected, isTrue);
+    expect(card(_monthlyCard).selected, isFalse);
+    expect(
+      find.descendant(
+        of: find.byKey(_annualCard),
+        matching: find.byKey(PlanCard.badgeKey),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Save 33%'), findsOneWidget);
+    expect(_onCard(tester, _annualCard, PlanCard.detailKey), r'$16.67 a month');
+    expect(_onCard(tester, _monthlyCard, PlanCard.detailKey), isNull);
+    expect(
+      find.descendant(
+        of: find.byKey(_monthlyCard),
+        matching: find.text('Save 33%'),
+      ),
       findsNothing,
     );
-    expect(find.text('Start trial'), findsNWidgets(2));
   });
 
   testWidgets('a spent introductory offer shows the plain price', (
@@ -193,28 +260,154 @@ void main() {
       ),
     );
 
-    expect(find.text(r'$24.99 / month'), findsOneWidget);
-    expect(find.text(r'$199.99 / year'), findsOneWidget);
+    expect(_onCard(tester, _monthlyCard, PlanCard.priceKey), r'$24.99 / month');
+    expect(_onCard(tester, _annualCard, PlanCard.priceKey), r'$199.99 / year');
     expect(find.textContaining('days free'), findsNothing);
-    expect(find.text('Subscribe'), findsNWidgets(2));
+    expect(find.text('Continue'), findsOneWidget);
   });
 
-  testWidgets('the four actions are present, and no app bar', (tester) async {
-    await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+  group('pinned through the scroll (mp-493 §3)', () {
+    testWidgets('the plans and Continue stay on screen from the top of the '
+        'scroll to its end', (tester) async {
+      await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+      const screen = Rect.fromLTWH(0, 0, 390, 844);
+      final before = {
+        for (final k in [_tray, _annualCard, _monthlyCard, _continue])
+          k: tester.getRect(find.byKey(k)),
+      };
+      for (final rect in before.values) {
+        expect(screen.contains(rect.topLeft), isTrue);
+        expect(screen.contains(rect.bottomRight - const Offset(1, 1)), isTrue);
+      }
 
-    for (final key in [_restore, _manage, _signOut, _delete]) {
-      expect(find.byKey(key), findsOneWidget, reason: '$key');
-    }
-    expect(find.byType(AppBar), findsNothing);
+      // Scroll to the very end: the privacy link is the last thing.
+      await tester.dragUntilVisible(
+        find.byKey(const ValueKey('paywall.privacy_link')),
+        find.byKey(const ValueKey('paywall.scroll')),
+        const Offset(0, -300),
+      );
+      await tester.drag(
+        find.byKey(const ValueKey('paywall.scroll')),
+        const Offset(0, -2000),
+      );
+      await tester.pumpAndSettle();
+      final scrollable = tester.state<ScrollableState>(
+        find.descendant(
+          of: find.byKey(const ValueKey('paywall.scroll')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(scrollable.position.pixels, greaterThan(0));
+      expect(scrollable.position.pixels, scrollable.position.maxScrollExtent);
+
+      for (final entry in before.entries) {
+        expect(
+          tester.getRect(find.byKey(entry.key)),
+          entry.value,
+          reason: '${entry.key} moved with the scroll',
+        );
+      }
+      // And still takes a tap there.
+      await tester.tap(find.byKey(_monthlyCard));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<PlanCard>(find.byKey(_monthlyCard)).selected,
+        isTrue,
+      );
+    });
+  });
+
+  group('the ⋯ menu (mp-494, mp-496 §3)', () {
+    testWidgets('the old stack of buttons is gone: the actions are only in '
+        'the menu', (tester) async {
+      await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+      for (final key in [_restore, _manage, _signOut, _delete]) {
+        expect(find.byKey(key), findsNothing, reason: '$key');
+      }
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byKey(_more), findsOneWidget);
+    });
+
+    testWidgets('never subscribed: Restore, Sign out, Delete account; no '
+        'Manage, no Redeem code', (tester) async {
+      await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+      await _openMenu(tester);
+      expect(_menuLabels(tester), [
+        'Restore purchases',
+        'Sign out',
+        'Delete account',
+      ]);
+      expect(find.byKey(_manage), findsNothing);
+      expect(find.textContaining('code'), findsNothing);
+    });
+
+    testWidgets('with a subscription: Restore, Manage, Sign out, Delete '
+        'account', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(hasSubscription: true),
+      );
+      await _openMenu(tester);
+      expect(_menuLabels(tester), [
+        'Restore purchases',
+        'Manage subscription',
+        'Sign out',
+        'Delete account',
+      ]);
+      expect(find.textContaining('code'), findsNothing);
+    });
+
+    testWidgets('the onboarding shape carries the same menu (mp-494 §2)', (
+      tester,
+    ) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(onboarding: true),
+        overrides: _overrides(),
+      );
+      await _openMenu(tester);
+      expect(_menuLabels(tester), [
+        'Restore purchases',
+        'Sign out',
+        'Delete account',
+      ]);
+    });
+  });
+
+  group('no close button (mp-493 §5)', () {
+    testWidgets('never subscribed: none', (tester) async {
+      await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+      expect(find.byKey(_close), findsNothing);
+      expect(find.byIcon(Icons.close), findsNothing);
+    });
+
+    testWidgets('onboarding: none', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(onboarding: true),
+        overrides: _overrides(),
+      );
+      expect(find.byKey(_close), findsNothing);
+    });
+
+    testWidgets('lapsed: none yet, full screen until the sheet arrives '
+        '(mp-496 §2)', (tester) async {
+      await smokeScreen(
+        tester,
+        const PaywallScreen(),
+        overrides: _overrides(hasSubscription: true),
+      );
+      expect(find.byKey(_close), findsNothing);
+    });
   });
 
   group('the opening clip (mp-493 §1, mp-497 §2)', () {
     const clip = ValueKey('paywall.clip');
     const still = ValueKey('paywall.clip_still');
     const features = ValueKey('paywall.features');
-    const plans = ValueKey('paywall.pricing_card');
-    const close = ValueKey('paywall.close_button');
-    const more = ValueKey('paywall.more_button');
+    const plans = _tray;
+    const more = _more;
 
     Future<void> pumpPaywall(
       WidgetTester tester, {
@@ -241,7 +434,7 @@ void main() {
     }
 
     testWidgets('plays the clip silently, then slides to the features and '
-        'plans; close and ⋯ arrive with them', (tester) async {
+        'plans; ⋯ arrives with them', (tester) async {
       final player = FakePhoneClipPlayer();
       var made = 0;
       await pumpPaywall(
@@ -263,7 +456,7 @@ void main() {
       await tester.pump();
       expect(find.byKey(clip), findsOneWidget);
       expect(find.byKey(FakePhoneClipPlayer.viewKey), findsOneWidget);
-      for (final key in [features, plans, close, more]) {
+      for (final key in [features, plans, more]) {
         expect(find.byKey(key), findsNothing, reason: '$key');
       }
 
@@ -272,15 +465,17 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
       expect(find.byKey(features), findsOneWidget);
-      expect(tester.getTopLeft(find.byKey(close)).dx, greaterThan(100));
+      expect(tester.getTopLeft(find.byKey(more)).dx, greaterThan(393));
       await tester.pumpAndSettle();
 
       expect(find.byKey(clip), findsNothing);
       expect(player.disposed, isTrue);
-      for (final key in [features, plans, close, more]) {
+      for (final key in [features, plans, more]) {
         expect(find.byKey(key), findsOneWidget, reason: '$key');
       }
-      expect(tester.getTopLeft(find.byKey(close)).dx, lessThan(40));
+      expect(find.byKey(_close), findsNothing);
+      expect(tester.getTopRight(find.byKey(more)).dx, greaterThan(340));
+      expect(tester.getTopRight(find.byKey(more)).dx, lessThanOrEqualTo(393));
     });
 
     testWidgets('a tap on the clip skips it', (tester) async {
@@ -320,9 +515,13 @@ void main() {
         ),
         findsOneWidget,
       );
-      for (final key in [features, plans, close, more]) {
+      for (final key in [features, plans, more]) {
         expect(find.byKey(key), findsOneWidget, reason: '$key');
       }
+      // Continue's own 200 ms enabled-state fade (the plans arrive after the
+      // first frame) is the only motion allowed; a slide would still be
+      // running at 250 ms (it takes 480).
+      await tester.pump(const Duration(milliseconds: 250));
       expect(tester.hasRunningAnimations, isFalse);
     });
 
@@ -348,7 +547,7 @@ void main() {
       expect(find.byKey(clip), findsNothing);
       expect(find.byKey(still), findsOneWidget);
       expect(find.byKey(features), findsOneWidget);
-      expect(find.byKey(close), findsOneWidget);
+      expect(find.byKey(more), findsOneWidget);
     });
 
     testWidgets('four headline features, the divider, then the rest, with '
@@ -386,7 +585,7 @@ void main() {
     });
   });
 
-  testWidgets('Start trial calls buy() for that plan', (tester) async {
+  testWidgets('Continue buys annual, selected by default', (tester) async {
     final paywall = _RecordingPaywall();
     await smokeScreen(
       tester,
@@ -394,30 +593,53 @@ void main() {
       overrides: _overrides(paywall: () => paywall),
     );
 
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('paywall.subscribe_annual')),
-    );
-    await tester.tap(find.byKey(const ValueKey('paywall.subscribe_annual')));
+    await tester.tap(find.byKey(_continue));
     await tester.pumpAndSettle();
-
     expect(paywall.bought, ['me_pro_annual']);
     expect(find.text('Welcome to Mealvana Endurance!'), findsOneWidget);
   });
 
-  testWidgets('no offering → unavailable message, actions still present', (
+  testWidgets('picking monthly moves the selection; Continue buys monthly', (
     tester,
   ) async {
+    final paywall = _RecordingPaywall();
     await smokeScreen(
       tester,
       const PaywallScreen(),
-      overrides: _overrides(plans: const PaywallPlans()),
+      overrides: _overrides(paywall: () => paywall),
+    );
+
+    await tester.tap(find.byKey(_monthlyCard));
+    await tester.pumpAndSettle();
+    expect(tester.widget<PlanCard>(find.byKey(_annualCard)).selected, isFalse);
+    expect(tester.widget<PlanCard>(find.byKey(_monthlyCard)).selected, isTrue);
+    await tester.tap(find.byKey(_continue));
+    await tester.pumpAndSettle();
+    expect(paywall.bought, ['me_pro_monthly']);
+  });
+
+  testWidgets('no offering → unavailable message, nothing to buy, the menu '
+      'still there', (tester) async {
+    final paywall = _RecordingPaywall();
+    await smokeScreen(
+      tester,
+      const PaywallScreen(),
+      overrides: _overrides(
+        plans: const PaywallPlans(),
+        paywall: () => paywall,
+      ),
     );
 
     expect(
       find.byKey(const ValueKey('paywall.pricing_unavailable')),
       findsOneWidget,
     );
-    for (final key in [_restore, _manage, _signOut, _delete]) {
+    expect(find.byType(PlanCard), findsNothing);
+    await tester.tap(find.byKey(_continue));
+    await tester.pumpAndSettle();
+    expect(paywall.bought, isEmpty);
+    await _openMenu(tester);
+    for (final key in [_restore, _signOut, _delete]) {
       expect(find.byKey(key), findsOneWidget, reason: '$key');
     }
   });
@@ -432,7 +654,7 @@ void main() {
       overrides: _overrides(paywall: () => paywall),
     );
 
-    await tester.ensureVisible(find.byKey(_restore));
+    await _openMenu(tester);
     await tester.tap(find.byKey(_restore));
     await tester.pumpAndSettle();
 
@@ -448,7 +670,7 @@ void main() {
       overrides: _overrides(paywall: () => paywall),
     );
 
-    await tester.ensureVisible(find.byKey(_restore));
+    await _openMenu(tester);
     await tester.tap(find.byKey(_restore));
     await tester.pumpAndSettle();
 
@@ -467,6 +689,7 @@ void main() {
       const PaywallScreen(),
       overrides: _overrides(
         paywall: () => paywall,
+        hasSubscription: true,
         launcher: (u) async {
           launched.add(u);
           return true;
@@ -474,7 +697,7 @@ void main() {
       ),
     );
 
-    await tester.ensureVisible(find.byKey(_manage));
+    await _openMenu(tester);
     await tester.tap(find.byKey(_manage));
     await tester.pumpAndSettle();
 
@@ -491,11 +714,12 @@ void main() {
       const PaywallScreen(),
       overrides: _overrides(
         paywall: () => paywall,
+        hasSubscription: true,
         launcher: (_) async => true,
       ),
     );
 
-    await tester.ensureVisible(find.byKey(_manage));
+    await _openMenu(tester);
     await tester.tap(find.byKey(_manage));
     await tester.pumpAndSettle();
 
@@ -512,7 +736,7 @@ void main() {
       overrides: _overrides(settings: () => settings),
     );
 
-    await tester.ensureVisible(find.byKey(_signOut));
+    await _openMenu(tester);
     await tester.tap(find.byKey(_signOut));
     await tester.pumpAndSettle();
     expect(find.text('Sign out?'), findsOneWidget);
@@ -521,6 +745,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(settings.signOuts, 0);
 
+    await _openMenu(tester);
     await tester.tap(find.byKey(_signOut));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(_confirm));
@@ -528,9 +753,8 @@ void main() {
     expect(settings.signOuts, 1);
   });
 
-  testWidgets('Delete account confirms, then deletes through Settings', (
-    tester,
-  ) async {
+  testWidgets('Delete account is in reach from the menu, confirms, then '
+      'deletes through Settings', (tester) async {
     final settings = _RecordingSettings();
     await smokeScreen(
       tester,
@@ -538,7 +762,7 @@ void main() {
       overrides: _overrides(settings: () => settings),
     );
 
-    await tester.ensureVisible(find.byKey(_delete));
+    await _openMenu(tester);
     await tester.tap(find.byKey(_delete));
     await tester.pumpAndSettle();
     expect(find.text('Delete account?'), findsOneWidget);
@@ -551,7 +775,8 @@ void main() {
 
   group('founding prices (mp-453 §2)', () {
     testWidgets('each plan shows the founding price with the normal one '
-        'struck through, under a Founding member line', (tester) async {
+        'struck through, under a Founding member line; annual saves 33% at '
+        '\$8.33 a month', (tester) async {
       await smokeScreen(
         tester,
         const PaywallScreen(),
@@ -559,19 +784,31 @@ void main() {
       );
 
       expect(find.text('Founding member'), findsOneWidget);
-      expect(find.text(r'7 days free, then $12.49 / month'), findsOneWidget);
-      expect(find.text(r'7 days free, then $99.99 / year'), findsOneWidget);
-
-      final monthlyRegular = tester.widget<Text>(
-        find.byKey(const ValueKey('paywall.plan.monthly.regular_price')),
+      expect(
+        _onCard(tester, _monthlyCard, PlanCard.priceKey),
+        r'$12.49 / month',
       );
-      final annualRegular = tester.widget<Text>(
-        find.byKey(const ValueKey('paywall.plan.annual.regular_price')),
+      expect(_onCard(tester, _annualCard, PlanCard.priceKey), r'$99.99 / year');
+      expect(
+        _onCard(tester, _monthlyCard, PlanCard.regularPriceKey),
+        r'$24.99 / month',
       );
-      expect(monthlyRegular.data, r'$24.99 / month');
-      expect(annualRegular.data, r'$199.99 / year');
-      expect(monthlyRegular.style?.decoration, TextDecoration.lineThrough);
-      expect(annualRegular.style?.decoration, TextDecoration.lineThrough);
+      expect(
+        _onCard(tester, _annualCard, PlanCard.regularPriceKey),
+        r'$199.99 / year',
+      );
+      final struck = tester.widget<Text>(
+        find.descendant(
+          of: find.byKey(_annualCard),
+          matching: find.byKey(PlanCard.regularPriceKey),
+        ),
+      );
+      expect(struck.style?.decoration, TextDecoration.lineThrough);
+      expect(
+        _onCard(tester, _annualCard, PlanCard.detailKey),
+        r'$8.33 a month',
+      );
+      expect(find.text('Save 33%'), findsOneWidget);
     });
 
     testWidgets('buying while founding is current buys the founding product', (
@@ -584,10 +821,9 @@ void main() {
         overrides: _overrides(plans: _foundingPlans(), paywall: () => paywall),
       );
 
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('paywall.subscribe_monthly')),
-      );
-      await tester.tap(find.byKey(const ValueKey('paywall.subscribe_monthly')));
+      await tester.tap(find.byKey(_monthlyCard));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(_continue));
       await tester.pumpAndSettle();
 
       expect(paywall.bought, ['me_pro_monthly_founding']);
@@ -719,32 +955,13 @@ void main() {
     });
   });
 
-  testWidgets('onboarding mode: plans and Restore, no account actions', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [mockAppExternalDeps(), ..._overrides()],
-        child: const MaterialApp(home: PaywallScreen(onboarding: true)),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('paywall.plan.monthly')), findsOneWidget);
-    expect(find.byKey(const ValueKey('paywall.plan.annual')), findsOneWidget);
-    expect(find.byKey(_restore), findsOneWidget);
-    expect(find.byKey(_manage), findsNothing);
-    expect(find.byKey(_signOut), findsNothing);
-    expect(find.byKey(_delete), findsNothing);
-  });
-
-  group('goldens — the paywall with its four actions', () {
+  group('goldens — the full-screen paywall (mp-497 §3)', () {
     Future<void> golden(
       WidgetTester tester,
       Brightness brightness, {
-      bool onboarding = false,
       bool founding = false,
     }) async {
-      tester.view.physicalSize = const Size(393, 2500);
+      tester.view.physicalSize = const Size(393, 852);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
@@ -762,9 +979,9 @@ void main() {
                   ? AppColors.blackberry
                   : AppColors.cream,
             ),
-            home: RepaintBoundary(
-              key: const Key('golden'),
-              child: PaywallScreen(onboarding: onboarding),
+            home: const RepaintBoundary(
+              key: Key('golden'),
+              child: PaywallScreen(),
             ),
           ),
         ),
@@ -773,11 +990,7 @@ void main() {
       expect(tester.takeException(), isNull);
 
       final name = brightness == Brightness.dark ? 'dark' : 'light';
-      final shape = onboarding
-          ? 'onboarding_'
-          : founding
-          ? 'founding_'
-          : '';
+      final shape = founding ? 'founding_' : '';
       await expectLater(
         find.byKey(const Key('golden')),
         matchesGoldenFile('goldens/paywall_$shape$name.png'),
@@ -793,10 +1006,6 @@ void main() {
     testWidgets(
       'founding dark',
       (tester) => golden(tester, Brightness.dark, founding: true),
-    );
-    testWidgets(
-      'onboarding dark',
-      (tester) => golden(tester, Brightness.dark, onboarding: true),
     );
   });
 }

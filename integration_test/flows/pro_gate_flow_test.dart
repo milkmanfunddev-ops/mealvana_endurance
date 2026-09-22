@@ -44,9 +44,12 @@ import '../helpers/flow_launcher.dart';
 const _foodScreen = ValueKey('meal_planning.food_screen');
 const _vanaScreen = ValueKey('meal_planning.vana_chat_screen');
 const _paywallScreen = ValueKey('paywall.screen');
+const _paywallMore = ValueKey('paywall.more_button');
+
+/// Always in the paywall's ⋯ menu (mp-494); Manage subscription joins them
+/// only for an account with a subscription on record.
 const _paywallActions = [
   ValueKey('paywall.restore_button'),
-  ValueKey('paywall.manage_button'),
   ValueKey('paywall.sign_out_button'),
   ValueKey('paywall.delete_account_button'),
 ];
@@ -96,9 +99,16 @@ void main() {
       final locked = $(_paywallScreen).exists;
 
       if (locked) {
+        // The actions sit behind the ⋯ button, which arrives with the page
+        // after the opening clip.
+        await $(_paywallMore).tap();
+        await $.pumpAndSettle();
         for (final key in _paywallActions) {
-          expect($(key).exists, isTrue, reason: 'paywall carries $key');
+          expect($(key).exists, isTrue, reason: 'paywall menu carries $key');
         }
+        // Close the menu on its scrim.
+        await $.tester.tapAt(const Offset(20, 700));
+        await $.pumpAndSettle();
       }
 
       // ---- /food -------------------------------------------------------

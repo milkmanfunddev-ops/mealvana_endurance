@@ -6,12 +6,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/services/privacy/privacy_links.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
-import '../../../../shared/widgets/kyle_design/materials/glass.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
-import '../../domain/entitlement.dart';
 
 /// Opens [uri] outside the app. A provider so widget tests can intercept
 /// "Manage subscription" and the terms and privacy links instead of reaching
@@ -41,31 +39,41 @@ final paywallClipPosterProvider = Provider<ImageProvider>(
 );
 
 /// The paywall — where an inactive account lands after sign-in and stays
-/// (mp-280). It offers the monthly and annual plans with the store's free
-/// introductory week when the person is eligible (mp-279), and exactly four
-/// other actions: Restore purchases, Manage subscription, Sign out and
-/// Delete account. Prices come from RevenueCat's Current Offering (mp-453):
-/// while it is `founding`, each plan shows the founding price with the
-/// normal one struck through beside it, under a "Founding member" line.
-/// Below the plans sit the trial terms, the price after the trial, the
-/// renewal terms and links to the terms and privacy policy (mp-453 §4).
-/// There is no close button: nothing renders behind it, and
-/// the router moves the person into the app the moment the gate opens.
+/// (mp-280), in Bevel's layout with our branding (mp-493).
 ///
-/// Two shapes of the one screen:
-/// - lapsed (default): the four actions above;
-/// - [onboarding]: the last step after account creation (mp-297). Plans and
-///   Restore only — Manage, Sign out and Delete are for a lapsed account,
-///   not one made a moment ago.
+/// It opens on a clip of our own app, then slides to the features. The two
+/// plan cards stay pinned above one Continue button through the whole
+/// scroll; annual is selected by default and carries its saving and its
+/// per-month price, worked out from the store's prices (mp-493 §3). Prices
+/// come from RevenueCat's Current Offering (mp-453): while it is `founding`,
+/// each plan shows the founding price with the normal one struck through,
+/// under a "Founding member" line. Under the features sit the trial terms,
+/// the price after the trial, the renewal terms and links to the terms and
+/// privacy policy (mp-453 §4).
+///
+/// Everything secondary is behind the one ⋯ button (mp-494): Restore
+/// purchases, Manage subscription (only when the account has a store
+/// subscription on record), Sign out and Delete account. Redeem code joins
+/// it with the update (mp-496 §3). The same menu serves the onboarding shape
+/// (mp-494 §2, replacing mp-417 §3).
+///
+/// This is the full-screen presentation, which has no close button
+/// (mp-493 §5): a never-subscribed account has nothing behind it, and until
+/// the closable sheet arrives a lapsed account meets it full screen too
+/// (mp-496 §2). The router moves the person into the app the moment the
+/// gate opens.
 ///
 /// UI only: purchase / restore / management URL live in
-/// [ProPaywallController]; sign-out and delete reuse [SettingsController]'s
-/// flows; the gate itself is `appGateProvider`. All copy comes from
-/// [ContentKeys].
+/// [ProPaywallController]; whether there is a subscription to manage is
+/// [paywallHasSubscriptionProvider]; sign-out and delete reuse
+/// [SettingsController]'s flows; the gate itself is `appGateProvider`. All
+/// copy comes from [ContentKeys].
 class PaywallScreen extends ConsumerWidget {
   const PaywallScreen({super.key, this.onboarding = false});
 
-  /// Reached as onboarding's last step: plans and Restore only.
+  /// Reached as onboarding's last step (mp-417 §4). Since mp-494 §2 both
+  /// shapes carry the same menu, so nothing on the screen differs yet; the
+  /// route still says which shape it opened.
   final bool onboarding;
 
   Future<void> _buy(BuildContext context, WidgetRef ref, Package pkg) async {
@@ -224,10 +232,11 @@ class PaywallScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final content = ref.watch(contentServiceProvider);
     final plansAsync = ref.watch(paywallPlansProvider);
+    final hasSubscription =
+        ref.watch(paywallHasSubscriptionProvider).value ?? false;
     final paywallState = ref.watch(proPaywallControllerProvider);
     final isBusy = paywallState is AsyncLoading;
 
@@ -249,6 +258,37 @@ class PaywallScreen extends ConsumerWidget {
     final clipPoster = ref.watch(paywallClipPosterProvider);
     final clipLabel = content.getValue(ContentKeys.paywallClipLabel);
 
+    // mp-494 §1: exactly these, in this order; Manage only with a
+    // subscription to manage. No Redeem code before the update (mp-496 §3).
+    void unlessBusy(void Function() action) {
+      if (!isBusy) action();
+    }
+
+    final menu = [
+      OverflowMenuEntry(
+        key: const ValueKey('paywall.restore_button'),
+        label: content.getValue(ContentKeys.paywallRestoreButton),
+        onSelected: () => unlessBusy(() => _restore(context, ref)),
+      ),
+      if (hasSubscription)
+        OverflowMenuEntry(
+          key: const ValueKey('paywall.manage_button'),
+          label: content.getValue(ContentKeys.paywallManageButton),
+          onSelected: () => unlessBusy(() => _manage(context, ref)),
+        ),
+      OverflowMenuEntry(
+        key: const ValueKey('paywall.sign_out_button'),
+        label: content.getValue(ContentKeys.paywallSignOutButton),
+        onSelected: () => unlessBusy(() => _signOut(context, ref)),
+      ),
+      OverflowMenuEntry(
+        key: const ValueKey('paywall.delete_account_button'),
+        label: content.getValue(ContentKeys.paywallDeleteAccountButton),
+        destructive: true,
+        onSelected: () => unlessBusy(() => _deleteAccount(context, ref)),
+      ),
+    ];
+
     return Scaffold(
       key: const ValueKey('paywall.screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
@@ -263,276 +303,107 @@ class PaywallScreen extends ConsumerWidget {
           semanticLabel: clipLabel,
           onEnded: onEnded,
         ),
-        // Page two: the placeholders for close and ⋯ (tickets 16, 17 give
-        // them their behaviour), then the features and the plans.
-        features: (reduceMotion) => SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _PaywallTopBar(
-                closeLabel: content.getValue(ContentKeys.paywallCloseLabel),
-                moreLabel: content.getValue(ContentKeys.paywallMoreLabel),
-                color: textColor,
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: AppSpacing.screenPadding,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Reduce Motion: the clip's first frame stands in for the
-                      // clip (mp-493 §1).
-                      if (reduceMotion) ...[
-                        Center(
-                          child: SizedBox(
-                            width: 120,
-                            child: PhoneClipFrame(
-                              key: const ValueKey('paywall.clip_still'),
-                              player: clipPlayer,
-                              poster: clipPoster,
-                              aspectRatio: kPaywallClipAspectRatio,
-                              semanticLabel: clipLabel,
-                              still: true,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xl),
-                      ],
-                      // The app's name and one line on what the prices below buy.
-                      // No hero, no pitch beyond that (Lee, 2026-09-16).
-                      Text(
-                        key: const ValueKey('paywall.title'),
-                        content.getValue(ContentKeys.paywallTitle),
-                        style: AppTextStyles.h1.copyWith(color: textColor),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        key: const ValueKey('paywall.subtitle'),
-                        content.getValue(ContentKeys.paywallSubtitle),
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: secondaryColor,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      // Four headline features, the divider and the rest; the AI
-                      // features share the one Vana line (mp-493 §2).
-                      const SizedBox(height: AppSpacing.xxl),
-                      _PaywallFeatures(content: content),
-
-                      const SizedBox(height: AppSpacing.xxxl),
-
-                      // Plans
-                      // A content card: solid fill + hairline, never glass
-                      // (tokens.md §Materials, boundaries).
-                      BaseCard(
-                        key: const ValueKey('paywall.pricing_card'),
-                        backgroundColor: isDark
-                            ? AppColors.surfaceDark
-                            : AppColors.surfaceLight,
-                        border: Border.all(
-                          color: theme.colorScheme.outline.withValues(
-                            alpha: 0.2,
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            plansAsync.when(
-                              loading: () => const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(AppSpacing.md),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              ),
-                              error: (_, _) => _PricingUnavailable(
-                                text: content.getValue(
-                                  ContentKeys.paywallPricingUnavailable,
-                                ),
-                                color: secondaryColor,
-                              ),
-                              data: (plans) {
-                                if (plans.isEmpty) {
-                                  return _PricingUnavailable(
-                                    key: const ValueKey(
-                                      'paywall.pricing_unavailable',
-                                    ),
-                                    text: content.getValue(
-                                      ContentKeys.paywallPricingUnavailable,
-                                    ),
-                                    color: secondaryColor,
-                                  );
-                                }
-                                final monthly = plans.monthly;
-                                final annual = plans.annual;
-                                final perMonth = content.getValue(
-                                  ContentKeys.paywallPerMonth,
-                                );
-                                final perYear = content.getValue(
-                                  ContentKeys.paywallPerYear,
-                                );
-                                String? struck(Package pkg, String template) {
-                                  final regular = plans.regularPriceFor(pkg);
-                                  return regular == null
-                                      ? null
-                                      : ContentKeys.format(template, {
-                                          'price': regular,
-                                        });
-                                }
-
-                                return Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    if (plans.isFounding) ...[
-                                      Text(
-                                        key: const ValueKey(
-                                          'paywall.founding_line',
-                                        ),
-                                        content.getValue(
-                                          ContentKeys.paywallFoundingLine,
-                                        ),
-                                        style: AppTextStyles.overline.copyWith(
-                                          color: AppColors.electrolyte,
-                                        ),
-                                      ),
-                                      const SizedBox(height: AppSpacing.md),
-                                    ],
-                                    if (monthly != null)
-                                      _PlanRow(
-                                        rowKey: const ValueKey(
-                                          'paywall.plan.monthly',
-                                        ),
-                                        buttonKey: const ValueKey(
-                                          'paywall.subscribe_monthly',
-                                        ),
-                                        label: content.getValue(
-                                          ContentKeys.paywallMonthlyLabel,
-                                        ),
-                                        price: ContentKeys.format(perMonth, {
-                                          'price':
-                                              monthly.storeProduct.priceString,
-                                        }),
-                                        regularPrice: struck(monthly, perMonth),
-                                        regularKey: const ValueKey(
-                                          'paywall.plan.monthly.regular_price',
-                                        ),
-                                        intro: plans.introOfferFor(monthly),
-                                        content: content,
-                                        isBusy: isBusy,
-                                        onPressed: () =>
-                                            _buy(context, ref, monthly),
-                                        textColor: textColor,
-                                        secondaryColor: secondaryColor,
-                                      ),
-                                    if (monthly != null && annual != null)
-                                      const SizedBox(height: AppSpacing.md),
-                                    if (annual != null)
-                                      _PlanRow(
-                                        rowKey: const ValueKey(
-                                          'paywall.plan.annual',
-                                        ),
-                                        buttonKey: const ValueKey(
-                                          'paywall.subscribe_annual',
-                                        ),
-                                        label: content.getValue(
-                                          ContentKeys.paywallAnnualLabel,
-                                        ),
-                                        price: ContentKeys.format(perYear, {
-                                          'price':
-                                              annual.storeProduct.priceString,
-                                        }),
-                                        regularPrice: struck(annual, perYear),
-                                        regularKey: const ValueKey(
-                                          'paywall.plan.annual.regular_price',
-                                        ),
-                                        intro: plans.introOfferFor(annual),
-                                        content: content,
-                                        isBusy: isBusy,
-                                        onPressed: () =>
-                                            _buy(context, ref, annual),
-                                        textColor: textColor,
-                                        secondaryColor: secondaryColor,
-                                      ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Trial terms, the price after the trial, renewal and the two
-                      // links (mp-453 §4), whatever the store answered.
-                      const SizedBox(height: AppSpacing.lg),
-                      _PaywallTerms(
-                        plans: plansAsync.value,
-                        content: content,
-                        color: secondaryColor,
-                        onTerms: () =>
-                            _openLink(context, ref, kTermsOfServiceUrl),
-                        onPrivacy: () =>
-                            _openLink(context, ref, kPrivacyPolicyUrl),
-                      ),
-
-                      const SizedBox(height: AppSpacing.xxl),
-
-                      // The four actions, and nothing else (mp-280 §2); Restore alone
-                      // in onboarding mode.
-                      KyleSecondaryButton(
-                        key: const ValueKey('paywall.restore_button'),
-                        text: content.getValue(
-                          ContentKeys.paywallRestoreButton,
-                        ),
-                        isLoading: isBusy,
-                        onPressed: isBusy ? null : () => _restore(context, ref),
-                      ),
-                      if (!onboarding) ...[
-                        const SizedBox(height: AppSpacing.sm),
-                        KyleTertiaryButton(
-                          key: const ValueKey('paywall.manage_button'),
-                          text: content.getValue(
-                            ContentKeys.paywallManageButton,
-                          ),
-                          onPressed: isBusy
-                              ? null
-                              : () => _manage(context, ref),
-                        ),
-                        KyleTertiaryButton(
-                          key: const ValueKey('paywall.sign_out_button'),
-                          text: content.getValue(
-                            ContentKeys.paywallSignOutButton,
-                          ),
-                          onPressed: isBusy
-                              ? null
-                              : () => _signOut(context, ref),
-                        ),
-                        TextButton(
-                          key: const ValueKey('paywall.delete_account_button'),
-                          onPressed: isBusy
-                              ? null
-                              : () => _deleteAccount(context, ref),
-                          child: Text(
-                            content.getValue(
-                              ContentKeys.paywallDeleteAccountButton,
-                            ),
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.dragonfruit,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      const SizedBox(height: AppSpacing.huge),
-                    ],
+        // Page two: the ⋯ button, the features scrolling, and the plans
+        // pinned under them with the one Continue.
+        features: (reduceMotion) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.md,
+                  0,
+                ),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: OverflowMenuButton(
+                    key: const ValueKey('paywall.more_button'),
+                    semanticLabel: content.getValue(
+                      ContentKeys.paywallMoreLabel,
+                    ),
+                    color: textColor,
+                    entries: menu,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                key: const ValueKey('paywall.scroll'),
+                padding: AppSpacing.screenPadding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Reduce Motion: the clip's first frame stands in for the
+                    // clip (mp-493 §1).
+                    if (reduceMotion) ...[
+                      Center(
+                        child: SizedBox(
+                          width: 120,
+                          child: PhoneClipFrame(
+                            key: const ValueKey('paywall.clip_still'),
+                            player: clipPlayer,
+                            poster: clipPoster,
+                            aspectRatio: kPaywallClipAspectRatio,
+                            semanticLabel: clipLabel,
+                            still: true,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+                    // The app's name and one line on what the prices below buy.
+                    // No hero, no pitch beyond that (Lee, 2026-09-16).
+                    Text(
+                      key: const ValueKey('paywall.title'),
+                      content.getValue(ContentKeys.paywallTitle),
+                      style: AppTextStyles.h1.copyWith(color: textColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      key: const ValueKey('paywall.subtitle'),
+                      content.getValue(ContentKeys.paywallSubtitle),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: secondaryColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+
+                    // Four headline features, the divider and the rest; the AI
+                    // features share the one Vana line (mp-493 §2).
+                    const SizedBox(height: AppSpacing.xxl),
+                    _PaywallFeatures(content: content),
+
+                    // Trial terms, the price after the trial, renewal and the
+                    // two links (mp-453 §4), whatever the store answered.
+                    const SizedBox(height: AppSpacing.xxl),
+                    _PaywallTerms(
+                      plans: plansAsync.value,
+                      content: content,
+                      color: secondaryColor,
+                      onTerms: () =>
+                          _openLink(context, ref, kTermsOfServiceUrl),
+                      onPrivacy: () =>
+                          _openLink(context, ref, kPrivacyPolicyUrl),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
+                ),
+              ),
+            ),
+            // The plans and the one Continue, pinned (mp-493 §3).
+            _PlansTray(
+              plansAsync: plansAsync,
+              content: content,
+              isBusy: isBusy,
+              secondaryColor: secondaryColor,
+              onContinue: (pkg) => _buy(context, ref, pkg),
+            ),
+          ],
         ),
       ),
     );
@@ -580,59 +451,147 @@ class _PaywallPagesState extends State<_PaywallPages> {
   }
 }
 
-/// Close and ⋯, as placeholders: they arrive with the second page and do
-/// nothing yet. Who gets a close button (mp-493 §5) and what the ⋯ menu
-/// holds (mp-494) are later tickets.
-class _PaywallTopBar extends StatelessWidget {
-  const _PaywallTopBar({
-    required this.closeLabel,
-    required this.moreLabel,
-    required this.color,
+enum _Plan { annual, monthly }
+
+/// The pinned tray: the "Founding member" line while founding prices are
+/// on, the annual and monthly cards, and the one Continue that buys the
+/// selected plan. Annual is selected until the person picks monthly
+/// (mp-493 §3). While the store has not answered, or served nothing, the
+/// tray says so and Continue has nothing to buy.
+class _PlansTray extends StatefulWidget {
+  const _PlansTray({
+    required this.plansAsync,
+    required this.content,
+    required this.isBusy,
+    required this.secondaryColor,
+    required this.onContinue,
   });
 
-  final String closeLabel;
-  final String moreLabel;
-  final Color color;
+  final AsyncValue<PaywallPlans> plansAsync;
+  final ContentService content;
+  final bool isBusy;
+  final Color secondaryColor;
+  final void Function(Package pkg) onContinue;
 
-  Widget _button(Key key, IconData icon, String label) => Semantics(
-    button: true,
-    label: label,
-    child: SizedBox.square(
-      key: key,
-      dimension: 40,
-      child: GlassSurface(
-        borderRadius: BorderRadius.circular(20),
-        child: Center(
-          child: ExcludeSemantics(child: Icon(icon, size: 20, color: color)),
-        ),
-      ),
-    ),
-  );
+  @override
+  State<_PlansTray> createState() => _PlansTrayState();
+}
+
+class _PlansTrayState extends State<_PlansTray> {
+  _Plan _choice = _Plan.annual;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.xs,
-        AppSpacing.md,
-        0,
-      ),
-      child: Row(
-        children: [
-          _button(
-            const ValueKey('paywall.close_button'),
-            Icons.close,
-            closeLabel,
-          ),
-          const Spacer(),
-          _button(
-            const ValueKey('paywall.more_button'),
-            Icons.more_horiz,
-            moreLabel,
-          ),
+    final content = widget.content;
+    String t(String key) => content.getValue(key);
+    final plans = widget.plansAsync.value;
+    final monthly = plans?.monthly;
+    final annual = plans?.annual;
+    final selected = switch (_choice) {
+      _Plan.annual => annual ?? monthly,
+      _Plan.monthly => monthly ?? annual,
+    };
+
+    final continueButton = KylePrimaryButton(
+      key: const ValueKey('paywall.continue_button'),
+      text: t(ContentKeys.paywallContinueButton),
+      isLoading: widget.isBusy,
+      onPressed: widget.isBusy || selected == null
+          ? null
+          : () => widget.onContinue(selected),
+    );
+
+    if (plans == null || plans.isEmpty) {
+      return PlanCardTray(
+        key: const ValueKey('paywall.plans'),
+        cards: [
+          if (widget.plansAsync.isLoading && plans == null)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: CircularProgressIndicator(),
+              ),
+            )
+          else
+            _PricingUnavailable(
+              key: const ValueKey('paywall.pricing_unavailable'),
+              text: t(ContentKeys.paywallPricingUnavailable),
+              color: widget.secondaryColor,
+            ),
         ],
-      ),
+        action: continueButton,
+      );
+    }
+
+    String? struck(Package pkg, String template) {
+      final regular = plans.regularPriceFor(pkg);
+      return regular == null
+          ? null
+          : ContentKeys.format(template, {'price': regular});
+    }
+
+    String? trial(Package pkg) {
+      final offer = plans.introOfferFor(pkg);
+      return offer == null
+          ? null
+          : ContentKeys.format(t(ContentKeys.paywallPlanTrial), {
+              'days': offer.freeDays,
+            });
+    }
+
+    final perMonth = t(ContentKeys.paywallPerMonth);
+    final perYear = t(ContentKeys.paywallPerYear);
+    final saving = plans.annualSavingPercent;
+    final annualPerMonth = plans.annualPerMonthPrice();
+
+    return PlanCardTray(
+      key: const ValueKey('paywall.plans'),
+      header: plans.isFounding
+          ? Text(
+              key: const ValueKey('paywall.founding_line'),
+              t(ContentKeys.paywallFoundingLine),
+              style: AppTextStyles.overline.copyWith(
+                color: AppColors.electrolyte,
+              ),
+            )
+          : null,
+      cards: [
+        if (annual != null)
+          PlanCard(
+            key: const ValueKey('paywall.plan.annual'),
+            title: t(ContentKeys.paywallAnnualLabel),
+            price: ContentKeys.format(perYear, {
+              'price': annual.storeProduct.priceString,
+            }),
+            regularPrice: struck(annual, perYear),
+            detail: annualPerMonth == null
+                ? null
+                : ContentKeys.format(t(ContentKeys.paywallPerMonthEquivalent), {
+                    'price': annualPerMonth,
+                  }),
+            badge: saving == null
+                ? null
+                : ContentKeys.format(t(ContentKeys.paywallAnnualSaving), {
+                    'percent': saving,
+                  }),
+            note: trial(annual),
+            selected: identical(selected, annual),
+            onSelected: () => setState(() => _choice = _Plan.annual),
+          ),
+        if (monthly != null)
+          PlanCard(
+            key: const ValueKey('paywall.plan.monthly'),
+            title: t(ContentKeys.paywallMonthlyLabel),
+            price: ContentKeys.format(perMonth, {
+              'price': monthly.storeProduct.priceString,
+            }),
+            regularPrice: struck(monthly, perMonth),
+            note: trial(monthly),
+            selected: identical(selected, monthly),
+            onSelected: () => setState(() => _choice = _Plan.monthly),
+          ),
+      ],
+      action: continueButton,
     );
   }
 }
@@ -685,102 +644,7 @@ class _PaywallFeatures extends StatelessWidget {
   }
 }
 
-/// One plan: label, localised price and (when the store grants it) the free
-/// introductory line on the left; the buy button on the right.
-class _PlanRow extends StatelessWidget {
-  const _PlanRow({
-    required this.rowKey,
-    required this.buttonKey,
-    required this.label,
-    required this.price,
-    this.regularPrice,
-    this.regularKey,
-    required this.intro,
-    required this.content,
-    required this.isBusy,
-    required this.onPressed,
-    required this.textColor,
-    required this.secondaryColor,
-  });
-
-  final Key rowKey;
-  final Key buttonKey;
-  final String label;
-  final String price;
-
-  /// The normal price, struck through beside [price] while founding prices
-  /// are on (mp-453 §2); null otherwise.
-  final String? regularPrice;
-  final Key? regularKey;
-  final IntroOffer? intro;
-  final ContentService content;
-  final bool isBusy;
-  final VoidCallback onPressed;
-  final Color textColor;
-  final Color secondaryColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final offer = intro;
-    final regular = regularPrice;
-    return Row(
-      key: rowKey,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTextStyles.h5.copyWith(color: textColor)),
-              const SizedBox(height: AppSpacing.xs),
-              if (offer != null)
-                Text(
-                  ContentKeys.format(
-                    content.getValue(ContentKeys.paywallIntroLine),
-                    {'days': offer.freeDays, 'price': price},
-                  ),
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: AppColors.electrolyte,
-                    fontWeight: FontWeight.w600,
-                  ),
-                )
-              else
-                Text(
-                  price,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: secondaryColor,
-                  ),
-                ),
-              if (regular != null)
-                Text(
-                  key: regularKey,
-                  regular,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: secondaryColor,
-                    decoration: TextDecoration.lineThrough,
-                    decorationColor: secondaryColor,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        KylePrimaryButton(
-          key: buttonKey,
-          text: content.getValue(
-            offer != null
-                ? ContentKeys.paywallStartTrialButton
-                : ContentKeys.paywallSubscribeButton,
-          ),
-          isFullWidth: false,
-          isLoading: isBusy,
-          onPressed: isBusy ? null : onPressed,
-        ),
-      ],
-    );
-  }
-}
-
-/// The terms under the plans: the free week and the price after it (from
+/// The terms under the features: the free week and the price after it (from
 /// the store, or the plain prices when the offer is spent), the renewal
 /// terms, and links to the terms of use and the privacy policy. The price
 /// line is left out while the store has not answered with both plans; the

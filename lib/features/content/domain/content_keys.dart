@@ -9,9 +9,6 @@ class ContentKeys {
   static const String paywallAnnualLabel = 'paywall.annual_label';
   static const String paywallPerMonth = 'paywall.per_month';
   static const String paywallPerYear = 'paywall.per_year';
-  static const String paywallIntroLine = 'paywall.intro_line';
-  static const String paywallStartTrialButton = 'paywall.start_trial_button';
-  static const String paywallSubscribeButton = 'paywall.subscribe_button';
   static const String paywallRestoreButton = 'paywall.restore_button';
   static const String paywallManageButton = 'paywall.manage_button';
   static const String paywallSignOutButton = 'paywall.sign_out_button';
@@ -61,6 +58,14 @@ class ContentKeys {
   static const String paywallFeatureHydration = 'paywall.feature_hydration';
   static const String paywallFeatureFormulas = 'paywall.feature_formulas';
   static const String paywallFeatureTargets = 'paywall.feature_targets';
+
+  // The pinned plans and the one Continue (mp-493 §3). `{percent}` and the
+  // per-month `{price}` are worked out from the store's prices.
+  static const String paywallContinueButton = 'paywall.continue_button';
+  static const String paywallPlanTrial = 'paywall.plan_trial';
+  static const String paywallAnnualSaving = 'paywall.annual_saving';
+  static const String paywallPerMonthEquivalent =
+      'paywall.per_month_equivalent';
 
   // The day-five reminder: a local notification two days before the free
   // week ends (mp-456). `{price}` is the store's price after the trial.
