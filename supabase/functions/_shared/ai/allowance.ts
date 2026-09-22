@@ -130,7 +130,7 @@ export interface WalletBudgetRow {
  * share of a month. Never a dollar figure.
  */
 export interface BudgetStatus {
-  /** 0..1 of this period's allowance spent; null when no allowance was ever granted. */
+  /** 0..1 of this period's allowance spent; null when no allowance window is open (never granted, or lapsed). */
   share_used: number | null;
   /** ISO end of the current allowance window; null when none is open. */
   refill_at: string | null;
@@ -144,7 +144,8 @@ export function budgetStatus(row: WalletBudgetRow, monthly: number): BudgetStatu
   const balance = Math.max(0, row.balance ?? 0);
   const allowance = Math.max(0, row.allowance ?? 0);
   const allowanceMonthly = row.allowance_monthly ?? 0;
-  const shareUsed = allowanceMonthly > 0 ? share(Math.min(1, Math.max(0, 1 - allowance / allowanceMonthly))) : null;
+  const windowOpen = allowanceMonthly > 0 && !!row.allowance_expires_at;
+  const shareUsed = windowOpen ? share(Math.min(1, Math.max(0, 1 - allowance / allowanceMonthly))) : null;
   const bought = Math.max(0, balance - allowance);
   return {
     share_used: shareUsed,

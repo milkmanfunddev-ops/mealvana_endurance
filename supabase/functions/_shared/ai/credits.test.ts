@@ -169,8 +169,10 @@ Deno.test('the status the app reads: a share of the month, the refill date, boug
   );
   // Never granted an allowance: no share, no refill, what is there is extra.
   assertEquals(budgetStatus({ balance: 400_000, allowance: 0, allowance_monthly: 0, allowance_expires_at: null }, 4_000_000), { share_used: null, refill_at: null, bought_extra_share: 0.1 });
-  // Over-run floored at zero reads as the whole month used.
-  assertEquals(budgetStatus({ balance: 0, allowance: 0, allowance_monthly: 4_000_000, allowance_expires_at: null }, 4_000_000).share_used, 1);
+  // A lapsed subscription: the window closed, so there is no month to show, only what was bought.
+  assertEquals(budgetStatus({ balance: 400_000, allowance: 0, allowance_monthly: 4_000_000, allowance_expires_at: null }, 4_000_000), { share_used: null, refill_at: null, bought_extra_share: 0.1 });
+  // Over-run floored at zero inside an open window reads as the whole month used.
+  assertEquals(budgetStatus({ balance: 0, allowance: 0, allowance_monthly: 4_000_000, allowance_expires_at: '2026-10-15T12:00:00+00:00' }, 4_000_000).share_used, 1);
 });
 
 Deno.test('the amounts: $4.00 a month, the trial a quarter, and the env overrides them per project', () => {
