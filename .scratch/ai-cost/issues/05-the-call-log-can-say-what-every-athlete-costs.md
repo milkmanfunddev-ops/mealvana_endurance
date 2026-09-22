@@ -1,6 +1,6 @@
 # 05: The call log can say what every athlete costs
 
-**Status:** in-progress (wave 3, 2026-09-22)
+**Status:** done (wave 3, 2026-09-22)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/chat.ts), 04 (touches supabase/functions/_shared/vana/chat.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
