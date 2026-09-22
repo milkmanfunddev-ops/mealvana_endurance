@@ -97,16 +97,21 @@ line, and the opener text forbids raising the plan the week already holds (archi
 when the new one is confirmed, never at open).
 Lines: `{"type":"text","delta"}` (a `"\n"` delta separates text blocks) · `{"type":"ui","part":VanaPart}` ·
 `{"type":"status","tool":name}` (on tool-input-start — drives the "Finding options…" line) ·
-`{"type":"done","usage":{input_tokens,output_tokens}}` · `{"type":"error","message"}`. Pre-stream errors: 401
+`{"type":"done","usage":{input_tokens,output_tokens,cache_read_tokens,steps}}` (`steps` = model steps in the turn,
+2026-09-22, mp-471; the client ignores `usage`) · `{"type":"error","message"}`. Pre-stream errors: 401
 `{error:'unauthenticated'}`, 400 `{error:'message_required'}`, 403 `{error:'pro_required'}` (edge fn only), 429
 `{error:'rate_limited', retry_after_seconds}`. Reference implementation: prototype `POST /api/vana/chat-ndjson`
 (`contract-v1`); Flutter uses the same envelope against `vana-chat`.
 
 Persistence (server): user + assistant rows in `vana_messages` with `content` (first text), `parts`
-(ordered AI-SDK parts incl. `tool-*` with `state:'output-available'`), `metadata {ui_parts, tool_calls,
+(ordered AI-SDK parts incl. `tool-*` with `state:'output-available'`), `metadata {tool_calls,
 duration_ms, opener, kind}`; `vana_conversations.last_message_at/title` touched; one `vana_calls` row
 per model call (`function_name, model, input_tokens, output_tokens`). History read prefers `parts`,
-falls back to `content + metadata.ui_parts` (this is what the Dart history loader parses).
+falls back to `content + metadata.ui_parts` (this is what the Dart history loader parses). Since
+2026-09-22 (mp-471) `metadata.ui_parts` is no longer written — every part is stored once, in `parts`;
+rows from before that date still carry it. What the MODEL is sent for a stored `tool-*` part is the
+tool's compact form (`tools.ts modelView`), on the first send and on every replay; the app always
+gets the full part.
 
 Limits (planning): ≤400 output tokens, `stepCountIs(6)`, text clamped to 2 sentences per step;
 general: ≤700, `stepCountIs(8)`. Rate limits: `vana.chat` 4/10 s, `vana.brief` 2/60 s, `vana.embed` 30/60 s.
