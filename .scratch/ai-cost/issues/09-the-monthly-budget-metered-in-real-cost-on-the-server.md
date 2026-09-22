@@ -1,6 +1,6 @@
 # 09: The monthly budget, metered in real cost on the server
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 4, 2026-09-22)
 **Blocked by:** 02 (touches supabase/functions/describe-meal/index.ts), 04 (touches supabase/functions/vana-chat/index.ts), 05 (touches supabase/migrations), 08 (touches supabase/functions/describe-meal/index.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** fable
