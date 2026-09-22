@@ -26,6 +26,11 @@ export function pickOpener(input: { today: string; current: (MealPlan & { checki
   return { kind: 'plan' };
 }
 
+/** The id prefix of the opener's hidden first message when a stored conversation is read back (chat.ts
+ *  conversationMessages): it is not a row, it is the opener row's `metadata.opener_prompt` put back in front of it so
+ *  the replay is the bytes first sent (mp-420 clause 5). The summariser skips it by this prefix. */
+export const OPENER_REPLAY_ID_PREFIX = 'opener:';
+
 /** The Situation a "New meal plan" opener carries in place of the screen's. The athlete tapped the button on the Plan tab, so
  *  the screen's own sentence says "the week of … is confirmed" and its DAY PLAN section lists that plan's meals — the very plan
  *  the opener must not raise. Ids the client sent are dropped for that one turn; later turns resolve the screen as usual. */

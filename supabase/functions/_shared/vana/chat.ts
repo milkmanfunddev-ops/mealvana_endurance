@@ -4,12 +4,16 @@
  *  Cost posture: Haiku by default, ≤6 steps, ≤900 output tokens, ~250-token context block, and the model is sent only what it
  *  reads (mp-471): every tool has a compact model-facing form that the replay uses too (tools.ts modelView), the assistant row
  *  stores each part once, and a turn ends on the step that asked a choice, handed off or filed feedback silently.
- *  The repeated prefix is cached (mp-276): the gateway call carries Anthropic's automatic cache_control, the prompt
- *  order is fixed (tools, persona, context, messages), the context block is built once per conversation and reused
- *  (context-cache.ts), and the cache-read token count is logged per call so a zero is visible.
+ *  The repeated prefix is cached (mp-276, mp-420 clauses 4 and 5): the prompt order is fixed (tools, persona, context,
+ *  messages); the persona and the context are two system messages with their own cache markers, so a context rebuild
+ *  (every plan write) keeps the tools and persona readable; the tail rides on Anthropic's automatic cache_control; the
+ *  call is pinned to Anthropic and carries the conversation as its session; the context block is built once per
+ *  conversation and reused (context-cache.ts); a stored conversation replays as the bytes first sent (the screen line
+ *  and the opener's hidden first message are stored with the transcript); and the cache-read token count is logged
+ *  per call so a zero is visible.
  *  Brevity is a prompt rule (persona.ts VOICE registers), not a server trim: a clamp only cuts text after it was paid for.
  *  The only server cut is a generous runaway guard so a looping turn never floods the transcript (Lee, 2026-09-03). */
-import { streamText, convertToModelMessages, stepCountIs, hasToolCall, type UIMessage, type ModelMessage } from 'npm:ai@6.0.277';
+import { streamText, convertToModelMessages, stepCountIs, hasToolCall, type UIMessage, type ModelMessage, type SystemModelMessage } from 'npm:ai@6.0.277';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
@@ -18,14 +22,14 @@ import { makeVanaTools } from './tools.ts';
 import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STANDING, checkinOpener, debriefOpener } from './persona.ts';
 import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
-import { inViewSection, resolveSituation, type Situation } from './situation.ts';
+import { inViewSection, resolveSituation, SITUATION_MARK, type Situation } from './situation.ts';
 import { asInputMode, callMetrics, logCall, type InputMode } from './log.ts';
 import { subscriberState } from './subscriber.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
 import { addDays, weekStartFor } from './env.ts';
-import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, type OpenerVariant } from './opener.ts';
+import { pickOpener, pendingDebrief, NEW_PLAN_SITUATION, OPENER_REPLAY_ID_PREFIX, type OpenerVariant } from './opener.ts';
 import { getPlanPeriod } from './memory.ts';
 import { generalOpener, type GeneralOpenerVariant } from './moment.ts';
 import type { MealPlan } from './contracts.ts';
@@ -33,8 +37,26 @@ import { ndjsonFromFullStream, ndjsonHeaders, cacheReadTokens } from './stream.t
 
 /** Anthropic's automatic prompt caching, through the gateway: a top-level `cache_control` the API places on the last
  *  cacheable block and moves forward as the conversation grows (mp-276 clause 1). With the prefix stable — tools,
- *  persona, context, then the history — every turn after the first reads the one before it. */
+ *  persona, context, then the history — every turn after the first reads the one before it. It marks ONE block, so
+ *  on its own a context rebuild threw the tools and persona away with the context (the 09-20 audit: 43% read on a
+ *  planning turn; the ticket 07 probe: 0% on every rebuilt turn). The two system messages below carry the other two
+ *  markers; this one stays for the tail. */
 export const CACHE_PROVIDER_OPTIONS = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
+/** The persona's cache lifetime (mp-420 clause 4; the research put the saving at low traffic on the shared prefix). One
+ *  hour costs twice the input price to write against 1.25× for five minutes, and is refreshed free on every read. It
+ *  must sit before the five-minute markers, which it does: the persona is the first block after the tools. Null turns
+ *  it off without changing the shape. The dev probe (ticket 07) is where "does the setting survive the gateway" is read:
+ *  Anthropic's usage reports `cache_creation.ephemeral_1h_input_tokens` and the gateway hands it back as it is. */
+export const PERSONA_CACHE_TTL: '1h' | null = '1h';
+/** What every chat call carries: the automatic marker for the tail, and the gateway pinned to Anthropic itself
+ *  (`only`). The gateway's routing plan lists Bedrock and Vertex as live fallbacks for the same model id, and a request
+ *  it moved there cannot read a cache written at Anthropic — the athlete would pay a cold prefix for a provider hiccup
+ *  we never asked for. Pinned, an Anthropic outage is a refused call (`ai_unavailable`), which is the honest answer. */
+export const chatProviderOptions = () => ({ ...CACHE_PROVIDER_OPTIONS, gateway: { only: ['anthropic'] } });
+/** The session header a chat call carries: one id per conversation, so the gateway can keep a conversation's requests
+ *  together. The gateway reports nothing back about it (the ticket 07 probe found no echo), so this is asked for and
+ *  not proven; the provider pin above is what the cache actually rests on. An ephemeral turn has no conversation. */
+export const chatHeaders = (conversationId: string): Record<string, string> => (conversationId ? { 'x-session-affinity': conversationId } : {});
 
 const MAX_OUTPUT_TOKENS = 900;
 /** The most a single turn may spend, input and output across every step, before the loop is stopped (mp-469 criterion 4).
@@ -178,20 +200,38 @@ export async function ensureConversation(v: VanaCtx, conversationId?: string | n
   if (conversationId) { const { data } = await v.db.from('vana_conversations').select('id, kind').eq('id', conversationId).eq('user_id', v.userId).eq('is_deleted', false).maybeSingle(); if (data) return { id: data.id, kind: data.kind === 'general' ? 'general' : 'meal_planning' }; }
   return { id: await createConversation(v, kind), kind };
 }
-/** Stored rows → UIMessage[] (parts column preferred; legacy content + metadata.ui_parts otherwise). */
+/** A user message as the model first read it: the text, then the screen line that rode on it (mp-420 clause 5). The
+ *  line is a text part of its own, which is the shape `withSituation` gives the newest message, so the stored turn and
+ *  the sent turn are the same bytes. A row from before the line was stored has one part, as it always did. */
+const userReplay = (id: string, text: string, situation: unknown): UIMessage =>
+  ({ id, role: 'user', parts: [{ type: 'text', text }, ...(typeof situation === 'string' && situation ? [{ type: 'text', text: situation }] : [])] } as UIMessage);
+/** Stored rows → UIMessage[] (parts column preferred; legacy content + metadata.ui_parts otherwise).
+ *  The opener's hidden first message is not a row — the app would draw it — but the opener's assistant row carries it
+ *  (`metadata.opener_prompt`, with the screen line under `metadata.situation`), and it comes back here in front of
+ *  that row, so the next turn replays the conversation exactly as the opener sent it (mp-420 clause 5). */
 export async function conversationMessages(v: VanaCtx, conversationId: string): Promise<{ kind: ConversationKind; messages: UIMessage[] }> {
   const [{ data }, kind] = await Promise.all([v.db.from('vana_messages').select('id, role, content, metadata, parts, created_at').eq('conversation_id', conversationId).eq('user_id', v.userId).order('created_at'), conversationKind(v, conversationId)]);
   // deno-lint-ignore no-explicit-any
-  const messages = (data ?? []).map((r: any) => {
-    if (r.role === 'user') return { id: r.id, role: 'user', parts: [{ type: 'text', text: r.content ?? '' }] } as UIMessage;
-    if (Array.isArray(r.parts) && r.parts.length) return { id: r.id, role: 'assistant', parts: r.parts } as UIMessage;
+  const messages = (data ?? []).flatMap((r: any): UIMessage[] => {
+    if (r.role === 'user') return [userReplay(r.id, r.content ?? '', r.metadata?.situation)];
+    const openerPrompt = typeof r.metadata?.opener_prompt === 'string' && r.metadata.opener_prompt ? [userReplay(`${OPENER_REPLAY_ID_PREFIX}${r.id}`, r.metadata.opener_prompt, r.metadata?.situation)] : [];
+    if (Array.isArray(r.parts) && r.parts.length) return [...openerPrompt, { id: r.id, role: 'assistant', parts: r.parts } as UIMessage];
     const ui = (r.metadata?.ui_parts ?? []) as VanaPart[];
     const parts: unknown[] = [];
     if (r.content) parts.push({ type: 'text', text: r.content });
     ui.forEach((p, i) => parts.push({ type: 'tool-legacy', toolCallId: `${r.id}:${i}`, state: 'output-available', input: {}, output: p }));
-    return { id: r.id, role: 'assistant', parts } as UIMessage;
+    return [...openerPrompt, { id: r.id, role: 'assistant', parts } as UIMessage];
   });
   return { kind, messages };
+}
+/** The opener's hidden first message, as the model reads it: a user message whose text is the scripted instruction.
+ *  Built as a UI message and sent through the same conversion as a stored turn, so the first send and every replay
+ *  are one path (mp-420 clause 5). */
+export const openerMessage = (text: string): UIMessage => ({ id: 'opener', role: 'user', parts: [{ type: 'text', text }] } as UIMessage);
+/** The user row for a turn. The screen line is stored beside the text (`metadata.situation`), never inside it: the app
+ *  reads `content` and draws that alone, and the model reads both (userReplay). */
+export function userMessageRow(i: { conversationId: string; userId: string; text: string; parts: unknown[]; situation: string | null }) {
+  return { conversation_id: i.conversationId, user_id: i.userId, role: 'user' as const, content: i.text, parts: i.parts, metadata: i.situation ? { situation: i.situation } : null };
 }
 async function touch(v: VanaCtx, convId: string, firstUserText?: string) {
   const patch: Record<string, unknown> = { last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() };
@@ -245,14 +285,17 @@ export function partsFromSteps(text: string, steps: any[], maxSentences: number 
  *  hold every UI part a second time (a picker row was 24 KB on disk and 82,000 characters over PostgREST — the 09-20
  *  audit, F3), and no reader takes it once `parts` exists (conversationMessages and the app's fetchMessages read `parts`
  *  first). `content` keeps the first text block so a legacy reader still has a line. */
+/** `openerPrompt` / `situation`: on an opener, the hidden first message and the screen line it carried, stored on this
+ *  row so the next turn replays them (conversationMessages). The app reads neither key. */
 // deno-lint-ignore no-explicit-any
-export function assistantMessageRow(i: { conversationId: string; userId: string; text: string; parts: unknown[]; steps: any[]; started: number; opener: boolean; openerVariant: string; newPlan: boolean; kind: ConversationKind; planSnapshot: unknown | null }) {
+export function assistantMessageRow(i: { conversationId: string; userId: string; text: string; parts: unknown[]; steps: any[]; started: number; opener: boolean; openerVariant: string; newPlan: boolean; kind: ConversationKind; planSnapshot: unknown | null; openerPrompt?: string | null; situation?: string | null }) {
   const firstText = (i.parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text;
   return {
     conversation_id: i.conversationId, user_id: i.userId, role: 'assistant' as const,
     content: firstText ?? (i.parts.length ? '' : clampSentences(i.text)),
     parts: i.parts,
-    metadata: { tool_calls: i.steps.flatMap((s) => (s.toolCalls ?? []).map((c: { toolName: string }) => c.toolName)), duration_ms: Date.now() - i.started, opener: i.opener, opener_variant: i.opener ? i.openerVariant : undefined, new_plan: i.newPlan || undefined, kind: i.kind, plan_snapshot: i.planSnapshot ?? undefined },
+    metadata: { tool_calls: i.steps.flatMap((s) => (s.toolCalls ?? []).map((c: { toolName: string }) => c.toolName)), duration_ms: Date.now() - i.started, opener: i.opener, opener_variant: i.opener ? i.openerVariant : undefined, new_plan: i.newPlan || undefined, kind: i.kind, plan_snapshot: i.planSnapshot ?? undefined,
+      opener_prompt: i.opener && i.openerPrompt ? i.openerPrompt : undefined, situation: i.opener && i.situation ? i.situation : undefined },
   };
 }
 /** The stored history as the model reads it: the same conversion the first send used, with the tools passed so every
@@ -268,19 +311,35 @@ const weekdayOf = (iso: string) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 
  *  by a tool call the model might not make.
  *  Order is fixed and stable within a day: persona, then the context (the API renders tools before this
  *  system text, and the messages after it). Nothing per-message goes in here — the Situation rides on the
- *  user message (`withSituation`) — or the cached prefix would break on every turn (mp-276 clause 3). */
+ *  user message (`withSituation`) — or the cached prefix would break on every turn (mp-276 clause 3).
+ *  Two system messages, not one (mp-420 clause 4): the persona is the same bytes for every athlete and every turn,
+ *  the context changes on a plan write or a new day. With a marker on each, a rebuild misses only the context and
+ *  the messages after it; the tools and persona in front of it (about 12,000 tokens) are read from the cache. The
+ *  standing extra (NEW PLAN, DEBRIEF PENDING) belongs to the context message, since it changes when the context does. */
+export function systemMessages(kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '', personaTtl: '1h' | null = PERSONA_CACHE_TTL): SystemModelMessage[] {
+  return [
+    { role: 'system', content: promptFor(kind), providerOptions: { anthropic: { cacheControl: personaTtl ? { type: 'ephemeral', ttl: personaTtl } : { type: 'ephemeral' } } } },
+    { role: 'system', content: `--- CONTEXT (today ${todayIso}, ${weekdayOf(todayIso)}) ---\n${contextBlock(ctx)}${extra}`, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } },
+  ];
+}
+/** The two system messages as one string, in order — what the tests that read the prompt as text look at. */
 export const systemPrompt = (kind: ConversationKind, ctx: AthleteContext, todayIso: string, extra = '') =>
-  `${promptFor(kind)}\n--- CONTEXT (today ${todayIso}, ${weekdayOf(todayIso)}) ---\n${contextBlock(ctx)}${extra}`;
+  systemMessages(kind, ctx, todayIso, extra).map((m) => m.content).join('\n');
 
+/** The marked line the Situation becomes on the message, with the in-view section (mp-273 clause 2) under it. Null
+ *  when there is no situation. This exact string is what a user row stores (`userMessageRow`) and what the opener's
+ *  row keeps, so a replay carries the line the model first read. */
+export const situationNote = (situation: string | null | undefined, section?: string | null): string | null =>
+  situation ? `${SITUATION_MARK}${situation}]${section ? `\n${section}` : ''}` : null;
 /** The Situation (which screen they are on) travels with the message, so it is appended to the last user turn as a
  *  marked line, not written into the system prompt: the prefix stays byte-identical across turns and only the newest
- *  message — never cached anyway — carries what changes per message. */
+ *  message carries what changes per message. Stored with that message's row, it replays on every later turn as sent. */
 export function withSituation<M extends { role: string; content: unknown }>(messages: M[], situation: string | null | undefined, section?: string | null): M[] {
-  if (!situation) return messages;
+  const note = situationNote(situation, section);
+  if (!note) return messages;
   const i = messages.map((m) => m.role).lastIndexOf('user');
   if (i < 0) return messages;
-  // The in-view section (mp-273 clause 2) goes under the note, on the same message, for the same reason.
-  const m = messages[i]; const note = `[SITUATION right now they are ${situation}]${section ? `\n${section}` : ''}`;
+  const m = messages[i];
   const content = typeof m.content === 'string' ? `${m.content}\n\n${note}` : Array.isArray(m.content) ? [...m.content, { type: 'text', text: note }] : m.content;
   return [...messages.slice(0, i), { ...m, content }, ...messages.slice(i + 1)];
 }
@@ -396,7 +455,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   // A pure vent is answered by the content-managed row alone; a complaint that also asks something still gets its answer.
   const silenceFeedback = silenceAfterFeedback(lastText);
   const started = Date.now();
-  if (last && !opener && persist) { await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'user', content: lastText, parts: last.parts }); await touch(v, convId, lastText); }
+  // The screen line this turn carries, stored with the row it rides on (mp-420 clause 5).
+  const note = situationNote(situation, inView);
+  if (last && !opener && persist) { await v.db.from('vana_messages').insert(userMessageRow({ conversationId: convId, userId: v.userId, text: lastText, parts: last.parts, situation: note })); await touch(v, convId, lastText); }
   let openerText: string = OPENERS[convKind]; let openerVariant: OpenerVariant['kind'] | GeneralOpenerVariant = 'plan'; let extraContext = '';
   // The athlete's very first conversation of any kind gets a server-authored `feedback_prompt` part after the opener
   // ("Give feedback for me here" → the app's own feedback sheet). Appended to the stream and the persisted row; the model
@@ -415,21 +476,23 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     else if (variant.kind === 'checkin') { openerText = checkinOpener(variant.plan, variant.cookDate, variant.session, anchorDate); await v.db.from('meal_plans').update({ checkin_done_at: new Date().toISOString() }).eq('id', variant.plan.id).eq('user_id', v.userId); }
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
-  const replayed = opener ? messages : await replayHistory(v, convId, messages);
-  const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await replayModelMessages(replayed, tools), situation, inView);
+  // The opener's first message goes through the same conversion a stored turn does, so its replay is the same bytes.
+  const replayed = opener ? [openerMessage(openerText)] : await replayHistory(v, convId, messages);
+  const modelMessages = withSituation(await replayModelMessages(replayed, tools), situation, inView);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
 
   const result = streamText({
     model: CHAT_MODEL,
-    system: systemPrompt(convKind, ctx, anchorDate, extraContext),
+    system: systemMessages(convKind, ctx, anchorDate, extraContext),
     messages: modelMessages,
     tools,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     // deno-lint-ignore no-explicit-any
     stopWhen: chatStopWhen(general, silenceFeedback) as any,
-    providerOptions: CACHE_PROVIDER_OPTIONS,
+    providerOptions: chatProviderOptions(),
+    headers: chatHeaders(convId),
     // A stream that fails is a call the athlete did not get: its reservation goes back. The hold settles once, so an
     // onFinish that follows an error changes nothing.
     onError: ({ error }) => { console.error(`${tag} stream error:`, (error as Error)?.message ?? error); if (opts.onFailure) waitUntil(opts.onFailure(error).catch((e) => console.error(`${tag} onFailure threw:`, (e as Error).message))); },
@@ -447,7 +510,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
             for (const t of trailingParts) parts.push({ type: 'tool-feedbackPrompt', toolCallId: `server-${Date.now()}`, state: 'output-available', input: {}, output: t });
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
-            const { error } = await v.db.from('vana_messages').insert(assistantMessageRow({ conversationId: convId, userId: v.userId, text, parts, steps: steps as unknown[], started, opener, openerVariant, newPlan, kind: convKind, planSnapshot }));
+            const { error } = await v.db.from('vana_messages').insert(assistantMessageRow({ conversationId: convId, userId: v.userId, text, parts, steps: steps as unknown[], started, opener, openerVariant, newPlan, kind: convKind, planSnapshot, openerPrompt: opener ? openerText : null, situation: note }));
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }

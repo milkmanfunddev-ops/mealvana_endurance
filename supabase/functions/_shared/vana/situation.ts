@@ -57,6 +57,10 @@ export interface Situation {
 /** Which kind of thing the route's `entityId` points at. */
 export type EntityKind = 'plan' | 'meal' | 'activity' | 'event' | 'formula' | null;
 
+/** How the Situation opens on the message it rides (chat.ts situationNote). Stored with the message since ticket 07
+ *  (mp-420 clause 5), so the summariser recognises the line by this and leaves it out of what was said. */
+export const SITUATION_MARK = '[SITUATION right now they are ';
+
 /** The one capped section a screen adds for what is in view (mp-273 clause 2). Most screens add none. */
 export type SectionKind = 'events_ahead' | 'day_plan' | 'formula';
 

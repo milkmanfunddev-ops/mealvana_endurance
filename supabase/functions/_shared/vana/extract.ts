@@ -12,8 +12,11 @@
  * Nothing is announced. Extracted Memories produce no card and no mention — the flat list in Vana
  * settings is the audit trail.
  *
- * The opener's synthetic user message is never stored, so a transcript begins with Vana's own first
- * turn. Nothing here may depend on that message existing.
+ * The opener's synthetic user message is not a row, so a transcript read from the table begins with
+ * Vana's own first turn. Since ticket 07 it comes back in the replayed history (chat.ts
+ * conversationMessages, for the cache) under an `opener:` id, and `transcriptFromMessages` leaves it
+ * out again: it is an instruction to the model, not something anyone said. Nothing here may depend on
+ * that message existing.
  *
  * A conversation still in progress is not read back; its history is chunked and the oldest chunk
  * summarised onto the conversation row instead (mp-277 clause 1): see `writeSummary`.
@@ -25,6 +28,8 @@ import type { VanaCtx } from './env.ts';
 import { listMemories, rememberFact } from './memory.ts';
 import { logCall } from './log.ts';
 import { checkRateLimit } from './rate-limit.ts';
+import { OPENER_REPLAY_ID_PREFIX } from './opener.ts';
+import { SITUATION_MARK } from './situation.ts';
 
 /** Zero to three margin notes, and always exactly one episode sentence. */
 export const ExtractionZ = z.object({
@@ -184,12 +189,14 @@ export async function readSummaries(v: VanaCtx, conversationId: string): Promise
 }
 
 /** The message text the summariser reads: what was said, plus the meals a picker showed, which is
- *  how "the one I picked in turn three" survives when the pick was a tap rather than a sentence. */
-export function transcriptFromMessages(messages: { role: string; parts: unknown[] }[]): TranscriptLine[] {
-  return messages.map((m) => {
+ *  how "the one I picked in turn three" survives when the pick was a tap rather than a sentence.
+ *  Not read: the opener's hidden first message (an instruction to the model, replayed for the cache — mp-420
+ *  clause 5) and the screen line on a user message (`[SITUATION …]`, the same), neither of which anyone said. */
+export function transcriptFromMessages(messages: { id?: string; role: string; parts: unknown[] }[]): TranscriptLine[] {
+  return messages.filter((m) => !String(m.id ?? '').startsWith(OPENER_REPLAY_ID_PREFIX)).map((m) => {
     const text: string[] = [];
     for (const p of m.parts as { type?: string; text?: string; state?: string; output?: unknown }[]) {
-      if (p?.type === 'text' && p.text?.trim()) text.push(p.text.trim());
+      if (p?.type === 'text' && p.text?.trim()) { if (!p.text.startsWith(SITUATION_MARK)) text.push(p.text.trim()); }
       else if (p?.type?.startsWith('tool-') && p.state === 'output-available') {
         const out = p.output as { kind?: string; meals?: { name?: string }[] } | undefined;
         const names = Array.isArray(out?.meals) ? out!.meals.map((x) => x?.name).filter(Boolean) : [];
