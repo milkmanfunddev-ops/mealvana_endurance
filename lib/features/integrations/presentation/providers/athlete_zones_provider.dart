@@ -74,6 +74,7 @@ Future<bool> tpZonesStale(Ref ref, String userId) async {
   return DateTime.now().difference(updatedAt) > const Duration(hours: 24);
 }
 
+
 /// D-2b provenance feed (TP fallback): the athlete weight (kg) TP reported
 /// on the basic profile, or null when TP is not connected. Garmin remains
 /// the ruled primary body-comp source; this fills the badge when Garmin has
@@ -90,10 +91,8 @@ Future<double?> tpAthleteWeightKg(Ref ref, String userId) async {
 /// TP-reported identity fields for profile provenance badges (name, birth
 /// month "YYYY-MM", gender) — null when TP is not connected.
 @riverpod
-Future<({String? name, String? birthMonth, String? gender})?> tpAthleteIdentity(
-  Ref ref,
-  String userId,
-) async {
+Future<({String? name, String? birthMonth, String? gender})?>
+    tpAthleteIdentity(Ref ref, String userId) async {
   final repository = ref.watch(integrationsRepositoryProvider);
   final tp = await repository.getIntegration(userId, 'training_peaks');
   if (tp == null || !tp.isActive) return null;
