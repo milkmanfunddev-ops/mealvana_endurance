@@ -44,6 +44,28 @@
       }
     ]
   },
+  "subscription": {
+    "match": [
+      "Subscription screen",
+      "Subscription"
+    ],
+    "reuse": "test/features/subscription/presentation/goldens/subscription_active_light.png",
+    "code": [
+      "lib/features/subscription/presentation/screens/subscription_screen.dart",
+      "lib/features/subscription/presentation/widgets/pro_feature_list.dart",
+      "lib/features/subscription/application/subscription_screen_controller.dart"
+    ],
+    "drive": [
+      {
+        "tap": "Settings",
+        "type": "Button"
+      },
+      {
+        "tap": "Subscription",
+        "settle": 2500
+      }
+    ]
+  },
   "calendar-sheet": {
     "match": [
       "Calendar sheet over the Plan tab",

@@ -3141,3 +3141,145 @@ The widget is `kyle_design/buttons/overflow_menu_button.dart`, spec PROPOSED, aw
 **What it touches.** The top-up sheet, `ai_credits.pack_sliver` in the content system.
 
 > 2026-09-22 opened in wave 5 ticket 10
+
+## mp-579 · What a lapsed account can still do
+- category: Pro and paywall
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-579.svg
+- screen: none (write controllers)
+- source: wave paywall 4 ticket 12
+- linked: mp-491
+
+**Context.** mp-457 says every write controller checks the write-access provider before writing. Ticket 12 added the check to 36 controllers (208 write paths). It had to decide which actions count as a write the paywall should stop and which are account housekeeping the paywall itself depends on.
+
+**Question.** Which actions does a lapsed account keep, and which open the paywall?
+
+**Decision.** 
+1. Open the paywall: every edit to the athlete's own data (activities, bricks, events, calendar, carb loading, nutrition plan and macros, meal logs and drafts, templates, the race checklist, profile and sweat profile), meal planning (plans, days, votes, notes, photos, the shopping list, Vana settings), AI calls, Kroger cart and connect, connecting or importing from a training app, a Garmin backfill the athlete taps, and every coach-mode write.
+2. Keep working: sign-in and sign-out, account deletion, buying and restoring, the credits sheet, startup, uploading rows already queued, plans the server sends down, onboarding, analytics consent, Vana's quiet and moment settings, emailing a plan as a PDF, Kroger search and hand-off, and the Garmin backfill the app starts once per session.
+3. Disconnecting a training app stays open, like sign-out: revoking a third party's access is the account's right. It hides or deletes that app's imported activities, as it does today.
+
+**Why.** The paywall offers Restore, Sign out and Delete account (mp-280), so what it relies on cannot be behind it; what the server sends is not the athlete editing.
+
+**What else was considered.** Gating disconnect too (Kroger disconnect is gated); gating the plan email, which also saves the sender's name to the profile.
+
+**What it touches.** Every write controller, `subscription/application/write_guard.dart`.
+
+**Details.** One seam test per controller write path, through the real notifier, with every repository set to fail if touched (`lapsed_writes_seam_test.dart` in each feature). The wave review found two gaps, fixed before merge: carb-loading food selection was ungated, and the session's Garmin backfill opened the paywall when a lapsed athlete merely opened Connected Apps. Kroger disconnect is gated while training-app disconnect is not; say which way both should go.
+
+> 2026-09-22 proposed in wave 4 ticket 12
+
+## mp-580 · The Subscription screen's status line
+- category: Pro and paywall
+- status: proposed
+- image: test/features/subscription/presentation/goldens/subscription_active_light.png
+- caption: Subscription screen, active plan (golden, light)
+- screen: Subscription screen
+- source: wave paywall 4 ticket 16
+- linked: mp-495
+
+**Context.** mp-495 lists four states (trial, active, founding, ended) but not which one shows when two apply, such as a trial on a founding product, or a cancelled plan that still runs.
+
+**Question.** Which status shows when more than one applies, and how is founding recognised?
+
+**Decision.** 
+1. Ended, then trial, then founding, then active: the first that applies is shown.
+2. A plan that will not renew shows "Ends on {date}. It won't renew." instead of "Renews on {date}."
+3. Founding means the product this customer bought is a founding product, not whatever the paywall offers today.
+4. The list of what Pro includes is the paywall's own list, each feature ticked and the AI features under one Vana line with Vana's avatar.
+
+**Why.** During a trial the end date is what the athlete needs; a founding price is a fact about what they bought, which today's offering cannot tell.
+
+**What else was considered.** Showing founding over trial; reading founding from the current offering; a separate copy of the feature list for Settings.
+
+**What it touches.** Subscription screen, the paywall's feature list (now shared), `subscription.*` content keys.
+
+**Details.** Founding is a product id containing `_founding` (`me_pro_*_founding` and the `_prod` ones). Dates read "September 29, 2026". Goldens light and dark for active and ended; trial and founding are widget-tested.
+
+> 2026-09-22 proposed in wave 4 ticket 16
+> 2026-09-22 picture reused from test/features/subscription/presentation/goldens/subscription_active_light.png
+
+## mp-581 · Subscription is the first row in Settings
+- category: Pro and paywall
+- status: proposed
+- image: none
+- caption:
+- screen: Settings
+- source: wave paywall 4 ticket 16
+- linked: mp-495
+
+**Context.** mp-495 says Settings gets a Subscription row but not where.
+
+**Question.** Where in Settings does the Subscription row go?
+
+**Decision.** First row of Settings' quick-links card, crown icon, title and subtitle from the content system.
+
+**Why.** It is where an athlete looks first to check or cancel a plan.
+
+**What else was considered.** Near Account at the bottom of Settings.
+
+**What it touches.** Settings screen.
+
+> 2026-09-22 proposed in wave 4 ticket 16
+
+## mp-582 · What does an admin with no plan see on the Subscription screen?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-495
+- image: none
+- caption:
+- screen: Subscription screen
+- source: wave paywall 4 ticket 16
+
+**Context.** An admin gets full access without a plan (mp-457 clause 1). The Subscription screen reads only the store, so an admin with no plan sees "Your plan has ended", "Your data is read-only until you subscribe", and an Upgrade button. That button goes nowhere useful, because the gate sends an open account away from the paywall.
+
+**Question.** Should an admin see their own status (for example "Admin access"), no Upgrade, or the store status as it is?
+
+**Why.** The ended line tells an admin something false about their data.
+
+**What it touches.** Subscription screen, `subscription.*` content keys.
+
+> 2026-09-22 opened in wave 4 ticket 16
+
+## mp-583 · Do granted plans need their own label?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-495
+- image: none
+- caption:
+- screen: Subscription screen
+- source: wave paywall 4 ticket 16
+
+**Context.** A plan granted rather than bought (the grace month, a coach code, the dev account) shows as "Subscribed · Ends on September 15, 2027. It won't renew." with no Manage button, since there is no store subscription to manage.
+
+**Question.** Should a granted plan say so (for example "Gift from your coach" or "Grace month"), or is "Subscribed" with its end date enough?
+
+**Why.** "It won't renew" can read as a problem to an athlete who never paid.
+
+**What it touches.** Subscription screen, `subscription.*` content keys.
+
+> 2026-09-22 opened in wave 4 ticket 16
+
+## mp-584 · What should a screen do after its save is refused?
+- category: Pro and paywall
+- kind: question
+- status: open
+- linked: mp-491
+- image: none
+- caption:
+- screen: none (every edit screen)
+- source: wave paywall 4 ticket 12
+
+**Context.** Ticket 12 refuses the write in the controller and opens the paywall. The screen underneath was left alone, so some screens still close themselves or show "saved" behind the paywall after a refused save. The sweat profile was fixed in the wave review; the others were not checked on a device.
+
+**Question.** Should every edit screen stay put and show nothing when its save is refused, leaving the paywall to speak?
+
+**Why.** A "saved" toast for a save that never happened is wrong, and a screen that closes loses what the athlete typed.
+
+**What it touches.** Every edit screen.
+
+> 2026-09-22 opened in wave 4 ticket 12

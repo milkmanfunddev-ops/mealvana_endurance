@@ -85,5 +85,9 @@
   "docs/ssot/decisions/images/mealplanning/bevel-subscription.png": {
     "id": "a54c22fb4dcb16561db104f91e339b9a",
     "sha256": "33adedb3773e74b484bbf8cdbf9c5d9c869980c9bce7d6a27ffd3752c04ff339"
+  },
+  "test/features/subscription/presentation/goldens/subscription_active_light.png": {
+    "id": "6346f33f6f94efc2fc505a5fc1a4014c",
+    "sha256": "df69a486b40194b19caddeda0bd61bed6da9a075067e78d34a50d90c624040f4"
   }
 }
