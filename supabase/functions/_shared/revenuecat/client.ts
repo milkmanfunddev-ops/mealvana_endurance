@@ -6,6 +6,9 @@
  *                     computes it (the later of a grant and a subscription)
  *   grantPro          a promotional `pro` grant for N days from now
  *   setAttributes     subscriber attributes (founding_member, coach_code, …)
+ *   getAttributes     the customer's attributes, or null for an unknown customer
+ *   promotionalProEnd the end of the customer's live promotional `pro` grant
+ *   createCustomer    make a customer RevenueCat has never seen (a grant needs one)
  *
  * The v2 API names entitlements by an opaque id; the app knows `pro` by its
  * lookup key, so the client resolves the id once per instance.
@@ -36,6 +39,15 @@ export interface RevenueCatClient {
   grantPro(appUserId: string, days: number): Promise<void>;
   /** Set subscriber attributes; an empty map makes no call. */
   setAttributes(appUserId: string, attributes: Record<string, string>): Promise<void>;
+  /** The customer's attributes as name → value, or null when RevenueCat has never seen them. */
+  getAttributes(appUserId: string): Promise<Record<string, string> | null>;
+  /**
+   * ISO end of the latest live promotional (granted) `pro`, or null when the
+   * customer holds none. Bought subscriptions do not count.
+   */
+  promotionalProEnd(appUserId: string): Promise<string | null>;
+  /** Create a customer by id (RevenueCat refuses a grant to an unknown one). */
+  createCustomer(appUserId: string): Promise<void>;
 }
 
 export interface RevenueCatConfig {
@@ -52,6 +64,16 @@ interface ListBody<T> {
 interface EntitlementItem {
   id?: string;
   lookup_key?: string;
+}
+interface AttributeItem {
+  name?: string;
+  value?: string | null;
+}
+interface SubscriptionItem {
+  store?: string;
+  gives_access?: boolean;
+  ends_at?: number | null;
+  entitlements?: ListBody<EntitlementItem>;
 }
 interface ActiveEntitlementItem {
   entitlement_id?: string;
@@ -128,6 +150,37 @@ export function makeRevenueCatClient(config: RevenueCatConfig): RevenueCatClient
       if (pairs.length === 0) return;
       const res = await call('POST', `${customerPath(appUserId)}/attributes`, { attributes: pairs });
       if (res === null) throw new RevenueCatError(`RevenueCat has no customer ${appUserId}`, 404);
+    },
+
+    async getAttributes(appUserId) {
+      const customer = await call<{ attributes?: ListBody<AttributeItem> }>(
+        'GET',
+        `${customerPath(appUserId)}?expand=attributes`,
+      );
+      if (customer === null) return null;
+      const out: Record<string, string> = {};
+      for (const a of customer.attributes?.items ?? []) {
+        if (a.name && typeof a.value === 'string') out[a.name] = a.value;
+      }
+      return out;
+    },
+
+    async promotionalProEnd(appUserId) {
+      const id = await proId();
+      const subs = await call<ListBody<SubscriptionItem>>('GET', `${customerPath(appUserId)}/subscriptions?limit=100`);
+      let latest: number | null | undefined;
+      for (const s of subs?.items ?? []) {
+        if (s.store !== 'promotional' || s.gives_access !== true) continue;
+        if (!s.entitlements?.items?.some((e) => e.id === id)) continue;
+        const end = s.ends_at ?? null;
+        if (end === null) return NO_EXPIRY_ISO;
+        if (latest === undefined || latest === null || end > latest) latest = end;
+      }
+      return latest === undefined || latest === null ? null : new Date(latest).toISOString();
+    },
+
+    async createCustomer(appUserId) {
+      await call('POST', `${base}/customers`, { id: appUserId });
     },
   };
 }

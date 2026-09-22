@@ -238,3 +238,113 @@ describe('construction', () => {
     assertEquals(threw, 2);
   });
 });
+
+/** A customer's subscription list as the v2 API returns it (shape read off the dev project, 2026-09-21). */
+function subscriptions(items: { store: string; ends_at: number | null; gives_access?: boolean; entitlement?: string }[]) {
+  return {
+    object: 'list',
+    items: items.map((s, i) => ({
+      object: 'subscription',
+      id: `sub${i}`,
+      customer_id: USER,
+      store: s.store,
+      status: 'active',
+      gives_access: s.gives_access ?? true,
+      starts_at: T0 - DAY,
+      current_period_ends_at: s.ends_at,
+      ends_at: s.ends_at,
+      auto_renewal_status: 'will_not_renew',
+      product_id: null,
+      environment: 'production',
+      entitlements: {
+        object: 'list',
+        items: [{ object: 'entitlement', id: s.entitlement ?? PRO_ID, lookup_key: 'pro', state: 'active' }],
+        next_page: null,
+      },
+    })),
+    next_page: null,
+    url: `/v2/projects/${PROJECT}/customers/${USER}/subscriptions`,
+  };
+}
+const SUBS_ROUTE = `GET /v2/projects/${PROJECT}/customers/${USER}/subscriptions`;
+const CUSTOMER_ROUTE = `GET /v2/projects/${PROJECT}/customers/${USER}`;
+
+describe('promotionalProEnd', () => {
+  it('the latest end among live promotional `pro` subscriptions; bought ones do not count', async () => {
+    const { fetch } = fakeFetch({
+      [ENTITLEMENTS_ROUTE]: { body: ENTITLEMENTS },
+      [SUBS_ROUTE]: {
+        body: subscriptions([
+          { store: 'app_store', ends_at: T0 + 400 * DAY },
+          { store: 'promotional', ends_at: T0 + 10 * DAY },
+          { store: 'promotional', ends_at: T0 + 30 * DAY },
+          { store: 'promotional', ends_at: T0 + 90 * DAY, gives_access: false },
+          { store: 'promotional', ends_at: T0 + 90 * DAY, entitlement: 'entl0000other' },
+        ]),
+      },
+    });
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    assertEquals(await rc.promotionalProEnd(USER), new Date(T0 + 30 * DAY).toISOString());
+  });
+
+  it('no promotional `pro` → null; an unknown customer (404) → null', async () => {
+    const one = fakeFetch({
+      [ENTITLEMENTS_ROUTE]: { body: ENTITLEMENTS },
+      [SUBS_ROUTE]: { body: subscriptions([{ store: 'play_store', ends_at: T0 + DAY }]) },
+    });
+    assertEquals(await makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch: one.fetch }).promotionalProEnd(USER), null);
+    const two = fakeFetch({ [ENTITLEMENTS_ROUTE]: { body: ENTITLEMENTS } });
+    assertEquals(await makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch: two.fetch }).promotionalProEnd(USER), null);
+  });
+
+  it('a promotional grant without an end reads as open to the far future', async () => {
+    const { fetch } = fakeFetch({
+      [ENTITLEMENTS_ROUTE]: { body: ENTITLEMENTS },
+      [SUBS_ROUTE]: { body: subscriptions([{ store: 'promotional', ends_at: null }]) },
+    });
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    assertEquals(await rc.promotionalProEnd(USER), '9999-12-31T00:00:00.000Z');
+  });
+});
+
+describe('getAttributes', () => {
+  it('reads the customer with its attributes expanded, as a name → value map', async () => {
+    const { fetch, calls } = fakeFetch({
+      [CUSTOMER_ROUTE]: {
+        body: {
+          object: 'customer',
+          id: USER,
+          project_id: PROJECT,
+          attributes: {
+            object: 'list',
+            items: [
+              { object: 'customer.attribute', name: '$attConsentStatus', value: 'notDetermined', updated_at: T0 },
+              { object: 'customer.attribute', name: 'founding_member', value: 'true', updated_at: T0 },
+            ],
+            next_page: null,
+          },
+        },
+      },
+    });
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    assertEquals(await rc.getAttributes(USER), { $attConsentStatus: 'notDetermined', founding_member: 'true' });
+    assertEquals(new URL(calls[0].url).searchParams.get('expand'), 'attributes');
+  });
+
+  it('an unknown customer → null', async () => {
+    const { fetch } = fakeFetch({});
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    assertEquals(await rc.getAttributes(USER), null);
+  });
+});
+
+describe('createCustomer', () => {
+  it('posts the id', async () => {
+    const { fetch, calls } = fakeFetch({
+      [`POST /v2/projects/${PROJECT}/customers`]: { status: 201, body: { object: 'customer', id: USER, project_id: PROJECT } },
+    });
+    const rc = makeRevenueCatClient({ secretKey: KEY, projectId: PROJECT, fetch });
+    await rc.createCustomer(USER);
+    assertEquals(calls[0].body, { id: USER });
+  });
+});
