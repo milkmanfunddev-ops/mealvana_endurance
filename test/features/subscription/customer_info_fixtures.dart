@@ -10,41 +10,48 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 
-Map<String, dynamic> _pro({required bool isActive, required String expires}) =>
-    {
-      'identifier': 'pro',
-      'isActive': isActive,
-      'willRenew': isActive,
-      'latestPurchaseDate': '2026-08-01T10:00:00Z',
-      'originalPurchaseDate': '2026-08-01T10:00:00Z',
-      'productIdentifier': 'me_pro_monthly',
-      'isSandbox': true,
-      'ownershipType': 'PURCHASED',
-      'store': 'APP_STORE',
-      'periodType': 'NORMAL',
-      'expirationDate': expires,
-      'unsubscribeDetectedAt': isActive ? null : '2026-08-20T10:00:00Z',
-      'billingIssueDetectedAt': null,
-      'verification': 'NOT_REQUESTED',
-    };
+Map<String, dynamic> _pro({
+  required bool isActive,
+  required String expires,
+  String productId = 'me_pro_monthly',
+  String periodType = 'NORMAL',
+  String store = 'APP_STORE',
+  bool? willRenew,
+}) => {
+  'identifier': 'pro',
+  'isActive': isActive,
+  'willRenew': willRenew ?? isActive,
+  'latestPurchaseDate': '2026-08-01T10:00:00Z',
+  'originalPurchaseDate': '2026-08-01T10:00:00Z',
+  'productIdentifier': productId,
+  'isSandbox': true,
+  'ownershipType': 'PURCHASED',
+  'store': store,
+  'periodType': periodType,
+  'expirationDate': expires,
+  'unsubscribeDetectedAt': (willRenew ?? isActive)
+      ? null
+      : '2026-08-20T10:00:00Z',
+  'billingIssueDetectedAt': null,
+  'verification': 'NOT_REQUESTED',
+};
 
 CustomerInfo _info({required Map<String, dynamic> all, required bool active}) {
+  final sku = all.isEmpty ? null : all['pro']['productIdentifier'] as String;
   return CustomerInfo.fromJson({
     'entitlements': {
       'all': all,
       'active': active ? all : <String, dynamic>{},
       'verification': 'NOT_REQUESTED',
     },
-    'allPurchaseDates': {
-      if (all.isNotEmpty) 'me_pro_monthly': '2026-08-01T10:00:00Z',
-    },
-    'activeSubscriptions': [if (active) 'me_pro_monthly'],
-    'allPurchasedProductIdentifiers': [if (all.isNotEmpty) 'me_pro_monthly'],
+    'allPurchaseDates': {if (all.isNotEmpty) sku!: '2026-08-01T10:00:00Z'},
+    'activeSubscriptions': [if (active) sku!],
+    'allPurchasedProductIdentifiers': [if (all.isNotEmpty) sku!],
     'nonSubscriptionTransactions': <dynamic>[],
     'firstSeen': '2026-08-01T09:00:00Z',
     'originalAppUserId': 'u-1',
     'allExpirationDates': {
-      if (all.isNotEmpty) 'me_pro_monthly': all['pro']['expirationDate'],
+      if (all.isNotEmpty) sku!: all['pro']['expirationDate'],
     },
     'requestDate': '2026-09-22T12:00:00Z',
     'latestExpirationDate': all.isEmpty ? null : all['pro']['expirationDate'],
@@ -64,6 +71,58 @@ final CustomerInfo customerInfoOpen = _info(
 final CustomerInfo customerInfoLapsed = _info(
   all: {'pro': _pro(isActive: false, expires: '2026-09-01T10:00:00Z')},
   active: false,
+);
+
+/// `pro` in its free week on the monthly plan, ending 29 September; the
+/// store will start charging then.
+final CustomerInfo customerInfoTrial = _info(
+  all: {
+    'pro': _pro(
+      isActive: true,
+      expires: '2026-09-29T10:00:00Z',
+      periodType: 'TRIAL',
+    ),
+  },
+  active: true,
+);
+
+/// `pro` on the founding annual plan (mp-452), renewing 1 October 2027.
+final CustomerInfo customerInfoFounding = _info(
+  all: {
+    'pro': _pro(
+      isActive: true,
+      expires: '2027-10-01T10:00:00Z',
+      productId: 'me_pro_annual_founding',
+    ),
+  },
+  active: true,
+);
+
+/// `pro` active until 1 November, cancelled: it will not renew.
+final CustomerInfo customerInfoOpenCancelled = _info(
+  all: {
+    'pro': _pro(
+      isActive: true,
+      expires: '2026-11-01T10:00:00Z',
+      willRenew: false,
+    ),
+  },
+  active: true,
+);
+
+/// `pro` granted by RevenueCat (the grace month, a code), not bought: no
+/// store page to manage. Active until 22 October.
+final CustomerInfo customerInfoGranted = _info(
+  all: {
+    'pro': _pro(
+      isActive: true,
+      expires: '2026-10-22T10:00:00Z',
+      store: 'PROMOTIONAL',
+      productId: 'rc_promo_pro_monthly',
+      willRenew: false,
+    ),
+  },
+  active: true,
 );
 
 /// No `pro`, ever.

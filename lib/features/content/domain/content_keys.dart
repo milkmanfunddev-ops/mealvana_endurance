@@ -972,6 +972,31 @@ class ContentKeys {
   static const String planEndedMessage = 'plan_ended.message';
   static const String planEndedSubscribeButton = 'plan_ended.subscribe_button';
 
+  // The Subscription screen in Settings (mp-495): its row in Settings, the
+  // plan status with its date, what Pro includes and Upgrade. The feature
+  // lines and Manage subscription are the paywall's own keys. `{date}` is
+  // the long date ("September 29, 2026").
+  static const String subscriptionSettingsRowTitle =
+      'subscription.settings_row_title';
+  static const String subscriptionSettingsRowSubtitle =
+      'subscription.settings_row_subtitle';
+  static const String subscriptionTitle = 'subscription.title';
+  static const String subscriptionStatusTrial = 'subscription.status_trial';
+  static const String subscriptionStatusActive = 'subscription.status_active';
+  static const String subscriptionStatusFounding =
+      'subscription.status_founding';
+  static const String subscriptionStatusEnded = 'subscription.status_ended';
+  static const String subscriptionTrialEnds = 'subscription.trial_ends';
+  static const String subscriptionTrialEndsNoRenew =
+      'subscription.trial_ends_no_renew';
+  static const String subscriptionRenews = 'subscription.renews';
+  static const String subscriptionEnds = 'subscription.ends';
+  static const String subscriptionEndedOn = 'subscription.ended_on';
+  static const String subscriptionEndedNoDate = 'subscription.ended_no_date';
+  static const String subscriptionIncludesHeader =
+      'subscription.includes_header';
+  static const String subscriptionUpgradeButton = 'subscription.upgrade_button';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.
   static String format(String value, Map<String, Object?> params) {

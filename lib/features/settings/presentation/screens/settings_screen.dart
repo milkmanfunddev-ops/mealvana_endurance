@@ -13,6 +13,9 @@ import '../../../../shared/services/app_external_deps.dart';
 import '../../../../shared/widgets/adaptive/adaptive.dart';
 import '../../../../shared/widgets/custom_app_bar_back_button.dart';
 import '../../../../shared/services/app_config.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
+import '../../../subscription/presentation/screens/subscription_screen.dart';
 import '../providers/dev_tools_switch_controller.dart';
 import '../providers/settings_controller.dart';
 import '../providers/tester_mode_controller.dart';
@@ -670,10 +673,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildQuickLinksSection(BuildContext context) {
+    final content = ref.watch(contentServiceProvider);
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Subscription (mp-495): the plan's status, what it includes, and
+          // Upgrade / Manage. A named push, so the router file stays as is.
+          _buildQuickLink(
+            context: context,
+            rowKey: const ValueKey('settings.subscription_row'),
+            icon: FontAwesomeIcons.crown.data,
+            title: content.getValue(ContentKeys.subscriptionSettingsRowTitle),
+            subtitle: content.getValue(
+              ContentKeys.subscriptionSettingsRowSubtitle,
+            ),
+            onTap: () {
+              final analytics = ref.read(appExternalDepsProvider);
+              analytics.analytics.track('settings_subscription_tapped');
+              Navigator.of(context).push(SubscriptionScreen.route());
+            },
+          ),
+
+          const SizedBox(height: AppSpacing.sm),
+
           // Profile & Preferences (with triple-tap gesture for debug)
           GestureDetector(
             onTap: _handleProfileTap,
