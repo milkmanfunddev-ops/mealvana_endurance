@@ -1,8 +1,8 @@
 /** Vana tools — AI SDK v6. UI-rendering tools return a VanaPart (with `kind`); data tools return plain data.
  *  All 24 tools of the prototype, same two tool sets per conversation kind. */
-import { tool } from 'npm:ai@6.0.277';
+import { tool, type JSONValue } from 'npm:ai@6.0.277';
 import { z } from 'npm:zod@3';
-import type { VanaPart, MealRef, MealContext, MealType, PlanRule, ConversationKind, AthleteContext } from './contracts.ts';
+import type { VanaPart, MealRef, MealContext, MealType, MealPlan, PlanMeal, PlanRule, ConversationKind, AthleteContext } from './contracts.ts';
 import { today, addDays, dayKey, dayName, weekStartFor } from './env.ts';
 import { pendingDebrief } from './opener.ts';
 import type { VanaCtx } from './env.ts';
@@ -40,6 +40,59 @@ export async function planDayPart(v: VanaCtx, ctx: AthleteContext, date: string)
 
 /** What the model sees for a meal: compact, never the full source string. */
 export const compactMeal = (m: MealRef) => ({ id: m.id, source: m.source, name: m.name, mealType: m.mealType, kind: m.kind, pattern: m.pattern, why: m.why, by: m.attributionShort, batch: m.batch, prepMinutes: m.prepMinutes, contexts: m.contexts, kcal: m.kcal, carbsG: m.carbsG, proteinG: m.proteinG });
+
+// ---------------------------------------------------------------- what the model is sent (mp-471; mp-420 clause 5)
+/** A tool result has two readers. The app draws the full part (pictures, ingredients, the "Show more" tail, the shopping
+ *  list's rows); the model writes two sentences from it and picks by id. Since 2026-09-16 a picker carried 24 extra
+ *  full meals to the model — about 10,000 tokens, replayed on every later turn (the 09-20 audit, finding 1). So every
+ *  tool answers in two forms: `execute` returns the part the app gets, unchanged against the contract fixtures, and
+ *  `toModelOutput` returns `modelView` of it, which the SDK sends in the step that follows the call and, with the same
+ *  tools passed to `convertToModelMessages`, on every replay. `modelView` is a pure function of the stored part, so a
+ *  replayed conversation is the same bytes as the first send and the cached prefix holds. */
+/** The most a model-facing form may be, in JSON characters — stated here and held by one test per tool. A meal is
+ *  about 350 characters compact; a picker shows at most six. */
+export const MODEL_BUDGET_CHARS = { meal_picker: 3_500, batch: 4_000, day_guidance: 1_200, staples: 3_000, shopping_list: 2_000, week: 1_500 } as const;
+type PlanMealView = ReturnType<typeof compactPlanMeal>;
+/** A plan meal for the model: what it is, how many servings, and what the athlete said about it. The id is what
+ *  updateBatch / swapMeal / logFromPlan take. */
+const compactPlanMeal = (m: PlanMeal) => ({ id: m.id, source: m.source, mealId: m.libraryMealId ?? m.savedMealId, name: m.name, mealType: m.mealType, session: m.session, servings: m.servings, servingsLeft: m.servingsLeft, kcal: m.kcal, carbsG: m.carbsG, proteinG: m.proteinG, ...(m.swapsApplied?.length ? { swaps: m.swapsApplied.map((s) => `${s.from}→${s.to}`) } : {}), ...(m.comments?.length ? { comments: m.comments.map((c) => c.text) } : {}) });
+/** The model-facing form of a tool result. A part that is not oversized, a data tool's plain output, and anything
+ *  unknown pass through as they are (an undefined output is null, as the SDK itself would send it). */
+export function modelView(output: unknown): unknown {
+  if (output === undefined) return null;
+  if (!output || typeof output !== 'object' || !('kind' in output)) return output;
+  const part = output as VanaPart;
+  switch (part.kind) {
+    case 'meal_picker': {
+      // The meals shown, compact, plus a count of the tail: the model never reads "Show more", the app does.
+      const { more, meals, ...rest } = part;
+      return { ...rest, meals: meals.map(compactMeal), moreCount: more?.length ?? 0 };
+    }
+    case 'batch': {
+      const { id, weekStart, status, batchCooking, brief, rules, meals, coverage, shopping } = part.plan;
+      const view: { id: string; weekStart: string; status: string; batchCooking: boolean; brief: string | null; rules: PlanRule[]; meals: PlanMealView[]; coverage: MealPlan['coverage']; shoppingItems: number } =
+        { id, weekStart, status, batchCooking, brief, rules, meals: meals.map(compactPlanMeal), coverage, shoppingItems: shopping?.length ?? 0 };
+      return { kind: 'batch', plan: view };
+    }
+    case 'day_guidance': return { ...part, suggestions: part.suggestions.map(compactMeal) };
+    case 'staples': return { ...part, meals: part.meals.map((m) => ({ ...compactMeal(m), timesLogged: m.timesLogged, ticked: m.ticked })) };
+    case 'shopping_list': {
+      // One line an item, by aisle. `have` items are already the `skipped` list.
+      const aisles: Record<string, string[]> = {};
+      for (const i of part.items) (aisles[i.aisle] ??= []).push(i.qty ? `${i.name} · ${i.qty}` : i.name);
+      return { kind: 'shopping_list', itemCount: part.itemCount, skipped: part.skipped, aisles };
+    }
+    case 'week': return { kind: 'week', periodDays: part.periodDays, days: part.days.map((d) => ({ date: d.date, label: d.label, breakfast: d.slots.breakfast?.name ?? null, lunch: d.slots.lunch?.name ?? null, dinner: d.slots.dinner?.name ?? null, snack: d.slots.snack?.name ?? null })) };
+    default: return part;
+  }
+}
+/** `toModelOutput` for every Vana tool: the SDK's JSON form of `modelView`. */
+export const modelOutput = ({ output }: { output: unknown }) => ({ type: 'json' as const, value: modelView(output) as JSONValue });
+/** Every tool gets the model-facing form, so a new tool cannot forget it. A tool that set its own keeps it. */
+function withModelOutput<T extends Record<string, unknown>>(tools: T): T {
+  for (const t of Object.values(tools) as { toModelOutput?: unknown }[]) t.toModelOutput ??= modelOutput;
+  return tools;
+}
 
 /** Context tags for this week, derived from race distance and load (deterministic). */
 export function weekContexts(ctx: AthleteContext): MealContext[] {
@@ -119,7 +172,7 @@ export function makeVanaTools(v: VanaCtx, ctx: AthleteContext, kind: Conversatio
 function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
   const scope = opts.scope ?? null;
   const shown = new Set(opts.shownIds ?? []);
-  return {
+  return withModelOutput({
     swapMeal: tool({ description: 'Replace one plan meal in place (keeps servings/session) with a meal from a tool result.', inputSchema: z.object({ planMealId: z.string(), source: z.enum(['library', 'saved']), mealId: z.string() }), execute: async (i): Promise<VanaPart> => ({ kind: 'batch', plan: await plan.swapMeal(v, i.planMealId, i.source, i.mealId) }) }),
     // The acknowledgement is SERVER-AUTHORED (2026-09-10, ticket 01): this part is the whole reply, drawn by the
     // client from `meal_planning.feedback_saved_row`, and the persona tells Vana to write nothing about the feedback.
@@ -135,7 +188,7 @@ function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
     } }),
     // mp-265 clause 4 (ticket 27): when the athlete is trying to do something the app already has a screen for, Vana does
     // not do it in the chat — she offers this button, and the app navigates. Deterministic: the model picks the target only.
-    handOff: tool({ description: 'Offer a button to the app screen that already does what the athlete is trying to do, instead of doing it in the chat. target: meal_plan = building or changing a meal plan (the meal-planning page); new_activity = fuelling a specific upcoming workout (pass its id from getWorkouts as entityId when you have it); event = planning or adding a race or event (pass the event id when it is one they already have); carb_loading = carb loading for a race (pass the event id). label = the button text, a short imperative in their terms ("Plan my meals", "Fuel Thursday\'s run"). Call it once, then at most one sentence — never a picker, chips or a plan of your own for the same ask.', inputSchema: z.object({ target: z.enum(['meal_plan', 'new_activity', 'event', 'carb_loading']), label: z.string().min(1).max(60), entityId: z.string().min(1).optional().describe('the workout (new_activity) or event (event, carb_loading) it is about; omit when there is none') }), execute: async ({ target, label, entityId }): Promise<VanaPart> => await Promise.resolve({ kind: 'hand_off', target, label, entityId: entityId ?? null }) }),
+    handOff: tool({ description: 'Offer a button to the app screen that already does what the athlete is trying to do, instead of doing it in the chat. target: meal_plan = building or changing a meal plan (the meal-planning page); new_activity = fuelling a specific upcoming workout (pass its id from getWorkouts as entityId when you have it); event = planning or adding a race or event (pass the event id when it is one they already have); carb_loading = carb loading for a race (pass the event id). label = the button text, a short imperative in their terms ("Plan my meals", "Fuel Thursday\'s run"). At most one sentence saying what the screen does, THEN call it once — the call ends the turn, so nothing written after it is heard. Never a picker, chips or a plan of your own for the same ask.', inputSchema: z.object({ target: z.enum(['meal_plan', 'new_activity', 'event', 'carb_loading']), label: z.string().min(1).max(60), entityId: z.string().min(1).optional().describe('the workout (new_activity) or event (event, carb_loading) it is about; omit when there is none') }), execute: async ({ target, label, entityId }): Promise<VanaPart> => await Promise.resolve({ kind: 'hand_off', target, label, entityId: entityId ?? null }) }),
     askChoice: tool({ description: 'Ask ONE question as 2–4 short tappable options (labels only — the app renders compact pills; never descriptions or trade-offs). Only for a real fork — never after suggestMeals.', inputSchema: z.object({ question: z.string().optional(), options: z.array(z.string().max(60)).min(2).max(4) }), execute: async ({ question, options }): Promise<VanaPart> => { return await Promise.resolve({ kind: 'choices', question, options }); } }),
     diagnoseStaples: tool({ description: 'What the athlete already eats most weeks (logs + saved meals), as a tappable staples widget. Nothing is added to the plan — the athlete ticks what they want. Use when they ask what they usually eat or want to start from their own meals.', inputSchema: z.object({}), execute: async () => { const st = await diagnoseStaples(v); const p = await plan.resolvePlan(v, scope, false); const inPlan = new Set((p?.meals ?? []).map((m) => m.libraryMealId ?? m.savedMealId ?? '')); const meals = st.meals.map((m) => ({ ...m, ticked: inPlan.has(m.id) })); meals.forEach((m) => shown.add(m.id)); const target = ctx.budget.today; return { kind: 'staples' as const, meals, planCarbsPerDay: p?.coverage.perDay.carbsG ?? 0, targetCarbsPerDay: target?.carbsG ?? null, covered: p?.coverage.covered ?? 0, of: p?.coverage.lunchDinnerSlots ?? 14 }; } }),
     searchMeals: tool({ description: 'Search the meal library AND the athlete\'s saved meals with hard allergy/diet filters. Use for lookups; use suggestMeals to show a picker.', inputSchema: z.object({ query: z.string().optional(), mealType: MealTypeZ.optional(), contexts: z.array(ContextZ).optional(), batch: z.boolean().optional(), kind: z.enum(['assembly', 'recipe']).optional().describe('assembly = no-recipe component combos; omit for both'), limit: z.number().int().min(1).max(12).optional(), excludeAllergens: z.array(AllergenZ).optional().describe('Query-time exclusions the athlete asked for (e.g. without nuts), on top of their stored allergies'), requireDiet: DietZ.optional().describe('Query-time diet the athlete asked for (e.g. vegan tonight)') }), execute: async (i) => (await searchMeals(v, { ...i, kind: i.kind ?? null, limit: Math.min(i.limit ?? 6, 6) })).map(compactMeal) }),
@@ -212,6 +265,6 @@ function makeAllTools(v: VanaCtx, ctx: AthleteContext, opts: ToolOpts = {}) {
     updateActivity: tool({ description: 'Change a workout they already have (the id from listActivities): move it to another day or time, rename it, change its length, distance or intensity. Pass only what changes.', inputSchema: z.object({ id: z.string().min(1), patch: z.object({ title: z.string().min(1).max(120).optional(), date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), time: z.string().regex(/^\d{2}:\d{2}$/).optional(), type: z.enum(writes.EVENT_TYPES).optional(), durationMinutes: z.number().int().min(1).max(1440).nullable().optional(), distanceMiles: z.number().min(0).max(1000).nullable().optional(), intensity: z.enum(writes.INTENSITIES).nullable().optional(), notes: z.string().max(500).nullable().optional() }) }), execute: async (i): Promise<VanaPart> => writes.updateActivity(v, i.id, i.patch) }),
     deleteActivity: tool({ description: 'Delete a workout (the id from listActivities). FIRST call without `confirmed` — it writes nothing and answers needs_confirmation; then askChoice ("Delete Long ride · Sep 19?" / Yes / No) and call again with confirmed: true only after they say yes. Never pass confirmed on the first call.', inputSchema: z.object({ id: z.string().min(1), confirmed: z.boolean().optional().describe('true only after the athlete answered yes to the askChoice for THIS workout') }), execute: async (i): Promise<VanaPart> => writes.deleteActivity(v, i.id, i.confirmed) }),
     deleteLoggedMeal: tool({ description: 'Remove a logged meal (the id from getLoggedMeals). FIRST call without `confirmed` — it writes nothing and answers needs_confirmation; then askChoice ("Remove the lentil salad from today?" / Yes / No) and call again with confirmed: true only after they say yes.', inputSchema: z.object({ id: z.string().min(1), confirmed: z.boolean().optional().describe('true only after the athlete answered yes to the askChoice for THIS log') }), execute: async (i): Promise<VanaPart> => writes.deleteLoggedMeal(v, i.id, i.confirmed) }),
-  };
+  });
 }
 export const dayLabel = (iso: string) => `${dayName(iso)} (${dayKey(iso)})`;

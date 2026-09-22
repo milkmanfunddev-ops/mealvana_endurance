@@ -186,8 +186,10 @@ Deno.test('a turn stops on tokens as well as steps', () => {
   // input + output when there is no total.
   assertEquals(tokenBudgetIs(10)({ steps: [{ usage: { inputTokens: 6, outputTokens: 6 } }] as never }), true);
   assert(TURN_TOKEN_CEILING > 0);
-  assertEquals(chatStopWhen(false).length, 2); // the step limit AND the token ceiling
-  assertEquals(chatStopWhen(true).length, 2);
+  // the step limit AND the token ceiling, then the terminal tools (mp-471: askChoice, handOff; saveFeedback only when silenced)
+  assertEquals(chatStopWhen(false).length, 4);
+  assertEquals(chatStopWhen(true).length, 4);
+  assertEquals(chatStopWhen(true, true).length, 5);
 });
 
 Deno.test('the step limits are what the cost posture says', () => {
