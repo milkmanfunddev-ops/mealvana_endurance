@@ -953,6 +953,53 @@ describe('H. granted access reaches the row', () => {
 });
 
 // ---------------------------------------------------------------------------
+// I. Dev takes sandbox events and grants, never a real prod purchase
+// ---------------------------------------------------------------------------
+
+describe('I. REVENUECAT_SANDBOX_ONLY (the dev project)', () => {
+  function devSetup() {
+    const db = new FakeDb();
+    const { rc, handle } = withRevenueCat(envWith({ REVENUECAT_SANDBOX_ONLY: 'true' }), db, T0 + 60_000);
+    return { db, rc, handle };
+  }
+
+  it('a real App Store purchase in production is acknowledged and writes nothing', async () => {
+    const { db, rc, handle } = devSetup();
+    const res = await handle(rcRequest(body(paidRenewal({ environment: 'PRODUCTION' }))));
+    assertEquals(res.status, 200);
+    assertEquals((await res.json()).ignored, 'production_store_event');
+    assertEquals(db.writes.length + db.rpcCalls.length, 0);
+    assertEquals(rc.expiryCalls, [], 'RevenueCat is not asked about a prod customer');
+  });
+
+  it('a production credit pack is dropped the same way', async () => {
+    const { db, handle } = devSetup();
+    const res = await handle(rcRequest(body(creditPack({ environment: 'PRODUCTION', store: 'PLAY_STORE' }))));
+    assertEquals(res.status, 200);
+    assertEquals(db.rpcCalls.length, 0);
+  });
+
+  it('a grant (PRODUCTION, PROMOTIONAL store) still opens the dev row', async () => {
+    const { db, handle } = devSetup();
+    const res = await handle(rcRequest(body(promotionalGrant())));
+    assertEquals(res.status, 200);
+    assertEquals(db.rows.get(USER_ID)!.active_until, iso(T0 + 30 * DAY));
+  });
+
+  it('a sandbox purchase still lands on the dev row', async () => {
+    const { db, handle } = devSetup();
+    await handle(rcRequest(body(trialStart())));
+    assertEquals(db.rows.get(USER_ID)!.period_type, 'TRIAL');
+  });
+
+  it('without the flag (prod) a production purchase is handled as before', async () => {
+    const { db, handle } = setup();
+    await handle(rcRequest(body(trialStart({ environment: 'PRODUCTION' }))));
+    assertEquals(db.rows.get(USER_ID)!.period_type, 'TRIAL');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // F. Pure mapping
 // ---------------------------------------------------------------------------
 

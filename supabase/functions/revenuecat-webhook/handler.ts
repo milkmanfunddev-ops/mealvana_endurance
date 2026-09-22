@@ -306,6 +306,20 @@ export function makeWebhookHandler(deps: WebhookDeps): (req: Request) => Promise
     const appUserId = String(event.app_user_id ?? '');
     const productId = String(event.product_id ?? '');
 
+    // ── Dev hears sandbox and grants only ───────────────────────────────────
+    // One RevenueCat project serves both Supabase projects. The dev integration
+    // takes every environment because a grant (coach code, grace month) is
+    // logged as a PRODUCTION event on the PROMOTIONAL store; a real store
+    // purchase in production belongs to prod and is dropped here (Lee, mp-533).
+    if (
+      deps.env('REVENUECAT_SANDBOX_ONLY') === 'true' &&
+      event.environment === 'PRODUCTION' &&
+      event.store !== 'PROMOTIONAL'
+    ) {
+      console.log(`[rc-webhook] sandbox-only: dropping production ${event.store} event type=${type} id=${eventId}`);
+      return json({ ok: true, ignored: 'production_store_event' });
+    }
+
     // ── Pro subscription → user_entitlements ────────────────────────────────
     if (type === TRANSFER_EVENT_TYPE) {
       return await handleTransfer(deps, event, eventId);

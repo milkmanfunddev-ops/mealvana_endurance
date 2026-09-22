@@ -33,6 +33,10 @@
  *                                expiry; without it those events answer 500 and
  *                                RevenueCat redelivers. Credit packs do not need it.
  *   REVENUECAT_PROJECT_ID      — optional, defaults to proj77b3c48f
+ *   REVENUECAT_SANDBOX_ONLY    — "true" on DEV only. The dev integration takes every
+ *                                environment so grants (PRODUCTION, PROMOTIONAL store)
+ *                                reach it; this drops every other PRODUCTION event, so a
+ *                                real store purchase is never handled on dev. Never on prod.
  *   RC_PRODUCT_BUDGET          — optional JSON map of store product id → micro-dollars added,
  *                                e.g. {"mealvana_credits_50":1000000,"mealvana_credits_250":5000000}
  *                                NOTE: when set, this REPLACES the defaults in _shared/ai/allowance.ts —
