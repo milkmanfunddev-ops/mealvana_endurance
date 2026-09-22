@@ -186,11 +186,45 @@ class NotificationService {
 
   /// Syncs Supabase auth user id to OneSignal external id.
   /// This allows server-side targeting with include_aliases.external_id.
+  ///
+  /// A NULL/empty id here means "we do not know who this is YET" — it does
+  /// NOT mean the athlete signed out, and it must never detach the alias.
+  /// Startup calls this with `auth.currentUser?.id`, which is null whenever
+  /// the Supabase session has not finished restoring (offline launch, refresh
+  /// in flight). Detaching there stranded real athletes: a restored session
+  /// emits `initialSession`/`tokenRefreshed`, never `signedIn`, so nothing
+  /// re-attached the alias and every server push came back
+  /// `invalid_aliases` — silently, because OneSignal answers 200.
+  /// Measured 2026-09-22 on prod: 5 of 14 Garmin-active athletes unreachable.
+  ///
+  /// Use [clearRemotePushUserId] for a real sign-out.
   static Future<void> setRemotePushUserId(String? userId) async {
     final normalized = userId?.trim();
-    _pendingRemoteUserId = (normalized == null || normalized.isEmpty)
-        ? null
-        : normalized;
+    if (normalized == null || normalized.isEmpty) {
+      return;
+    }
+    _pendingRemoteUserId = normalized;
+
+    if (!_isInitialized || !_isOneSignalInitialized) {
+      return;
+    }
+
+    await _syncRemotePushUserIdentity();
+  }
+
+  /// The id this device will claim in OneSignal on the next sync.
+  ///
+  /// Exposed so the regression test can prove a null from an unrestored
+  /// session does not wipe it — the failure that left athletes unreachable.
+  @visibleForTesting
+  static String? get pendingRemotePushUserId => _pendingRemoteUserId;
+
+  /// Detach this device from the athlete's OneSignal alias — sign-out ONLY.
+  ///
+  /// Split out from [setRemotePushUserId] so that "no id available yet" can
+  /// never reach `OneSignal.logout()`.
+  static Future<void> clearRemotePushUserId() async {
+    _pendingRemoteUserId = null;
 
     if (!_isInitialized || !_isOneSignalInitialized) {
       return;
