@@ -11,6 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 import 'package:supabase_flutter/supabase_flutter.dart'
     as supabase
     show AuthException;
+import '../../../shared/services/app_config.dart';
 import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/analytics/analytics_tracker.dart';
 import '../../../shared/services/logging_service.dart';
@@ -36,6 +37,21 @@ class OAuthService extends _$OAuthService {
   SupabaseClient get _supabase =>
       ref.read(appExternalDepsProvider).supabaseClient;
   AnalyticsTracker get _analytics => ref.read(analyticsTrackerProvider);
+
+  /// Android's Sign in with Apple sheet runs in a Chrome Custom Tab, so the
+  /// SDK must be told the Services ID and the return URL it is registered to.
+  /// iOS uses the native sheet (bundle ID) and passes nothing. When no
+  /// Services ID is configured the sheet cannot launch — sign_in_with_apple
+  /// throws on Android without these options.
+  WebAuthenticationOptions? get _appleWebAuthenticationOptions {
+    if (kIsWeb || !PlatformInfo.isAndroid) return null;
+    final config = ref.read(appConfigProvider);
+    if (config.appleAuthServicesId.isEmpty) return null;
+    return WebAuthenticationOptions(
+      clientId: config.appleAuthServicesId,
+      redirectUri: Uri.parse('${config.supabaseUrl}/auth/v1/callback'),
+    );
+  }
 
   // Google Sign-In instance (lazy initialized)
   GoogleSignIn? _googleSignIn;
@@ -140,6 +156,7 @@ class OAuthService extends _$OAuthService {
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: hashedNonce,
+        webAuthenticationOptions: _appleWebAuthenticationOptions,
       );
 
       _logger.info(
@@ -488,6 +505,7 @@ class OAuthService extends _$OAuthService {
           AppleIDAuthorizationScopes.fullName,
         ],
         nonce: hashedNonce,
+        webAuthenticationOptions: _appleWebAuthenticationOptions,
       );
 
       // Sign in (switches session to this user)
