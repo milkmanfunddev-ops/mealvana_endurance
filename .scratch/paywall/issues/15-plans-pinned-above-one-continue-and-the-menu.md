@@ -1,6 +1,6 @@
 # 15: Plans pinned above one Continue, and the ⋯ menu
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-22)
 **Blocked by:** 03 (touches lib/features/subscription/presentation/screens/paywall_screen.dart), 04 (touches lib/features/content/domain/content_keys.dart), 14 (touches lib/shared/widgets/kyle_design/kyle_design.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus

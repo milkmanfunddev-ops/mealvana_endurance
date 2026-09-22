@@ -1,6 +1,6 @@
 # 11: Open, lapsed or never, and the read-only shell
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-22)
 **Blocked by:** 04 (touches lib/features/subscription/application/subscription_status_provider.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus

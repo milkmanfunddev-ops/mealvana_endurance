@@ -1,6 +1,6 @@
 # 09: Old anonymous installs claim their grace
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-22)
 **Blocked by:** 06 (touches supabase/functions/_shared/grace), 08 (touches lib/features/auth/presentation/screens/post_onboarding_auth_screen.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus
