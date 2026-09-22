@@ -1,6 +1,6 @@
 # 08: Meal logging: a cacheable prompt, totals we add up, and an answer for "not food"
 
-**Status:** ready-for-agent
+**Status:** in-progress (wave 3, 2026-09-22)
 **Blocked by:** 02 (touches supabase/functions/describe-meal/index.ts), 04 (touches supabase/functions/describe-meal/index.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
