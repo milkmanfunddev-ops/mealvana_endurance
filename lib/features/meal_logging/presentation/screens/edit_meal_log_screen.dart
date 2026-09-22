@@ -22,6 +22,7 @@ import '../../domain/meal_component.dart';
 import '../../domain/meal_log.dart';
 import '../../domain/meal_slot.dart';
 import '../../../nutrition_plan/presentation/providers/swap_food_controller.dart';
+import '../../../subscription/presentation/ai_action_guard.dart';
 import '../providers/meal_log_providers.dart';
 import '../widgets/meal_analysis_skeleton.dart';
 import '../widgets/meal_component_editor.dart';
@@ -182,6 +183,8 @@ class _EditMealLogScreenState extends ConsumerState<EditMealLogScreen> {
     // Metered AI must fail closed: the button is hidden when the release flag
     // is off, and this guard covers any path that reaches here anyway.
     if (!ref.read(appConfigProvider).describeMealEnabled) return;
+    // A lapsed account meets the paywall instead of the AI call (mp-457 §3).
+    if (!await aiActionAllowed(context, ref) || !mounted) return;
     final source = await _pickImageSource();
     if (source == null || !mounted) return;
 

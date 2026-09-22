@@ -28,6 +28,7 @@ import '../../../nutrition_plan/domain/food.dart';
 import '../../../nutrition_plan/domain/food_item.dart';
 import '../../../recipes/application/recipe_service.dart';
 import '../../../recipes/domain/recipe.dart';
+import '../../../subscription/presentation/ai_action_guard.dart';
 import '../../application/meal_ai_service.dart';
 import '../../application/meal_logging_service.dart' show RecipeLogParams;
 import '../../domain/consumed_totals.dart';
@@ -565,9 +566,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     // slot — reuse that sub-flow, then quick-log directly instead of
     // routing through the servings/time confirm sheet a second time.
     final logRequest = await Navigator.of(context).push<ScannedFoodLogRequest>(
-      MaterialPageRoute(
-        builder: (_) => LogScannedFoodScreen(food: food),
-      ),
+      MaterialPageRoute(builder: (_) => LogScannedFoodScreen(food: food)),
     );
     if (logRequest == null || !mounted) return;
 
@@ -1567,6 +1566,8 @@ class _AiTabState extends ConsumerState<_AiTab> {
       );
       return;
     }
+    // A lapsed account meets the paywall instead of the AI call (mp-457 §3).
+    if (!await aiActionAllowed(context, ref) || !mounted) return;
     FocusScope.of(context).unfocus();
     analytics.track(
       'meal_ai_started',

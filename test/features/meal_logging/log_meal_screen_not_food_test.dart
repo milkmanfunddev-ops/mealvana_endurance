@@ -13,6 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
 import 'package:mealvana_endurance/features/content/domain/content_keys.dart';
 import 'package:mealvana_endurance/features/meal_logging/presentation/screens/log_meal_screen.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/supabase/supabase_client_provider.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -44,6 +45,7 @@ void main() {
       overrides: [
         supabaseClientProvider.overrideWithValue(supabase),
         contentServiceProvider.overrideWith(testContentService),
+        writeAccessProvider.overrideWith((_) async => true),
       ],
     );
 

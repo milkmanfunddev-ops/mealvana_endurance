@@ -12,9 +12,9 @@ import '../domain/entitlement.dart';
 /// Where a locked user is sent, and stays.
 const String kPaywallPath = '/paywall';
 
-/// The paywall as onboarding's last step: plans and Restore only, no
-/// account actions (a person who just created the account is not lapsed).
-/// Same route; the query selects the shape. The gate's redirect still moves
+/// The paywall as onboarding's last step. Same route; the query selects the
+/// shape. Its ⋯ menu carries the same entries as the lapsed shape (mp-494 §2,
+/// which replaced mp-417 §3's "Restore only"). The gate's redirect still moves
 /// an unlocked account on to `/main`.
 const String kOnboardingPaywallQuery = 'onboarding';
 const String kOnboardingPaywallLocation =
