@@ -33,6 +33,7 @@ import '../../application/vana_ambient_conversation_controller.dart';
 import '../../application/vana_chat_controller.dart';
 import '../../application/vana_moment_controller.dart';
 import '../../application/vana_situation_controller.dart';
+import '../../domain/vana_input_mode.dart';
 import '../../domain/vana_conversation_kind.dart';
 import '../../domain/vana_exchange.dart';
 import '../../domain/vana_launcher_rule.dart';
@@ -454,13 +455,17 @@ class _VanaCompanionSheetState extends ConsumerState<VanaCompanionSheet> {
     await _controller.loadOpener();
   }
 
+  /// A [label] means a chip or a quick reply was tapped; no label means the
+  /// composer's send button, which is the only typed path in the sheet. The
+  /// call log records which (mp-464 clause 7); nothing else reads it.
   void _send([String? label]) {
     final text = (label ?? _text.text).trim();
     if (text.isEmpty) return;
     if (label == null) _text.clear();
     setState(() => _repliesRetired = true);
-    _lastAttempt = () => _controller.send(text);
-    _controller.send(text);
+    final mode = label == null ? VanaInputMode.typed : VanaInputMode.tap;
+    _lastAttempt = () => _controller.send(text, inputMode: mode);
+    _controller.send(text, inputMode: mode);
   }
 
   void _retry() {

@@ -69,6 +69,8 @@ serve(withSentry(async (req: Request) => {
     const run = await runChat(v, body, {
       functionName: 'vana-chat',
       afterFinish: charged ? async () => { await debitForUsage(v.admin, v.userId, 'vana-chat'); } : undefined,
+      // The call log records whether the turn drew the budget (mp-420 clause 6), so "what did the budget pay for" is answerable.
+      debited: charged,
     });
     if (!run.ok) return jsonResponse(run.body, run.status);
     return run.response;

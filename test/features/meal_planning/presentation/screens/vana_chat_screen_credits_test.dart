@@ -24,6 +24,7 @@ import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_reposit
 import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
@@ -48,6 +49,7 @@ class _EmptyWalletRepo extends Fake implements VanaChatRepository {
     VanaSituation? situation,
     VanaMoment? moment,
     bool newPlan = false,
+    VanaInputMode? inputMode,
   }) async {
     sent.add(message);
     throw InsufficientCreditsException.fromMap({

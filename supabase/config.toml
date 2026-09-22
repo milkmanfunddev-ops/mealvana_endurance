@@ -353,6 +353,13 @@ verify_jwt = false
 [functions.raw-retention-alert]
 verify_jwt = false
 
+# Called by the database itself (pg_net from the daily AI-cost check), same as
+# raw-retention-alert: pg_net cannot mint JWTs, so gateway verification is off
+# and the function validates the x-alert-token shared secret internally. It
+# only reports to Sentry — it refuses nothing. ai-cost ticket 05.
+[functions.ai-cost-alert]
+verify_jwt = false
+
 # Called by qa/scripts/corpus-export.sh (a repo script, not an app session);
 # validates the x-export-token shared secret internally. real-payload-corpus@v1.
 [functions.corpus-export]

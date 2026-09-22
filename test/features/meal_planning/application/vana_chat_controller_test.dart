@@ -23,6 +23,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/meal_plan.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/memory_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/user_memory.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
@@ -57,6 +58,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     VanaSituation? situation,
     VanaMoment? moment,
     bool newPlan = false,
+    VanaInputMode? inputMode,
   }) async {
     calls.add({
       'message': message,
@@ -66,6 +68,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
       'situation': situation?.toJson(),
       'moment': moment?.toWire(),
       'newPlan': newPlan,
+      'inputMode': inputMode?.wire,
     });
     if (throwOnStream != null) throw throwOnStream!;
     return VanaChatResponse(
@@ -990,6 +993,61 @@ void main() {
       await notifier.send('second');
       await gate.future;
       expect(repo.calls.map((c) => c['message']), ['first']);
+    });
+  });
+
+  // mp-464 clause 7 / ai-cost ticket 05: every message says whether it was
+  // tapped or typed, so the saving the fixed-label chips make is measurable
+  // against the chip taps that still cost a turn. Driven through the real
+  // notifier — the write path is the request the repository sends.
+  group('tap or typed rides every message', () {
+    test('the composer types, a chip taps, and the opener says neither',
+        () async {
+      repo.events = const [VanaDoneEvent()];
+      final (:notifier, seen: _) = make();
+      await notifier.future;
+
+      await notifier.loadOpener(anchorDate: '2026-09-22');
+      await notifier.send('what should I eat tonight?');
+      await notifier.tapChip('I like these');
+
+      expect(
+        repo.calls.map((c) => [c['opener'], c['inputMode']]),
+        [
+          [true, null],
+          [false, 'typed'],
+          [false, 'tap'],
+        ],
+      );
+    });
+
+    test('"Use these" on the pantry card is a tap', () async {
+      repo.events = const [VanaDoneEvent()];
+      actions.byType['set_pantry'] = const VanaActionResult(
+        parts: [],
+        extras: {},
+      );
+      final (:notifier, seen: _) = make(conversationId: 'conv-1');
+      await notifier.future;
+
+      await notifier.usePantry(
+        const ['eggs', 'rice'],
+        message: 'I have eggs and rice on hand',
+      );
+
+      expect(repo.calls.single['inputMode'], 'tap');
+    });
+
+    test('an edited athlete turn is typed, not tapped', () async {
+      repo.events = const [VanaDoneEvent()];
+      final (:notifier, seen: _) = make();
+      await notifier.future;
+
+      // No conversation id and no such message: rewindAndSend degrades to a
+      // plain send, which is still the athlete typing.
+      await notifier.rewindAndSend('no-such-message', 'actually, pasta');
+
+      expect(repo.calls.single['inputMode'], 'typed');
     });
   });
 }

@@ -8,6 +8,7 @@ import '../../../shared/services/app_external_deps.dart';
 import '../../../shared/services/logging_service.dart';
 import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
+import '../domain/vana_input_mode.dart';
 import '../domain/vana_message.dart';
 import '../domain/vana_moment.dart';
 import '../domain/vana_part.dart';
@@ -112,6 +113,10 @@ class VanaChatRepository {
   /// on the wire): the server opens with the plan-building opener and leaves
   /// the plan the week already holds out of the first message.
   ///
+  /// [inputMode] says whether the athlete tapped a chip or typed (`input_mode`
+  /// on the wire, mp-464 clause 7). It is recorded on the call row and changes
+  /// nothing about the turn. The scripted opener sends none.
+  ///
   /// Throws [VanaUnauthenticatedException], [ProRequiredException],
   /// [VanaRateLimitedException], [VanaOfflineException],
   /// [VanaServerException] (and `InsufficientCreditsException` on
@@ -126,6 +131,7 @@ class VanaChatRepository {
     VanaSituation? situation,
     VanaMoment? moment,
     bool newPlan = false,
+    VanaInputMode? inputMode,
   }) async {
     final body = <String, dynamic>{
       'kind': kind.wire,
@@ -134,6 +140,8 @@ class VanaChatRepository {
         'conversation_id': conversationId,
       if (opener) 'opener': true,
       if (opener && newPlan) 'new_plan': true,
+      // Measurement only, and never on the opener: Vana speaks first there.
+      if (!opener && inputMode != null) 'input_mode': inputMode.wire,
       if (anchorDate != null) 'anchor_date': anchorDate,
       // Ids only — the server resolves them into one sentence and stores nothing.
       if (situation != null) 'situation': situation.toJson(),

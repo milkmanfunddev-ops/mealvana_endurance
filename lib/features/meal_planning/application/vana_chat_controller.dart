@@ -16,6 +16,7 @@ import '../data/vana_chat_repository.dart';
 import '../data/vana_exceptions.dart';
 import '../domain/meal_plan.dart';
 import '../domain/ui_action.dart';
+import '../domain/vana_input_mode.dart';
 import '../domain/vana_conversation_kind.dart';
 import '../domain/vana_message.dart';
 import '../domain/vana_moment.dart';
@@ -253,16 +254,27 @@ class VanaChatController extends _$VanaChatController {
   }
 
   /// Send a user message.
-  Future<void> send(String text) async {
+  ///
+  /// [inputMode] is what the athlete did to send it (mp-464 clause 7): it
+  /// rides the request and is recorded on the call row, and nothing about the
+  /// turn depends on it. It defaults to [VanaInputMode.typed] because the
+  /// composer is the only caller that does not say — a chip goes through
+  /// [tapChip] or [usePantry].
+  Future<void> send(
+    String text, {
+    VanaInputMode inputMode = VanaInputMode.typed,
+  }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming) return;
-    await _turn(current, message: trimmed, opener: false);
+    await _turn(current, message: trimmed, opener: false, inputMode: inputMode);
   }
 
-  /// Chip taps send the chip label as the next user message (02 §6).
-  Future<void> tapChip(String label) => send(label);
+  /// Chip taps send the chip label as the next user message (02 §6), marked as
+  /// a tap so the log can tell them from typed turns.
+  Future<void> tapChip(String label) =>
+      send(label, inputMode: VanaInputMode.tap);
 
   void clearError() {
     final current = state.value;
@@ -289,7 +301,7 @@ class VanaChatController extends _$VanaChatController {
     final conversationId = current.conversationId;
     final index = current.messages.indexWhere((m) => m.id == messageId);
     if (conversationId == null || conversationId.isEmpty || index < 0) {
-      await _turn(current, message: trimmed, opener: false);
+      await _turn(current, message: trimmed, opener: false, inputMode: VanaInputMode.typed);
       return;
     }
 
@@ -321,7 +333,7 @@ class VanaChatController extends _$VanaChatController {
         clearError: true,
       );
       state = AsyncData(rewound);
-      await _turn(rewound, message: trimmed, opener: false);
+      await _turn(rewound, message: trimmed, opener: false, inputMode: VanaInputMode.typed);
     } catch (e, st) {
       if (!ref.mounted) return;
       _logger.error(
@@ -458,7 +470,7 @@ class VanaChatController extends _$VanaChatController {
       }
       if (!ref.mounted) return;
     }
-    await send(message);
+    await send(message, inputMode: VanaInputMode.tap);
   }
 
   Future<void> _turn(
@@ -468,6 +480,7 @@ class VanaChatController extends _$VanaChatController {
     String? anchorDate,
     VanaMoment? moment,
     bool newPlan = false,
+    VanaInputMode? inputMode,
   }) async {
     final now = DateTime.now();
     final convId = before.conversationId ?? '';
@@ -510,6 +523,7 @@ class VanaChatController extends _$VanaChatController {
         situation: ref.read(vanaSituationControllerProvider.notifier).current(),
         moment: moment,
         newPlan: newPlan,
+        inputMode: inputMode,
       );
       final resolvedId = response.conversationId.isNotEmpty
           ? response.conversationId

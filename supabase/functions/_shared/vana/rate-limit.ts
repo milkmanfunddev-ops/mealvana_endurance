@@ -14,6 +14,7 @@
  *  This module is the ONLY limiter: the photo, description and pantry paths call it on the server, and nothing counts on
  *  the phone, where a client could simply not count (Lee, 2026-09-21, `.scratch/ai-cost/spec.md`). */
 import type { Db } from './env.ts';
+import { costColumns, type CallCostFields } from './log.ts';
 
 const WINDOWS = {
   'vana.chat': { seconds: 10, max: 4 },      // 4 turns / 10s
@@ -85,11 +86,13 @@ export async function reserveCall(admin: Db, userId: string, fn: RateLimitedFn, 
   } catch (e) { console.error('[vana] reserveCall threw, failing open:', (e as Error).message); return { allowed: true, callId: null }; }
 }
 
-/** Finish a reservation: the tokens the call actually spent, on the row that held its place. Never throws. */
-export async function completeCall(admin: Db, callId: string | null, tokens: { inputTokens?: number; outputTokens?: number; cacheReadTokens?: number; functionName?: string; conversationId?: string | null }): Promise<void> {
+/** Finish a reservation: what the call actually spent, on the row that held its place. Never throws.
+ *  Beyond the tokens it carries the cost fields the log gained in ai-cost ticket 05 (see `log.ts`); a caller that
+ *  mentions none of them leaves those columns alone. */
+export async function completeCall(admin: Db, callId: string | null, tokens: { inputTokens?: number; outputTokens?: number; functionName?: string; conversationId?: string | null } & CallCostFields): Promise<void> {
   if (!callId) return;
   try {
-    const patch: Record<string, unknown> = { input_tokens: tokens.inputTokens ?? null, output_tokens: tokens.outputTokens ?? null, cache_read_tokens: tokens.cacheReadTokens ?? null };
+    const patch: Record<string, unknown> = { input_tokens: tokens.inputTokens ?? null, output_tokens: tokens.outputTokens ?? null, ...costColumns({ ...tokens, cacheReadTokens: tokens.cacheReadTokens ?? null }) };
     // The reservation is made before the conversation is resolved, so its name and id are settled here.
     if (tokens.functionName) patch.function_name = tokens.functionName;
     if (tokens.conversationId) patch.conversation_id = tokens.conversationId;

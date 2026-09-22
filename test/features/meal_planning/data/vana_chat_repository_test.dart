@@ -10,6 +10,7 @@ import 'package:mealvana_endurance/features/ai_credits/domain/insufficient_credi
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_exceptions.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
@@ -73,6 +74,54 @@ void main() {
         });
       },
     );
+
+    test('input_mode rides a user turn and never the opener', () async {
+      // mp-464 clause 7 / ai-cost ticket 05: the server records it on the call
+      // row. Nothing about the turn depends on it, so the only thing to assert
+      // is the wire.
+      final fixture = loadFixture('general_turn');
+      for (final mode in VanaInputMode.values) {
+        final h = TransportHarness(
+          status: 200,
+          body: ndjsonFromFixture(fixture),
+        );
+        await _repo(h).streamChat(
+          kind: VanaConversationKind.general,
+          message: 'I like these',
+          conversationId: 'conv-1',
+          timezone: 'America/Chicago',
+          inputMode: mode,
+        );
+        expect(h.requests.single.body['input_mode'], mode.wire);
+      }
+
+      // The scripted opener is Vana speaking first: neither tapped nor typed,
+      // whatever the caller passes.
+      final ho = TransportHarness(
+        status: 200,
+        body: ndjsonFromFixture(loadFixture('opener')),
+      );
+      await _repo(ho).streamChat(
+        kind: VanaConversationKind.mealPlanning,
+        opener: true,
+        timezone: 'America/Chicago',
+        inputMode: VanaInputMode.tap,
+      );
+      expect(ho.requests.single.body.containsKey('input_mode'), isFalse);
+
+      // An older build that says nothing sends nothing, rather than a guess.
+      final hn = TransportHarness(
+        status: 200,
+        body: ndjsonFromFixture(fixture),
+      );
+      await _repo(hn).streamChat(
+        kind: VanaConversationKind.general,
+        message: 'hi',
+        conversationId: 'conv-1',
+        timezone: 'America/Chicago',
+      );
+      expect(hn.requests.single.body.containsKey('input_mode'), isFalse);
+    });
 
     test('new_plan rides the opener request and only the opener', () async {
       final fixture = loadFixture('opener');

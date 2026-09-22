@@ -82,6 +82,7 @@ serve(withSentry(async (req: Request) => {
       persist: !isOpener,
       // Debit credits for the successful AI call (opener included — same as before).
       afterFinish: async () => { await debitForUsage(v.admin, v.userId, 'jade-chat'); },
+      debited: true,
     });
     if (!run.ok) {
       if (run.status === 429) return jsonResponse(run.body, 429);

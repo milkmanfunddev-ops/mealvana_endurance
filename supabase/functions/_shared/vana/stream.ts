@@ -31,6 +31,12 @@ export const ndjsonLine = (l: NdjsonLine): Uint8Array => enc.encode(JSON.stringi
 // deno-lint-ignore no-explicit-any
 export const cacheReadTokens = (usage: any): number | null => usage?.inputTokenDetails?.cacheReadTokens ?? usage?.cachedInputTokens ?? null;
 
+/** The prompt-cache WRITE count out of an AI SDK v6 usage (`inputTokenDetails.cacheWriteTokens`). A write is billed at
+ *  more than an uncached read, so a turn whose prefix keeps being re-written is expensive twice over (mp-420 clause 6);
+ *  without this column a churning cache and a warm one look the same in the log. Null when the provider said nothing. */
+// deno-lint-ignore no-explicit-any
+export const cacheWriteTokens = (usage: any): number | null => usage?.inputTokenDetails?.cacheWriteTokens ?? null;
+
 export const errorMessage = (e: unknown) => (e instanceof Error ? e.message : typeof e === 'string' ? e : 'Vana hit an error');
 
 /** The `error` line for [e]: the gateway refusing us carries `code: 'ai_unavailable'` so the client can tell
