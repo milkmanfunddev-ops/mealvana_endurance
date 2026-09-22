@@ -9,6 +9,7 @@ import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../domain/coach_chat_state.dart';
 import '../../domain/coach_message.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'coach_chat_controller.g.dart';
 
@@ -210,6 +211,7 @@ class CoachChatController extends _$CoachChatController {
 
   /// Send a new message with offline queueing support
   Future<void> sendMessage(String messageText) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || messageText.trim().isEmpty) return;
 
@@ -318,6 +320,7 @@ class CoachChatController extends _$CoachChatController {
 
   /// Retry sending all failed messages
   Future<void> retryFailedMessages() async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 

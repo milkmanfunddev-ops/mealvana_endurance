@@ -9,6 +9,7 @@ import '../../data/personal_templates_repository.dart';
 import '../../domain/personal_template.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../nutrition_plan/domain/nutrition_plan.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'personal_templates_controller.g.dart';
 
@@ -37,6 +38,7 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
     required NutritionPlan nutritionPlan,
     required String templateName,
   }) async {
+    await requireWriteAccess(ref);
     try {
       final userId = await ref.read(userIdProvider.future);
       if (!ref.mounted) return SaveTemplateResult.error;
@@ -124,6 +126,7 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
 
   /// Rename a template
   Future<void> renameTemplate(String templateId, String newName) async {
+    if (!await ref.canWrite()) return;
     try {
       await _repository.updateTemplateName(templateId, newName);
       if (!ref.mounted) return;
@@ -142,6 +145,7 @@ class PersonalTemplatesController extends _$PersonalTemplatesController {
 
   /// Delete a template
   Future<void> deleteTemplate(String templateId) async {
+    if (!await ref.canWrite()) return;
     try {
       final userId = await ref.read(userIdProvider.future);
       if (!ref.mounted) return;

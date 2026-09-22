@@ -13,6 +13,7 @@ import '../../../activities/application/activities_service.dart';
 import '../../../activities/data/activities_repository.dart';
 import '../../../activities/domain/activity.dart';
 import '../../../activities/domain/activity_completion.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'coach_activity_detail_controller.g.dart';
 
@@ -152,6 +153,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
   }
 
   Future<void> saveActivity() async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -185,6 +187,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
   /// Delete the current activity as a coach.
   /// Returns true on success, false on failure.
   Future<bool> deleteActivity() async {
+    await requireWriteAccess(ref);
     final currentState = state.value;
     final activity = currentState?.activity;
     if (activity == null) return false;
@@ -356,6 +359,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     String category, {
     double? customAmount,
   }) async {
+    if (!await ref.canWrite()) return;
     await _updateSectionFoods(
       category: category,
       operationName: 'swapFoodItem',
@@ -373,6 +377,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     String category, {
     double? customAmount,
   }) async {
+    if (!await ref.canWrite()) return;
     await _updateSectionFoods(
       category: category,
       operationName: 'addFoodItem',
@@ -384,6 +389,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
   }
 
   Future<void> deleteFoodItem(String foodId, String category) async {
+    if (!await ref.canWrite()) return;
     await _updateSectionFoods(
       category: category,
       operationName: 'deleteFoodItem',
@@ -396,6 +402,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     String category,
     double newQuantity,
   ) async {
+    if (!await ref.canWrite()) return;
     await _updateSectionFoods(
       category: category,
       operationName: 'updateFoodQuantity',
@@ -457,6 +464,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
     required int overallSatisfaction,
     String? textNotes,
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -490,6 +498,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
   /// Update completion rating for a completed activity (coach view)
   Future<void> updateCompletionRating(int rating) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 
@@ -549,6 +558,7 @@ class CoachActivityDetailController extends _$CoachActivityDetailController {
 
   /// Update workout notes for a completed activity (coach view)
   Future<void> updateWorkoutNotes(String? notes) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null || currentState.activity == null) return;
 

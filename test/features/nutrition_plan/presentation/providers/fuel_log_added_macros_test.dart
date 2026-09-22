@@ -13,6 +13,7 @@ import 'package:mealvana_endurance/features/nutrition_plan/presentation/provider
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mocktail/mocktail.dart';
+import '../../../../helpers/write_access.dart';
 
 // Regression tests for two fuel-log flaws surfaced by the ADD FOOD fix
 // (bug 3a3e3fdb wrote added foods to fuelLogData, making these visible):
@@ -93,6 +94,7 @@ void main() {
   ProviderContainer buildContainer(ActivityDetailState seed) {
     final container = ProviderContainer(
       overrides: [
+        writesAllowed(),
         appExternalDepsProvider.overrideWithValue(mockDeps),
         authServiceProvider.overrideWithValue(mockAuthService),
         activityDetailControllerProvider(

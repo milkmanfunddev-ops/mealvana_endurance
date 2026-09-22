@@ -30,6 +30,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_eve
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../helpers/write_access.dart';
 
 /// Records every idle signal the controller sends. [reply] is what each
 /// signal's future does: completes, never completes, or throws.
@@ -69,7 +70,6 @@ class _IdleRepo extends Fake implements VanaChatRepository {
       events: Stream.fromIterable(const [VanaDoneEvent()]),
     );
   }
-
 }
 
 void main() {
@@ -89,6 +89,7 @@ void main() {
   ProviderContainer containerFor(String userId) {
     final c = ProviderContainer(
       overrides: [
+        writesAllowed(),
         sharedPreferencesProvider.overrideWithValue(prefs),
         userIdProvider.overrideWith((ref) async => userId),
         vanaClockProvider.overrideWithValue(() => now),
@@ -110,19 +111,22 @@ void main() {
     expect(await open(c), isNull);
   });
 
-  test('later the same day, the sheet continues the same conversation', () async {
-    final c = containerFor('user-1');
-    expect(await open(c), isNull);
-    await notifier(c).adopt('conv-a');
-    expect(c.read(vanaAmbientConversationProvider).value, 'conv-a');
+  test(
+    'later the same day, the sheet continues the same conversation',
+    () async {
+      final c = containerFor('user-1');
+      expect(await open(c), isNull);
+      await notifier(c).adopt('conv-a');
+      expect(c.read(vanaAmbientConversationProvider).value, 'conv-a');
 
-    now = DateTime(2026, 9, 10, 21, 45);
-    expect(await open(c), 'conv-a');
+      now = DateTime(2026, 9, 10, 21, 45);
+      expect(await open(c), 'conv-a');
 
-    // A cold start later that day reads it back from the device.
-    final restarted = containerFor('user-1');
-    expect(await open(restarted), 'conv-a');
-  });
+      // A cold start later that day reads it back from the device.
+      final restarted = containerFor('user-1');
+      expect(await open(restarted), 'conv-a');
+    },
+  );
 
   test('the next day opens a new one', () async {
     final c = containerFor('user-1');
@@ -167,26 +171,32 @@ void main() {
       expect(repo.idle, ['conv-a']);
     });
 
-    test('closing a sheet whose conversation was never named signals nothing', () async {
-      final c = containerFor('user-1');
-      await open(c);
+    test(
+      'closing a sheet whose conversation was never named signals nothing',
+      () async {
+        final c = containerFor('user-1');
+        await open(c);
 
-      notifier(c).sheetClosed();
+        notifier(c).sheetClosed();
 
-      expect(repo.idle, isEmpty);
-    });
+        expect(repo.idle, isEmpty);
+      },
+    );
 
-    test('the app going to the background signals the held conversation idle', () async {
-      final c = containerFor('user-1');
-      await open(c);
-      await notifier(c).adopt('conv-a');
+    test(
+      'the app going to the background signals the held conversation idle',
+      () async {
+        final c = containerFor('user-1');
+        await open(c);
+        await notifier(c).adopt('conv-a');
 
-      binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-      binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+        binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+        binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
 
-      expect(repo.idle, ['conv-a']);
-    });
+        expect(repo.idle, ['conv-a']);
+      },
+    );
 
     test('a new day\'s conversation signals the one before it idle', () async {
       final c = containerFor('user-1');
@@ -201,60 +211,72 @@ void main() {
       expect(repo.idle, ['conv-a'], reason: 'conv-a was already signalled');
     });
 
-    test('the server naming a different conversation signals the held one idle', () async {
-      final c = containerFor('user-1');
-      await open(c);
-      await notifier(c).adopt('conv-a');
+    test(
+      'the server naming a different conversation signals the held one idle',
+      () async {
+        final c = containerFor('user-1');
+        await open(c);
+        await notifier(c).adopt('conv-a');
 
-      await notifier(c).adopt('conv-b');
+        await notifier(c).adopt('conv-b');
 
-      expect(repo.idle, ['conv-a']);
-    });
+        expect(repo.idle, ['conv-a']);
+      },
+    );
 
-    test('a conversation is signalled once until the sheet opens it again', () async {
-      final c = containerFor('user-1');
-      await open(c);
-      await notifier(c).adopt('conv-a');
+    test(
+      'a conversation is signalled once until the sheet opens it again',
+      () async {
+        final c = containerFor('user-1');
+        await open(c);
+        await notifier(c).adopt('conv-a');
 
-      notifier(c).sheetClosed();
-      notifier(c).sheetClosed();
-      expect(repo.idle, ['conv-a']);
+        notifier(c).sheetClosed();
+        notifier(c).sheetClosed();
+        expect(repo.idle, ['conv-a']);
 
-      // Reopened the same day: it may hold new turns, so the next close says so.
-      now = DateTime(2026, 9, 10, 20);
-      expect(await open(c), 'conv-a');
-      notifier(c).sheetClosed();
-      expect(repo.idle, ['conv-a', 'conv-a']);
-    });
+        // Reopened the same day: it may hold new turns, so the next close says so.
+        now = DateTime(2026, 9, 10, 20);
+        expect(await open(c), 'conv-a');
+        notifier(c).sheetClosed();
+        expect(repo.idle, ['conv-a', 'conv-a']);
+      },
+    );
 
-    test('fire-and-forget: a signal that never answers or fails holds nothing up', () async {
-      final c = containerFor('user-1');
-      await open(c);
-      await notifier(c).adopt('conv-a');
+    test(
+      'fire-and-forget: a signal that never answers or fails holds nothing up',
+      () async {
+        final c = containerFor('user-1');
+        await open(c);
+        await notifier(c).adopt('conv-a');
 
-      repo.reply = () => Completer<void>().future;
-      notifier(c).sheetClosed();
-      expect(repo.idle, ['conv-a']);
+        repo.reply = () => Completer<void>().future;
+        notifier(c).sheetClosed();
+        expect(repo.idle, ['conv-a']);
 
-      repo.reply = () => Future.error(StateError('offline'));
-      await notifier(c).adopt('conv-b');
-      notifier(c).sheetClosed();
-      await pumpEventQueue();
-      expect(repo.idle, ['conv-a', 'conv-b']);
-    });
+        repo.reply = () => Future.error(StateError('offline'));
+        await notifier(c).adopt('conv-b');
+        notifier(c).sheetClosed();
+        await pumpEventQueue();
+        expect(repo.idle, ['conv-a', 'conv-b']);
+      },
+    );
 
-    test('another person\'s conversation is never signalled on their behalf', () async {
-      final c = containerFor('user-1');
-      await open(c);
-      await notifier(c).adopt('conv-a');
-      notifier(c).sheetClosed();
+    test(
+      'another person\'s conversation is never signalled on their behalf',
+      () async {
+        final c = containerFor('user-1');
+        await open(c);
+        await notifier(c).adopt('conv-a');
+        notifier(c).sheetClosed();
 
-      final other = containerFor('user-2');
-      await open(other);
-      notifier(other).sheetClosed();
+        final other = containerFor('user-2');
+        await open(other);
+        notifier(other).sheetClosed();
 
-      expect(repo.idle, ['conv-a']);
-    });
+        expect(repo.idle, ['conv-a']);
+      },
+    );
   });
 
   group('entry points (mp-275)', () {
@@ -274,10 +296,7 @@ void main() {
           kind: kind,
           conversationId: minted.putIfAbsent(kind, newVanaConversationKey),
         );
-    VanaChatController newChat(
-      ProviderContainer c,
-      VanaConversationKind kind,
-    ) {
+    VanaChatController newChat(ProviderContainer c, VanaConversationKind kind) {
       final sub = c.listen(newKey(kind), (_, _) {});
       addTearDown(sub.close);
       return c.read(newKey(kind).notifier);
@@ -297,7 +316,10 @@ void main() {
 
       // The note card, later: the same conversation.
       expect(await notifier(c).openToday(), 'conv-day');
-      expect(vanaAmbientChatLocation('conv-day'), '/vana?mode=general&c=conv-day');
+      expect(
+        vanaAmbientChatLocation('conv-day'),
+        '/vana?mode=general&c=conv-day',
+      );
     });
 
     test('the note card first in the day names the conversation the launcher '

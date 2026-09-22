@@ -8,6 +8,7 @@ import '../data/formula_pins_repository.dart';
 import '../domain/formula_phase.dart';
 import '../domain/formula_pin.dart';
 import '../domain/formula_view.dart';
+import '../../subscription/application/write_guard.dart';
 
 part 'formula_pin_controller.g.dart';
 
@@ -103,6 +104,7 @@ class FormulaPinController extends _$FormulaPinController {
     List<String>? durationBrackets,
     FormulaPhase? phaseOverride,
   }) async {
+    if (!await ref.canWrite()) return;
     final current = state.value;
     if (current == null) return;
 
@@ -175,6 +177,7 @@ class FormulaPinController extends _$FormulaPinController {
     required BeforeFormulaView formula,
     required String source,
   }) async {
+    if (!await ref.canWrite()) return;
     await togglePin(
       templateId: formula.id,
       kind: TemplateKind.preSystem,
@@ -189,6 +192,7 @@ class FormulaPinController extends _$FormulaPinController {
     required DuringFormulaView formula,
     required String source,
   }) async {
+    if (!await ref.canWrite()) return;
     await togglePin(
       templateId: formula.id,
       kind: TemplateKind.duringSystem,
@@ -205,6 +209,7 @@ class FormulaPinController extends _$FormulaPinController {
     required AfterFormulaView formula,
     required String source,
   }) async {
+    if (!await ref.canWrite()) return;
     await togglePin(
       templateId: formula.id,
       kind: TemplateKind.postSystem,
@@ -221,6 +226,7 @@ class FormulaPinController extends _$FormulaPinController {
     required FormulaPhase phase,
     required String source,
   }) async {
+    if (!await ref.canWrite()) return;
     await togglePin(
       templateId: formulaId,
       kind: TemplateKind.personalFormula,

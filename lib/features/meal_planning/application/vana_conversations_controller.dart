@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/vana_chat_repository.dart';
 import '../domain/vana_conversation.dart';
 import '../domain/vana_conversation_kind.dart';
+import '../../subscription/application/write_guard.dart';
 
 part 'vana_conversations_controller.g.dart';
 
@@ -25,6 +26,7 @@ class VanaConversationsController extends _$VanaConversationsController {
   /// Create an empty conversation of this kind and return its id (the
   /// screen then opens it and streams the opener).
   Future<String> create() async {
+    await requireWriteAccess(ref);
     final id = await _repo.createConversation(kind);
     unawaited(refresh());
     return id;

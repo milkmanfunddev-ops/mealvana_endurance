@@ -27,6 +27,7 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/screens/m
 import 'package:mealvana_endurance/shared/widgets/kyle_design/buttons/primary_button.dart';
 
 import '../helpers/test_content.dart';
+import '../../../../helpers/write_access.dart';
 
 const _mealId = 'AD-001';
 const _address = 'https://images.pexels.com/photos/1/salmon-salad.jpeg';
@@ -56,7 +57,8 @@ class _RecordingPhotoRepository implements MealPhotoRepository {
     return MealPhotoHistoryEntry(
       id: 'history-upload',
       photo: MealPhoto(
-        url: 'https://dev.supabase.co/storage/v1/object/public/meal-images/'
+        url:
+            'https://dev.supabase.co/storage/v1/object/public/meal-images/'
             'photos/AD-001/stored.jpg',
         credit: credit,
         creditUrl: creditUrl,
@@ -150,6 +152,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          writesAllowed(),
           contentServiceProvider.overrideWith(testContentService),
           mealPhotoRepositoryProvider.overrideWithValue(repo),
           // The camera and the crop editor are platform widgets — they are
@@ -183,7 +186,9 @@ void main() {
       url,
     );
     await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_preview')));
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_preview')),
+    );
     await tester.pump();
   }
 
@@ -292,42 +297,45 @@ void main() {
     _stopServing();
   });
 
-  testWidgets('confirming sends the address and the credit once, then says so', (
-    tester,
-  ) async {
-    serveImages();
-    await pump(tester);
-    await paste(tester, _address);
-    await settleImage(tester);
+  testWidgets(
+    'confirming sends the address and the credit once, then says so',
+    (tester) async {
+      serveImages();
+      await pump(tester);
+      await paste(tester, _address);
+      await settleImage(tester);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('meal_planning.photos_credit_field')),
-      'Photo by Lee',
-    );
-    await tester.enterText(
-      find.byKey(const ValueKey('meal_planning.photos_credit_url_field')),
-      'https://example.com/photos/1',
-    );
-    await tester.pump();
-    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_confirm')));
-    await tester.pump();
-    await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey('meal_planning.photos_credit_field')),
+        'Photo by Lee',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('meal_planning.photos_credit_url_field')),
+        'https://example.com/photos/1',
+      );
+      await tester.pump();
+      await tester.tap(
+        find.byKey(const ValueKey('meal_planning.photos_confirm')),
+      );
+      await tester.pump();
+      await tester.pump();
 
-    expect(repo.adds, hasLength(1));
-    expect(repo.adds.single, {
-      'url': _address,
-      'credit': 'Photo by Lee',
-      'creditUrl': 'https://example.com/photos/1',
-    });
-    // Said only after the server has it.
-    expect(find.text(content['meal_planning.photos_added']!), findsOneWidget);
-    // And the form is ready for the next one.
-    expect(
-      find.byKey(const ValueKey('meal_planning.photos_confirm')),
-      findsNothing,
-    );
-    _stopServing();
-  });
+      expect(repo.adds, hasLength(1));
+      expect(repo.adds.single, {
+        'url': _address,
+        'credit': 'Photo by Lee',
+        'creditUrl': 'https://example.com/photos/1',
+      });
+      // Said only after the server has it.
+      expect(find.text(content['meal_planning.photos_added']!), findsOneWidget);
+      // And the form is ready for the next one.
+      expect(
+        find.byKey(const ValueKey('meal_planning.photos_confirm')),
+        findsNothing,
+      );
+      _stopServing();
+    },
+  );
 
   testWidgets('Cancel at the preview changes nothing', (tester) async {
     serveImages();
@@ -344,7 +352,10 @@ void main() {
       find.byKey(const ValueKey('meal_planning.photos_confirm')),
       findsNothing,
     );
-    expect(find.byKey(const ValueKey('meal_planning.photos_preview')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('meal_planning.photos_preview')),
+      findsOneWidget,
+    );
     expect(find.text(content['meal_planning.photos_none']!), findsOneWidget);
     _stopServing();
   });
@@ -358,7 +369,9 @@ void main() {
     await paste(tester, _address);
     await settleImage(tester);
 
-    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_confirm')));
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_confirm')),
+    );
     await tester.pump();
     await tester.pump();
 
@@ -379,7 +392,9 @@ void main() {
     await paste(tester, _address);
     await settleImage(tester);
 
-    await tester.tap(find.byKey(const ValueKey('meal_planning.photos_confirm')));
+    await tester.tap(
+      find.byKey(const ValueKey('meal_planning.photos_confirm')),
+    );
     await tester.pump();
     await tester.pump();
 
@@ -628,7 +643,9 @@ void main() {
     );
   });
 
-  testWidgets('Delete asks first, and keeping it sends nothing', (tester) async {
+  testWidgets('Delete asks first, and keeping it sends nothing', (
+    tester,
+  ) async {
     await pump(tester, seed: worn());
 
     await tester.tap(

@@ -7,18 +7,10 @@ library;
 
 import 'package:go_router/go_router.dart';
 
+import '../application/paywall_location.dart';
 import '../domain/entitlement.dart';
 
-/// Where a locked user is sent, and stays.
-const String kPaywallPath = '/paywall';
-
-/// The paywall as onboarding's last step. Same route; the query selects the
-/// shape. Its ⋯ menu carries the same entries as the lapsed shape (mp-494 §2,
-/// which replaced mp-417 §3's "Restore only"). The gate's redirect still moves
-/// an unlocked account on to `/main`.
-const String kOnboardingPaywallQuery = 'onboarding';
-const String kOnboardingPaywallLocation =
-    '$kPaywallPath?$kOnboardingPaywallQuery=1';
+export '../application/paywall_location.dart';
 
 /// Routes the gate never touches: the root (startup), the force-upgrade and
 /// consent screens, and the public welcome / onboarding / auth flows —
@@ -79,15 +71,6 @@ String? gateRedirect({required String path, required AppAccess access}) {
 /// unknown location (nothing routed yet) does not either.
 bool planEndedBarShownOn(String path) =>
     path.isNotEmpty && !isUngatedPath(path) && path != kPaywallPath;
-
-/// The location path of the route on top of [config]; a pushed route
-/// carries its own match list.
-String topPathOf(RouteMatchList config) {
-  if (config.matches.isEmpty) return '';
-  final last = config.last;
-  final list = last is ImperativeRouteMatch ? last.matches : config;
-  return list.uri.path;
-}
 
 /// Moves a PUSHED paywall on to `/main` once the gate is open.
 ///

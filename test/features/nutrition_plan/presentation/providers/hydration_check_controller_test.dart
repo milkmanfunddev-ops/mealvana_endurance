@@ -42,6 +42,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../helpers/fixtures/user_fixtures.dart';
 import '../../pre_workout_before_card_fixtures.dart';
+import '../../../../helpers/write_access.dart';
 
 class MockAuthService extends Mock implements AuthService {}
 
@@ -141,6 +142,7 @@ void main() {
     ).thenAnswer((_) async => seed.activity);
     final container = ProviderContainer(
       overrides: [
+        writesAllowed(),
         authServiceProvider.overrideWithValue(auth),
         analyticsTrackerProvider.overrideWithValue(MockAnalyticsTracker()),
         macroRepositoryProvider.overrideWithValue(macroRepo),

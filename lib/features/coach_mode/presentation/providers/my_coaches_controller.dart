@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../../../shared/services/logging_service.dart';
 import '../../application/coach_service.dart';
 import '../../domain/coach_athlete_relationship.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'my_coaches_controller.g.dart';
 
@@ -106,6 +107,7 @@ class MyCoachesController extends _$MyCoachesController {
 
   /// Accept a coach's request
   Future<void> acceptRequest(String relationshipId) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -141,6 +143,7 @@ class MyCoachesController extends _$MyCoachesController {
 
   /// Decline a coach's request
   Future<void> declineRequest(String relationshipId) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 

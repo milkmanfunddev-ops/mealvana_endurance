@@ -18,6 +18,7 @@ import '../../domain/meal_log.dart';
 import '../../domain/meal_log_source.dart';
 import '../../domain/meal_slot.dart';
 import '../../domain/saved_meal.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'meal_log_providers.g.dart';
 
@@ -248,6 +249,7 @@ class MealLogController extends _$MealLogController {
     String? notes,
     DateTime? eatenAt,
   }) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
@@ -282,6 +284,7 @@ class MealLogController extends _$MealLogController {
     required String logDate,
     DateTime? eatenAt,
   }) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
@@ -313,6 +316,7 @@ class MealLogController extends _$MealLogController {
     required String logDate,
     DateTime? eatenAt,
   }) async {
+    if (!await ref.canWrite()) return;
     if (savedMeals.isEmpty) return;
     await _runGuarded((service) async {
       final userId = await _currentUserId();
@@ -344,6 +348,7 @@ class MealLogController extends _$MealLogController {
     DateTime? eatenAt,
     String? notes,
   }) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
@@ -384,6 +389,7 @@ class MealLogController extends _$MealLogController {
     // them for funnels without a schema migration. Defaults to source.
     String? logMethod,
   }) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       final userId = await _currentUserId();
       if (userId == null) throw StateError('No authenticated user');
@@ -413,6 +419,7 @@ class MealLogController extends _$MealLogController {
   /// Passes the full updated [MealLog] to the service which recomputes totals
   /// when components are present, then writes via the repository.
   Future<void> updateLog(MealLog log) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       await service.updateLog(log);
 
@@ -431,6 +438,7 @@ class MealLogController extends _$MealLogController {
 
   /// Restore a previously soft-deleted meal log entry (used by undo-delete).
   Future<void> restoreLog(String logId) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       // Read the repo before the async gap below so a mid-action disposal
       // can't trigger a `ref.read` on a disposed ref (UnmountedRefException).
@@ -453,6 +461,7 @@ class MealLogController extends _$MealLogController {
 
   /// Soft-delete a meal log entry.
   Future<void> deleteLog(String logId) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       // Read the repo before the async gap below so a mid-action disposal
       // can't trigger a `ref.read` on a disposed ref (UnmountedRefException).
@@ -479,6 +488,7 @@ class MealLogController extends _$MealLogController {
 
   /// Save a log entry as a user favorite.
   Future<void> saveLogAsFavorite(MealLog log, {String? customName}) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       await service.saveLogAsFavorite(log, customName: customName);
       if (ref.mounted) ref.invalidate(savedMealsProvider);
@@ -492,6 +502,7 @@ class MealLogController extends _$MealLogController {
 
   /// Soft-delete a saved meal.
   Future<void> deleteSavedMeal(String mealId) async {
+    if (!await ref.canWrite()) return;
     await _runGuarded((service) async {
       await ref.read(savedMealsRepositoryProvider).softDelete(mealId);
       if (ref.mounted) ref.invalidate(savedMealsProvider);

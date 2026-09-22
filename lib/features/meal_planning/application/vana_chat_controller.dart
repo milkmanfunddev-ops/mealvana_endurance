@@ -27,6 +27,7 @@ import 'meal_plan_controller.dart';
 import 'vana_situation_controller.dart';
 import 'vana_write_refetcher.dart';
 import 'vana_ambient_conversation_controller.dart';
+import '../../subscription/application/write_guard.dart';
 
 part 'vana_chat_controller.g.dart';
 
@@ -236,6 +237,7 @@ class VanaChatController extends _$VanaChatController {
     VanaMoment? moment,
     bool newPlan = false,
   }) async {
+    if (!await ref.canWrite()) return;
     // The opener can be requested in the screen's first post-frame callback,
     // before this notifier's async build() has resolved — writes made before
     // initialization completes are clobbered by the initializer's return.
@@ -264,6 +266,7 @@ class VanaChatController extends _$VanaChatController {
     String text, {
     VanaInputMode inputMode = VanaInputMode.typed,
   }) async {
+    if (!await ref.canWrite()) return;
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final current = state.value ?? VanaChatState(kind: kind);
@@ -293,6 +296,7 @@ class VanaChatController extends _$VanaChatController {
   /// A message id the transcript does not hold (already rewound, or an
   /// optimistic id that never persisted) degrades to a plain [send].
   Future<void> rewindAndSend(String messageId, String text) async {
+    if (!await ref.canWrite()) return;
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
     final current = state.value ?? VanaChatState(kind: kind);
@@ -301,7 +305,12 @@ class VanaChatController extends _$VanaChatController {
     final conversationId = current.conversationId;
     final index = current.messages.indexWhere((m) => m.id == messageId);
     if (conversationId == null || conversationId.isEmpty || index < 0) {
-      await _turn(current, message: trimmed, opener: false, inputMode: VanaInputMode.typed);
+      await _turn(
+        current,
+        message: trimmed,
+        opener: false,
+        inputMode: VanaInputMode.typed,
+      );
       return;
     }
 
@@ -333,7 +342,12 @@ class VanaChatController extends _$VanaChatController {
         clearError: true,
       );
       state = AsyncData(rewound);
-      await _turn(rewound, message: trimmed, opener: false, inputMode: VanaInputMode.typed);
+      await _turn(
+        rewound,
+        message: trimmed,
+        opener: false,
+        inputMode: VanaInputMode.typed,
+      );
     } catch (e, st) {
       if (!ref.mounted) return;
       _logger.error(
@@ -368,6 +382,7 @@ class VanaChatController extends _$VanaChatController {
     Uint8List bytes, {
     String extension = 'jpg',
   }) async {
+    if (!await ref.canWrite()) return;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming) return;
 
@@ -449,6 +464,7 @@ class VanaChatController extends _$VanaChatController {
   /// with them. Without a persisted conversation there is nothing to
   /// record; the message alone is sent.
   Future<void> usePantry(List<String> items, {required String message}) async {
+    if (!await ref.canWrite()) return;
     final current = state.value ?? VanaChatState(kind: kind);
     if (current.isStreaming) return;
     final conversationId = current.conversationId;
@@ -728,6 +744,7 @@ class VanaChatController extends _$VanaChatController {
   /// receipt names. Throws on failure so the card can say so; a receipt
   /// with no undo is a no-op.
   Future<void> undoReceipt(VanaReceiptPart part) async {
+    if (!await ref.canWrite()) return;
     final undo = part.undo;
     if (undo == null) return;
     final result = await _actions.run(UndoReceiptAction(params: undo.params));

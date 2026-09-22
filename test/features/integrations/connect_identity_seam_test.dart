@@ -42,6 +42,7 @@ import 'package:mealvana_endurance/shared/database/app_database.dart';
 import 'package:mealvana_endurance/shared/providers/user_id_provider.dart';
 
 import '../../helpers/widget_test_harness.dart';
+import '../../helpers/write_access.dart';
 
 class _MockFinalSurgeOAuth extends Mock implements FinalSurgeOAuthService {}
 
@@ -116,6 +117,7 @@ void main() {
 
     container = ProviderContainer(
       overrides: [
+        writesAllowed(),
         mockAppExternalDeps(supabaseClient: supabase),
         mockSharedPreferences(),
         inMemoryDatabaseOverride(db),

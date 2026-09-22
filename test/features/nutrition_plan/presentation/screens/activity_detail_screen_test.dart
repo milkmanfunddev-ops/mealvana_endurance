@@ -13,6 +13,7 @@ import 'package:mealvana_endurance/features/coach_mode/presentation/providers/co
 import 'package:mealvana_endurance/shared/domain/activity_type.dart';
 import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
+import '../../../../helpers/write_access.dart';
 
 /// Unit tests for Activity Detail Screen actions
 ///
@@ -47,6 +48,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,
@@ -93,6 +95,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: true,
@@ -142,6 +145,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            writesAllowed(),
             coachActivityDetailControllerProvider(
               'test-activity-1',
             ).overrideWith(() {
@@ -189,6 +193,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,
@@ -244,6 +249,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            writesAllowed(),
             activityDetailControllerProvider(
               activityId: 'test-activity-1',
               isNewActivity: false,

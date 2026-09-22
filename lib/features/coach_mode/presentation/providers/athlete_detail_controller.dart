@@ -18,6 +18,7 @@ import '../../data/coach_repository.dart';
 import '../../domain/coach_athlete_relationship.dart';
 import '../../domain/coach_message.dart';
 import 'athlete_data_sync_provider.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'athlete_detail_controller.g.dart';
 
@@ -301,6 +302,7 @@ class AthleteDetailController extends _$AthleteDetailController {
     String? activityId,
     String? nutritionPlanId,
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -340,6 +342,7 @@ class AthleteDetailController extends _$AthleteDetailController {
 
   /// Delete a message (only if you sent it)
   Future<void> deleteMessage(String messageId) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -400,6 +403,7 @@ class AthleteDetailController extends _$AthleteDetailController {
 
   /// Save nutrition target overrides for athlete
   Future<void> saveNutritionTargets(NutritionTargetOverrides overrides) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -431,6 +435,7 @@ class AthleteDetailController extends _$AthleteDetailController {
     required DateTime raceDate,
     required double bodyWeightPounds,
   }) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
@@ -455,6 +460,7 @@ class AthleteDetailController extends _$AthleteDetailController {
 
   /// Delete carb loading plan for athlete
   Future<void> deleteCarbLoadingPlan({required String eventId}) async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value;
     if (currentState == null) return;
 
