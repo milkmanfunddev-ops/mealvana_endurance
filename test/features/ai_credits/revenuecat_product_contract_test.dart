@@ -3,8 +3,9 @@
 /// Two maps have to agree about "how many credits does this SKU grant":
 ///   • `kCreditsByProductId` in `lib/features/ai_credits/domain/credit_packs.dart`
 ///     — display only, what the purchase sheet promises the user.
-///   • `RC_PRODUCT_CREDITS` in `supabase/functions/revenuecat-webhook/handler.ts`
-///     — authoritative, what `grant_credits` actually writes to the wallet.
+///   • `DEFAULT_PRODUCT_BUDGET` in `supabase/functions/_shared/ai/allowance.ts`
+///     — authoritative, what the RevenueCat webhook's `grant_credits` writes to
+///     the wallet, in micro-dollars since ai-cost ticket 09 (2 cents a credit).
 ///
 /// When they drift, the user is charged and shown one number while the wallet
 /// receives another — or, in the failure bf0b591f hit, the sheet advertises
@@ -21,20 +22,31 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/ai_credits/domain/credit_packs.dart';
 
-/// Pulls the `RC_PRODUCT_CREDITS` defaults out of the edge function source.
+/// Pulls the `DEFAULT_PRODUCT_BUDGET` map out of the shared allowance module
+/// and converts it back to credits at the one rate the record fixes
+/// (`MICRO_PER_CREDIT`, 2 cents a credit, mp-436 clause 2).
 ///
-/// Matches the object literal assigned to the default credit map, e.g.
+/// Since ai-cost ticket 09 the map holds micro-dollars, e.g.
 /// ```ts
-/// const DEFAULT_PRODUCT_CREDITS: Record<string, number> = {
-///   mealvana_credits_50: 50,
-///   mealvana_credits_250: 250,
+/// export const DEFAULT_PRODUCT_BUDGET: Record<string, number> = {
+///   mealvana_credits_50: 1 * USD_MICRO,
+///   mealvana_credits_test_1: MICRO_PER_CREDIT,
 /// };
 /// ```
+/// Each value is a plain integer, `<int> * USD_MICRO`, or `MICRO_PER_CREDIT`;
+/// the two constants are read from the same file.
 Map<String, int> parseWebhookCreditMap(String source) {
-  // The default map is the first object literal whose entries are all
-  // `identifier_or_string: <int>` pairs following a *PRODUCT_CREDITS* binding.
+  int constant(String name) {
+    final m = RegExp('const $name\\s*=\\s*([0-9_]+)').firstMatch(source);
+    expect(m, isNotNull, reason: 'Could not find `$name` in allowance.ts.');
+    return int.parse(m!.group(1)!.replaceAll('_', ''));
+  }
+
+  final usdMicro = constant('USD_MICRO');
+  final microPerCredit = constant('MICRO_PER_CREDIT');
+
   final binding = RegExp(
-    r'PRODUCT_CREDITS[^=]*=\s*\{([^}]*)\}',
+    r'DEFAULT_PRODUCT_BUDGET[^=]*=\s*\{([^}]*)\}',
     dotAll: true,
   ).firstMatch(source);
 
@@ -42,24 +54,40 @@ Map<String, int> parseWebhookCreditMap(String source) {
     binding,
     isNotNull,
     reason:
-        'Could not find a PRODUCT_CREDITS object literal in the webhook '
-        'source. If it was renamed, update this parser — do not delete the '
-        'test: it is the only thing keeping the grant map and the purchase '
-        'sheet in step.',
+        'Could not find a DEFAULT_PRODUCT_BUDGET object literal in '
+        'allowance.ts. If it was renamed, update this parser — do not delete '
+        'the test: it is the only thing keeping the grant map and the '
+        'purchase sheet in step.',
   );
 
   final body = binding!.group(1)!;
-  final entry = RegExp(r'''["']?([A-Za-z0-9_]+)["']?\s*:\s*(\d+)''');
+  final entry = RegExp(r'''["']?([A-Za-z0-9_]+)["']?\s*:\s*([^,\n]+)''');
+
+  int micro(String expr) {
+    final e = expr.trim();
+    final times = RegExp(r'^(\d+)\s*\*\s*USD_MICRO$').firstMatch(e);
+    if (times != null) return int.parse(times.group(1)!) * usdMicro;
+    if (e == 'MICRO_PER_CREDIT') return microPerCredit;
+    return int.parse(e.replaceAll('_', ''));
+  }
 
   final parsed = <String, int>{};
   for (final m in entry.allMatches(body)) {
-    parsed[m.group(1)!] = int.parse(m.group(2)!);
+    final value = micro(m.group(2)!);
+    expect(
+      value % microPerCredit,
+      0,
+      reason:
+          'SKU "${m.group(1)}" grants $value micro-dollars, which is not a '
+          'whole number of credits at $microPerCredit each.',
+    );
+    parsed[m.group(1)!] = value ~/ microPerCredit;
   }
   return parsed;
 }
 
 void main() {
-  final webhookFile = File('supabase/functions/revenuecat-webhook/handler.ts');
+  final webhookFile = File('supabase/functions/_shared/ai/allowance.ts');
 
   group('credit pack contract', () {
     late Map<String, int> serverMap;
@@ -69,7 +97,7 @@ void main() {
         webhookFile.existsSync(),
         isTrue,
         reason:
-            'Expected the RevenueCat webhook at ${webhookFile.path}. Tests run '
+            'Expected the allowance module at ${webhookFile.path}. Tests run '
             'from the repo root.',
       );
       serverMap = parseWebhookCreditMap(webhookFile.readAsStringSync());
