@@ -11,11 +11,11 @@
 
 **Touches:** lib/features/ai_credits, lib/features/meal_planning/presentation/screens/vana_settings_screen.dart, assets/config/content_defaults.json
 
-- [ ] The Vana settings usage bar shows a share, a refill date and bought extra with no dollar figure (widget test through the real controller).
-- [ ] At 100% the top-up sheet opens (mp-282); the pack wording names the new unit and no credit count.
-- [ ] The wallet channel opens and closes with the budget screens (widget test over a transport that counts).
-- [ ] A gateway refusal still shows "Vana is unavailable right now" and never the top-up sheet (ticket 02's test stays green).
-- [ ] Every controller write path keeps its test through the real notifier.
-- [ ] Checked on a pool simulator: the bar in Vana settings, and the sheet at 100% on a drained dev wallet.
+- [x] The Vana settings usage bar shows a share, a refill date and bought extra with no dollar figure (widget test through the real controller).
+- [x] At 100% the top-up sheet opens (mp-282); the pack wording names the new unit and no credit count.
+- [x] The wallet channel opens and closes with the budget screens (widget test over a transport that counts).
+- [x] A gateway refusal still shows "Vana is unavailable right now" and never the top-up sheet (ticket 02's test stays green).
+- [x] Every controller write path keeps its test through the real notifier.
+- [x] Checked on a pool simulator: the bar in Vana settings, and the sheet at 100% on a drained dev wallet.
 
 Next: /implement-lee ai-cost
