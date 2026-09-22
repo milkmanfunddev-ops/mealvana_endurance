@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mealvana_endurance/features/subscription/domain/trial_reminder.dart';
 import 'package:mealvana_endurance/shared/services/notification_service.dart';
 
 /// Parsing guards for notification payload strings.
@@ -10,6 +11,17 @@ import 'package:mealvana_endurance/shared/services/notification_service.dart';
 /// can sit in a notification tray across an app upgrade.
 void main() {
   group('parseTypedNotificationPayload', () {
+    test('the day-five reminder parses to its own type (mp-456 §3)', () {
+      final parsed = NotificationService.parseTypedNotificationPayload(
+        TrialReminder.payload,
+      );
+
+      expect(parsed, isNotNull);
+      expect(parsed!.type, TrialReminder.payloadType);
+      expect(parsed.activityId, 'subscription');
+      expect(parsed.copyVariant, isNull);
+    });
+
     test('parses a two-segment payload with no variant', () {
       final parsed = NotificationService.parseTypedNotificationPayload(
         'activity:abc-123',

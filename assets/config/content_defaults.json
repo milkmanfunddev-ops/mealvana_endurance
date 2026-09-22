@@ -109,7 +109,10 @@
     "renewal_terms": "Your subscription renews automatically at the same price until you cancel. Cancel at least 24 hours before it renews in your App Store or Google Play account settings.",
     "terms_link": "Terms of Use",
     "privacy_link": "Privacy Policy",
-    "link_failed": "Couldn't open that page. Please try again."
+    "link_failed": "Couldn't open that page. Please try again.",
+    "trial_reminder_title": "Your free week ends in two days",
+    "trial_reminder_body_monthly": "After that it's {price} a month. You can cancel any time. Tap to manage your subscription.",
+    "trial_reminder_body_annual": "After that it's {price} a year. You can cancel any time. Tap to manage your subscription."
   },
   "main_screen": {
     "title": "Mealvana Endurance",

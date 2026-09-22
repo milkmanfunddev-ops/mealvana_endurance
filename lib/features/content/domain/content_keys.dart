@@ -42,6 +42,15 @@ class ContentKeys {
   static const String paywallPrivacyLink = 'paywall.privacy_link';
   static const String paywallLinkFailed = 'paywall.link_failed';
 
+  // The day-five reminder: a local notification two days before the free
+  // week ends (mp-456). `{price}` is the store's price after the trial.
+  static const String paywallTrialReminderTitle =
+      'paywall.trial_reminder_title';
+  static const String paywallTrialReminderBodyMonthly =
+      'paywall.trial_reminder_body_monthly';
+  static const String paywallTrialReminderBodyAnnual =
+      'paywall.trial_reminder_body_annual';
+
   // Post-onboarding account screen: the trial line (mp-279 terms).
   static const String postOnboardingTrialLine =
       'auth.post_onboarding.trial_line';

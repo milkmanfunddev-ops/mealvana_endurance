@@ -25,6 +25,7 @@ class _FakeEntitlement extends Fake implements EntitlementInfo {
     this.expirationDate,
     this.periodType = PeriodType.normal,
     this.productIdentifier = 'mealvana_pro_monthly',
+    this.willRenew = true,
   });
 
   @override
@@ -35,6 +36,8 @@ class _FakeEntitlement extends Fake implements EntitlementInfo {
   final PeriodType periodType;
   @override
   final String productIdentifier;
+  @override
+  final bool willRenew;
 }
 
 class _FakeOfferings extends Fake implements Offerings {
@@ -113,6 +116,19 @@ void main() {
         SubscriptionService.statusFromEntitlement(
           _FakeEntitlement(periodType: PeriodType.intro),
         ).isTrial,
+        isTrue,
+      );
+    });
+
+    test('a cancelled trial is still active but will not renew (mp-456)', () {
+      final s = SubscriptionService.statusFromEntitlement(
+        _FakeEntitlement(periodType: PeriodType.trial, willRenew: false),
+      );
+      expect(s.active, isTrue);
+      expect(s.isTrial, isTrue);
+      expect(s.willRenew, isFalse);
+      expect(
+        SubscriptionService.statusFromEntitlement(_FakeEntitlement()).willRenew,
         isTrue,
       );
     });

@@ -8,6 +8,7 @@ import '../data/subscription_service.dart';
 import '../data/user_entitlements_repository.dart';
 import '../domain/entitlement.dart';
 import 'subscription_status_provider.dart';
+import 'trial_reminder_service.dart';
 
 part 'pro_paywall_controller.g.dart';
 
@@ -203,6 +204,7 @@ class ProPaywallController extends _$ProPaywallController {
           data: {'sku': sku},
         );
       }
+      await _scheduleTrialReminder(pkg, status);
     });
 
     if (state is AsyncError) {
@@ -236,6 +238,38 @@ class ProPaywallController extends _$ProPaywallController {
   /// customer, else the platform store's subscriptions page. Null only on a
   /// platform with no store (web).
   Future<Uri?> managementUrl() => _service.managementUrl();
+
+  /// The day-five reminder (mp-456), when RevenueCat says this purchase
+  /// started the free week. Never fails the purchase: the money and the
+  /// unlock are real whether or not a notification could be set.
+  Future<void> _scheduleTrialReminder(
+    Package pkg,
+    SubscriptionStatus status,
+  ) async {
+    try {
+      final when = await ref
+          .read(trialReminderServiceProvider)
+          .scheduleFor(status: status, pkg: pkg);
+      if (when != null) {
+        ref
+            .read(sentryReporterProvider)
+            .addBreadcrumb(
+              message: 'trial reminder scheduled',
+              category: 'subscription',
+              data: {'at': when.toIso8601String()},
+            );
+      }
+    } catch (e, st) {
+      await ref
+          .read(sentryReporterProvider)
+          .reportCriticalError(
+            e,
+            stackTrace: st,
+            context: 'subscription',
+            tags: {'rc_operation': 'trial_reminder'},
+          );
+    }
+  }
 
   Future<SubscriptionStatus> _refreshStatus() async {
     await ref.read(subscriptionStatusProvider.notifier).refresh();

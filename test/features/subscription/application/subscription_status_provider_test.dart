@@ -13,15 +13,57 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:mealvana_endurance/features/subscription/application/subscription_status_provider.dart';
 import 'package:mealvana_endurance/features/subscription/data/subscription_service.dart';
 import 'package:mealvana_endurance/features/subscription/data/user_entitlements_repository.dart';
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
+import 'package:mealvana_endurance/features/subscription/domain/trial_reminder.dart';
+import 'package:mealvana_endurance/shared/services/notification_service.dart';
 
 class _MockSubscriptionService extends Mock implements SubscriptionService {}
 
 class _MockRepository extends Mock implements UserEntitlementsRepository {}
+
+/// Records cancellations instead of reaching the platform plugin.
+class _FakeScheduler implements LocalNotificationScheduler {
+  final cancelled = <int>[];
+
+  @override
+  Future<bool> scheduleOnce({
+    required int id,
+    required DateTime when,
+    required String title,
+    required String body,
+    String? payload,
+  }) async => true;
+
+  @override
+  Future<void> cancel(int id) async => cancelled.add(id);
+}
+
+/// RevenueCat's `pro` entitlement in a trial, as the native bridge hands it
+/// to `EntitlementInfo.fromJson`, through the service's own mapping.
+SubscriptionStatus _trialFromRevenueCat({required bool willRenew}) =>
+    SubscriptionService.statusFromEntitlement(
+      EntitlementInfo.fromJson({
+        'identifier': 'pro',
+        'isActive': true,
+        'willRenew': willRenew,
+        'latestPurchaseDate': '2026-09-22T14:30:00Z',
+        'originalPurchaseDate': '2026-09-22T14:30:00Z',
+        'productIdentifier': 'me_pro_monthly',
+        'isSandbox': true,
+        'ownershipType': 'PURCHASED',
+        'store': 'APP_STORE',
+        'periodType': 'TRIAL',
+        'expirationDate': '2026-09-29T14:30:00Z',
+        'unsubscribeDetectedAt': willRenew ? null : '2026-09-23T08:00:00Z',
+        'billingIssueDetectedAt': null,
+        'verification': 'NOT_REQUESTED',
+      }),
+    );
 
 const _userId = '45a54f25-47c6-4730-8b21-78ea1df36bea';
 const _timeout = Duration(milliseconds: 60);
@@ -36,6 +78,7 @@ final _rcActive = SubscriptionStatus(
 void main() {
   late _MockSubscriptionService service;
   late _MockRepository repo;
+  late _FakeScheduler scheduler;
 
   /// The listener the controller registered with the service, so a test can
   /// simulate a RevenueCat CustomerInfo push.
@@ -44,6 +87,7 @@ void main() {
   setUp(() {
     service = _MockSubscriptionService();
     repo = _MockRepository();
+    scheduler = _FakeScheduler();
     capturedListener = null;
 
     when(() => repo.currentUserId).thenReturn(_userId);
@@ -69,6 +113,7 @@ void main() {
         subscriptionServiceProvider.overrideWithValue(service),
         userEntitlementsRepositoryProvider.overrideWithValue(repo),
         entitlementAnswerTimeoutProvider.overrideWithValue(_timeout),
+        localNotificationSchedulerProvider.overrideWithValue(scheduler),
       ],
     );
     addTearDown(c.dispose);
@@ -258,6 +303,54 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       expect((await resolve(c)).active, isTrue);
+    });
+  });
+
+  group('the day-five reminder is cancelled when the trial will not renew '
+      '(mp-456 §4)', () {
+    test('an app open that finds a cancelled trial cancels it', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => _trialFromRevenueCat(willRenew: false));
+      final c = container();
+
+      final status = await resolve(c);
+      await pumpEventQueue();
+
+      expect(status.active, isTrue, reason: 'the free week still runs out');
+      expect(scheduler.cancelled, [TrialReminder.notificationId]);
+    });
+
+    test('a trial that will renew keeps it', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => _trialFromRevenueCat(willRenew: true));
+      await resolve(container());
+      await pumpEventQueue();
+      expect(scheduler.cancelled, isEmpty);
+    });
+
+    test('a stale cache at open, then RevenueCat pushes the cancellation: '
+        'cancelled on the push', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => _trialFromRevenueCat(willRenew: true));
+      final c = container();
+      await resolve(c);
+      expect(scheduler.cancelled, isEmpty);
+
+      capturedListener!(_trialFromRevenueCat(willRenew: false));
+      await pumpEventQueue();
+      expect(scheduler.cancelled, [TrialReminder.notificationId]);
+    });
+
+    test('no answer from RevenueCat cancels nothing', () async {
+      when(
+        () => service.fetchStatus(),
+      ).thenAnswer((_) async => SubscriptionStatus.none);
+      await resolve(container());
+      await pumpEventQueue();
+      expect(scheduler.cancelled, isEmpty);
     });
   });
 }

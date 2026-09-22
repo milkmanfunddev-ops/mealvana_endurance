@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
@@ -473,6 +474,9 @@ class NotificationService {
   /// keep several reminders alive at once (the meal-plan check-in and
   /// debrief) pass their own ids so one does not overwrite the other; the
   /// default keeps the legacy slots (1 recurring, 2 one-off).
+  ///
+  /// [payload] is what a tap hands back; without one, a reminder for an
+  /// [activityId] carries `reminder:<activityId>`.
   static Future<void> scheduleReminder({
     required DateTime scheduledDate,
     required bool recurring,
@@ -480,6 +484,7 @@ class NotificationService {
     required String body,
     String? activityId,
     int? id,
+    String? payload,
   }) async {
     if (!_isInitialized) {
       await initialize();
@@ -515,6 +520,8 @@ class NotificationService {
     );
 
     final scheduledTZ = tz.TZDateTime.from(scheduledDate, tz.local);
+    final tapPayload =
+        payload ?? (activityId != null ? 'reminder:$activityId' : null);
 
     if (activityId != null) {
       // Track both reminder_set and reminder_scheduled
@@ -541,7 +548,7 @@ class NotificationService {
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-        payload: activityId != null ? 'reminder:$activityId' : null,
+        payload: tapPayload,
       );
     } else {
       await _plugin.zonedSchedule(
@@ -551,7 +558,7 @@ class NotificationService {
         scheduledTZ,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: activityId != null ? 'reminder:$activityId' : null,
+        payload: tapPayload,
       );
     }
   }
@@ -707,3 +714,53 @@ class NotificationService {
 
   // Reminder fired tracking removed - using reminder_scheduled as proxy
 }
+
+/// One-off local notifications behind a seam, so a controller that schedules
+/// one can be tested with a fake instead of the platform plugin.
+abstract interface class LocalNotificationScheduler {
+  /// Schedule a one-off notification in slot [id] (replacing whatever the
+  /// slot held) at [when], local time. False when notifications are off for
+  /// the app or unsupported (web), in which case nothing was scheduled.
+  Future<bool> scheduleOnce({
+    required int id,
+    required DateTime when,
+    required String title,
+    required String body,
+    String? payload,
+  });
+
+  /// Cancel slot [id]; a no-op when nothing is scheduled there.
+  Future<void> cancel(int id);
+}
+
+/// The app's scheduler: [NotificationService] on the phone.
+class NotificationServiceScheduler implements LocalNotificationScheduler {
+  const NotificationServiceScheduler();
+
+  @override
+  Future<bool> scheduleOnce({
+    required int id,
+    required DateTime when,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    if (!await NotificationService.areNotificationsEnabled()) return false;
+    await NotificationService.scheduleReminder(
+      id: id,
+      scheduledDate: when,
+      recurring: false,
+      title: title,
+      body: body,
+      payload: payload,
+    );
+    return true;
+  }
+
+  @override
+  Future<void> cancel(int id) => NotificationService.cancelReminder(id);
+}
+
+final localNotificationSchedulerProvider = Provider<LocalNotificationScheduler>(
+  (_) => const NotificationServiceScheduler(),
+);
