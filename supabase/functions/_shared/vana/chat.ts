@@ -17,7 +17,8 @@ import { PLANNING_PROMPT, GENERAL_PROMPT, OPENERS, NEW_PLAN_OPENER, NEW_PLAN_STA
 import { completeCall, reserveCall } from './rate-limit.ts';
 import { readSummaries, writeSummary, writeOnIdle, defaultExtractDeps, defaultSummaryDeps, type ExtractDeps, type StoredSummary, type SummaryDeps } from './extract.ts';
 import { inViewSection, resolveSituation, type Situation } from './situation.ts';
-import { logCall } from './log.ts';
+import { asInputMode, callMetrics, logCall, type InputMode } from './log.ts';
+import { subscriberState } from './subscriber.ts';
 import { logAiUsage } from '../ai/usage.ts';
 import type { VanaPart, AthleteContext, ConversationSummary, ConversationKind } from './contracts.ts';
 import { getConversationPlan, getPlan, snapshotPlan } from './plan.ts';
@@ -258,7 +259,11 @@ export interface ChatBody { message?: string; conversation_id?: string | null; k
   /** With `opener` on a planning conversation: the athlete tapped "New meal plan" on the Plan tab. The plan opener wins over a
    *  check-in or debrief, the screen's Situation is replaced by NEW_PLAN_SITUATION, and the opener text forbids raising the plan
    *  the week already holds (it is archived by confirm_meal_plan when this one is confirmed, never at open). Ignored otherwise. */
-  new_plan?: boolean }
+  new_plan?: boolean;
+  /** `'tap' | 'typed'` — what the athlete did to send this message (mp-464 clause 7). Recorded on the call row so the
+   *  saving the fixed-label chips make is measurable against the chip taps that still cost a turn. Anything else, and
+   *  the scripted opener, is null: the request is never refused over it. */
+  input_mode?: string }
 export interface ChatRunOpts {
   /** `ai_usage.function_name` / log tag: 'vana-chat' | 'jade-chat'. */
   functionName: string;
@@ -266,6 +271,10 @@ export interface ChatRunOpts {
   persist?: boolean;
   /** Runs inside the onFinish persistence task after the usage rows are written (jade-chat's credit debit). */
   afterFinish?: (usage: { inputTokens: number; outputTokens: number }) => Promise<void>;
+  /** Whether this turn draws the athlete's budget (mp-420 clause 6) — the function's own `charged` decision, recorded on
+   *  the call row so "what did the budget actually pay for" is answerable. The scripted opener is not charged today; the
+   *  column is what will show that changing (spec: every call draws it down). Default false. */
+  debited?: boolean;
 }
 export type ChatOutcome = { ok: true; response: Response } | { ok: false; status: 400 | 429; body: Record<string, unknown> };
 
@@ -305,6 +314,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
   if (!body.opener && !message && messages.length) return { ok: false, status: 400, body: { error: 'message_required' } };
 
   const opener = messages.length === 0;
+  // What the athlete did to send this (mp-464 clause 7). The scripted opener is Vana speaking first, so it is neither a
+  // tap nor typed; a body that says nothing (an older build) is null rather than a guess at 'typed'.
+  const inputMode: InputMode | null = opener ? null : asInputMode(body.input_mode);
   // The bucket is the row, and the row goes in before the model (mp-430 clause 9): the reservation is this call's
   // `vana_calls` row, and `completeCall` writes its tokens when the turn finishes. An opener counts in its own bucket,
   // which is the one its row was always logged under.
@@ -382,6 +394,9 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       const u = totalUsage ?? usage;
       const inputTokens = u?.inputTokens ?? 0; const outputTokens = u?.outputTokens ?? 0;
       const cacheRead = cacheReadTokens(u) ?? 0;
+      // What the turn cost us, out of what the SDK handed back: the cache both directions, the steps, the FIRST step's
+      // prompt (the only one that can read the shared prefix from cache) and the gateway's own charge (mp-420 clause 6).
+      const metrics = callMetrics(steps as unknown[], u);
       const task = (async () => {
         try {
           if (persist) {
@@ -397,9 +412,14 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
           // The reservation IS this call's row; its tokens land on it. Only a reservation the log could not write
           // (the limiter failed open) needs a row of its own.
           const functionName = `${bucket}.${convKind}`;
-          if (callId) await completeCall(v.admin, callId, { inputTokens, outputTokens, cacheReadTokens: cacheRead, functionName, conversationId: convId || null });
-          else await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName, model: CHAT_MODEL, inputTokens, outputTokens, cacheReadTokens: cacheRead });
-          await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens });
+          // The plan and trial state as they stood at the call, read here and not on the athlete's path: this task
+          // already runs after the response (mp-285 leaves `user_entitlements` the only place to ask).
+          const sub = await subscriberState(v.admin, v.userId);
+          const cost = { ...metrics, debited: opts.debited === true, inputMode, subscriberPeriodType: sub.periodType, subscriberActiveUntil: sub.activeUntil };
+          if (callId) await completeCall(v.admin, callId, { inputTokens, outputTokens, functionName, conversationId: convId || null, ...cost });
+          else await logCall(v.admin, { userId: v.userId, conversationId: convId || null, functionName, model: CHAT_MODEL, inputTokens, outputTokens, ...cost });
+          // `ai_usage.cost_usd` exists for exactly this and was never filled from chat; the gateway's charge goes in both logs.
+          await logAiUsage(v.admin, { userId: v.userId, functionName: opts.functionName, model: CHAT_MODEL, inputTokens, outputTokens, costUsd: metrics.gatewayCostUsd ?? null });
           await opts.afterFinish?.({ inputTokens, outputTokens });
           console.log(`${tag} onFinish user=${v.userId} conv=${convId || '(ephemeral)'} in=${inputTokens} cache_read=${cacheRead} out=${outputTokens} steps=${steps.length} ${Date.now() - started}ms`);
         } catch (e) { console.error(`${tag} onFinish task failed:`, (e as Error).message); }

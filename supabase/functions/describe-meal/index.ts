@@ -262,6 +262,11 @@ Return your answer as structured JSON matching the requested schema.`,
       completeCall(serviceClient, reserved.callId, {
         inputTokens: usage?.inputTokens ?? 0,
         outputTokens: usage?.outputTokens ?? 0,
+        // The gateway's own charge and the fact that this call drew the athlete's budget
+        // (ai-cost ticket 05): "cost per athlete" has to include logging a meal, not only chat.
+        steps: 1,
+        gatewayCostUsd: costUsd,
+        debited: true,
       }),
     );
     // Also record in the canonical, prod-safe ai_usage ledger (used for
