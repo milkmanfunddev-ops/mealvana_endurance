@@ -22,6 +22,7 @@ import '../../../subscription/application/pro_gate.dart';
 import '../../../subscription/application/pro_paywall_controller.dart';
 import '../../../subscription/presentation/pro_gate_redirect.dart';
 import '../../application/auth_service.dart';
+import '../../application/grace_claim_service.dart';
 import '../providers/post_onboarding_auth_controller.dart';
 import '../../domain/auth_exceptions.dart';
 import '../../../coach_mode/application/coach_service.dart';
@@ -55,9 +56,16 @@ class PostOnboardingAuthScreen extends ConsumerStatefulWidget {
 
 class _PostOnboardingAuthScreenState
     extends ConsumerState<PostOnboardingAuthScreen> {
+  /// Whether this screen opened on an install left anonymous from before the
+  /// paywall (mp-455 §4). Taken once, on arrival: after the link the session
+  /// is no longer anonymous, and the email path reports back later.
+  late final bool _openedOnOldAnonymousInstall;
+
   @override
   void initState() {
     super.initState();
+    _openedOnOldAnonymousInstall =
+        widget.mode != 'login' && _linksOldAnonymousInstall;
 
     ref
         .read(appExternalDepsProvider)
@@ -105,7 +113,10 @@ class _PostOnboardingAuthScreenState
       if (isLogin) {
         await _navigateToMain();
       } else if (linksOldInstall) {
-        await _saveOnboardingDataAndNavigate(authProvider: 'apple');
+        await _saveOnboardingDataAndNavigate(
+          authProvider: 'apple',
+          claimGrace: true,
+        );
       } else {
         // A new account takes the waiting draft; an existing, set-up account
         // keeps its own settings.
@@ -137,7 +148,10 @@ class _PostOnboardingAuthScreenState
       if (isLogin) {
         await _navigateToMain();
       } else if (linksOldInstall) {
-        await _saveOnboardingDataAndNavigate(authProvider: 'google');
+        await _saveOnboardingDataAndNavigate(
+          authProvider: 'google',
+          claimGrace: true,
+        );
       } else {
         // A new account takes the waiting draft; an existing, set-up account
         // keeps its own settings.
@@ -342,7 +356,11 @@ class _PostOnboardingAuthScreenState
         // Finish without discarding any onboarding draft still in memory.
         await _finishLoginPreservingDraft(authProvider: 'email');
       case EmailAuthKind.signup:
-        await _saveOnboardingDataAndNavigate(authProvider: 'email');
+        // The email screen links onto the anonymous user when there is one.
+        await _saveOnboardingDataAndNavigate(
+          authProvider: 'email',
+          claimGrace: _openedOnOldAnonymousInstall,
+        );
     }
   }
 
@@ -398,8 +416,12 @@ class _PostOnboardingAuthScreenState
   /// Write the waiting onboarding draft to the signed-in account and move
   /// on to the paywall. Saves locally, then uploads in the background.
   /// [authProvider] - 'email', 'google', 'apple'
+  /// [claimGrace] - the sign-up just linked onto an install left anonymous
+  /// from before the paywall: claim its grace month (mp-455 §4) before the
+  /// gate is settled, so a granted account moves on into the app.
   Future<void> _saveOnboardingDataAndNavigate({
     required String authProvider,
+    bool claimGrace = false,
   }) async {
     final logger = ref.read(appExternalDepsProvider).logger;
     final onboardingController = ref.read(
@@ -409,6 +431,7 @@ class _PostOnboardingAuthScreenState
     // `ref.read` after that point can throw on a disposed ConsumerState.
     final syncCoordinator = ref.read(syncCoordinatorProvider.notifier);
     final contentService = ref.read(contentServiceProvider);
+    final graceClaim = claimGrace ? ref.read(graceClaimServiceProvider) : null;
     // For the post-sync macro-cache bust below. The container (not `ref`) is
     // captured because the background upload outlives this screen, and the
     // root container outlives every screen. The macro repository itself is
@@ -440,6 +463,8 @@ class _PostOnboardingAuthScreenState
 
         // The identity fields were already flipped (locally and in Supabase)
         // by AuthMigrationService.completeAuthentication during the link.
+        await graceClaim?.claim();
+        if (!mounted) return;
         await ref.read(appGateProvider.notifier).settle();
         if (!mounted) return;
         context.go('/main');
@@ -500,6 +525,8 @@ class _PostOnboardingAuthScreenState
       // moves an already-unlocked account (admin, restored) on to /main. The
       // upload below still runs if this screen was disposed during the
       // lookup above — the data is saved either way and must reach Supabase.
+      if (!mounted) return;
+      await graceClaim?.claim();
       if (!mounted) return;
       await ref.read(appGateProvider.notifier).settle();
       if (mounted) context.go(kOnboardingPaywallLocation);
@@ -635,6 +662,14 @@ class _PostOnboardingAuthScreenState
         context,
         isLoading: asyncState.isLoading,
         isLogin: isLogin,
+        // An old anonymous install sent here by the router (mp-455) has no
+        // onboarding to go back to and no account yet: sign-up is the way on.
+        showBack:
+            !(_openedOnOldAnonymousInstall &&
+                !context.canPop() &&
+                !ref
+                    .read(onboardingControllerProvider.notifier)
+                    .hasCompletedProfileDraft),
       ),
       contentWidth: AdaptiveContentWidth.narrow,
       body: Stack(
@@ -803,6 +838,7 @@ class _PostOnboardingAuthScreenState
     BuildContext context, {
     bool isLoading = false,
     bool isLogin = false,
+    bool showBack = true,
   }) {
     return AppBar(
       backgroundColor: Colors.transparent,
@@ -813,57 +849,58 @@ class _PostOnboardingAuthScreenState
         children: [
           // Back button (disabled during loading) — spec: the same 32px
           // cream-10% chevron circle as the onboarding step headers.
-          Opacity(
-            opacity: isLoading ? 0.5 : 1.0,
-            child: InkWell(
-              key: ValueKey(
-                isLogin
-                    ? 'login_options.back_button'
-                    : 'create_account.back_button',
-              ),
-              customBorder: const CircleBorder(),
-              onTap: isLoading
-                  ? null
-                  : () {
-                      // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
-                      // reached via context.go() (post-onboarding flow) as
-                      // well as push(), so guard against GoError "There is
-                      // nothing to pop". The go() arrival replaces the stack,
-                      // so in the redesigned flow canPop() is false for EVERY
-                      // new user landing here — the fallback must return to
-                      // the flow they came from, not /main: going to /main
-                      // would silently abandon all nine onboarding steps
-                      // before saveAllOnboardingData ever runs.
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        // Nothing to pop. LOGIN mode: the person is not
-                        // signed in and just asked to go back, so /main
-                        // would strand an unauthenticated user in the app.
-                        // SIGNUP mode: return to the flow AT ITS LAST PAGE
-                        // (?page=last) — a bare /onboarding builds a fresh
-                        // PageView at page 0, rewinding the athlete nine
-                        // answered steps when they were one tap from saving.
-                        context.go(
-                          isLogin ? '/welcome' : '/onboarding?page=last',
-                        );
-                      }
-                    },
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: OnbTokens.creamA(0.1),
-                  shape: BoxShape.circle,
+          if (showBack)
+            Opacity(
+              opacity: isLoading ? 0.5 : 1.0,
+              child: InkWell(
+                key: ValueKey(
+                  isLogin
+                      ? 'login_options.back_button'
+                      : 'create_account.back_button',
                 ),
-                child: Icon(
-                  Icons.chevron_left,
-                  size: 18,
-                  color: OnbTokens.creamA(0.8),
+                customBorder: const CircleBorder(),
+                onTap: isLoading
+                    ? null
+                    : () {
+                        // Sentry MEALVANA-ENDURANCE-DEV-5R: this screen can be
+                        // reached via context.go() (post-onboarding flow) as
+                        // well as push(), so guard against GoError "There is
+                        // nothing to pop". The go() arrival replaces the stack,
+                        // so in the redesigned flow canPop() is false for EVERY
+                        // new user landing here — the fallback must return to
+                        // the flow they came from, not /main: going to /main
+                        // would silently abandon all nine onboarding steps
+                        // before saveAllOnboardingData ever runs.
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          // Nothing to pop. LOGIN mode: the person is not
+                          // signed in and just asked to go back, so /main
+                          // would strand an unauthenticated user in the app.
+                          // SIGNUP mode: return to the flow AT ITS LAST PAGE
+                          // (?page=last) — a bare /onboarding builds a fresh
+                          // PageView at page 0, rewinding the athlete nine
+                          // answered steps when they were one tap from saving.
+                          context.go(
+                            isLogin ? '/welcome' : '/onboarding?page=last',
+                          );
+                        }
+                      },
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: OnbTokens.creamA(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.chevron_left,
+                    size: 18,
+                    color: OnbTokens.creamA(0.8),
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

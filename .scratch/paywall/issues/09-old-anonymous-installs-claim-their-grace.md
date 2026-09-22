@@ -11,8 +11,8 @@
 
 **Touches:** supabase/functions/grace-claim, supabase/functions/_shared/grace, lib/features/auth/presentation/screens/post_onboarding_auth_screen.dart, lib/features/auth/application
 
-- [ ] The claim grants only to an anonymous user created before the flip with no grant (handler test).
-- [ ] Sign-up links onto the old user and keeps its data (seam test).
+- [x] The claim grants only to an anonymous user created before the flip with no grant (handler test).
+- [x] Sign-up links onto the old user and keeps its data (seam test).
 - [ ] Checked on the dev simulator with an old anonymous session.
 
 Next: /implement-lee paywall

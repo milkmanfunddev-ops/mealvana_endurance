@@ -21,6 +21,7 @@ import '../../features/onboarding/presentation/screens/allergies_screen.dart';
 import '../../features/onboarding/presentation/screens/running_details_screen.dart';
 import '../../features/onboarding/presentation/screens/cycling_details_screen.dart';
 import '../../features/onboarding/presentation/screens/swimming_details_screen.dart';
+import '../../features/auth/presentation/old_install_redirect.dart';
 import '../../features/auth/presentation/screens/post_onboarding_auth_screen.dart';
 import '../../features/auth/presentation/screens/email_signup_screen.dart';
 import '../../features/auth/presentation/screens/email_login_screen.dart';
@@ -201,6 +202,15 @@ class AppRouter {
           if (supabase.auth.currentSession == null) {
             return '/welcome';
           }
+          // An install left anonymous from before the paywall (mp-455 §4)
+          // signs up before anything else: the account screen links onto
+          // its user and claims the grace month. Asked before the gate, so
+          // it never meets the paywall as an anonymous user.
+          final oldInstall = oldAnonymousInstallRedirect(
+            path: currentPath,
+            anonymous: supabase.auth.currentUser?.isAnonymous ?? false,
+          );
+          if (oldInstall != null) return oldInstall;
           // The app gate (mp-280): every signed-in route is behind the one
           // subscription gate. `readAppGate` answers from the settled status
           // at once, or waits for the status controller's bounded resolve

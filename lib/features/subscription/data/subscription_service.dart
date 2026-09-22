@@ -125,6 +125,19 @@ class SubscriptionService {
     }
   }
 
+  /// Drop the SDK's cached CustomerInfo so the next [fetchStatus] asks
+  /// RevenueCat. For access granted on the server (the grace claim, mp-455):
+  /// the cache still holds the answer from before the grant.
+  Future<void> forgetCachedStatus() async {
+    if (!isAvailable) return;
+    try {
+      await Purchases.invalidateCustomerInfoCache();
+      _crumb('customer info cache invalidated');
+    } catch (e, st) {
+      _report('invalidateCustomerInfoCache failed', e, stackTrace: st);
+    }
+  }
+
   /// Register (or replace) the app-level status listener. RevenueCat calls
   /// it whenever CustomerInfo changes — purchase, renewal, expiry, restore —
   /// which is how the gate reacts to a refresh (mp-284).
