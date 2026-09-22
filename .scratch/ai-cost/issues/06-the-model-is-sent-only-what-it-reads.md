@@ -1,6 +1,6 @@
 # 06: The model is sent only what it reads
 
-**Status:** in-progress (wave 4, 2026-09-22)
+**Status:** done (wave 4, 2026-09-22)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/tools.ts), 04 (touches supabase/functions/_shared/vana/chat.ts), 05 (touches supabase/functions/_shared/vana/chat.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** fable
