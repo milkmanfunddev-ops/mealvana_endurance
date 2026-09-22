@@ -12,7 +12,7 @@
 **Touches:** supabase/migrations, supabase/functions/redeem-code
 
 - [ ] The `codes` table exists on dev with type, owner, validity window and perk; only the service role writes it.
-- [ ] Each code type and each refusal is covered by a handler test with a fake REST client and database.
+- [x] Each code type and each refusal is covered by a handler test with a fake REST client and database.
 - [ ] Deployed to dev and a coach code redeemed by curl grants `pro`.
 
 Next: /implement-lee paywall
