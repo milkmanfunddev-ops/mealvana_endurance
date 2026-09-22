@@ -39,11 +39,39 @@ export interface AuthUser {
   created_at: string;
   is_anonymous?: boolean;
   deleted_at?: string | null;
+  /** Sign-in identities. An anonymous user has none; linking one adds one. */
+  identities?: { provider?: string; created_at?: string | null }[] | null;
 }
 
 export function predatesFlip(user: AuthUser, flipAt: Date): boolean {
   const created = Date.parse(user.created_at);
   return Number.isFinite(created) && created < flipAt.getTime();
+}
+
+/**
+ * Whether [user] was still anonymous when the paywall switched on: it holds
+ * no sign-in identity attached before the flip. GoTrue gives an anonymous
+ * user no identity row and adds one when it links an email, Apple or Google
+ * (checked on dev 2026-09-22: 891 anonymous users, 0 identities). An
+ * identity with no readable date is taken as attached before the flip, so an
+ * unreadable account is left to the flip-day run rather than granted twice.
+ */
+export function anonymousAtFlip(user: AuthUser, flipAt: Date): boolean {
+  return !(user.identities ?? []).some((i) => {
+    if (i.provider === 'anonymous') return false;
+    const at = Date.parse(i.created_at ?? '');
+    return !Number.isFinite(at) || at < flipAt.getTime();
+  });
+}
+
+/**
+ * Who the claim (ticket 09, mp-455 §4) is for: an install created before the
+ * flip that was still anonymous at the flip, and has signed up since. Every
+ * account registered at the flip is the flip-day run's (selectGraceAccounts);
+ * the claim covers only the installs that run could not see.
+ */
+export function claimsGrace(user: AuthUser, flipAt: Date): boolean {
+  return isRegistered(user) && predatesFlip(user, flipAt) && anonymousAtFlip(user, flipAt);
 }
 
 export function isRegistered(user: AuthUser): boolean {
