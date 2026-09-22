@@ -1,6 +1,6 @@
 # 07: The cache reads everything that repeats
 
-**Status:** in-progress (wave 5, 2026-09-22)
+**Status:** done (wave 5, 2026-09-22)
 **Blocked by:** 02 (touches supabase/functions/_shared/vana/chat.ts), 04 (touches supabase/functions/_shared/vana/chat.ts), 05 (touches supabase/functions/_shared/vana/chat.ts), 06 (touches supabase/functions/_shared/vana/chat.ts).
 **Next:** `/implement-lee ai-cost`
 **Model:** fable

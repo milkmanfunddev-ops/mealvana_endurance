@@ -1,6 +1,6 @@
 # 10: The athlete sees a share of the month, never dollars
 
-**Status:** in-progress (wave 5, 2026-09-22)
+**Status:** done (wave 5, 2026-09-22)
 **Blocked by:** 02 (touches lib/features/ai_credits), 04 (touches assets/config/content_defaults.json), 09.
 **Next:** `/implement-lee ai-cost`
 **Model:** opus
