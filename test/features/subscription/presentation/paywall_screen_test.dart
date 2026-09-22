@@ -326,6 +326,31 @@ void main() {
       expect(tester.hasRunningAnimations, isFalse);
     });
 
+    testWidgets('iOS Reduce Motion: the first frame, straight on the '
+        'features', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(reduceMotion: true);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
+      var made = 0;
+      await pumpPaywall(
+        tester,
+        overrides: _overrides(
+          clip: () {
+            made++;
+            return FakePhoneClipPlayer();
+          },
+        ),
+      );
+      await tester.pump();
+      expect(made, 0);
+      expect(find.byKey(clip), findsNothing);
+      expect(find.byKey(still), findsOneWidget);
+      expect(find.byKey(features), findsOneWidget);
+      expect(find.byKey(close), findsOneWidget);
+    });
+
     testWidgets('four headline features, the divider, then the rest, with '
         'the AI features on the one Vana line', (tester) async {
       await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());

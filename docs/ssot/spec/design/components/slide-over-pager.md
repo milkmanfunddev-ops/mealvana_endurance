@@ -19,7 +19,9 @@ inherits. No colour of its own.
   (cubic) curve. The first page drifts back a third as far (parallax) and dims under the scrim up
   to its full 60 %.
 - **SOP-3 — Reduce Motion jumps.** With Reduce Motion on (or when the owner asks for no animation)
-  the second page is there on the next frame, with no slide and no fade.
+  the second page is there on the next frame, with no slide and no fade. Reduce Motion means
+  either the platform's "disable animations" or iOS's Reduce Motion switch, which Flutter reports
+  separately; both count.
 - **SOP-4 — one page at a time.** Nothing takes a tap during the move. Once it ends the first page
   leaves the tree, so whatever it was playing stops and it is gone from the screen reader. A pager
   that starts on the second page never builds the first.

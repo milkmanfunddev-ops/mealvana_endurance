@@ -14,7 +14,8 @@
 /// * **SOP-2** — the move takes [duration] on an ease-out curve; the first
 ///   page moves a third as far as the second (parallax) and dims.
 /// * **SOP-3** — Reduce Motion (or [animate] false) jumps: the second page is
-///   there on the next frame, no slide.
+///   there on the next frame, no slide. Reduce Motion is read by
+///   [SlideOverPager.reduceMotionOf], which covers iOS's own flag.
 /// * **SOP-4** — only the visible page is in the tree for input and
 ///   semantics; once the move ends the first page is removed, so whatever it
 ///   was playing stops.
@@ -46,6 +47,18 @@ class SlideOverPager extends StatefulWidget {
   /// SOP-2.
   final Duration duration;
 
+  /// Whether the person asked for less motion: the platform's "disable
+  /// animations" (Android, and a test's MediaQuery) or iOS Reduce Motion.
+  /// Flutter reports iOS Reduce Motion only as
+  /// `AccessibilityFeatures.reduceMotion`, which [MediaQueryData] does not
+  /// carry, so both are read.
+  static bool reduceMotionOf(BuildContext context) =>
+      (MediaQuery.maybeDisableAnimationsOf(context) ?? false) ||
+      (View.maybeOf(
+            context,
+          )?.platformDispatcher.accessibilityFeatures.reduceMotion ??
+          false);
+
   static const firstKey = ValueKey('slide_over_pager.first');
   static const secondKey = ValueKey('slide_over_pager.second');
 
@@ -72,8 +85,7 @@ class _SlideOverPagerState extends State<SlideOverPager>
   void didUpdateWidget(covariant SlideOverPager old) {
     super.didUpdateWidget(old);
     if (!widget.showSecond || _moved) return; // SOP-1
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (!widget.animate || reduceMotion) {
+    if (!widget.animate || SlideOverPager.reduceMotionOf(context)) {
       _move.value = 1; // SOP-3
     } else {
       _move.forward();

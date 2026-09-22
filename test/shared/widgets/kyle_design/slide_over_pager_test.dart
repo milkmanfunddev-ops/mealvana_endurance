@@ -134,6 +134,19 @@ void main() {
     expect(tester.hasRunningAnimations, isFalse);
   });
 
+  testWidgets('SOP-3 iOS Reduce Motion (the platform flag) jumps', (
+    tester,
+  ) async {
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(reduceMotion: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.pumpWidget(app(showSecond: false));
+    await tester.pumpWidget(app(showSecond: true));
+    await tester.pump();
+    expect(tester.getTopLeft(find.byKey(_second)).dx, 0);
+    expect(find.byKey(_first), findsNothing);
+  });
+
   testWidgets('SOP-3 animate: false jumps', (tester) async {
     await tester.pumpWidget(app(showSecond: false, animate: false));
     await tester.pumpWidget(app(showSecond: true, animate: false));

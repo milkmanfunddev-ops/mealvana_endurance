@@ -561,7 +561,7 @@ class _PaywallPagesState extends State<_PaywallPages> {
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final reduceMotion = SlideOverPager.reduceMotionOf(context);
     return SlideOverPager(
       showSecond: _clipDone || reduceMotion,
       first: GestureDetector(
