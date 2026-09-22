@@ -1,6 +1,6 @@
 # 06: The grace month, granted on flip day
 
-**Status:** in-progress (wave 2, 2026-09-22)
+**Status:** done (wave 2, 2026-09-22)
 **Blocked by:** 01.
 **Next:** `/implement-lee paywall`
 **Model:** opus
@@ -13,6 +13,6 @@
 
 - [x] The dry run lists accounts and a count and writes nothing.
 - [x] The write run grants 30 days and sets `founding_member`; a second run grants nobody (selection tested with a fake database).
-- [ ] Run on dev; a granted dev account opens the app and its row is active.
+- [x] Run on dev; a granted dev account opens the app and its row is active.
 
 Next: /implement-lee paywall

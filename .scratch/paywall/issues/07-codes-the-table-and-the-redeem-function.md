@@ -1,6 +1,6 @@
 # 07: Codes: the table and the redeem function
 
-**Status:** in-progress (wave 2, 2026-09-22)
+**Status:** done (wave 2, 2026-09-22)
 **Blocked by:** 01.
 **Next:** `/implement-lee paywall`
 **Model:** opus
@@ -11,8 +11,8 @@
 
 **Touches:** supabase/migrations, supabase/functions/redeem-code
 
-- [ ] The `codes` table exists on dev with type, owner, validity window and perk; only the service role writes it.
+- [x] The `codes` table exists on dev with type, owner, validity window and perk; only the service role writes it.
 - [x] Each code type and each refusal is covered by a handler test with a fake REST client and database.
-- [ ] Deployed to dev and a coach code redeemed by curl grants `pro`.
+- [x] Deployed to dev and a coach code redeemed by curl grants `pro`.
 
 Next: /implement-lee paywall

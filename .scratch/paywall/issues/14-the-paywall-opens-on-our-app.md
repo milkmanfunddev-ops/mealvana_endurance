@@ -1,6 +1,6 @@
 # 14: The paywall opens on our app
 
-**Status:** in-progress (wave 2, 2026-09-22)
+**Status:** done (wave 2, 2026-09-22)
 **Blocked by:** 03 (touches lib/features/subscription/presentation/screens/paywall_screen.dart).
 **Next:** `/implement-lee paywall`
 **Model:** opus
