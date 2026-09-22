@@ -2480,7 +2480,7 @@ Last extracted: 1dedc493
 - screen: none (the RevenueCat webhook)
 - source: wave ai-cost 4 ticket 09
 
-**Context.** The production webhook takes every environment by ruling, and testers get in on a production release by a free TestFlight subscription, which is a sandbox event (mp-431). A sandbox pack purchase on production would then add real budget for free. Nothing in the webhook filters on the event's environment; the dev-only drop rule from mp-533 covers the other direction (dev ignoring real purchases).
+**Context.** The production webhook takes every environment by ruling, and testers get in on a production release by a free TestFlight subscription, which is a sandbox event (mp-431). A sandbox pack purchase on production would then add real budget for free. Nothing in the webhook grants differently by the event's environment; what dev does with production events is a separate, rejected card (mp-533) and not this question.
 
 **Question.** Should a sandbox event on production grant the same budget as a real one? Three options: sandbox events grant a smaller tester budget; sandbox subscriptions grant the month but sandbox pack purchases grant nothing; accept it, since the testers are ours.
 
