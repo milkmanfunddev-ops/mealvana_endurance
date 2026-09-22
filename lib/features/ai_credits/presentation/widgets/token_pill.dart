@@ -68,8 +68,7 @@ class TokenPill extends ConsumerWidget {
             const SizedBox(width: 7),
             Text(
               switch (wallet) {
-                AsyncData() =>
-                  '${percentOf((left ?? 0).clamp(0.0, 9.99))}%',
+                AsyncData() => '${percentOf((left ?? 0).clamp(0.0, 9.99))}%',
                 AsyncError() => '–',
                 _ => '…',
               },
