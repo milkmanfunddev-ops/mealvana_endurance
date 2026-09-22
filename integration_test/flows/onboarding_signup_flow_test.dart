@@ -146,23 +146,30 @@ void main() {
       await $(const ValueKey('signup_email.create_account_button')).tap();
 
       // ---- Landed on the paywall's onboarding shape with the plan saved --
-      // (a new account has no entitlement; Restore is the only action
-      // beside the plans — mp-297, mp-417).
+      // (a new account has no entitlement). The ⋯ button arrives with the
+      // plans after the opening clip; its menu carries Restore, Sign out and
+      // Delete account in the onboarding shape too (mp-494 §2).
       await $(
-        const ValueKey('paywall.restore_button'),
+        const ValueKey('paywall.more_button'),
       ).waitUntilVisible(timeout: const Duration(seconds: 40));
       expect(
-        $(const ValueKey('paywall.restore_button')),
+        $(const ValueKey('paywall.continue_button')),
         findsOneWidget,
         reason:
             'Expected the paywall after signup. If this fails, the signup '
             'round-trip did not complete or the post-signup redirect changed.',
       );
-      expect(
-        $(const ValueKey('paywall.sign_out_button')),
-        findsNothing,
-        reason: 'The onboarding shape carries no account actions.',
-      );
+      await $(const ValueKey('paywall.more_button')).tap();
+      await $.pumpAndSettle();
+      for (final key in const [
+        ValueKey('paywall.restore_button'),
+        ValueKey('paywall.sign_out_button'),
+        ValueKey('paywall.delete_account_button'),
+      ]) {
+        expect($(key), findsOneWidget, reason: 'paywall menu carries $key');
+      }
+      await $.tester.tapAt(const Offset(20, 700));
+      await $.pumpAndSettle();
       expect(
         find.textContaining('Failed to save'),
         findsNothing,

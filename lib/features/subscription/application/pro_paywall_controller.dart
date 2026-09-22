@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -96,6 +97,29 @@ class PaywallPlans {
     if (regular.storeProduct.price <= pkg.storeProduct.price) return null;
     return regular.storeProduct.priceString;
   }
+
+  /// What the annual plan saves over twelve months of the monthly plan sold
+  /// beside it, in whole percent rounded down (never overstated), from the
+  /// store's prices (mp-493 §3). Null when either plan is missing or there
+  /// is no saving.
+  int? get annualSavingPercent {
+    final m = monthly?.storeProduct.price;
+    final a = annual?.storeProduct.price;
+    if (m == null || a == null || m <= 0) return null;
+    final percent = ((1 - a / (m * 12)) * 100).floor();
+    return percent > 0 ? percent : null;
+  }
+
+  /// The annual plan's price over twelve, in the store's currency
+  /// ("$16.67"). Null when there is no annual plan.
+  String? annualPerMonthPrice([String? locale]) {
+    final product = annual?.storeProduct;
+    if (product == null) return null;
+    return NumberFormat.simpleCurrency(
+      locale: locale,
+      name: product.currencyCode,
+    ).format(product.price / 12);
+  }
 }
 
 Package? _monthlyOf(Offering? o) =>
@@ -135,6 +159,13 @@ Future<PaywallPlans> paywallPlans(Ref ref) async {
     regularAnnual: isFounding ? _annualOf(regularOffering) : null,
   );
 }
+
+/// Whether this account has a store subscription to manage, running or
+/// ended: the paywall's ⋯ menu offers Manage subscription only then
+/// (mp-494 §1). A restore asks again.
+@riverpod
+Future<bool> paywallHasSubscription(Ref ref) =>
+    ref.read(subscriptionServiceProvider).hasStoreSubscriptionOnRecord();
 
 /// Drives purchase, restore and "manage subscription" for the paywall.
 ///
@@ -231,6 +262,9 @@ class ProPaywallController extends _$ProPaywallController {
       await _service.restore();
       active = (await _refreshStatus()).active;
     });
+    // A restore can bring a subscription onto this account: Manage may now
+    // belong in the menu.
+    ref.invalidate(paywallHasSubscriptionProvider);
     return active;
   }
 

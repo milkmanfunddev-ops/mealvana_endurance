@@ -272,6 +272,72 @@ void main() {
     });
   });
 
+  group('the annual plan beside the monthly one (mp-493 §3)', () {
+    final defaults = offeringFixture('default');
+    final founding = offeringFixture('founding');
+
+    test('default: save 33% and \$16.67 a month, from the store prices', () {
+      final plans = PaywallPlans(
+        monthly: defaults.monthly,
+        annual: defaults.annual,
+      );
+      expect(plans.annualSavingPercent, 33);
+      expect(plans.annualPerMonthPrice(), r'$16.67');
+    });
+
+    test('founding: the founding prices set both, \$8.33 a month', () {
+      final plans = PaywallPlans(
+        monthly: founding.monthly,
+        annual: founding.annual,
+        isFounding: true,
+        regularMonthly: defaults.monthly,
+        regularAnnual: defaults.annual,
+      );
+      expect(plans.annualSavingPercent, 33);
+      expect(plans.annualPerMonthPrice(), r'$8.33');
+    });
+
+    test('no monthly plan: no saving to claim; no annual: neither', () {
+      expect(PaywallPlans(annual: defaults.annual).annualSavingPercent, isNull);
+      expect(
+        PaywallPlans(annual: defaults.annual).annualPerMonthPrice(),
+        r'$16.67',
+      );
+      expect(
+        PaywallPlans(monthly: defaults.monthly).annualSavingPercent,
+        isNull,
+      );
+      expect(
+        PaywallPlans(monthly: defaults.monthly).annualPerMonthPrice(),
+        isNull,
+      );
+    });
+  });
+
+  group('paywallHasSubscription (mp-494 §1)', () {
+    test('answers from the store record', () async {
+      when(
+        () => service.hasStoreSubscriptionOnRecord(),
+      ).thenAnswer((_) async => true);
+      expect(
+        await container().read(paywallHasSubscriptionProvider.future),
+        isTrue,
+      );
+    });
+
+    test('a restore asks again', () async {
+      var answers = 0;
+      when(() => service.hasStoreSubscriptionOnRecord()).thenAnswer((_) async {
+        answers += 1;
+        return answers > 1;
+      });
+      final c = container();
+      expect(await c.read(paywallHasSubscriptionProvider.future), isFalse);
+      await c.read(proPaywallControllerProvider.notifier).restore();
+      expect(await c.read(paywallHasSubscriptionProvider.future), isTrue);
+    });
+  });
+
   group('buy', () {
     test('a confirmed purchase re-asserts the identity, refreshes the status '
         'and reports activated once the SDK says active', () async {

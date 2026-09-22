@@ -84,9 +84,6 @@
     "annual_label": "Annual",
     "per_month": "{price} / month",
     "per_year": "{price} / year",
-    "intro_line": "{days} days free, then {price}",
-    "start_trial_button": "Start trial",
-    "subscribe_button": "Subscribe",
     "restore_button": "Restore purchases",
     "manage_button": "Manage subscription",
     "sign_out_button": "Sign out",
@@ -129,7 +126,11 @@
     "feature_brick": "Brick and multi-leg workouts",
     "feature_hydration": "Hydration checks for long sessions",
     "feature_formulas": "Your own fuel formulas",
-    "feature_targets": "Daily calorie and macro targets"
+    "feature_targets": "Daily calorie and macro targets",
+    "continue_button": "Continue",
+    "plan_trial": "{days} days free",
+    "annual_saving": "Save {percent}%",
+    "per_month_equivalent": "{price} a month"
   },
   "main_screen": {
     "title": "Mealvana Endurance",
