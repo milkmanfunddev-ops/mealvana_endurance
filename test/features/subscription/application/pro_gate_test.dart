@@ -1,6 +1,7 @@
-/// Unit tests for the app gate ([computeUnlocked] / `appGateProvider` /
-/// [readAppGate]). The gate is the status, or a team admin: no build flag,
-/// no tester grant, no coach branch (mp-279, mp-286).
+/// Unit tests for the app gate ([computeAccess] / `appGateProvider` /
+/// [readAppGate] / `writeAccessProvider`). The gate answers open (the
+/// status, or a team admin), lapsed (held `pro` once) or never (mp-457); no
+/// build flag, no tester grant, no coach branch (mp-279, mp-286).
 library;
 
 import 'dart:async';
@@ -16,7 +17,11 @@ import 'package:mealvana_endurance/shared/providers/is_admin_provider.dart';
 const _active = SubscriptionStatus(
   active: true,
   source: SubscriptionSource.revenuecat,
+  hadPro: true,
 );
+
+/// `pro` held once and expired.
+const _lapsed = SubscriptionStatus(active: false, hadPro: true);
 
 /// A status controller pinned to one value — how widget/router tests stub
 /// the subscription without RevenueCat.
@@ -44,18 +49,35 @@ class _MutableStatus extends SubscriptionStatusController {
 }
 
 void main() {
-  group('computeUnlocked', () {
-    test('active → unlocked', () {
-      expect(computeUnlocked(_active, isAdmin: false), isTrue);
+  group('computeAccess', () {
+    test('active → open', () {
+      expect(computeAccess(_active, isAdmin: false), AppAccess.open);
     });
 
-    test('none → locked', () {
-      expect(computeUnlocked(SubscriptionStatus.none, isAdmin: false), isFalse);
+    test('held once and expired → lapsed', () {
+      expect(computeAccess(_lapsed, isAdmin: false), AppAccess.lapsed);
     });
 
-    test('an admin is unlocked whatever the status', () {
-      expect(computeUnlocked(SubscriptionStatus.none, isAdmin: true), isTrue);
-      expect(computeUnlocked(_active, isAdmin: true), isTrue);
+    test('none → never', () {
+      expect(
+        computeAccess(SubscriptionStatus.none, isAdmin: false),
+        AppAccess.never,
+      );
+    });
+
+    test('an admin is open whatever the status', () {
+      for (final s in [SubscriptionStatus.none, _lapsed, _active]) {
+        expect(computeAccess(s, isAdmin: true), AppAccess.open, reason: '$s');
+      }
+    });
+
+    test('only open writes; lapsed and open enter the app', () {
+      expect(AppAccess.open.canWrite, isTrue);
+      expect(AppAccess.lapsed.canWrite, isFalse);
+      expect(AppAccess.never.canWrite, isFalse);
+      expect(AppAccess.open.entersApp, isTrue);
+      expect(AppAccess.lapsed.entersApp, isTrue);
+      expect(AppAccess.never.entersApp, isFalse);
     });
   });
 
@@ -76,12 +98,17 @@ void main() {
 
     test('reflects an active status once resolved', () async {
       final c = container(() => _FixedStatus(_active));
-      expect(await c.read(appGateProvider.future), isTrue);
+      expect(await c.read(appGateProvider.future), AppAccess.open);
     });
 
-    test('reflects a locked status once resolved', () async {
+    test('reflects a never status once resolved', () async {
       final c = container(() => _FixedStatus(SubscriptionStatus.none));
-      expect(await c.read(appGateProvider.future), isFalse);
+      expect(await c.read(appGateProvider.future), AppAccess.never);
+    });
+
+    test('reflects a lapsed status once resolved', () async {
+      final c = container(() => _FixedStatus(_lapsed));
+      expect(await c.read(appGateProvider.future), AppAccess.lapsed);
     });
 
     test('an admin with no subscription is unlocked', () async {
@@ -89,7 +116,7 @@ void main() {
         () => _FixedStatus(SubscriptionStatus.none),
         admin: (_) async => true,
       );
-      expect(await c.read(appGateProvider.future), isTrue);
+      expect(await c.read(appGateProvider.future), AppAccess.open);
     });
 
     test('an admin read that never answers locks within the bound', () async {
@@ -105,7 +132,7 @@ void main() {
         ],
       );
       addTearDown(c.dispose);
-      expect(await c.read(appGateProvider.future), isFalse);
+      expect(await c.read(appGateProvider.future), AppAccess.never);
     });
 
     test('is loading while the status is unresolved, then settles', () async {
@@ -115,7 +142,7 @@ void main() {
 
       final pending = c.read(appGateProvider.future);
       deferred.completer.complete(_active);
-      expect(await pending, isTrue);
+      expect(await pending, AppAccess.open);
     });
 
     test(
@@ -125,55 +152,108 @@ void main() {
         final c = container(() => fixed);
         final sub = c.listen(appGateProvider, (_, _) {});
         addTearDown(sub.close);
-        expect(await c.read(appGateProvider.future), isFalse);
+        expect(await c.read(appGateProvider.future), AppAccess.never);
 
         // The controller's own setter path, as a RevenueCat push uses it.
         fixed.state = const AsyncData(_active);
         await Future<void>.delayed(Duration.zero);
 
-        expect(await c.read(appGateProvider.future), isTrue);
+        expect(await c.read(appGateProvider.future), AppAccess.open);
       },
     );
   });
 
   group('settle (the sign-in hand-off to the router)', () {
-    test('rebuilds for the user now signed in and answers the new value',
-        () async {
-      // Before sign-in the status answers for nobody: locked.
-      var status = SubscriptionStatus.none;
+    test(
+      'rebuilds for the user now signed in and answers the new value',
+      () async {
+        // Before sign-in the status answers for nobody: locked.
+        var status = SubscriptionStatus.none;
+        final c = ProviderContainer(
+          overrides: [
+            subscriptionStatusProvider.overrideWith(
+              () => _MutableStatus(() => status),
+            ),
+            isAdminProvider.overrideWith((_) async => false),
+          ],
+        );
+        addTearDown(c.dispose);
+        expect(await c.read(appGateProvider.future), AppAccess.never);
+
+        // The credentials land; the status now answers for the athlete.
+        status = _active;
+        expect(await c.read(appGateProvider.notifier).settle(), AppAccess.open);
+        // The router's synchronous read sees the same settled answer.
+        final gate = c.read(appGateProvider);
+        expect(gate.hasValue && !gate.isLoading, isTrue);
+        expect(gate.value, AppAccess.open);
+      },
+    );
+
+    test(
+      'a status that never answers settles locked within the bound',
+      () async {
+        final c = ProviderContainer(
+          overrides: [
+            subscriptionStatusProvider.overrideWith(_DeferredStatus.new),
+            isAdminProvider.overrideWith((_) async => false),
+            entitlementAnswerTimeoutProvider.overrideWithValue(
+              const Duration(milliseconds: 20),
+            ),
+          ],
+        );
+        addTearDown(c.dispose);
+        expect(
+          await c.read(appGateProvider.notifier).settle(),
+          AppAccess.never,
+        );
+      },
+    );
+  });
+
+  group('writeAccessProvider (mp-457 §4)', () {
+    ProviderContainer container(
+      SubscriptionStatus status, {
+      bool isAdmin = false,
+    }) {
       final c = ProviderContainer(
         overrides: [
-          subscriptionStatusProvider.overrideWith(
-            () => _MutableStatus(() => status),
-          ),
-          isAdminProvider.overrideWith((_) async => false),
+          subscriptionStatusProvider.overrideWith(() => _FixedStatus(status)),
+          isAdminProvider.overrideWith((_) async => isAdmin),
         ],
       );
       addTearDown(c.dispose);
-      expect(await c.read(appGateProvider.future), isFalse);
+      return c;
+    }
 
-      // The credentials land; the status now answers for the athlete.
-      status = _active;
-      expect(await c.read(appGateProvider.notifier).settle(), isTrue);
-      // The router's synchronous read sees the same settled answer.
-      final gate = c.read(appGateProvider);
-      expect(gate.hasValue && !gate.isLoading, isTrue);
-      expect(gate.value, isTrue);
+    test('open writes', () async {
+      expect(await container(_active).read(writeAccessProvider.future), isTrue);
     });
 
-    test('a status that never answers settles locked within the bound',
-        () async {
-      final c = ProviderContainer(
-        overrides: [
-          subscriptionStatusProvider.overrideWith(_DeferredStatus.new),
-          isAdminProvider.overrideWith((_) async => false),
-          entitlementAnswerTimeoutProvider.overrideWithValue(
-            const Duration(milliseconds: 20),
-          ),
-        ],
+    test('lapsed does not write', () async {
+      expect(
+        await container(_lapsed).read(writeAccessProvider.future),
+        isFalse,
       );
-      addTearDown(c.dispose);
-      expect(await c.read(appGateProvider.notifier).settle(), isFalse);
+    });
+
+    test('never does not write', () async {
+      expect(
+        await container(
+          SubscriptionStatus.none,
+        ).read(writeAccessProvider.future),
+        isFalse,
+      );
+    });
+
+    test('a lapsed admin writes', () async {
+      expect(
+        await container(
+          _lapsed,
+          isAdmin: true,
+        ).read(writeAccessProvider.future),
+        isTrue,
+      );
     });
   });
 
@@ -188,8 +268,8 @@ void main() {
       addTearDown(c.dispose);
       await c.read(appGateProvider.future);
 
-      final viaRef = Provider<Future<bool>>((ref) => readAppGate(ref));
-      expect(await c.read(viaRef), isTrue);
+      final viaRef = Provider<Future<AppAccess>>((ref) => readAppGate(ref));
+      expect(await c.read(viaRef), AppAccess.open);
     });
 
     test('waits for an unresolved status', () async {
@@ -202,10 +282,10 @@ void main() {
       );
       addTearDown(c.dispose);
 
-      final viaRef = Provider<Future<bool>>((ref) => readAppGate(ref));
+      final viaRef = Provider<Future<AppAccess>>((ref) => readAppGate(ref));
       final pending = c.read(viaRef);
       deferred.completer.complete(SubscriptionStatus.none);
-      expect(await pending, isFalse);
+      expect(await pending, AppAccess.never);
     });
   });
 }

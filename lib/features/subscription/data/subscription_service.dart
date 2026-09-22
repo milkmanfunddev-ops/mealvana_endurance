@@ -254,9 +254,23 @@ class SubscriptionService {
   }
 
   /// Map a [CustomerInfo] to the [SubscriptionStatus]. Only the ACTIVE
-  /// entitlement map counts — an expired entitlement still appears in `all`.
-  static SubscriptionStatus statusFromCustomerInfo(CustomerInfo info) =>
-      statusFromEntitlement(info.entitlements.active[Entitlement.pro.key]);
+  /// entitlement map unlocks. An expired entitlement still appears in `all`,
+  /// which is how a lapsed customer (held `pro` once) is told from one who
+  /// never held it (mp-457).
+  static SubscriptionStatus statusFromCustomerInfo(CustomerInfo info) {
+    final active = info.entitlements.active[Entitlement.pro.key];
+    if (active != null && active.isActive) return statusFromEntitlement(active);
+    final held = info.entitlements.all[Entitlement.pro.key];
+    if (held == null) return SubscriptionStatus.none;
+    final raw = held.expirationDate;
+    return SubscriptionStatus(
+      active: false,
+      hadPro: true,
+      expiresAt: raw == null ? null : DateTime.tryParse(raw)?.toUtc(),
+      productId: held.productIdentifier,
+      willRenew: false,
+    );
+  }
 
   /// Pure mapping from an (active) [EntitlementInfo] to a status; null → none.
   @visibleForTesting
@@ -273,6 +287,7 @@ class SubscriptionService {
           info.periodType == PeriodType.intro,
       productId: info.productIdentifier,
       willRenew: info.willRenew,
+      hadPro: true,
     );
   }
 

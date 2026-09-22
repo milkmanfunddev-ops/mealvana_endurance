@@ -17,6 +17,8 @@
 /// moment), and a tap opens the sheet on the moment (VM-1).
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,6 +26,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
+import '../../../../features/subscription/application/pro_gate.dart';
+import '../../../../features/subscription/presentation/pro_gate_redirect.dart';
 import '../../../../shared/domain/activity_type.dart';
 import '../../../../shared/widgets/kyle_design/navigation/vana_sheet.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
@@ -215,8 +219,14 @@ class _VanaCompanionHostState extends ConsumerState<VanaCompanionHost> {
 
   Future<void> _summon() async {
     // Gating follows the one app gate (mp-266 §2): a launcher that renders
-    // is on a screen the router already let through, so there is no
-    // Vana-specific check here.
+    // is on a screen the router already let through. That includes a lapsed
+    // account's read-only screens (mp-457), where the launcher opens the
+    // paywall instead of the sheet: Vana is an AI call.
+    if (!await ref.read(writeAccessProvider.future)) {
+      if (mounted) unawaited(widget.router.push(kPaywallPath));
+      return;
+    }
+    if (!mounted) return;
     final navigator = widget.router.routerDelegate.navigatorKey.currentState;
     if (navigator == null) return;
     String? conversationId;
