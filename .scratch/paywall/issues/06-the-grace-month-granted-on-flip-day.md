@@ -11,8 +11,8 @@
 
 **Touches:** scripts/grace-grant.mjs, supabase/functions/_shared/grace
 
-- [ ] The dry run lists accounts and a count and writes nothing.
-- [ ] The write run grants 30 days and sets `founding_member`; a second run grants nobody (selection tested with a fake database).
+- [x] The dry run lists accounts and a count and writes nothing.
+- [x] The write run grants 30 days and sets `founding_member`; a second run grants nobody (selection tested with a fake database).
 - [ ] Run on dev; a granted dev account opens the app and its row is active.
 
 Next: /implement-lee paywall

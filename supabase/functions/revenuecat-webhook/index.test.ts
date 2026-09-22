@@ -220,6 +220,21 @@ class FakeRevenueCat implements RevenueCatClient {
   async setAttributes(): Promise<void> {
     throw new Error('the webhook never sets attributes');
   }
+
+  // deno-lint-ignore require-await
+  async getAttributes(): Promise<Record<string, string> | null> {
+    throw new Error('the webhook never reads attributes');
+  }
+
+  // deno-lint-ignore require-await
+  async promotionalProEnd(): Promise<string | null> {
+    throw new Error('the webhook never reads grants');
+  }
+
+  // deno-lint-ignore require-await
+  async createCustomer(): Promise<void> {
+    throw new Error('the webhook never creates customers');
+  }
 }
 
 // ---------------------------------------------------------------------------
