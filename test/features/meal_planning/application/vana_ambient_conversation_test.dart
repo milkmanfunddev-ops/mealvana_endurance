@@ -22,6 +22,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/vana_ambie
 import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/application/vana_situation_controller.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
@@ -59,6 +60,7 @@ class _IdleRepo extends Fake implements VanaChatRepository {
     VanaSituation? situation,
     VanaMoment? moment,
     bool newPlan = false,
+    VanaInputMode? inputMode,
   }) async {
     situations.add(situation);
     return VanaChatResponse(

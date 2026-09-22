@@ -24,6 +24,7 @@ import '../../domain/meal_source.dart';
 import '../../domain/meal_type.dart';
 import '../../domain/plan_meal.dart';
 import '../../domain/ui_action.dart';
+import '../../domain/vana_input_mode.dart';
 import '../../domain/vana_conversation_kind.dart';
 import '../../domain/vana_message.dart';
 import '../../domain/vana_part.dart';
@@ -387,7 +388,7 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       chipsEnabled: !_chipsPicked,
       onChipPick: (label) {
         setState(() => _chipsPicked = true);
-        _send(label);
+        _send(label, inputMode: VanaInputMode.tap);
       },
       onSomethingElse: _focusComposer,
       onAcceptRule: _acceptRule,
@@ -709,9 +710,12 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
     _send(text);
   }
 
-  void _send(String text) {
+  /// [inputMode] is which control the athlete used: the composer types, a chip
+  /// or a sheet button taps. The call log records it (mp-464 clause 7) and
+  /// nothing about the turn changes.
+  void _send(String text, {VanaInputMode inputMode = VanaInputMode.typed}) {
     _lastSent = text;
-    _controller.send(text);
+    _controller.send(text, inputMode: inputMode);
     setState(() => _chipsPicked = false);
   }
 
@@ -763,7 +767,10 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       case VanaAttachBrowseMeals():
         await _openBrowse();
       case VanaAttachUseWhatIHave():
-        _send(content.getValue(ContentKeys.mpAttachUseWhatIHave));
+        _send(
+          content.getValue(ContentKeys.mpAttachUseWhatIHave),
+          inputMode: VanaInputMode.tap,
+        );
       case VanaAttachPhoto(:final file, :final extension):
         // `readAsBytes` works for both the file path (mobile) and the blob
         // URL (web) an XFile can carry.

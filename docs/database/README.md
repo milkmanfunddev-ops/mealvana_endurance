@@ -59,6 +59,8 @@ flutter test test/migrations/v1_to_v2_migration_test.dart
 
 ## Related Docs
 - `meal-planning-rpcs.md` — the Vana meal-planning SQL functions (`confirm_meal_plan`, `plan_log_from_plan`, …) and who calls them
+- `ai-cost-log-and-weekly-view.md` — the three AI log tables, what `vana_calls` records about a call's
+  cost, the saved weekly view (`vana_weekly_cost`), the daily $1.50 Sentry check and the 90-day sweep
 - `/docs/technical/sync-architecture.md`
 - `/docs/architecture/README.md`
 - `/docs/web_mode/README.md`

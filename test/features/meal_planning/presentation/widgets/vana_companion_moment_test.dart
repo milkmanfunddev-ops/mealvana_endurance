@@ -27,6 +27,7 @@ import 'package:mealvana_endurance/features/meal_planning/application/vana_chat_
 import 'package:mealvana_endurance/features/meal_planning/data/vana_action_client.dart';
 import 'package:mealvana_endurance/features/meal_planning/data/vana_chat_repository.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/ui_action.dart';
+import 'package:mealvana_endurance/features/meal_planning/domain/vana_input_mode.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_conversation_kind.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_message.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_moment.dart';
@@ -119,6 +120,7 @@ class _FakeChatRepo extends Fake implements VanaChatRepository {
     VanaSituation? situation,
     VanaMoment? moment,
     bool newPlan = false,
+    VanaInputMode? inputMode,
   }) async {
     calls.add({
       'message': message,
