@@ -6,7 +6,7 @@
  *   {"type":"text","delta":"..."}                 — prose chunk; a "\n" delta separates two text blocks
  *   {"type":"ui","part":{"kind":...}}             — a VanaPart (every tool result that carries `kind`)
  *   {"type":"status","tool":"suggestMeals"}       — emitted when the model starts a tool call; drives "Finding options…"
- *   {"type":"done","usage":{"input_tokens":n,"output_tokens":n,"cache_read_tokens":n}}  — cache_read_tokens: the prompt-cache read (mp-276)
+ *   {"type":"done","usage":{"input_tokens":n,"output_tokens":n,"cache_read_tokens":n,"steps":n}}  — cache_read_tokens: the prompt-cache read (mp-276); steps: model steps in the turn (mp-471 — the opener eval asserts one)
  *   {"type":"error","message":"...","code":"ai_unavailable"}   — `code` only when the fault is ours (mp-437)
  *
  * The Dart parser (`ai_coach_chat_repository._parseLine`) ignores unknown `type`s and ignores extra keys on `done`, so
@@ -20,7 +20,7 @@ export type NdjsonLine =
   | { type: 'text'; delta: string }
   | { type: 'ui'; part: unknown }
   | { type: 'status'; tool: string }
-  | { type: 'done'; usage?: { input_tokens: number | null; output_tokens: number | null; cache_read_tokens: number | null } }
+  | { type: 'done'; usage?: { input_tokens: number | null; output_tokens: number | null; cache_read_tokens: number | null; steps: number } }
   | { type: 'error'; message: string; code?: string };
 
 const enc = new TextEncoder();
@@ -82,6 +82,7 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
       let textBlocks = 0;   // each step's text is its own block in the transcript; a newline keeps them apart when the client concatenates deltas
       let done = false;
       let filed = false;    // a feedback_saved part has gone out; with silenceAfterFeedback, nothing else may be said
+      let steps = 0;        // model steps so far (finish-step parts) — reported on `done` so a wasted step is visible from outside
       const push = (l: NdjsonLine) => { try { controller.enqueue(ndjsonLine(l)); } catch { /* closed */ } };
       try {
         for await (const part of fullStream) {
@@ -89,10 +90,11 @@ export function ndjsonFromFullStream(fullStream: AsyncIterable<any>, opts: Ndjso
           if (part.type === 'text-start') { if (!silenced && textBlocks++ > 0) push({ type: 'text', delta: '\n' }); }
           else if (part.type === 'text-delta') { if (!silenced) push({ type: 'text', delta: part.text ?? part.textDelta ?? '' }); }
           else if (part.type === 'tool-input-start') push({ type: 'status', tool: part.toolName });
+          else if (part.type === 'finish-step') steps++;
           else if (part.type === 'tool-result') { const out = part.output; if (out && typeof out === 'object' && 'kind' in out) { if ((out as { kind?: string }).kind === 'feedback_saved') filed = true; opts.onUiPart?.(out); push({ type: 'ui', part: out }); } }
           else if (part.type === 'error') { console.error(`${tag} fullStream error part:`, errorMessage(part.error)); push(errorLine(part.error)); }
-          else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null, cache_read_tokens: cacheReadTokens(part.totalUsage) } }); done = true; }
-          // step-start / step-finish / tool-call / tool-input-delta carry nothing user-visible.
+          else if (part.type === 'finish') { for (const t of opts.trailingParts ?? []) push({ type: 'ui', part: t }); push({ type: 'done', usage: { input_tokens: part.totalUsage?.inputTokens ?? null, output_tokens: part.totalUsage?.outputTokens ?? null, cache_read_tokens: cacheReadTokens(part.totalUsage), steps } }); done = true; }
+          // start-step / tool-call / tool-input-delta carry nothing user-visible.
         }
       } catch (e) {
         console.error(`${tag} stream consumer error:`, errorMessage(e));

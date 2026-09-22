@@ -1,13 +1,15 @@
 /** Chat orchestration shared by `vana-chat` and the `jade-chat` alias:
  *  rate limit → context → conversation → tools → user-row persist → streamText → NDJSON, with the assistant row,
  *  `vana_calls` and `ai_usage` written from onFinish under EdgeRuntime.waitUntil.
- *  Cost posture: Haiku by default, ≤6 steps, ≤700 output tokens, ~250-token context block, compact tool outputs.
+ *  Cost posture: Haiku by default, ≤6 steps, ≤900 output tokens, ~250-token context block, and the model is sent only what it
+ *  reads (mp-471): every tool has a compact model-facing form that the replay uses too (tools.ts modelView), the assistant row
+ *  stores each part once, and a turn ends on the step that asked a choice, handed off or filed feedback silently.
  *  The repeated prefix is cached (mp-276): the gateway call carries Anthropic's automatic cache_control, the prompt
  *  order is fixed (tools, persona, context, messages), the context block is built once per conversation and reused
  *  (context-cache.ts), and the cache-read token count is logged per call so a zero is visible.
  *  Brevity is a prompt rule (persona.ts VOICE registers), not a server trim: a clamp only cuts text after it was paid for.
  *  The only server cut is a generous runaway guard so a looping turn never floods the transcript (Lee, 2026-09-03). */
-import { streamText, convertToModelMessages, stepCountIs, type UIMessage } from 'npm:ai@6.0.277';
+import { streamText, convertToModelMessages, stepCountIs, hasToolCall, type UIMessage, type ModelMessage } from 'npm:ai@6.0.277';
 import { CHAT_MODEL, localDate, waitUntil } from './env.ts';
 import type { VanaCtx } from './env.ts';
 import { buildAthleteContext, contextBlock } from './context.ts';
@@ -46,8 +48,20 @@ const stepTokens = (u?: { inputTokens?: number; outputTokens?: number; totalToke
  *  not report reads as zero — an unknown cost never stops a turn that has not run. */
 export const tokenBudgetIs = (ceiling: number) => ({ steps }: { steps: Array<{ usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> }) =>
   steps.reduce((s, x) => s + stepTokens(x.usage), 0) >= ceiling;
-/** What stops a turn: its step limit AND its token ceiling (either one ends the loop). */
-export const chatStopWhen = (general: boolean) => [stepCountIs(general ? 8 : 6), tokenBudgetIs(TURN_TOKEN_CEILING)];
+/** The tools whose call is the end of what Vana has to say (mp-471): a question asked, a hand-off offered, feedback
+ *  filed. After any tool call the SDK runs the model again over the whole prompt; after one of these that step wrote
+ *  nothing on 94 of 94 dev turns (the 09-20 audit, B1) — every opener paid for it. The picker is NOT one: the persona
+ *  writes its two sentences after suggestMeals, in the step that follows. */
+export const TERMINAL_TOOLS = ['askChoice', 'handOff', 'saveFeedback'] as const;
+const isTerminal = (name: string | undefined) => (TERMINAL_TOOLS as readonly string[]).includes(name ?? '');
+/** What stops a turn: its step limit, its token ceiling, a question asked, a hand-off, and — when the message was a
+ *  pure vent, so the reply is the content-managed row alone — feedback filed. A complaint that also asks something keeps
+ *  its answering step (silenceAfterFeedback). Each is the pinned SDK's own condition; any one ends the loop, and the
+ *  step's tools have already run. `hasToolCall` reads the LAST step only, so setSetting-then-askChoice stops on the fork. */
+export const chatStopWhen = (general: boolean, silenceFeedback = false) => [
+  stepCountIs(general ? 8 : 6), tokenBudgetIs(TURN_TOKEN_CEILING),
+  hasToolCall('askChoice'), hasToolCall('handOff'), ...(silenceFeedback ? [hasToolCall('saveFeedback')] : []),
+];
 /** Runaway guard, not a style rule: a well-behaved planning turn never comes near it (PRESENTING is ≤4 sentences). */
 export const RUNAWAY_SENTENCES = 8;
 const textOf = (m: UIMessage) => m.parts.filter((p): p is { type: 'text'; text: string } => p.type === 'text').map((p) => p.text).join('\n');
@@ -211,12 +225,14 @@ export function partsFromSteps(text: string, steps: any[], maxSentences: number 
   const clamp = (t: string) => (maxSentences == null ? t.replace(/\s+/g, ' ').trim() : clampSentences(t, maxSentences));
   for (const s of steps) {
     // Unclamped (general) mode: drop the model's pre-tool narration ("I'll pull up your plan.") — only the step that answers keeps its text.
-    // A step whose only tool is askChoice is not narrating: its text is what the question is about (a moment's opener names the
-    // session there), and the stream already showed it.
+    // A step whose only tools are terminal (askChoice, handOff, saveFeedback) is not narrating: its text is what the question or
+    // the hand-off is about (a moment's opener names the session there), the stream already showed it, and the turn ends on it.
     const calls = (s.toolCalls ?? []) as { toolName?: string }[];
-    const asking = calls.length > 0 && calls.every((c) => c.toolName === 'askChoice');
+    const asking = calls.length > 0 && calls.every((c) => isTerminal(c.toolName));
     const narration = maxSentences == null && calls.length > 0 && !asking && String(s.text ?? '').length < 160;
-    const t = narration || (filed && silenceFeedback) ? '' : clamp(String(s.text ?? '')); if (t) { parts.push({ type: 'text', text: t }); anyText = true; }
+    // A silenced feedback turn keeps no prose at all — not after the row, and not the step that filed it either.
+    const filing = silenceFeedback && calls.some((c) => c.toolName === 'saveFeedback');
+    const t = narration || filing || (filed && silenceFeedback) ? '' : clamp(String(s.text ?? '')); if (t) { parts.push({ type: 'text', text: t }); anyText = true; }
     for (const r of s.toolResults ?? []) {
       const out = (r as { output?: unknown; toolName?: string; toolCallId?: string; input?: unknown }).output;
       if (out && typeof out === 'object' && 'kind' in (out as object)) { if ((out as { kind?: string }).kind === 'feedback_saved') filed = true; ui.push(out as VanaPart); parts.push({ type: `tool-${(r as { toolName: string }).toolName}`, toolCallId: (r as { toolCallId?: string }).toolCallId ?? `${Date.now()}`, state: 'output-available', input: (r as { input?: unknown }).input ?? {}, output: out }); }
@@ -224,6 +240,26 @@ export function partsFromSteps(text: string, steps: any[], maxSentences: number 
   }
   if (!anyText && text.trim() && !(filed && silenceFeedback)) parts.unshift({ type: 'text', text: clamp(text) });
   return { parts, ui };
+}
+/** The assistant row for a finished turn. The tool outputs live in `parts` and nowhere else: `metadata.ui_parts` used to
+ *  hold every UI part a second time (a picker row was 24 KB on disk and 82,000 characters over PostgREST — the 09-20
+ *  audit, F3), and no reader takes it once `parts` exists (conversationMessages and the app's fetchMessages read `parts`
+ *  first). `content` keeps the first text block so a legacy reader still has a line. */
+// deno-lint-ignore no-explicit-any
+export function assistantMessageRow(i: { conversationId: string; userId: string; text: string; parts: unknown[]; steps: any[]; started: number; opener: boolean; openerVariant: string; newPlan: boolean; kind: ConversationKind; planSnapshot: unknown | null }) {
+  const firstText = (i.parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text;
+  return {
+    conversation_id: i.conversationId, user_id: i.userId, role: 'assistant' as const,
+    content: firstText ?? (i.parts.length ? '' : clampSentences(i.text)),
+    parts: i.parts,
+    metadata: { tool_calls: i.steps.flatMap((s) => (s.toolCalls ?? []).map((c: { toolName: string }) => c.toolName)), duration_ms: Date.now() - i.started, opener: i.opener, opener_variant: i.opener ? i.openerVariant : undefined, new_plan: i.newPlan || undefined, kind: i.kind, plan_snapshot: i.planSnapshot ?? undefined },
+  };
+}
+/** The stored history as the model reads it: the same conversion the first send used, with the tools passed so every
+ *  stored tool part is replayed through its `toModelOutput` — the compact form, not the part the app drew (mp-471).
+ *  Without the tools the SDK replays the stored output whole, and a picker's 24-meal tail rides on every later turn. */
+export function replayModelMessages(messages: UIMessage[], tools: Parameters<typeof convertToModelMessages>[1] extends { tools?: infer T } | undefined ? T : never): Promise<ModelMessage[]> {
+  return convertToModelMessages(messages, { tools });
 }
 /** The day's name, so "Saturday" in a past conversation can be read against today without date arithmetic. */
 const weekdayOf = (iso: string) => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(`${iso}T12:00:00Z`).getUTCDay()];
@@ -376,7 +412,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     else if (variant.kind === 'debrief') openerText = debriefOpener(variant.plan);
   }
   const replayed = opener ? messages : await replayHistory(v, convId, messages);
-  const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await convertToModelMessages(replayed), situation, inView);
+  const modelMessages = withSituation(opener ? [{ role: 'user' as const, content: openerText }] : await replayModelMessages(replayed, tools), situation, inView);
   const general = convKind === 'general';
   const tag = `[${opts.functionName}]`;
   console.log(`${tag} user=${v.userId} conv=${convId || '(ephemeral)'} kind=${convKind} opener=${opener}${opener ? `/${openerVariant}${newPlan ? '/new_plan' : ''}` : ''} model=${CHAT_MODEL} context=${reused ? 'reused' : 'built'}`);
@@ -388,7 +424,7 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
     tools,
     maxOutputTokens: MAX_OUTPUT_TOKENS,
     // deno-lint-ignore no-explicit-any
-    stopWhen: chatStopWhen(general) as any,
+    stopWhen: chatStopWhen(general, silenceFeedback) as any,
     providerOptions: CACHE_PROVIDER_OPTIONS,
     onFinish: ({ text, steps, usage, totalUsage }) => {
       const u = totalUsage ?? usage;
@@ -400,12 +436,11 @@ export async function runChat(v: VanaCtx, body: ChatBody, opts: ChatRunOpts): Pr
       const task = (async () => {
         try {
           if (persist) {
-            const { parts, ui } = partsFromSteps(text, steps as unknown[], general ? null : RUNAWAY_SENTENCES, silenceFeedback);
-            for (const t of trailingParts) { ui.push(t); parts.push({ type: 'tool-feedbackPrompt', toolCallId: `server-${Date.now()}`, state: 'output-available', input: {}, output: t }); }
+            const { parts } = partsFromSteps(text, steps as unknown[], general ? null : RUNAWAY_SENTENCES, silenceFeedback);
+            for (const t of trailingParts) parts.push({ type: 'tool-feedbackPrompt', toolCallId: `server-${Date.now()}`, state: 'output-available', input: {}, output: t });
             // plan_snapshot: the draft after this turn, so an edit-rewind can restore it (plan Phase 6.1)
             const planSnapshot = scope ? await snapshotPlan(v, scope) : null;
-            const firstText = (parts.find((p) => (p as { type: string }).type === 'text') as { text?: string } | undefined)?.text;
-            const { error } = await v.db.from('vana_messages').insert({ conversation_id: convId, user_id: v.userId, role: 'assistant', content: firstText ?? (parts.length ? '' : clampSentences(text)), parts, metadata: { ui_parts: ui, tool_calls: steps.flatMap((s) => (s.toolCalls ?? []).map((c) => c.toolName)), duration_ms: Date.now() - started, opener, opener_variant: opener ? openerVariant : undefined, new_plan: newPlan || undefined, kind: convKind, plan_snapshot: planSnapshot ?? undefined } });
+            const { error } = await v.db.from('vana_messages').insert(assistantMessageRow({ conversationId: convId, userId: v.userId, text, parts, steps: steps as unknown[], started, opener, openerVariant, newPlan, kind: convKind, planSnapshot }));
             if (error) console.error(`${tag} assistant message persist error:`, error.message);
             await touch(v, convId, opener ? (general ? 'Quick question' : "This week's plan") : undefined);
           }

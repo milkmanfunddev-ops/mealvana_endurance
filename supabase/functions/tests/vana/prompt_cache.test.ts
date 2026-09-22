@@ -60,7 +60,8 @@ const lines = async (usage: unknown) => {
 
 Deno.test('the done line carries cache_read_tokens for the eval', async () => {
   const out = await lines({ inputTokens: 5200, outputTokens: 90, inputTokenDetails: { noCacheTokens: 300, cacheReadTokens: 4900, cacheWriteTokens: 0 } });
-  assertEquals(out.at(-1), { type: 'done', usage: { input_tokens: 5200, output_tokens: 90, cache_read_tokens: 4900 } });
+  // `steps` (mp-471) counts finish-step parts; this stream has none.
+  assertEquals(out.at(-1), { type: 'done', usage: { input_tokens: 5200, output_tokens: 90, cache_read_tokens: 4900, steps: 0 } });
   const none = await lines({ inputTokens: 5200, outputTokens: 90 });
-  assertEquals(none.at(-1), { type: 'done', usage: { input_tokens: 5200, output_tokens: 90, cache_read_tokens: null } });
+  assertEquals(none.at(-1), { type: 'done', usage: { input_tokens: 5200, output_tokens: 90, cache_read_tokens: null, steps: 0 } });
 });
