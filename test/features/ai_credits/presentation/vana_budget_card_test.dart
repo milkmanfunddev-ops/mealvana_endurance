@@ -100,6 +100,22 @@ void main() {
       await pumpCard(tester, row: _halfSpent);
 
       expect(find.byKey(const ValueKey('ai_credits.usage_bar')), findsOneWidget);
+
+      // The fill is really drawn, half the bar wide and as tall as it. A
+      // loose Stack child sized to a childless ColoredBox is zero high, so
+      // the bar once rendered as an empty track.
+      final bar = tester.getSize(
+        find.byKey(const ValueKey('ai_credits.usage_bar')),
+      );
+      final fill = tester.getSize(
+        find.descendant(
+          of: find.byKey(const ValueKey('ai_credits.usage_bar')),
+          matching: find.byType(ColoredBox),
+        ).last,
+      );
+      expect(fill.height, bar.height);
+      expect(fill.width, closeTo(bar.width / 2, 1));
+
       expect(
         find.text(
           content['ai_credits.usage_used']!.replaceAll('{percent}', '50'),

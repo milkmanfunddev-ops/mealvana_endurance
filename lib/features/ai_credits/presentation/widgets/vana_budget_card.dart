@@ -151,10 +151,18 @@ class _UsageBar extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(child: ColoredBox(color: track)),
-            FractionallySizedBox(
-              widthFactor: used.clamp(0.0, 1.0),
-              child: ColoredBox(
-                color: share.isSpent ? AppColors.dragonfruit : AppColors.orange,
+            // Positioned.fill, so the fill is as tall as the bar. A loose
+            // Stack child here takes its child's height, and a ColoredBox
+            // with no child is zero high — the fill was invisible.
+            Positioned.fill(
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: used.clamp(0.0, 1.0),
+                child: ColoredBox(
+                  color: share.isSpent
+                      ? AppColors.dragonfruit
+                      : AppColors.orange,
+                ),
               ),
             ),
           ],
