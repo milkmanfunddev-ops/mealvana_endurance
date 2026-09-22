@@ -9,6 +9,7 @@ import '../../../ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../data/ai_coach_chat_repository.dart';
 import '../../domain/ai_coach_message.dart';
 import '../../domain/ai_coach_ui_part.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'ai_coach_chat_controller.g.dart';
 
@@ -116,6 +117,7 @@ class AiCoachChatController extends _$AiCoachChatController {
   /// On error the partial assistant message is removed and
   /// [AiCoachChatState.errorMessage] is set so the screen can show a snackbar.
   Future<void> send(String text) async {
+    if (!await ref.canWrite()) return;
     final trimmed = text.trim();
     if (trimmed.isEmpty) return;
 
@@ -313,6 +315,7 @@ class AiCoachChatController extends _$AiCoachChatController {
   /// On any failure it silently restores the empty state; the screen then shows
   /// its static greeting. An opener is a nicety, never an error to surface.
   Future<void> loadOpener() async {
+    if (!await ref.canWrite()) return;
     final currentState = state.value ?? const AiCoachChatState();
     if (currentState.messages.isNotEmpty || currentState.isStreaming) return;
 

@@ -13,12 +13,14 @@ import 'package:mealvana_endurance/features/subscription/application/pro_gate.da
 import 'package:mealvana_endurance/features/subscription/application/write_guard.dart';
 import 'package:mealvana_endurance/features/subscription/domain/write_access_denied.dart';
 
-/// The account may write (the gate is open).
-Override writesAllowed() => writeAccessProvider.overrideWith((_) async => true);
+/// The account may write (the gate is open). A settled value, so the guard
+/// answers in one microtask, as it does in the running app.
+Override writesAllowed() =>
+    writeAccessProvider.overrideWithValue(const AsyncData(true));
 
 /// The account may not write (lapsed, or never).
 Override writesRefused() =>
-    writeAccessProvider.overrideWith((_) async => false);
+    writeAccessProvider.overrideWithValue(const AsyncData(false));
 
 /// Counts how many times a refused write asked for the paywall. Add
 /// [override] to the container; read [count] after the write.

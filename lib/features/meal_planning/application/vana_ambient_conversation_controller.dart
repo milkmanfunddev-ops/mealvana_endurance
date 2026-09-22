@@ -36,8 +36,7 @@ bool isNewVanaConversationKey(String? conversationId) =>
 /// The chat route for the day's ambient conversation: [conversationId] when
 /// the day holds one, else the unnamed general conversation the day's first
 /// entry point names.
-String vanaAmbientChatLocation(String? conversationId) =>
-    conversationId == null
+String vanaAmbientChatLocation(String? conversationId) => conversationId == null
     ? '/vana?mode=general'
     : '/vana?mode=general&c=$conversationId';
 
@@ -165,9 +164,7 @@ class VanaAmbientConversation extends _$VanaAmbientConversation {
   void _signal(String id) {
     if (!ref.mounted || !_signalled.add(id)) return;
     final repo = ref.read(vanaChatRepositoryProvider);
-    unawaited(
-      Future.sync(() => repo.signalIdle(id)).catchError((Object _) {}),
-    );
+    unawaited(Future.sync(() => repo.signalIdle(id)).catchError((Object _) {}));
   }
 
   String _today() => todayIso(ref.read(vanaClockProvider)());

@@ -53,10 +53,17 @@ extension WriteGuard on Ref {
   /// Whether this account may write right now (`writeAccessProvider`). True:
   /// go ahead. False: the paywall has been opened, so return without writing.
   ///
-  /// The write-access rule waits for the gate's bounded answer, so a write
-  /// during startup resolves once the gate does rather than slipping past.
+  /// A settled gate (the app's steady state) answers without waiting on a
+  /// future, so an optimistic update lands one microtask after the call, as
+  /// it did before the guard. An unresolved gate waits for its bounded
+  /// answer, so a write during startup resolves once the gate does rather
+  /// than slipping past.
   Future<bool> canWrite() async {
-    if (await read(writeAccessProvider.future)) return true;
+    final settled = read(writeAccessProvider);
+    final allowed = settled.hasValue && !settled.isLoading
+        ? settled.value!
+        : await read(writeAccessProvider.future);
+    if (allowed) return true;
     read(paywallOpenerProvider)();
     return false;
   }

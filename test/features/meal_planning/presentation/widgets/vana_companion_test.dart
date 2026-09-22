@@ -31,7 +31,6 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/c
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picker_carousel.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
-import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
@@ -249,9 +248,8 @@ Future<_Harness> _pump(
 
   final container = ProviderContainer(
     overrides: [
-      ...baseOverrides(),
+      ...baseOverrides(writeAccess: canWrite),
       ...vanaMomentInputs(),
-      writeAccessProvider.overrideWith((_) async => canWrite),
       sharedPreferencesProvider.overrideWithValue(prefs),
       contentServiceProvider.overrideWith(testContentService),
       vanaChatRepositoryProvider.overrideWithValue(chat),

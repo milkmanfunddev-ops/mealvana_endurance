@@ -33,7 +33,7 @@ import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'fakes/fake_supabase_client.dart';
 import 'responsive_test_harness.dart';
 
-import 'write_access.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 
 export 'package:flutter_riverpod/src/internals.dart' show Override;
 export 'fakes/fake_supabase_client.dart';
@@ -231,6 +231,7 @@ Future<void> smokeScreen(
   bool withAppDeps = true,
   bool settle = true,
   AppConfig? appConfig,
+  bool? writeAccess = true,
 }) async {
   final allOverrides = <Override>[
     if (withAppDeps) mockAppExternalDeps(),
@@ -241,9 +242,11 @@ Future<void> smokeScreen(
     // kyleThemeModeProvider) don't throw UnimplementedError. Individual
     // tests that need custom prefs behaviour can pass their own override
     // in [overrides]; it will appear later in the list and take precedence.
-    // An open account: every write controller asks the write guard first
-    // (mp-457 §4); a lapsed-account test passes writesRefused() in [overrides].
-    if (withAppDeps) writesAllowed(),
+    if (withAppDeps) mockSharedPreferences(),
+    // The write guard's answer (mp-457 §4): open by default, false for a
+    // lapsed-account test, null to leave writeAccessProvider unoverridden.
+    if (withAppDeps && writeAccess != null)
+      writeAccessProvider.overrideWithValue(AsyncData(writeAccess)),
     ...overrides,
   ];
 

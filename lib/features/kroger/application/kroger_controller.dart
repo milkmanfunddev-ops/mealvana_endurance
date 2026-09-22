@@ -16,6 +16,7 @@ import '../../meal_planning/application/shopping_list_controller.dart';
 import '../data/kroger_repository.dart';
 import '../domain/kroger_models.dart';
 import 'kroger_matching.dart';
+import '../../subscription/application/write_guard.dart';
 
 part 'kroger_controller.g.dart';
 
@@ -234,7 +235,10 @@ class KrogerController extends _$KrogerController {
 
   /// The delivery area the shopper typed, which is also how they correct it
   /// having moved or travelled.
-  Future<void> setArea(String area) => _run(() => _applyArea(area));
+  Future<void> setArea(String area) async {
+    if (!await ref.canWrite()) return;
+    await _run(() => _applyArea(area));
+  }
 
   Future<void> _applyArea(String raw) async {
     final area = krogerArea(raw);
@@ -424,38 +428,46 @@ class KrogerController extends _$KrogerController {
   Future<void> loadCloud() => _run(
     () async => _persist(_reconcile(await _repo.loadRemote(_user!, planId))),
   );
-  Future<void> connect() => _run(() async {
-    if (kIsWeb) throw const KrogerException('mobile_only');
-    final start = await _repo.remote.call('connect');
-    final redirect = Uri.parse(start['redirect'] as String);
-    final result = Uri.parse(
-      await ref.read(krogerBrowserProvider)(
-        start['url'] as String,
-        redirect.scheme,
-      ),
-    );
-    if (result.scheme != redirect.scheme ||
-        result.host != redirect.host ||
-        result.path != redirect.path ||
-        result.queryParameters['state'] != start['state']) {
-      throw const KrogerException('invalid_oauth_state');
-    }
-    if (result.queryParameters['error'] != null ||
-        result.queryParameters['code'] == null) {
-      throw const KrogerException('authorization_cancelled');
-    }
-    await _repo.remote.call('exchange', {
-      'code': result.queryParameters['code'],
-      'state': start['state'],
+  Future<void> connect() async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      if (kIsWeb) throw const KrogerException('mobile_only');
+      final start = await _repo.remote.call('connect');
+      final redirect = Uri.parse(start['redirect'] as String);
+      final result = Uri.parse(
+        await ref.read(krogerBrowserProvider)(
+          start['url'] as String,
+          redirect.scheme,
+        ),
+      );
+      if (result.scheme != redirect.scheme ||
+          result.host != redirect.host ||
+          result.path != redirect.path ||
+          result.queryParameters['state'] != start['state']) {
+        throw const KrogerException('invalid_oauth_state');
+      }
+      if (result.queryParameters['error'] != null ||
+          result.queryParameters['code'] == null) {
+        throw const KrogerException('authorization_cancelled');
+      }
+      await _repo.remote.call('exchange', {
+        'code': result.queryParameters['code'],
+        'state': start['state'],
+      });
+      _publish(
+        state.value!.copyWith(connected: true, clearUnavailableReason: true),
+      );
     });
-    _publish(
-      state.value!.copyWith(connected: true, clearUnavailableReason: true),
-    );
-  });
-  Future<void> disconnect() => _run(() async {
-    await _repo.remote.call('disconnect');
-    _publish(state.value!.copyWith(connected: false));
-  });
+  }
+
+  Future<void> disconnect() async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      await _repo.remote.call('disconnect');
+      _publish(state.value!.copyWith(connected: false));
+    });
+  }
+
   Future<List<KrogerProduct>> _search(String query) async {
     final draft = state.value!.draft;
     if (draft.store == null) throw const KrogerException('choose_store');
@@ -494,60 +506,63 @@ class KrogerController extends _$KrogerController {
   /// Matches every line the shopper has neither ticked off nor excluded, and
   /// says what actually happened: a run that matched nothing, and a run that
   /// had nothing to match, are different outcomes and read differently.
-  Future<void> matchAll() => _run(() async {
-    await _persist(_reconcile(state.value!.draft));
-    if (state.value!.draft.included.isEmpty) {
-      _publish(state.value!.copyWith(message: 'all_skipped'));
-      return;
-    }
-    final pending = state.value!.draft.included
-        .where((l) => !l.approved)
-        .toList();
-    var matched = 0;
-    // Each line's answer is saved as it arrives, so a run that fails partway
-    // keeps what it learned and leaves the lines it never reached unanswered.
-    for (final line in pending) {
-      final products = await _search(line.name);
-      if (!ref.mounted) return;
-      final preferred = _repo.preferred(
-        _user!,
-        state.value!.draft.store!.id,
-        line.name,
-      );
-      final product =
-          products
-              .where(
-                (p) =>
-                    p.upc == (line.product?.upc ?? preferred?.upc) &&
-                    p.available,
-              )
-              .firstOrNull ??
-          products.where((p) => p.available).firstOrNull;
-      if (product != null) {
-        matched++;
-        // Suggestions always need review, including remembered products.
-        await _updateLine(
-          line.id,
-          (l) => l.copyWith(
-            product: product,
-            approved: false,
-            quantity: l.quantityEdited
-                ? l.quantity
-                : KrogerMatching.packages(l.requiredQty, product.size) ?? 1,
-          ),
-        );
-      } else {
-        await _recordAnswer(line.id, noMatch: true);
+  Future<void> matchAll() async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      await _persist(_reconcile(state.value!.draft));
+      if (state.value!.draft.included.isEmpty) {
+        _publish(state.value!.copyWith(message: 'all_skipped'));
+        return;
       }
-    }
-    _publish(
-      state.value!.copyWith(
-        message: pending.isNotEmpty && matched == 0
-            ? 'no_products'
-            : 'review_matches',
-      ),
-    );
-  });
+      final pending = state.value!.draft.included
+          .where((l) => !l.approved)
+          .toList();
+      var matched = 0;
+      // Each line's answer is saved as it arrives, so a run that fails partway
+      // keeps what it learned and leaves the lines it never reached unanswered.
+      for (final line in pending) {
+        final products = await _search(line.name);
+        if (!ref.mounted) return;
+        final preferred = _repo.preferred(
+          _user!,
+          state.value!.draft.store!.id,
+          line.name,
+        );
+        final product =
+            products
+                .where(
+                  (p) =>
+                      p.upc == (line.product?.upc ?? preferred?.upc) &&
+                      p.available,
+                )
+                .firstOrNull ??
+            products.where((p) => p.available).firstOrNull;
+        if (product != null) {
+          matched++;
+          // Suggestions always need review, including remembered products.
+          await _updateLine(
+            line.id,
+            (l) => l.copyWith(
+              product: product,
+              approved: false,
+              quantity: l.quantityEdited
+                  ? l.quantity
+                  : KrogerMatching.packages(l.requiredQty, product.size) ?? 1,
+            ),
+          );
+        } else {
+          await _recordAnswer(line.id, noMatch: true);
+        }
+      }
+      _publish(
+        state.value!.copyWith(
+          message: pending.isNotEmpty && matched == 0
+              ? 'no_products'
+              : 'review_matches',
+        ),
+      );
+    });
+  }
 
   /// What Kroger's latest search for this line said: [noMatch] when it had
   /// nothing the line could use. A line that already has a product keeps it,
@@ -567,79 +582,101 @@ class KrogerController extends _$KrogerController {
       ],
     ),
   );
-  Future<void> choose(String id, KrogerProduct product) => _run(() async {
-    await _updateLine(
-      id,
-      (l) => l.copyWith(
-        product: product,
-        approved: false,
-        quantity: l.quantityEdited
-            ? l.quantity
-            : KrogerMatching.packages(l.requiredQty, product.size) ?? 1,
-      ),
-    );
-  });
-  Future<void> approve(String id) => _run(() async {
-    final line = state.value!.draft.lines.firstWhere((l) => l.id == id);
-    if (line.product?.available != true) {
-      throw const KrogerException('product_unavailable');
-    }
-    await _updateLine(id, (l) => l.copyWith(approved: true));
-    await _repo.remember(
-      _user!,
-      state.value!.draft.store!.id,
-      line.name,
-      line.product!,
-    );
-  });
+  Future<void> choose(String id, KrogerProduct product) async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      await _updateLine(
+        id,
+        (l) => l.copyWith(
+          product: product,
+          approved: false,
+          quantity: l.quantityEdited
+              ? l.quantity
+              : KrogerMatching.packages(l.requiredQty, product.size) ?? 1,
+        ),
+      );
+    });
+  }
+
+  Future<void> approve(String id) async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      final line = state.value!.draft.lines.firstWhere((l) => l.id == id);
+      if (line.product?.available != true) {
+        throw const KrogerException('product_unavailable');
+      }
+      await _updateLine(id, (l) => l.copyWith(approved: true));
+      await _repo.remember(
+        _user!,
+        state.value!.draft.store!.id,
+        line.name,
+        line.product!,
+      );
+    });
+  }
 
   /// Approves every line [KrogerDraft.approvable] lists, in one action.
   /// Each is remembered for this Location exactly as [approve] remembers it,
   /// so a later matching run prefers the same products. Nothing to approve
   /// is nothing to do, not a failure.
-  Future<void> approveAll() => _run(() async {
-    final draft = state.value!.draft;
-    final ids = {for (final l in draft.approvable) l.id};
-    if (ids.isEmpty) return;
-    await _persist(
-      draft.copyWith(
-        lines: [
-          for (final l in draft.lines)
-            if (ids.contains(l.id)) l.copyWith(approved: true) else l,
-        ],
-      ),
-    );
-    for (final line in draft.approvable) {
-      await _repo.remember(_user!, draft.store!.id, line.name, line.product!);
-    }
-  });
-  Future<void> quantity(String id, int count) => _run(() async {
-    if (count < 1 || count > 99) return;
-    await _updateLine(
-      id,
-      (l) => l.copyWith(quantity: count, quantityEdited: true, approved: false),
-    );
-  });
-  Future<void> exclude(String id, bool value) =>
-      _run(() => _updateLine(id, (l) => l.copyWith(excluded: value)));
-  Future<void> addManual(String name) => _run(() async {
-    final value = name.trim();
-    if (value.isEmpty || value.length > 100) return;
-    final draft = state.value!.draft;
-    await _persist(
-      draft.copyWith(
-        lines: [
-          ...draft.lines,
-          KrogerLine(
-            id: const Uuid().v4(),
-            name: value,
-            requiredQty: '',
-            manual: true,
-          ),
-        ],
-      ),
-    );
-  });
+  Future<void> approveAll() async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      final draft = state.value!.draft;
+      final ids = {for (final l in draft.approvable) l.id};
+      if (ids.isEmpty) return;
+      await _persist(
+        draft.copyWith(
+          lines: [
+            for (final l in draft.lines)
+              if (ids.contains(l.id)) l.copyWith(approved: true) else l,
+          ],
+        ),
+      );
+      for (final line in draft.approvable) {
+        await _repo.remember(_user!, draft.store!.id, line.name, line.product!);
+      }
+    });
+  }
+
+  Future<void> quantity(String id, int count) async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      if (count < 1 || count > 99) return;
+      await _updateLine(
+        id,
+        (l) =>
+            l.copyWith(quantity: count, quantityEdited: true, approved: false),
+      );
+    });
+  }
+
+  Future<void> exclude(String id, bool value) async {
+    if (!await ref.canWrite()) return;
+    await _run(() => _updateLine(id, (l) => l.copyWith(excluded: value)));
+  }
+
+  Future<void> addManual(String name) async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      final value = name.trim();
+      if (value.isEmpty || value.length > 100) return;
+      final draft = state.value!.draft;
+      await _persist(
+        draft.copyWith(
+          lines: [
+            ...draft.lines,
+            KrogerLine(
+              id: const Uuid().v4(),
+              name: value,
+              requiredQty: '',
+              manual: true,
+            ),
+          ],
+        ),
+      );
+    });
+  }
 
   /// Sends what matched to the shopper's Kroger cart, and takes them there.
   ///
@@ -647,74 +684,79 @@ class KrogerController extends _$KrogerController {
   /// add-only cart and asked for one anyway. Nothing else can set it: a
   /// repeated tap, a retried request and a reloaded screen all arrive
   /// without it and are refused by the server's own record of the send.
-  Future<void> export({bool resend = false}) => _run(() async {
-    final draft = _reconcile(state.value!.draft);
-    await _persist(draft);
-    if (!(resend ? draft.resendable : draft.ready)) {
-      throw const KrogerException('review_required');
-    }
-    final synced = await _repo.ensureSynced(_user!, planId);
-    if (synced.dirty) throw const KrogerException('review_required');
-    // Reconcile again after network work: a plan change invalidates the reviewed quantities.
-    final latest = _reconcile(synced);
-    if (jsonEncode(latest.lines.map((l) => l.toJson()).toList()) !=
-        jsonEncode(draft.lines.map((l) => l.toJson()).toList())) {
-      await _persist(latest);
-      throw const KrogerException('review_required');
-    }
-    await _persist(latest.copyWith(receiptStatus: 'sending'));
-    final result = await _repo.remote.call('export', {
-      'id': const Uuid().v4(),
-      'planId': planId,
-      'store': draft.store!.id,
-      'modality': draft.modality,
-      'resend': resend,
-      // Only what matched. An unmatched line has nothing to send and is the
-      // shopper's own to add on Kroger's site.
-      'items': [
-        for (final l in draft.matched)
-          {
-            'upc': l.product!.upc,
-            'quantity': l.quantity,
-            'price': l.product!.price,
-            'size': l.product!.size,
-          },
-      ],
-    });
-    if (result['changed'] case final List changed) {
-      var next = state.value!.draft.copyWith(clearReceipt: true);
-      for (final raw in changed) {
-        final p = KrogerProduct.fromJson(Map<String, dynamic>.from(raw as Map));
-        next = next.copyWith(
-          lines: [
-            for (final l in next.lines)
-              if (l.product?.upc == p.upc)
-                l.copyWith(
-                  product: p,
-                  approved: false,
-                  quantity: l.quantityEdited
-                      ? l.quantity
-                      : KrogerMatching.packages(l.requiredQty, p.size) ?? 1,
-                )
-              else
-                l,
-          ],
-        );
+  Future<void> export({bool resend = false}) async {
+    if (!await ref.canWrite()) return;
+    await _run(() async {
+      final draft = _reconcile(state.value!.draft);
+      await _persist(draft);
+      if (!(resend ? draft.resendable : draft.ready)) {
+        throw const KrogerException('review_required');
       }
-      await _persist(next);
-      _publish(state.value!.copyWith(message: 'products_changed'));
-    } else {
-      await _persist(
-        state.value!.draft.copyWith(
-          receiptStatus: (result['receipt'] as Map)['status'] as String,
-        ),
-      );
-      // The Hand-off. Kroger acknowledged the add, so the items are in the
-      // cart whether or not Kroger opens; a launch that fails is not a send
-      // that failed, and says nothing. The button stays for another try.
-      if (state.value!.draft.sent) await _openKroger();
-    }
-  });
+      final synced = await _repo.ensureSynced(_user!, planId);
+      if (synced.dirty) throw const KrogerException('review_required');
+      // Reconcile again after network work: a plan change invalidates the reviewed quantities.
+      final latest = _reconcile(synced);
+      if (jsonEncode(latest.lines.map((l) => l.toJson()).toList()) !=
+          jsonEncode(draft.lines.map((l) => l.toJson()).toList())) {
+        await _persist(latest);
+        throw const KrogerException('review_required');
+      }
+      await _persist(latest.copyWith(receiptStatus: 'sending'));
+      final result = await _repo.remote.call('export', {
+        'id': const Uuid().v4(),
+        'planId': planId,
+        'store': draft.store!.id,
+        'modality': draft.modality,
+        'resend': resend,
+        // Only what matched. An unmatched line has nothing to send and is the
+        // shopper's own to add on Kroger's site.
+        'items': [
+          for (final l in draft.matched)
+            {
+              'upc': l.product!.upc,
+              'quantity': l.quantity,
+              'price': l.product!.price,
+              'size': l.product!.size,
+            },
+        ],
+      });
+      if (result['changed'] case final List changed) {
+        var next = state.value!.draft.copyWith(clearReceipt: true);
+        for (final raw in changed) {
+          final p = KrogerProduct.fromJson(
+            Map<String, dynamic>.from(raw as Map),
+          );
+          next = next.copyWith(
+            lines: [
+              for (final l in next.lines)
+                if (l.product?.upc == p.upc)
+                  l.copyWith(
+                    product: p,
+                    approved: false,
+                    quantity: l.quantityEdited
+                        ? l.quantity
+                        : KrogerMatching.packages(l.requiredQty, p.size) ?? 1,
+                  )
+                else
+                  l,
+            ],
+          );
+        }
+        await _persist(next);
+        _publish(state.value!.copyWith(message: 'products_changed'));
+      } else {
+        await _persist(
+          state.value!.draft.copyWith(
+            receiptStatus: (result['receipt'] as Map)['status'] as String,
+          ),
+        );
+        // The Hand-off. Kroger acknowledged the add, so the items are in the
+        // cart whether or not Kroger opens; a launch that fails is not a send
+        // that failed, and says nothing. The button stays for another try.
+        if (state.value!.draft.sent) await _openKroger();
+      }
+    });
+  }
 
   /// Kroger's cart, where the shopper picks a delivery slot, adds what
   /// Mealvana could not match, and pays. Mealvana embeds none of that.

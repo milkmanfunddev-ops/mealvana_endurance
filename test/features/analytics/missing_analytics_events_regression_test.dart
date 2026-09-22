@@ -29,6 +29,7 @@ import 'package:mealvana_endurance/shared/services/sentry/sentry_reporter.dart';
 import 'package:mealvana_endurance/shared/services/sync/sync_coordinator.dart';
 
 import '../../helpers/fakes/recording_analytics_tracker.dart';
+import '../../helpers/write_access.dart';
 
 class _MockActivitiesService extends Mock implements ActivitiesService {}
 
@@ -117,6 +118,7 @@ void main() {
 
       container = ProviderContainer(
         overrides: [
+          writesAllowed(),
           appExternalDepsProvider.overrideWithValue(
             AppExternalDeps(
               analytics: analytics,

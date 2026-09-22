@@ -317,6 +317,9 @@ void main() {
     final done = c
         .read(shoppingListControllerProvider.notifier)
         .setChecked('broccoli', true);
+    // The write guard answers first (mp-457 §4): one microtask, then the
+    // tick lands, still before the server answers.
+    await null;
     expect(
       c.read(shoppingListControllerProvider).value!.items.first.checked,
       isTrue,

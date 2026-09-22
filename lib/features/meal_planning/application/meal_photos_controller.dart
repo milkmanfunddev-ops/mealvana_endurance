@@ -11,6 +11,7 @@ import '../domain/meal_photo_history.dart';
 import 'meal_catalog_controller.dart';
 import 'meal_detail_controller.dart';
 import 'plan_meal_photos.dart';
+import '../../subscription/application/write_guard.dart';
 
 part 'meal_photos_controller.g.dart';
 
@@ -46,6 +47,7 @@ class MealPhotosController extends _$MealPhotosController {
     String? credit,
     String? creditUrl,
   }) async {
+    if (!await ref.canWrite()) return;
     // Never a silent return: a page that has not finished loading must still
     // send, or Confirm would say "Photo added" having sent nothing (story 32).
     final current = state.value ?? const MealPhotos();
@@ -81,6 +83,7 @@ class MealPhotosController extends _$MealPhotosController {
     String? credit,
     String? creditUrl,
   }) async {
+    if (!await ref.canWrite()) return;
     final current = state.value ?? const MealPhotos();
 
     final prepared = await ref.read(dishPhotoPreparerProvider)(bytes);
@@ -102,6 +105,7 @@ class MealPhotosController extends _$MealPhotosController {
   /// Not a delete: the photograph stays in History and is one tap from coming
   /// back, and no older photograph is pulled forward in its place (story 42).
   Future<void> remove() async {
+    if (!await ref.canWrite()) return;
     final current = state.value ?? const MealPhotos();
 
     await _repo.remove(mealId);
@@ -114,6 +118,7 @@ class MealPhotosController extends _$MealPhotosController {
   /// Put a photograph from History back on — the one tap that undoes a mistake
   /// or somebody else's vandalism (story 38).
   Future<void> restore(String photoId) async {
+    if (!await ref.canWrite()) return;
     final current = state.value ?? const MealPhotos();
 
     // The server's own answer, not the row this device happened to be holding:
@@ -132,9 +137,13 @@ class MealPhotosController extends _$MealPhotosController {
   /// the server says so, and the page is told by its answer rather than
   /// guessing.
   Future<void> delete(String photoId) async {
+    if (!await ref.canWrite()) return;
     final current = state.value ?? const MealPhotos();
 
-    final nowShowing = await _repo.deletePhoto(mealId: mealId, photoId: photoId);
+    final nowShowing = await _repo.deletePhoto(
+      mealId: mealId,
+      photoId: photoId,
+    );
 
     if (!ref.mounted) return;
     state = AsyncData(current.withDeleted(photoId, nowShowing));

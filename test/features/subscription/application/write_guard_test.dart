@@ -9,7 +9,6 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/features/subscription/application/write_guard.dart';
 import 'package:mealvana_endurance/features/subscription/domain/write_access_denied.dart';
 
@@ -19,9 +18,7 @@ void main() {
   group('ref.canWrite()', () {
     test('open: true, and the paywall is not opened', () async {
       final opens = PaywallOpens();
-      final c = ProviderContainer(
-        overrides: [writesAllowed(), opens.override],
-      );
+      final c = ProviderContainer(overrides: [writesAllowed(), opens.override]);
       addTearDown(c.dispose);
       final probe = c.read(_probeProvider.notifier);
       expect(await probe.tryWrite(), isTrue);

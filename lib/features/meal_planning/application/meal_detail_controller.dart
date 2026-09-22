@@ -13,6 +13,7 @@ import '../domain/meal_detail.dart';
 import '../domain/meal_ref.dart';
 import '../domain/meal_source.dart';
 import '../domain/ui_action.dart';
+import '../../subscription/application/write_guard.dart';
 
 part 'meal_detail_controller.g.dart';
 
@@ -41,6 +42,7 @@ class MealDetailController extends _$MealDetailController {
   /// Thumbs: -1 down, 0 clear, 1 up. Optimistic; rethrows on failure after
   /// restoring the previous vote.
   Future<void> vote(int vote, {String? reason}) async {
+    if (!await ref.canWrite()) return;
     assert(vote >= -1 && vote <= 1);
     final current = state.value;
     if (current == null) return;
@@ -76,6 +78,7 @@ class MealDetailController extends _$MealDetailController {
   /// The athlete's own directions on a saved meal (local-first; replayed by
   /// the saved-meals upload). No-op for library meals.
   Future<void> setNotes(String notes) async {
+    if (!await ref.canWrite()) return;
     final current = state.value;
     if (current == null || current.meal.source != MealSource.saved) return;
     final clean = notes.length > 2000 ? notes.substring(0, 2000) : notes;
@@ -92,6 +95,7 @@ class MealDetailController extends _$MealDetailController {
   /// saved meal's [MealRef]; the saved-meals repository is re-synced so My
   /// Foods shows it. Null when the current meal is already a saved meal.
   Future<MealRef?> saveToMine() async {
+    await requireWriteAccess(ref);
     final current = state.value;
     if (current == null || current.meal.source == MealSource.saved) return null;
     final result = await ref
@@ -107,6 +111,7 @@ class MealDetailController extends _$MealDetailController {
   /// sent until the server has it. The detail state is untouched; a failure
   /// (offline, RLS refusing a non-admin) rethrows for the screen to show.
   Future<void> review({required bool isGood, required String why}) async {
+    if (!await ref.canWrite()) return;
     final current = state.value;
     if (current == null) return;
     final clean = why.trim();

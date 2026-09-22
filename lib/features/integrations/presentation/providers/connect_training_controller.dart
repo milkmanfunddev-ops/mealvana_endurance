@@ -34,6 +34,7 @@ import '../../domain/integration.dart';
 import '../../../onboarding/presentation/providers/onboarding_controller.dart';
 import '../../domain/runna_defaults.dart';
 import 'integrations_providers.dart';
+import '../../../subscription/application/write_guard.dart';
 
 part 'connect_training_controller.g.dart';
 
@@ -634,6 +635,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectFinalSurge() async {
+    await requireWriteAccess(ref);
     return _connectProvider(
       providerId: 'final_surge',
       authenticate: () => _finalSurgeOAuth.authenticate(_currentUserId!),
@@ -708,9 +710,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // a network failure must not fail the disconnect (the tokens are
       // already gone), and the flag is re-appliable.
       try {
-        final supabaseClient = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient;
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         await supabaseClient
             .from('garmin_health_data')
             .update({'hidden_by_disconnect': true})
@@ -782,9 +782,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // Explicit "also delete my synced data": the wellness store and the
       // users mirrors go too (Q-INT2 hard-purge half). Best effort.
       try {
-        final supabaseClient = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient;
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         await supabaseClient
             .from('garmin_health_data')
             .delete()
@@ -806,9 +804,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
       // leaves these rows: they surface nowhere and age out via the 90-day
       // TTL regardless.
       try {
-        final supabaseClient = ref
-            .read(appExternalDepsProvider)
-            .supabaseClient;
+        final supabaseClient = ref.read(appExternalDepsProvider).supabaseClient;
         await supabaseClient
             .from('provider_raw_payloads')
             .delete()
@@ -858,6 +854,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// `_syncGarminMappingIfNeeded`). From settings the row already exists, so the
   /// mapping is written immediately.
   Future<bool> connectGarmin({bool isOnboarding = false}) async {
+    await requireWriteAccess(ref);
     return _connectProvider(
       providerId: 'garmin',
       authenticate: () => _garminOAuth.authenticate(
@@ -898,6 +895,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// Returns false (and surfaces an error via snackbar in the caller) on
   /// auth failure / network error / Garmin refusal.
   Future<bool> triggerGarminBackfill() async {
+    await requireWriteAccess(ref);
     // This is invoked from build()'s fire-and-forget kick via
     // `Future<void>(() async { await triggerGarminBackfill(); })`, which runs
     // in a later microtask — by the time it executes, the controller may
@@ -1038,6 +1036,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectVdot() async {
+    await requireWriteAccess(ref);
     return _connectProvider(
       providerId: 'vdot',
       authenticate: () => _vdotOAuth.authenticate(_currentUserId!),
@@ -1069,6 +1068,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// inline the state management), and pushes dirty rows to Supabase
   /// immediately after sync to avoid the duplicate-on-relogin trap.
   Future<VdotSyncResult> importVdotWorkouts() async {
+    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       return VdotSyncResult.error('Missing user ID');
     }
@@ -1271,6 +1271,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// carries no athlete identity) is 'runna-' + a short stable hash of the
   /// URL.
   Future<bool> connectRunna(String feedUrl) async {
+    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       if (kDebugMode) {
         print('❌ connectRunna: No current user ID');
@@ -1389,6 +1390,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   /// failures into UploadResult.failed) to avoid the duplicate-on-relogin
   /// trap.
   Future<RunnaSyncResult> importRunnaWorkouts() async {
+    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       return RunnaSyncResult.error('Missing user ID');
     }
@@ -1796,6 +1798,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<SyncResult> importFinalSurgeWorkouts() async {
+    await requireWriteAccess(ref);
     return _importWorkouts<SyncResult>(
       providerId: 'final_surge',
       syncWorkouts: () => _finalSurgeSync.syncWorkouts(_currentUserId!),
@@ -1816,6 +1819,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<bool> connectTrainingPeaks() async {
+    await requireWriteAccess(ref);
     final connected = await _connectProvider(
       providerId: 'training_peaks',
       authenticate: () async {
@@ -1872,6 +1876,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<TrainingPeaksSyncResult> importTrainingPeaksWorkouts() async {
+    await requireWriteAccess(ref);
     if (_currentUserId == null) {
       return TrainingPeaksSyncResult.error('Missing user ID');
     }
@@ -1941,6 +1946,7 @@ class ConnectTrainingController extends _$ConnectTrainingController {
   }
 
   Future<int> importWorkouts() async {
+    await requireWriteAccess(ref);
     if (state.value?.isFinalSurgeConnected == true) {
       final result = await importFinalSurgeWorkouts();
       return result.newWorkouts;
