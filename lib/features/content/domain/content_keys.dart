@@ -252,16 +252,19 @@ class ContentKeys {
   static const String mpVanaNoteEmpty = 'meal_planning.vana_note_empty';
   static const String mpProRequired = 'meal_planning.pro_required';
   static const String mpRateLimited = 'meal_planning.rate_limited';
+
   /// The shared server-side limiter turned a meal analysis away (429,
   /// `describe-meal` / `analyze-meal-photo`, mp-469). `{n}` is the wait the
   /// server named. Vana chat has its own, shorter line (`mpRateLimited`).
   static const String mpAnalysisRateLimited =
       'meal_planning.analysis_rate_limited';
+
   /// The photo or the description is not food (422 `not_food` from
   /// `describe-meal` / `analyze-meal-photo`, mp-473). One short line instead of
   /// invented macros.
   static const String mpAnalysisNotFood = 'meal_planning.analysis_not_food';
   static const String mpServerError = 'meal_planning.server_error';
+
   /// The AI Gateway refused US — our key's monthly budget hard-stopped, or
   /// the key is gone (mp-437). Never the top-up sheet: the athlete's own
   /// budget is fine. Covers Vana chat, meal logging and the coach insight.
@@ -948,6 +951,13 @@ class ContentKeys {
   static const String aiCreditsToppedUpBody = 'ai_credits.topped_up_body';
   static const String aiCreditsLeftChip = 'ai_credits.left_chip';
   static const String aiCreditsStartUsing = 'ai_credits.start_using';
+  static const String aiCreditsPurchasePending = 'ai_credits.purchase_pending';
+  static const String aiCreditsSignInToTopUp = 'ai_credits.sign_in_to_top_up';
+  static const String aiCreditsPurchaseFailed = 'ai_credits.purchase_failed';
+  static const String aiCreditsBalanceLeft = 'ai_credits.balance_left';
+  static const String aiCreditsPackShare = 'ai_credits.pack_share';
+  static const String aiCreditsPackPriceOneTime =
+      'ai_credits.pack_price_one_time';
 
   // What a pack adds, as a share of a month (mp-430 clause 7). Keyed from
   // `kPackContentKeyByProductId`, never from a credit count.

@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/credits_controller.dart';
 import 'package:mealvana_endurance/features/ai_credits/application/purchase_controller.dart';
 import 'package:mealvana_endurance/features/ai_credits/data/credits_repository.dart';
+import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart';
 import 'package:mealvana_endurance/features/ai_credits/presentation/insufficient_credits_handler.dart';
 import 'package:mealvana_endurance/features/ai_credits/presentation/widgets/vana_budget_card.dart';
 import 'package:mealvana_endurance/features/content/application/content_service.dart';
@@ -99,7 +100,10 @@ void main() {
     ) async {
       await pumpCard(tester, row: _halfSpent);
 
-      expect(find.byKey(const ValueKey('ai_credits.usage_bar')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('ai_credits.usage_bar')),
+        findsOneWidget,
+      );
 
       // The fill is really drawn, half the bar wide and as tall as it. A
       // loose Stack child sized to a childless ColoredBox is zero high, so
@@ -108,10 +112,12 @@ void main() {
         find.byKey(const ValueKey('ai_credits.usage_bar')),
       );
       final fill = tester.getSize(
-        find.descendant(
-          of: find.byKey(const ValueKey('ai_credits.usage_bar')),
-          matching: find.byType(ColoredBox),
-        ).last,
+        find
+            .descendant(
+              of: find.byKey(const ValueKey('ai_credits.usage_bar')),
+              matching: find.byType(ColoredBox),
+            )
+            .last,
       );
       expect(fill.height, bar.height);
       expect(fill.width, closeTo(bar.width / 2, 1));
@@ -130,7 +136,9 @@ void main() {
       );
       expect(
         tester
-            .widget<Text>(find.byKey(const ValueKey('ai_credits.usage_refills')))
+            .widget<Text>(
+              find.byKey(const ValueKey('ai_credits.usage_refills')),
+            )
             .data,
         contains('${refills.day}'),
       );
@@ -156,25 +164,29 @@ void main() {
       expect(texts, isNot(contains('4.00')));
     });
 
-    testWidgets('a wallet with no budget window says so and shows no bar fill', (
-      tester,
-    ) async {
-      await pumpCard(
-        tester,
-        row: const {
-          'balance': 0,
-          'allowance': 0,
-          'allowance_monthly': 0,
-          'allowance_expires_at': null,
-        },
-      );
+    testWidgets(
+      'a wallet with no budget window says so and shows no bar fill',
+      (tester) async {
+        await pumpCard(
+          tester,
+          row: const {
+            'balance': 0,
+            'allowance': 0,
+            'allowance_monthly': 0,
+            'allowance_expires_at': null,
+          },
+        );
 
-      expect(
-        find.text(content['ai_credits.usage_no_window']!),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('ai_credits.usage_refills')), findsNothing);
-    });
+        expect(
+          find.text(content['ai_credits.usage_no_window']!),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('ai_credits.usage_refills')),
+          findsNothing,
+        );
+      },
+    );
 
     testWidgets('at 100% it says so and offers the top-up sheet (mp-282)', (
       tester,
@@ -228,6 +240,20 @@ void main() {
 
       expect(repo.subscribes, 1);
       expect(repo.removes, 1);
+    });
+
+    testWidgets('a row pushed down the wire reaches the bar through the '
+        'real controller', (tester) async {
+      final repo = await pumpCard(tester, row: _halfSpent);
+      expect(find.text(content['ai_credits.usage_spent']!), findsNothing);
+
+      // The server drains the wallet; the channel hands the row to
+      // CreditsController.applyRemoteWallet, and the bar follows.
+      repo.onChange!(CreditWallet.fromMap(_allSpent));
+      await tester.pumpAndSettle();
+
+      expect(find.text(content['ai_credits.usage_spent']!), findsOneWidget);
+      expect(find.byKey(const ValueKey('ai_credits.top_up')), findsOneWidget);
     });
 
     testWidgets('no budget screen, no connection', (tester) async {

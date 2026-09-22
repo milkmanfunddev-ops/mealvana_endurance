@@ -806,7 +806,7 @@
     "companion_session_ride": "ride",
     "companion_session_swim": "swim",
     "companion_session_other": "session",
-    "out_of_credits_strip": "Out of tokens for now — top up to keep chatting",
+    "out_of_credits_strip": "You've used this month's Vana — top up to keep chatting",
     "out_of_credits_action": "Top up",
     "photos_title": "Meal photos",
     "photos_current": "What athletes see now",
@@ -866,7 +866,13 @@
     "topped_up_title": "You're topped up!",
     "topped_up_body": "{pack} was added to your balance.",
     "left_chip": "{percent}% of a month left",
-    "start_using": "Start using Vana"
+    "start_using": "Start using Vana",
+    "purchase_pending": "Your purchase went through, but the budget is still on its way. It'll appear shortly — no need to buy again.",
+    "sign_in_to_top_up": "Sign in to top up — your Vana budget is tied to your account so it follows you to any device.",
+    "purchase_failed": "That didn't go through. Nothing was charged.",
+    "balance_left": "{percent}% of a month left",
+    "pack_share": "{percent}% of a month of Vana",
+    "pack_price_one_time": "{price} one-time purchase"
   },
   "plan_ended": {
     "message": "Your plan has ended. Your data is read-only until you subscribe.",

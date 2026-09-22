@@ -18,7 +18,8 @@ class BudgetShare {
     required this.shareUsed,
     required this.refillAt,
     required this.boughtExtraShare,
-  });
+    bool? spent,
+  }) : _spent = spent;
 
   /// 0..1 of this period's budget spent. Null when no budget window is open
   /// (never granted, or lapsed), which is the one case with nothing to say
@@ -33,6 +34,8 @@ class BudgetShare {
   /// Bought budget never expires (Apple 3.1.1), so it has no date.
   final double boughtExtraShare;
 
+  final bool? _spent;
+
   /// Whether there is a month to show a bar for.
   bool get hasWindow => shareUsed != null;
 
@@ -44,7 +47,11 @@ class BudgetShare {
   /// (mp-430 clause 6). A wallet that never had a month counts as spent: it
   /// has nothing either. What the screen SAYS about it differs, which is
   /// [hasWindow]'s job, not this one's.
-  bool get isSpent => shareLeft <= 0;
+  ///
+  /// Read from the raw balance when the row gave one, never from the rounded
+  /// shares: a wallet with a cent left reads "100% used" and is still not
+  /// spent, so the server would accept its next call (mp-436 clause 1).
+  bool get isSpent => _spent ?? shareLeft <= 0;
 
   @override
   String toString() =>
@@ -61,7 +68,8 @@ class BudgetShare {
 /// that comes from the grant the row itself carries.
 const int kMonthlyBudgetMicros = 4000000;
 
-double _share(double n) => (n * 100).round() / 100;
+/// Round a share to whole percent, the precision the screen shows.
+double _wholePercent(double n) => (n * 100).round() / 100;
 
 /// Derive what the athlete may see from a wallet row.
 BudgetShare budgetShareOf(CreditWallet wallet) {
@@ -71,7 +79,7 @@ BudgetShare budgetShareOf(CreditWallet wallet) {
   final windowOpen = monthly > 0 && wallet.allowanceRenewsAt != null;
 
   final used = windowOpen
-      ? _share((1 - allowance / monthly).clamp(0.0, 1.0))
+      ? _wholePercent((1 - allowance / monthly).clamp(0.0, 1.0))
       : null;
   final bought = balance - allowance;
 
@@ -80,7 +88,8 @@ BudgetShare budgetShareOf(CreditWallet wallet) {
     refillAt: wallet.allowanceRenewsAt,
     boughtExtraShare: bought <= 0
         ? 0
-        : _share(bought / kMonthlyBudgetMicros),
+        : _wholePercent(bought / kMonthlyBudgetMicros),
+    spent: balance <= 0,
   );
 }
 

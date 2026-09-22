@@ -5,6 +5,8 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/feedback/mealvana_snackbar.dart';
+import '../../../content/application/content_service.dart';
+import '../../../content/domain/content_keys.dart';
 import '../../application/credits_controller.dart';
 import '../../application/purchase_controller.dart';
 import '../../domain/budget_share.dart';
@@ -199,13 +201,14 @@ class _EnabledBody extends ConsumerWidget {
 // Balance header
 // ---------------------------------------------------------------------------
 
-class _BalanceHeader extends StatelessWidget {
+class _BalanceHeader extends ConsumerWidget {
   const _BalanceHeader({required this.walletAsync});
 
   final AsyncValue<CreditWallet> walletAsync;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -219,8 +222,14 @@ class _BalanceHeader extends StatelessWidget {
               // A share of a month, never the wallet's micro-dollars
               // (mp-430 clause 8, mp-436 clause 3).
               data: (wallet) => Text(
-                '${percentOf(budgetShareOf(wallet).shareLeft.clamp(0.0, 9.99))}% '
-                'of a month left',
+                ContentKeys.format(
+                  content.getValue(ContentKeys.aiCreditsBalanceLeft),
+                  {
+                    'percent': percentOf(
+                      budgetShareOf(wallet).shareLeft.clamp(0.0, 9.99),
+                    ),
+                  },
+                ),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -237,7 +246,7 @@ class _BalanceHeader extends StatelessWidget {
 // Package list
 // ---------------------------------------------------------------------------
 
-class _PackageList extends StatelessWidget {
+class _PackageList extends ConsumerWidget {
   const _PackageList({
     required this.packages,
     required this.isBusy,
@@ -256,7 +265,8 @@ class _PackageList extends StatelessWidget {
       packShareForProductId(identifier);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final content = ref.watch(contentServiceProvider);
     return Column(
       children: packages.map((pkg) {
         final product = pkg.storeProduct;
@@ -270,11 +280,19 @@ class _PackageList extends StatelessWidget {
             ),
             title: share != null
                 ? Text(
-                    '${percentOf(share)}% of a month of Vana',
+                    ContentKeys.format(
+                      content.getValue(ContentKeys.aiCreditsPackShare),
+                      {'percent': percentOf(share)},
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   )
                 : Text(product.title),
-            subtitle: Text('${product.priceString} one-time purchase'),
+            subtitle: Text(
+              ContentKeys.format(
+                content.getValue(ContentKeys.aiCreditsPackPriceOneTime),
+                {'price': product.priceString},
+              ),
+            ),
             trailing: FilledButton(
               onPressed: isBusy ? null : () => onBuy(pkg),
               child: isBusy

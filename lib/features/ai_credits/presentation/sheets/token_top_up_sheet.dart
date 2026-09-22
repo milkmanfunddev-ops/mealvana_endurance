@@ -93,7 +93,8 @@ List<_Pack> _packsFrom(List<Package> packages) {
   // Order by what each adds so "Best value" is unambiguous; unknown SKUs sort
   // last.
   packs.sort(
-    (a, b) => (a.share ?? double.maxFinite).compareTo(b.share ?? double.maxFinite),
+    (a, b) =>
+        (a.share ?? double.maxFinite).compareTo(b.share ?? double.maxFinite),
   );
 
   return [
@@ -510,9 +511,7 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
           // itself to the celebration state when the webhook lands.
           _awaitingCreditFrom = balanceBefore;
           _awaitingPack = packTitle;
-          _error =
-              'Your purchase went through, but the budget is still on its '
-              "way. It'll appear shortly — no need to buy again.";
+          _error = content.getValue(ContentKeys.aiCreditsPurchasePending);
         });
 
       case PurchaseOutcome.cancelled:
@@ -537,15 +536,13 @@ class _TokenTopUpSheetState extends ConsumerState<_TokenTopUpSheet> {
       case PurchaseOutcome.notSignedIn:
         setState(() {
           _buying = false;
-          _error =
-              'Sign in to top up — your Vana budget is tied to your account '
-              'so it follows you to any device.';
+          _error = content.getValue(ContentKeys.aiCreditsSignInToTopUp);
         });
 
       case PurchaseOutcome.failed:
         setState(() {
           _buying = false;
-          _error = "That didn't go through. Nothing was charged.";
+          _error = content.getValue(ContentKeys.aiCreditsPurchaseFailed);
         });
     }
   }

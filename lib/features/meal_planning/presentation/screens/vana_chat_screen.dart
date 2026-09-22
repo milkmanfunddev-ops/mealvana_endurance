@@ -1220,7 +1220,7 @@ class _EditingStrip extends StatelessWidget {
   }
 }
 
-/// "Out of tokens for now — top up to keep chatting" over the composer with
+/// "You've used this month's Vana — top up to keep chatting" over the composer with
 /// a "Top up" action (mp-282 §2): the one line Vana shows for an empty
 /// wallet, never a message in the thread.
 class _OutOfCreditsStrip extends StatelessWidget {

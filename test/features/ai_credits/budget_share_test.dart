@@ -15,6 +15,20 @@ import 'package:mealvana_endurance/features/ai_credits/domain/credit_wallet.dart
 
 void main() {
   group('budgetShareOf', () {
+    test('a cent left reads 100% used and is still not spent (mp-436 §1)', () {
+      final share = budgetShareOf(
+        CreditWallet.fromMap(const {
+          'balance': 10000,
+          'allowance': 10000,
+          'allowance_monthly': 4000000,
+          'allowance_expires_at': '2026-10-15T12:00:00+00:00',
+        }),
+      );
+
+      expect(share.shareUsed, 1.0);
+      expect(share.isSpent, isFalse);
+    });
+
     test('half a month spent, a quarter-month pack bought', () {
       final share = budgetShareOf(
         CreditWallet.fromMap(const {
@@ -32,31 +46,34 @@ void main() {
       expect(share.isSpent, isFalse);
     });
 
-    test('no window open: nothing to say about a month, bought extra stands', () {
-      final noGrant = budgetShareOf(
-        CreditWallet.fromMap(const {
-          'balance': 400000,
-          'allowance': 0,
-          'allowance_monthly': 0,
-          'allowance_expires_at': null,
-        }),
-      );
-      expect(noGrant.shareUsed, isNull);
-      expect(noGrant.refillAt, isNull);
-      expect(noGrant.boughtExtraShare, 0.1);
+    test(
+      'no window open: nothing to say about a month, bought extra stands',
+      () {
+        final noGrant = budgetShareOf(
+          CreditWallet.fromMap(const {
+            'balance': 400000,
+            'allowance': 0,
+            'allowance_monthly': 0,
+            'allowance_expires_at': null,
+          }),
+        );
+        expect(noGrant.shareUsed, isNull);
+        expect(noGrant.refillAt, isNull);
+        expect(noGrant.boughtExtraShare, 0.1);
 
-      // A grant size with no expiry is not an open window either.
-      final noExpiry = budgetShareOf(
-        CreditWallet.fromMap(const {
-          'balance': 400000,
-          'allowance': 0,
-          'allowance_monthly': 4000000,
-          'allowance_expires_at': null,
-        }),
-      );
-      expect(noExpiry.shareUsed, isNull);
-      expect(noExpiry.boughtExtraShare, 0.1);
-    });
+        // A grant size with no expiry is not an open window either.
+        final noExpiry = budgetShareOf(
+          CreditWallet.fromMap(const {
+            'balance': 400000,
+            'allowance': 0,
+            'allowance_monthly': 4000000,
+            'allowance_expires_at': null,
+          }),
+        );
+        expect(noExpiry.shareUsed, isNull);
+        expect(noExpiry.boughtExtraShare, 0.1);
+      },
+    );
 
     test('an empty wallet inside an open window is the whole month used', () {
       final share = budgetShareOf(
