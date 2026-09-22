@@ -2841,3 +2841,258 @@ Last extracted: 1dedc493
 **What it touches.** App Store Connect, RevenueCat offerings.
 
 > 2026-09-22 opened in wave 3 ticket 15
+
+## mp-568 · A replayed conversation is sent exactly as the first time
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-568.svg
+- screen: none (the Vana server)
+- source: wave ai-cost 5 ticket 07
+
+**Context.** A cache read only pays when a turn's prompt begins with exactly the bytes the last turn sent. Until this wave two things were left out of the stored transcript: the line saying which screen the athlete was on, and the hidden instruction that made the opener speak first. Each new turn therefore missed the cache the last one had written.
+
+**Question.** Where do the screen line and the opener's hidden instruction live between turns?
+
+**Decision.** They are saved with the conversation and put back on every turn exactly as first sent. The screen line stays with the athlete's message it came in on; the opener's instruction stays with the opener's own reply. The summary that shortens a long chat skips both, so an instruction never leaks into what Vana remembers. Example: Lee opens Vana from the Plan tab on Sept 22, and turn one carries "screen: Plan tab". On Sept 23 turn two sends turn one unchanged and adds its own screen line, so the 16,000 tokens before it are read from the cache instead of written again.
+
+**Why.** Without a byte-identical replay the cache is written every turn and read never.
+
+**What else was considered.** A hidden athlete message (the app would show it); a column on the conversation (loses its place for an opener mid-thread).
+
+**What it touches.** The Vana server (chat, opener, summariser) and stored transcripts. Nothing on screen.
+
+**Details.** The screen line is `metadata.situation` on the athlete's row, replayed as a second text part; the opener's instruction is `metadata.opener_prompt` on the opener's assistant row. `transcriptFromMessages` skips ids with the `opener:` prefix and text parts starting with the situation mark. Two tests replay an opener turn and an athlete turn and assert the sent prefix is equal.
+
+> 2026-09-22 proposed in wave 5 ticket 07
+
+## mp-569 · Vana's calls go to Anthropic only
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-569.svg
+- screen: none (the Vana server)
+- source: wave ai-cost 5 ticket 07
+
+**Context.** The gateway can send a Claude call to Anthropic, Bedrock or Vertex. Each keeps its own cache, so a call that lands somewhere new starts cold and pays full price. Ticket 07 asked for calls pinned to Anthropic with a session id per conversation.
+
+**Question.** What happens when Anthropic is down?
+
+**Decision.** Every Vana call goes to Anthropic and nowhere else. When Anthropic is down, Vana says it is unavailable right now, the same line as any other refusal, instead of answering from a cold cache somewhere else. Example: an Anthropic outage at 7pm on Oct 3. Lee taps send, sees "Vana is unavailable right now", and nothing is charged.
+
+**Why.** One provider is one cache. A fallback would make the cheap turn the exception.
+
+**What else was considered.** Keeping Bedrock and Vertex as fallbacks: every fallback turn would be a cold one at full price.
+
+**What it touches.** The Vana server; the unavailable line in Vana chat.
+
+**Details.** `gateway.only: ['anthropic']`; `x-session-affinity` carries the conversation id. The gateway does not echo the session header, so its effect could not be checked from outside; the pin is what the cache rests on.
+
+> 2026-09-22 proposed in wave 5 ticket 07
+
+## mp-570 · The shared start of every Vana prompt is kept warm for an hour
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- svg: docs/ssot/decisions/images/mealplanning/mp-570.svg
+- screen: none (the Vana server)
+- source: wave ai-cost 5 ticket 07
+
+**Context.** Anthropic keeps a cached prompt for five minutes unless asked for an hour, which costs twice as much to write once. The start of a planning turn (tools, persona, the athlete's context) is about 16,000 tokens and the same for every turn of a conversation. Ticket 07 asked for the hour if the setting survived the gateway.
+
+**Question.** Five minutes or an hour?
+
+**Decision.** An hour. The gateway passes the setting through, so an athlete who comes back to Vana forty minutes later still reads the start of the prompt from the cache. Measured on dev with ten planning turns in one conversation: 85% of the input read from the cache, against 43% before this wave, at about 0.8 cents a turn. Example: Lee's first turn on Sept 22 costs 3.2 cents, the hour's write; the nine turns after it cost 0.2 to 0.5 cents each.
+
+**Why.** A conversation is rarely ten turns inside five minutes; the hour is where the reads come from.
+
+**What else was considered.** Five minutes: a cheaper first turn, cold again after a pause.
+
+**What it touches.** The Vana server. Nothing on screen.
+
+**Details.** Read share 85.2% over ten turns, 93.9% over the nine follow-ups; the turns right after a context rebuild read 85.7, 83.2 and 79.2%. $0.0077 a turn on average; the cold turn $0.032 with the hour against $0.022 with five minutes. Measured against the gateway directly with a synthetic athlete, not on the deployed dev function. Raw runs in `.scratch/ai-cost/probe/`.
+
+> 2026-09-22 proposed in wave 5 ticket 07
+
+## mp-571 · The phone works out the share of the month from the wallet row
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- screen: Vana settings
+- source: wave ai-cost 5 ticket 10
+- linked: mp-576
+
+**Context.** When the app asks the server to check the wallet, the server answers with the share of the month used, the refill date and any bought extra. But the wallet row reaches the phone two other ways as well: a plain read when the app opens, and a live push when the row changes. Both carry the raw balance in micro-dollars and none of the three shares.
+
+**Question.** Who turns the wallet row into what the athlete sees?
+
+**Decision.** The phone does, with the same arithmetic as the server, so the bar reads the same whichever way the row arrived. The screen never shows a dollar figure. Example: Lee's row on Sept 22 says balance $3.00, monthly grant $4.00, $2.00 of the grant left. The bar says 50% used, refills Oct 15, plus 25% of a month bought.
+
+**Why.** Three doors and one formula is the only way the bar cannot disagree with itself in the middle of a session.
+
+**What else was considered.** Carrying the server's three fields on the wallet and ignoring the other two doors; the bar would go stale after a live push.
+
+**What it touches.** Vana settings, the top-up sheet, the budget pill; `lib/features/ai_credits/domain/budget_share.dart`.
+
+**Details.** Mirrors `budgetStatus` in `allowance.ts`, with the unit test copying that file's cases. Bought extra is a share of `kMonthlyBudgetMicros` (4,000,000, a mirror of the server's default); the share used reads the grant the row carries, so a trial week reads right. The raw row still reaches the phone: mp-576.
+
+> 2026-09-22 proposed in wave 5 ticket 10
+
+## mp-572 · Price tags are gone, and the pill shows what is left as a percent
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- screen: Describe meal and Log meal
+- source: wave ai-cost 5 ticket 10
+
+**Context.** Beside Describe, Analyze and the photo pickers sat a small tag saying what the tap would cost, and the pill in the corner showed the wallet's balance. Since ticket 09 nothing counts turns or actions (mp-430 clause 1): a call costs what it costs, so the tags were a made-up price, and the balance is now in micro-dollars.
+
+**Question.** What do the tags and the pill say now?
+
+**Decision.** The tags say nothing: they draw nothing, and the buttons stay where they were. The pill shows how much of a month is left as a percentage, the rest of this month plus anything bought, and reads the wallet the app already holds without opening the live connection. The old buy-credits screen, still reachable by its route, speaks in the same shares. Example: Lee with half the month left and a quarter-month pack bought sees "75%" in the pill and no tag beside Analyze.
+
+**Why.** A tag can only lie when a turn has no fixed price, and a percentage is the one number the athlete may see.
+
+**What else was considered.** Removing the tag widgets and their call sites: a bigger diff for the same screen.
+
+**What it touches.** Describe meal, Log meal, the legacy buy-credits screen.
+
+**Details.** `TokenCostTag` and `TokenCostChip` render `SizedBox.shrink()`; the pill shows `percentOf(shareLeft.clamp(0, 9.99))`.
+
+> 2026-09-22 proposed in wave 5 ticket 10
+
+## mp-573 · A cent left is not spent
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- screen: Vana settings
+- source: wave ai-cost 5 ticket 10, review
+
+**Context.** The bar rounds to whole percent, so a wallet with two cents of a $4 month left reads "100% used". The server still accepts that wallet's next call: a call that starts inside the budget runs (mp-436 clause 1). The first build of ticket 10 read "spent" off the rounded share, so the card said the month was used up and offered the top-up sheet while Vana would still have answered.
+
+**Question.** When does the card say the month is used up?
+
+**Decision.** Only when the wallet's balance is really zero. The bar may say 100% used while the card still lets the athlete carry on; the top-up sheet comes on the first call the server refuses. Example: Lee has one cent left on Sept 22. The bar says 100% used, the card does not say the month is gone, his next message goes through, and the one after that gets the sheet.
+
+**Why.** The screen must not refuse before the server does.
+
+**What else was considered.** None recorded.
+
+**What it touches.** Vana settings, the top-up sheet.
+
+**Details.** `BudgetShare.isSpent` reads the raw balance (`balance <= 0`), never the rounded shares. Unit test: a cent left reads 100% used and is still not spent.
+
+> 2026-09-22 proposed in wave 5 ticket 10
+
+## mp-574 · The line above the composer says the month is used
+- category: Cutting costs
+- status: proposed
+- image: none
+- caption:
+- screen: Vana chat
+- source: wave ai-cost 5 ticket 10, review
+
+**Context.** When the server refuses a Vana message for an empty wallet, one line appears above the composer and send opens the top-up sheet (mp-282 clause 2). The line said "Out of tokens for now — top up to keep chatting", the old unit, next to a sheet now worded in months.
+
+**Question.** What does the line say?
+
+**Decision.** "You've used this month's Vana — top up to keep chatting". Example: Lee, at 100% on Sept 30, taps send. The line appears, the sheet opens, and nothing on screen says tokens or credits.
+
+**Why.** Text that names credits changes with the unit (mp-430 clause 7).
+
+**What else was considered.** None recorded.
+
+**What it touches.** Vana chat; `meal_planning.out_of_credits_strip` in the content system.
+
+> 2026-09-22 proposed in wave 5 ticket 10
+
+## mp-575 · The wallet's live connection follows the budget screens
+- category: Cutting costs
+- status: proposed
+- detail: yes
+- image: none
+- caption:
+- screen: Vana settings
+- source: wave ai-cost 5 ticket 10
+
+**Context.** The app used to keep a live connection to the wallet open for the whole session so the balance stayed fresh. mp-475 says it is open only while a budget screen is showing.
+
+**Question.** How does the connection know a budget screen is showing?
+
+**Decision.** A budget screen holds the connection open by watching it. When the last such screen goes away the connection closes a moment later, and it never opens on a screen that shows no budget. A pushed row still lands in the one wallet the session keeps. Example: Lee opens Vana settings (the connection opens), backs out (it closes two seconds later), sends three Vana messages (no connection), opens the top-up sheet (it opens again).
+
+**Why.** Riverpod's own reference counting is the mechanism, so there is no counter to get wrong.
+
+**What else was considered.** A retain/release counter on the wallet controller.
+
+**What it touches.** `credits_controller.dart` (the channel out of `build`, `applyRemoteWallet` in), `wallet_channel.dart`.
+
+**Details.** `walletChannelProvider` is `autoDispose`. A widget test over a counting transport asserts one subscribe on show, one remove on hide, none without a card, and that a pushed row reaches the bar through the real controller.
+
+> 2026-09-22 proposed in wave 5 ticket 10
+
+## mp-576 · Should the wallet row stop reaching the phone in dollars?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-571
+- image: none
+- caption:
+- screen: none (the wallet transport)
+- source: wave ai-cost 5 ticket 10
+
+**Context.** mp-436 clause 3 says the app is never sent a dollar figure. After ticket 10 the screen shows none, but the row the phone reads (balance, allowance and monthly grant, all in micro-dollars) still arrives by the plain read and the live push. Closing that means a database view or a server call that returns only the three shares, outside ticket 10's files.
+
+**Question.** Is "never sent" about the screen, which is done, or about the wire, which needs a server change and a ticket of its own?
+
+**Why.** It decides whether cutting costs has one more ticket or none.
+
+**What it touches.** The wallet read and push, `token_wallets`, ensure-credits.
+
+> 2026-09-22 opened in wave 5 ticket 10
+
+## mp-577 · Is 80% cache read a floor for every turn or an average over ten?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-570
+- image: none
+- caption:
+- screen: none (the Vana server)
+- source: wave ai-cost 5 ticket 07
+
+**Context.** Ticket 07 asked for 80% or better on ten planning turns and measured 85%. But the turn right after the athlete changes the plan reads less, and one of the ten read 79%: history that grows behind a rebuilt context cannot sit under a cache marker.
+
+**Question.** Does the 80% target hold for every turn, or for the conversation as a whole?
+
+**Why.** A per-turn floor would need a third cache marker on the conversation history, more work for less than a cent a conversation.
+
+**What it touches.** The Vana server, the eval seam.
+
+> 2026-09-22 opened in wave 5 ticket 07
+
+## mp-578 · What is the $0.99 test pack called in months?
+- category: Cutting costs
+- kind: question
+- status: open
+- linked: mp-475
+- image: none
+- caption:
+- screen: none (the top-up sheet on dev)
+- source: wave ai-cost 5 ticket 10
+
+**Context.** The store has a $0.99 pack that exists to test the purchase pipeline. The two real packs are "a quarter of a month" and "a month and a quarter" (mp-430 clause 7). The test pack adds about half a percent of a month, which rounds to nothing as a percentage. The build named it "A sliver of a month of Vana".
+
+**Question.** Keep "a sliver", pick another name, or hide the pack from the sheet?
+
+**Why.** It shows in the sheet on dev today with that wording.
+
+**What it touches.** The top-up sheet, `ai_credits.pack_sliver` in the content system.
+
+> 2026-09-22 opened in wave 5 ticket 10
