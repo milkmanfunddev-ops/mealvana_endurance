@@ -856,5 +856,22 @@
   "plan_ended": {
     "message": "Your plan has ended. Your data is read-only until you subscribe.",
     "subscribe_button": "Subscribe"
+  },
+  "subscription": {
+    "settings_row_title": "Subscription",
+    "settings_row_subtitle": "Your plan, what it includes, and managing it",
+    "title": "Subscription",
+    "status_trial": "Free trial",
+    "status_active": "Subscribed",
+    "status_founding": "Founding member",
+    "status_ended": "Your plan has ended",
+    "trial_ends": "Your free week ends on {date}. Your plan starts then.",
+    "trial_ends_no_renew": "Your free week ends on {date}. It won't renew.",
+    "renews": "Renews on {date}.",
+    "ends": "Ends on {date}. It won't renew.",
+    "ended_on": "It ended on {date}. Your data is read-only until you subscribe.",
+    "ended_no_date": "Your data is read-only until you subscribe.",
+    "includes_header": "What your plan includes",
+    "upgrade_button": "Upgrade"
   }
 }

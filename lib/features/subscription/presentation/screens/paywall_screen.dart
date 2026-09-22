@@ -10,6 +10,7 @@ import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
 import '../../application/pro_paywall_controller.dart';
+import '../widgets/pro_feature_list.dart';
 
 /// Opens [uri] outside the app. A provider so widget tests can intercept
 /// "Manage subscription" and the terms and privacy links instead of reaching
@@ -376,7 +377,10 @@ class PaywallScreen extends ConsumerWidget {
                     // Four headline features, the divider and the rest; the AI
                     // features share the one Vana line (mp-493 §2).
                     const SizedBox(height: AppSpacing.xxl),
-                    _PaywallFeatures(content: content),
+                    ProFeatureList(
+                      key: const ValueKey('paywall.features'),
+                      content: content,
+                    ),
 
                     // Trial terms, the price after the trial, renewal and the
                     // two links (mp-453 §4), whatever the store answered.
@@ -592,54 +596,6 @@ class _PlansTrayState extends State<_PlansTray> {
           ),
       ],
       action: continueButton,
-    );
-  }
-}
-
-/// What a plan buys (mp-493 §2): four headline features, then the rest.
-/// Vana carries the AI features in one line.
-class _PaywallFeatures extends StatelessWidget {
-  const _PaywallFeatures({required this.content});
-
-  final ContentService content;
-
-  @override
-  Widget build(BuildContext context) {
-    String t(String key) => content.getValue(key);
-    FeatureListItem more(IconData icon, String key) =>
-        FeatureListItem(leading: FeatureListIcon(icon), title: t(key));
-    return FeatureList(
-      key: const ValueKey('paywall.features'),
-      headline: [
-        FeatureListItem(
-          leading: const FeatureListIcon(Icons.bolt),
-          title: t(ContentKeys.paywallFeatureFuelTitle),
-          body: t(ContentKeys.paywallFeatureFuelBody),
-        ),
-        FeatureListItem(
-          leading: const VanaAvatar(size: 40),
-          title: t(ContentKeys.paywallFeatureVanaTitle),
-          body: t(ContentKeys.paywallFeatureVanaBody),
-        ),
-        FeatureListItem(
-          leading: const FeatureListIcon(Icons.shopping_basket_outlined),
-          title: t(ContentKeys.paywallFeatureShoppingTitle),
-          body: t(ContentKeys.paywallFeatureShoppingBody),
-        ),
-        FeatureListItem(
-          leading: const FeatureListIcon(Icons.watch_outlined),
-          title: t(ContentKeys.paywallFeatureSyncTitle),
-          body: t(ContentKeys.paywallFeatureSyncBody),
-        ),
-      ],
-      dividerLabel: t(ContentKeys.paywallFeaturesDivider),
-      more: [
-        more(Icons.restaurant_menu, ContentKeys.paywallFeatureRecipes),
-        more(Icons.directions_bike, ContentKeys.paywallFeatureBrick),
-        more(Icons.water_drop_outlined, ContentKeys.paywallFeatureHydration),
-        more(Icons.science_outlined, ContentKeys.paywallFeatureFormulas),
-        more(Icons.track_changes, ContentKeys.paywallFeatureTargets),
-      ],
     );
   }
 }
