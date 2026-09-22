@@ -64,6 +64,51 @@ final class PaywallPlansProvider
 
 String _$paywallPlansHash() => r'08216f2ec4e7357081fcac58680f8d2805f2b2e3';
 
+/// Whether this account has a store subscription to manage, running or
+/// ended: the paywall's ⋯ menu offers Manage subscription only then
+/// (mp-494 §1). A restore asks again.
+
+@ProviderFor(paywallHasSubscription)
+const paywallHasSubscriptionProvider = PaywallHasSubscriptionProvider._();
+
+/// Whether this account has a store subscription to manage, running or
+/// ended: the paywall's ⋯ menu offers Manage subscription only then
+/// (mp-494 §1). A restore asks again.
+
+final class PaywallHasSubscriptionProvider
+    extends $FunctionalProvider<AsyncValue<bool>, bool, FutureOr<bool>>
+    with $FutureModifier<bool>, $FutureProvider<bool> {
+  /// Whether this account has a store subscription to manage, running or
+  /// ended: the paywall's ⋯ menu offers Manage subscription only then
+  /// (mp-494 §1). A restore asks again.
+  const PaywallHasSubscriptionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'paywallHasSubscriptionProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$paywallHasSubscriptionHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<bool> create(Ref ref) {
+    return paywallHasSubscription(ref);
+  }
+}
+
+String _$paywallHasSubscriptionHash() =>
+    r'e226a2043769577791a30587530e06db5ccd4b81';
+
 /// Drives purchase, restore and "manage subscription" for the paywall.
 ///
 /// State is `AsyncValue<void>`: loading while a store call is in flight,
@@ -117,7 +162,7 @@ final class ProPaywallControllerProvider
 }
 
 String _$proPaywallControllerHash() =>
-    r'8eb8d4088568761375b716d663517d3777857900';
+    r'6f95fdd507b4f679a1b5724b808acdbb8ea774a0';
 
 /// Drives purchase, restore and "manage subscription" for the paywall.
 ///

@@ -229,6 +229,27 @@ class SubscriptionService {
     return storeSubscriptionsUrl(defaultTargetPlatform);
   }
 
+  /// Whether this customer has a store subscription to `pro` on record,
+  /// running or ended: the paywall's ⋯ menu offers Manage subscription only
+  /// then (mp-494 §1). False when the SDK is unavailable or the read fails.
+  Future<bool> hasStoreSubscriptionOnRecord() async {
+    if (!isAvailable) return false;
+    try {
+      final info = await Purchases.getCustomerInfo();
+      return hasStoreSubscription(info.entitlements.all[Entitlement.pro.key]);
+    } catch (e, st) {
+      _report('subscription record read failed', e, stackTrace: st);
+      return false;
+    }
+  }
+
+  /// Pure: [info] is the `pro` entitlement from `entitlements.all` (active
+  /// or not). A RevenueCat grant (the grace month, a code) has no store page
+  /// to manage, so only a store purchase counts.
+  @visibleForTesting
+  static bool hasStoreSubscription(EntitlementInfo? info) =>
+      info != null && info.store != Store.promotional;
+
   /// The platform store's own subscriptions page; null off iOS / Android.
   @visibleForTesting
   static Uri? storeSubscriptionsUrl(TargetPlatform platform) {

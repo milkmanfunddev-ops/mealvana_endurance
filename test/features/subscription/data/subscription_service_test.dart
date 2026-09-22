@@ -141,6 +141,57 @@ void main() {
     });
   });
 
+  group(
+    'hasStoreSubscription (Manage subscription on the paywall, mp-494 §1)',
+    () {
+      EntitlementInfo pro({required String store, bool isActive = false}) =>
+          EntitlementInfo.fromJson({
+            'identifier': 'pro',
+            'isActive': isActive,
+            'willRenew': false,
+            'latestPurchaseDate': '2026-08-01T00:00:00Z',
+            'originalPurchaseDate': '2026-08-01T00:00:00Z',
+            'productIdentifier': 'me_pro_monthly',
+            'isSandbox': true,
+            'ownershipType': 'PURCHASED',
+            'store': store,
+            'periodType': 'NORMAL',
+            'expirationDate': '2026-09-01T00:00:00Z',
+            'unsubscribeDetectedAt': null,
+            'billingIssueDetectedAt': null,
+            'verification': 'NOT_REQUESTED',
+          });
+
+      test('no pro entitlement ever: nothing to manage', () {
+        expect(SubscriptionService.hasStoreSubscription(null), isFalse);
+      });
+
+      test('an expired store subscription is still one to manage', () {
+        expect(
+          SubscriptionService.hasStoreSubscription(pro(store: 'APP_STORE')),
+          isTrue,
+        );
+        expect(
+          SubscriptionService.hasStoreSubscription(pro(store: 'PLAY_STORE')),
+          isTrue,
+        );
+      });
+
+      test('a RevenueCat grant (grace, codes) has no store page to manage', () {
+        expect(
+          SubscriptionService.hasStoreSubscription(
+            pro(store: 'PROMOTIONAL', isActive: true),
+          ),
+          isFalse,
+        );
+      });
+
+      test('without the SDK there is nothing on record', () async {
+        expect(await service.hasStoreSubscriptionOnRecord(), isFalse);
+      });
+    },
+  );
+
   group('introOfferOf (the store price is the source, mp-279)', () {
     test("Apple's free week → seven free days", () {
       final product = _FakeStoreProduct(
