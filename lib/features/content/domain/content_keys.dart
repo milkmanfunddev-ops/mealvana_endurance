@@ -41,6 +41,26 @@ class ContentKeys {
   static const String paywallTermsLink = 'paywall.terms_link';
   static const String paywallPrivacyLink = 'paywall.privacy_link';
   static const String paywallLinkFailed = 'paywall.link_failed';
+  // The opening clip, the features and the page chrome (mp-493 §1, §2).
+  static const String paywallClipLabel = 'paywall.clip_label';
+  static const String paywallCloseLabel = 'paywall.close_label';
+  static const String paywallMoreLabel = 'paywall.more_label';
+  static const String paywallFeaturesDivider = 'paywall.features_divider';
+  static const String paywallFeatureFuelTitle = 'paywall.feature_fuel_title';
+  static const String paywallFeatureFuelBody = 'paywall.feature_fuel_body';
+  static const String paywallFeatureVanaTitle = 'paywall.feature_vana_title';
+  static const String paywallFeatureVanaBody = 'paywall.feature_vana_body';
+  static const String paywallFeatureShoppingTitle =
+      'paywall.feature_shopping_title';
+  static const String paywallFeatureShoppingBody =
+      'paywall.feature_shopping_body';
+  static const String paywallFeatureSyncTitle = 'paywall.feature_sync_title';
+  static const String paywallFeatureSyncBody = 'paywall.feature_sync_body';
+  static const String paywallFeatureRecipes = 'paywall.feature_recipes';
+  static const String paywallFeatureBrick = 'paywall.feature_brick';
+  static const String paywallFeatureHydration = 'paywall.feature_hydration';
+  static const String paywallFeatureFormulas = 'paywall.feature_formulas';
+  static const String paywallFeatureTargets = 'paywall.feature_targets';
 
   // Post-onboarding account screen: the trial line (mp-279 terms).
   static const String postOnboardingTrialLine =

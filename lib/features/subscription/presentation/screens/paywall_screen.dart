@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../shared/services/privacy/privacy_links.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
+import '../../../../shared/widgets/kyle_design/materials/glass.dart';
 import '../../../content/application/content_service.dart';
 import '../../../content/domain/content_keys.dart';
 import '../../../settings/presentation/providers/settings_controller.dart';
@@ -18,6 +19,25 @@ import '../../domain/entitlement.dart';
 final paywallUrlLauncherProvider = Provider<Future<bool> Function(Uri uri)>(
   (_) =>
       (uri) => launchUrl(uri, mode: LaunchMode.externalApplication),
+);
+
+/// The clip the paywall opens on: about four seconds of the dev app recorded
+/// from the simulator (timeline, Vana answering, a week's meal plan), silent,
+/// 540×1174. Its first frame is the poster and the Reduce Motion still.
+const kPaywallClipAsset = 'assets/video/paywall_clip.mp4';
+const kPaywallClipPosterAsset = 'assets/video/paywall_clip_first.jpg';
+const kPaywallClipAspectRatio = 540 / 1174;
+
+/// Makes the clip's player. A provider so widget tests drive a fake instead
+/// of the `video_player` platform channel.
+final paywallClipPlayerProvider = Provider<PhoneClipPlayer Function()>(
+  (_) =>
+      () => VideoPhoneClipPlayer(asset: kPaywallClipAsset),
+);
+
+/// The clip's first frame. A provider so widget tests need no asset decode.
+final paywallClipPosterProvider = Provider<ImageProvider>(
+  (_) => const AssetImage(kPaywallClipPosterAsset),
 );
 
 /// The paywall — where an inactive account lands after sign-in and stays
@@ -225,211 +245,442 @@ class PaywallScreen extends ConsumerWidget {
         ? AppColors.textDarkSecondary
         : AppColors.textLightSecondary;
 
+    final clipPlayer = ref.watch(paywallClipPlayerProvider);
+    final clipPoster = ref.watch(paywallClipPosterProvider);
+    final clipLabel = content.getValue(ContentKeys.paywallClipLabel);
+
     return Scaffold(
       key: const ValueKey('paywall.screen'),
       backgroundColor: isDark ? AppColors.blackberry : AppColors.cream,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: AppSpacing.screenPadding,
+      body: _PaywallPages(
+        // Page one: the clip of our own app, silent, in the phone frame
+        // (mp-493 §1). A tap skips it.
+        clip: (onEnded) => PhoneClipFrame(
+          key: const ValueKey('paywall.clip'),
+          player: clipPlayer,
+          poster: clipPoster,
+          aspectRatio: kPaywallClipAspectRatio,
+          semanticLabel: clipLabel,
+          onEnded: onEnded,
+        ),
+        // Page two: the placeholders for close and ⋯ (tickets 16, 17 give
+        // them their behaviour), then the features and the plans.
+        features: (reduceMotion) => SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: AppSpacing.xl),
-              // The app's name and one line on what the prices below buy.
-              // No hero, no pitch beyond that (Lee, 2026-09-16).
-              Text(
-                key: const ValueKey('paywall.title'),
-                content.getValue(ContentKeys.paywallTitle),
-                style: AppTextStyles.h1.copyWith(color: textColor),
-                textAlign: TextAlign.center,
+              _PaywallTopBar(
+                closeLabel: content.getValue(ContentKeys.paywallCloseLabel),
+                moreLabel: content.getValue(ContentKeys.paywallMoreLabel),
+                color: textColor,
               ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                key: const ValueKey('paywall.subtitle'),
-                content.getValue(ContentKeys.paywallSubtitle),
-                style: AppTextStyles.bodyMedium.copyWith(color: secondaryColor),
-                textAlign: TextAlign.center,
-              ),
-
-              const SizedBox(height: AppSpacing.xxxl),
-
-              // Plans
-              // A content card: solid fill + hairline, never glass
-              // (tokens.md §Materials, boundaries).
-              BaseCard(
-                key: const ValueKey('paywall.pricing_card'),
-                backgroundColor: isDark
-                    ? AppColors.surfaceDark
-                    : AppColors.surfaceLight,
-                border: Border.all(
-                  color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                ),
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    plansAsync.when(
-                      loading: () => const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(AppSpacing.md),
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
-                      error: (_, _) => _PricingUnavailable(
-                        text: content.getValue(
-                          ContentKeys.paywallPricingUnavailable,
-                        ),
-                        color: secondaryColor,
-                      ),
-                      data: (plans) {
-                        if (plans.isEmpty) {
-                          return _PricingUnavailable(
-                            key: const ValueKey('paywall.pricing_unavailable'),
-                            text: content.getValue(
-                              ContentKeys.paywallPricingUnavailable,
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: AppSpacing.screenPadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Reduce Motion: the clip's first frame stands in for the
+                      // clip (mp-493 §1).
+                      if (reduceMotion) ...[
+                        Center(
+                          child: SizedBox(
+                            width: 120,
+                            child: PhoneClipFrame(
+                              key: const ValueKey('paywall.clip_still'),
+                              player: clipPlayer,
+                              poster: clipPoster,
+                              aspectRatio: kPaywallClipAspectRatio,
+                              semanticLabel: clipLabel,
+                              still: true,
                             ),
-                            color: secondaryColor,
-                          );
-                        }
-                        final monthly = plans.monthly;
-                        final annual = plans.annual;
-                        final perMonth = content.getValue(
-                          ContentKeys.paywallPerMonth,
-                        );
-                        final perYear = content.getValue(
-                          ContentKeys.paywallPerYear,
-                        );
-                        String? struck(Package pkg, String template) {
-                          final regular = plans.regularPriceFor(pkg);
-                          return regular == null
-                              ? null
-                              : ContentKeys.format(template, {
-                                  'price': regular,
-                                });
-                        }
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
+                      ],
+                      // The app's name and one line on what the prices below buy.
+                      // No hero, no pitch beyond that (Lee, 2026-09-16).
+                      Text(
+                        key: const ValueKey('paywall.title'),
+                        content.getValue(ContentKeys.paywallTitle),
+                        style: AppTextStyles.h1.copyWith(color: textColor),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(
+                        key: const ValueKey('paywall.subtitle'),
+                        content.getValue(ContentKeys.paywallSubtitle),
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: secondaryColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
 
-                        return Column(
+                      // Four headline features, the divider and the rest; the AI
+                      // features share the one Vana line (mp-493 §2).
+                      const SizedBox(height: AppSpacing.xxl),
+                      _PaywallFeatures(content: content),
+
+                      const SizedBox(height: AppSpacing.xxxl),
+
+                      // Plans
+                      // A content card: solid fill + hairline, never glass
+                      // (tokens.md §Materials, boundaries).
+                      BaseCard(
+                        key: const ValueKey('paywall.pricing_card'),
+                        backgroundColor: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.surfaceLight,
+                        border: Border.all(
+                          color: theme.colorScheme.outline.withValues(
+                            alpha: 0.2,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (plans.isFounding) ...[
-                              Text(
-                                key: const ValueKey('paywall.founding_line'),
-                                content.getValue(
-                                  ContentKeys.paywallFoundingLine,
-                                ),
-                                style: AppTextStyles.overline.copyWith(
-                                  color: AppColors.electrolyte,
+                            plansAsync.when(
+                              loading: () => const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(AppSpacing.md),
+                                  child: CircularProgressIndicator(),
                                 ),
                               ),
-                              const SizedBox(height: AppSpacing.md),
-                            ],
-                            if (monthly != null)
-                              _PlanRow(
-                                rowKey: const ValueKey('paywall.plan.monthly'),
-                                buttonKey: const ValueKey(
-                                  'paywall.subscribe_monthly',
+                              error: (_, _) => _PricingUnavailable(
+                                text: content.getValue(
+                                  ContentKeys.paywallPricingUnavailable,
                                 ),
-                                label: content.getValue(
-                                  ContentKeys.paywallMonthlyLabel,
-                                ),
-                                price: ContentKeys.format(perMonth, {
-                                  'price': monthly.storeProduct.priceString,
-                                }),
-                                regularPrice: struck(monthly, perMonth),
-                                regularKey: const ValueKey(
-                                  'paywall.plan.monthly.regular_price',
-                                ),
-                                intro: plans.introOfferFor(monthly),
-                                content: content,
-                                isBusy: isBusy,
-                                onPressed: () => _buy(context, ref, monthly),
-                                textColor: textColor,
-                                secondaryColor: secondaryColor,
+                                color: secondaryColor,
                               ),
-                            if (monthly != null && annual != null)
-                              const SizedBox(height: AppSpacing.md),
-                            if (annual != null)
-                              _PlanRow(
-                                rowKey: const ValueKey('paywall.plan.annual'),
-                                buttonKey: const ValueKey(
-                                  'paywall.subscribe_annual',
-                                ),
-                                label: content.getValue(
-                                  ContentKeys.paywallAnnualLabel,
-                                ),
-                                price: ContentKeys.format(perYear, {
-                                  'price': annual.storeProduct.priceString,
-                                }),
-                                regularPrice: struck(annual, perYear),
-                                regularKey: const ValueKey(
-                                  'paywall.plan.annual.regular_price',
-                                ),
-                                intro: plans.introOfferFor(annual),
-                                content: content,
-                                isBusy: isBusy,
-                                onPressed: () => _buy(context, ref, annual),
-                                textColor: textColor,
-                                secondaryColor: secondaryColor,
-                              ),
+                              data: (plans) {
+                                if (plans.isEmpty) {
+                                  return _PricingUnavailable(
+                                    key: const ValueKey(
+                                      'paywall.pricing_unavailable',
+                                    ),
+                                    text: content.getValue(
+                                      ContentKeys.paywallPricingUnavailable,
+                                    ),
+                                    color: secondaryColor,
+                                  );
+                                }
+                                final monthly = plans.monthly;
+                                final annual = plans.annual;
+                                final perMonth = content.getValue(
+                                  ContentKeys.paywallPerMonth,
+                                );
+                                final perYear = content.getValue(
+                                  ContentKeys.paywallPerYear,
+                                );
+                                String? struck(Package pkg, String template) {
+                                  final regular = plans.regularPriceFor(pkg);
+                                  return regular == null
+                                      ? null
+                                      : ContentKeys.format(template, {
+                                          'price': regular,
+                                        });
+                                }
+
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    if (plans.isFounding) ...[
+                                      Text(
+                                        key: const ValueKey(
+                                          'paywall.founding_line',
+                                        ),
+                                        content.getValue(
+                                          ContentKeys.paywallFoundingLine,
+                                        ),
+                                        style: AppTextStyles.overline.copyWith(
+                                          color: AppColors.electrolyte,
+                                        ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.md),
+                                    ],
+                                    if (monthly != null)
+                                      _PlanRow(
+                                        rowKey: const ValueKey(
+                                          'paywall.plan.monthly',
+                                        ),
+                                        buttonKey: const ValueKey(
+                                          'paywall.subscribe_monthly',
+                                        ),
+                                        label: content.getValue(
+                                          ContentKeys.paywallMonthlyLabel,
+                                        ),
+                                        price: ContentKeys.format(perMonth, {
+                                          'price':
+                                              monthly.storeProduct.priceString,
+                                        }),
+                                        regularPrice: struck(monthly, perMonth),
+                                        regularKey: const ValueKey(
+                                          'paywall.plan.monthly.regular_price',
+                                        ),
+                                        intro: plans.introOfferFor(monthly),
+                                        content: content,
+                                        isBusy: isBusy,
+                                        onPressed: () =>
+                                            _buy(context, ref, monthly),
+                                        textColor: textColor,
+                                        secondaryColor: secondaryColor,
+                                      ),
+                                    if (monthly != null && annual != null)
+                                      const SizedBox(height: AppSpacing.md),
+                                    if (annual != null)
+                                      _PlanRow(
+                                        rowKey: const ValueKey(
+                                          'paywall.plan.annual',
+                                        ),
+                                        buttonKey: const ValueKey(
+                                          'paywall.subscribe_annual',
+                                        ),
+                                        label: content.getValue(
+                                          ContentKeys.paywallAnnualLabel,
+                                        ),
+                                        price: ContentKeys.format(perYear, {
+                                          'price':
+                                              annual.storeProduct.priceString,
+                                        }),
+                                        regularPrice: struck(annual, perYear),
+                                        regularKey: const ValueKey(
+                                          'paywall.plan.annual.regular_price',
+                                        ),
+                                        intro: plans.introOfferFor(annual),
+                                        content: content,
+                                        isBusy: isBusy,
+                                        onPressed: () =>
+                                            _buy(context, ref, annual),
+                                        textColor: textColor,
+                                        secondaryColor: secondaryColor,
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
                           ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
+                        ),
+                      ),
 
-              // Trial terms, the price after the trial, renewal and the two
-              // links (mp-453 §4), whatever the store answered.
-              const SizedBox(height: AppSpacing.lg),
-              _PaywallTerms(
-                plans: plansAsync.value,
-                content: content,
-                color: secondaryColor,
-                onTerms: () => _openLink(context, ref, kTermsOfServiceUrl),
-                onPrivacy: () => _openLink(context, ref, kPrivacyPolicyUrl),
-              ),
+                      // Trial terms, the price after the trial, renewal and the two
+                      // links (mp-453 §4), whatever the store answered.
+                      const SizedBox(height: AppSpacing.lg),
+                      _PaywallTerms(
+                        plans: plansAsync.value,
+                        content: content,
+                        color: secondaryColor,
+                        onTerms: () =>
+                            _openLink(context, ref, kTermsOfServiceUrl),
+                        onPrivacy: () =>
+                            _openLink(context, ref, kPrivacyPolicyUrl),
+                      ),
 
-              const SizedBox(height: AppSpacing.xxl),
+                      const SizedBox(height: AppSpacing.xxl),
 
-              // The four actions, and nothing else (mp-280 §2); Restore alone
-              // in onboarding mode.
-              KyleSecondaryButton(
-                key: const ValueKey('paywall.restore_button'),
-                text: content.getValue(ContentKeys.paywallRestoreButton),
-                isLoading: isBusy,
-                onPressed: isBusy ? null : () => _restore(context, ref),
-              ),
-              if (!onboarding) ...[
-                const SizedBox(height: AppSpacing.sm),
-                KyleTertiaryButton(
-                  key: const ValueKey('paywall.manage_button'),
-                  text: content.getValue(ContentKeys.paywallManageButton),
-                  onPressed: isBusy ? null : () => _manage(context, ref),
-                ),
-                KyleTertiaryButton(
-                  key: const ValueKey('paywall.sign_out_button'),
-                  text: content.getValue(ContentKeys.paywallSignOutButton),
-                  onPressed: isBusy ? null : () => _signOut(context, ref),
-                ),
-                TextButton(
-                  key: const ValueKey('paywall.delete_account_button'),
-                  onPressed: isBusy ? null : () => _deleteAccount(context, ref),
-                  child: Text(
-                    content.getValue(ContentKeys.paywallDeleteAccountButton),
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.dragonfruit,
-                      decoration: TextDecoration.underline,
-                    ),
+                      // The four actions, and nothing else (mp-280 §2); Restore alone
+                      // in onboarding mode.
+                      KyleSecondaryButton(
+                        key: const ValueKey('paywall.restore_button'),
+                        text: content.getValue(
+                          ContentKeys.paywallRestoreButton,
+                        ),
+                        isLoading: isBusy,
+                        onPressed: isBusy ? null : () => _restore(context, ref),
+                      ),
+                      if (!onboarding) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        KyleTertiaryButton(
+                          key: const ValueKey('paywall.manage_button'),
+                          text: content.getValue(
+                            ContentKeys.paywallManageButton,
+                          ),
+                          onPressed: isBusy
+                              ? null
+                              : () => _manage(context, ref),
+                        ),
+                        KyleTertiaryButton(
+                          key: const ValueKey('paywall.sign_out_button'),
+                          text: content.getValue(
+                            ContentKeys.paywallSignOutButton,
+                          ),
+                          onPressed: isBusy
+                              ? null
+                              : () => _signOut(context, ref),
+                        ),
+                        TextButton(
+                          key: const ValueKey('paywall.delete_account_button'),
+                          onPressed: isBusy
+                              ? null
+                              : () => _deleteAccount(context, ref),
+                          child: Text(
+                            content.getValue(
+                              ContentKeys.paywallDeleteAccountButton,
+                            ),
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.dragonfruit,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: AppSpacing.huge),
+                    ],
                   ),
                 ),
-              ],
-
-              const SizedBox(height: AppSpacing.huge),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The two pages of the paywall: the clip, then the features and plans.
+/// The clip's end (or a tap on it) moves the page on; Reduce Motion starts
+/// on the features with the clip's first frame at their head.
+class _PaywallPages extends StatefulWidget {
+  const _PaywallPages({required this.clip, required this.features});
+
+  final Widget Function(VoidCallback onEnded) clip;
+  final Widget Function(bool reduceMotion) features;
+
+  @override
+  State<_PaywallPages> createState() => _PaywallPagesState();
+}
+
+class _PaywallPagesState extends State<_PaywallPages> {
+  bool _clipDone = false;
+
+  void _moveOn() {
+    if (!_clipDone && mounted) setState(() => _clipDone = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    return SlideOverPager(
+      showSecond: _clipDone || reduceMotion,
+      first: GestureDetector(
+        key: const ValueKey('paywall.clip_page'),
+        behavior: HitTestBehavior.opaque,
+        onTap: _moveOn,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Center(child: widget.clip(_moveOn)),
+          ),
+        ),
+      ),
+      second: widget.features(reduceMotion),
+    );
+  }
+}
+
+/// Close and ⋯, as placeholders: they arrive with the second page and do
+/// nothing yet. Who gets a close button (mp-493 §5) and what the ⋯ menu
+/// holds (mp-494) are later tickets.
+class _PaywallTopBar extends StatelessWidget {
+  const _PaywallTopBar({
+    required this.closeLabel,
+    required this.moreLabel,
+    required this.color,
+  });
+
+  final String closeLabel;
+  final String moreLabel;
+  final Color color;
+
+  Widget _button(Key key, IconData icon, String label) => Semantics(
+    button: true,
+    label: label,
+    child: SizedBox.square(
+      key: key,
+      dimension: 40,
+      child: GlassSurface(
+        borderRadius: BorderRadius.circular(20),
+        child: Center(
+          child: ExcludeSemantics(child: Icon(icon, size: 20, color: color)),
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
+      ),
+      child: Row(
+        children: [
+          _button(
+            const ValueKey('paywall.close_button'),
+            Icons.close,
+            closeLabel,
+          ),
+          const Spacer(),
+          _button(
+            const ValueKey('paywall.more_button'),
+            Icons.more_horiz,
+            moreLabel,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What a plan buys (mp-493 §2): four headline features, then the rest.
+/// Vana carries the AI features in one line.
+class _PaywallFeatures extends StatelessWidget {
+  const _PaywallFeatures({required this.content});
+
+  final ContentService content;
+
+  @override
+  Widget build(BuildContext context) {
+    String t(String key) => content.getValue(key);
+    FeatureListItem more(IconData icon, String key) =>
+        FeatureListItem(leading: FeatureListIcon(icon), title: t(key));
+    return FeatureList(
+      key: const ValueKey('paywall.features'),
+      headline: [
+        FeatureListItem(
+          leading: const FeatureListIcon(Icons.bolt),
+          title: t(ContentKeys.paywallFeatureFuelTitle),
+          body: t(ContentKeys.paywallFeatureFuelBody),
+        ),
+        FeatureListItem(
+          leading: const VanaAvatar(size: 40),
+          title: t(ContentKeys.paywallFeatureVanaTitle),
+          body: t(ContentKeys.paywallFeatureVanaBody),
+        ),
+        FeatureListItem(
+          leading: const FeatureListIcon(Icons.shopping_basket_outlined),
+          title: t(ContentKeys.paywallFeatureShoppingTitle),
+          body: t(ContentKeys.paywallFeatureShoppingBody),
+        ),
+        FeatureListItem(
+          leading: const FeatureListIcon(Icons.watch_outlined),
+          title: t(ContentKeys.paywallFeatureSyncTitle),
+          body: t(ContentKeys.paywallFeatureSyncBody),
+        ),
+      ],
+      dividerLabel: t(ContentKeys.paywallFeaturesDivider),
+      more: [
+        more(Icons.restaurant_menu, ContentKeys.paywallFeatureRecipes),
+        more(Icons.directions_bike, ContentKeys.paywallFeatureBrick),
+        more(Icons.water_drop_outlined, ContentKeys.paywallFeatureHydration),
+        more(Icons.science_outlined, ContentKeys.paywallFeatureFormulas),
+        more(Icons.track_changes, ContentKeys.paywallFeatureTargets),
+      ],
     );
   }
 }

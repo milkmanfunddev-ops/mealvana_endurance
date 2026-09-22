@@ -190,6 +190,7 @@ flutter:
     - assets/images/integrations/
     - assets/config/
     - assets/icons/
+    - assets/video/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

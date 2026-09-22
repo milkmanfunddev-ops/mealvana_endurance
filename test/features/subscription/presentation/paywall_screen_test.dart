@@ -32,9 +32,13 @@ import 'package:mealvana_endurance/features/subscription/application/subscriptio
 import 'package:mealvana_endurance/features/subscription/domain/entitlement.dart';
 import 'package:mealvana_endurance/features/subscription/presentation/screens/paywall_screen.dart';
 import 'package:mealvana_endurance/shared/services/privacy/privacy_links.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/cards/feature_list.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/data/phone_clip_frame.dart';
+import 'package:mealvana_endurance/shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'package:mealvana_endurance/theme/kyle_design/app_colors.dart';
 
 import '../../../helpers/widget_test_harness.dart';
+import '../../../shared/widgets/kyle_design/phone_clip_fakes.dart';
 import '../../meal_planning/presentation/helpers/test_content.dart';
 import '../offerings_fixtures.dart';
 
@@ -118,15 +122,23 @@ final _content = loadDefaultContent();
 ContentService _testContentService(Ref ref) =>
     TestContentService(ref, _content);
 
+/// Every test but the clip's own starts past the clip: its player ends the
+/// moment it starts, so the page has moved on to the features and plans once
+/// the pump settles. [clip] hands a test the player to drive instead.
 List<Override> _overrides({
   PaywallPlans? plans,
   ProPaywallController Function()? paywall,
   SettingsController Function()? settings,
   Future<bool> Function(Uri)? launcher,
+  PhoneClipPlayer Function()? clip,
 }) {
   final resolved = plans ?? PaywallPlans(monthly: _monthly, annual: _annual);
   return [
     contentServiceProvider.overrideWith(_testContentService),
+    paywallClipPlayerProvider.overrideWithValue(
+      clip ?? () => FakePhoneClipPlayer(endOnStart: true),
+    ),
+    paywallClipPosterProvider.overrideWithValue(testPoster),
     subscriptionStatusProvider.overrideWith(
       () => _FixedStatus(SubscriptionStatus.none),
     ),
@@ -187,16 +199,166 @@ void main() {
     expect(find.text('Subscribe'), findsNWidgets(2));
   });
 
-  testWidgets('the four actions are present, and no close button', (
-    tester,
-  ) async {
+  testWidgets('the four actions are present, and no app bar', (tester) async {
     await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
 
     for (final key in [_restore, _manage, _signOut, _delete]) {
       expect(find.byKey(key), findsOneWidget, reason: '$key');
     }
-    expect(find.byIcon(Icons.close), findsNothing);
     expect(find.byType(AppBar), findsNothing);
+  });
+
+  group('the opening clip (mp-493 §1, mp-497 §2)', () {
+    const clip = ValueKey('paywall.clip');
+    const still = ValueKey('paywall.clip_still');
+    const features = ValueKey('paywall.features');
+    const plans = ValueKey('paywall.pricing_card');
+    const close = ValueKey('paywall.close_button');
+    const more = ValueKey('paywall.more_button');
+
+    Future<void> pumpPaywall(
+      WidgetTester tester, {
+      required List<Override> overrides,
+      bool reduceMotion = false,
+    }) async {
+      tester.view.physicalSize = const Size(393, 852);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [mockAppExternalDeps(), ...overrides],
+          child: MaterialApp(
+            home: MediaQuery(
+              data: MediaQueryData(
+                size: const Size(393, 852),
+                disableAnimations: reduceMotion,
+              ),
+              child: const PaywallScreen(),
+            ),
+          ),
+        ),
+      );
+    }
+
+    testWidgets('plays the clip silently, then slides to the features and '
+        'plans; close and ⋯ arrive with them', (tester) async {
+      final player = FakePhoneClipPlayer();
+      var made = 0;
+      await pumpPaywall(
+        tester,
+        overrides: _overrides(
+          clip: () {
+            made++;
+            return player;
+          },
+        ),
+      );
+      await tester.pump();
+
+      // Page one: the clip, playing muted, and nothing else.
+      expect(made, 1);
+      expect(player.started, isTrue);
+      expect(player.muted, isTrue);
+      player.phase.value = PhoneClipPhase.playing;
+      await tester.pump();
+      expect(find.byKey(clip), findsOneWidget);
+      expect(find.byKey(FakePhoneClipPlayer.viewKey), findsOneWidget);
+      for (final key in [features, plans, close, more]) {
+        expect(find.byKey(key), findsNothing, reason: '$key');
+      }
+
+      // The clip ends: the features and plans slide over it.
+      player.phase.value = PhoneClipPhase.ended;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.byKey(features), findsOneWidget);
+      expect(tester.getTopLeft(find.byKey(close)).dx, greaterThan(100));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(clip), findsNothing);
+      expect(player.disposed, isTrue);
+      for (final key in [features, plans, close, more]) {
+        expect(find.byKey(key), findsOneWidget, reason: '$key');
+      }
+      expect(tester.getTopLeft(find.byKey(close)).dx, lessThan(40));
+    });
+
+    testWidgets('a tap on the clip skips it', (tester) async {
+      final player = FakePhoneClipPlayer();
+      await pumpPaywall(tester, overrides: _overrides(clip: () => player));
+      await tester.pump();
+      await tester.tap(find.byKey(clip));
+      await tester.pumpAndSettle();
+      expect(find.byKey(features), findsOneWidget);
+      expect(find.byKey(clip), findsNothing);
+    });
+
+    testWidgets('Reduce Motion: the first frame, straight on the features', (
+      tester,
+    ) async {
+      var made = 0;
+      await pumpPaywall(
+        tester,
+        reduceMotion: true,
+        overrides: _overrides(
+          clip: () {
+            made++;
+            return FakePhoneClipPlayer();
+          },
+        ),
+      );
+      await tester.pump();
+
+      // No clip plays, no slide runs: the still frame heads the features.
+      expect(made, 0);
+      expect(find.byKey(clip), findsNothing);
+      expect(find.byKey(still), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(still),
+          matching: find.byKey(PhoneClipFrame.posterKey),
+        ),
+        findsOneWidget,
+      );
+      for (final key in [features, plans, close, more]) {
+        expect(find.byKey(key), findsOneWidget, reason: '$key');
+      }
+      expect(tester.hasRunningAnimations, isFalse);
+    });
+
+    testWidgets('four headline features, the divider, then the rest, with '
+        'the AI features on the one Vana line', (tester) async {
+      await smokeScreen(tester, const PaywallScreen(), overrides: _overrides());
+      String copy(String key) => _content[key]!;
+      for (final key in [
+        'paywall.feature_fuel_title',
+        'paywall.feature_vana_title',
+        'paywall.feature_vana_body',
+        'paywall.feature_shopping_title',
+        'paywall.feature_sync_title',
+        'paywall.feature_recipes',
+      ]) {
+        expect(find.text(copy(key)), findsOneWidget, reason: key);
+      }
+      expect(find.byKey(FeatureList.headlineKey(3)), findsOneWidget);
+      expect(find.byKey(FeatureList.headlineKey(4)), findsNothing);
+      expect(
+        find.text(copy('paywall.features_divider').toUpperCase()),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byKey(FeatureList.headlineKey(1)),
+          matching: find.byType(VanaAvatar),
+        ),
+        findsOneWidget,
+      );
+      // The features come before the plans.
+      expect(
+        tester.getTopLeft(find.byKey(features)).dy,
+        lessThan(tester.getTopLeft(find.byKey(plans)).dy),
+      );
+    });
   });
 
   testWidgets('Start trial calls buy() for that plan', (tester) async {
@@ -557,7 +719,7 @@ void main() {
       bool onboarding = false,
       bool founding = false,
     }) async {
-      tester.view.physicalSize = const Size(393, 1320);
+      tester.view.physicalSize = const Size(393, 2500);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
 
