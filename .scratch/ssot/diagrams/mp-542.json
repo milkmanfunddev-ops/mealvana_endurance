@@ -1,0 +1,1 @@
+{"kind":"flow","title":"Our own accounts are not skipped","rows":[[{"id":"all","label":"Registered before the flip\n(ours included)","tone":"ink"}],[{"id":"g","label":"30 days + founding member","tone":"ok"}]],"edges":[{"from":"all","to":"g"}],"example":["Dev dry run: 76 selected, test@test.com among them","No domain list, no internal-flag rule to keep up"]}

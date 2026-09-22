@@ -74,6 +74,7 @@ Everything is idempotent and re-runnable.
 | 4 | Refresh the pair view | `select public.refresh_meal_library_pairs();` (service_role) |
 | 5 | Verify (read-only) | `03_image_gate.sql` against prod must pass; then `90_verify.sql` — paste the row into the status header above |
 | 6 | Deploy edge functions to prod | `/deploy-edge` for `vana-chat`, `vana-action`, `vana-day-notes`, `revenuecat-webhook`, `jade-chat` |
+| 6b | Prod RevenueCat webhook hears every event type (mp-543) | RevenueCat → Integrations → webhook `whintgraa6c9e50e5` (prod): event types = all; environment stays unfiltered. Refunds and plan changes reach `user_entitlements` only through these. Right after step 6, never before |
 | 7 | Secrets | `PRO_GATE_ENABLED=true` on prod; `VANA_*_MODEL` optional |
 | 8 | Smoke | `search_meals` as the QA user excludes their allergens; a `vana_calls` row is written; `jade_conversations` still serves the shipped app |
 | 9 | **After the 1.24.x binary is LIVE**, and only at Xuan's direction | `95_app_config_schema_20.sql` |
