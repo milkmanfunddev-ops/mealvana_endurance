@@ -107,6 +107,15 @@ class AuthListenerService {
         );
       }
 
+      // Re-attach the push alias on ANY event that carries a session.
+      // A returning athlete never emits `signedIn` — the session is restored
+      // as `initialSession` and kept alive by `tokenRefreshed` — so without
+      // this the alias is only ever set by the startup path, and one null
+      // read there left the device unreachable for good.
+      if (session != null && event != AuthChangeEvent.signedOut) {
+        await NotificationService.setRemotePushUserId(session.user.id);
+      }
+
       // Handle sign-out events
       if (event == AuthChangeEvent.signedOut) {
         await _handleSignedOut();
@@ -132,7 +141,7 @@ class AuthListenerService {
       },
     );
 
-    await NotificationService.setRemotePushUserId(null);
+    await NotificationService.clearRemotePushUserId();
 
     _sentry.addBreadcrumb(
       message: wasOnboardingSignOut
