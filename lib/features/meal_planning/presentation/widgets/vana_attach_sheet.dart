@@ -10,6 +10,7 @@ import '../../../../shared/utils/adaptive_modal.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
 import '../../../../theme/kyle_design/app_spacing.dart';
 import '../../../../theme/kyle_design/app_text_styles.dart';
+import '../../../meal_logging/domain/meal_photo_capture.dart';
 
 /// What the athlete chose on the composer's `+` sheet.
 sealed class VanaAttachChoice {
@@ -72,7 +73,8 @@ Future<VanaAttachChoice?> showVanaAttachSheet({
               ? ImageSource.camera
               : ImageSource.gallery,
           imageQuality: 85,
-          maxWidth: 1000,
+          maxWidth: kPhotoLongEdgeMaxPx,
+          maxHeight: kPhotoLongEdgeMaxPx,
         );
       } catch (e) {
         throw VanaAttachPickFailed(e);

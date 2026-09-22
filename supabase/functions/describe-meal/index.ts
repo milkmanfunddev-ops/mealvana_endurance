@@ -15,6 +15,8 @@
  *
  * Error responses:
  *   400 — missing/invalid body or description too long
+ *   422 — {error:'not_food'}: the description is not food. One short line in the app, from
+ *         the content system; no invented macros (mp-473).
  *   401 — missing or invalid JWT
  *   403 — {error:'pro_required'}: no active subscription (checked right after auth, same refusal as vana-chat)
  *   503 — {error:'ai_unavailable'}: the AI Gateway refused US (key budget hard-stopped, key
@@ -36,7 +38,13 @@ import {
 import { DESCRIBE_MEAL_MODEL } from "../_shared/ai/model.ts";
 import { gatewayCostUsd, logAiUsage } from "../_shared/ai/usage.ts";
 import { gatewayRefusalResponse } from "../_shared/ai/gateway_error.ts";
-import { MealAnalysisSchema } from "../_shared/meal_analysis/schema.ts";
+import { MealAnalysisRequestSchema } from "../_shared/meal_analysis/schema.ts";
+import {
+  finalizeAnalysis,
+  NOT_FOOD_BODY,
+  NOT_FOOD_STATUS,
+} from "../_shared/meal_analysis/finalize.ts";
+import { describeMealPrompt } from "../_shared/meal_analysis/prompt.ts";
 import { initSentry, withSentry } from "../_shared/sentry.ts";
 import { refuseUnlessPro } from "../_shared/vana/entitlement.ts";
 import {
@@ -181,44 +189,15 @@ serve(withSentry(async (req: Request) => {
       );
     }
 
-    // Call Claude via Vercel AI Gateway
+    // Call Claude via Vercel AI Gateway.
+    // The fixed instructions go first in their own system message with a one-hour cache
+    // marker; the athlete's words go last, on their own (ai-cost ticket 08, mp-473).
     const result = await generateObject({
       model: DESCRIBE_MEAL_MODEL as Parameters<typeof generateObject>[0]["model"],
-      schema: MealAnalysisSchema,
+      schema: MealAnalysisRequestSchema,
       maxOutputTokens: 1000,
-      messages: [
-        {
-          role: "user",
-          content:
-            `You are a sports nutrition assistant helping an endurance athlete log their meals accurately.
-
-The athlete described this meal: "${description.trim()}"
-
-INSTRUCTIONS:
-- Group food into items the way a person logging their own meal would think
-  about it — one item per DISH or line, not one item per raw ingredient.
-  For example: "spaghetti and meatballs" is ONE item (its sauce, pasta, and
-  meatballs are summed into one entry), while a side of "broccoli" is a
-  SEPARATE item because it's a distinct component of the plate. Similarly,
-  "a turkey sandwich with lettuce and mayo" is ONE item, not three. Only
-  split into multiple items when the foods are genuinely separate parts of
-  the meal (a side dish, a drink, a dessert) — never split a single dish's
-  own ingredients apart.
-- Each item's macros must be the SUM across everything that makes up that
-  dish (e.g. the meatballs' and sauce's calories/carbs/protein/fat/sodium
-  are combined into the "spaghetti and meatballs" item, not reported
-  separately).
-- If a quantity is mentioned (e.g. "two eggs", "large OJ"), use it; otherwise assume a single, realistic serving for an adult endurance athlete.
-- Do NOT underestimate portions — athletes eat meaningfully sized meals.
-- Provide per-item macros: calories (kcal), carbohydrates (g), protein (g), fat (g), and sodium (mg). These must be non-null for every item.
-- Compute accurate totals across all items.
-- Suggest the meal slot (breakfast, lunch, dinner, snack) based on the foods described.
-- Set confidence to "high" if the description is precise (weights, brand names, counts); "medium" if typical portions can be inferred; "low" if too vague to estimate reliably.
-- If the description clearly does not describe food (e.g. a movie title, a random sentence), set confidence to "low", return a single placeholder item, and set notes to explain.
-
-Return your answer as structured JSON matching the requested schema.`,
-        },
-      ],
+      ...describeMealPrompt(description),
+      allowSystemInMessages: false,
       providerOptions: {
         gateway: {
           user: user.id,
@@ -231,7 +210,9 @@ Return your answer as structured JSON matching the requested schema.`,
       },
     });
 
-    const analysis = result.object;
+    // The totals are ours, not the model's, and "not food" is an answer rather than a
+    // parse failure (ai-cost ticket 08, mp-473).
+    const finalized = finalizeAnalysis(result.object);
     const usage = result.usage;
     const costUsd = gatewayCostUsd(result.providerMetadata);
 
@@ -287,6 +268,14 @@ Return your answer as structured JSON matching the requested schema.`,
       debitForUsage(serviceClient, user.id, "describe-meal"),
     );
 
+    // A description that is not food: one answer, no invented macros. The call still
+    // cost us a model turn, so it is logged and debited above like any other.
+    if (finalized.notFood) {
+      console.log(`[describe-meal] Not food for user ${user.id}`);
+      return jsonResponse(NOT_FOOD_BODY, NOT_FOOD_STATUS);
+    }
+
+    const analysis = finalized.analysis;
     console.log(
       `[describe-meal] Success for user ${user.id}: "${analysis.name}", ` +
         `${analysis.items.length} items, confidence=${analysis.confidence}`,

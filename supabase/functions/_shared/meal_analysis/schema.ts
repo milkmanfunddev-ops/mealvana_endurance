@@ -71,3 +71,38 @@ export const MealAnalysisSchema = z.object({
 });
 
 export type MealAnalysis = z.infer<typeof MealAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
+// What the MODEL is asked for (ai-cost ticket 08, mp-473)
+// ---------------------------------------------------------------------------
+
+/**
+ * The shape the model answers in. It differs from [MealAnalysisSchema], which
+ * is what the app receives, in three ways:
+ *
+ *  - `not_food` — a photo or a sentence that is not a meal gets one short
+ *    answer and no made-up macros. Before this the photo function relied on a
+ *    zod parse failure it string-matched, and the text function was told to
+ *    invent a placeholder item.
+ *  - `totals` is optional and, when present, ignored. The function sums the
+ *    items itself (`finalizeAnalysis`), so the totals the athlete sees always
+ *    equal the items shown next to them.
+ *  - `items` may be empty, which only happens with `not_food`.
+ *
+ * `suggested_slot` and `confidence` are optional for the same reason: a
+ * not-food answer has nothing to say about either, and a model that leaves
+ * them out of a real answer gets the defaults rather than a 500.
+ */
+export const MealAnalysisRequestSchema = z.object({
+  name: z.string(),
+  /** True when the photo or the description is not food at all. */
+  not_food: z.boolean().optional(),
+  suggested_slot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+  confidence: z.enum(['low', 'medium', 'high']).optional(),
+  items: z.array(MealItemSchema).max(12),
+  /** Ignored. The function adds the items up. */
+  totals: MealTotalsSchema.partial().optional(),
+  notes: z.string().optional(),
+});
+
+export type MealAnalysisRequest = z.infer<typeof MealAnalysisRequestSchema>;

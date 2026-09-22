@@ -15,6 +15,7 @@ import '../../../ai_credits/presentation/insufficient_credits_handler.dart';
 import '../../../ai_credits/presentation/widgets/token_pill.dart';
 import '../../../ai_coach/presentation/widgets/ai_thinking_status.dart';
 import '../../application/meal_ai_service.dart';
+import '../../domain/meal_photo_capture.dart';
 import '../widgets/meal_analysis_skeleton.dart';
 
 /// Screen for selecting or capturing a meal photo.
@@ -59,10 +60,13 @@ class _PhotoCaptureScreenState extends ConsumerState<PhotoCaptureScreen> {
     final picker = ImagePicker();
     XFile? file;
     try {
+      // Both edges, not just the width: a portrait photo used to arrive a
+      // third taller than a landscape one and bill for it (ai-cost 08, mp-473).
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1200,
+        maxWidth: kPhotoLongEdgeMaxPx,
+        maxHeight: kPhotoLongEdgeMaxPx,
       );
     } catch (_) {
       if (mounted) {

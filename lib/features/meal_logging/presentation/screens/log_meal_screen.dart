@@ -45,6 +45,7 @@ import '../widgets/quick_log_confirm_sheet.dart';
 import '../widgets/unified_meal_search_results.dart';
 import 'build_meal_screen.dart';
 import 'log_scanned_food_screen.dart';
+import '../../domain/meal_photo_capture.dart';
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -1657,7 +1658,15 @@ class _AiTabState extends ConsumerState<_AiTab> {
           'latency_ms': stopwatch.elapsedMilliseconds,
         },
       );
-      if (mounted) MealvanaSnackbar.showError(context, e.userMessage);
+      if (mounted) {
+        // "That doesn't look like food" is not a failure of ours: one short
+        // line from the content system, and nothing invented (mp-473).
+        if (e.kind == MealAiFailureKind.notFood) {
+          MealvanaSnackbar.showWarning(context, e.userMessage);
+        } else {
+          MealvanaSnackbar.showError(context, e.userMessage);
+        }
+      }
     } catch (_) {
       stopwatch.stop();
       analytics.track(
@@ -1696,7 +1705,8 @@ class _AiTabState extends ConsumerState<_AiTab> {
       file = await picker.pickImage(
         source: source,
         imageQuality: 85,
-        maxWidth: 1000,
+        maxWidth: kPhotoLongEdgeMaxPx,
+        maxHeight: kPhotoLongEdgeMaxPx,
       );
     } catch (_) {
       if (mounted) {

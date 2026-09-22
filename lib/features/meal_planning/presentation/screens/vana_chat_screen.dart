@@ -42,6 +42,7 @@ import '../widgets/vana_message_card.dart';
 import '../widgets/vana_status_copy.dart';
 import '../widgets/vana_hand_off.dart';
 import '../widgets/vana_part_renderer.dart';
+import '../../../meal_logging/domain/meal_photo_capture.dart';
 
 /// `/vana?mode=&c=` (05 §4) — the Vana chat for both kinds. Planning chats
 /// carry the plan bar (minimized at start and on every new turn), the
@@ -816,7 +817,8 @@ class _VanaChatScreenState extends ConsumerState<VanaChatScreen> {
       file = await ImagePicker().pickImage(
         source: kIsWeb ? ImageSource.gallery : ImageSource.camera,
         imageQuality: 85,
-        maxWidth: 1000,
+        maxWidth: kPhotoLongEdgeMaxPx,
+        maxHeight: kPhotoLongEdgeMaxPx,
       );
     } catch (e) {
       if (mounted) {

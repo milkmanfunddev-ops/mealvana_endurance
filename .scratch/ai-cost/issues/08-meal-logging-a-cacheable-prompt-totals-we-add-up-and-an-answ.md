@@ -11,10 +11,10 @@
 
 **Touches:** supabase/functions/describe-meal/index.ts, supabase/functions/analyze-meal-photo/index.ts, lib/features/meal_logging/application/meal_ai_service.dart, lib/features/meal_logging/presentation/screens/photo_capture_screen.dart
 
-- [ ] Both functions send their fixed instructions first with a one-hour cache marker and the athlete's text or photo last (prompt shape test in each function's own test file).
-- [ ] The function adds up the totals; the model's totals are ignored (test with a mismatched model answer).
-- [ ] The output has a "not food" answer and the log-meal screen shows one short line for it, from the content system.
-- [ ] Photos are sent at 1,000 px on the long edge; a portrait and a landscape photo of the same scene bill within 10% of each other on dev.
-- [ ] Both model settings still default to Sonnet.
+- [x] Both functions send their fixed instructions first with a one-hour cache marker and the athlete's text or photo last (prompt shape test in each function's own test file).
+- [x] The function adds up the totals; the model's totals are ignored (test with a mismatched model answer).
+- [x] The output has a "not food" answer and the log-meal screen shows one short line for it, from the content system.
+- [x] Photos are sent at 1,000 px on the long edge; a portrait and a landscape photo of the same scene bill within 10% of each other on dev.
+- [x] Both model settings still default to Sonnet.
 
 Next: /implement-lee ai-cost

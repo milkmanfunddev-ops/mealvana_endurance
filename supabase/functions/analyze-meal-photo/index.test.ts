@@ -40,7 +40,13 @@ import {
 import { describe, it } from 'https://deno.land/std@0.177.1/testing/bdd.ts';
 import { z } from 'npm:zod@3';
 
-import { MealAnalysisSchema, MealItemSchema } from '../_shared/meal_analysis/schema.ts';
+import { MealAnalysisRequestSchema, MealAnalysisSchema, MealItemSchema } from '../_shared/meal_analysis/schema.ts';
+import { finalizeAnalysis, NOT_FOOD_BODY, NOT_FOOD_STATUS, sumTotals } from '../_shared/meal_analysis/finalize.ts';
+import {
+  MEAL_ANALYSIS_CACHE_OPTIONS,
+  MEAL_PHOTO_INSTRUCTIONS,
+  mealPhotoPrompt,
+} from '../_shared/meal_analysis/prompt.ts';
 import { ANALYZE_MEAL_PHOTO_MODEL } from '../_shared/ai/model.ts';
 
 // ---------------------------------------------------------------------------
@@ -300,58 +306,146 @@ describe('D. Chunked base64 encoding correctness', () => {
 });
 
 // ---------------------------------------------------------------------------
-// E. not_food error classification
+// E. "Not food" is an answer now (ai-cost ticket 08, mp-473)
+//
+// It used to be a zod parse failure the function string-matched, and the
+// section that stood here recorded why that never fired: zod says "Required at
+// items", not "not_food", so a landscape photo came back a 500. `not_food` is
+// part of the schema the model answers in, so the flag arrives intact.
 // ---------------------------------------------------------------------------
 
-describe('E. not_food detection logic', () => {
-  /**
-   * Mirrors the catch block in analyze-meal-photo/index.ts that checks
-   * whether an AI error string signals a not_food response.
-   *
-   * BUG NOTE: The code checks errStr.includes('not_food') OR
-   * errStr.toLowerCase().includes('not food'). This relies on the
-   * schema validation error MESSAGE containing these strings when zod
-   * rejects { not_food: true }. In practice zod's error for an unexpected
-   * shape won't include "not_food" — it will say something like
-   * "Required at items". This means the not_food detection may NEVER fire
-   * and such images would return a 500 instead of the intended 422.
-   * Marked as BUG below.
-   */
-
-  function classifyAiError(aiError: unknown): 'not_food' | 'rethrow' {
-    const errStr = String(aiError);
-    if (errStr.includes('not_food') || errStr.toLowerCase().includes('not food')) {
-      return 'not_food';
-    }
-    return 'rethrow';
-  }
-
-  it('error string containing "not_food" → 422 path', () => {
-    const err = new Error('Zod parse failed: not_food field present');
-    assertEquals(classifyAiError(err), 'not_food');
+describe('E. not food', () => {
+  it('the model can answer with the flag and no items, and the schema takes it', () => {
+    const parsed = MealAnalysisRequestSchema.safeParse({
+      name: 'A dog on a sofa',
+      not_food: true,
+      items: [],
+    });
+    assert(parsed.success, 'the not-food answer is a valid model answer, not a parse failure');
   });
 
-  it('error string containing "not food" (with space) → 422 path', () => {
-    const err = new Error('The image is not food');
-    assertEquals(classifyAiError(err), 'not_food');
+  it('the flag returns the not-food answer and no macros', () => {
+    const final = finalizeAnalysis(
+      MealAnalysisRequestSchema.parse({ name: 'A dog on a sofa', not_food: true, items: [] }),
+    );
+    assertEquals(final, { notFood: true });
   });
 
-  it('NOT FOOD in uppercase → 422 path (toLowerCase check)', () => {
-    const err = new Error('NOT FOOD detected');
-    assertEquals(classifyAiError(err), 'not_food');
+  it('a photo the model returned no items for is the same answer', () => {
+    assertEquals(
+      finalizeAnalysis(MealAnalysisRequestSchema.parse({ name: 'Unclear', items: [] })),
+      { notFood: true },
+    );
   });
 
-  it('generic zod parse error without food mention → rethrow (→ 500)', () => {
-    // BUG: This is the likely path when the model returns { not_food: true }
-    // because zod will say "Required at items" or similar — NOT "not_food".
-    // The 422 branch will be skipped and the caller gets a 500.
-    const err = new Error('ZodError: Required at items; Required at name');
-    assertEquals(classifyAiError(err), 'rethrow');
+  it('the body is a code and a 422, never prose — the line is content-managed', () => {
+    assertEquals(NOT_FOOD_BODY, { error: 'not_food' });
+    assertEquals(NOT_FOOD_STATUS, 422);
   });
 
-  it('network error → rethrow', () => {
-    const err = new TypeError('fetch failed');
-    assertEquals(classifyAiError(err), 'rethrow');
+  it('a real meal is never the not-food answer', () => {
+    const final = finalizeAnalysis(MealAnalysisRequestSchema.parse({
+      name: 'Burrito',
+      suggested_slot: 'lunch',
+      confidence: 'high',
+      items: [{ name: 'Burrito', portion: '1', calories: 640, carb_g: 72, protein_g: 30, fat_g: 24, sodium_mg: 1200 }],
+    }));
+    assert(!final.notFood);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// E2. Prompt shape: instructions first with a one-hour marker, photo last
+// ---------------------------------------------------------------------------
+
+describe('E2. Prompt shape', () => {
+  const prompt = mealPhotoPrompt({
+    base64Image: 'BASE64BYTES',
+    mediaType: 'image/jpeg',
+    description: '  a big plate of ramen  ',
+  });
+
+  it('the instructions come first, in a system message, and hold no athlete text', () => {
+    assertEquals(prompt.system.role, 'system');
+    assertEquals(prompt.system.content, MEAL_PHOTO_INSTRUCTIONS);
+    assert(!MEAL_PHOTO_INSTRUCTIONS.includes('ramen'));
+    assert(!MEAL_PHOTO_INSTRUCTIONS.includes('BASE64BYTES'));
+  });
+
+  it('the system message carries a one-hour cache marker', () => {
+    assertEquals(prompt.system.providerOptions, MEAL_ANALYSIS_CACHE_OPTIONS);
+    assertEquals(MEAL_ANALYSIS_CACHE_OPTIONS, {
+      anthropic: { cacheControl: { type: 'ephemeral', ttl: '1h' } },
+    });
+  });
+
+  it('the photo and the words typed with it are last, and nothing follows them', () => {
+    assertEquals(prompt.messages.length, 1, "the athlete's input is the only message");
+    assertEquals(prompt.messages[0], {
+      role: 'user',
+      content: [
+        { type: 'image', image: 'BASE64BYTES', mediaType: 'image/jpeg' },
+        { type: 'text', text: 'a big plate of ramen' },
+      ],
+    });
+  });
+
+  it('a photo with no words sends the photo alone', () => {
+    const bare = mealPhotoPrompt({ base64Image: 'B', mediaType: 'image/png' });
+    assertEquals(bare.messages[0].content, [{ type: 'image', image: 'B', mediaType: 'image/png' }]);
+    assertEquals(bare.system, prompt.system, 'the cached prefix does not move with the words');
+  });
+
+  it('two different photos send byte-identical instructions', () => {
+    const a = mealPhotoPrompt({ base64Image: 'AAA', mediaType: 'image/jpeg' });
+    const b = mealPhotoPrompt({ base64Image: 'BBB', mediaType: 'image/png', description: 'lunch' });
+    assertEquals(a.system, b.system);
+  });
+
+  it('the instructions still carry the wording the estimates depend on', () => {
+    assert(MEAL_PHOTO_INSTRUCTIONS.includes('do NOT underestimate'));
+    assert(MEAL_PHOTO_INSTRUCTIONS.includes('endurance athlete'));
+    assert(MEAL_PHOTO_INSTRUCTIONS.includes('Do NOT compute totals'));
+    assert(MEAL_PHOTO_INSTRUCTIONS.includes('Never return a placeholder item'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// E3. The function adds up the totals; the model's are ignored (mp-473)
+// ---------------------------------------------------------------------------
+
+describe('E3. Totals are ours', () => {
+  it("a mismatched model answer is thrown away and the items are summed", () => {
+    const final = finalizeAnalysis(MealAnalysisRequestSchema.parse({
+      name: 'Plate',
+      suggested_slot: 'dinner',
+      confidence: 'medium',
+      items: [
+        { name: 'Rice', portion: '2 cups', calories: 410, carb_g: 89.5, protein_g: 8.4, fat_g: 0.8, sodium_mg: 4 },
+        { name: 'Chicken thigh', portion: '1', calories: 280, carb_g: 0, protein_g: 26.1, fat_g: 19.2, sodium_mg: 320 },
+      ],
+      totals: { calories: 99999, carb_g: 0, protein_g: 0, fat_g: 0, sodium_mg: 0 },
+    }));
+    assert(!final.notFood);
+    if (final.notFood) return;
+    assertEquals(final.analysis.totals, {
+      calories: 690,
+      carb_g: 89.5,
+      protein_g: 34.5,
+      fat_g: 20,
+      sodium_mg: 324,
+    });
+    assert(MealAnalysisSchema.safeParse(final.analysis).success, 'the app still gets its own shape');
+  });
+
+  it('a partial model totals object is ignored too, not merged', () => {
+    const items = [{ name: 'Toast', portion: '2 slices', calories: 160, carb_g: 30, protein_g: 6, fat_g: 2, sodium_mg: 290 }];
+    const final = finalizeAnalysis(
+      MealAnalysisRequestSchema.parse({ name: 'Toast', items, totals: { calories: 5 } }),
+    );
+    assert(!final.notFood);
+    if (final.notFood) return;
+    assertEquals(final.analysis.totals, sumTotals(items));
   });
 });
 
