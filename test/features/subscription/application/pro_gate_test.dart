@@ -164,48 +164,58 @@ void main() {
   });
 
   group('settle (the sign-in hand-off to the router)', () {
-    test('rebuilds for the user now signed in and answers the new value',
-        () async {
-      // Before sign-in the status answers for nobody: locked.
-      var status = SubscriptionStatus.none;
-      final c = ProviderContainer(
-        overrides: [
-          subscriptionStatusProvider.overrideWith(
-            () => _MutableStatus(() => status),
-          ),
-          isAdminProvider.overrideWith((_) async => false),
-        ],
-      );
-      addTearDown(c.dispose);
-      expect(await c.read(appGateProvider.future), AppAccess.never);
+    test(
+      'rebuilds for the user now signed in and answers the new value',
+      () async {
+        // Before sign-in the status answers for nobody: locked.
+        var status = SubscriptionStatus.none;
+        final c = ProviderContainer(
+          overrides: [
+            subscriptionStatusProvider.overrideWith(
+              () => _MutableStatus(() => status),
+            ),
+            isAdminProvider.overrideWith((_) async => false),
+          ],
+        );
+        addTearDown(c.dispose);
+        expect(await c.read(appGateProvider.future), AppAccess.never);
 
-      // The credentials land; the status now answers for the athlete.
-      status = _active;
-      expect(await c.read(appGateProvider.notifier).settle(), AppAccess.open);
-      // The router's synchronous read sees the same settled answer.
-      final gate = c.read(appGateProvider);
-      expect(gate.hasValue && !gate.isLoading, isTrue);
-      expect(gate.value, AppAccess.open);
-    });
+        // The credentials land; the status now answers for the athlete.
+        status = _active;
+        expect(await c.read(appGateProvider.notifier).settle(), AppAccess.open);
+        // The router's synchronous read sees the same settled answer.
+        final gate = c.read(appGateProvider);
+        expect(gate.hasValue && !gate.isLoading, isTrue);
+        expect(gate.value, AppAccess.open);
+      },
+    );
 
-    test('a status that never answers settles locked within the bound',
-        () async {
-      final c = ProviderContainer(
-        overrides: [
-          subscriptionStatusProvider.overrideWith(_DeferredStatus.new),
-          isAdminProvider.overrideWith((_) async => false),
-          entitlementAnswerTimeoutProvider.overrideWithValue(
-            const Duration(milliseconds: 20),
-          ),
-        ],
-      );
-      addTearDown(c.dispose);
-      expect(await c.read(appGateProvider.notifier).settle(), AppAccess.never);
-    });
+    test(
+      'a status that never answers settles locked within the bound',
+      () async {
+        final c = ProviderContainer(
+          overrides: [
+            subscriptionStatusProvider.overrideWith(_DeferredStatus.new),
+            isAdminProvider.overrideWith((_) async => false),
+            entitlementAnswerTimeoutProvider.overrideWithValue(
+              const Duration(milliseconds: 20),
+            ),
+          ],
+        );
+        addTearDown(c.dispose);
+        expect(
+          await c.read(appGateProvider.notifier).settle(),
+          AppAccess.never,
+        );
+      },
+    );
   });
 
   group('writeAccessProvider (mp-457 §4)', () {
-    ProviderContainer container(SubscriptionStatus status, {bool isAdmin = false}) {
+    ProviderContainer container(
+      SubscriptionStatus status, {
+      bool isAdmin = false,
+    }) {
       final c = ProviderContainer(
         overrides: [
           subscriptionStatusProvider.overrideWith(() => _FixedStatus(status)),
@@ -229,14 +239,19 @@ void main() {
 
     test('never does not write', () async {
       expect(
-        await container(SubscriptionStatus.none).read(writeAccessProvider.future),
+        await container(
+          SubscriptionStatus.none,
+        ).read(writeAccessProvider.future),
         isFalse,
       );
     });
 
     test('a lapsed admin writes', () async {
       expect(
-        await container(_lapsed, isAdmin: true).read(writeAccessProvider.future),
+        await container(
+          _lapsed,
+          isAdmin: true,
+        ).read(writeAccessProvider.future),
         isTrue,
       );
     });

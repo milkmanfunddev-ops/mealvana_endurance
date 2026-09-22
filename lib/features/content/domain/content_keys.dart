@@ -925,6 +925,11 @@ class ContentKeys {
   static const String aiCreditsAllowanceRenews = 'ai_credits.allowance_renews';
   static const String aiCreditsAllowanceLeft = 'ai_credits.allowance_left';
 
+  // Plan ended (mp-457): the bar a lapsed account sees on every screen —
+  // lib/shared/widgets/kyle_design/feedback/plan_ended_bar.dart.
+  static const String planEndedMessage = 'plan_ended.message';
+  static const String planEndedSubscribeButton = 'plan_ended.subscribe_button';
+
   /// Interpolates `{name}` placeholders in a content value:
   /// `format('Give me {n} seconds', {'n': 30})`.
   static String format(String value, Map<String, Object?> params) {

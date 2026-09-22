@@ -851,5 +851,9 @@
     "allowance_line": "Your plan includes {n} tokens a month",
     "allowance_renews": "{left} left · renews {date}",
     "allowance_left": "{left} left"
+  },
+  "plan_ended": {
+    "message": "Your plan has ended. Your data is read-only until you subscribe.",
+    "subscribe_button": "Subscribe"
   }
 }

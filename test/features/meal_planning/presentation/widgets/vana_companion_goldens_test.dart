@@ -60,6 +60,7 @@ import 'package:mealvana_endurance/features/meal_planning/domain/vana_part.dart'
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_situation.dart';
 import 'package:mealvana_endurance/features/meal_planning/domain/vana_stream_event.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/services/logging_service.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/navigation/kyle_tab_bar.dart';
@@ -272,6 +273,7 @@ Future<_FakeChatRepo> _pump(
   final container = ProviderContainer(
     overrides: [
       ...baseOverrides(),
+      writeAccessProvider.overrideWith((_) async => true),
       ...vanaMomentInputs(activities: moment ? [_run] : const []),
       sharedPreferencesProvider.overrideWithValue(prefs),
       contentServiceProvider.overrideWith(testContentService),

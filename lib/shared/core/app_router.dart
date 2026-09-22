@@ -125,11 +125,16 @@ class AppRouter {
     // to /main and an expiry turns the app read-only without a restart.
     // The root widget watches this provider, which keeps the subscription
     // active.
+    late final GoRouter router;
     ref.listen(appGateProvider, (previous, next) {
       if (!next.hasValue || next.isLoading) return;
-      if (previous?.value != next.value) authChangeNotifier.notify();
+      if (previous?.value == next.value) return;
+      authChangeNotifier.notify();
+      // A paywall pushed over a lapsed account's read-only screen is not
+      // re-redirected by the refresh; move it on once open (mp-457).
+      yieldPushedPaywall(router, next.value);
     });
-    return GoRouter(
+    return router = GoRouter(
       initialLocation: '/',
       refreshListenable: authChangeNotifier,
       // Use Sentry navigator key for screenshot capture in feedback widget

@@ -5,6 +5,8 @@
 /// `app_router.dart` combines [gateRedirect] with `readAppGate(ref)`.
 library;
 
+import 'package:go_router/go_router.dart';
+
 import '../domain/entitlement.dart';
 
 /// Where a locked user is sent, and stays.
@@ -69,4 +71,38 @@ String? gateRedirect({required String path, required AppAccess access}) {
     AppAccess.lapsed => isAiPath(path) ? kPaywallPath : null,
     AppAccess.never => kPaywallPath,
   };
+}
+
+/// Whether the plan-ended bar (mp-457 §3) belongs over [path] for a lapsed
+/// account: every signed-in route except the paywall itself. The ungated
+/// routes (startup, welcome, onboarding, sign-in) never carry it, and an
+/// unknown location (nothing routed yet) does not either.
+bool planEndedBarShownOn(String path) =>
+    path.isNotEmpty && !isUngatedPath(path) && path != kPaywallPath;
+
+/// The location path of the route on top of [config]; a pushed route
+/// carries its own match list.
+String topPathOf(RouteMatchList config) {
+  if (config.matches.isEmpty) return '';
+  final last = config.last;
+  final list = last is ImperativeRouteMatch ? last.matches : config;
+  return list.uri.path;
+}
+
+/// Moves a PUSHED paywall on to `/main` once the gate is open.
+///
+/// A lapsed account reaches the paywall by a push (the plan-ended bar's
+/// Subscribe, the Vana launcher, an AI route redirected), so it sits over
+/// the read-only screen. go_router's refresh re-runs the redirect on the
+/// base location only, never on a pushed route, so [gateRedirect] alone
+/// would leave that paywall on screen after a purchase or restore
+/// (mp-335 §5: an entitled account can never view the paywall). The router
+/// calls this whenever the gate's answer changes. A paywall that is the base
+/// location is left to the redirect.
+void yieldPushedPaywall(GoRouter router, AppAccess? access) {
+  if (access != AppAccess.open) return;
+  final config = router.routerDelegate.currentConfiguration;
+  if (config.matches.isEmpty || config.last is! ImperativeRouteMatch) return;
+  if (topPathOf(config) != kPaywallPath) return;
+  router.go('/main');
 }

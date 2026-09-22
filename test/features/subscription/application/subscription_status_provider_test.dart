@@ -361,13 +361,15 @@ void main() {
       expect(scheduler.cancelled, [TrialReminder.notificationId]);
     });
 
-    test('an open with nobody signed in (deleted account) cancels it',
-        () async {
-      when(() => repo.currentUserId).thenReturn(null);
-      await resolve(container());
-      await pumpEventQueue();
-      expect(scheduler.cancelled, [TrialReminder.notificationId]);
-    });
+    test(
+      'an open with nobody signed in (deleted account) cancels it',
+      () async {
+        when(() => repo.currentUserId).thenReturn(null);
+        await resolve(container());
+        await pumpEventQueue();
+        expect(scheduler.cancelled, [TrialReminder.notificationId]);
+      },
+    );
 
     test('no answer from RevenueCat cancels nothing', () async {
       when(
@@ -418,8 +420,7 @@ void main() {
       expect(await c.read(writeAccessProvider.future), isTrue);
     });
 
-    test('a pro that expired answers lapsed, and writes are refused',
-        () async {
+    test('a pro that expired answers lapsed, and writes are refused', () async {
       when(
         () => service.fetchStatus(),
       ).thenAnswer((_) async => statusOf(customerInfoLapsed));
@@ -437,14 +438,16 @@ void main() {
       expect(await c.read(writeAccessProvider.future), isFalse);
     });
 
-    test('no answer in time answers never (unknown is locked, mp-284)',
-        () async {
-      when(
-        () => service.fetchStatus(),
-      ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
-      final c = gateContainer();
-      expect(await c.read(appGateProvider.future), AppAccess.never);
-    });
+    test(
+      'no answer in time answers never (unknown is locked, mp-284)',
+      () async {
+        when(
+          () => service.fetchStatus(),
+        ).thenAnswer((_) => Completer<SubscriptionStatus?>().future);
+        final c = gateContainer();
+        expect(await c.read(appGateProvider.future), AppAccess.never);
+      },
+    );
 
     test('a lapsed admin answers open (mp-416)', () async {
       when(

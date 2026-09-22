@@ -3,6 +3,7 @@
 library;
 
 export 'buttons/primary_button.dart';
+export 'feedback/plan_ended_bar.dart';
 export 'buttons/secondary_button.dart';
 export 'buttons/tertiary_button.dart';
 export 'buttons/segmented_control.dart';

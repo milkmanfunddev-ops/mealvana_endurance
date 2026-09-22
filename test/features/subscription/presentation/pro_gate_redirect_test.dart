@@ -120,23 +120,25 @@ void main() {
       expect(gateRedirect(path: kPaywallPath, access: AppAccess.never), isNull);
     });
 
-    test('lapsed: app routes render (read-only), AI routes open the paywall',
-        () {
-      for (final p in ['/main', '/settings', '/food/plan', '/events']) {
-        expect(
-          gateRedirect(path: p, access: AppAccess.lapsed),
-          isNull,
-          reason: p,
-        );
-      }
-      for (final p in ['/vana', '/jade', '/meal-log/photo']) {
-        expect(
-          gateRedirect(path: p, access: AppAccess.lapsed),
-          kPaywallPath,
-          reason: p,
-        );
-      }
-    });
+    test(
+      'lapsed: app routes render (read-only), AI routes open the paywall',
+      () {
+        for (final p in ['/main', '/settings', '/food/plan', '/events']) {
+          expect(
+            gateRedirect(path: p, access: AppAccess.lapsed),
+            isNull,
+            reason: p,
+          );
+        }
+        for (final p in ['/vana', '/jade', '/meal-log/photo']) {
+          expect(
+            gateRedirect(path: p, access: AppAccess.lapsed),
+            kPaywallPath,
+            reason: p,
+          );
+        }
+      },
+    );
 
     test('lapsed: the paywall renders when Subscribe opens it', () {
       expect(
@@ -161,7 +163,11 @@ void main() {
     test('ungated routes are never redirected, whatever the answer', () {
       for (final p in ['/welcome', '/onboarding', '/auth/email-login', '/']) {
         for (final a in AppAccess.values) {
-          expect(gateRedirect(path: p, access: a), isNull, reason: '$p $a');
+          expect(
+            gateRedirect(path: p, access: a),
+            isNull,
+            reason: '$p $a',
+          );
         }
       }
     });
@@ -201,11 +207,14 @@ void main() {
     Provider<GoRouter> routerProvider(String initial) {
       return Provider<GoRouter>((ref) {
         final refresh = ChangeNotifier();
+        late final GoRouter router;
         ref.listen(appGateProvider, (prev, next) {
-          if (next.hasValue && !next.isLoading) refresh.notifyListeners();
+          if (!next.hasValue || next.isLoading) return;
+          refresh.notifyListeners();
+          if (prev?.value != next.value) yieldPushedPaywall(router, next.value);
         });
         Widget page(String label) => Scaffold(body: Text(label));
-        return GoRouter(
+        return router = GoRouter(
           initialLocation: initial,
           refreshListenable: refresh,
           redirect: (context, state) async {
@@ -303,19 +312,20 @@ void main() {
       },
     );
 
-    testWidgets('a push with no pro on record closes the app onto the paywall', (
-      tester,
-    ) async {
-      when(() => service.fetchStatus()).thenAnswer((_) async => _active);
-      await pump(tester, initial: '/settings');
-      expect(find.text('settings'), findsOneWidget);
+    testWidgets(
+      'a push with no pro on record closes the app onto the paywall',
+      (tester) async {
+        when(() => service.fetchStatus()).thenAnswer((_) async => _active);
+        await pump(tester, initial: '/settings');
+        expect(find.text('settings'), findsOneWidget);
 
-      capturedListener!(SubscriptionStatus.none);
-      await tester.pumpAndSettle();
+        capturedListener!(SubscriptionStatus.none);
+        await tester.pumpAndSettle();
 
-      expect(find.text('paywall'), findsOneWidget);
-      expect(find.text('settings'), findsNothing);
-    });
+        expect(find.text('paywall'), findsOneWidget);
+        expect(find.text('settings'), findsNothing);
+      },
+    );
 
     testWidgets('lapsed (customer info with an expired pro) reaches app '
         'routes', (tester) async {
@@ -341,6 +351,14 @@ void main() {
 
       expect(find.text('paywall'), findsOneWidget);
       expect(find.text('vana'), findsNothing);
+
+      // Subscribing moves the pushed paywall on: an entitled account never
+      // views it (mp-335 §5), though go_router's refresh redirects the base
+      // location only.
+      capturedListener!(statusOf(customerInfoOpen));
+      await tester.pumpAndSettle();
+      expect(find.text('paywall'), findsNothing);
+      expect(find.text('main'), findsOneWidget);
     });
 
     testWidgets('never (customer info with no pro) is redirected to the '

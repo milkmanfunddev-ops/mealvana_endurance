@@ -31,6 +31,7 @@ import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/c
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/meal_picker_carousel.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_companion.dart';
 import 'package:mealvana_endurance/features/meal_planning/presentation/widgets/vana_situation_scope.dart';
+import 'package:mealvana_endurance/features/subscription/application/pro_gate.dart';
 import 'package:mealvana_endurance/shared/services/app_external_deps.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/icons/vana_avatar.dart';
 import 'package:mealvana_endurance/shared/widgets/kyle_design/materials/glass.dart';
@@ -207,6 +208,7 @@ Future<_Harness> _pump(
   String initial = '/main',
   _FakeChatRepo? repo,
   DateTime Function()? clock,
+  bool canWrite = true,
 }) async {
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1.0;
@@ -221,6 +223,10 @@ Future<_Harness> _pump(
     observers: [observer],
     routes: [
       GoRoute(path: '/food', builder: (_, _) => const _PlanTabPage()),
+      GoRoute(
+        path: '/paywall',
+        builder: (_, _) => const Scaffold(body: Center(child: Text('paywall'))),
+      ),
       GoRoute(
         path: '/food/cook/:id',
         builder: (_, _) => const Scaffold(body: Center(child: Text('cook'))),
@@ -245,6 +251,7 @@ Future<_Harness> _pump(
     overrides: [
       ...baseOverrides(),
       ...vanaMomentInputs(),
+      writeAccessProvider.overrideWith((_) async => canWrite),
       sharedPreferencesProvider.overrideWithValue(prefs),
       contentServiceProvider.overrideWith(testContentService),
       vanaChatRepositoryProvider.overrideWithValue(chat),
@@ -315,6 +322,22 @@ Future<void> _send(WidgetTester tester, String text) async {
 }
 
 void main() {
+  group('a lapsed account (mp-457)', () {
+    testWidgets('the launcher opens the paywall instead of the sheet', (
+      tester,
+    ) async {
+      final h = await _pump(tester, canWrite: false);
+      expect(find.byKey(_launcher), findsOneWidget);
+
+      await tester.tap(find.byKey(_launcher));
+      await tester.pumpAndSettle();
+
+      expect(find.text('paywall'), findsOneWidget);
+      expect(find.byType(VanaCompanionSheet), findsNothing);
+      expect(h.repo.calls, isEmpty);
+    });
+  });
+
   group('VS-6: where the launcher renders', () {
     testWidgets('present on the three screens, absent on every other route', (
       tester,
