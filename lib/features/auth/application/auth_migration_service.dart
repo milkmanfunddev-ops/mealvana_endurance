@@ -651,7 +651,17 @@ class AuthMigrationService {
 
         // Avoid updateAuthProvider() here because it calls getCurrentUser(),
         // which can race immediately after Supabase session switches.
-        await _handleFreshLogin(newUserId, authProvider);
+        //
+        // The uid did not move, so the profile on this phone is the
+        // account's own: an old anonymous install linking (mp-455) keeps it
+        // even when the server has no row for it (a local-only install from
+        // before 2026-07-29) or the phone is offline. A default profile
+        // written over it would lose every onboarding answer.
+        await _handleFreshLogin(
+          newUserId,
+          authProvider,
+          keepLocalProfile: true,
+        );
       } else {
         // SCENARIO 3: Fresh Login (no migration needed)
         sentry.addBreadcrumb(
@@ -788,7 +798,16 @@ class AuthMigrationService {
   }
 
   /// Handle fresh login (fetch remote profile or create new in Supabase)
-  Future<void> _handleFreshLogin(String userId, String authProvider) async {
+  ///
+  /// [keepLocalProfile]: when the server has no profile (or cannot be
+  /// reached), a local profile under [userId] is the one to register rather
+  /// than a new default. Set for a link, where the uid is unchanged and the
+  /// local profile belongs to this account.
+  Future<void> _handleFreshLogin(
+    String userId,
+    String authProvider, {
+    bool keepLocalProfile = false,
+  }) async {
     sentry.addBreadcrumb(
       message: 'Starting fresh login flow',
       category: 'auth',
@@ -796,9 +815,17 @@ class AuthMigrationService {
     );
 
     // Fetch user profile from Supabase (for existing accounts)
-    final remoteProfile = await userRepository.fetchAndSaveRemoteProfile(
-      userId,
-    );
+    var remoteProfile = await userRepository.fetchAndSaveRemoteProfile(userId);
+    if (remoteProfile == null && keepLocalProfile) {
+      remoteProfile = await userRepository.getUserProfileById(userId);
+      if (remoteProfile != null) {
+        sentry.addBreadcrumb(
+          message: 'Link - no server profile, registering the local one',
+          category: 'auth',
+          data: {'user_id': userId, 'auth_provider': authProvider},
+        );
+      }
+    }
 
     if (remoteProfile != null) {
       // User exists in Supabase - update profile directly (no second lookup)
