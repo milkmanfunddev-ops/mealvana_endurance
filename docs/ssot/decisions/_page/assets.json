@@ -67,16 +67,12 @@
     "sha256": "3d780e7c0eed02cab6e84bcc602e005b41ac8688d60fcd4eaa2af9208f153918"
   },
   "test/features/subscription/presentation/goldens/paywall_light.png": {
-    "id": "e93e5f3903e2538aa3570c02df027f3a",
-    "sha256": "5283ca18a07295ea1e2a7ee8234ceeb1f192ecb0049d280d6722f13eff55bd3a"
+    "id": "5a39cb04c00d2e900c7f4f889384f96d",
+    "sha256": "70ba1366427a1e6543e45e4adae5a7bd77b7d3642c15b0b6ac619fd8a16426e9"
   },
   "test/features/subscription/presentation/goldens/paywall_dark.png": {
-    "id": "365be8870341d8d5a87955be6fbc7fb7",
-    "sha256": "7d5be9f851b2b405be6890a7c84de94c466f41932fe6f8ba2d142ef8b1ef1cc0"
-  },
-  "test/features/subscription/presentation/goldens/paywall_onboarding_dark.png": {
-    "id": "cfecd32a41518691a6fb67d189a494c1",
-    "sha256": "9eba7291e68c0f13ce8e471c353ae778d39e5f899b802978ccfa2b2df83db3be"
+    "id": "fa440c5b370aaa5efec54f8f89e69f90",
+    "sha256": "18d61acf27100da02b1385bb717aa6653ab22dbcd95452d9dbf6bb8235a42c83"
   },
   "docs/ssot/decisions/images/mealplanning/bevel-paywall-hero.png": {
     "id": "ccf1799b408e6ce71200b8866e1aa1ec",
