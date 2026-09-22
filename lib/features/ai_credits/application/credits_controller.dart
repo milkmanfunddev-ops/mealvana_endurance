@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../shared/services/preferences_service.dart';
@@ -35,8 +33,8 @@ part 'credits_controller.g.dart';
 ///
 /// [CreditsController.build] watches this so a session APPEARING (anonymous
 /// sign-in at the end of onboarding), CHANGING (log out → log in) or ENDING
-/// rebuilds the controller — which re-runs the monthly ensure/grant, rebinds
-/// the realtime channel to the right user, and re-reads the wallet. Before
+/// rebuilds the controller — which re-runs the monthly ensure/grant and
+/// re-reads the wallet (the live channel rebinds with its own provider). Before
 /// this existed the only thing that ever invalidated the controller was a
 /// purchase, which is why balances "reappeared after buying".
 @Riverpod(keepAlive: true)
@@ -47,9 +45,6 @@ Stream<String?> creditsAuthUserId(Ref ref) {
 @Riverpod(keepAlive: true)
 class CreditsController extends _$CreditsController {
   CreditsRepository get _repo => ref.read(creditsRepositoryProvider);
-
-  /// Live wallet-row subscription; replaced whenever [build] reruns.
-  RealtimeChannel? _walletChannel;
 
   /// Foreground hook; recreated with the notifier.
   AppLifecycleListener? _lifecycle;
@@ -81,28 +76,34 @@ class CreditsController extends _$CreditsController {
   /// Two channels, because webhook latency is unbounded (a credit has taken
   /// anywhere from 12 seconds to 13 minutes to land):
   ///  - a Postgres realtime subscription on the user's `token_wallets` row, so
-  ///    a webhook write updates the pill the moment it happens; and
-  ///  - a refresh on app foreground, covering credits that landed while the
+  ///    a webhook write updates the budget the moment it happens; and
+  ///  - a refresh on app foreground, covering budget that landed while the
   ///    app was backgrounded or the socket was down.
   ///
   /// Without these, the balance a keepAlive controller cached at launch was
   /// simply what the user saw until they restarted the app — a tester who
-  /// bought tokens watched the store say "success" while the pill never moved.
+  /// bought a pack watched the store say "success" while the bar never moved.
+  ///
+  /// Only the foreground hook lives here now. The socket moved to
+  /// [walletChannelProvider], which a budget screen watches and which closes
+  /// when the last one leaves: this controller is `keepAlive`, so a
+  /// subscription opened from [build] was a socket held for the whole session
+  /// on every screen (ai-cost ticket 10).
   void _listenForRemoteCredits() {
-    final old = _walletChannel;
-    if (old != null) {
-      _repo.removeChannel(old);
-      _walletChannel = null;
-    }
-    _walletChannel = _repo.subscribeToWallet((wallet) {
-      debugPrint(
-        '[CreditsController] wallet updated remotely → ${wallet.balance}',
-      );
-      state = AsyncData(wallet);
-    });
-
     _lifecycle?.dispose();
     _lifecycle = AppLifecycleListener(onResume: () => refresh());
+  }
+
+  /// Take a wallet row the live channel delivered.
+  ///
+  /// Called by [walletChannelProvider] while a budget screen is showing. The
+  /// controller stays the one cache of the wallet for the session; the
+  /// channel only feeds it.
+  void applyRemoteWallet(CreditWallet wallet) {
+    debugPrint(
+      '[CreditsController] wallet updated remotely → ${wallet.balance}',
+    );
+    state = AsyncData(wallet);
   }
 
   /// Re-fetch the wallet from Supabase and update state.

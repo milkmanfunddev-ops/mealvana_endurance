@@ -5,18 +5,26 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../shared/services/app_config.dart';
 import '../../../../shared/widgets/kyle_design/kyle_design.dart';
 import '../../application/credits_controller.dart';
+import '../../domain/budget_share.dart';
 import '../sheets/token_top_up_sheet.dart';
 
-/// The token balance pill that sits beside an AI surface's prompt.
+/// The Vana budget pill that sits beside an AI surface's prompt.
 ///
-/// Per Xuan's token design: a token glyph plus the balance, in a soft outlined
-/// pill. When the balance runs low (under 3, zero included) it flips to
-/// dragonfruit so "you are nearly out" reads before the number does. Tapping
-/// opens the top-up sheet — the pill is the only entry point to buying, so it
-/// must be tappable at any balance, not just zero.
+/// Per Xuan's token design: the glyph plus what is left, in a soft outlined
+/// pill. Since ai-cost ticket 10 what it shows is a SHARE OF THE MONTH, as a
+/// percentage — the wallet holds micro-dollars and the athlete never sees a
+/// dollar figure or a credit count (mp-430 clause 8, mp-436 clause 3). Under a
+/// tenth of a month left (zero included) it flips to dragonfruit so "you are
+/// nearly out" reads before the number does. Tapping opens the top-up sheet —
+/// the pill is the only entry point to buying, so it must be tappable at any
+/// level, not just empty.
+///
+/// It reads the cached wallet and does NOT open the live wallet connection:
+/// that belongs to the budget screens (`walletChannelProvider`), not to every
+/// meal screen.
 ///
 /// Renders nothing unless [AppConfig.aiCreditsEnabled], so the surface is
-/// unchanged wherever tokens are off.
+/// unchanged wherever the budget UI is off.
 class TokenPill extends ConsumerWidget {
   const TokenPill({super.key});
 
@@ -30,8 +38,10 @@ class TokenPill extends ConsumerWidget {
     final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
     final wallet = ref.watch(creditsControllerProvider);
 
-    final balance = wallet.value?.balance;
-    final low = balance != null && balance < 3;
+    final left = wallet.value == null
+        ? null
+        : budgetShareOf(wallet.value!).shareLeft;
+    final low = left != null && left < 0.1;
 
     return GestureDetector(
       key: const ValueKey('tokens.balance_pill'),
@@ -58,7 +68,8 @@ class TokenPill extends ConsumerWidget {
             const SizedBox(width: 7),
             Text(
               switch (wallet) {
-                AsyncData(:final value) => '${value.balance.clamp(0, 99999)}',
+                AsyncData() =>
+                  '${percentOf((left ?? 0).clamp(0.0, 9.99))}%',
                 AsyncError() => '–',
                 _ => '…',
               },
@@ -74,10 +85,9 @@ class TokenPill extends ConsumerWidget {
   }
 }
 
-/// The token glyph — the Mealvana logomark, which is itself a fortune cookie.
+/// The Vana glyph — the Mealvana logomark, which is itself a fortune cookie.
 ///
-/// Tokens are "fortune cookies", so the mark is the brand logomark rather than
-/// a stock cookie: `assets/icons/token_cookie.svg` is the logomark flattened to
+/// The mark is the brand logomark rather than a stock cookie: `assets/icons/token_cookie.svg` is the logomark flattened to
 /// a solid silhouette (crease and the slip's "M" knocked out) so it still reads
 /// at 16px. One widget, so every token surface picks up any change.
 class TokenGlyph extends StatelessWidget {
@@ -97,72 +107,30 @@ class TokenGlyph extends StatelessWidget {
   }
 }
 
-/// A quiet "costs N tokens" tag for secondary AI entry points — the photo
-/// pickers and re-scan tiles, where the dark inset [TokenCostChip] built for
-/// the accent Analyze button would overpower an outlined surface. Just the
-/// glyph and the count, no capsule, at reduced opacity so it reads as a price
-/// note rather than a second label.
+/// The old "costs N tokens" tag beside a secondary AI entry point.
 ///
-/// Renders nothing unless [AppConfig.aiCreditsEnabled], same as the pill.
-class TokenCostTag extends ConsumerWidget {
+/// Since ai-cost ticket 09 a call draws the monthly budget by what it really
+/// costs us: nothing counts turns or actions and no action has a fixed price
+/// (mp-430 clause 1). A per-action price would now be a made-up number, so
+/// these two render nothing. The widgets stay so their call sites — the photo
+/// pickers, the re-scan tiles and the Analyze buttons — keep compiling and
+/// keep their layout; the AI surfaces themselves are untouched.
+class TokenCostTag extends StatelessWidget {
   const TokenCostTag({super.key, this.cost = 1});
 
   final int cost;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(appConfigProvider).aiCreditsEnabled) {
-      return const SizedBox.shrink();
-    }
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final onSurface = isDark ? AppColors.cream : AppColors.blackberry;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const TokenGlyph(size: 14),
-        const SizedBox(width: 3),
-        Text(
-          '$cost',
-          style: AppTextStyles.bodySmall.copyWith(
-            fontWeight: FontWeight.w700,
-            color: onSurface.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-/// The "costs 1 token" price that rides inside an AI action button.
-///
-/// Just the cost and the glyph, no capsule or background — the price sits
-/// directly on the accent button so it reads as part of the label.
-class TokenCostChip extends ConsumerWidget {
+/// The old "costs 1 token" price inside an AI action button. See
+/// [TokenCostTag] — there is no per-action price any more.
+class TokenCostChip extends StatelessWidget {
   const TokenCostChip({super.key, this.cost = 1});
 
   final int cost;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(appConfigProvider).aiCreditsEnabled) {
-      return const SizedBox.shrink();
-    }
-    return Padding(
-      padding: const EdgeInsets.only(left: 10),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$cost',
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.w700,
-              color: AppColors.blackberry,
-            ),
-          ),
-          const SizedBox(width: 5),
-          const TokenGlyph(size: 16, color: AppColors.blackberry),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

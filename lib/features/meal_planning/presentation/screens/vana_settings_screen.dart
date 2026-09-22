@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../features/ai_credits/presentation/widgets/vana_budget_card.dart';
 import '../../../../features/content/application/content_service.dart';
 import '../../../../features/content/domain/content_keys.dart';
 import '../../../../theme/kyle_design/app_colors.dart';
@@ -157,6 +158,11 @@ class VanaSettingsScreen extends ConsumerWidget {
                 ],
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            // How much of this month's Vana is used, when it refills and any
+            // bought extra (mp-430 clause 8). The card is also where the live
+            // wallet connection opens and closes.
+            const VanaBudgetCard(),
             const SizedBox(height: AppSpacing.md),
             Text(
               content.getValue(ContentKeys.mpSettingsMemories).toUpperCase(),
