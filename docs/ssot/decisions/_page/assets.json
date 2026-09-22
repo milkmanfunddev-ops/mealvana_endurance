@@ -27,55 +27,67 @@
   "test/features/home_shell/goldens/tab_bar_expanded_5.png": "25f9558e75769b0685d6221533fb31ab",
   "docs/new_mealplanning/figma/16-plan-detail-modal.png": "712b5bf4ced576aca498ca5352b47c0f",
   "docs/ssot/decisions/images/mealplanning/vana-chat.png": {
-    "id": "6b27e55ae9dadf0d511961bcbc9f2585",
-    "sha256": "3c0685a36148a75a635d062d345e85cdf0fac86f7857d4ebb1112d038adfe557"
+    "id": "6528b92dcb17483c84b1b154df3b3241",
+    "sha256": "28942f1a767c38e0213b8ae1d119ccb0c5c929d20e4a9793998ae57e078d05e5"
   },
   "docs/ssot/decisions/images/mealplanning/settings.png": {
-    "id": "e8c1ce188d0bcfa70b2b3d07c1c6898a",
-    "sha256": "574538b51d1390f9ab635b0be05b3161c8003b93bfffa6242b497e67bf9a9282"
+    "id": "de0c009fc0a9067b46a4bd0299bfbece",
+    "sha256": "35c8d2baeebe9ae31e69e6a9fa4589ae55d5cae0af0fd5589e005cfb4ee9d9ea"
   },
   "docs/ssot/decisions/images/mealplanning/calendar-sheet.png": {
     "id": "977ed8bc4d877e2b01efcff1225957ca",
     "sha256": "8dd4a6853737356f11bc6a36f48b920511b58e4e096b5bed8d63f462846c6daa"
   },
   "docs/ssot/decisions/images/mealplanning/meal-detail.png": {
-    "id": "3d1cee1a75bdc92820b76877b4860103",
-    "sha256": "5c06a12695d169e284b0b51e7e9eafb840aa9b1fa4ae26ff9fc71d10c5fb6c12"
+    "id": "3e5f7a2727a08fb32e2c0ac395b654fe",
+    "sha256": "0861b9d42f1a83bc888ee6ef7e99cc02cbf28b51a0c98d0c973ac971c51995cd"
   },
   "docs/ssot/decisions/images/mealplanning/timeline.png": {
-    "id": "f6e43fb47588db47668afed45fbf76e7",
-    "sha256": "fa343230c66081f8fb8dc6775a33fa9b919d41d2e83347cf4621f90d2bf3b351"
+    "id": "29207c0f1c4d9ec608eb0df473482e9b",
+    "sha256": "49f6c6da4cfd879ba8619642fb873083a05bb9a502bba00eebe2cf62129ca17b"
   },
   "docs/ssot/decisions/images/mealplanning/meals-tab.png": {
-    "id": "0c9ffd0a1370877aad123edc2f7b0f62",
-    "sha256": "64ac7da5b99f10b6a2db05509f9b54d7f0c79811dcf09f8cc1ce9d510a2656e4"
+    "id": "19f10538e5c4c1ec2a0b06e7dd780957",
+    "sha256": "c1a21afe51c74273c7252b469c5b59c2e08aff2d958d2747d2a68a11da08eab4"
   },
   "docs/ssot/decisions/images/mealplanning/cooking-mode.png": {
     "id": "eb738ddf5cb7b83c64bd0435940c50f9",
     "sha256": "cba76454ba9c6e88424de6bb5bf71147c109b690d7058546cbe0f8662d20f7b9"
   },
   "docs/ssot/decisions/images/mealplanning/plan-tab.png": {
-    "id": "f2390449d2167dc67657e312a5e40ca4",
-    "sha256": "ab0731cc67393d330a9083998e85efcc79f94e3f6d503d15648bd33ff26ef169"
+    "id": "79dff6adb27375567ab1df4f96aa83dc",
+    "sha256": "1c1de46468a05a43cd50280c6b766453dc649d4e68c86e8179ed56280200e728"
   },
   "docs/ssot/decisions/images/mealplanning/formula-editor.png": {
-    "id": "50c0cd347325b4b308e18554b1dfc297",
-    "sha256": "cfc7a3c2e4f43e5904a6a08ad517860e49f19bb1ff097a278d65ef3da425ae25"
+    "id": "9acd1e1116cf1f92c5cad834d0b45e75",
+    "sha256": "63a48c3fe93752a85ffeb6ef659f7d7ed7d997f558d754585e79eea4dab01e7a"
   },
   "docs/ssot/decisions/images/mealplanning/shopping-tab.png": {
-    "id": "0696526653dbfb0ff1a7c0499c260f19",
-    "sha256": "34fc39e63cc2d3b283ab3da11e970feb2ecbfd67ed87ffe1cfef1aeae0a962b3"
+    "id": "70446550d5ef4aeaa897b733b8949ad6",
+    "sha256": "3d780e7c0eed02cab6e84bcc602e005b41ac8688d60fcd4eaa2af9208f153918"
   },
   "test/features/subscription/presentation/goldens/paywall_light.png": {
-    "id": "55a0ae7fde5351eb84d3ed944ad7af8e",
-    "sha256": "19c2da286239d8645d582ce8f1465c9ee4583d2dd91d1b6c46cec626efd13a7e"
+    "id": "e93e5f3903e2538aa3570c02df027f3a",
+    "sha256": "5283ca18a07295ea1e2a7ee8234ceeb1f192ecb0049d280d6722f13eff55bd3a"
   },
   "test/features/subscription/presentation/goldens/paywall_dark.png": {
-    "id": "df334c77bb1b2fe4f2a1fa453ba0c221",
-    "sha256": "5429b58ddc6c86bc13e08dafc7c07755a5f59974a1e9a1658926874efebca0db"
+    "id": "365be8870341d8d5a87955be6fbc7fb7",
+    "sha256": "7d5be9f851b2b405be6890a7c84de94c466f41932fe6f8ba2d142ef8b1ef1cc0"
   },
   "test/features/subscription/presentation/goldens/paywall_onboarding_dark.png": {
-    "id": "60ea0d189fe0786b4ff9bf0d6a285207",
-    "sha256": "cba99237595e97b87febd9577c115105a142b801eea95481da126efde02f42c4"
+    "id": "cfecd32a41518691a6fb67d189a494c1",
+    "sha256": "9eba7291e68c0f13ce8e471c353ae778d39e5f899b802978ccfa2b2df83db3be"
+  },
+  "docs/ssot/decisions/images/mealplanning/bevel-paywall-hero.png": {
+    "id": "ccf1799b408e6ce71200b8866e1aa1ec",
+    "sha256": "b2768cf71500ee1e2eddb41658fda9ac36c5c36d7d044e02b516f9d79edb6fe8"
+  },
+  "docs/ssot/decisions/images/mealplanning/bevel-paywall-menu.png": {
+    "id": "925e4854ad700b7e29b3cbb74ee89ed3",
+    "sha256": "b4859f1104e66bb79d1508af3444338873c34be8f7b10cfdc524a255a77fa239"
+  },
+  "docs/ssot/decisions/images/mealplanning/bevel-subscription.png": {
+    "id": "a54c22fb4dcb16561db104f91e339b9a",
+    "sha256": "33adedb3773e74b484bbf8cdbf9c5d9c869980c9bce7d6a27ffd3752c04ff339"
   }
 }
