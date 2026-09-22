@@ -1,6 +1,6 @@
 # 12: A lapsed account cannot write
 
-**Status:** in-progress (wave 4, 2026-09-22)
+**Status:** done (wave 4, 2026-09-22)
 **Blocked by:** 03, 04, 08 (touches lib/features/auth/application), 09 (touches lib/features/auth/application), 11.
 **Next:** `/implement-lee paywall`
 **Model:** fable
